@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: misc-ui
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: misc-ui
+  template:
+    metadata:
+      labels:
+        app: misc-ui
+    spec:
+      containers:
+      - image: nginx:alpine
+        name: misc-ui
+        ports:
+        - containerPort: 80
