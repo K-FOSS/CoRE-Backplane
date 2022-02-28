@@ -17,4 +17,5 @@ spec:
     targetRevision: 10.14.2
     helm:
       releaseName: traefik-core
-      values: '{{ .Files.Get "Input.yaml" | indent 8 }}'
+      values: |-
+        {{ (.Files.Get "Input.yaml").AsConfig | indent 8 }}
