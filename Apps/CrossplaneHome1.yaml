@@ -6,6 +6,11 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
   destination:
     server: 'https://home1kubernetes-default.service.home1.kjdev:6443'
     namespace: core-prod
