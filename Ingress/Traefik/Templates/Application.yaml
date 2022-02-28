@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik-core-{{ .Values.serverName }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: core-prod
+    server: {{ .Values.serverURI }}
+  project: core
+  source:
+    path: traefik
+    repoURL: https://helm.traefik.io/traefik
+    targetRevision: 10.14.2
+    helm:
+      releaseName: traefik-core
+      valueFiles:
+        - values.yaml
