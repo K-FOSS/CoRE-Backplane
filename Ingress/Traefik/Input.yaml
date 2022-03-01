@@ -15,6 +15,23 @@ ingressClass:
   fallbackApiVersion: ''
   isDefaultClass: false
 
+experimental:
+  http3:
+    enabled: true
+
+providers:
+  kubernetesCRD:
+    allowCrossNamespace: true
+    allowExternalNameServices: true
+    enabled: true
+    namespaces: null
+  kubernetesIngress:
+    allowExternalNameServices: true
+    enabled: true
+    namespaces: null
+    publishedService:
+      enabled: true
+
 ports:
   metrics:
     port: 9100
@@ -39,3 +56,9 @@ ports:
       domains: null
       enabled: true
       options: ''
+
+service:
+  enabled: true
+  type: LoadBalancer
+  annotations:
+    metallb.universe.tf/allow-shared-ip: 'traefik-core'

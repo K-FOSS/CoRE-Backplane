@@ -20,5 +20,8 @@ spec:
     targetRevision: 10.14.2
     helm:
       releaseName: traefik-core
+      parameters:
+        - name: service.spec.loadBalancerIP
+          value: {{ .Values.loadBalancerIP }}
       values: |-
 {{ .Files.Get "Input.yaml" | indent 8 }}
