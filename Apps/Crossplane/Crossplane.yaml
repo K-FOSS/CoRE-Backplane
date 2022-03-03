@@ -23,32 +23,10 @@ spec:
         targetRevision: 1.7.0-rc.0.99.g5b52bf9e
         helm:
           releaseName: crossplane-core
-          parameters:
-            - name: service.spec.loadBalancerIP
-              value: '{{loadBalancerIP}}'
           values: |
             replicas: 1
 
             deploymentStrategy: RollingUpdate
-
-            image:
-              repository: crossplane/crossplane
-              tag: v1.7.0-rc.0.99.g5b52bf9e
-              pullPolicy: IfNotPresent
-
-            nodeSelector: {}
-            tolerations: {}
-            affinity: {}
-
-            # -- Custom labels to add into metadata
-            customLabels: {}
-
-            # -- Custom Annotations to add to crossplane serviceaccount
-            serviceAccount:
-              customAnnotations: {}
-
-            leaderElection: true
-            args: {}
 
             provider:
               packages: []

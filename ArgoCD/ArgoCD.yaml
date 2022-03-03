@@ -1,1 +1,526 @@
 
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-argocd-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+  template:
+    metadata:
+      name: '{{cluster}}-argocd-helm'
+    spec:
+      project: core
+      source:
+        repoURL: https://argoproj.github.io/argo-helm
+        chart: argo-cd
+        path: argo-cd
+        targetRevision: 3.35.0
+        helm:
+          releaseName: argocd
+          values: |
+            apiVersionOverrides:
+              certmanager: ''
+              ingress: ''
+            configs:
+              clusterCredentials: null
+              credentialTemplates: {}
+              gpgKeys: {}
+              gpgKeysAnnotations: {}
+              knownHosts:
+                data:
+                  ssh_known_hosts: >
+                    bitbucket.org ssh-rsa
+                    AAAAB3NzaC1yc2EAAAABIwAAAQEAubiN81eDcafrgMeLzaFPsw2kNvEcqTKl/VqLat/MaB33pZy0y3rJZtnqwR2qOOvbwKZYKiEO1O6VqNEBxKvJJelCq0dTXWT5pbO2gDXC6h6QDXCaHo6pOHGPUy+YBaGQRGuSusMEASYiWunYN0vCAI8QaXnWMXNMdFP3jHAJH0eDsoiGnLPBlBp4TNm6rYI74nMzgz3B9IikW4WVK+dc8KZJZWYjAuORU3jc1c/NPskD2ASinf8v3xnfXeukU0sJ5N6m5E8VLjObPEO+mN2t/FZTMZLiFqPWc/ALSqnMnnhwrNi2rbfg/rd/IpL8Le3pSBne8+seeFVBoGqzHM9yXw==
+
+                    github.com ecdsa-sha2-nistp256
+                    AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+
+                    github.com ssh-ed25519
+                    AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+
+                    github.com ssh-rsa
+                    AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==
+
+                    gitlab.com ecdsa-sha2-nistp256
+                    AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFSMqzJeV9rUzU4kWitGjeR4PWSa29SPqJ1fVkhtj3Hw9xjLVXVYrU9QlYWrOLXBpQ6KWjbjTDTdDkoohFzgbEY=
+
+                    gitlab.com ssh-ed25519
+                    AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf
+
+                    gitlab.com ssh-rsa
+                    AAAAB3NzaC1yc2EAAAADAQABAAABAQCsj2bNKTBSpIYDEGk9KxsGh3mySTRgMtXL583qmBpzeQ+jqCMRgBqB98u3z++J1sKlXHWfM9dyhSevkMwSbhoR8XIq/U0tCNyokEi/ueaBMCvbcTHhO7FcwzY92WK4Yt0aGROY5qX2UKSeOvuP4D6TPqKF1onrSzH9bx9XUf2lEdWT/ia1NEKjunUqu1xOB/StKDHMoX4/OKyIzuS0q/T1zOATthvasJFoPrAjkohTyaDUz2LN5JoH839hViyEG82yB+MjcFV5MU3N1l1QL3cVUCh93xSaua1N85qivl+siMkPGbO5xR/En4iEY6K2XPASUEMaieWVNTRCtJ4S8H+9
+
+                    ssh.dev.azure.com ssh-rsa
+                    AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H
+
+                    vs-ssh.visualstudio.com ssh-rsa
+                    AAAAB3NzaC1yc2EAAAADAQABAAABAQC7Hr1oTWqNqOlzGJOfGJ4NakVyIzf1rXYd4d7wo6jBlkLvCA4odBlL0mDUyZ0/QUfTTqeu+tm22gOsv+VrVTMk6vwRU75gY/y9ut5Mb3bR5BV58dKXyq9A9UeB5Cakehn5Zgm6x1mKoVyf+FFn26iYqXJRgzIZZcZ5V6hrE0Qg39kZm4az48o0AUbf6Sp4SLdvnuMa2sVNwHBboS7EJkm57XQPVU3/QpyNLHbWDdzwtrlS+ez30S3AdYhLKEOxAG8weOnyrtLJAUen9mTkol8oII1edf7mWWbWVf0nBmly21+nZcmCTISQBtdcyPaEno7fFQMDD26/s0lfKob4Kw8H
+              knownHostsAnnotations: {}
+              repositories: {}
+              repositoryCredentials: {}
+              secret:
+                argocdServerAdminPassword: null
+                argocdServerAdminPasswordMtime: ''
+                argocdServerTlsConfig: null
+                bitbucketServerSecret: ''
+                bitbucketUUID: ''
+                createSecret: false
+                extra: {}
+                githubSecret: ''
+                gitlabSecret: ''
+                gogsSecret: ''
+              styles: ''
+              tlsCerts: {}
+              tlsCertsAnnotations: {}
+            controller:
+              affinity: {}
+              args:
+                appResyncPeriod: '180'
+                operationProcessors: '10'
+                repoServerTimeoutSeconds: '60'
+                selfHealTimeout: '5'
+                statusProcessors: '20'
+              clusterAdminAccess:
+                enabled: true
+              clusterRoleRules:
+                enabled: false
+                rules: null
+              containerPort: 8082
+              containerSecurityContext: {}
+              enableStatefulSet: false
+              env: null
+              envFrom: null
+              extraArgs:
+                - '--redis'
+                - k0s-dc1-keydb-prod-realtime-prod.service.dc1.kjdev:6379
+              extraContainers: null
+              image:
+                imagePullPolicy: ''
+                repository: ''
+                tag: ''
+              initContainers: null
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              logFormat: json
+              logLevel: info
+              metrics:
+                applicationLabels:
+                  enabled: false
+                  labels: {}
+                enabled: false
+                rules:
+                  enabled: false
+                  spec: null
+                service:
+                  annotations: {}
+                  labels: {}
+                  servicePort: 8082
+                serviceMonitor:
+                  additionalLabels: {}
+                  enabled: false
+                  interval: 30s
+                  metricRelabelings: null
+                  namespace: ''
+                  relabelings: null
+                  selector: {}
+              name: application-controller
+              nodeSelector: {}
+              pdb:
+                annotations: {}
+                enabled: false
+                labels: {}
+              podAnnotations: {}
+              podLabels: {}
+              priorityClassName: ''
+              readinessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              replicas: 1
+              resources: {}
+              service:
+                annotations: {}
+                labels: {}
+                port: 8082
+                portName: https-controller
+              serviceAccount:
+                annotations: {}
+                automountServiceAccountToken: true
+                create: true
+                name: argocd-application-controller
+              tolerations: null
+              topologySpreadConstraints: null
+              volumeMounts: null
+              volumes: null
+            createAggregateRoles: false
+            dex:
+              affinity: {}
+              containerPortGrpc: 5557
+              containerPortHttp: 5556
+              containerPortMetrics: 5558
+              containerSecurityContext: {}
+              enabled: true
+              env: null
+              envFrom: null
+              extraArgs: null
+              extraContainers: null
+              extraVolumeMounts: null
+              extraVolumes: null
+              image:
+                imagePullPolicy: IfNotPresent
+                repository: ghcr.io/dexidp/dex
+                tag: v2.30.0
+              initContainers: null
+              initImage:
+                imagePullPolicy: ''
+                repository: ''
+                tag: ''
+              livenessProbe:
+                enabled: false
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              metrics:
+                enabled: false
+                service:
+                  annotations: {}
+                  labels: {}
+                serviceMonitor:
+                  additionalLabels: {}
+                  enabled: false
+                  interval: 30s
+                  metricRelabelings: null
+                  namespace: ''
+                  relabelings: null
+                  selector: {}
+              name: dex-server
+              nodeSelector: {}
+              pdb:
+                annotations: {}
+                enabled: false
+                labels: {}
+              podAnnotations: {}
+              podLabels: {}
+              priorityClassName: ''
+              readinessProbe:
+                enabled: false
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              resources: {}
+              serviceAccount:
+                annotations: {}
+                automountServiceAccountToken: true
+                create: true
+                name: argocd-dex-server
+              servicePortGrpc: 5557
+              servicePortGrpcName: grpc
+              servicePortHttp: 5556
+              servicePortHttpName: http
+              servicePortMetrics: 5558
+              tolerations: null
+              topologySpreadConstraints: null
+              volumeMounts:
+                - mountPath: /shared
+                  name: static-files
+              volumes:
+                - emptyDir: {}
+                  name: static-files
+            extraObjects: null
+            fullnameOverride: ''
+
+            global:
+              additionalLabels: {}
+              hostAliases: null
+              image:
+                imagePullPolicy: IfNotPresent
+                repository: quay.io/argoproj/argocd
+                tag: ''
+              imagePullSecrets: null
+              networkPolicy:
+                create: false
+                defaultDenyIngress: false
+              podAnnotations: {}
+              podLabels: {}
+              securityContext: {}
+              systemDefaultRegistry: ''
+            kubeVersionOverride: ''
+            nameOverride: argocd
+
+            openshift:
+              enabled: false
+
+            redis:
+              enabled: false
+            redis-ha:
+              enabled: false
+            repoServer:
+              affinity: {}
+              autoscaling:
+                enabled: false
+                maxReplicas: 5
+                minReplicas: 1
+                targetCPUUtilizationPercentage: 50
+                targetMemoryUtilizationPercentage: 50
+              clusterAdminAccess:
+                enabled: false
+              clusterRoleRules:
+                enabled: false
+                rules: null
+              containerPort: 8081
+              containerSecurityContext: {}
+              copyutil:
+                resources: {}
+              env: null
+              envFrom: null
+              extraArgs:
+                - '--redis'
+                - k0s-dc1-keydb-prod-realtime-prod.service.dc1.kjdev:6379
+              extraContainers: null
+              image:
+                imagePullPolicy: ''
+                repository: ''
+                tag: ''
+              initContainers: null
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              logFormat: json
+              logLevel: info
+              metrics:
+                enabled: false
+                service:
+                  annotations: {}
+                  labels: {}
+                  servicePort: 8084
+                serviceMonitor:
+                  additionalLabels: {}
+                  enabled: false
+                  interval: 30s
+                  metricRelabelings: null
+                  namespace: ''
+                  relabelings: null
+                  selector: {}
+              name: repo-server
+              nodeSelector: {}
+              pdb:
+                annotations: {}
+                enabled: false
+                labels: {}
+              podAnnotations: {}
+              podLabels: {}
+              priorityClassName: ''
+              rbac: null
+              readinessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              replicas: 1
+              resources: {}
+              service:
+                annotations: {}
+                labels: {}
+                port: 8081
+                portName: https-repo-server
+              serviceAccount:
+                annotations: {}
+                automountServiceAccountToken: true
+                create: false
+                name: ''
+              tolerations: null
+              topologySpreadConstraints: null
+              volumeMounts: null
+              volumes: null
+            server:
+              GKEbackendConfig:
+                enabled: false
+              GKEfrontendConfig:
+                enabled: false
+              GKEmanagedCertificate:
+                enabled: false
+              additionalApplications: null
+              additionalProjects: null
+              affinity: {}
+              autoscaling:
+                enabled: false
+                maxReplicas: 5
+                minReplicas: 1
+                targetCPUUtilizationPercentage: 50
+                targetMemoryUtilizationPercentage: 50
+              certificate:
+                enabled: false
+              clusterAdminAccess:
+                enabled: true
+              config:
+                application.instanceLabelKey: argocd.argoproj.io/instance
+                url: https://argo.writemy.codes
+                oidc.config: >
+                  name: Authentik
+
+                  issuer: https://idp.mylogin.space/application/o/argocd/
+
+                  clientID: $oidc.clientID
+
+                  clientSecret: $oidc.clientSecret
+
+                  requestedScopes: ["openid", "profile", "email"]
+              configAnnotations: {}
+              configEnabled: true
+              containerPort: 8080
+              containerSecurityContext: {}
+              env: null
+              envFrom: null
+              extensions:
+                contents: null
+                enabled: false
+                image:
+                  imagePullPolicy: IfNotPresent
+                  repository: ghcr.io/argoproj-labs/argocd-extensions
+                  tag: v0.1.0
+                resources: {}
+              extraArgs:
+                - --insecure=true
+                - '--redis'
+                - k0s-dc1-keydb-prod-realtime-prod.service.dc1.kjdev:6379
+              extraContainers: null
+              image:
+                imagePullPolicy: ''
+                repository: ''
+                tag: ''
+              ingress:
+                annotations:
+                  cert-manager.io/cluster-issuer: kjdev-cluster
+                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                  traefik.ingress.kubernetes.io/router.tls: 'true'
+                enabled: true
+                extraPaths: null
+                hosts:
+                  - argo.writemy.codes
+                https: true
+                ingressClassName: traefik-1645372211
+                labels: {}
+                pathType: Prefix
+                paths:
+                  - /
+                tls:
+                  - hosts:
+                      - argo.writemy.codes
+                    secretName: argo-certs
+              ingressGrpc:
+                annotations: {}
+                awsALB:
+                  backendProtocolVersion: HTTP2
+                  serviceType: NodePort
+                enabled: false
+                extraPaths: null
+                hosts: null
+                https: false
+                ingressClassName: ''
+                isAWSALB: false
+                labels: {}
+                pathType: Prefix
+                paths:
+                  - /
+                tls: null
+              initContainers: null
+              lifecycle: {}
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              logFormat: text
+              logLevel: info
+              metrics:
+                enabled: false
+                service:
+                  annotations: {}
+                  labels: {}
+                  servicePort: 8083
+                serviceMonitor:
+                  additionalLabels: {}
+                  enabled: false
+                  interval: 30s
+                  metricRelabelings: null
+                  namespace: ''
+                  relabelings: null
+                  selector: {}
+              name: server
+              nodeSelector: {}
+              pdb:
+                annotations: {}
+                enabled: false
+                labels: {}
+              podAnnotations: {}
+              podLabels: {}
+              priorityClassName: ''
+              rbacConfig: {}
+              rbacConfigAnnotations: {}
+              rbacConfigCreate: true
+              readinessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 10
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              replicas: 1
+              resources: {}
+              route:
+                annotations: {}
+                enabled: false
+                hostname: ''
+                termination_policy: None
+                termination_type: passthrough
+              service:
+                annotations: {}
+                externalIPs: null
+                externalTrafficPolicy: ''
+                labels: {}
+                loadBalancerIP: ''
+                loadBalancerSourceRanges: null
+                namedTargetPort: true
+                nodePortHttp: 30080
+                nodePortHttps: 30443
+                servicePortHttp: 80
+                servicePortHttpName: http
+                servicePortHttps: 443
+                servicePortHttpsName: https
+                sessionAffinity: ''
+                type: ClusterIP
+              serviceAccount:
+                annotations: {}
+                automountServiceAccountToken: true
+                create: true
+                name: argocd-server
+              staticAssets:
+                enabled: true
+              tolerations: null
+              topologySpreadConstraints: null
+              volumeMounts: null
+              volumes: null
+
+
+      destination:
+        server: '{{url}}'
+        namespace: argocd
