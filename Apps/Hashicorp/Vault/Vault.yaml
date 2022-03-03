@@ -21,8 +21,310 @@ spec:
         targetRevision: 0.19.0
         helm:
           releaseName: vault-core
-          valueFiles:
-            - values.yaml
+          values: |
+            csi:
+              daemonSet:
+                annotations: {}
+                kubeletRootDir: /var/lib/kubelet
+                providersDir: /etc/kubernetes/secrets-store-csi-providers
+                updateStrategy:
+                  maxUnavailable: ''
+                  type: RollingUpdate
+              debug: false
+              enabled: true
+              extraArgs: null
+              image:
+                pullPolicy: IfNotPresent
+                repository: hashicorp/vault-csi-provider
+                tag: 0.3.0
+              livenessProbe:
+                failureThreshold: 2
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 3
+              pod:
+                annotations: {}
+                tolerations: null
+              readinessProbe:
+                failureThreshold: 2
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 3
+              resources: {}
+              serviceAccount:
+                annotations: {}
+              volumeMounts: null
+              volumes: null
+              priorityClassName: ''
+
+            global:
+              enabled: true
+              imagePullSecrets: null
+              openshift: false
+              psp:
+                annotations: >
+                  seccomp.security.alpha.kubernetes.io/allowedProfileNames:
+                  docker/default,runtime/default
+
+                  apparmor.security.beta.kubernetes.io/allowedProfileNames: runtime/default
+
+                  seccomp.security.alpha.kubernetes.io/defaultProfileName:  runtime/default
+
+                  apparmor.security.beta.kubernetes.io/defaultProfileName:  runtime/default
+                enable: false
+              tlsDisable: true
+
+            injector:
+              affinity: |
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app.kubernetes.io/name: {{ template "vault.name" . }}-agent-injector
+                          app.kubernetes.io/instance: "{{ .Release.Name }}"
+                          component: webhook
+                      topologyKey: kubernetes.io/hostname
+              agentDefaults:
+                cpuLimit: 500m
+                cpuRequest: 250m
+                memLimit: 128Mi
+                memRequest: 64Mi
+                template: map
+                templateConfig:
+                  exitOnRetryFailure: true
+                  staticSecretRenderInterval: ''
+              agentImage:
+                repository: hashicorp/vault
+                tag: 1.9.0
+              annotations: {}
+              authPath: auth/kubernetes
+              certs:
+                caBundle: ''
+                certName: tls.crt
+                keyName: tls.key
+                secretName: null
+              enabled: true
+              externalVaultAddr: ''
+              extraEnvironmentVars: {}
+              extraLabels: {}
+              failurePolicy: Ignore
+              hostNetwork: false
+              image:
+                pullPolicy: IfNotPresent
+                repository: hashicorp/vault-k8s
+                tag: 0.14.1
+              leaderElector:
+                enabled: true
+              logFormat: standard
+              logLevel: info
+              metrics:
+                enabled: false
+              namespaceSelector: {}
+              nodeSelector: {}
+              objectSelector: {}
+              port: 8080
+              priorityClassName: ''
+              replicas: 1
+              resources: {}
+              revokeOnShutdown: false
+              service:
+                annotations: {}
+              tolerations: null
+              webhookAnnotations: {}
+              podDisruptionBudget: {}
+              strategy: {}
+
+            server:
+              affinity: null
+              annotations: {}
+              auditStorage:
+                accessMode: ReadWriteOnce
+                annotations: {}
+                enabled: false
+                mountPath: /vault/audit
+                size: 10Gi
+                storageClass: null
+              authDelegator:
+                enabled: true
+              dataStorage:
+                accessMode: ReadWriteOnce
+                annotations: {}
+                enabled: true
+                mountPath: /vault/data
+                size: 10Gi
+                storageClass: null
+              dev:
+                devRootToken: root
+                enabled: false
+              enabled: true
+              enterpriseLicense:
+                secretKey: license
+                secretName: ''
+              extraArgs: ''
+              extraContainers: null
+              extraEnvironmentVars: {}
+              extraInitContainers: null
+              extraLabels: {}
+              extraSecretEnvironmentVars:
+                - envName: VAULT_TOKEN
+                  secretKey: token
+                  secretName: vault-token
+              extraVolumes: null
+              ha:
+                apiAddr: null
+                config: >
+                  ui = true
+
+
+                  listener "tcp" {
+                    tls_disable = 1
+                    address = "[::]:8200"
+                    cluster_address = "[::]:8201"
+                  }
+
+
+                  seal "transit" {
+                    address = "http://core-corevault.service.kjdev:8200"
+                    disable_renewal = "false"
+                    key_name = "autounseal"
+                    mount_path = "transit/"
+                    tls_skip_verify = "true"
+                  }
+
+
+                  storage "consul" {
+                    path = "Vault"
+                    service = "Vault"
+                    address = "consul.service.dc1.kjdev:8500"
+                  }
+
+                  service_registration "consul" {
+                    address = "consul.service.dc1.kjdev:8500"
+
+                    service = "core-vault"
+                  }
+                disruptionBudget:
+                  enabled: true
+                  maxUnavailable: null
+                enabled: true
+                raft:
+                  config: |
+                    ui = true
+
+                    listener "tcp" {
+                      tls_disable = 1
+                      address = "[::]:8200"
+                      cluster_address = "[::]:8201"
+                    }
+
+                    service_registration "kubernetes" {}
+                  enabled: false
+                  setNodeId: false
+                replicas: 3
+              image:
+                pullPolicy: IfNotPresent
+                repository: hashicorp/vault
+                tag: 1.9.0
+              ingress:
+                activeService: true
+                annotations:
+                  cert-manager.io/cluster-issuer: letsencrypt-prod
+                  external-dns.alpha.kubernetes.io/access: public
+                  external-dns.alpha.kubernetes.io/target: proxy.int.mylogin.space.
+                  ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
+                enabled: false
+                extraPaths: null
+                hosts:
+                  - host: vault.int.mylogin.space
+                    paths:
+                      - /
+                ingressClassName: pomerium
+                labels: {}
+                pathType: Prefix
+                tls:
+                  - hosts:
+                      - '*.int.mylogin.space'
+                    secretName: core-aaa-ingress-certs
+              livenessProbe:
+                enabled: false
+                failureThreshold: 2
+                initialDelaySeconds: 60
+                path: /v1/sys/health?standbyok=true
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 3
+              logFormat: json
+              logLevel: debug
+              networkPolicy:
+                egress: null
+                enabled: false
+              nodeSelector: {}
+              postStart: null
+              preStopSleepSeconds: 5
+              priorityClassName: ''
+              readinessProbe:
+                enabled: true
+                failureThreshold: 2
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 3
+              resources: {}
+              route:
+                activeService: true
+                annotations: {}
+                enabled: false
+                host: chart-example.local
+                labels: {}
+              service:
+                annotations:
+                  consul.hashicorp.com/service-name: vault-k8s
+                enabled: true
+                externalTrafficPolicy: Cluster
+                port: 8200
+                targetPort: 8200
+                type: ClusterIP
+              serviceAccount:
+                annotations: {}
+                create: true
+                name: ''
+              shareProcessNamespace: false
+              standalone:
+                config: >
+                  ui = true
+
+
+                  listener "tcp" {
+                    tls_disable = 1
+                    address = "[::]:8200"
+                    cluster_address = "[::]:8201"
+                  }
+
+                  storage "file" {
+                    path = "/vault/data"
+                  }
+                enabled: '-'
+              statefulSet:
+                annotations: {}
+              tolerations: null
+              updateStrategyType: OnDelete
+              volumeMounts: null
+              volumes: null
+              terminationGracePeriodSeconds: 10
+
+            ui:
+              activeVaultPodOnly: false
+              annotations: {}
+              enabled: false
+              externalPort: 8200
+              externalTrafficPolicy: Cluster
+              publishNotReadyAddresses: true
+              serviceNodePort: null
+              serviceType: ClusterIP
+              targetPort: 8200
+
       destination:
         server: '{{url}}'
         namespace: core-prod
