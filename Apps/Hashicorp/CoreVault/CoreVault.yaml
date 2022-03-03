@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-corevault-main
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-corevault'
+    spec:
+      project: core
+      source:
+        repoURL: https://helm.releases.hashicorp.com
+        chart: vault
+        path: vault
+        targetRevision: 0.19.0
+        helm:
+          releaseName: corevault-core
+          valueFiles:
+            - values.yaml
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
