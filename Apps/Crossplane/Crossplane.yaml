@@ -1,0 +1,123 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-crossplane-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-crossplane'
+    spec:
+      project: core
+      source:
+        repoURL: https://charts.crossplane.io/master/
+        chart: crossplane
+        path: crossplane
+        targetRevision: 1.7.0-rc.0.99.g5b52bf9e
+        helm:
+          releaseName: crossplane-core
+          parameters:
+            - name: service.spec.loadBalancerIP
+              value: '{{loadBalancerIP}}'
+          values: |
+            replicas: 1
+
+            deploymentStrategy: RollingUpdate
+
+            image:
+              repository: crossplane/crossplane
+              tag: v1.7.0-rc.0.99.g5b52bf9e
+              pullPolicy: IfNotPresent
+
+            nodeSelector: {}
+            tolerations: {}
+            affinity: {}
+
+            # -- Custom labels to add into metadata
+            customLabels: {}
+
+            # -- Custom Annotations to add to crossplane serviceaccount
+            serviceAccount:
+              customAnnotations: {}
+
+            leaderElection: true
+            args: {}
+
+            provider:
+              packages: []
+
+            configuration:
+              packages: []
+
+            imagePullSecrets:
+              - dockerhub
+
+            registryCaBundleConfig: {}
+
+            rbacManager:
+              deploy: true
+              skipAggregatedClusterRoles: false
+              replicas: 1
+              managementPolicy: All
+              leaderElection: true
+              args: {}
+              nodeSelector: {}
+              tolerations: {}
+              affinity: {}
+
+            priorityClassName: ""
+
+            resourcesCrossplane:
+              limits:
+                cpu: 100m
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+
+            securityContextCrossplane:
+              runAsUser: 65532
+              runAsGroup: 65532
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+
+            packageCache:
+              medium: ""
+              sizeLimit: 5Mi
+              pvc: ""
+
+            resourcesRBACManager:
+              limits:
+                cpu: 100m
+                memory: 512Mi
+              requests:
+                cpu: 100m
+                memory: 256Mi
+
+            securityContextRBACManager:
+              runAsUser: 65532
+              runAsGroup: 65532
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+
+            metrics:
+              enabled: false
+
+            extraEnvVarsCrossplane: {}
+
+            extraEnvVarsRBACManager: {}
+
+            podSecurityContextCrossplane: {}
+
+            podSecurityContextRBACManager: {}
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
