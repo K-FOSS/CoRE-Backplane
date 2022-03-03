@@ -1,26 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-externalsecrets-vaultstore
+  name: core-backplane-argocd
   namespace: argocd
 spec:
   generators:
     - list:
         elements:
-          - cluster: k0s-home1
-            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
           - cluster: k0s-cntrl
             url: https://rancher.int.mylogin.space/k8s/clusters/local
   template:
     metadata:
-      name: '{{cluster}}-externalsecrets-store'
+      name: '{{cluster}}-argocd'
     spec:
       project: core
       syncPolicy:
         syncOptions:
           - CreateNamespace=true
       source:
-        path: Secrets
+        path: ArgoCD
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
         directory:
@@ -28,4 +26,4 @@ spec:
           jsonnet: {}
       destination:
         server: '{{url}}'
-        namespace: core-prod
+        namespace: argocd
