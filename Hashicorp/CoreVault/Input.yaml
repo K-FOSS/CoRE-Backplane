@@ -158,21 +158,19 @@ server:
         cluster_address = "[::]:8201"
       }
 
-
       storage "consul" {
         path = "CoreVault"
         service = "CoreVault"
         address = "consul.service.dc1.kjdev:8500"
       }
 
-
       service_registration "kubernetes" {}
 
+      service_registration "consul" {
+        address = "consul.service.dc1.kjdev:8500"
 
-      # Example configuration for using auto-unseal, using Google Cloud KMS. The
-
-      # GKMS keys must already exist, and the cluster must have a service
-      account
+        service = "core-corevault"
+      }
     disruptionBudget:
       enabled: true
       maxUnavailable: null
