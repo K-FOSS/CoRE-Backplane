@@ -47,6 +47,10 @@ spec:
       dnsConfig:
         {{- toYaml .Values.dnsConfig | nindent 8 }}
       {{- end }}
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 10.1.1.53
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
