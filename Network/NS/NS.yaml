@@ -1,0 +1,112 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-ns-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+            loadBalancerIP: 10.1.1.159
+  template:
+    metadata:
+      name: '{{cluster}}-ns-core'
+    spec:
+      project: core
+      source:
+        repoURL: https://k8s-at-home.com/charts/
+        chart: powerdns
+        path: powerdns
+        targetRevision: 4.0.0
+        helm:
+          releaseName: ns-core
+          parameters:
+            - name: service.loadBalancerIP
+              value: '{{loadBalancerIP}}'
+          values: |
+            image:
+              pullPolicy: Always
+              repository: powerdns/pdns-auth-master
+              tag: latest
+            nameOverride: ''
+            nodeSelector: {}
+            podSecurityContext: {}
+            postgresql:
+              enabled: false
+              persistence:
+                enabled: false
+              postgresqlDatabase: pdns
+              postgresqlPassword: pdnspass
+              postgresqlPostgresPassword: pdnsadminpass
+              postgresqlUsername: pdns
+            powerdns:
+              additionalEnv:
+                - name: PGSQL_HOST
+                  value: psql.service.kjdev
+                - name: PGSQL_DB
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabaseDatabase
+                      name: ns-secrets
+                - name: PGSQL_USER
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabaseUser
+                      name: ns-secrets
+                - name: PGSQL_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      key: DatabasePassword
+                      name: ns-secrets
+              config:
+                launch: gpgsql
+                allow-axfr-ips: 172.16.0.0/12,10.0.0.0/8
+                allow-dnsupdate-from: 172.16.0.0/12,10.0.0.0/8
+                also-notify: 10.1.1.10,10.1.1.13,10.1.1.53
+                default-soa-content: ns.kristianjones.dev bots.@ 0 300 60 600 300
+                dnsupdate: 'yes'
+                expand-alias: 'yes'
+                forward-dnsupdate: 'yes'
+                forward-notify: 10.1.1.50,10.1.1.53,10.1.1.56,10.1.1.54
+                primary: 'yes'
+              dnssec: false
+              domain: kristianjones.dev
+              mysql:
+                database: null
+                password: null
+                username: null
+              postgres:
+                database: pdns
+                password: pdnspass
+                username: pdns
+            probes:
+              liveness:
+                enabled: true
+                failureThreshold: 5
+                initialDelaySeconds: 30
+                timeoutSeconds: 10
+              readiness:
+                enabled: true
+                failureThreshold: 5
+                initialDelaySeconds: 30
+                timeoutSeconds: 10
+              startup:
+                enabled: false
+                failureThreshold: 30
+                periodSeconds: 10
+            replicaCount: 1
+            resources: {}
+            securityContext: {}
+            service:
+              externalTrafficPolicy: null
+              port: 53
+              type: LoadBalancer
+              annotations:
+                consul.hashicorp.com/service-name: ns-core
+                metallb.universe.tf/allow-shared-ip: ns
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
