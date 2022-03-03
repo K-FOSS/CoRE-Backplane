@@ -1,0 +1,167 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-rdns-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+            loadBalancerIP: 10.1.1.61
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+            loadBalancerIP: 10.1.1.62
+  template:
+    metadata:
+      name: '{{cluster}}-rdns-core'
+    spec:
+      project: core
+      source:
+        repoURL: https://coredns.github.io/helm
+        chart: coredns
+        path: coredns
+        targetRevision: 1.16.7
+        helm:
+          releaseName: rdns-core
+          parameters:
+            - name: service.loadBalancerIP
+              value: '{{loadBalancerIP}}'
+          values: |
+            customLabels: {}
+            deployment:
+              enabled: true
+              name: ''
+            extraConfig: {}
+            extraSecrets: null
+            extraVolumeMounts: null
+            extraVolumes: null
+            hpa:
+              enabled: false
+              maxReplicas: 2
+              metrics: {}
+              minReplicas: 1
+            image:
+              pullPolicy: IfNotPresent
+              repository: kristianfjones/coredns-docker
+              tag: core0
+            isClusterService: false
+            livenessProbe:
+              enabled: true
+              failureThreshold: 5
+              initialDelaySeconds: 60
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 5
+            nodeSelector: {}
+            podAnnotations: {}
+            podDisruptionBudget: {}
+            priorityClassName: ''
+            prometheus:
+              monitor:
+                additionalLabels: {}
+                enabled: false
+                interval: ''
+                namespace: ''
+              service:
+                annotations:
+                  prometheus.io/port: '9153'
+                  prometheus.io/scrape: 'true'
+                enabled: false
+            rbac:
+              create: true
+              pspEnable: false
+            readinessProbe:
+              enabled: true
+              failureThreshold: 5
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 5
+            replicaCount: 4
+            resources:
+              limits:
+                cpu: 100m
+                memory: 128Mi
+              requests:
+                cpu: 100m
+                memory: 128Mi
+            rollingUpdate:
+              maxSurge: 25%
+              maxUnavailable: 1
+            servers:
+              - plugins:
+                  - name: errors
+                  - configBlock: lameduck 5s
+                    name: health
+                  - name: ready
+                  - configBlock: network TCP
+                    name: fanout
+                    parameters: . 172.17.0.10:53 172.18.0.10:53 172.19.0.10:53 10.0.8.10:53
+                  - name: cache
+                    parameters: 30
+                  - name: forward
+                    parameters: . /etc/resolv.conf
+                  - name: cache
+                    parameters: 30
+                  - name: loop
+                  - name: reload
+                  - name: loadbalance
+                port: 8097
+                zones:
+                  - zone: cluster.local.
+              - plugins:
+                  - name: errors
+                  - configBlock: lameduck 5s
+                    name: health
+                  - name: ready
+                  - configBlock: network TCP
+                    name: fanout
+                    parameters: . 172.18.171.211:53 172.19.125.220:53 10.0.11.160:53
+                  - name: cache
+                    parameters: 30
+                  - name: loadbalance
+                port: 8098
+                zones:
+                  - zone: kjdev.
+              - plugins:
+                  - name: errors
+                  - configBlock: lameduck 5s
+                    name: health
+                  - name: ready
+                  - configBlock: transfer from 10.1.1.153:53
+                    name: secondary
+                    parameters: >-
+                      kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
+                      mylogin.space trackmy.finance ksit.services writemy.codes
+                      ipaddr.network resolvemy.host syncmy.date
+                  - configBlock: network TCP
+                    name: fanout
+                    parameters: . 127.0.0.1:8098 1.1.1.1:53 1.0.0.1:53 127.0.0.1:8097
+                  - name: cache
+                    parameters: 30
+                  - name: loop
+                  - name: reload
+                  - name: loadbalance
+                port: 53
+                zones:
+                  - zone: .
+            service:
+              annotations:
+                consul.hashicorp.com/service-name: dns
+                consul.hashicorp.com/service-tags: dns.rns
+                purelb.io/service-group: anycast
+              name: dns-rdns-core
+            serviceAccount:
+              annotations: {}
+              create: false
+              name: ''
+            serviceType: LoadBalancer
+            terminationGracePeriodSeconds: 30
+            tolerations: null
+            zoneFiles: null
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
