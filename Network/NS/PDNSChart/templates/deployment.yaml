@@ -55,8 +55,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
           - name: config
-            mountPath: /etc/powerdns
+            mountPath: /etc/pdns/conf.d
           env:
+            - name: AUTOCONF
+              value: postgres 
             - name: PGSQL_HOST
               valueFrom:
                 secretKeyRef:
