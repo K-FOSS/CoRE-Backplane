@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pomerium-core-{{ .Values.serverName }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  syncPolicy:
+    automated:
+      selfHeal: true
+  destination:
+    namespace: core-prod
+    server: {{ .Values.serverURI }}
+  project: core
+  source:
+    repoURL: https://helm.pomerium.io
+    chart: pomerium
+    path: pomerium
+    targetRevision: 30.0.1
+    helm:
+      releaseName: pomerium-core
+      parameters:
+        - name: service.spec.loadBalancerIP
+          value: {{ .Values.loadBalancerIP }}
+      values: |-
+{{ .Files.Get "Input.yaml" | indent 8 }}

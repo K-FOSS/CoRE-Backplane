@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: corevault-core-{{ .Values.serverName }}
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  syncPolicy:
+    automated:
+      selfHeal: true
+  destination:
+    namespace: core-prod
+    server: {{ .Values.serverURI }}
+  project: core
+  source:
+    repoURL: https://helm.releases.hashicorp.com
+    chart: vault
+    path: vault
+    targetRevision: 0.19.0
+    helm:
+      releaseName: corevault-core
+#      parameters:
+#        - name: service.spec.loadBalancerIP
+#          value: {{ .Values.loadBalancerIP }}
+      values: |-
+{{ .Files.Get "Input.yaml" | indent 8 }}
