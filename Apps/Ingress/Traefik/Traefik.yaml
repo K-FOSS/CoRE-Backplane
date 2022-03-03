@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-traefik-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+            loadBalancerIP: 10.1.1.88
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+            loadBalancerIP: 10.1.1.89
+  template:
+    metadata:
+      name: '{{cluster}}-traefik-core'
+    spec:
+      project: core
+      source:
+        repoURL: 'https://helm.traefik.io/traefik'
+        chart: traefik
+        path: traefik
+        targetRevision: 10.14.2
+        helm:
+          releaseName: traefik-core
+          parameters:
+            - name: service.spec.loadBalancerIP
+              value: '{{loadBalancerIP}}'
+          valueFiles:
+            - values.yaml
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
