@@ -16,10 +16,10 @@ spec:
     spec:
       project: core
       source:
-        repoURL: https://k8s-at-home.com/charts/
+        repoURL: https://halkeye.github.io/helm-charts/
         chart: powerdns
         path: powerdns
-        targetRevision: 4.0.0
+        targetRevision: 0.4.0
         helm:
           releaseName: ns-core
           parameters:
@@ -30,37 +30,12 @@ spec:
               pullPolicy: Always
               repository: powerdns/pdns-auth-master
               tag: latest
-            args: ['--config-dir=/etc/pdns/conf.d']
             nameOverride: ''
             nodeSelector: {}
             podSecurityContext: {}
             postgresql:
               enabled: false
-              persistence:
-                enabled: false
-              postgresqlDatabase: pdns
-              postgresqlPassword: pdnspass
-              postgresqlPostgresPassword: pdnsadminpass
-              postgresqlUsername: pdns
             powerdns:
-              additionalEnv:
-                - name: PGSQL_HOST
-                  value: psql.service.kjdev
-                - name: PGSQL_DB
-                  valueFrom:
-                    secretKeyRef:
-                      key: DatabaseDatabase
-                      name: ns-secrets
-                - name: PGSQL_USER
-                  valueFrom:
-                    secretKeyRef:
-                      key: DatabaseUser
-                      name: ns-secrets
-                - name: PGSQL_PASS
-                  valueFrom:
-                    secretKeyRef:
-                      key: DatabasePassword
-                      name: ns-secrets
               config:
                 launch: gpgsql
                 allow-axfr-ips: 172.16.0.0/12,10.0.0.0/8
@@ -74,10 +49,6 @@ spec:
                 primary: 'yes'
               dnssec: false
               domain: kristianjones.dev
-              mysql:
-                database: null
-                password: null
-                username: null
               postgres:
                 database: pdns
                 password: pdnspass
