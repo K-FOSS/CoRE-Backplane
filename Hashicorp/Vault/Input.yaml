@@ -162,7 +162,7 @@ server:
 
 
       seal "transit" {
-        address = "http://corevault-k8s.service.kjdev:8200"
+        address = "http://core-corevault.service.kjdev:8200"
         disable_renewal = "false"
         key_name = "autounseal"
         mount_path = "transit/"
@@ -176,8 +176,11 @@ server:
         address = "consul.service.dc1.kjdev:8500"
       }
 
+      service_registration "consul" {
+        address = "consul.service.dc1.kjdev:8500"
 
-      service_registration "kubernetes" {}
+        service = "core-vault"
+      }
     disruptionBudget:
       enabled: true
       maxUnavailable: null
