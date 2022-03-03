@@ -28,8 +28,72 @@ spec:
           parameters:
             - name: service.spec.loadBalancerIP
               value: '{{loadBalancerIP}}'
-          valueFiles:
-            - values.yaml
+          values: |
+            additionalArguments:
+              - '--serverstransport.insecureskipverify=true'
+              - '--entryPoints.websecure.forwardedHeaders.insecure'
+
+            deployment:
+              kind: Deployment
+              labels: {}
+              minReadySeconds: 15
+              podAnnotations: {}
+              podLabels: {}
+              replicas: 3
+
+            ingressClass:
+              enabled: true
+              fallbackApiVersion: ''
+              isDefaultClass: false
+
+            experimental:
+              http3:
+                enabled: true
+
+            providers:
+              kubernetesCRD:
+                allowCrossNamespace: true
+                allowExternalNameServices: true
+                enabled: true
+                namespaces: null
+              kubernetesIngress:
+                allowExternalNameServices: true
+                enabled: true
+                namespaces: null
+                publishedService:
+                  enabled: true
+
+            ports:
+              metrics:
+                port: 9100
+                protocol: TCP
+              minio:
+                port: 9080
+                protocol: TCP
+              traefik:
+                exposedPort: 9000
+                port: 9000
+                protocol: TCP
+              web:
+                exposedPort: 80
+                port: 8080
+                protocol: TCP
+              websecure:
+                exposedPort: 443
+                port: 8443
+                protocol: TCP
+                tls:
+                  certResolver: ''
+                  domains: null
+                  enabled: true
+                  options: ''
+
+            service:
+              enabled: true
+              type: LoadBalancer
+              annotations:
+                metallb.universe.tf/allow-shared-ip: 'traefik-core'
+
       destination:
         server: '{{url}}'
         namespace: core-prod
