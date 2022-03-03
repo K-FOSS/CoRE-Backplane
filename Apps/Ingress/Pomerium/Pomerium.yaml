@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-pomerium-deploy
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+  template:
+    metadata:
+      name: '{{cluster}}-pomerium-deploy'
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        path: Ingress/Pomerium
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        directory:
+          recurse: false
+          jsonnet: {}
+      destination:
+        server: '{{url}}'
+        namespace: argocd
