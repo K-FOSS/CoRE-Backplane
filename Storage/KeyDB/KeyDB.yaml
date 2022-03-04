@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-keydb-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+            loadBalancerIP: 10.1.1.69
+            externalNodes: ['']
+  template:
+    metadata:
+      name: '{{cluster}}-keydb-core'
+    spec:
+      project: core
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Storage/KeyDB/KeyDBChart
+        targetRevision: main
+        helm:
+          releaseName: keydb-core
+          parameters:
+            - name: service.loadBalancerIP
+              value: '{{loadBalancerIP}}'
+            - name: externalNodes
+              value: {{externalNodes}}
+          values: |
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
