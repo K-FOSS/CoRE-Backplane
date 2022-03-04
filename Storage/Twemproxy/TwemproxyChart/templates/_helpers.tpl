@@ -89,7 +89,5 @@ redis:
 {{- with .Values.twemproxy.config }}
 {{ toYaml . | indent 2 }}
 {{- end }}
-  servers:
-{{ include "twemproxy.connectionsList" . | indent 2 }}
 {{- end -}}
 

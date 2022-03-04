@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-redis-argocd-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+  template:
+    metadata:
+      name: '{{cluster}}-redis-argocd-core'
+    spec:
+      project: core
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Storage/Twemproxy/TwemproxyChart
+        targetRevision: main
+        helm:
+          releaseName: argocd-redis-core
+          values: |
+            twemproxy:
+              config:
+                servers:
+                  - keydb.service.kjdev:6379:1
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
