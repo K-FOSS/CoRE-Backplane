@@ -1,1 +1,26 @@
-
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-keydb-deploy
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+  template:
+    metadata:
+      name: '{{cluster}}-keydb-deploy'
+    spec:
+      project: core
+      source:
+        path: Storage/KeyDB
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        directory:
+          recurse: false
+          jsonnet: {}
+      destination:
+        server: '{{url}}'
+        namespace: argocd
