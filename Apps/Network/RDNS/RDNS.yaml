@@ -9,7 +9,7 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
-            loadBalancerIP: 10.1.1.54
+            loadBalancerIP: 10.1.1.53
 
           - cluster: k0s-home1
             url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
@@ -19,6 +19,8 @@ spec:
       name: '{{cluster}}-rdns-core'
     spec:
       project: core
+      syncPolicy:
+        automated: {}
       source:
         repoURL: https://coredns.github.io/helm
         chart: coredns
