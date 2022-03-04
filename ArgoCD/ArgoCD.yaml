@@ -286,10 +286,12 @@ spec:
               containerSecurityContext: {}
               copyutil:
                 resources: {}
-              env: null
+              env:
+                - name: REDIS_DB
+                  value: 10
               envFrom: null
               extraArgs:
-                - '--redisdb=10'
+                - '--redisdb=${REDIS_DB}'
                 - '--redis'
                 - keydb-headless.service.kjdev:6379
               extraContainers: null
