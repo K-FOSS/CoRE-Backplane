@@ -1,0 +1,90 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-rancher-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+  template:
+    metadata:
+      name: '{{cluster}}-rancher-helm'
+    spec:
+      project: core
+      source:
+        repoURL: https://releases.rancher.com/server-charts/alpha
+        chart: rancher
+        path: rancher
+        targetRevision: 2.6.4-alpha3
+        helm:
+          releaseName: rancher
+          values: |-
+            addLocal: 'true'
+            additionalTrustedCAs: false
+            antiAffinity: preferred
+            auditLog:
+              destination: sidecar
+              hostPath: /var/log/rancher/audit/
+              level: 0
+              maxAge: 1
+              maxBackup: 1
+              maxSize: 100
+            bootstrapPassword: ''
+            busyboxImage: busybox
+            certmanager:
+              version: ''
+            customLogos:
+              accessMode: ReadWriteOnce
+              enabled: false
+              size: 1Gi
+              volumeKind: persistentVolumeClaim
+              volumeSubpaths:
+                emberUi: ember
+                vueUi: vue
+            debug: false
+            imagePullSecrets: null
+            ingress:
+              enabled: true
+              extraAnnotations:
+                cert-manager.io/cluster-issuer: kjdev-cluster
+                traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                traefik.ingress.kubernetes.io/router.tls: 'true'
+              includeDefaultExtraAnnotations: true
+              tls:
+                secretName: tls-rancher-ingress
+                source: secret
+            letsEncrypt:
+              environment: production
+              ingress:
+                class: traefik
+            noProxy: 127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local
+            postDelete:
+              enabled: false
+              ignoreTimeoutError: false
+              image:
+                repository: rancher/shell
+                tag: v0.1.14
+              namespaceList:
+                - cattle-fleet-system
+                - cattle-system
+                - rancher-operator-system
+              timeout: 120
+            privateCA: false
+            rancherImage: rancher/rancher
+            replicas: 3
+            resources: {}
+            restrictedAdmin: false
+            systemDefaultRegistry: ''
+            tls: ingress
+            topologyKey: kubernetes.io/hostname
+            useBundledSystemChart: false
+            hostname: rancher.int.mylogin.space
+
+
+
+      destination:
+        server: '{{url}}'
+        namespace: cattle-system
