@@ -10,7 +10,7 @@ spec:
           - cluster: k0s-home1
             url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
             loadBalancerIP: 10.1.1.69
-            externalNodes: ['']
+            externalNodes: ['test.service.dc1.kjdev']
   template:
     metadata:
       name: '{{cluster}}-keydb-core'
@@ -28,7 +28,7 @@ spec:
             - name: externalNodes
               value: {{externalNodes}}
           values: |
-
+            helloWorld: 'test'
       destination:
         server: '{{url}}'
         namespace: core-prod
