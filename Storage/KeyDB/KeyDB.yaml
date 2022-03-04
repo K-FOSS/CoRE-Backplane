@@ -10,7 +10,12 @@ spec:
           - cluster: k0s-home1
             url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
             loadBalancerIP: 10.1.1.69
-            externalNodes: "['test.service.dc1.kjdev']"
+            externalNodes: "['keydb-headless.service.dc1.kjdev']"
+
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+            loadBalancerIP: 10.1.1.49
+            externalNodes: "['keydb-headless.service.home1.kjdev']"
   template:
     metadata:
       name: '{{cluster}}-keydb-core'
@@ -23,10 +28,20 @@ spec:
         helm:
           releaseName: keydb-core
           parameters:
-            - name: service.loadBalancerIP
+            - name: loadBalancer.extraSpec.loadBalancerIP
               value: '{{loadBalancerIP}}'
           values: |
             externalNodes: {{externalNodes}}
+
+            service:
+              annotations:
+                consul.hashicorp.com/service-name: keydb-headless
+
+            loadBalancer:
+              enabled: true
+              annotations:
+                metallb.universe.tf/allow-shared-ip: keydb
+                consul.hashicorp.com/service-name: keydb
       destination:
         server: '{{url}}'
         namespace: core-prod
