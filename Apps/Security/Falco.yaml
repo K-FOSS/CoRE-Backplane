@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-falco-deploy
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-falco-deploy'
+    spec:
+      project: core
+      syncPolicy:
+        automated: {}
+      source:
+        path: Security/Falco
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        directory:
+          recurse: false
+          jsonnet: {}
+      destination:
+        server: '{{url}}'
+        namespace: argocd

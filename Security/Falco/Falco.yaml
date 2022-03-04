@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-falco-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-falco-helm'
+    spec:
+      project: core
+      syncPolicy:
+        automated: {}
+      source:
+        repoURL: https://falcosecurity.github.io/charts
+        chart: falco
+        path: falco
+        targetRevision: 1.17.2
+        helm:
+          releaseName: pomerium-core
+          values: |
+            docker:
+              enabled: false
+              socket: /var/run/docker.sock
+
+            containerd:
+              enabled: true
+              socket: /run/k0s/containerd.sock
+            
+
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
