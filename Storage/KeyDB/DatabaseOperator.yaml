@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-keydb-assignment-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+
+          - cluster: k0s-cntrl
+            url: https://rancher.int.mylogin.space/k8s/clusters/local
+  template:
+    metadata:
+      name: '{{cluster}}-keydb-assignment-core'
+    spec:
+      project: core
+      source:
+        repoURL: https://helm.wyrihaximus.net/
+        chart: redis-db-assignment-operator
+        path: redis-db-assignment-operator
+        targetRevision: 1.0.5
+        helm:
+          releaseName: keydb-assignment-core
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
