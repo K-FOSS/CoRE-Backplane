@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "twemproxy.fullname" . }}-twemproxy
+  labels:
+    {{- include "twemproxy.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.twemproxy.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "twemproxy.twemproxySelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "twemproxy.twemproxySelectorLabels" . | nindent 8 }}
+{{- if .Values.twemproxy.podLabels }}
+{{ toYaml .Values.twemproxy.podLabels | indent 8 }}
+{{- end }}
+      annotations:
+        checksum/configmap: {{ include (print $.Template.BasePath "/twemproxy-configmap.yaml") . | sha256sum }}
+      {{- if .Values.twemproxy.podAnnotations }}
+{{ toYaml .Values.twemproxy.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "twemproxy.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.twemproxy.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}-twemproxy
+          securityContext:
+            {{- toYaml .Values.twemproxy.securityContext | nindent 12 }}
+          image: "{{ .Values.twemproxy.image.repository }}:{{ .Values.twemproxy.image.tag }}"
+          imagePullPolicy: {{ .Values.twemproxy.image.pullPolicy }}
+          ports:
+            - name: redis
+              containerPort: {{ .Values.redisPort }}
+          volumeMounts:
+          - mountPath: /etc/nutcracker.conf
+            name: config
+            subPath: nutcracker.conf
+          command:
+          - "nutcracker"
+          - "-c"
+          - "/etc/nutcracker.conf"
+          - "-v"
+          - "1"
+          resources:
+            {{- toYaml .Values.twemproxy.resources | nindent 12 }}
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "twemproxy.fullname" . }}-twemproxy-config
+      {{- with .Values.twemproxy.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.twemproxy.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.twemproxy.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

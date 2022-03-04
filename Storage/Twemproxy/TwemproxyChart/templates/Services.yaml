@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "twemproxy.fullname" . }}
+  labels:
+    {{- include "twemproxy.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+  - name: redis
+    port: {{ .Values.redisPort }}
+    targetPort: redis
+  selector:
+    {{- include "twemproxy.twemproxySelectorLabels" . | nindent 4 }}
