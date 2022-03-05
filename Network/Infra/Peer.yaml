@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-cilium-bgp-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+            peers: |
+              - name: home1-wan-rt
+                peerIP: 172.31.241.33
+                asn: '64567'
+
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+            peers: |
+              - name: dc1-k0s-rt1
+                peerIP: 172.16.30.1
+                asn: '64567'
+
+              - name: dc1-k0s-rt2
+                peerIP: 172.16.30.2
+                asn: '64567'
+  template:
+    metadata:
+      name: '{{cluster}}-cilium-bgp-core'
+    spec:
+      project: core
+      syncPolicy:
+        automated: {}
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Network/Infra/BGPChart
+        targetRevision: main
+        helm:
+          releaseName: cilium-bgp
+          parameters:
+            - name: peers
+              value: '{{peers}}'
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
