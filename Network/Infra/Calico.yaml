@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-infra-calico-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-calico-helm'
+    spec:
+      project: core
+      syncPolicy:
+        automated: {}
+      source:
+        repoURL: https://projectcalico.docs.tigera.io/charts
+        chart: tigera-operator
+        path: tigera-operator
+        targetRevision: 3.22.1
+        helm:
+          releaseName: calico
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
