@@ -10,6 +10,7 @@ spec:
           - cluster: k0s-home1
             url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
             serviceCIDR: 10.0.8.0/22
+            podCIDR: 172.17.0.0/16
             peers: |
               - name: home1-wan-rt
                 peerIP: 172.31.241.33
@@ -18,6 +19,7 @@ spec:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
             serviceCIDR: 172.20.0.0/22
+            podCIDR: 10.4.0.0/16
             peers: |
               - name: dc1-k0s-rt1
                 peerIP: 172.16.30.1
@@ -44,6 +46,8 @@ spec:
               value: '{{peers}}'
             - name: serviceCIDR
               value: '{{serviceCIDR}}'
+            - name: podCIDR
+              values: '{{podCIDR}}'
       destination:
         server: '{{url}}'
         namespace: core-prod
