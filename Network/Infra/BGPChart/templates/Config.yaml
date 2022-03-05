@@ -1,4 +1,4 @@
-apiVersion: projectcalico.org/v3
+apiVersion: crd.projectcalico.org/v1
 kind: BGPConfiguration
 metadata:
   name: default
@@ -9,4 +9,8 @@ spec:
   serviceClusterIPs:
   - cidr: {{ .Values.serviceCIDR }}
   serviceExternalIPs: []
+  serviceLoadBalancerIPs:
+{{- range .Values.lbServices }}
+    - cidr: {{ . }}
+{{- end }}
   listenPort: 178
