@@ -810,7 +810,7 @@ subjects:
 apiVersion: v1
 kind: Service
 metadata:
-  name: webhook-service
+  name: metallb-webhook-service
   namespace: metallb-system
 spec:
   ports:
@@ -890,8 +890,8 @@ metadata:
   namespace: metallb-system
 spec:
   dnsNames:
-  - webhook-service.metallb-system.svc
-  - webhook-service.metallb-system.svc.cluster.local
+  - metallb-webhook-service.metallb-system.svc
+  - metallb-webhook-service.metallb-system.svc.cluster.local
   issuerRef:
     kind: Issuer
     name: selfsigned-issuer
@@ -916,7 +916,7 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: webhook-service
+      name: metallb-webhook-service
       namespace: metallb-system
       path: /validate-metallb-io-v1beta1-addresspool
   failurePolicy: Fail
@@ -936,7 +936,7 @@ webhooks:
   - v1
   clientConfig:
     service:
-      name: webhook-service
+      name: metallb-webhook-service
       namespace: metallb-system
       path: /validate-metallb-io-v1beta1-bgppeer
   failurePolicy: Fail
