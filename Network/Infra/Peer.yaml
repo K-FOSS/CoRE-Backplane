@@ -49,9 +49,10 @@ spec:
         targetRevision: main
         helm:
           releaseName: calico-bgp
+          values: |-
+            peers:
+              {{peers}}
           parameters:
-            - name: peers
-              value: '{{peers}}'
             - name: serviceCIDR
               value: '{{serviceCIDR}}'
             - name: podCIDR
