@@ -12,10 +12,7 @@ spec:
             serviceCIDR: 172.20.0.0/22
             podCIDR: 172.17.0.0/16
             lbServices: "['10.1.1.56', '10.1.1.69', '10.1.1.151']" 
-            peers: |
-                - name: home1-wan-rt
-                  peerIP: 172.31.241.33
-                  asn: '64567'
+            peers: "[{ name: 'dc1-k0s-rt1', peerIP: '172.16.30.1', asn: '64567' }, { name: 'dc1-k0s-rt2', peerIP: '172.16.30.2', asn: '64567' }]"
 
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
@@ -36,16 +33,15 @@ spec:
         targetRevision: main
         helm:
           releaseName: calico-bgp
-          values: |-
-            peers:
-              {{peers}}
+          values: |
+            lbServices: {{lbServices}}
+
+            peers: {{peers}}
           parameters:
             - name: serviceCIDR
               value: '{{serviceCIDR}}'
             - name: podCIDR
               value: '{{podCIDR}}'
-            - name: lbServices
-              value: '{{lbServices}}'
       destination:
         server: '{{url}}'
         namespace: core-prod
