@@ -16,7 +16,7 @@ spec:
               - 10.1.1.69
               - 10.1.1.151
             peers: |- 
-              - name: home1-wan-rt
+                - name: home1-wan-rt
                   peerIP: 172.31.241.33
                   asn: '64567'
 
@@ -28,12 +28,12 @@ spec:
               - 10.1.1.53
               - 10.1.1.69
               - 10.1.1.153
-            peers: |- 
-              - name: dc1-k0s-rt1
+            peers: |
+                - name: dc1-k0s-rt1
                   peerIP: 172.16.30.1
                   asn: '64567'
 
-              - name: dc1-k0s-rt2
+                - name: dc1-k0s-rt2
                   peerIP: 172.16.30.2
                   asn: '64567'
   template:
@@ -50,8 +50,7 @@ spec:
         helm:
           releaseName: calico-bgp
           values: |-
-            peers:
-              {{ {{peers}} | nindent 4 }}
+            peers: {{peers}}
           parameters:
             - name: serviceCIDR
               value: '{{serviceCIDR}}'
