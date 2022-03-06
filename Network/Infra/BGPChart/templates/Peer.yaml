@@ -1,11 +1,10 @@
-{{- $top := . -}}
-{{- range $peers := .Values.peers -}}
----
+{{- range .Values.externalNodes }}
 apiVersion: crd.projectcalico.org/v1
 kind: BGPPeer
 metadata:
-  name: {{ $peers.name }}
+  name: {{ .name }}
 spec:
-  peerIP: {{ $peers.peerIP }}
-  asNumber: {{ $peers.asn }}
+  peerIP: {{ .peerIP }}
+  asNumber: {{ .asn }}
+---
 {{- end }}
