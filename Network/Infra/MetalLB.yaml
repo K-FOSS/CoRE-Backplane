@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-metallb-main-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-home1
+            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
+            lbCIDR: 10.0.1.8-10.0.1.15
+
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+            lbCIDR: 10.0.1.0-10.0.1.7
+  template:
+    metadata:
+      name: '{{cluster}}-metallb-main-core'
+    spec:
+      project: core
+      syncPolicy:
+        automated: {}
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Network/Infra/MetalLBChart
+        targetRevision: main
+        helm:
+          releaseName: metallb
+          parameters:
+            - name: lbCIDR
+              value: '{{lbCIDR}}'
+      destination:
+        server: '{{url}}'
+        namespace: metallb-system
