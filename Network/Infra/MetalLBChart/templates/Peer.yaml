@@ -1,0 +1,11 @@
+apiVersion: metallb.io/v1beta1
+kind: BGPPeer
+metadata:
+  name: core-peer
+  namespace: metallb-system
+spec:
+  peerAddress: {{ .Values.peerRouter }}
+  peerASN: 64567
+  myASN: 64512
+  holdTime: '180s'
+  keepaliveTime: '180s'
