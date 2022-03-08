@@ -7,17 +7,11 @@ spec:
   generators:
     - list:
         elements:
-          - cluster: k0s-home1
-            url: https://k0s-home1-kubernetes-default.service.home1.kjdev:6443
-            loadBalancerIP: 10.1.1.69
-            externalNodes: "['keydb-headless.service.dc1.kjdev']"
-            replicas: '2'
-
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
             loadBalancerIP: 10.1.1.68
             externalNodes: "['keydb-headless.service.home1.kjdev']"
-            replicas: '1'
+            replicas: '3'
   template:
     metadata:
       name: '{{cluster}}-keydb-core'
