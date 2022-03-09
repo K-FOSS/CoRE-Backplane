@@ -32,6 +32,11 @@ spec:
             additionalArguments:
               - '--serverstransport.insecureskipverify=true'
               - '--entryPoints.websecure.forwardedHeaders.insecure'
+            
+            globalArguments:
+              - '--global.checknewversion'
+              - '--global.sendanonymoususage'
+              - '--entrypoints.websecure.http3'
 
             deployment:
               kind: Deployment
@@ -82,6 +87,7 @@ spec:
                 exposedPort: 443
                 port: 8443
                 protocol: TCP
+                http3: true
                 tls:
                   certResolver: ''
                   domains: null
