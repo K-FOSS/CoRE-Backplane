@@ -1,21 +1,16 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  labels:
-    app: metallb
-    component: speaker
-    manager: kube-controller-manager
-  name: speaker
-  namespace: metallb-system
   annotations:
     argocd.argoproj.io/compare-options: IgnoreExtraneous
-  ownerReferences:
-  - apiVersion: metallb.io/v1beta1
-    blockOwnerDeletion: true
-    controller: true
-    kind: MetalLB
-    name: metallb
-    uid: e4da720b-d8a7-4f67-94c9-55a9b9805053
+    deprecated.daemonset.template.generation: "28"
+  labels:
+    app: metallb
+    argocd.argoproj.io/instance: k0s-cntrl-metallb-main-core
+    component: speaker
+    manager: kube-controller-manager
+  name: speaker-core
+  namespace: metallb-system
 spec:
   revisionHistoryLimit: 10
   selector:
@@ -167,6 +162,7 @@ spec:
         - mountPath: /etc/frr_reloader
           name: reloader
       dnsPolicy: ClusterFirst
+      hostNetwork: false
       initContainers:
       - command:
         - /bin/sh
