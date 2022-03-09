@@ -14,11 +14,13 @@ spec:
       name: '{{cluster}}-argocd-helm'
     spec:
       project: core
+      syncPolicy:
+        automated: {}
       source:
         repoURL: https://argoproj.github.io/argo-helm
         chart: argo-cd
         path: argo-cd
-        targetRevision: 3.35.0
+        targetRevision: 3.35.2
         helm:
           releaseName: argocd
           values: |
