@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-calico-tigera-config-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+            apiServer: https://10.0.8.1
+  template:
+    metadata:
+      name: '{{cluster}}-calico-tigera-config-core'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Network/Infra/TigeraConfigChart
+        targetRevision: main
+        helm:
+          releaseName: tigera-config
+          parameters:
+            - name: apiServer
+              value: '{{apiServer}}'
+      destination:
+        server: '{{url}}'
+        namespace: tigera-operator
