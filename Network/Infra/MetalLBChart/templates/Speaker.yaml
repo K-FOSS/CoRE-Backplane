@@ -136,16 +136,6 @@ spec:
               name: memberlist
         image: quay.io/metallb/speaker:main
         imagePullPolicy: IfNotPresent
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /metrics
-            port: monitoring
-            scheme: HTTP
-          initialDelaySeconds: 10
-          periodSeconds: 10
-          successThreshold: 1
-          timeoutSeconds: 1
         name: speaker
         ports:
         - containerPort: 7472
