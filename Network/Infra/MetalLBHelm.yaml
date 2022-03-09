@@ -30,10 +30,6 @@ spec:
             # This is a YAML-formatted file.
             # Declare variables to be passed into your templates.
 
-            imagePullSecrets: []
-            nameOverride: ""
-            fullnameOverride: ""
-
             # To configure MetalLB, you must specify ONE of the following two
             # options.
 
@@ -153,14 +149,9 @@ spec:
               logLevel: error
               image:
                 repository: quay.io/metallb/controller
-                tag:
-                pullPolicy:
               serviceAccount:
                 # Specifies whether a ServiceAccount should be created
                 create: true
-                # The name of the ServiceAccount to use. If not set and create is
-                # true, a name is generated using the fullname template
-                name: ""
                 annotations: {}
               securityContext:
                 runAsNonRoot: true
@@ -203,8 +194,6 @@ spec:
                 mlBindPort: 7946
               image:
                 repository: quay.io/metallb/speaker
-                tag:
-                pullPolicy:
               serviceAccount:
                 # Specifies whether a ServiceAccount should be created
                 create: true
