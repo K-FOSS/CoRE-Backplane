@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: rdns-tls
+spec:
+  hosts:
+    - resolvemy.host
+  gateways:
+    - rdns-gateway
+  tls:
+  - match:
+      - port: 853
+        sniHosts:
+          - resolvemy.host
+    route:
+      - destination:
+          host: dns-rdns-core
+          port:
+            number: 853
