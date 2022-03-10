@@ -1,0 +1,17 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: pdns-token-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: powerdns-api
+  data:
+    - secretKey: Token
+      remoteRef:
+        key: NS
+        property: APIKey
+      

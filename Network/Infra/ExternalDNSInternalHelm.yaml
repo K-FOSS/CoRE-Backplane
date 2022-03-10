@@ -1,0 +1,140 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-infra-externaldns-pdns-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-externaldns-pdns-helm'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+      source:
+        repoURL: https://kubernetes-sigs.github.io/external-dns/
+        chart: external-dns
+        path: external-dns
+        targetRevision: 1.7.1
+        helm:
+          releaseName: externaldns-pdns-core
+          values: |
+            image:
+              repository: k8s.gcr.io/external-dns/external-dns
+              pullPolicy: IfNotPresent
+
+            imagePullSecrets: []
+            nameOverride: ""
+            fullnameOverride: ""
+
+            serviceAccount:
+              # Specifies whether a service account should be created
+              create: true
+              # Annotations to add to the service account
+              annotations: {}    
+
+            rbac:
+              # Specifies whether RBAC resources should be created
+              create: true
+              additionalPermissions: {}
+
+            podLabels: {}
+
+            podAnnotations: {}
+
+            podSecurityContext:
+              fsGroup: 65534
+
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 65534
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+
+            priorityClassName: ""
+
+            terminationGracePeriodSeconds:
+
+            serviceMonitor:
+              enabled: false
+              additionalLabels: {}
+              interval: 1m
+              scrapeTimeout: 10s
+
+            env:
+              - name: PDNS_API_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    key: Token
+                    name: powerdns-api
+
+            livenessProbe:
+              httpGet:
+                path: /healthz
+                port: http
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 2
+              successThreshold: 1
+
+            readinessProbe:
+              httpGet:
+                path: /healthz
+                port: http
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 6
+              successThreshold: 1
+
+            service:
+              port: 7979
+              annotations: {}
+
+            extraVolumes: []
+
+            extraVolumeMounts: []
+
+            resources: {}
+
+            nodeSelector: {}
+
+            tolerations: []
+
+            affinity: {}
+
+            logLevel: info
+            logFormat: json
+
+            interval: 1m
+            triggerLoopOnEvent: false
+
+            sources:
+              - service
+              - ingress
+
+            policy: upsert-only
+
+            registry: txt
+            txtOwnerId: "k0s-dc1"
+            txtPrefix: ""
+            txtSuffix: ""
+
+            domainFilters: []
+
+            provider: pdns
+
+            extraArgs: ['--pdns-server=k0s-dc1-ns-core-powerdns-webserver-core-prod.service.dc1.kjdev', '--pdns-api-key=$(PDNS_API_TOKEN)']
+
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod

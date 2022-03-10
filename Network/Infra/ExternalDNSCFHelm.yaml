@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-network-infra-externaldns-helm
+  name: core-backplane-network-infra-externaldns-cf-helm
   namespace: argocd
 spec:
   generators:
@@ -11,7 +11,7 @@ spec:
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
   template:
     metadata:
-      name: '{{cluster}}-externaldns-helm'
+      name: '{{cluster}}-externaldns-cf-helm'
     spec:
       project: core
       syncPolicy:
@@ -23,12 +23,10 @@ spec:
         path: external-dns
         targetRevision: 1.7.1
         helm:
-          releaseName: externaldns-core
+          releaseName: externaldns-cf-core
           values: |
             image:
               repository: k8s.gcr.io/external-dns/external-dns
-              # Overrides the image tag whose default is v{{ .Chart.AppVersion }}
-              tag: ""
               pullPolicy: IfNotPresent
 
             imagePullSecrets: []
