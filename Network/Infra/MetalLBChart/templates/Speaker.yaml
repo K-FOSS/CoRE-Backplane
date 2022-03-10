@@ -18,6 +18,20 @@ spec:
       labels:
         app.kubernetes.io/component: speaker
     spec:
+      volumes:
+        - emptyDir: {}
+          name: frr-sockets
+        - configMap:
+            defaultMode: 420
+            name: frr-startup
+          name: frr-startup
+        - emptyDir: {}
+          name: frr-conf
+        - emptyDir: {}
+          name: reloader
+        - emptyDir: {}
+          name: metrics
+
       initContainers:
         - name: cp-frr-files
           image: quay.io/frrouting/frr:stable_7.5
@@ -33,10 +47,11 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-            - mountPath: /tmp/frr
-              name: frr-startup
-            - mountPath: /etc/frr
-              name: frr-conf
+            - name: frr-startup
+              mountPath: /tmp/frr
+              
+            - name: frr-conf
+              mountPath: /etc/frr
 
         - name: cp-reloader
           image: quay.io/metallb/speaker:main
@@ -50,8 +65,8 @@ spec:
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
-            - mountPath: /etc/frr_reloader
-              name: reloader
+            - name: reloader
+              mountPath: /etc/frr_reloader
 
         - name: cp-metrics
           image: quay.io/metallb/speaker:main
@@ -70,9 +85,72 @@ spec:
               name: metrics
 
       containers:
+        - name: speaker
+          image: quay.io/metallb/speaker:main
+          imagePullPolicy: IfNotPresent
+          command:
+            - /speaker
+          args:
+            - --port=7572
+            - --log-level=info
+          env:
+            - name: METALLB_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
+
+            - name: METALLB_HOST
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+
+            - name: FRR_CONFIG_FILE
+              value: /etc/frr_reloader/frr.conf
+
+            - name: FRR_RELOADER_PID_FILE
+              value: /etc/frr_reloader/reloader.pid
+
+            - name: METALLB_BGP_TYPE
+              value: frr
+
+            - name: FRR_LOGGING_LEVEL
+              value: informational
+          
+          ports:
+            - containerPort: 7572
+              hostPort: 7572
+              name: monitoring
+              protocol: TCP
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              add:
+                - NET_RAW
+              drop:
+                - ALL
+
+          volumeMounts:
+            - mountPath: /etc/frr_reloader
+              name: reloader
+
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+
+
         - name: frr
           image: quay.io/frrouting/frr:stable_7.5
           imagePullPolicy: IfNotPresent
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - NET_RAW
+                - SYS_ADMIN
+                - NET_BIND_SERVICE
           command:
             - /bin/sh
             - -c
@@ -88,36 +166,32 @@ spec:
             - name: TINI_SUBREAPER
               value: "true"
           resources: {}
-          securityContext:
-            capabilities:
-              add:
-                - NET_ADMIN
-                - NET_RAW
-                - SYS_ADMIN
-                - NET_BIND_SERVICE
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
+
           volumeMounts:
-            - mountPath: /var/run/frr
-              name: frr-sockets
-            - mountPath: /etc/frr
-              name: frr-conf
+            - name: frr-sockets
+              mountPath: /var/run/frr
+              
+            - name: frr-conf
+              mountPath: /etc/frr
 
         - name: reloader
           image: quay.io/frrouting/frr:stable_7.5
           imagePullPolicy: IfNotPresent
           command:
-            - /etc/frr_reloader/frr-reloader.sh    
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
+            - /etc/frr_reloader/frr-reloader.sh  
           volumeMounts:
-            - mountPath: /var/run/frr
-              name: frr-sockets
-            - mountPath: /etc/frr
-              name: frr-conf
-            - mountPath: /etc/frr_reloader
-              name: reloader
+            - name: frr-sockets
+              mountPath: /var/run/frr
+              
+            - name: frr-conf
+              mountPath: /etc/frr
+              
+            - name: reloader
+              mountPath: /etc/frr_reloader
+
+          resources: {}
+          
+
 
         - name: frr-metrics
           image: quay.io/frrouting/frr:stable_7.5
@@ -137,59 +211,7 @@ spec:
           - mountPath: /etc/frr_metrics
             name: metrics
 
-        - name: speaker
-          image: quay.io/metallb/speaker:main
-          imagePullPolicy: IfNotPresent
-          command:
-            - /speaker
-          args:
-            - --port=7572
-            - --config=config
-            - --log-level=info
-          env:
-            - name: FRR_CONFIG_FILE
-              value: /etc/frr_reloader/frr.conf
-            - name: FRR_RELOADER_PID_FILE
-              value: /etc/frr_reloader/reloader.pid
-            - name: METALLB_BGP_TYPE
-              value: frr
-            - name: METALLB_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: spec.nodeName
-            - name: METALLB_HOST
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: status.podIP
-            - name: METALLB_ML_BIND_ADDR
-              valueFrom:
-                fieldRef:
-                  apiVersion: v1
-                  fieldPath: status.podIP
-            - name: METALLB_ML_LABELS
-              value: app=metallb,component=speaker
-          
-          ports:
-            - containerPort: 7572
-              hostPort: 7572
-              name: monitoring
-              protocol: TCP
-          resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              add:
-                - NET_RAW
-              drop:
-                - ALL
-            readOnlyRootFilesystem: true
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          volumeMounts:
-            - mountPath: /etc/frr_reloader
-              name: reloader
+
 
       dnsPolicy: ClusterFirst
       hostNetwork: false
@@ -206,19 +228,7 @@ spec:
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
-      volumes:
-        - emptyDir: {}
-          name: frr-sockets
-        - configMap:
-            defaultMode: 420
-            name: frr-startup
-          name: frr-startup
-        - emptyDir: {}
-          name: frr-conf
-        - emptyDir: {}
-          name: reloader
-        - emptyDir: {}
-          name: metrics
+
 
   updateStrategy:
     rollingUpdate:
