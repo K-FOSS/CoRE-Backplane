@@ -34,7 +34,9 @@ spec:
               enabled: true
               name: ''
             extraConfig: {}
-            extraSecrets: null
+            extraSecrets:
+              - name: resolvemyhost-default-certificates
+                mountPath: /tls
             extraVolumeMounts: null
             extraVolumes: null
             hpa:
@@ -91,48 +93,10 @@ spec:
               maxSurge: 25%
               maxUnavailable: 1
             servers:
-              - plugins:
-                  - name: errors
-                  
-                  - name: health
-                    configBlock: lameduck 5s
-                    
-                  - name: ready
-                  
-                  - name: fanout
-                    parameters: . 172.17.0.10:53 172.18.0.10:53 172.19.0.10:53 10.0.8.10:53
-                    configBlock: network TCP
-                  
-                  - name: cache
-                    parameters: 30
-                  
-                  - name: loadbalance
-                port: 8097
-                zones:
-                  - zone: cluster.local.
-              
-              - plugins:
-                  - name: errors
-              
-                  - name: health
-                    configBlock: lameduck 5s
-                    
-              
-                  - name: ready
-              
-                  - name: fanout
-                    parameters: . 172.18.171.211:53 172.19.125.220:53 10.0.11.160:53
-                    configBlock: network TCP
-
-                  - name: cache
-                    parameters: 30
-
-                  - name: loadbalance
-                port: 8098
-                zones:
-                  - zone: kjdev.
-
-              - plugins:
+              - zones:
+                  - zone: .
+                port: 53
+                plugins:
                   - name: errors
 
                   - name: health
@@ -159,9 +123,90 @@ spec:
                   - name: reload
                   
                   - name: loadbalance
-                port: 53
-                zones:
+
+              - zones:
                   - zone: .
+                port: 853
+                force_tcp: true
+                scheme: tls 
+                plugins:
+                  - name: errors
+
+                  - name: health
+                    configBlock: lameduck 5s
+                    
+                  - name: ready
+
+                  - name: secondary
+                    parameters: >-
+                      kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
+                      mylogin.space trackmy.finance ksit.services writemy.codes
+                      ipaddr.network resolvemy.host syncmy.date
+                    configBlock: transfer from 10.1.1.153:53 10.1.1.159:53 10.1.1.150:53 10.1.1.151:53
+                  
+                  - name: fanout
+                    parameters: . 127.0.0.1:8098 1.1.1.1:53 1.0.0.1:53 127.0.0.1:8097
+                    configBlock: network TCP
+                    
+                  - name: cache
+                    parameters: 30
+                  
+                  - name: loop
+                  
+                  - name: reload
+                  
+                  - name: loadbalance
+                  
+                  - name: tls
+                    parameters: /tls/tls.crt /tls/tls.key
+
+            
+              - zones:
+                  - zone: cluster.local.
+                port: 8097
+                plugins:
+                  - name: errors
+                  
+                  - name: health
+                    configBlock: lameduck 5s
+                    
+                  - name: ready
+                  
+                  - name: fanout
+                    parameters: . 172.17.0.10:53 172.18.0.10:53 172.19.0.10:53 10.0.8.10:53
+                    configBlock: network TCP
+                  
+                  - name: cache
+                    parameters: 30
+                  
+                  - name: loadbalance
+                
+                
+              
+              - zones:
+                  - zone: kjdev.
+                port: 8098
+                plugins:
+                  - name: errors
+              
+                  - name: health
+                    configBlock: lameduck 5s
+                    
+              
+                  - name: ready
+              
+                  - name: fanout
+                    parameters: . 172.18.171.211:53 172.19.125.220:53 10.0.11.160:53
+                    configBlock: network TCP
+
+                  - name: cache
+                    parameters: 30
+
+                  - name: loadbalance
+                
+
+
+                
 
             service:
               annotations:
