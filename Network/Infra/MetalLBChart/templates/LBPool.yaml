@@ -1,0 +1,10 @@
+apiVersion: metallb.io/v1beta1
+kind: AddressPool
+metadata:
+  name: metallb-pool
+  namespace: metallb-system
+spec:
+  protocol: bgp
+  autoAssign: true
+  addresses:
+    - {{ .Values.lbCIDR }}
