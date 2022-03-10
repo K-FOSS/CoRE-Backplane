@@ -1,0 +1,169 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-security-tls-certmanager-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-certmanager-helm'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+      source:
+        repoURL: https://charts.jetstack.io
+        chart: cert-manager
+        path: cert-manager
+        targetRevision: 1.7.1
+        helm:
+          releaseName: cert-manager-1645371900
+          values: |
+            affinity: {}
+            cainjector:
+              affinity: {}
+              containerSecurityContext: {}
+              enabled: true
+              extraArgs: null
+              image:
+                pullPolicy: IfNotPresent
+                repository: quay.io/jetstack/cert-manager-cainjector
+              nodeSelector: {}
+              podLabels: {}
+              replicaCount: 1
+              resources: {}
+              securityContext:
+                runAsNonRoot: true
+              serviceAccount:
+                automountServiceAccountToken: true
+                create: true
+              strategy: {}
+              tolerations: null
+            clusterResourceNamespace: ''
+            containerSecurityContext: {}
+            extraArgs: null
+            extraEnv: null
+            featureGates: ''
+            global:
+              imagePullSecrets: null
+              leaderElection:
+                namespace: kube-system
+              logLevel: 2
+              podSecurityPolicy:
+                enabled: false
+                useAppArmor: true
+              priorityClassName: ''
+              rbac:
+                create: true
+            image:
+              pullPolicy: IfNotPresent
+              repository: quay.io/jetstack/cert-manager-controller
+            ingressShim: {}
+            installCRDs: true
+            nodeSelector: {}
+            podLabels: {}
+            prometheus:
+              enabled: true
+              servicemonitor:
+                enabled: false
+                honorLabels: false
+                interval: 60s
+                labels: {}
+                path: /metrics
+                prometheusInstance: default
+                scrapeTimeout: 30s
+                targetPort: 9402
+            replicaCount: 1
+            resources: {}
+            securityContext:
+              runAsNonRoot: true
+            serviceAccount:
+              automountServiceAccountToken: true
+              create: true
+            startupapicheck:
+              affinity: {}
+              backoffLimit: 4
+              enabled: true
+              extraArgs: null
+              image:
+                pullPolicy: IfNotPresent
+                repository: quay.io/jetstack/cert-manager-ctl
+              jobAnnotations:
+                helm.sh/hook: post-install
+                helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+                helm.sh/hook-weight: '1'
+              nodeSelector: {}
+              podLabels: {}
+              rbac:
+                annotations:
+                  helm.sh/hook: post-install
+                  helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+                  helm.sh/hook-weight: '-5'
+              resources: {}
+              securityContext:
+                runAsNonRoot: true
+              serviceAccount:
+                annotations:
+                  helm.sh/hook: post-install
+                  helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+                  helm.sh/hook-weight: '-5'
+                automountServiceAccountToken: true
+                create: true
+              timeout: 1m
+              tolerations: null
+            strategy: {}
+            tolerations: null
+            volumeMounts: null
+            volumes: null
+            webhook:
+              affinity: {}
+              config: null
+              containerSecurityContext: {}
+              extraArgs: null
+              hostNetwork: false
+              image:
+                pullPolicy: IfNotPresent
+                repository: quay.io/jetstack/cert-manager-webhook
+              livenessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 60
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              nodeSelector: {}
+              podLabels: {}
+              readinessProbe:
+                failureThreshold: 3
+                initialDelaySeconds: 5
+                periodSeconds: 5
+                successThreshold: 1
+                timeoutSeconds: 1
+              replicaCount: 1
+              resources: {}
+              securePort: 10250
+              securityContext:
+                runAsNonRoot: true
+              serviceAccount:
+                automountServiceAccountToken: true
+                create: true
+              serviceLabels: {}
+              serviceType: ClusterIP
+              strategy: {}
+              timeoutSeconds: 10
+              tolerations: null
+              url: {}
+            podDnsConfig:
+              nameservers:
+                - 1.1.1.1
+                - 8.8.8.8
+            podDnsPolicy: None
+
+      destination:
+        server: '{{url}}'
+        namespace: cert-manager
