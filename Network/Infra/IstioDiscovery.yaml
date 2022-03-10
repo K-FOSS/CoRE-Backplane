@@ -13,9 +13,16 @@ spec:
     metadata:
       name: '{{cluster}}-istio-discovery-helm'
     spec:
+      ignoreDifferences:
+        - group: admissionregistration.k8s.io
+          kind: MutatingWebhookConfiguration
+          name: istio-sidecar-injector
+          jqPathExpressions:
+            - '.webhooks[]?.clientConfig.caBundle'
       project: core
       syncPolicy:
-        automated: {}
+        automated:
+          selfHeal: true
         syncOptions:
           - CreateNamespace=true
       source:
