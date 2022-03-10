@@ -1,0 +1,22 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: awx-admin-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: awx-admin
+  data:
+    - secretKey: AWX_ADMIN_USER
+      remoteRef:
+        key: AWX
+        property: AdminUsername
+
+    - secretKey: AWX_ADMIN_PASSWORD
+      remoteRef:
+        key: AWX
+        property: AdminPassword
+      
