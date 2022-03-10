@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-externaldns-main-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-externaldns-main-core'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Network/Infra/ExternalDNSChart
+        targetRevision: main
+        helm:
+          releaseName: externaldns-custom
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
