@@ -25,9 +25,6 @@ spec:
         helm:
           releaseName: istio-ingress
           values: |
-            # A-la-carte istio ingress gateway.
-            # Must be installed in a separate namespace, to minimize access to secrets.
-
             gateways:
               istio-ingressgateway:
                 name: istio-ingressgateway
@@ -140,9 +137,6 @@ spec:
 
                 # The injection template to use for the gateway. If not set, no injection will be performed.
                 injectionTemplate: ""
-
-            # Revision is set as 'version' label and part of the resource names when installing multiple control planes.
-            revision: ""
 
             global:
               # set the default set of namespaces to which services, service entries, virtual services, destination
