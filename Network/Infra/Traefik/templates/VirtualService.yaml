@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: traefik
+spec:
+  hosts:
+    - argo.writemy.codes
+    - rancher.int.mylogin.space
+  gateways:
+    - traefik-gateway
+  tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - argo.writemy.codes
+            - rancher.int.mylogin.space
+      route:
+        - destination:
+            host: traefik-core
+            port:
+              number: 443
