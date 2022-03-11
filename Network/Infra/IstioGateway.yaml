@@ -75,14 +75,18 @@ spec:
                 port: 853
                 protocol: TCP
                 targetPort: 853
-              - name: https
+              - name: https-tcp
                 port: 443
                 protocol: TCP
+                targetPort: 443
+              - name: https-udp
+                port: 443
+                protocol: UDP
                 targetPort: 443
               annotations: {}
               loadBalancerIP: 10.1.1.83
               loadBalancerSourceRanges: []
-              externalTrafficPolicy: ""
+              externalTrafficPolicy: Local
 
             resources:
               requests:
