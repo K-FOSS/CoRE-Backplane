@@ -1,0 +1,52 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-infra-cilium-helm
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-cilium-helm'
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        repoURL: https://helm.cilium.io/
+        chart: cilium
+        path: cilium
+        targetRevision: 1.12.0-rc0
+        helm:
+          releaseName: cilium
+          values: |
+            cni:
+              chainingMode: 'generic-veth'
+              customConf: true
+              configMap: 'cni-configuration'
+
+            tunnel: 'disabled'
+
+            enableIPv4Masquerade: false
+
+            enableIdentityMark: false
+
+            installIptablesRules: false
+
+            enableIPv6Masquerade: false
+
+            hubble:
+              enabled: true
+              
+              ui:
+                enabled: true
+
+
+      destination:
+        server: '{{url}}'
+        namespace: kube-system
