@@ -14,6 +14,11 @@ spec:
       name: '{{cluster}}-keydb-assignment-core'
     spec:
       project: core
+      ignoreDifferences:
+        - kind: CustomResourceDefinition
+          name: redis-databases.wyrihaximus.net
+          jqPathExpressions:
+            - .spec.versions[]?.schema.openAPIV3Schema.properties.secret.properties.name.rules
       source:
         repoURL: https://helm.wyrihaximus.net/
         chart: redis-db-assignment-operator
