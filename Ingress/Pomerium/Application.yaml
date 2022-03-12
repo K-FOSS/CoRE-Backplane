@@ -189,7 +189,6 @@ spec:
             ingressController:
               config:
                 ingressClass: traefik-core
-                namespaces: null
                 operatorMode: true
                 updateStatus: true
               deployment:
@@ -201,7 +200,7 @@ spec:
                 repository: pomerium/ingress-controller
                 tag: v0.16.0
               ingressClassResource:
-                controllerName: pomerium.io/ingress-controller
+                controllerName: traefik-core
                 default: false
                 enabled: false
                 name: pomerium
@@ -213,7 +212,7 @@ spec:
               serviceAccount:
                 annotations: {}
                 nameOverride: ''
-              replicaCount: 0
+              replicaCount: 2
 
             metrics:
               enabled: false
