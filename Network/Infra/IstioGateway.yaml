@@ -67,6 +67,7 @@ spec:
                 port: 15021
                 protocol: TCP
                 targetPort: 15021
+
               - name: http2
                 port: 80
                 protocol: TCP
@@ -82,21 +83,12 @@ spec:
                 protocol: TCP
                 targetPort: 53
 
-              - name: dns-udp
-                port: 53
-                protocol: UDP
-                targetPort: 53
-
               - name: https-tcp
                 port: 443
                 protocol: TCP
                 targetPort: 443
-
-              - name: https-udp
-                port: 443
-                protocol: UDP
-                targetPort: 443
-              annotations: {}
+              annotations:
+                metallb.universe.tf/allow-shared-ip: istio
               loadBalancerIP: 10.1.1.83
               loadBalancerSourceRanges: []
               externalTrafficPolicy: Local

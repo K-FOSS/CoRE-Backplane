@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: rdns-tcp
+spec:
+  gateways:
+    - rdns-gateway
+  tcp:
+    - match:
+        - port: 53
+      route:
+        - destination:
+            host: dns-rdns-core
+            port:
+              number: 53

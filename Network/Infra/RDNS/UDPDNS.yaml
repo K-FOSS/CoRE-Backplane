@@ -1,15 +1,24 @@
-apiVersion: networking.istio.io/v1alpha3
-kind: VirtualService
+apiVersion: v1
+kind: Service
 metadata:
-  name: rdns-udp
+  annotations:
+    metallb.universe.tf/allow-shared-ip: istio
+  name: dns-rdns-gateway
+  namespace: core-prod
 spec:
-  gateways:
-    - rdns-gateway
-  tcp:
-    - match:
-        - port: 53
-      route:
-        - destination:
-            host: dns-rdns-core
-            port:
-              number: 53
+  allocateLoadBalancerNodePorts: false
+  externalTrafficPolicy: Local
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 10.1.1.83
+  ports:
+  - name: udp-53
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  selector:
+    app.kubernetes.io/instance: rdns-core
+    app.kubernetes.io/name: coredns
+  sessionAffinity: None
+  type: LoadBalancer
