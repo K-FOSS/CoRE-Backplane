@@ -14,9 +14,12 @@ spec:
       name: '{{cluster}}-crossplane'
     spec:
       project: core
+      
       ignoreDifferences:
         - kind: ClusterRole
           name: crossplane
+          jqPathExpressions:
+            - .rules
       source:
         repoURL: https://charts.crossplane.io/master/
         chart: crossplane
