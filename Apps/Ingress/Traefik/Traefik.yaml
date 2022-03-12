@@ -40,13 +40,12 @@ spec:
 
             securityContext:
               capabilities:
-                drop: [ALL]
                 add:
                   - NET_BIND_SERVICE
               readOnlyRootFilesystem: true
-              runAsGroup: 65532
-              runAsNonRoot: true
-              runAsUser: 65532
+              runAsGroup: 0
+              runAsNonRoot: false
+              runAsUser: 0
 
             deployment:
               kind: Deployment
@@ -88,12 +87,12 @@ spec:
 
             ports:
               dhcp:
-                port: 8067
+                port: 67
                 protocol: UDP
                 expose: false
 
               dns:
-                port: 8053
+                port: 53
                 protocol: UDP
                 expose: false
 
@@ -109,11 +108,11 @@ spec:
                 protocol: TCP
               web:
                 exposedPort: 80
-                port: 8080
+                port: 80
                 protocol: TCP
               websecure:
                 exposedPort: 443
-                port: 8443
+                port: 443
                 protocol: TCP
                 http3: true
                 tls:
