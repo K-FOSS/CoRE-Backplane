@@ -7,6 +7,7 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 | Database | Application | Purpose                      |
 |    0     | Core DNS    | Distributed DNS Cache        |
 | 5        | Pomerium    | SSO Audited Proxy/Gatekeeper |
+| 6        | AWX/Ansible | Ansible Tower, Automation    |
 | 10       | ArgoCD      | The deployerer               |
 
 

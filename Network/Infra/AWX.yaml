@@ -88,22 +88,23 @@ spec:
               port: 8080
 
             ingress:
-              enabled: false
+              enabled: true
               # -- Whether the default backend for this ingress should route to the awx service
-              defaultBackend: true
+              defaultBackend: false
               # -- Define ingress routing here
               hosts:
-                - host: chart-example.local
+                - host: awx.int.mylogin.space
                   paths:
                     - /
-              annotations: {}
-                # kubernetes.io/ingress.class: nginx
-                # kubernetes.io/tls-acme: "true"
-              tls: []
-                # -- Secrets referenced here must be exist in this namespace
-                # - secretName: chart-example-tls
-                #   hosts:
-                #     - chart-example.local
+              annotations:
+                ingress.pomerium.io/policy: '[{"allow":{"and":[{"email":{"is":"k@kristianjones.dev"}}]}}]'
+                traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+                traefik.ingress.kubernetes.io/router.tls: "true"
+              tls:
+                - secretName: myloginspace-int-default-certificates
+                  hosts:
+                    - '*.int.mylogin.space'
 
             # -- See bitnami/postgresql chart values for all options
             postgresql:
