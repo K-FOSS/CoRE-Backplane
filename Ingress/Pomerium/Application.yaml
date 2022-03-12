@@ -30,6 +30,7 @@ spec:
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
               proxied: false
               replicaCount: 2
+                  
 
             authorize:
               existingTLSSecret: pomerium-tls
@@ -71,10 +72,8 @@ spec:
               internal: true
 
             fullnameOverride: ''
+
             ingress:
-              annotations:
-                # Not sure why, but I need this as well..
-                nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
               enabled: false
 
             ingressController:
@@ -82,6 +81,8 @@ spec:
                 operatorMode: true
                 updateStatus: true
                 ingressClass: 'traefik.io/ingress-controller'
+              ingressClassResource:
+                enabled: false
 
               enabled: true
 

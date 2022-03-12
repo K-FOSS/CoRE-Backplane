@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: myloginspace-int-default-certificates
+spec:
+  secretName: myloginspace-int-default-certificates
+  commonName: mylogin.space
+  dnsNames:
+    - int.mylogin.space
+    - '*.int.mylogin.space'
+  issuerRef:
+    name: kjdev-cluster
+    kind: ClusterIssuer
