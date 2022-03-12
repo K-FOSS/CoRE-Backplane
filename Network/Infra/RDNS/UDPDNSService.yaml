@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/allow-shared-ip: istio
+  name: dns-rdns-gateway
+  namespace: core-prod
+spec:
+  allocateLoadBalancerNodePorts: false
+  externalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 10.1.1.83
+  ports:
+  - name: udp-53
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  selector:
+    app.kubernetes.io/instance: traefik-core
+    app.kubernetes.io/name: traefik
+  sessionAffinity: None
+  type: LoadBalancer

@@ -1,24 +1,13 @@
-apiVersion: v1
-kind: Service
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteUDP
 metadata:
-  annotations:
-    metallb.universe.tf/allow-shared-ip: istio
-  name: dns-rdns-gateway
-  namespace: core-prod
+  name: ingress-udp-dns
 spec:
-  allocateLoadBalancerNodePorts: false
-  externalTrafficPolicy: Cluster
-  ipFamilies:
-  - IPv4
-  ipFamilyPolicy: SingleStack
-  loadBalancerIP: 10.1.1.83
-  ports:
-  - name: udp-53
-    port: 53
-    protocol: UDP
-    targetPort: 53
-  selector:
-    app.kubernetes.io/instance: rdns-core
-    app.kubernetes.io/name: coredns
-  sessionAffinity: None
-  type: LoadBalancer
+  entryPoints:
+    - dns
+  routes:
+    - services:
+        - name: dns-rdns-core
+          port: 53
+          weight: 10 
