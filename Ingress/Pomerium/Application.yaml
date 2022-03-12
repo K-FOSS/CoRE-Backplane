@@ -15,6 +15,11 @@ spec:
       name: '{{cluster}}-pomerium-helm'
     spec:
       project: core
+      ignoreDifferences:
+        - kind: Secret
+          name: istio-sidecar-injector
+          jqPathExpressions:
+            - '.secrets[]?.data'
       source:
         repoURL: https://helm.pomerium.io
         chart: pomerium
@@ -30,9 +35,6 @@ spec:
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
               proxied: false
               replicaCount: 2
-              ingress:
-                tls:
-                  secretName: resolvemyhost-default-certificates
 
             authorize:
               existingTLSSecret: pomerium-tls
