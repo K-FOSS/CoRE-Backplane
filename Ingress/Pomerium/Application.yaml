@@ -25,144 +25,48 @@ spec:
         helm:
           releaseName: pomerium-core
           values: |
-            apiProxy:
-              enabled: false
-              fullNameOverride: ''
-              ingress: true
-              name: kubernetes
-
             authenticate:
               existingTLSSecret: pomerium-tls
-              autoscaling:
-                enabled: false
-              deployment:
-                annotations: {}
-                extraEnv: {}
-                podAnnotations: {}
-
               idp:
                 provider: oidc
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
-              name: ''
-              nameOverride: ''
-              pdb:
-                enabled: false
-                minAvailable: 1
               proxied: false
               replicaCount: 2
-              service:
-                annotations: {}
-                nodePort: ''
-                type: ClusterIP
 
             authorize:
               existingTLSSecret: pomerium-tls
-              autoscaling:
-                enabled: false
-                maxReplicas: 1
-                minReplicas: 1
-                targetCPUUtilizationPercentage: 50
-                targetMemoryUtilizationPercentage: 50
-              deployment:
-                annotations: {}
-                extraEnv: {}
-                podAnnotations: {}
-              fullnameOverride: ''
-              nameOverride: ''
-              pdb:
-                enabled: false
-                minAvailable: 1
-              replicaCount: 1
-              service:
-                annotations: {}
-                clusterIP: None
-                type: ClusterIP
-              serviceAccount:
-                annotations: {}
-                nameOverride: ''
-              tls:
-                cert: ''
-                defaultIPList: null
-                defaultSANList: null
-                key: ''
-
-            cache:
-              fullnameOverride: ''
-              nameOverride: ''
 
             config:
               administrators: k@kristianjones.dev
-              ca:
-                cert: ''
-                key: ''
-              cookieSecret: ''
-              existingPolicy: ''
-              existingSecret: ''
               existingSharedSecret: pomerium-secrets
               existingSigningKeySecret: pomerium-signing-key
               extraOpts:
                 jwt_claims_headers: email,groups,user,nickname
-              extraSecretLabels: {}
-              extraSharedSecretLabels: {}
               forceGenerateServiceSecrets: false
               forceGenerateSigningKey: false
               forceGenerateTLS: false
               generateSigningKey: false
               existingCASecret: pomerium-tls
               generateTLS: false
-              generateTLSAnnotations: {}
               insecure: false
               insecureProxy: false
               rootDomain: int.mylogin.space
-              routes:
-                - allow_spdy: true
-                  allowed_idp_claims:
-                    groups:
-                      - Server
-                      - Network
-                  from: https://resolvemy.host
-                  to: https://google.com
               sharedSecret: ''
               signingKey: ''
 
             databroker:
               existingTLSSecret: pomerium-tls
-              deployment:
-                annotations: {}
-                extraEnv: {}
-                podAnnotations: {}
-              fullnameOverride: ''
-              nameOverride: ''
-              pdb:
-                enabled: false
-              replicaCount: 3
               service:
                 annotations: {}
                 clusterIP: None
                 type: ClusterIP
-              serviceAccount:
-                annotations: {}
-                nameOverride: ''
               storage:
-                clientTLS:
-                  ca: ''
-                  cert: ''
-                  key: ''
                 connectionString: redis://10.1.1.68:6379/5
                 tlsSkipVerify: false
                 type: redis
-              tls:
-                cert: ''
-                defaultIPList: null
-                defaultSANList: null
-                key: ''
 
             extraArgs: {}
             extraEnv: {}
-            extraEnvFrom: null
-            extraTLSSecrets: null
-            extraVolumeMounts: null
-            extraVolumes: null
 
             forwardAuth:
               enabled: true
@@ -171,7 +75,7 @@ spec:
             fullnameOverride: ''
             ingress:
               annotations: {}
-              enabled: true
+              enabled: false
 
             ingressController:
               ingressClass: traefik-core
@@ -183,401 +87,20 @@ spec:
             metrics:
               enabled: false
               port: 9090
-            nameOverride: ''
-            nodeSelector: {}
-            podAnnotations: {}
-            podLabels: {}
-            priorityClassName: ''
 
             proxy:
-              authenticateServiceUrl: ''
-              authorizeInternalUrl: ''
               existingTLSSecret: pomerium-tls
-              autoscaling:
-                enabled: false
-                maxReplicas: 1
-                minReplicas: 1
-                targetCPUUtilizationPercentage: 50
-                targetMemoryUtilizationPercentage: 50
-              deployment:
-                annotations: {}
-                extraEnv: {}
-                podAnnotations: {}
-              fullnameOverride: ''
-              nameOverride: ''
-              pdb:
-                enabled: false
-                minAvailable: 1
-              redirectServer: true
-              replicaCount: 1
-              service:
-                annotations: {}
-                nodePort: ''
-                type: ClusterIP
-              serviceAccount:
-                annotations: {}
-                nameOverride: ''
-              tls:
-                cert: ''
-                defaultIPList: null
-                defaultSANList: null
-                key: ''
 
             rbac:
               create: true
 
 
             redis:
-              architecture: replication
-              auth:
-                enabled: false
-              cluster:
-                slaveCount: 1
-              clusterDomain: cluster.local
-              common:
-                exampleValue: common-chart
-                global:
-                  imagePullSecrets: null
-                  redis: {}
-              commonAnnotations: {}
-              commonConfiguration: |-
-                # Enable AOF https://redis.io/topics/persistence#append-only-file
-                appendonly yes
-                # Disable RDB persistence, AOF persistence already enabled.
-                save ""
-              commonLabels: {}
-              diagnosticMode:
-                args:
-                  - infinity
-                command:
-                  - sleep
-                enabled: false
               enabled: false
-              existingConfigmap: null
-              extraDeploy: null
-              forceGenerateTLS: false
-              fullnameOverride: null
-              generateTLS: false
-              global:
-                imagePullSecrets: null
-                redis: {}
-              kubeVersion: null
-              master:
-                affinity: {}
-                args: null
-                command: null
-                containerPort: 6379
-                containerSecurityContext:
-                  enabled: true
-                  runAsUser: 1001
-                customLivenessProbe: {}
-                customReadinessProbe: {}
-                disableCommands:
-                  - FLUSHDB
-                  - FLUSHALL
-                extraEnvVars: null
-                extraFlags: null
-                extraVolumeMounts: null
-                extraVolumes: null
-                hostAliases: null
-                initContainers: {}
-                lifecycleHooks: {}
-                livenessProbe:
-                  enabled: true
-                  failureThreshold: 5
-                  initialDelaySeconds: 20
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 5
-                nodeAffinityPreset:
-                  key: ''
-                  type: ''
-                  values: null
-                nodeSelector: {}
-                persistence:
-                  accessModes:
-                    - ReadWriteOnce
-                  annotations: {}
-                  enabled: true
-                  path: /data
-                  selector: {}
-                  size: 8Gi
-                  subPath: ''
-                podAffinityPreset: ''
-                podAnnotations: {}
-                podAntiAffinityPreset: soft
-                podLabels: {}
-                podSecurityContext:
-                  enabled: true
-                  fsGroup: 1001
-                preExecCmds: null
-                priorityClassName: ''
-                readinessProbe:
-                  enabled: true
-                  failureThreshold: 5
-                  initialDelaySeconds: 20
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 1
-                resources:
-                  limits: {}
-                  requests: {}
-                service:
-                  annotations: {}
-                  externalTrafficPolicy: Cluster
-                  loadBalancerSourceRanges: null
-                  port: 6379
-                  type: ClusterIP
-                shareProcessNamespace: false
-                sidecars: {}
-                spreadConstraints: {}
-                terminationGracePeriodSeconds: 30
-                tolerations: null
-                updateStrategy:
-                  rollingUpdate: {}
-                  type: RollingUpdate
-              metrics:
-                containerSecurityContext:
-                  enabled: true
-                  runAsUser: 1001
-                enabled: false
-                extraArgs: {}
-                podAnnotations:
-                  prometheus.io/port: '9121'
-                  prometheus.io/scrape: 'true'
-                podLabels: {}
-                prometheusRule:
-                  additionalLabels: {}
-                  enabled: false
-                  rules: null
-                redisTargetHost: localhost
-                resources:
-                  limits: {}
-                  requests: {}
-                sentinel:
-                  containerSecurityContext:
-                    enabled: true
-                    runAsUser: 1001
-                  enabled: false
-                  extraArgs: {}
-                  resources:
-                    limits: {}
-                    requests: {}
-                  service:
-                    annotations: {}
-                    externalTrafficPolicy: Cluster
-                    loadBalancerIP: ''
-                    loadBalancerSourceRanges: null
-                    port: 9355
-                    type: ClusterIP
-                service:
-                  annotations: {}
-                  externalTrafficPolicy: Cluster
-                  loadBalancerIP: ''
-                  loadBalancerSourceRanges: null
-                  port: 9121
-                  type: ClusterIP
-                serviceMonitor:
-                  additionalLabels: {}
-                  enabled: false
-                  honorLabels: false
-                  interval: 30s
-                  relabellings: null
-              nameOverride: null
-              networkPolicy:
-                allowExternal: true
-                enabled: false
-                extraEgress: null
-                extraIngress: null
-                ingressNSMatchLabels: {}
-                ingressNSPodMatchLabels: {}
-              pdb:
-                create: false
-                minAvailable: 1
-              podSecurityPolicy:
-                create: false
-                enabled: false
-              rbac:
-                create: false
-                rules: null
-              replica:
-                affinity: {}
-                args: null
-                autoscaling:
-                  enabled: false
-                  maxReplicas: 11
-                  minReplicas: 1
-                command: null
-                containerPort: 6379
-                containerSecurityContext:
-                  enabled: true
-                  runAsUser: 1001
-                customLivenessProbe: {}
-                customReadinessProbe: {}
-                disableCommands:
-                  - FLUSHDB
-                  - FLUSHALL
-                extraEnvVars: null
-                extraFlags: null
-                extraVolumeMounts: null
-                extraVolumes: null
-                hostAliases: null
-                initContainers: {}
-                lifecycleHooks: {}
-                livenessProbe:
-                  enabled: true
-                  failureThreshold: 5
-                  initialDelaySeconds: 20
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 5
-                nodeAffinityPreset:
-                  key: ''
-                  type: ''
-                  values: null
-                nodeSelector: {}
-                persistence:
-                  accessModes:
-                    - ReadWriteOnce
-                  annotations: {}
-                  enabled: true
-                  path: /data
-                  selector: {}
-                  size: 8Gi
-                  subPath: ''
-                podAffinityPreset: ''
-                podAnnotations: {}
-                podAntiAffinityPreset: soft
-                podLabels: {}
-                podSecurityContext:
-                  enabled: true
-                  fsGroup: 1001
-                preExecCmds: null
-                priorityClassName: ''
-                readinessProbe:
-                  enabled: true
-                  failureThreshold: 5
-                  initialDelaySeconds: 20
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 1
-                replicaCount: 1
-                resources:
-                  limits: {}
-                  requests: {}
-                service:
-                  annotations: {}
-                  externalTrafficPolicy: Cluster
-                  loadBalancerSourceRanges: null
-                  port: 6379
-                  type: ClusterIP
-                shareProcessNamespace: false
-                sidecars: {}
-                spreadConstraints: {}
-                terminationGracePeriodSeconds: 30
-                tolerations: null
-                updateStrategy:
-                  rollingUpdate: {}
-                  type: RollingUpdate
-              sentinel:
-                args: null
-                cleanDelaySeconds: 5
-                command: null
-                containerPort: 26379
-                containerSecurityContext:
-                  enabled: true
-                  runAsUser: 1001
-                customLivenessProbe: {}
-                customReadinessProbe: {}
-                downAfterMilliseconds: 60000
-                enabled: false
-                extraVolumeMounts: null
-                extraVolumes: null
-                failoverTimeout: 18000
-                lifecycleHooks: {}
-                livenessProbe:
-                  enabled: false
-                  failureThreshold: 5
-                  initialDelaySeconds: 20
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 5
-                masterSet: mymaster
-                parallelSyncs: 1
-                preExecCmds: null
-                quorum: 2
-                readinessProbe:
-                  enabled: false
-                  failureThreshold: 5
-                  initialDelaySeconds: 20
-                  periodSeconds: 5
-                  successThreshold: 1
-                  timeoutSeconds: 1
-                resources:
-                  limits: {}
-                  requests: {}
-                service:
-                  annotations: {}
-                  externalTrafficPolicy: Cluster
-                  loadBalancerSourceRanges: null
-                  nodePorts: {}
-                  port: 6379
-                  sentinelPort: 26379
-                  type: ClusterIP
-                staticID: false
-                terminationGracePeriodSeconds: 30
-              serviceAccount:
-                annotations: {}
-                automountServiceAccountToken: true
-                create: true
-                name: ''
-              sysctl:
-                command: null
-                enabled: false
-                mountHostSys: false
-                resources:
-                  limits: {}
-                  requests: {}
-              tls:
-                authClients: true
-                autoGenerated: false
-                certCAFilename: ca.crt
-                certFilename: tls.crt
-                certKeyFilename: tls.key
-                certificatesSecret: pomerium-redis-tls
-                dhParamsFilename: null
-                enabled: false
-                existingSecret: null
-                certificateSecret: pomerium-redis-tls
-              volumePermissions:
-                containerSecurityContext:
-                  runAsUser: 0
-                enabled: false
-                resources:
-                  limits: {}
-                  requests: {}
-              usePassword: false
 
             replicaCount: 2
-
-            resources: {}
-
-            service:
-              annotations: {}
-              externalPort: ''
-              grpcTrafficPort:
-                nameOverride: ''
-              httpTrafficPort:
-                nameOverride: ''
-              labels: {}
-
             serviceMonitor:
               enabled: false
-              labels:
-                release: prometheus
-              namespace: ''
-            tolerations: null
-
             tracing:
               debug: false
               enabled: false
