@@ -30,6 +30,9 @@ spec:
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
               proxied: false
               replicaCount: 2
+              ingress:
+                tls:
+                  secretName: resolvemyhost-default-certificates
 
             authorize:
               existingTLSSecret: pomerium-tls
@@ -73,7 +76,7 @@ spec:
             fullnameOverride: ''
 
             ingress:
-              enabled: false
+              enabled: true
 
             ingressController:
               config:
