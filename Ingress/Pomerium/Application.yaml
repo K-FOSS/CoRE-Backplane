@@ -77,6 +77,15 @@ spec:
 
             ingress:
               enabled: true
+              className: traefik-core
+              annotations:
+                traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                traefik.ingress.kubernetes.io/router.tls: "true"
+              secret:
+                name: resolvemyhost-default-certificates
+              tls:
+                hosts:
+                  - '*.int.mylogin.space'
 
             ingressController:
               config:
