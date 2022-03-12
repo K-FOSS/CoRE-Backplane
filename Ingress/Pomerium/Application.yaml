@@ -38,6 +38,7 @@ spec:
                 annotations: {}
                 extraEnv: {}
                 podAnnotations: {}
+
               idp:
                 provider: oidc
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
@@ -52,7 +53,7 @@ spec:
                 enabled: false
                 minAvailable: 1
               proxied: false
-              replicaCount: 0
+              replicaCount: 2
               service:
                 annotations: {}
                 nodePort: ''
@@ -83,7 +84,7 @@ spec:
               pdb:
                 enabled: false
                 minAvailable: 1
-              replicaCount: 0
+              replicaCount: 1
               service:
                 annotations: {}
                 clusterIP: None
@@ -148,8 +149,7 @@ spec:
               nameOverride: ''
               pdb:
                 enabled: false
-                minAvailable: 1
-              replicaCount: 0
+              replicaCount: 3
               service:
                 annotations: {}
                 clusterIP: None
@@ -181,7 +181,7 @@ spec:
             extraVolumes: null
 
             forwardAuth:
-              enabled: false
+              enabled: true
               internal: false
               name: ''
 
@@ -242,6 +242,7 @@ spec:
             podAnnotations: {}
             podLabels: {}
             priorityClassName: ''
+
             proxy:
               authenticateServiceUrl: ''
               authorizeInternalUrl: ''
@@ -262,7 +263,7 @@ spec:
                 enabled: false
                 minAvailable: 1
               redirectServer: true
-              replicaCount: 0
+              replicaCount: 1
               service:
                 annotations:
                   external-dns.alpha.kubernetes.io/access: public
@@ -287,11 +288,6 @@ spec:
               architecture: replication
               auth:
                 enabled: false
-                existingSecret: pomerium-redis-password
-                existingSecretPasswordKey: password
-                password: ''
-                sentinel: true
-                usePasswordFiles: false
               cluster:
                 slaveCount: 1
               clusterDomain: cluster.local
@@ -657,7 +653,7 @@ spec:
                   requests: {}
               usePassword: false
 
-            replicaCount: 0
+            replicaCount: 2
 
             resources: {}
 
@@ -678,8 +674,8 @@ spec:
             tolerations: null
 
             tracing:
-              debug: true
-              enabled: true
+              debug: false
+              enabled: false
               jaeger:
                 agent_endpoint: http.distributor.tempo.service.kjdev:6831
                 collector_endpoint: http://http.distributor.tempo.service.kjdev:14268/api/traces
