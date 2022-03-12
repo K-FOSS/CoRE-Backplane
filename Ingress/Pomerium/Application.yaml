@@ -30,6 +30,11 @@ spec:
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
               proxied: false
               replicaCount: 2
+              ingress:
+                annotations:
+                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                tls:
+                  secretName: myloginspace-int-default-certificates
 
             authorize:
               existingTLSSecret: pomerium-tls
