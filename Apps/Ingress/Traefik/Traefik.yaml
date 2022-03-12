@@ -38,6 +38,16 @@ spec:
               - '--global.sendanonymoususage'
               - '--entrypoints.websecure.http3'
 
+            securityContext:
+              capabilities:
+                drop: [ALL]
+                add:
+                  - NET_BIND_SERVICE
+              readOnlyRootFilesystem: true
+              runAsGroup: 65532
+              runAsNonRoot: true
+              runAsUser: 65532
+
             deployment:
               kind: Deployment
               labels: {}
