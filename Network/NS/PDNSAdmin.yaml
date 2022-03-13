@@ -9,7 +9,6 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
-            loadBalancerIP: 10.1.1.151
   template:
     metadata:
       name: '{{cluster}}-ns-admin'
@@ -25,9 +24,6 @@ spec:
         targetRevision: 1.0.0
         helm:
           releaseName: ns-admin
-          parameters:
-            - name: service.loadBalancerIP
-              value: '{{loadBalancerIP}}'
           values: |
             persistence:
               data:
