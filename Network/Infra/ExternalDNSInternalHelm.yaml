@@ -118,8 +118,8 @@ spec:
             triggerLoopOnEvent: false
 
             sources:
-              - service
-              - ingress
+              - istio-gateway
+              - 
 
             policy: upsert-only
 
@@ -132,7 +132,7 @@ spec:
 
             provider: pdns
 
-            extraArgs: ['--pdns-server=http://pdns-admin-powerdns-admin-networking-prod.service.dc1.kjdev:80', '--pdns-api-key=$(PDNS_API_TOKEN)']
+            extraArgs: ['--pdns-server=http://pdns-admin-powerdns-admin-networking-prod.service.dc1.kjdev:80', '--pdns-api-key=$(PDNS_API_TOKEN)', '--label-filter=wan-mode=private']
 
 
       destination:
