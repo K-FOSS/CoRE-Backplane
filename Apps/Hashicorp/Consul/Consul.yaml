@@ -570,12 +570,26 @@ spec:
                 service: ''
               enabled: true
               ingress:
-                annotations: null
-                enabled: false
-                hosts: null
-                ingressClassName: ''
+                annotations:
+                  cert-manager.io/cluster-issuer: kjdev-cluster
+                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+                  traefik.ingress.kubernetes.io/router.tls: 'true'
+                  ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
+                enabled: true
+                hosts:
+                  - host: consul.int.mylogin.space
+                    paths: ['/']
+                labels:
+                  wan-mode: 'public'
+                  lan-mode: 'private'
+                ingressClassName: traefik-core
                 pathType: Prefix
-                tls: null
+                tls:
+                  - hosts:
+                      - '*.int.mylogin.space'
+                    secretName: myloginspace-int-default-certificates
               metrics:
                 baseURL: http://cortex-prod-nginx-observability-prod.service.dc1.kjdev
                 enabled: false
@@ -596,4 +610,4 @@ spec:
 
       destination:
         server: '{{url}}'
-        namespace: hashicorp-prod
+        namespace: core-prod
