@@ -52,7 +52,6 @@ spec:
               main:
                 enabled: true
                 annotations:
-                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
                   ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server", "Network"]}'
                   ingress.pomerium.io/pass_identity_headers: 'true'
                   ingress.pomerium.io/preserve_host_header: 'true'
@@ -67,9 +66,6 @@ spec:
                         service:
                           port: 80
                 ingressClassName: traefik-core
-                labels:
-                  lan-mode: private
-                  wan-mode: public
                 tls:
                   - hosts:
                       - '*.int.mylogin.space'
