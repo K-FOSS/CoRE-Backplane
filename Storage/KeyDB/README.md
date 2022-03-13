@@ -4,11 +4,15 @@
 
 We currently manually "use" 3 "databases" and these are due to the applications they are used being critical to the deployment and maintence of the KeyDB system and everything else
 
-| Database | Application | Purpose                      |
-|    0     | Core DNS    | Distributed DNS Cache        |
-| 5        | Pomerium    | SSO Audited Proxy/Gatekeeper |
-| 6        | AWX/Ansible | Ansible Tower, Automation    |
-| 10       | ArgoCD      | The deployerer               |
+| Database | Application         | Purpose                      |
+|    0     | Core DNS            | Distributed DNS Cache        |
+|    1     | Authentik Cache     | Authentik        |
+|    2     | Authentik Queue     | TODO        |
+|    3     | Authentik websocket | TODO        |
+|    4     | Authentik Outpost   | TODO        |
+| 5        | Pomerium            | SSO Audited Proxy/Gatekeeper |
+| 6        | AWX/Ansible         | Ansible Tower, Automation    |
+| 10       | ArgoCD              | The deployerer               |
 
 
 
