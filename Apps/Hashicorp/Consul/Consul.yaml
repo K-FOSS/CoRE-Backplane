@@ -17,6 +17,7 @@ spec:
       syncPolicy:
         automated:
           selfHeal: true
+          prune: true
       source:
         repoURL: https://helm.releases.hashicorp.com
         chart: consul
@@ -216,13 +217,13 @@ spec:
             global:
               acls:
                 bootstrapToken:
-                  secretKey: null
-                  secretName: null
-                createReplicationToken: false
-                manageSystemACLs: false
-                replicationToken:
                   secretKey: token
                   secretName: consul-acl-replication-acl-token
+                createReplicationToken: true
+                manageSystemACLs: true
+                replicationToken:
+                  secretKey: null
+                  secretName: null
               adminPartitions:
                 enabled: false
                 name: default
@@ -610,4 +611,4 @@ spec:
 
       destination:
         server: '{{url}}'
-        namespace: hashicorp-prod
+        namespace: core-prod
