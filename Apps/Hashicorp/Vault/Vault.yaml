@@ -36,7 +36,6 @@ spec:
               image:
                 pullPolicy: IfNotPresent
                 repository: hashicorp/vault-csi-provider
-                tag: 0.3.0
               livenessProbe:
                 failureThreshold: 2
                 initialDelaySeconds: 5
@@ -97,7 +96,6 @@ spec:
                   staticSecretRenderInterval: ''
               agentImage:
                 repository: hashicorp/vault
-                tag: 1.9.0
               annotations: {}
               authPath: auth/kubernetes
               certs:
@@ -114,7 +112,6 @@ spec:
               image:
                 pullPolicy: IfNotPresent
                 repository: hashicorp/vault-k8s
-                tag: 0.14.1
               leaderElector:
                 enabled: true
               logFormat: standard
@@ -226,27 +223,28 @@ spec:
               image:
                 pullPolicy: IfNotPresent
                 repository: hashicorp/vault
-                tag: 1.9.0
               ingress:
                 activeService: true
                 annotations:
-                  cert-manager.io/cluster-issuer: letsencrypt-prod
-                  external-dns.alpha.kubernetes.io/access: public
-                  external-dns.alpha.kubernetes.io/target: proxy.int.mylogin.space.
+                  cert-manager.io/cluster-issuer: kjdev-cluster
+                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+                  traefik.ingress.kubernetes.io/router.tls: 'true'
                   ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
-                enabled: false
+                enabled: true
                 extraPaths: null
                 hosts:
                   - host: vault.int.mylogin.space
                     paths:
                       - /
-                ingressClassName: pomerium
+                ingressClassName: traefik-core
                 labels: {}
                 pathType: Prefix
                 tls:
                   - hosts:
                       - '*.int.mylogin.space'
-                    secretName: core-aaa-ingress-certs
+                    secretName: myloginspace-int-default-certificates
               livenessProbe:
                 enabled: false
                 failureThreshold: 2
@@ -256,7 +254,7 @@ spec:
                 successThreshold: 1
                 timeoutSeconds: 3
               logFormat: json
-              logLevel: debug
+              logLevel: warn
               networkPolicy:
                 egress: null
                 enabled: false
