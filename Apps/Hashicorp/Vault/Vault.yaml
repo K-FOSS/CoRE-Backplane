@@ -14,6 +14,9 @@ spec:
       name: '{{cluster}}-vault'
     spec:
       project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
       source:
         repoURL: https://helm.releases.hashicorp.com
         chart: vault
@@ -239,7 +242,9 @@ spec:
                     paths:
                       - /
                 ingressClassName: traefik-core
-                labels: {}
+                labels:
+                  wan-mode: 'public'
+                  lan-mode: 'private'
                 pathType: Prefix
                 tls:
                   - hosts:

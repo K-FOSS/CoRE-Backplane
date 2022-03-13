@@ -14,6 +14,9 @@ spec:
       name: '{{cluster}}-corevault'
     spec:
       project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
       source:
         repoURL: https://helm.releases.hashicorp.com
         chart: vault
@@ -36,7 +39,6 @@ spec:
               image:
                 pullPolicy: IfNotPresent
                 repository: hashicorp/vault-csi-provider
-                tag: 0.3.0
               livenessProbe:
                 failureThreshold: 2
                 initialDelaySeconds: 5
@@ -97,7 +99,6 @@ spec:
                   staticSecretRenderInterval: ''
               agentImage:
                 repository: hashicorp/vault
-                tag: 1.9.0
               annotations: {}
               authPath: auth/kubernetes
               certs:
@@ -114,7 +115,6 @@ spec:
               image:
                 pullPolicy: IfNotPresent
                 repository: hashicorp/vault-k8s
-                tag: 0.14.1
               leaderElector:
                 enabled: true
               logFormat: standard
@@ -151,7 +151,7 @@ spec:
               dataStorage:
                 accessMode: ReadWriteOnce
                 annotations: {}
-                enabled: true
+                enabled: false
                 mountPath: /vault/data
                 size: 10Gi
                 storageClass: null
@@ -221,19 +221,29 @@ spec:
               image:
                 pullPolicy: IfNotPresent
                 repository: hashicorp/vault
-                tag: 1.9.0
               ingress:
                 activeService: true
-                annotations: {}
-                enabled: false
+                annotations:
+                  cert-manager.io/cluster-issuer: kjdev-cluster
+                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+                  traefik.ingress.kubernetes.io/router.tls: 'true'
+                  ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
+                enabled: true
                 extraPaths: null
                 hosts:
-                  - host: chart-example.local
+                  - host: corevault.int.mylogin.space
                     paths: ['/']
-                ingressClassName: ''
-                labels: {}
+                ingressClassName: traefik-core
+                labels:
+                  wan-mode: 'public'
+                  lan-mode: 'private'
                 pathType: Prefix
-                tls: null
+                tls:
+                  - hosts:
+                      - '*.int.mylogin.space'
+                    secretName: myloginspace-int-default-certificates
               livenessProbe:
                 enabled: false
                 failureThreshold: 2
