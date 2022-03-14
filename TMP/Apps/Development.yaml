@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-keydb-deploy
+  name: core-backplane-development
   namespace: argocd
 spec:
   generators:
@@ -9,19 +9,15 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
-
-          - cluster: infra1-dc1
-            url: infra1-dc1
   template:
     metadata:
-      name: '{{cluster}}-keydb-deploy'
+      name: '{{cluster}}-development'
     spec:
       project: core
       syncPolicy:
-        automated:
-          selfHeal: true
+        automated: {}
       source:
-        path: Storage/KeyDB
+        path: Development
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
         directory:
