@@ -26,6 +26,8 @@ spec:
       syncPolicy:
         automated:
           selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
       source:
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         path: Storage/KeyDB/KeyDBChart
@@ -49,6 +51,7 @@ spec:
               annotations:
                 metallb.universe.tf/allow-shared-ip: keydb
                 consul.hashicorp.com/service-name: keydb
+
       destination:
         server: '{{url}}'
         namespace: core-prod
