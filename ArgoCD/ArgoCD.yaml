@@ -393,6 +393,21 @@ spec:
               config:
                 application.instanceLabelKey: argocd.argoproj.io/instance
                 url: https://argo.writemy.codes
+                configManagementPlugins: |-
+                  - name: argocd-vault-replacer
+                    generate:
+                      command: ["argocd-vault-replacer"]
+                  - name: kustomize-argocd-vault-replacer
+                    generate:
+                      command: ["sh", "-c"]
+                      args: ["kustomize build . | argocd-vault-replacer"]
+                  - name: helm-argocd-vault-replacer
+                    init:
+                      command: ["/bin/sh", "-c"]
+                      args: ["helm dependency build"]
+                    generate:
+                      command: [sh, -c]
+                      args: ["helm template -n $ARGOCD_APP_NAMESPACE $ARGOCD_APP_NAME . | argocd-vault-replacer"]
                 oidc.config: >
                   name: Authentik
 
