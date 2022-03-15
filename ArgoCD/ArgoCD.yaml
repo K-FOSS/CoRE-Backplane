@@ -292,7 +292,9 @@ spec:
               env:
                 - name: REDIS_DB
                   value: '10'
-              envFrom: null
+              envFrom:
+                - secretRef:
+                    name: argocd-vault-replacer-credentials
               extraArgs:
                 - '--redisdb=$(REDIS_DB)'
                 - '--redis'
@@ -302,7 +304,13 @@ spec:
                 imagePullPolicy: ''
                 repository: ''
                 tag: ''
-              initContainers: null
+              initContainers:
+                - name: argocd-vault-replacer-install
+                  image: ghcr.io/crumbhole/argocd-vault-replacer
+                  imagePullPolicy: Always
+                  volumeMounts:
+                    - mountPath: /custom-tools
+                      name: custom-tools
               livenessProbe:
                 failureThreshold: 3
                 initialDelaySeconds: 10
@@ -352,11 +360,16 @@ spec:
                 annotations: {}
                 automountServiceAccountToken: true
                 create: false
-                name: ''
+                name: argocd
               tolerations: null
               topologySpreadConstraints: null
-              volumeMounts: null
-              volumes: null
+              volumeMounts:
+                - name: custom-tools
+                  mountPath: /usr/local/bin/argocd-vault-replacer
+                  subPath: argocd-vault-replace
+              volumes:
+                - name: custom-tools
+                  emptyDir: {}
             server:
               GKEbackendConfig:
                 enabled: false
