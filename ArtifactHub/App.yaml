@@ -21,6 +21,8 @@ spec:
         chart: artifact-hub
         path: artifact-hub
         targetRevision: 1.6.0
+        plugin:
+          name: argocd-vault-replacer
         helm:
           releaseName: artifacthub-{{ environment }}
           values: |
@@ -60,9 +62,9 @@ spec:
             db:
               host: psql.service.dc1.kjdev
               port: "5432"
-              database: hub
-              user: postgres
-              password: postgres
+              database: <secret:CORE0_SITE1/data/ArtifactHub~DatabaseDatabase>
+              user: <secret:CORE0_SITE1/data/ArtifactHub~DatabaseUsername>
+              password: <secret:CORE0_SITE1/data/ArtifactHub~DatabasePassword>
 
             # Email configuration
             email:
@@ -118,7 +120,7 @@ spec:
             # Hub configuration
             hub:
               ingress:
-                enabled: true
+                enabled: false
                 annotations:
                   kubernetes.io/ingress.class: traefik-core
                   cert-manager.io/cluster-issuer: kjdev-cluster
@@ -132,6 +134,7 @@ spec:
               service:
                 type: NodePort
                 port: 80
+
               deploy:
                 readinessGates: []
                 replicaCount: 1
@@ -139,6 +142,7 @@ spec:
                   # Hub image repository (without the tag)
                   repository: artifacthub/hub
                 resources: {}
+
               server:
                 # Allow adding private repositories to the Hub
                 allowPrivateRepositories: false
@@ -178,11 +182,11 @@ spec:
                     # Enable OIDC
                     enabled: true
                     # OpenID connect issuer url
-                    issuerURL: ""
+                    issuerURL: https://idp.mylogin.space/application/o/k0s-dc1/
                     # OpenID connect oauth client id
-                    clientID: ""
+                    clientID: <secret:CORE0_SITE1/data/ArtifactHub~OpenIDClientID>
                     # OpenID connect oauth client secret
-                    clientSecret: ""
+                    clientSecret: <secret:CORE0_SITE1/data/ArtifactHub~OpenIDClientSecret>
                     # OpenID connect oauth redirect url
                     redirectURL: ""
                     # OpenID connect oauth scopes
