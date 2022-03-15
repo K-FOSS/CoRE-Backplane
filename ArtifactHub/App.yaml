@@ -103,7 +103,7 @@ spec:
                   # Database migrator image repository (without the tag)
                   repository: artifacthub/db-migrator
               # Load demo user and sample repositories
-              loadSampleData: false
+              loadSampleData: true
               # Directory path where the configuration files should be mounted
               configDir: "/home/db-migrator/.cfg"
 
@@ -272,15 +272,6 @@ spec:
             # Values for postgresql chart dependency
             postgresql:
               enabled: true
-              image:
-                repository: artifacthub/postgres
-                tag: latest
-              persistence:
-                mountPath: /data
-              postgresqlUsername: postgres
-              postgresqlPassword: postgres
-              postgresqlDatabase: hub
-              postgresqlDataDir: /data/pgdata
 
       destination:
         server: '{{url}}'
