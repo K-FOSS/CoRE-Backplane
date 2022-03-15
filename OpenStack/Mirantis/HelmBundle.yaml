@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-openstack-helmbundle-deploy
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-helmbundle'
+    spec:
+      project: core
+      syncPolicy:
+        automated: {}
+      source:
+        path: release/02-helmbundle-crd.yaml
+        repoURL: https://github.com/Mirantis/release-openstack-k8s.git
+        targetRevision: master
+        directory:
+          recurse: false
+          jsonnet: {}
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
