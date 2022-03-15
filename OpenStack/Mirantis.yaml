@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-openstack-helmbundle-deploy
+  name: core-backplane-openstack-mirantis-deploy
   namespace: argocd
 spec:
   generators:
@@ -9,17 +9,18 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+
   template:
     metadata:
-      name: '{{cluster}}-helmbundle'
+      name: '{{cluster}}-mirantis'
     spec:
       project: core
       syncPolicy:
         automated: {}
       source:
-        path: release/02-helmbundle-crd.yaml
-        repoURL: https://github.com/Mirantis/release-openstack-k8s.git
-        targetRevision: master
+        path: OpenStack/Mirantis
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
         directory:
           recurse: false
           jsonnet: {}
