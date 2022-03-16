@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-lab-kjmedia
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: lab-prod
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+  source:
+    repoURL: https://gitlab.git.writemy.codes/KJDev/kjmedia-lab.git
+    path: Apps
+    plugin:
+      name: argocd-vault-replacer
+    targetRevision: HEAD
