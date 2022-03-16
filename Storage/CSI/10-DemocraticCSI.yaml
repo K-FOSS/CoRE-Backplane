@@ -10,7 +10,6 @@ spec:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
             environment: 'prod'
-            ingress: artifacthub.int.mylogin.space
   template:
     metadata:
       name: '{{cluster}}-storage-csi-democraticcsi'
@@ -22,7 +21,7 @@ spec:
         path: democratic-csi
         targetRevision: 0.11.1
         helm:
-          releaseName: artifacthub-{{ environment }}
+          releaseName: democraticcsi-{{ environment }}
           values: |
             # Default values for democratic-csi.
             # This is a YAML-formatted file.
