@@ -9,6 +9,15 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+            namespace: core-prod
+            dnsLBIP: 10.1.1.61
+            helmName: consul-prod
+
+          - cluster: infra1-dc1
+            url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
+            namespace: gitlab-managed-apps
+            dnsLBIP: 10.1.1.60
+            helmName: consul
   template:
     metadata:
       name: '{{cluster}}-consul'
@@ -20,7 +29,7 @@ spec:
         path: consul
         targetRevision: 0.41.1
         helm:
-          releaseName: consul-prod
+          releaseName: {{helmName}}
           values: |
             apiGateway:
               consulNamespaces:
@@ -194,12 +203,14 @@ spec:
               tolerations: null
             
             dns:
-              additionalSpec: null
+              additionalSpec:
+                loadBalancerIP: {{dnsLBIP}}
+                externalTrafficPolicy: local
               annotations: null
               clusterIP: null
               enableRedirection: false
               enabled: true
-              type: ClusterIP
+              type: LoadBalancer
             
             externalServers:
               enabled: false
@@ -584,4 +595,4 @@ spec:
 
       destination:
         server: '{{url}}'
-        namespace: core-prod
+        namespace: '{{namespace}}'
