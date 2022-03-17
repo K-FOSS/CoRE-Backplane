@@ -12,12 +12,14 @@ spec:
             namespace: core-prod
             dnsLBIP: 10.1.1.61
             helmName: consul-prod
+            name: k0s-dc1
 
           - cluster: infra1-dc1
             url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
             namespace: gitlab-managed-apps
             dnsLBIP: 10.1.1.60
             helmName: consul
+            name: infra1
   template:
     metadata:
       name: '{{cluster}}-consul'
@@ -277,7 +279,7 @@ spec:
                 enableAgentMetrics: false
                 enableGatewayMetrics: true
                 enabled: false
-              name: k0s-dc1
+              name: '{{name}}'
               openshift:
                 enabled: false
               recursors: null
