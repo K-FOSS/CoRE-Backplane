@@ -34,9 +34,6 @@ spec:
         targetRevision: 0.41.1
         helm:
           releaseName: '{{helmName}}'
-          parameters:
-            - name: core.isMain
-              value: '{{main}}'
           values: |
             apiGateway:
               consulNamespaces:
@@ -232,6 +229,7 @@ spec:
             global:
               acls:
                 createReplicationToken: false
+                manageSystemACLs: true
                 bootstrapToken:
                   # The name of the Kubernetes secret.
                   secretName: consul-acl-bootstrap-token
@@ -285,7 +283,7 @@ spec:
                 enableAgentMetrics: false
                 enableGatewayMetrics: true
                 enabled: false
-              name: {{name}}-{{ .Values.core.isMain }}
+              name: {{name}}
               openshift:
                 enabled: false
               recursors: null
