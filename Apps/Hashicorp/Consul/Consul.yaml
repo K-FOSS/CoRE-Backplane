@@ -233,7 +233,7 @@ spec:
               acls:
                 createReplicationToken: false
                 manageSystemACLs: true
-                {{ if eq .Values.core.isMain "true" }}
+                {{- if eq .Values.core.isMain "true" }}
                 bootstrapToken:
                   # The name of the Kubernetes secret.
                   secretName: consul-acl-bootstrap-token
@@ -243,7 +243,7 @@ spec:
                 replicationToken:
                   secretName: consul-acl-replication-acl-token
                   secretKey: token
-                {{ end }}
+                {{- end }}
 
               adminPartitions:
                 enabled: false
