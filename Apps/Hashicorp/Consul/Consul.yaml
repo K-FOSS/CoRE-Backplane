@@ -420,15 +420,7 @@ spec:
               enabled: false
             
             server:
-              affinity: |
-                podAntiAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    - labelSelector:
-                        matchLabels:
-                          app: {{ template "consul.name" . }}
-                          release: "{{ .Release.Name }}"
-                          component: server
-                      topologyKey: kubernetes.io/hostname
+              affinity: null
               annotations: null
               bootstrapExpect: 3
               connect: true
@@ -518,15 +510,7 @@ spec:
             
             terminatingGateways:
               defaults:
-                affinity: |
-                  podAntiAffinity:
-                    requiredDuringSchedulingIgnoredDuringExecution:
-                      - labelSelector:
-                          matchLabels:
-                            app: {{ template "consul.name" . }}
-                            release: "{{ .Release.Name }}"
-                            component: terminating-gateway
-                        topologyKey: kubernetes.io/hostname
+                affinity: null
                 annotations: null
                 consulNamespace: default
                 extraVolumes: null
