@@ -17,7 +17,7 @@ spec:
 
           - cluster: infra1-dc1
             url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
-            namespace: gitlab-managed-apps
+            namespace: core-prod
             dnsLBIP: 10.1.1.60
             helmName: consul
             name: infra1-dc1
@@ -30,6 +30,7 @@ spec:
       syncPolicy:
         automated:
           selfHeal: true
+          prune: true
       source:
         repoURL: https://helm.releases.hashicorp.com
         chart: consul
