@@ -20,13 +20,16 @@ spec:
             namespace: gitlab-managed-apps
             dnsLBIP: 10.1.1.60
             helmName: consul
-            name: infra1
+            name: infra1-dc1
             main: 'false'
   template:
     metadata:
       name: '{{cluster}}-consul'
     spec:
       project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
       source:
         repoURL: https://helm.releases.hashicorp.com
         chart: consul
