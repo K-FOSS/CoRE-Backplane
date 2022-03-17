@@ -13,6 +13,7 @@ spec:
             dnsLBIP: 10.1.1.61
             helmName: consul-prod
             name: k0s-dc1
+            ingress: 'true'
 
           - cluster: infra1-dc1
             url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
@@ -20,6 +21,7 @@ spec:
             dnsLBIP: 10.1.1.60
             helmName: consul
             name: infra1
+            ingress: 'false'
   template:
     metadata:
       name: '{{cluster}}-consul'
@@ -564,7 +566,7 @@ spec:
                   traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
                   traefik.ingress.kubernetes.io/router.tls: 'true'
                   ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
-                enabled: true
+                enabled: {{ingress}}
                 hosts:
                   - host: consul.int.mylogin.space
                     paths: ['/']
