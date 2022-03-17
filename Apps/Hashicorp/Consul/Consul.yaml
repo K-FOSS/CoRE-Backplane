@@ -327,15 +327,7 @@ spec:
             
             ingressGateways:
               defaults:
-                affinity: |
-                  podAntiAffinity:
-                    requiredDuringSchedulingIgnoredDuringExecution:
-                      - labelSelector:
-                          matchLabels:
-                            app: {{ template "consul.name" . }}
-                            release: "{{ .Release.Name }}"
-                            component: ingress-gateway
-                        topologyKey: kubernetes.io/hostname
+                affinity: null
                 annotations: null
                 consulNamespace: default
                 initCopyConsulContainer:
@@ -374,15 +366,7 @@ spec:
                 - name: ingress-gateway
             
             meshGateway:
-              affinity: |
-                podAntiAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    - labelSelector:
-                        matchLabels:
-                          app: {{ template "consul.name" . }}
-                          release: "{{ .Release.Name }}"
-                          component: mesh-gateway
-                      topologyKey: kubernetes.io/hostname
+              affinity: null
               annotations: null
               consulServiceName: mesh-gateway
               containerPort: 8443
