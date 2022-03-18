@@ -151,6 +151,46 @@ spec:
                   - name: loadbalance
 
               - zones:
+                  - zone: kristianjones.dev. arpa. kjmedia.stream. mylogin.space. trackmy.finance. ksit.services. writemy.codes. ipaddr.network. resolvemy.host. syncmy.date. local. kjdev.
+                    scheme: tls://
+                    #use_tcp: true 
+                port: 853
+                scheme: 'tls'
+                plugins:
+                  - name: errors
+
+                  - name: health
+                    configBlock: lameduck 5s
+                    
+                  - name: ready
+                  
+                  - name: secondary
+                    parameters: >-
+                      kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
+                      mylogin.space trackmy.finance ksit.services writemy.codes
+                      ipaddr.network resolvemy.host syncmy.date
+                    configBlock: transfer from 10.1.1.153:53 10.1.1.150:53 10.1.1.151:53
+
+                  - name: fanout
+                    parameters: . 127.0.0.1:8097 127.0.0.1:8098 
+                    configBlock: network TCP
+
+                  - name: dnsredir
+                    parameters: .
+                    configBlock: |-
+                      to tls://1.1.1.1 tls://1.0.0.1
+                      tls_servername one.one.one.one
+                  
+                  - name: loop
+                  
+                  - name: reload
+                  
+                  - name: loadbalance
+                  
+                  - name: tls
+                    parameters: /tls/tls.crt /tls/tls.key
+
+              - zones:
                   - zone: .
                     scheme: tls://
                     #use_tcp: true 
@@ -164,9 +204,11 @@ spec:
                     
                   - name: ready
                   
-                  - name: fanout
-                    parameters: . 127.0.0.1:1053 127.0.0.1:1153 
-                    configBlock: network TCP
+                  - name: dnsredir
+                    parameters: .
+                    configBlock: |-
+                      to tls://1.1.1.1 tls://1.0.0.1
+                      tls_servername one.one.one.one
                   
                   - name: loop
                   
