@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: test-ldap
+    app.kubernetes.io/name: authentik-ldap
+    app.kubernetes.io/version: 2022.3.1
+  name: myloginspace-ldap
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: myloginspace-ldap
+
+  allocateLoadBalancerNodePorts: false
+
+  loadBalancerIP: 10.1.1.36
+
+  ports:
+    # Plaintext LDAP
+    - name: tcp-ldap
+      protocol: TCP
+      appProtocol: ldap
+      targetPort: 3389
+      port: 389
+
+    - name: udp-ldap
+      protocol: UDP
+      appProtocol: ldap
+      targetPort: 3389
+      port: 389
+
+    # TLS LDAP
+    - name: tcp-ldaps
+      protocol: TCP
+      appProtocol: ldaps
+      targetPort: 6636
+      port: 636
+
+    - name: udp-ldaps
+      protocol: UDP
+      appProtocol: ldaps
+      targetPort: 6636
+      port: 636
+
+    # Prometheus Metrics
+    - name: http-metrics
+      protocol: TCP
+      appProtocol: ldaps
+      targetPort: 9300
+      port: 9300
+
+  internalTrafficPolicy: Local
+  externalTrafficPolicy: Local
+
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+
