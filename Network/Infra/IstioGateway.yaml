@@ -58,6 +58,7 @@ spec:
               prometheus.io/path: "/stats/prometheus"
               inject.istio.io/templates: "gateway"
               sidecar.istio.io/interceptionMode: 'TPROXY'
+              sidecar.istio.io/inject: 'false'
 
 
             service:
@@ -109,10 +110,12 @@ spec:
             env: {}
 
             # Labels to apply to all resources
-            labels: {}
+            labels:
+              sidecar.istio.io/inject: 'false'
 
             # Annotations to apply to all resources
-            annotations: {}
+            annotations:
+              sidecar.istio.io/inject: 'false'
 
             nodeSelector: {}
 
