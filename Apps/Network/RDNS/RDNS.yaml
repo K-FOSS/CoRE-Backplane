@@ -98,55 +98,9 @@ spec:
               maxUnavailable: 1
             servers:
               - zones:
-                  - zone: .
+                  - zone: kristianjones.dev. arpa. kjmedia.stream. mylogin.space. trackmy.finance. ksit.services. writemy.codes. ipaddr.network. resolvemy.host. syncmy.date. local. kjdev.
                 port: 53
                 plugins:
-                  - name: errors
-
-                  - name: health
-                    configBlock: lameduck 5s
-                    
-                  - name: ready
-
-                  - name: fanout
-                    parameters: . 127.0.0.1:1053 127.0.0.1:1153 
-                    configBlock: network TCP
-                  
-                  - name: loop
-                  
-                  - name: reload
-                  
-                  - name: loadbalance
-
-              - zones:
-                  - zone: .
-                port: 1053
-                plugins:
-                  - name: dnsredir
-                    parameters: .
-                    configBlock: |-
-                      to tls://1.1.1.1 tls://1.0.0.1
-                      tls_servername one.one.one.one
-                    
-                  - name: cache
-                    parameters: 120
-
-                  - name: dcache
-                    parameters: 10.1.1.68:6379
-                  
-                  - name: reload
-                  
-                  - name: loadbalance
-
-              - zones:
-                  - zone: .
-                port: 1153
-                plugins:
-                  - name: acl
-                    configBlock: |-
-                      allow net 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
-                      block
-
                   - name: secondary
                     parameters: >-
                       kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
@@ -167,7 +121,26 @@ spec:
                   - name: reload
                   
                   - name: loadbalance
+
+              - zones:
+                  - zone: .
+                port: 53
+                plugins:
+                  - name: dnsredir
+                    parameters: .
+                    configBlock: |-
+                      to tls://1.1.1.1 tls://1.0.0.1
+                      tls_servername one.one.one.one
+                    
+                  - name: cache
+                    parameters: 120
+
+                  - name: dcache
+                    parameters: 10.1.1.68:6379
                   
+                  - name: reload
+                  
+                  - name: loadbalance
 
               - zones:
                   - zone: .
