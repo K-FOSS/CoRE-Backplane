@@ -52,14 +52,6 @@ spec:
             securityContext: ~
             containerSecurityContext: ~
 
-            podAnnotations:
-              prometheus.io/port: "15020"
-              prometheus.io/scrape: "true"
-              prometheus.io/path: "/stats/prometheus"
-              inject.istio.io/templates: "gateway"
-              sidecar.istio.io/interceptionMode: 'TPROXY'
-              sidecar.istio.io/inject	: 'false'
-
 
             service:
               # Type of service. Set to "None" to disable the service entirely
@@ -113,8 +105,7 @@ spec:
             labels: {}
 
             # Annotations to apply to all resources
-            annotations:
-              sidecar.istio.io/inject: 'false'
+            annotations: {}
 
             nodeSelector: {}
 
