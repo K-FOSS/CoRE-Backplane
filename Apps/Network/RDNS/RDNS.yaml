@@ -49,7 +49,7 @@ spec:
               metrics: {}
               minReplicas: 1
             image:
-              pullPolicy: IfNotPresent
+              pullPolicy: Always
               repository: kristianfjones/coredns-docker
               tag: core0
             isClusterService: false
@@ -108,25 +108,61 @@ spec:
                     
                   - name: ready
 
-                  - name: secondary
-                    parameters: >-
-                      kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
-                      mylogin.space trackmy.finance ksit.services writemy.codes
-                      ipaddr.network resolvemy.host syncmy.date
-                    configBlock: transfer from 10.1.1.153:53 10.1.1.159:53 10.1.1.150:53 10.1.1.151:53
-                  
                   - name: fanout
-                    parameters: . 127.0.0.1:8098 1.1.1.1:53 1.0.0.1:53 127.0.0.1:8097
+                    parameters: . 127.0.0.1:1053 127.0.0.1:1153 
                     configBlock: network TCP
-                    
-                  - name: cache
-                    parameters: 30
                   
                   - name: loop
                   
                   - name: reload
                   
                   - name: loadbalance
+
+              - zones:
+                  - zone: .
+                port: 1053
+                plugins:
+                  - name: dnsredir
+                    parameters: .
+                    configBlock: |-
+                      to tls://1.1.1.1 tls://1.0.0.1
+                      tls_servername one.one.one.one
+                    
+                  - name: cache
+                    parameters: 120
+
+                  - name: dcache
+                    parameters: 10.1.1.68:6379
+                  
+                  - name: reload
+                  
+                  - name: loadbalance
+
+              - zones:
+                  - zone: .
+                port: 1153
+                plugins:
+                  - name: secondary
+                    parameters: >-
+                      kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
+                      mylogin.space trackmy.finance ksit.services writemy.codes
+                      ipaddr.network resolvemy.host syncmy.date
+                    configBlock: transfer from 10.1.1.153:53 10.1.1.150:53 10.1.1.151:53
+
+                  - name: fanout
+                    parameters: . 127.0.0.1:8097 127.0.0.1:8098 
+                    configBlock: network TCP
+                    
+                  - name: cache
+                    parameters: 30
+
+                  - name: dcache
+                    parameters: 10.1.1.68:6379
+                  
+                  - name: reload
+                  
+                  - name: loadbalance
+                  
 
               - zones:
                   - zone: .
@@ -141,20 +177,10 @@ spec:
                     configBlock: lameduck 5s
                     
                   - name: ready
-
-                  - name: secondary
-                    parameters: >-
-                      kristianjones.dev in-addr.arpa 241.31.172.in-addr.arpa kjmedia.stream
-                      mylogin.space trackmy.finance ksit.services writemy.codes
-                      ipaddr.network resolvemy.host syncmy.date
-                    configBlock: transfer from 10.1.1.153:53 10.1.1.159:53 10.1.1.150:53 10.1.1.151:53
                   
                   - name: fanout
-                    parameters: . 127.0.0.1:8098 1.1.1.1:53 1.0.0.1:53 127.0.0.1:8097
+                    parameters: . 127.0.0.1:1053 127.0.0.1:1153 
                     configBlock: network TCP
-                    
-                  - name: cache
-                    parameters: 30
                   
                   - name: loop
                   
@@ -181,9 +207,6 @@ spec:
                     parameters: . 172.17.0.10:53 172.18.0.10:53 172.19.0.10:53 10.0.8.10:53
                     configBlock: network TCP
                   
-                  - name: cache
-                    parameters: 30
-                  
                   - name: loadbalance
               
               - zones:
@@ -198,16 +221,10 @@ spec:
                   - name: ready
               
                   - name: fanout
-                    parameters: . 172.18.171.211:53 172.19.125.220:53 10.0.11.160:53 10.1.1.60:53 10.1.1.61:53
+                    parameters: . 172.19.125.220:53 10.1.1.60:53 10.1.1.61:53
                     configBlock: network TCP
 
-                  - name: cache
-                    parameters: 30
-
                   - name: loadbalance
-                
-
-
                 
 
             service:
