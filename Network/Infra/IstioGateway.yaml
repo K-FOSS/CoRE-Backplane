@@ -53,12 +53,14 @@ spec:
             containerSecurityContext: ~
           
             podAnnotations:
-              prometheus.io/port: "15020"
-              prometheus.io/scrape: "true"
-              prometheus.io/path: "/stats/prometheus"
-              inject.istio.io/templates: "gateway"
+              prometheus.io/port: '15020'
+              prometheus.io/scrape: 'true'
+              prometheus.io/path: '/stats/prometheus'
               sidecar.istio.io/interceptionMode: 'TPROXY'
-              sidecar.istio.io/inject: 'false'
+              inject.istio.io/templates: 'gateway'
+              sidecar.istio.io/inject: 'true'
+
+              
 
 
             service:
@@ -110,12 +112,10 @@ spec:
             env: {}
 
             # Labels to apply to all resources
-            labels:
-              sidecar.istio.io/inject: 'false'
+            labels: {}
 
             # Annotations to apply to all resources
-            annotations:
-              sidecar.istio.io/inject: 'false'
+            annotations: {}
 
             nodeSelector: {}
 
