@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-rdns
+  namespace: core-prod
+spec:
+  clusterIP: None 
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: udp-53
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  selector:
+    app.kubernetes.io/instance: rdns-core
+  sessionAffinity: None
