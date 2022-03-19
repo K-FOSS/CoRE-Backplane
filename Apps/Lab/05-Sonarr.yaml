@@ -1,0 +1,72 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-lab-kjmedia-sonarr
+  namespace: argocd
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: lab-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+  source:
+    repoURL: https://k8s-at-home.com/charts/
+    chart: sonarr
+    path: sonarr
+    targetRevision: 16.0.1
+    helm:
+      releaseName: sonarr-core
+      values: |
+        podSecurityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+        ingress:
+          main:
+            enabled: true
+            ingressClassName: traefik-core
+            labels:
+              wan-mode: 'public'
+              lan-mode: 'private'
+            annotations:
+              cert-manager.io/cluster-issuer: kjdev-cluster
+              external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: 'true'
+              traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+              ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Media Admins"]}'
+            hosts:
+              - host: sonarr.kjmedia.stream
+                paths:
+                  - path: '/'
+                    pathType: Prefix
+            tls:
+              - hosts:
+                  - '*.kjmedia.stream'
+                secretName: kjmediastream-default-certificates
+
+        env:
+          HOST_WHITELIST_ENTRIES: sabnzbd.kjmedia.stream
+
+        persistence:
+          config:
+            enabled: true
+            existingClaim: lab-core-kjmedia-configs
+            subPath: Sonarr
+
+          media:
+            enabled: true
+            mountPath: /Media/TV
+            existingClaim: lab-core-kjmedia-media
+            subPath: 'TV'
+
+          downloads:
+            enabled: true
+            mountPath: /downloads
+            existingClaim: lab-core-kjmedia-downloads-nzb
