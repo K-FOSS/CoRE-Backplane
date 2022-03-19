@@ -36,6 +36,7 @@ spec:
             globalArguments:
               - '--global.checknewversion'
               - '--global.sendanonymoususage'
+              - '--entrypoints.websecure.http3'
 
             securityContext:
               capabilities:
@@ -69,7 +70,7 @@ spec:
 
             experimental:
               http3:
-                enabled: false
+                enabled: true
 
             providers:
               kubernetesCRD:
@@ -113,6 +114,7 @@ spec:
                 exposedPort: 443
                 port: 443
                 protocol: TCP
+                http3: true
                 tls:
                   certResolver: ''
                   domains: null
