@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: core-backplane-lab-kjmedia-sabnzbd
+  name: core-backplane-lab-kjmedia-prowlarr
   namespace: argocd
 spec:
   destination:
@@ -17,15 +17,12 @@ spec:
 
   source:
     repoURL: https://k8s-at-home.com/charts/
-    chart: sabnzbd
-    path: sabnzbd
-    targetRevision: 9.2.0
+    chart: prowlarr
+    path: prowlarr
+    targetRevision: 4.2.0
     helm:
-      releaseName: sabnzbd-core
+      releaseName: prowlarr-core
       values: |
-        image:
-          tag: v3.5.3
-
         ingress:
           main:
             enabled: true
@@ -41,7 +38,7 @@ spec:
               traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
               ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Media Admins"]}'
             hosts:
-              - host: sabnzbd.kjmedia.stream
+              - host: prowlarr.kjmedia.stream
                 paths:
                   - path: '/'
                     pathType: Prefix
@@ -60,11 +57,5 @@ spec:
             subPath: SABNZBd
 
           media:
-            enabled: true
+            enabled: false
             mountPath: /media
-            existingClaim: lab-core-kjmedia-media
-
-          downloads:
-            enabled: true
-            mountPath: /downloads
-            existingClaim: lab-core-kjmedia-downloads-nzb
