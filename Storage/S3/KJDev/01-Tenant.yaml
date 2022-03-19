@@ -1,0 +1,76 @@
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: kjdev-core
+  namespace: core-prod
+scheduler:
+  name: ""
+spec:
+  configuration:
+    name: kjdev-core-env-configuration
+
+  credsSecret:
+    name: kjdev-core-secret
+
+  exposeServices:
+    console: true
+    minio: true
+
+  imagePullSecret: {}
+
+  log:
+    audit:
+      diskCapacityGB: 5
+    db:
+      resources: {}
+      securityContext:
+        fsGroup: 999
+        runAsGroup: 999
+        runAsNonRoot: true
+        runAsUser: 999
+      volumeClaimTemplate:
+        metadata:
+          name: kjdev-core-log
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: '5368709120'
+        status: {}
+    resources: {}
+    securityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+
+  mountPath: /export
+
+  pools:
+    - name: pool-0
+      resources: {}
+      servers: 4
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: '80530636800'
+          storageClassName: infra1-storage
+        status: {}
+      volumesPerServer: 1
+
+  prometheus:
+    diskCapacityGB: 5
+    resources: {}
+    securityContext:
+      fsGroup: 1000
+      runAsGroup: 1000
+      runAsNonRoot: true
+      runAsUser: 1000
+
+  requestAutoCert: true

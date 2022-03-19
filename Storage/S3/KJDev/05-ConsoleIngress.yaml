@@ -1,0 +1,32 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+  annotations:
+    cert-manager.io/cluster-issuer: kjdev-cluster
+    external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+    ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server", "Network"]}'
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+  name: s3-kjdev-console-ingress
+spec:
+  ingressClassName: traefik-core
+  rules:
+    - host: s3.int.mylogin.space
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kjdev-core-console
+                port:
+                  number: 9443
+
+  tls:
+    - hosts:
+        - '*.int.mylogin.space'
+      secretName: myloginspace-int-default-certificates

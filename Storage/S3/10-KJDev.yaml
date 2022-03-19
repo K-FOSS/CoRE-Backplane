@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-storage-s3-secrets-core
+  name: core-backplane-storage-s3-kjdev-core
   namespace: argocd
 spec:
   generators:
@@ -12,18 +12,15 @@ spec:
 
   template:
     metadata:
-      name: '{{cluster}}-storage-s3-secrets'
+      name: '{{cluster}}-storage-s3-kjdev'
     spec:
       project: core
-      syncPolicy:
-        automated:
-          selfHeal: true
 
       source:
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
-        path: Storage/S3/AWX/Secrets
+        path: Storage/S3/KJDev
         targetRevision: main
 
       destination:
         server: '{{url}}'
-        namespace: minio-operator
+        namespace: core-prod

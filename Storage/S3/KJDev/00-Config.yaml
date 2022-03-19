@@ -1,0 +1,55 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: minio-tenant-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    creationPolicy: Owner
+    name: kjdev-core-env-configuration
+    template:
+      engineVersion: v2
+      data:
+        config.env: |
+          export MINIO_BROWSER="on"
+
+          export MINIO_ROOT_USER="{{ .RootUser }}"
+
+          export MINIO_IDENTITY_OPENID_CONFIG_URL="https://idp.mylogin.space/application/o/S3/.well-known/openid-configuration"
+
+          export MINIO_IDENTITY_OPENID_CLIENT_SECRET="{{ .OpenIDClientSecret }}"
+
+          export MINIO_IDENTITY_OPENID_SCOPES="openid,profile,email,minio"
+
+          export MINIO_ROOT_PASSWORD="{{ .RootPassword }}"
+
+          export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+
+          export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OpenIDClientID }}"
+
+          export MINIO_IDENTITY_OPENID_REDIRECT_URI="https://s3.int.mylogin.space/oauth_callback"
+  data:
+    - secretKey: OpenIDClientID
+      remoteRef:
+        key: MinioOperator
+        property: OpenIDClientID
+
+    - secretKey: OpenIDClientSecret
+      remoteRef:
+        key: MinioOperator
+        property: OpenIDClientSecret
+
+    # Root
+  
+    - secretKey: RootUser
+      remoteRef:
+        key: MinioOperator
+        property: RootUser
+
+    - secretKey: RootPassword
+      remoteRef:
+        key: MinioOperator
+        property: RootPassword
