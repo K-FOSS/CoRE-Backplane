@@ -39,7 +39,7 @@ spec:
                 secret:
                   secretName: test-tmp-minio
 
-            volumeMounts:
+            extraVolumeMounts:
               - name: minio-token
                 mountPath: "/var/secrets/minio-token"
                 readOnly: true              
@@ -85,7 +85,7 @@ spec:
                 - from: https://kubernetes.int.mylogin.space
                   to: https://kubernetes.default.svc
                   tls_skip_verify: true
-                  kubernetes_service_account_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+                  kubernetes_service_account_token_file: /var/secrets/minio-token/token
                   allowed_idp_claims:
                     groups:
                       - Network
