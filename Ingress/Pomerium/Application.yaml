@@ -40,10 +40,11 @@ spec:
                 provider: oidc
                 url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
               proxied: false
-              replicaCount: 2
+              replicaCount: 3
 
             authorize:
               existingTLSSecret: pomerium-tls
+              replicaCount: 2
 
             config:
               administrators: k@kristianjones.dev
@@ -65,6 +66,7 @@ spec:
 
             databroker:
               existingTLSSecret: pomerium-tls
+              replicaCount: 3
               service:
                 annotations: {}
                 clusterIP: None
@@ -112,6 +114,7 @@ spec:
 
             proxy:
               existingTLSSecret: pomerium-tls
+              replicaCount: 2
 
             rbac:
               create: true
