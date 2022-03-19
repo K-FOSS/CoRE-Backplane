@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-lab-kjmedia-sabnzbd
+  namespace: argocd
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: lab-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+  source:
+    repoURL: https://k8s-at-home.com/charts/
+    chart: sabnzbd
+    path: sabnzbd
+    targetRevision: 10.15.0
+    helm:
+      releaseName: sabnzbd-core
+      values: |
+        ingress:
+          main:
+            enabled: true
+            ingressClassName: traefik-core
+            labels:
+              wan-mode: 'public'
+              lan-mode: 'private'
+            annotations:
+              cert-manager.io/cluster-issuer: kjdev-cluster
+              external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: 'true'
+              traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+              ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Media Admins"]}'
+            hosts:
+              - host: sabnzbd.kjmedia.stream
+                paths:
+                  - path: '/'
+                    pathType: Prefix
+            tls:
+              - hosts:
+                  - '*.sabnzbd.kjmedia.stream'
+                secretName: kjmediastream-default-certificates
+
+        persistence:
+          config:
+            enabled: false
+
+          media:
+            enabled: false
+            mountPath: /media
+
+          downloads:
+            enabled: true
+            mountPath: /downloads
+            existingClaim: lab-core-kjmedia-downloads-nzb
