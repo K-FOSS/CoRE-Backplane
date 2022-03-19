@@ -1,0 +1,103 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-storage-s3
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+            environment: 'prod'
+            ingress: minio.int.mylogin.space
+
+  template:
+    metadata:
+      name: '{{cluster}}-minio'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        repoURL: https://github.com/minio/operator.git
+        path: helm/operator
+        targetRevision: master
+        helm:
+          releaseName: minio-operator-{{ environment }}
+          values: |
+            operator:
+              ## Setup environment variables for the Operator
+              # env:
+              #   - name: MINIO_OPERATOR_TLS_ENABLE
+              #     value: "off"
+              #   - name: CLUSTER_DOMAIN
+              #     value: "cluster.domain"
+              #   - name: WATCHED_NAMESPACE
+              #     value: ""
+              image:
+                repository: minio/operator
+                tag: v4.4.11
+                pullPolicy: IfNotPresent
+              imagePullSecrets: [ ]
+              initcontainers: [ ]
+              replicaCount: 2
+              securityContext:
+                runAsUser: 1000
+                runAsGroup: 1000
+                runAsNonRoot: true
+                fsGroup: 1000
+              nodeSelector: { }
+              affinity: { }
+              tolerations: [ ]
+              topologySpreadConstraints: [ ]
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                  ephemeral-storage: 500Mi
+
+            console:
+              image:
+                repository: minio/console
+                tag: v0.15.0
+                pullPolicy: IfNotPresent
+              imagePullSecrets: [ ]
+              initcontainers: [ ]
+              replicaCount: 1
+              nodeSelector: { }
+              affinity: { }
+              tolerations: [ ]
+              topologySpreadConstraints: [ ]
+              resources: { }
+              securityContext:
+                runAsUser: 1000
+                runAsNonRoot: true
+              ingress:
+                enabled: true
+                ingressClassName: traefik-core
+                labels:
+                  wan-mode: 'public'
+                  lan-mode: 'private'
+                annotations:
+                  cert-manager.io/cluster-issuer: kjdev-cluster
+                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                  traefik.ingress.kubernetes.io/router.tls: 'true'
+                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+                  ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins", "Network Admins"]}'
+                tls:
+                  - hosts:
+                      - '*.int.mylogin.space'
+                    secretName: myloginspace-int-default-certificates
+                host: '{{ingress}}'
+                path: /
+              volumes: [ ]
+              volumeMounts: [ ]
+
+      destination:
+        server: '{{url}}'
+        namespace: minio-operator
