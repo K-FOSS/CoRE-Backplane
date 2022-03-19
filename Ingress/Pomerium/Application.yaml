@@ -63,6 +63,17 @@ spec:
               rootDomain: int.mylogin.space
               sharedSecret: ''
               signingKey: ''
+              routes:
+                - from: https://test-k8s.int.mylogin.space
+                  to: http://console.minio-operator.svc.cluster.local:9090
+                  allow_spdy: true
+                  tls_skip_verify: true
+                  kubernetes_service_account_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+                  allowed_idp_claims:
+                    groups:
+                      - Server
+                      - Network
+
 
             databroker:
               existingTLSSecret: pomerium-tls
