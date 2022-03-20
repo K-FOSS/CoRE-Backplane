@@ -18,10 +18,6 @@ spec:
 
           export MINIO_ROOT_USER="{{ .RootUser }}"
 
-          #
-          # LDAP
-          #
-
           export MINIO_IDENTITY_LDAP_SERVER_ADDR="ldap.mylogin.space:636"
           export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .MinioUser }},ou=users,dc=mylogin,dc=space"
           export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="{{ .MinioPassword }}"
@@ -29,7 +25,6 @@ spec:
           export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(objectClass=*)"
           export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectClass=group)(memberUid=%d))"
 
-          # LDAP Groups
           export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,dc=ldap,dc=mylogin,dc=space"
           export MINIO_IDENTITY_LDAP_USERNAME_FORMAT="cn=%s,ou=users,dc=ldap,dc=mylogin,dc=space"
 
