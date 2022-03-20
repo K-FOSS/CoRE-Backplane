@@ -18,6 +18,19 @@ spec:
 
           export MINIO_ROOT_USER="{{ .RootUser }}"
 
+          #
+          # LDAP
+          #
+
+          export MINIO_IDENTITY_LDAP_SERVER_ADDR="ldap.mylogin.space:636"
+          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .MinioUser }},ou=users,dc=mylogin,dc=space"
+          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="{{ .MinioPassword }}"
+          export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN="ou=users,dc=mylogin,dc=space"
+          export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(objectClass=*)"
+          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectClass=group)(member=%d))"
+
+
+
           export MINIO_IDENTITY_OPENID_CONFIG_URL="https://idp.mylogin.space/application/o/S3/.well-known/openid-configuration"
 
           export MINIO_IDENTITY_OPENID_CLIENT_SECRET="{{ .OpenIDClientSecret }}"
@@ -53,3 +66,14 @@ spec:
       remoteRef:
         key: MinioOperator
         property: RootPassword
+
+
+    - secretKey: MinioUser
+      remoteRef:
+        key: MinioOperator
+        property: MinioUser
+
+    - secretKey: MinioPassword
+      remoteRef:
+        key: MinioOperator
+        property: MinioPassword
