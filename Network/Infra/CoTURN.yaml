@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-network-coturn
+  namespace: argocd
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: core-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+  source:
+    repoURL: https://gitlab.git.writemy.codes/KJDev/natpuncher.git
+    path: CoTURN
+    directory:
+        recurse: false
+        jsonnet: {}
+    targetRevision: HEAD
