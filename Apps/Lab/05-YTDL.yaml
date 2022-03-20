@@ -1,0 +1,94 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-lab-kjmedia-ytdl
+  namespace: argocd
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: lab-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+  source:
+    repoURL: https://k8s-at-home.com/charts/
+    chart: youtubedl-material
+    path: youtubedl-material
+    targetRevision: 4.2.0
+    helm:
+      releaseName: ytdl-core
+      values: |
+        podSecurityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+
+        service:
+          main:
+            annotations:
+              consul.hashicorp.com/service-name: ytdl
+            ports:
+              http:
+                port: 8989
+
+        ingress:
+          main:
+            enabled: true
+            ingressClassName: traefik-core
+            labels:
+              wan-mode: 'public'
+              lan-mode: 'private'
+            annotations:
+              cert-manager.io/cluster-issuer: kjdev-cluster
+              external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: 'true'
+              traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+              ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Media Admins"]}'
+            hosts:
+              - host: ytdl.kjmedia.stream
+                paths:
+                  - path: '/'
+                    pathType: Prefix
+            tls:
+              - hosts:
+                  - '*.kjmedia.stream'
+                secretName: kjmediastream-default-certificates
+
+        env:
+          HOST_WHITELIST_ENTRIES: sabnzbd.kjmedia.stream
+
+        persistence:
+          config:
+            enabled: true
+            mountPath: /app/appdata
+            subPath: 'YTDL'
+
+          audio:
+            enabled: true
+            mountPath: /app/audio
+            existingClaim: lab-core-kjmedia-media
+            subPath: 'Audio'
+
+          subscriptions:
+            enabled: false
+            mountPath: /app/subscriptions
+            existingClaim: lab-core-kjmedia-media
+            subPath: 'Subscriptions'
+
+          users:
+            enabled: true
+            mountPath: /users
+            existingClaim: lab-core-kjmedia-media
+            subPath: 'Users'
+
+          video:
+            enabled: true
+            mountPath: /app/video
+            existingClaim: lab-core-kjmedia-media
+            subPath: 'TV'
