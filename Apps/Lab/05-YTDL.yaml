@@ -34,7 +34,18 @@ spec:
               consul.hashicorp.com/service-name: ytdl
             ports:
               http:
-                port: 8989
+                port: 17442
+
+        # -- environment variables. See [image repo](https://github.com/Tzahi12345/YoutubeDL-Material) for more details.
+        # @default -- See below
+        env:
+          # -- Set the container timezone
+          TZ: UTC
+          # -- Specify the user ID the application will run as
+          UID: '1000'
+          # -- Specify the group ID the application will run as
+          GID: '1000'
+
 
         ingress:
           main:
@@ -59,9 +70,6 @@ spec:
               - hosts:
                   - '*.kjmedia.stream'
                 secretName: kjmediastream-default-certificates
-
-        env:
-          HOST_WHITELIST_ENTRIES: sabnzbd.kjmedia.stream
 
         persistence:
           config:
