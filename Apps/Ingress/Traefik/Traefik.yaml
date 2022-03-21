@@ -107,6 +107,7 @@ spec:
               minio:
                 port: 9080
                 protocol: TCP
+
               traefik:
                 exposedPort: 9000
                 port: 9000
@@ -120,6 +121,10 @@ spec:
                 port: 443
                 protocol: TCP
                 http3: true
+                proxyProtocol:
+                  insecure: true
+                  trustedIPs:
+                    - 0.0.0.0/0
                 tls:
                   certResolver: ''
                   domains: null
