@@ -15,4 +15,12 @@ spec:
     path: CoTurn
     helm:
       releaseName: nat-puncher
+      values: |
+        extraConfig:
+          cert: /tls/tls.crt
+          pkey: /tls/tls.key
+          
+        extraSecrets:
+          - name: ipaddrnetwork-default-certificates
+            mountPath: /tls
     targetRevision: HEAD
