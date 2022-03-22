@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: mc-gateway
+spec:
+  selector:
+    istio: ingress # use istio default ingress gateway
+  servers:
+    - hosts:
+        - '*'
+      port:
+        number: 25565
+        name: minecraft
+        protocol: TCP

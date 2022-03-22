@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: mc-proxy
+spec:
+  hosts:
+    - '*'
+  gateways:
+    - mc-gateway
+  tcp:
+    - match:
+        - port: 25565
+      route:
+        - destination:
+            host: mc-lab-minecraft
+            port:
+              number: 25565
