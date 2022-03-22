@@ -88,23 +88,14 @@ spec:
                     key: AWS_S3_FORCE_PATH_STYLE
 
               - name: WALE_S3_ENDPOINT
-                valueFrom:
-                  secretKeyRef:
-                    name: psql-operator-backup-sync
-                    key: AWS_ENDPOINT
-
-              - name: SPILO_S3_BACKUP_PREFIX
-                valueFrom:
-                  secretKeyRef:
-                    name: psql-operator-backup-sync
-                    key: WALG_S3_PREFIX
-                  
+                value: https+path://s3.mylogin.space:443        
 
               - name: AWS_ACCESS_KEY_ID
                 valueFrom:
                   secretKeyRef:
                     name: psql-operator-backup-sync
                     key: AWS_ACCESS_KEY_ID
+  
               - name: AWS_SECRET_ACCESS_KEY
                 valueFrom:
                   secretKeyRef:
