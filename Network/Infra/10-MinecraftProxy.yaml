@@ -20,240 +20,298 @@ spec:
           selfHeal: true
 
       source:
-        repoURL: https://itzg.github.io/minecraft-server-charts/
-        chart: minecraft-proxy
-        path: minecraft-proxy
-        targetRevision: 2.6.0
+        repoURL: https://qumine.github.io/charts/
+        chart: ingress-controller
+        path: ingress-controller
+        targetRevision: 0.8.401
         helm:
           releaseName: mc-proxy
           values: |
-            # ref: https://hub.docker.com/r/itzg/docker-bungeecord/
-            image: itzg/bungeecord
-            imageTag: latest
-            imagePullSecret: ""
+            image:
+              registry: docker.io
+              repository: qumine/ingress-controller
+              tag: v0.8.4
+              ## Specify a imagePullPolicy
+              ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+              ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+              ##
+              pullPolicy: Always
+              ## Optionally specify an array of imagePullSecrets.
+              ## Secrets must be manually created in the namespace.
+              ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+              ##
+              # pullSecrets:
+              #   - myRegistryKeySecretName
+
+            qumine:
+              debug: false
+              port: 25565
+
+              type: "DaemonSet"
+              daemonset:
+                metricsPort: "8080"
+              deployment:
+                replicas: 2
+                ## Kubernetes svc configutarion
+                ##
+                service:
+                  ## Kubernetes svc type
+                  ##
+                  type: ClusterIP
+                  port: 25565
+                  ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
+                  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                  ##
+                  # nodePort:
+                  ## Static clusterIP or None for headless services
+                  ##
+                  # clusterIP: ""
+                  ## External IP list to use with ClusterIP service type
+                  ##
+                  externalIPs: []
+                  ## Use loadBalancerIP to request a specific static IP,
+                  ## otherwise leave blank
+                  ##
+                  # loadBalancerIP:
+                  ## Address that are allowed when svc is LoadBalancer
+                  ##
+                  loadBalancerSourceRanges: []
+                  ## Provide any additional annotations which may be required. This can be used to
+                  ## set the LoadBalancer service type to internal only.
+                  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+                  ##
+                  annotations: {}
+
+                  ## Provide any additional labels which may be required. This can be used to
+                  ## have qumine show up in `kubectl cluster-info`
+                  ##  kubernetes.io/cluster-service: "true"
+                  ##  kubernetes.io/name: "qumine"
+                  labels: {}
+
+            ## Affinity for pod assignment (this value is evaluated as a template)
+            ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+            ##
+            affinity: {}
+            ## Node labels for pod assignment (this value is evaluated as a template)
+            ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+            ##
+            nodeSelector: {}
+            ## Tolerations for pod assignment (this value is evaluated as a template)
+            ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#taints-and-tolerations-beta-feature
+            ##
+            tolerations: []
+            ## Annotations for qumine pods
+            ##
+            podAnnotations: {}
+            ## Additional labels for the pod(s).
+            ##
+            podLabels: {}
+            ## Pod priority class name
+            ##
+            priorityClassName: ""
+
+            ## ServiceAccount parameters
+            ## https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+            ##
+            serviceAccount:
+              create: true
+              ## Service Account for pods
+              ##
+              name:
+              ## Annotations for the Service Account
+              ##
+              annotations: {}
+
+            ## Kubernetes Security Context
+            ## https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+            ## Example:
+            ## securityContext:
+            ##  allowPrivilegeEscalation: false
+            ##  readOnlyRootFilesystem: true
+            ##  capabilities:
+            ##    drop: ["ALL"]
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop: ["ALL"]
+            podSecurityContext:
+              fsGroup: 4242
+              runAsUser: 4242
+              runAsNonRoot: true
 
             ## Configure resource requests and limits
             ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
             ##
             resources:
-              requests:
+              limits:
+                cpu: 250m
                 memory: 512Mi
-                cpu: 500m
+              requests:
+                memory: 256Mi
+                cpu: 125m
 
-            securityContext:
-              # Security context settings
-              runAsUser: 1000
-              runAsGroup: 1000
-              fsGroup: 2000
-            # Most of these map to environment variables. See Minecraft for details:
-            # https://hub.docker.com/r/itzg/docker-bungeecord/
-            livenessProbe:
-              initialDelaySeconds: 30
-              periodSeconds: 5
-              failureThreshold: 10
-              successThreshold: 1
-              timeoutSeconds: 1
-            readinessProbe:
-              initialDelaySeconds: 30
-              periodSeconds: 5
-              failureThreshold: 10
-              successThreshold: 1
-              timeoutSeconds: 1
-            startupProbe:
-              enabled: false
-              failureThreshold: 30
-              periodSeconds: 10
-
-            # initContainers:
-            #   - name: do-something
-            #     image: busybox
-            #     command: ['do', 'something']
-            #     volumesMounts:
-            #       - name: nfs
-            #         mountPath: /mnt/volume
-            #         readOnly: true
-            initContainers: []
-
-            # extraVolumes:
-            #   - volumeMounts:
-            #       - name: nfs
-            #         mountPath: /mnt/volume
-            #         readOnly: true
-            #     volumes:
-            #       - name: nfs
-            #         server: some.nfs.server.com
-            #         path: /
-            #         mountOptions:
-            #           - port=2049
-            #           - hard
-            #           - vers=4
-            extraVolumes: []
-
-            minecraftProxy:
-              # This can be one of "BUNGEECORD", "WATERFALL", "VELOCITY", "CUSTOM"
-              type: BUNGEECORD
-              # If type is set to BUNGEECORD or WATERFALL, this value overrides the base Jenkins URL
-              jenkinsBaseUrl:
-              # The Jenkins job ID of the artifact to download and run
-              jenkinsJobId: lastStableBuild
-              # If set, the job ID is arbitrarily incremented to force upgrade the proxy jar
-              jarRevision:
-              # This value can be set to a fully qualified URL to download a custom proxy jar
-              jarUrl:
-              # If set, this value specifies a custom proxy jar located inside the container
-              jarFile:
-              # If type is set to WATERFALL, use a specific Waterfall release stream
-              waterfallVersion: latest
-              # If type is set to WATERFALL, use a specific build of Waterfall within the specified version
-              waterfallBuildId: latest
-              # If type is set to VELOCITY, download and run this version of Velocity
-              velocityVersion: 1.1.0
-              # Check accounts against Minecraft account service.
-              onlineMode: true
-              # A list of .jar URLs to download into the plugins folder.
-              plugins: []
-              # If you adjust this, you may need to adjust resources.requests above to match.
-              memory: 512M
-              # General JVM options to be passed to the Minecraft server invocation
-              jvmOpts: ""
-              # Options like -X that need to proceed general JVM options
-              jvmXXOpts: ""
-              # DEPRECATED: use top-level rconServiceAnnotations instead
-              serviceAnnotations: {}
-              serviceType: ClusterIP
-              ## Set the port used if the serviceType is NodePort
-              # nodePort:
-              loadBalancerIP:
-              # loadBalancerSourceRanges: []
-              ## Set the externalTrafficPolicy in the Service to either Cluster or Local
-              # externalTrafficPolicy: Cluster
-              externalIPs:
-              # If set, this overrides the default config file path
-              configFilePath: /server/config.yml
-              # This can be set to the contents of your config file (only works with yaml currently)
-              # config: |
-              #  player_limit: -1
-              #  ip_forward: false
-              #  permissions:
-              #    default:
-              #    - bungeecord.command.server
-              #    - bungeecord.command.list
-              #    admin:
-              #    - bungeecord.command.alert
-              #    - bungeecord.command.end
-              #    - bungeecord.command.ip
-              #    - bungeecord.command.reload
-              #  timeout: 30000
-              #  log_pings: true
-              #  log_commands: false
-              #  online_mode: true
-              #  servers:
-              #    lobby:
-              #      motd: '&1Just another BungeeCord - Forced Host'
-              #      address: localhost:25565
-              #      restricted: false
-              #  listeners:
-              #  - query_port: 25577
-              #    motd: '&1Another Bungee server'
-              #    priorities:
-              #    - lobby
-              #    bind_local_address: true
-              #    tab_list: GLOBAL_PING
-              #    query_enabled: false
-              #    host: 0.0.0.0:25577
-              #    forced_hosts:
-              #      pvp.md-5.net: pvp
-              #    max_players: 1
-              #    tab_size: 60
-              #    ping_passthrough: false
-              #    force_default_server: false
-              #    proxy_protocol: false
-              #  disabled_commands:
-              #  - disabledcommandhere
-              #  network_compression_threshold: 256
-              #  groups:
-              #    md_5:
-              #    - admin
-              #  connection_throttle: 4000
-              #  connection_throttle_limit: 3
-              #  stats: f2876aa6-74d2-468c-90ee-1377111f1c9f
-              #  forge_support: false
-              #  inject_commands: false
-
-              rcon:
-                # If you enable this, make SURE to change your password below.
-                enabled: false
-                port: 25575
-                password: "CHANGEME!"
-                serviceType: LoadBalancer
-                loadBalancerIP:
-                # loadBalancerSourceRanges: []
-                ## Set the externalTrafficPolicy in the Service to either Cluster or Local
-                # externalTrafficPolicy: Cluster
-
-              extraPorts: []
-                # These options allow you to expose another port from the Minecraft proxy, plugins such
-                # as NuVotifier (8192) will require this for incoming webhooks
-                #
-                # - name: vote
-                #   containerPort: 8192
-                #   protocol: TCP
-                #   service:
-                #     enabled: false
-                #     embedded: false
-                #     annotations: {}
-                #     type: ClusterIP
-                #     ## Set the external port if the rcon serviceType is NodePort
-                ##     nodePort:
-                #     loadBalancerIP: ""
-                #     loadBalancerSourceRanges: []
-                #     externalTrafficPolicy: Cluster
-                #     port: 8192
-                #   ingress:
-                #     ingressClassName: nginx
-                #     enabled: false
-                #     annotations:
-                ## Deprecated way for specifying the ingressClass. Kube.version < 1.18
-                ##       kubernetes.io/ingress.class: nginx
-                #       kubernetes.io/tls-acme: "true"
-                #     hosts:
-                #       - name: vote.local
-                #         path: /
-                #     tls:
-                #       - secretName: vote-tls
-                #         hosts:
-                #           - vote.local
-
-            ## Additional minecraft container environment variables
+            ## Liveness Probe. The block is directly forwarded into the deployment, so you can use whatever livenessProbe configuration you want.
+            ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
             ##
-            extraEnv: {}
+            livenessProbe:
+              httpGet:
+                path: /health/live
+                port: 8080
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 5
+              successThreshold: 1
+            ## Readiness Probe. The block is directly forwarded into the deployment, so you can use whatever readinessProbe configuration you want.
+            ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
+            ##
+            readinessProbe:
+              httpGet:
+                path: /health/ready
+                port: 8080
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 5
+              successThreshold: 1
 
-            persistence:
-              ## minecraft data Persistent Volume Storage Class
-              ## If defined, storageClassName: <storageClass>
-              ## If set to "-", storageClassName: "", which disables dynamic provisioning
-              ## If undefined (the default) or set to null, no storageClassName spec is
-              ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
-              ##   GKE, AWS & OpenStack)
-              ##
-              # storageClass: "-"
-              dataDir:
-                # Set this to false if you don't care to persist state between restarts.
+            ## priorityClassName
+            ## ref: https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/#priorityclass
+            ##
+            # priorityClassName: ""
+
+
+            integrations:
+              ## Prometheus Exporter / Metrics
+              metrics:
                 enabled: false
-                # existingClaim: nil
-                Size: 1Gi
+                ## Metrics exporter pod Annotation and Labels
+                ##
+                # podAnnotations:
+                #   prometheus.io/scrape: "true"
+                #   prometheus.io/port: "7979"
 
-            podAnnotations: {}
+                ## Kubernetes svc configutarion
+                ##
+                service:
+                  ## Kubernetes svc type
+                  ##
+                  type: ClusterIP
+                  port: 8080
+                  ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
+                  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                  ##
+                  # nodePort:
+                  ## Static clusterIP or None for headless services
+                  ##
+                  # clusterIP: ""
+                  ## External IP list to use with ClusterIP service type
+                  ##
+                  externalIPs: []
+                  ## Use loadBalancerIP to request a specific static IP,
+                  ## otherwise leave blank
+                  ##
+                  # loadBalancerIP:
+                  ## Address that are allowed when svc is LoadBalancer
+                  ##
+                  loadBalancerSourceRanges: []
+                  ## Provide any additional annotations which may be required. This can be used to
+                  ## set the LoadBalancer service type to internal only.
+                  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+                  ##
+                  annotations: {}
 
-            deploymentAnnotations: {}
+                  ## Provide any additional labels which may be required. This can be used to
+                  ## have qumine show up in `kubectl cluster-info`
+                  ##  kubernetes.io/cluster-service: "true"
+                  ##  kubernetes.io/name: "qumine"
+                  labels:
+                    metrics: "true"
 
-            serviceAnnotations: {}
+                ## Prometheus Operator ServiceMonitor configuration
+                ##
+                serviceMonitor:
+                  enabled: false
+                  ## Namespace in which Prometheus is running
+                  ##
+                  # namespace: monitoring
 
-            rconServiceAnnotations: {}
+                  ## Interval at which metrics should be scraped.
+                  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+                  ##
+                  # interval: 10s
 
-            # Can allow plugins access to the kubernetes api using a service account
-            # https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
-            serviceAccountName:
+                  ## Timeout after which the scrape is ended
+                  ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
+                  ##
+                  # scrapeTimeout: 10s
+
+                  ## ServiceMonitor selector labels
+                  ## ref: https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#prometheus-configuration
+                  ##
+                  # selector:
+                  #   prometheus: my-prometheus
+
+              ## GeyserMC
+              geysermc:
+                enabled: false
+
+                ## GeyserMC image version
+                ## ref: https://hub.docker.com/repository/docker/qumine/integrations-bluemap/tags
+                ##
+                image:
+                  registry: docker.io
+                  repository: qumine/integrations-geysermc
+                  tag: 956
+                  ## Specify a imagePullPolicy
+                  ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
+                  ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+                  ##
+                  pullPolicy: Always
+                  ## Optionally specify an array of imagePullSecrets.
+                  ## Secrets must be manually created in the namespace.
+                  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+                  ##
+                  # pullSecrets:
+                  #   - myRegistryKeySecretName
+
+                ## Kubernetes svc configutarion
+                ##
+                service:
+                  ## Kubernetes svc type
+                  ##
+                  type: ClusterIP
+                  port: 19132
+                  ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
+                  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+                  ##
+                  # nodePort:
+                  ## Static clusterIP or None for headless services
+                  ##
+                  # clusterIP: ""
+                  ## External IP list to use with ClusterIP service type
+                  ##
+                  externalIPs: []
+                  ## Use loadBalancerIP to request a specific static IP,
+                  ## otherwise leave blank
+                  ##
+                  # loadBalancerIP:
+                  ## Address that are allowed when svc is LoadBalancer
+                  ##
+                  loadBalancerSourceRanges: []
+                  ## Provide any additional annotations which may be required. This can be used to
+                  ## set the LoadBalancer service type to internal only.
+                  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+                  ##
+                  annotations: {}
+
+                  ## Provide any additional labels which may be required. This can be used to
+                  ## have qumine show up in `kubectl cluster-info`
+                  ##  kubernetes.io/cluster-service: "true"
+                  ##  kubernetes.io/name: "qumine"
+                  labels:
+                    geysermc: "true"
 
 
       destination:
