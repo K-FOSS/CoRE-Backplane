@@ -13,6 +13,9 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 | 5        | Pomerium            | SSO Audited Proxy/Gatekeeper |
 | 6        | AWX/Ansible         | Ansible Tower, Automation    |
 | 10       | ArgoCD              | The deployerer               |
+| 11       | Cortex              | Metrics S3                   |
+| 12       | Loki                | Logs S3                      |
+| 13       | Tempo               | Traces Store                 |
 | 15       | CoTURN    
 
 
