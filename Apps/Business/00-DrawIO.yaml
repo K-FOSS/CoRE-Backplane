@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-business-drawio
+  namespace: argocd
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: core-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+  source:
+    repoURL: https://gitlab.git.writemy.codes/KJDev/core-business.git
+    path: Apps/DrawIO
+    targetRevision: HEAD
