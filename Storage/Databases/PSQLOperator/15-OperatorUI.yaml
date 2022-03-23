@@ -78,14 +78,17 @@ spec:
             # https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#environment-variables
             # UI specific env variables can be found here: https://github.com/zalando/postgres-operator/blob/master/ui/operator_ui/main.py
             extraEnvs:
-              - name: APP_URL
-                value: https://psql.int.mylogin.space
-
               - name: AUTHORIZE_URL
                 value: https://idp.mylogin.space/application/o/authorize/
 
-              - name: OAUTH2_TOKEN_INFO_URL
+              - name: ACCESS_TOKEN_URL
                 value: https://idp.mylogin.space/application/o/token/
+
+              - name: OAUTH2_TOKEN_INFO_URL
+                value: https://idp.mylogin.space/application/o/userinfo/
+
+              - name: TEAM_SERVICE_URL
+                value: 'https://idp.mylogin.space/application/o/PSQL/'
 
 
               - name: SPILO_S3_BACKUP_PREFIX
