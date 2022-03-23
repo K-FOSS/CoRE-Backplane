@@ -32,6 +32,10 @@ spec:
           ports:
             - containerPort: 8081
               protocol: "TCP"
+          volumeMounts:
+            - name: oidc
+              mountPath: "/etc/secrets/oidc"
+              readOnly: true
           readinessProbe:
             httpGet:
               path: "/health"
@@ -43,6 +47,9 @@ spec:
           env:
             - name: "APP_URL"
               value: "http://localhost:8081"
+
+            - name: 'CREDENTIALS_DIR'
+              value: '/etc/secrets/oidc'
             - name: "OPERATOR_API_URL"
               value: {{ .Values.envs.operatorApiUrl | quote }}
             - name: "OPERATOR_CLUSTER_NAME_LABEL"
@@ -80,3 +87,13 @@ spec:
             {{- if .Values.extraEnvs }}
             {{- .Values.extraEnvs | toYaml | nindent 12 }}
             {{- end }}
+      volumes:
+        - name: foo
+          secret:
+            secretName: psql-operator-backup-sync
+            items:
+              - key: OIDCClientID
+                path: authcode-client-id
+
+              - key: OIDCClientSecret
+                path: authcode-client-secret
