@@ -41,19 +41,6 @@ spec:
                   repository: artifacthub/hub
                 resources: {}
 
-              tracker:
-
-                cronjob:
-                  image:
-                    repository: artifacthub/tracker
-                  resources: {}
-                cacheDir: ""
-                configDir: "/home/tracker/.cfg"
-                concurrency: 32
-                repositoriesNames: []
-                repositoriesKinds: []
-                bypassDigestCheck: true
-
               server:
                 # Allow adding private repositories to the Hub
                 allowPrivateRepositories: false
@@ -138,6 +125,18 @@ spec:
                 # value than the default one (Artifact Hub) is provided, the site enters `white label` mode. In this mode, some
                 # sections of the website are displayed in a more generic way, omitting certain parts that are unique to Artifact Hub
                 siteName: "KJDev Artifact hub"
+
+            tracker:
+              cronjob:
+                image:
+                  repository: artifacthub/tracker
+                resources: {}
+              cacheDir: ""
+              configDir: "/home/tracker/.cfg"
+              concurrency: 32
+              repositoriesNames: []
+              repositoriesKinds: []
+              bypassDigestCheck: true
 
       destination:
         server: '{{url}}'
