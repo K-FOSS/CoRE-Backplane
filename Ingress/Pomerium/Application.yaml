@@ -90,6 +90,15 @@ spec:
                     groups:
                       - Network
 
+                - from: https://kiali.int.mylogin.space
+                  to: http://kiali.kiali-operator.svc:20001
+                  tls_skip_verify: true
+                  kubernetes_service_account_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+                  allowed_idp_claims:
+                    groups:
+                      - Network
+                      - Server
+
             databroker:
               existingTLSSecret: pomerium-tls
               replicaCount: 3
