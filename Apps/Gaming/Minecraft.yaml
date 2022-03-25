@@ -170,9 +170,9 @@ spec:
               # Determines if villagers will be spawned.
               spawnNPCs: true
               # Sets the area that non-ops can not edit (0 to disable)
-              spawnProtection: 16
+              spawnProtection: 0
               # Max view distance (in chunks).
-              viewDistance: 10
+              viewDistance: 32
               # Define this if you want a specific map generation seed.
               levelSeed:
               # One of: creative, survival, adventure, spectator
@@ -180,7 +180,7 @@ spec:
               # Message of the Day
               motd: "Welcome to Minecraft on Kubernetes!"
               # If true, enable player-vs-player damage.
-              pvp: false
+              pvp: true
               # One of: DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED
               levelType: DEFAULT
               # When levelType == FLAT or CUSTOMIZED, this can be used to further customize map generation.
@@ -198,7 +198,7 @@ spec:
               # Check accounts against Minecraft account service.
               onlineMode: true
               # If you adjust this, you may need to adjust resources.requests above to match.
-              memory: 1024M
+              memory: 4096M
               # General JVM options to be passed to the Minecraft server invocation
               jvmOpts: ""
               # Options like -X that need to proceed general JVM options
@@ -206,7 +206,7 @@ spec:
               # By default, the server configuration will be created and set based on the following environment variables, but only the first time the server is started
               # If you would like to override the server configuration each time the container starts up, you can set this to true
               # see https://github.com/itzg/docker-minecraft-server#server-configuration
-              overrideServerProperties: false
+              overrideServerProperties: true
               # DEPRECATED: use top-level rconServiceAnnotations instead
               serviceAnnotations: {}
               serviceType: ClusterIP
