@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: external-svc-infra1-redis
+spec:
+  hosts:
+    - infra1-redis
+  location: MESH_EXTERNAL
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  resolution: DNS
+  endpoints:
+    - address: infra1-dc1-keydb-headless.service.dc1.kjdev
+      ports:
+        http: 6379
