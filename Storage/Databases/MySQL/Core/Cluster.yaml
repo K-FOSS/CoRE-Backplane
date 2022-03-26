@@ -18,12 +18,19 @@ spec:
   cells:
     - name: zone1
       gateway:
-        authentication:
-          static:
-            secret:
-              name: example-cluster-config
-              key: users.json
         replicas: 1
+        extraFlags:
+          - -mysql_auth_server_impl=ldap
+          - -mysql_ldap_auth_config_file=/run/secrets/ldapauth/ldapconfig.json
+        extraVolumeMounts:
+          - name: ldap-config
+            mountPath: /run/secrets/ldapauth
+            readOnly: true
+        extraVolumes:
+          - name: ldap-config
+            secret:
+              secretName: database-mysql-vitess-ldap
+              optional: false
         resources:
           requests:
             cpu: 100m
@@ -44,14 +51,14 @@ spec:
         memory: 128Mi
 
   keyspaces:
-    - name: commerce
+    - name: core
       turndownPolicy: Immediate
       partitionings:
         - equal:
             parts: 1
             shardTemplate:
               databaseInitScriptSecret:
-                name: example-cluster-config
+                name: core-cluster-config
                 key: init_db.sql
               replication:
                 enforceSemiSync: false
@@ -86,16 +93,9 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: example-cluster-config
+  name: core-cluster-config
 type: Opaque
 stringData:
-  users.json: |
-    {
-      "user": [{
-        "UserData": "user",
-        "Password": ""
-      }]
-    }
   init_db.sql: |
     # This file is executed immediately after mysql_install_db,
     # to initialize a fresh data directory.
