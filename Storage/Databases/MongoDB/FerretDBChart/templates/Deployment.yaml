@@ -30,6 +30,15 @@ spec:
           - 10.1.1.50
           - 10.1.1.53
       containers:
+        - name: mongodb
+          image: mongo:5.0.6
+          args:
+            - --port=37017
+          ports:
+            - containerPort: 37017
+              name: mongodb
+              protocol: TCP
+
         - name: ferretdb
           image: ghcr.io/ferretdb/ferretdb:0.0.6
           args:
