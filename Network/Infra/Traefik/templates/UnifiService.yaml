@@ -7,12 +7,12 @@ spec:
     - unifi.ipaddr.network
   gateways:
     - traefik-gateway
-  tcp:
+  http:
     - match:
-        - port: 8080
+        - uri:
+            prefix: /inform
       route:
         - destination:
-            host: unifi-ingress
             port:
               number: 8080
-          weight: 100
+            host: unifi-ingress
