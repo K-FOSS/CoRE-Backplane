@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ferretdb-core
+  labels:
+    app.kubernetes.io/name: ferretdb-core
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ferretdb-core
+
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ferretdb-core
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 10.1.1.50
+          - 10.1.1.53
+      containers:
+        - name: ferretdb
+          image: ghcr.io/ferretdb/ferretdb:0.0.6
+          command:
+            - -listen-addr=:27017
+            - '-postgresql-url=postgres://$(Username):$(Password)@{{ .Values.database.hostname }}:5432/$(Database)'
+
+          securityContext:
+            readOnlyRootFilesystem: true
+          ports:
+            - containerPort: 27017
+              name: mongodb
+              protocol: TCP
+              appProtocol: mongodb
+          env:
+            - name: Database
+              valueFrom:
+                secretKeyRef:
+                  key: Database
+                  name: {{ .Values.database.secretName }}
+
+            - name: Username
+              valueFrom:
+                secretKeyRef:
+                  key: Username
+                  name: {{ .Values.database.secretName }}
+
+            - name: Password
+              valueFrom:
+                secretKeyRef:
+                  key: Username
+                  name: {{ .Values.database.secretName }}

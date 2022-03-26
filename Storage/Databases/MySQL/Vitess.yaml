@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-storage-database-vitess-operator
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-database-vitess-operator-helm'
+    spec:
+      project: core
+
+      source:
+        repoURL: https://github.com/zalando/postgres-operator.git
+        path: charts/postgres-operator
+        targetRevision: master
+        helm:
+          releaseName: postgres-operator
+          values: |
