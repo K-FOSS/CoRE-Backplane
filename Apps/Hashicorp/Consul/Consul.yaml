@@ -27,6 +27,14 @@ spec:
       name: '{{cluster}}-consul'
     spec:
       project: core
+
+      ignoreDifferences:
+        - group: v1
+          kind: Service
+          name: infra1-dc1-dns
+          jqPathExpressions:
+            - .spec.allocateLoadBalancerNodePorts
+
       source:
         repoURL: https://helm.releases.hashicorp.com
         chart: consul
