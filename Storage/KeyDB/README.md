@@ -4,18 +4,22 @@
 
 We currently manually "use" 3 "databases" and these are due to the applications they are used being critical to the deployment and maintence of the KeyDB system and everything else
 
-| Database | Application         | Purpose                      |
-|    0     | Core DNS            | Distributed DNS Cache        |
-|    1     | Authentik Cache     | Authentik        |
-|    2     | Authentik Queue     | TODO        |
-|    3     | Authentik websocket | TODO        |
-|    4     | Authentik Outpost   | TODO        |
-| 5        | Pomerium            | SSO Audited Proxy/Gatekeeper |
-| 6        | AWX/Ansible         | Ansible Tower, Automation    |
-| 10       | ArgoCD              | The deployerer               |
-| 11       | Cortex              | Metrics S3                   |
-| 12       | Loki                | Logs S3                      |
-| 13       | Tempo               | Traces Store                 |
+| Database | Application         | Purpose                           |
+|    0     | Core DNS & Harbor   | Distributed DNS Cache             |
+|    1     | Authentik Cache     | Authentik                         |
+|    2     | Authentik Queue     | TODO                              |
+|    3     | Authentik websocket | TODO                              |
+|    4     | Authentik Outpost   | TODO                              |
+| 5        | Pomerium            | SSO Audited Proxy/Gatekeeper      |
+| 6        | AWX/Ansible         | Ansible Tower, Automation         |
+| 7        | Harbor              | Container Images, Charts, etc     |
+| 8        | Harbor              | Container Images, Charts, etc     |
+| 9        | Harbor              | Container Images, Charts, etc     |
+| 10       | ArgoCD              | The deployerer                    |
+| 11       | Cortex              | Metrics S3                        |
+| 12       | Loki                | Logs S3                           |
+| 13       | Tempo               | Traces Store                      |
+| 14       | Harbor               | Traces Store                      |
 | 15       | CoTURN    
 
 
