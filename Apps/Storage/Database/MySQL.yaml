@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-storage-database-vitess-operator
+  name: core-backplane-storage-database-mysql-deploy
   namespace: argocd
 spec:
   generators:
@@ -9,17 +9,23 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+
   template:
     metadata:
-      name: '{{cluster}}-database-vitess-operator-helm'
+      name: '{{cluster}}-database-mysql-deploy'
     spec:
       project: core
-
+      syncPolicy:
+        automated: {}
       source:
+        path: Storage/Databases/MySQL
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
-        path: Storage/Databases/MySQL/Operator
-        targetRevision: master
+        targetRevision: HEAD
+        directory:
+          recurse: false
+          jsonnet: {}
+
 
       destination:
         server: '{{url}}'
-        namespace: core-prod
+        namespace: argocd
