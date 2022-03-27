@@ -252,6 +252,7 @@ spec:
               defaultConfig:
                 tracing:
                   sampling: 100
+                  max_path_tag_length: 99999
                   zipkin:
                     address: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:9411
 
@@ -259,6 +260,8 @@ spec:
             global:
               # Used to locate istiod.
               istioNamespace: istio-system
+
+              enableTracing
               # enable pod disruption budget for the control plane, which is used to
               # ensure Istio control plane components are gradually upgraded or recovered.
               defaultPodDisruptionBudget:

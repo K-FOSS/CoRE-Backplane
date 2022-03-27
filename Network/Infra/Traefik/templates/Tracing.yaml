@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracing
+  namespace: istio-system
+  labels:
+    app: jaeger
+spec:
+  ports:
+    - name: http-query
+      port: 80
+      protocol: TCP
+    # Note: Change port name if you add '--query.grpc.tls.enabled=true'
+    - name: grpc-query
+      port: 16685
+      protocol: TCP
+  type: ExternalName
+  externalName: tempo-core-tempo-distributed-gateway.core-prod.svc.cluster.local
+---
+# Jaeger implements the Zipkin API. To support swapping out the tracing backend, we use a Service named Zipkin.
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: zipkin
+  name: zipkin
+  namespace: istio-system
+spec:
+  ports:
+    - port: 80
+      name: http-query
+  type: ExternalName
+  externalName: tempo-core-tempo-distributed-gateway.core-prod.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: istio-system
+  labels:
+    app: jaeger
+spec:
+  ports:
+  - name: jaeger-collector-http
+    port: 14268
+    targetPort: 14268
+    protocol: TCP
+  - name: jaeger-collector-grpc
+    port: 14250
+    targetPort: 14250
+    protocol: TCP
+  - port: 9411
+    targetPort: 9411
+    name: http-zipkin
+  type: ExternalName
+  externalName: tempo-core-tempo-distributed-distributor.core-prod.svc.cluster.local
