@@ -11,6 +11,15 @@ spec:
     - name: zone1
       gateway:
         replicas: 1
+        secureTransport:
+          required: true
+          tls:
+            certSecret:
+              name: myloginspace-default-certificates
+              key: tls.crt
+            keySecret:
+              name: myloginspace-default-certificates
+              key: tls.key
         extraFlags:
           mysql_auth_server_impl: ldap
           mysql_ldap_auth_config_file: /run/secrets/ldapauth/ldapconfig.json
