@@ -27,10 +27,19 @@ spec:
           - name: ldap-config
             mountPath: /run/secrets/ldapauth
             readOnly: true
+
+          - name: ldap-tls
+            mountPath: /TLS/LDAP
+            readOnly: true
         extraVolumes:
           - name: ldap-config
             secret:
               secretName: database-mysql-vitess-ldap
+              optional: false
+
+          - name: ldap-tls
+            secret:
+              secretName: myloginspace-default-certificates
               optional: false
         resources:
           requests:
