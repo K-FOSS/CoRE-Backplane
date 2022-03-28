@@ -17,6 +17,7 @@ spec:
       containers:
         - name: bytebase
           image: "bytebase/bytebase:dev-ci"
+          args: ["--host", "https://db.mylogin.space", "--port", "80", "--data", "/var/opt/bytebase", '--debug']
           env:
             - name: NODE_ENV
               value: 'development'
@@ -29,12 +30,22 @@ spec:
           volumeMounts:
             - mountPath: /var/opt/bytebase
               name: sqlite
+
+            - mountPath: /var/opt/bytebase/keys/release.pub.pem
+              name: config
+              subPath: jwtKey
           readinessProbe:
             httpGet:
               path: /api/actuator/info
               port: web
             initialDelaySeconds: 2
             periodSeconds: 2
+        
+      volumes:
+        - name: config
+          configMap:
+            name: bytebase-key
+
   volumeClaimTemplates:
     - metadata:
         name: sqlite
