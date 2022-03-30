@@ -1,5 +1,5 @@
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: ferretdb-core
   labels:
@@ -10,12 +10,6 @@ spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: ferretdb-core
-
-  strategy:
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 25%
-    type: RollingUpdate
 
   template:
     metadata:
@@ -32,6 +26,9 @@ spec:
       containers:
         - name: mongodb
           image: mongo:4.4.6
+          volumeMounts:
+            - name: mongo-data
+              mountPath: /data/db
           args:
             - --port=37017
           ports:
@@ -43,7 +40,7 @@ spec:
           image: ghcr.io/ferretdb/ferretdb:0.0.6
           args:
             - -listen-addr=:27017
-            - -mode=diff-proxy
+            - -mode=proxy
             - '-postgresql-url=postgres://$(Username):$(Password)@{{ .Values.database.hostname }}:5432/$(Database)'
 
           securityContext:
@@ -70,3 +67,12 @@ spec:
                 secretKeyRef:
                   key: Password
                   name: {{ .Values.database.secretName }}
+
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 10Gi
