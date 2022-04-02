@@ -22,17 +22,6 @@ spec:
         targetRevision: 1.10.0
         helm: 
           values: |
-            # Default values for pxc-cluster.
-            # This is a YAML-formatted file.
-            # Declare variables to be passed into your templates.
-
-            finalizers:
-              - delete-pxc-pods-in-order
-            ## Set this if you want to delete proxysql persistent volumes on cluster deletion
-              - delete-proxysql-pvc
-            ## Set this if you want to delete database persistent volumes on cluster deletion
-              - delete-pxc-pvc
-
             nameOverride: ""
             fullnameOverride: ""
 
@@ -154,7 +143,7 @@ spec:
                 size: 8Gi
 
               # If you set this to true the cluster will be created without TLS
-              disableTLS: false
+              disableTLS: true
 
               # disable Helm creating TLS certificates if you want to let the operator
               # request certificates from cert-manager
@@ -164,13 +153,13 @@ spec:
               # a pre-existing secret of the same name.
               # clusterSecretName:
               readinessProbes:
-                initialDelaySeconds: 15
+                initialDelaySeconds: 300
                 timeoutSeconds: 15
                 periodSeconds: 30
                 successThreshold: 1
                 failureThreshold: 5
               livenessProbes:
-                initialDelaySeconds: 300
+                initialDelaySeconds: 600
                 timeoutSeconds: 5
                 periodSeconds: 10
                 successThreshold: 1
@@ -187,7 +176,7 @@ spec:
 
             haproxy:
               enabled: true
-              size: 3
+              size: 2
               image: ""
               replicasServiceEnabled: true
               # imagePullPolicy: Always
@@ -450,7 +439,7 @@ spec:
               #   - 1001
 
             logcollector:
-              enabled: true
+              enabled: false
               image: ""
               # configuration: |
               #   [OUTPUT]
