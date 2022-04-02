@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-redis-gitlab-core
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-redis-gitlab-core'
+    spec:
+      project: core
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Storage/Twemproxy/TwemproxyChart
+        targetRevision: main
+        helm:
+          releaseName: gitlab-redis-core
+          values: |
+            twemproxy:
+              config:
+                servers:
+                  - keydb.service.kjdev:6379:25
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
