@@ -1,0 +1,17 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-s3-{{ .Values.secretSuffix }}-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-s3-{{ .Values.secretSuffix }}
+  data:
+    - secretKey: S3SecretKey
+      remoteRef:
+        key: GitLab
+        property: S3SecretKey
+

@@ -1,0 +1,21 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-oidc-{{ .Values.secretSuffix }}-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-oidc-{{ .Values.secretSuffix }}
+  data:
+    - secretKey: OpenIDClient
+      remoteRef:
+        key: GitLab
+        property: OpenIDClient
+
+    - secretKey: OpenIDSecret
+      remoteRef:
+        key: GitLab
+        property: OpenIDSecret

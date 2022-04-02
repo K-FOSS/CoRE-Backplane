@@ -1,0 +1,16 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-kas-{{ .Values.secretSuffix }}-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-kas-{{ .Values.secretSuffix }}
+  data:
+    - secretKey: shared_secret
+      remoteRef:
+        key: GitLab
+        property: KASSecret

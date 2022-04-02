@@ -1,0 +1,21 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-praefect-database-{{ .Values.secretSuffix }}-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-praefect-database-{{ .Values.secretSuffix }}
+  data:
+    - secretKey: PraefectDatabaseUsername
+      remoteRef:
+        key: GitLab
+        property: PraefectDatabaseUsername
+
+    - secretKey: PraefectDatabasePassword
+      remoteRef:
+        key: GitLab
+        property: PraefectDatabasePassword
