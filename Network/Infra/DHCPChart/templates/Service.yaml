@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dhcp
+spec:
+  type: ClusterIP
+  ports:
+    - port: 67
+      targetPort: bootps
+      protocol: bootps
+      appProtocol: UDP
+      name: bootps-udp
+    
+    - port: 67
+      targetPort: bootps
+      protocol: bootps
+      appProtocol: UDP
+      name: bootps-udp
+  selector:
+    app: dhcp

@@ -1,1 +1,28 @@
-
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dhcp
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: dhcp
+  template:
+    metadata:
+      labels:
+        app: dhcp
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - image: kristianfjones/kea:vps1-core
+          name: dhcp
+          securityContext:
+            readOnlyRootFilesystem: true
+          ports:
+            - name: dhcp
+              containerPort: bootps
