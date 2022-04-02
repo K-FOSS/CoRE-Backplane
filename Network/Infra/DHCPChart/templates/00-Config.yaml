@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ template "dhcp.fullname" . }}-coturn-tpl-config'
+  labels:
+    app.kubernetes.io/name: {{ include "dhcp.name" . }}
+    helm.sh/chart: {{ include "dhcp.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  turnserver.conf: |{{`
+    listening-port=3478
+
+    min-port=49152
+    max-port=65535
+
+    fingerprint
+
+    external-ip=66.165.222.101
+
+    psql-userdb="postgresql://{{ .Username }}:{{ .Password }}@psql.service.dc1.kjdev:5432/{{ .DatabaseDatabase }}?sslmode=disable"
+
+    redis-statsdb="ip=10.1.1.68 dbname=15 port=6379 connect_timeout=30"
+
+    realm=nat.ipaddr.network
+
+    log-file=stdout
+    syslog
+    pidfile=/var/tmp/turnserver.pid
+
+    # Specify the user for the TURN authentification
+    # Enable long-term credential mechanism
+    
+    no-cli
+    verbose
+`}}
+    {{ range $key, $value := .Values.extraConfig -}}
+    {{ $key }}={{ $value }}
+    {{ end }}

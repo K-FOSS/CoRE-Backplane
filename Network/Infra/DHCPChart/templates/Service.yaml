@@ -1,20 +1,23 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: dhcp
+  name: {{ include "dhcp.fullname" . }}-dhcp
+  labels:
+    lan-mode: 'private'
+{{ include "dhcp.labels" . | indent 4 }}
 spec:
-  type: ClusterIP
+  clusterIP: None
   ports:
     - port: 67
-      targetPort: bootps
-      protocol: bootps
-      appProtocol: UDP
-      name: bootps-udp
-    
+      targetPort: udp-dhcp
+      protocol: UDP
+      appProtocol: bootps
+      name: udp-dhcp
+
     - port: 67
-      targetPort: bootps
-      protocol: bootps
-      appProtocol: UDP
-      name: bootps-udp
+      targetPort: tcp-dhcp
+      protocol: TCP
+      appProtocol: bootps
+      name: tcp-dhcp
   selector:
-    app: dhcp
+    {{- include "dhcp.selectorLabels" . | nindent 4 }}

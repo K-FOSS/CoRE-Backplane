@@ -1,28 +1,62 @@
 apiVersion: apps/v1
+{{- $podAnnotations := .Values.podAnnotations }}
 kind: Deployment
 metadata:
-  name: dhcp
+  name: {{ include "dhcp.fullname" . }}
+  labels:
+{{ include "dhcp.labels" . | indent 4 }}
 spec:
-  replicas: 1
-  revisionHistoryLimit: 3
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: dhcp
+      {{- include "dhcp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: dhcp
+        {{- include "dhcp.selectorLabels" . | nindent 8 }}
+      {{- if $podAnnotations }}
+      annotations:
+        {{- range $key, $value := $podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      {{- end }}
     spec:
-      securityContext:
-        runAsUser: 1000
-        runAsNonRoot: true
-        runAsGroup: 1000
-        fsGroup: 1000
       containers:
-        - image: kristianfjones/kea:vps1-core
-          name: dhcp
-          securityContext:
-            readOnlyRootFilesystem: true
+        - name: 'dhcp'
+          image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ['/usr/bin/turnserver']
+          args: ['-c', '/etc/coturn/turnserver.conf']
           ports:
-            - name: dhcp
-              containerPort: bootps
+            - name: udp-dhcp
+              containerPort: 67
+              protocol: UDP
+
+            - name: tcp-dhcp
+              containerPort: 67
+              protocol: TCP
+
+          volumeMounts:
+            - name: var-tmp
+              mountPath: /var/tmp
+
+            - name: coturn-config
+              mountPath: /etc/coturn/turnserver.conf
+              subPath: turnserver.conf
+              readOnly: true
+{{- range .Values.extraSecrets }}
+            - name: {{ .name }}
+              mountPath: {{ .mountPath }}
+              readOnly: true
+{{- end }}
+      volumes:
+        - name: var-tmp
+          emptyDir: {}
+        - name: coturn-config
+          secret:
+            secretName: {{ include "dhcp.fullname" . }}
+{{- range .Values.extraSecrets }}
+        - name: {{ .name }}
+          secret:
+            secretName: {{ .name }}
+{{- end }}
