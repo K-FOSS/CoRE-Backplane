@@ -9,6 +9,18 @@ spec:
     kind: ClusterSecretStore
   target:
     name: gitlab-s3-{{ .Values.secretSuffix }}
+    template:
+      engineVersion: v2
+      data:
+        # multiline string
+        connection: |
+          provider: AWS
+          aws_access_key_id: 'gitlab'
+          aws_secret_access_key: '{{ .S3SecretKey }}'
+          host: s3.mylogin.space
+          endpoint: https://s3.mylogin.space
+          path_style: true
+          region: us-east-1
   data:
     - secretKey: S3SecretKey
       remoteRef:
