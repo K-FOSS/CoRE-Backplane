@@ -119,13 +119,20 @@ spec:
                 domain: git.writemy.codes
               ingress:
                 annotations:
-                  cert-manager.io/cluster-issuer: letsencrypt-prod
+                  cert-manager.io/cluster-issuer: kjdev-cluster
                   external-dns.alpha.kubernetes.io/target: dc1-k8s.resolvemy.host.
                   traefik.ingress.kubernetes.io/router.entrypoints: websecure
                   traefik.ingress.kubernetes.io/router.tls: 'true'
                 class: traefik-core
                 configureCertmanager: false
                 provider: traefik-core
+                common:
+                  labels:
+                    lan-mode: private	
+                    wan-mode: public	
+                labels:
+                  lan-mode: private	
+                  wan-mode: public
                 tls:
                   enabled: true
                   secretName: gitlab-certificate
