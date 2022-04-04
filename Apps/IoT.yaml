@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-iot
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-core-iot'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+
+      source:
+        path: Apps
+        repoURL: https://gitlab.git.writemy.codes/KJDev/core-iot.git
+        targetRevision: HEAD
+        directory:
+          recurse: true
+          jsonnet: {}
+
+      destination:
+        server: '{{url}}'
+        namespace: argocd
