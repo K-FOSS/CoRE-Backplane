@@ -22,6 +22,6 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 | 14       | Harbor               | Traces Store                      |
 | 15       | CoTURN    
 
-
+| 40 | Grafana | Yay!
 
 Further usage relies upon ArgoCD, Database Operator, KeyDB, TwemProxy, OAM/KubeVela, and Crossplane ****TODO: Make that stuff****
