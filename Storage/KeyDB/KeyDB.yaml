@@ -10,14 +10,14 @@ spec:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
             loadBalancerIP: 10.1.1.68
-            externalNodes: "['infra1-dc1-keydb-headless.service.dc1.kjdev']"
+            externalNodes: "[]"
             replicas: '3'
 
-          - cluster: infra1-dc1
-            url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
-            loadBalancerIP: 10.1.1.67
-            externalNodes: "['k0s-cntrl-keydb-headless.service.dc1.kjdev']"
-            replicas: '2'
+          # - cluster: infra1-dc1
+          #   url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
+          #   loadBalancerIP: 10.1.1.67
+          #   externalNodes: "['k0s-cntrl-keydb-headless.service.dc1.kjdev']"
+          #   replicas: '2'
   template:
     metadata:
       name: '{{cluster}}-keydb-core'
