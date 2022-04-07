@@ -30,6 +30,10 @@ spec:
             # This is a YAML-formatted file.
             # Declare variables to be passed into your templates.
 
+            imagePullSecrets: []
+            nameOverride: ""
+            fullnameOverride: ""
+
             # To configure MetalLB, you must specify ONE of the following two
             # options.
 
@@ -41,6 +45,9 @@ spec:
               # create specifies whether to install and use Pod Security Policies.
               create: true
 
+            webhooks:
+              enable: true
+
             prometheus:
               # scrape annotations specifies whether to add Prometheus metric
               # auto-collection annotations to pods. See
@@ -50,7 +57,7 @@ spec:
               # (https://github.com/coreos/prometheus-operator) for more powerful
               # monitoring configuration. If you use the Prometheus operator, this
               # can be left at false.
-              scrapeAnnotations: false
+              scrapeAnnotations: true
 
               # port both controller and speaker will listen on for metrics
               metricsPort: 7472
@@ -67,7 +74,7 @@ spec:
               podMonitor:
 
                 # enable support for Prometheus Operator
-                enabled: false
+                enabled: true
 
                 # optional additionnal labels for podMonitors
                 additionalLabels: {}
@@ -146,13 +153,17 @@ spec:
             controller:
               enabled: true
               # -- Controller log level. Must be one of: `all`, `debug`, `info`, `warn`, `error` or `none`
-              logLevel: error
+              logLevel: info
               image:
                 repository: quay.io/metallb/controller
-                tag: main
+                
+                pullPolicy: Always
               serviceAccount:
                 # Specifies whether a ServiceAccount should be created
                 create: true
+                # The name of the ServiceAccount to use. If not set and create is
+                # true, a name is generated using the fullname template
+                name: ""
                 annotations: {}
               securityContext:
                 runAsNonRoot: true
@@ -195,6 +206,8 @@ spec:
                 mlBindPort: 7946
               image:
                 repository: quay.io/metallb/speaker
+                
+                pullPolicy: Always
               serviceAccount:
                 # Specifies whether a ServiceAccount should be created
                 create: true
@@ -238,11 +251,11 @@ spec:
                 # FRR_LOGGING_LEVEL used to set logging level for all running frr processes.
                 # Possible settings are :-
                 #  informational, warning, errors and debugging.
-                logLevel: warning
+                logLevel: informational
                 image:
                   repository: quay.io/frrouting/frr
                   tag: stable_7.5
-                  pullPolicy:
+                  pullPolicy: Always
       destination:
         server: '{{url}}'
         namespace: metallb-system
