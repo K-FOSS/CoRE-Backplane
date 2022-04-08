@@ -8,13 +8,11 @@ spec:
   gateways:
     - kjmedia-gateway
   http:
-  - match:
-    - uri:
-        prefix: /status
-    - uri:
-        prefix: /delay
-    route:
-    - destination:
-        port:
-          number: 8000
-        host: httpbin
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            port:
+              name: http
+            host: jellyfin-core.lab-prod.svc.cluster.local
