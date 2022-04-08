@@ -7,12 +7,26 @@ spec:
     - '*.kjmedia.stream'
   gateways:
     - kjmedia-gateway
-  http:
+  tls:
     - match:
-        - uri:
-            prefix: /
+        - port: 443
+          sniHosts:
+            - jellyfin.kjmedia.stream
       route:
         - destination:
+            host: jellyfin-core.lab-prod.svc.cluster.local
             port:
               number: 8096
-            host: jellyfin-core.lab-prod.svc.cluster.local
+          weight: 100
+
+    - match:
+        - port: 443
+          sniHosts:
+            - ytdl.kjmedia.stream
+      route:
+        - destination:
+            host: ytdl-core-youtubedl-material.lab-prod.svc.cluster.local
+            port:
+              number: 17442
+          weight: 100
+
