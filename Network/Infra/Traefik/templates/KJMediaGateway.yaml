@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: kjmedia-gateway
+spec:
+  selector:
+    istio: ingress # use istio default ingress gateway
+  servers:
+    - port:
+        number: 443
+        name: https-tcp
+        protocol: TLS
+      tls:
+        mode: SIMPLE
+        credentialName: kjmediastream-default-certificates
+      hosts:
+        - '*.kjmedia.stream'
