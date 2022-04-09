@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-lab-kjmedia-stash-porn
+  namespace: argocd
+spec:
+  destination:
+    server: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+    namespace: lab-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+  source:
+    repoURL: https://k8s-at-home.com/charts/
+    chart: stash
+    path: stash
+    targetRevision: 3.2.0
+    helm:
+      releaseName: stash-core
+      values: |
+        podSecurityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+
+        podLabels:
+          sidecar.istio.io/inject: 'true'
+
+        podAnnotations:
+          sidecar.istio.io/inject: 'true'
+          
+        ingress:
+          main:
+            enabled: false
+
+        env:
+          # -- Set the container port
+          STASH_PORT: 9999
+          # STASH_STASH:
+          # STASH_GENERATED:
+          # STASH_METADATA:
+          # STASH_CACHE:
+
+
+        persistence:
+          config:
+            enabled: true
+            existingClaim: lab-core-kjmedia-configs
+            subPath: Stash
+
+          media:
+            enabled: true
+            mountPath: /Media
+            existingClaim: lab-core-kjmedia-media
+
