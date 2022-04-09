@@ -1,0 +1,15 @@
+apiVersion: logging.banzaicloud.io/v1beta1
+kind: Flow
+metadata:
+  name: {{ include "keydb.fullname" . }}-health
+  labels:
+    {{ include "keydb.labels" . | nindent 4 }}
+spec:
+  filters:
+    - tag_normaliser: {}
+  match:
+    - select:
+        labels:
+          {{ include "keydb.labels" . | nindent 10 }}
+  localOutputRefs:
+    - loki-output
