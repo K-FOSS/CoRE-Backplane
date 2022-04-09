@@ -36,7 +36,24 @@ spec:
           
         ingress:
           main:
-            enabled: false
+            enabled: true
+            ingressClassName: traefik-core
+            annotations:
+              cert-manager.io/cluster-issuer: kjdev-cluster
+              external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+              traefik.ingress.kubernetes.io/router.entrypoints: websecure
+              traefik.ingress.kubernetes.io/router.tls: 'true'
+              traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+              ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Media Admins"]}'
+            hosts:
+              - host: ytdl.kjmedia.stream
+                paths:
+                  - path: '/'
+                    pathType: Prefix
+            tls:
+              - hosts:
+                  - 'accessmyporn.download'
+                secretName: kjmediastream-default-certificates
 
         env:
           # -- Set the container port
