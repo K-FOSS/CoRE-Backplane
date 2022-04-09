@@ -116,13 +116,11 @@ startupProbe:
   failureThreshold: 24
 
 # Lifecycle Hooks
-lifecycle: {}
-  # preStop:
-  #   exec:
-  #     command:
-  #       - sh
-  #       - -c
-  #       - "sleep 15; kill 1"
+lifecycle:
+  preStop:
+    exec:
+      command:
+        - /usr/local/bin/keydb-cli
 
 persistentVolume:
   enabled: true
