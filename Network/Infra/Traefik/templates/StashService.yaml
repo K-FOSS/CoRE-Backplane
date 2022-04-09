@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: kjmedia-jellyfin-ingress-service
+spec:
+  hosts:
+    - accessmyporn.download
+  gateways:
+    - traefik-gateway
+  http:
+    - match:
+        - uri:
+            prefix: /
+      route:
+        - destination:
+            port:
+              number: 9999
+            host: stash-core.lab-prod.svc.cluster.local
+
