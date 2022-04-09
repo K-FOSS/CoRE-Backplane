@@ -7,9 +7,13 @@ metadata:
 spec:
   filters:
     - tag_normaliser: {}
+    - parser:
+        remove_key_name_field: true
+        parse:
+          type: logfmt
   match:
     - select:
         labels:
-          {{ include "keydb.labels" . | nindent 10 }}
+          app.kubernetes.io/name: keydb
   localOutputRefs:
     - loki-output
