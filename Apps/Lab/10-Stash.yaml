@@ -23,11 +23,6 @@ spec:
     helm:
       releaseName: stash-core
       values: |
-        podSecurityContext:
-          runAsUser: 1000
-          runAsGroup: 1000
-          fsGroup: 1000
-
         podLabels:
           sidecar.istio.io/inject: 'true'
 
@@ -58,8 +53,7 @@ spec:
         env:
           # -- Set the container port
           STASH_PORT: 9999
-          USER: '1000'
-          # STASH_STASH:
+          STASH_STASH: /config
           # STASH_GENERATED:
           # STASH_METADATA:
           # STASH_CACHE:
