@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-aaa-secrets
+  name: core-backplane-aaa-extras
   namespace: argocd
 spec:
   generators:
@@ -13,13 +13,13 @@ spec:
             ingress: idp.mylogin.space
   template:
     metadata:
-      name: '{{cluster}}-aaa-secrets'
+      name: '{{cluster}}-aaa-extras'
     spec:
       project: core
       syncPolicy:
         automated: {}
       source:
-        path: AAA/Secrets
+        path: AAA/ExtrasChart
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: main
         helm:
