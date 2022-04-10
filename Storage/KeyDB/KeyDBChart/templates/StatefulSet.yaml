@@ -30,6 +30,7 @@ spec:
       labels:
         {{ include "keydb.labels" . | nindent 8 }}
     spec:
+      priorityClassName: 'system-cluster-critical'
       affinity:
         {{- include "common.tplvalues.render" (dict "value" .Values.affinity "context" $) | nindent 8 }}
       {{- if .Values.extraInitContainers }}
