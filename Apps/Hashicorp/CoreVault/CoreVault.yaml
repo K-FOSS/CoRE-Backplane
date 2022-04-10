@@ -195,7 +195,8 @@ spec:
                   }
                 disruptionBudget:
                   enabled: true
-                  maxUnavailable: null
+                  maxUnavailable: 1
+
                 enabled: true
                 raft:
                   config: |
@@ -253,14 +254,14 @@ spec:
                 successThreshold: 1
                 timeoutSeconds: 3
               logFormat: json
-              logLevel: debug
+              logLevel: warn
               networkPolicy:
                 egress: null
                 enabled: false
               nodeSelector: {}
               postStart: null
               preStopSleepSeconds: 5
-              priorityClassName: ''
+              priorityClassName: 'system-cluster-critical'
               readinessProbe:
                 enabled: true
                 failureThreshold: 2
