@@ -2,18 +2,12 @@ apiVersion: logging.banzaicloud.io/v1beta1
 kind: Flow
 metadata:
   name: {{ include "keydb.fullname" . }}-logflow
-  labels:
-    {{ include "keydb.labels" . | nindent 4 }}
 spec:
   filters:
     - tag_normaliser: {}
-    - parser:
-        remove_key_name_field: true
-        parse:
-          type: logfmt
   match:
     - select:
         labels:
-          app.kubernetes.io/name: keydb
+          app.kubernetes.io/name: democratic-csi
   localOutputRefs:
     - loki-output
