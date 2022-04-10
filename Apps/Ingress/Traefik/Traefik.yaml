@@ -37,6 +37,19 @@ spec:
               - '--global.checknewversion'
               - '--global.sendanonymoususage'
 
+            env:
+              - name: JAEGER_AGENT_HOST
+                value: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev
+
+              - name: JAEGER_AGENT_PORT
+                value: '6832'
+
+              - name: JAEGER_SAMPLER_TYPE
+                value: '0.25'
+              
+              - name: JAEGER_TAGS
+                value: app=traefik-core
+
             priorityClassName: 'system-cluster-critical'
 
             securityContext:
@@ -130,12 +143,6 @@ spec:
                   domains: null
                   enabled: true
                   options: ''
-
-            tracing:
-              jaeger:
-                samplingParam: 0.25
-                samplingType: const
-                localAgentHostPort: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:6831
 
             service:
               enabled: true
