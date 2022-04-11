@@ -133,7 +133,6 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-    {{- with .Values.affinity }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -141,7 +140,6 @@ spec:
                 matchLabels:
                   {{ include "powerdns.labels" . | indent 18 }}
               topologyKey: kubernetes.io/hostname
-    {{- end }}
     {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
