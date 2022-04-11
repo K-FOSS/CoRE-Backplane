@@ -428,7 +428,15 @@ spec:
               enabled: false
             
             server:
-              affinity: null
+              affinity: |
+                podAntiAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    - labelSelector:
+                        matchLabels:
+                          app: {{ template "consul.name" . }}
+                          release: "{{ .Release.Name }}"
+                          component: server
+                      topologyKey: kubernetes.io/hostname
               annotations: null
               bootstrapExpect: 3
               connect: true
