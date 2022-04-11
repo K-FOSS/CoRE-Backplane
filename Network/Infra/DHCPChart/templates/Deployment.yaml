@@ -4,6 +4,7 @@ kind: Deployment
 metadata:
   name: {{ include "dhcp.fullname" . }}
   labels:
+    logs: loki-myloginspace
 {{ include "dhcp.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
@@ -13,6 +14,7 @@ spec:
   template:
     metadata:
       labels:
+        logs: loki-myloginspace
         {{- include "dhcp.selectorLabels" . | nindent 8 }}
       {{- if $podAnnotations }}
       annotations:
