@@ -47,6 +47,19 @@ spec:
             podAnnotations:
               sidecar.istio.io/inject: 'true'
 
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: app.kubernetes.io/instance
+                            operator: In
+                            values:
+                              - rdns-core
+                      topologyKey: kubernetes.io/hostname
+
             extraVolumeMounts:
               - name: minio-token
                 mountPath: "/var/secrets/minio-token"
@@ -170,7 +183,7 @@ spec:
 
             proxy:
               existingTLSSecret: pomerium-tls
-              replicaCount: 2
+              replicaCount: 3
 
             rbac:
               create: true
