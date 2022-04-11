@@ -1,0 +1,12 @@
+apiVersion: logging.banzaicloud.io/v1beta1
+kind: Flow
+metadata:
+  name: default-myloginspace-logging-flow
+  namespace: metallb-system
+spec:
+  match:
+    - select:
+        labels:
+          logs: loki-myloginspace
+  localOutputRefs:
+    - loki-output
