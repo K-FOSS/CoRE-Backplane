@@ -7,16 +7,23 @@ metadata:
   namespace: core-prod
 spec:
   allocateLoadBalancerNodePorts: false
-  #externalTrafficPolicy: Local
+  externalTrafficPolicy: Local
   ipFamilies:
     - IPv4
   ipFamilyPolicy: SingleStack
   loadBalancerIP: 10.1.1.67
   ports:
-  - name: udp-67
-    port: 67
-    protocol: UDP
-    targetPort: 67
+    - name: udp-dhcp
+      port: 67
+      protocol: UDP
+      appProtocol: bootps
+      targetPort: 67
+
+    - port: 67
+      targetPort: tcp-dhcp
+      protocol: TCP
+      appProtocol: bootps
+      name: tcp-dhcp
   selector:
     {{- include "dhcp.selectorLabels" . | nindent 4 }}
   sessionAffinity: None
