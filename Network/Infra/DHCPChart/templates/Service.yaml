@@ -1,9 +1,14 @@
 apiVersion: v1
+{{- $serviceAnnotations := .Values.serviceAnnotations }}
 kind: Service
 metadata:
   name: {{ include "dhcp.fullname" . }}-dhcp
+  {{- if $serviceAnnotations }}
   annotations:
-    {{ .Values.serviceAnnotations | indent 4 }}
+    {{- range $key, $value := $serviceAnnotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
   labels:
 {{ include "dhcp.labels" . | indent 4 }}
 spec:
