@@ -25,8 +25,7 @@ spec:
         - name: 'dhcp'
           image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}'
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ['/usr/bin/turnserver']
-          args: ['-c', '/etc/coturn/turnserver.conf']
+          command: ['/usr/local/bin/entry.sh']
           ports:
             - name: udp-dhcp
               containerPort: 67
@@ -37,22 +36,34 @@ spec:
               protocol: TCP
 
           volumeMounts:
-            - name: var-tmp
-              mountPath: /var/tmp
+            - name: dhcp-socket
+              mountPath: /var/run/DHCP
 
-            - name: coturn-config
-              mountPath: /etc/coturn/turnserver.conf
-              subPath: turnserver.conf
+            - name: script-vol
+              mountPath: /usr/local/bin/entry.sh
+              subPath: entry.sh
+
+            - name: dhcp-config
+              mountPath: /etc/DHCP
               readOnly: true
+
 {{- range .Values.extraSecrets }}
             - name: {{ .name }}
               mountPath: {{ .mountPath }}
               readOnly: true
 {{- end }}
       volumes:
-        - name: var-tmp
-          emptyDir: {}
-        - name: coturn-config
+        - name: dhcp-socket
+          emptyDir:
+            medium: Memory
+
+        - name: script-vol
+          configMap:
+            name: '{{ template "dhcp.fullname" . }}-entryscript'
+            items:
+              - key: entry.sh
+                path: entry.sh
+        - name: dhcp-config
           secret:
             secretName: {{ include "dhcp.fullname" . }}
 {{- range .Values.extraSecrets }}
