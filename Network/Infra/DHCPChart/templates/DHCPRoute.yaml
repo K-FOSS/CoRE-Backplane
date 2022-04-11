@@ -1,12 +1,12 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteUDP
 metadata:
-  name: ingress-udp-dns
+  name: 'ingress-{{ template "dhcp.fullname" . }}'
 spec:
   entryPoints:
-    - dns
+    - dhcp
   routes:
     - services:
-        - name: dns-rdns-core
-          port: 53
+        - name: '{{ include "dhcp.fullname" . }}-dhcp'
+          port: 67
           weight: 10 
