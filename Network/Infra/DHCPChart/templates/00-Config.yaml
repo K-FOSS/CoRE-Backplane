@@ -349,30 +349,8 @@ data:
           // alias for remote-id, subscriber-id, rfc4580 (which is an alias for
           // subscriber-id) and docsis.
           //
-          // Note that the order matters. Methods are attempted one by one in the
-          // order specified until hardware address is obtained. If you don't care
-          // which method is used, using 'any' is marginally faster than enumerating
-          // them all.
-          //
-          // If mac-sources are not specified, a default value of 'any' is used.
-          "mac-sources": [
-            "client-link-addr-option",
-            "duid",
-            "ipv6-link-local"
-          ],
-          // RFC6422 defines a mechanism called relay-supplied options option. The
-          // relay agent may insert certain options that the server will echo back to
-          // the client, if certain criteria are met. One condition is that the option
-          // must be RSOO-enabled (i.e. allowed to be echoed back). IANA maintains a
-          // list of those options here:
-          // http://www.iana.org/assignments/dhcpv6-parameters/dhcpv6-parameters.xhtml#options-relay-supplied
-          // However, it is possible to allow the server to echo back additional
-          // options.  This entry marks options 110, 120 and 130 as RSOO-enabled.
-          "relay-supplied-options": [
-            "110",
-            "120",
-            "130"
-          ],
+
+
           // Addresses will be assigned with preferred and valid lifetimes
           // being 3000 and 4000, respectively. Client is told to start
           // renewing after 1000 seconds. If the server does not respond
@@ -620,7 +598,7 @@ data:
           // value instructs the server to not send this option for
           // backward compatibility with older DHCP specifications which
           // stated that Client Identifier must not be sent back.
-          "echo-client-id": true,
+          "echo-client-id": false,
           // Collection of Kea DHCPv4 server parameters configuring how
           // the server should process expired DHCP leases.
           "expired-leases-processing": {
