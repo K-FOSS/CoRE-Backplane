@@ -1,30 +1,12 @@
-apiVersion: v1
-kind: Service
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteUDP
 metadata:
-  annotations:
-    metallb.universe.tf/allow-shared-ip: dhcp
-  name: dhcp
-  namespace: core-prod
+  name: ingress-udp-dhcp
 spec:
-  allocateLoadBalancerNodePorts: false
-  #externalTrafficPolicy: Local
-  ipFamilies:
-    - IPv4
-  ipFamilyPolicy: SingleStack
-  loadBalancerIP: 10.1.1.67
-  ports:
-    - name: udp-dhcp
-      port: 67
-      protocol: UDP
-      appProtocol: bootps
-      targetPort: 67
-
-    - port: 67
-      targetPort: tcp-dhcp
-      protocol: TCP
-      appProtocol: bootps
-      name: tcp-dhcp
-  selector:
-    {{- include "dhcp.selectorLabels" . | nindent 4 }}
-  sessionAffinity: None
-  type: LoadBalancer
+  entryPoints:
+    - dhcp
+  routes:
+    - services:
+        - name: '{{ include "dhcp.fullname" . }}-dhcp'
+          port: 67
+          weight: 10 
