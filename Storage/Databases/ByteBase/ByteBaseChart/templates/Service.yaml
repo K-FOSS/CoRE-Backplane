@@ -9,8 +9,15 @@ metadata:
     app: bytebase
 spec:
   ports:
-    - port: 443
-      name: web
+    - name: http-wwwsql
+      port: 80
+      targetPort: http-wwwsql
+      appProtocol: http
+
+    - name: http-bb
+      port: 443
+      targetPort: http-bb
+      appProtocol: http
   clusterIP: None
   selector:
     app: bytebase
