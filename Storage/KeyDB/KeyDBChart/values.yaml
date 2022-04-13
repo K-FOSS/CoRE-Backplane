@@ -119,6 +119,11 @@ startupProbe:
 
 # Lifecycle Hooks
 lifecycle:
+  postStart:
+    exec:
+      command:
+        - /usr/local/bin/keydb-cli
+        - keydb-cli --cluster create keydb-core-0.keydb-core-headles:6379 keydb-core-1.keydb-core-headles:6379 keydb-core-2.keydb-core-headles:6379
   preStop:
     exec:
       command:
