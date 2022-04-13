@@ -13,6 +13,9 @@ spec:
     metadata:
       labels:
         app: bytebase
+        sidecar.istio.io/inject: 'true'
+      annotations:
+        sidecar.istio.io/inject: 'true'
 
     spec:
       containers:
@@ -55,7 +58,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /api/actuator/info
-              port: web
+              port: http-bb
             initialDelaySeconds: 2
             periodSeconds: 2
         
