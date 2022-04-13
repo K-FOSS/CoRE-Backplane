@@ -13,17 +13,17 @@ spec:
     metadata:
       labels:
         app: bytebase
-        sidecar.istio.io/inject: 'true'
-      annotations:
-        sidecar.istio.io/inject: 'true'
+
     spec:
       containers:
         - name: wwwsqldesigner
           image: atjapan2015/wwwsqldesigner
           imagePullPolicy: Always
           env:
-            - name: NODE_ENV
-              value: 'development'
+            - name: BUCKET_NAME
+              value: 'hpcollege'
+
+  
           ports:
             - containerPort: 8080
               name: http-wwwsql
