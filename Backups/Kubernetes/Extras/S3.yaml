@@ -1,0 +1,41 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: backups-velero-s3-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: backups-velero-s3
+  data:
+    - secretKey: S3AccessKey
+      remoteRef:
+        key: PSQLBackups
+        property: S3AccessKey
+      
+    - secretKey: S3Bucket
+      remoteRef:
+        key: PSQLBackups
+        property: S3Bucket
+      
+    - secretKey: S3Endpoint
+      remoteRef:
+        key: PSQLBackups
+        property: S3Endpoint
+      
+    - secretKey: S3Prefix
+      remoteRef:
+        key: PSQLBackups
+        property: S3Prefix
+      
+    - secretKey: S3SecretKey
+      remoteRef:
+        key: PSQLBackups
+        property: S3SecretKey
+      
+    - secretKey: Username
+      remoteRef:
+        key: PSQLBackups
+        property: Username
