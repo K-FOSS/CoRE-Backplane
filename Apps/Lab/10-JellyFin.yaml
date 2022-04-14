@@ -30,9 +30,21 @@ spec:
 
         podLabels:
           sidecar.istio.io/inject: 'true'
+          tenant: 'kjmedia'
 
         podAnnotations:
           sidecar.istio.io/inject: 'true'
+
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution: 
+              - labelSelector:
+                  matchExpressions:
+                    - key: tenant 
+                      operator: In 
+                      values:
+                        - kjmedia 
+                topologyKey: failure-domain.beta.kubernetes.io/zone
           
         ingress:
           main:
