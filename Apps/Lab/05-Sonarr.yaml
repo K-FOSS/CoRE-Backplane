@@ -30,6 +30,13 @@ spec:
 
         priorityClassName: 'nicetohave-priority'
 
+        podLabels:
+          sidecar.istio.io/inject: 'true'
+          tenant: 'kjmedia'
+
+        podAnnotations:
+          sidecar.istio.io/inject: 'true'
+
         service:
           main:
             annotations:
@@ -37,6 +44,17 @@ spec:
             ports:
               http:
                 port: 8989
+
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution: 
+              - labelSelector:
+                  matchExpressions:
+                    - key: tenant 
+                      operator: In 
+                      values:
+                        - kjmedia 
+                topologyKey: kubernetes.io/hostname
 
         ingress:
           main:
