@@ -14,6 +14,7 @@ spec:
             helmName: consul-prod
             name: k0s-dc1
             main: 'true'
+            replicas: 3
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
@@ -22,6 +23,7 @@ spec:
             helmName: consul
             name: infra1-dc1
             main: 'false'
+            replicas: 1
   template:
     metadata:
       name: '{{cluster}}-consul'
@@ -38,7 +40,7 @@ spec:
         repoURL: https://helm.releases.hashicorp.com
         chart: consul
         path: consul
-        targetRevision: 0.41.1
+        targetRevision: 0.42.0
         helm:
           releaseName: '{{helmName}}'
           values: |
@@ -201,14 +203,14 @@ spec:
               logLevel: ''
               nodeSelector: null
               priorityClassName: ''
-              replicas: 2
+              replicas: 1
               resources:
                 limits:
                   cpu: 100m
                   memory: 50Mi
                 requests:
-                  cpu: 100m
-                  memory: 50Mi
+                  cpu: 16m
+                  memory: 16Mi
               serviceAccount:
                 annotations: null
               tolerations: null
@@ -279,9 +281,6 @@ spec:
                 autoGenerate: false
                 secretKey: key
                 secretName: consul-gossip-encryption-key
-              image: hashicorp/consul:1.11.3
-              imageEnvoy: envoyproxy/envoy-alpine:v1.20.2
-              imageK8S: hashicorp/consul-k8s-control-plane:0.41.1
               imagePullSecrets: null
               logJSON: true
               logLevel: debug
@@ -459,14 +458,14 @@ spec:
                 serflan:
                   port: 8301
               priorityClassName: 'system-cluster-critical'
-              replicas: 3
+              replicas: {{ replicas }}
               resources:
                 limits:
                   cpu: 256m
                   memory: 2048Mi
                 requests:
-                  cpu: 100m
-                  memory: 250Mi
+                  cpu: 32m
+                  memory: 128Mi
               securityContext:
                 fsGroup: 1000
                 runAsGroup: 1000
