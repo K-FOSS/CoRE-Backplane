@@ -91,11 +91,13 @@ spec:
                       uid: cn
                 lfs:
                   bucket: 623579a1-8adc-0b12-dd3f-f24793c3a00f-imy3gs
+
                 object_store:
                   connection:
                     key: connection
                     secret: gitlab-s3-{{ environment }}
                   enabled: true
+
                 omniauth:
                   allowBypassTwoFactor: null
                   allowSingleSignOn:
@@ -108,15 +110,19 @@ spec:
                   providers:
                     - secret: gitlab-oidc-{{ environment }}
                   syncProfileFromProvider: null
+
                 terraformState:
                   bucket: 29f1e5ee-1b9c-14da-cc79-6ebe911caa7b-p3e18b
                   enabled: true
 
               edition: ce
+
               gitaly:
                 external: null
+
               hosts:
                 domain: git.writemy.codes
+
               ingress:
                 annotations:
                   cert-manager.io/cluster-issuer: kjdev-cluster
@@ -137,10 +143,13 @@ spec:
                 tls:
                   enabled: true
                   secretName: gitlab-certificate
+
               kas:
                 enabled: true
+
               minio:
                 enabled: false
+
               praefect:
                 dbSecret:
                   key: DatabasePassword
@@ -166,6 +175,7 @@ spec:
                 host: 10.1.1.68
                 password:
                   enabled: false
+
               shell:
                 authToken:
                   key: shared_secret
@@ -175,6 +185,7 @@ spec:
                 connection:
                   string: >-
                     opentracing://jaeger?http_endpoint=http%3A%2F%2Fk0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.kjdev%3A14268%2Fapi%2Ftraces&sampler=probabalistic&sampler_param=0.25
+
               workhorse:
                 secret: gitlab-workhorse-{{ environment }}
                 key: shared_secret

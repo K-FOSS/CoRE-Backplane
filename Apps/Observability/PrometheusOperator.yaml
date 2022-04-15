@@ -25,17 +25,13 @@ spec:
 
         chart: kube-prometheus-stack
         path: kube-prometheus-stack
-        targetRevision: 34.8.0
+        targetRevision: 34.10.0
         helm:
           releaseName: prom-core
           values: |
-            # Default values for kube-prometheus-stack.
-            # This is a YAML-formatted file.
-            # Declare variables to be passed into your templates.
-
             ## Provide a name in place of kube-prometheus-stack for `app:` labels
             ##
-            nameOverride: ""
+            nameOverride: ''
 
             ## Override the deployment namespace
             ##
@@ -56,8 +52,6 @@ spec:
             ## Labels to apply to all resources
             ##
             commonLabels: {}
-            # scmhash: abc123
-            # myLabel: aakkmd
 
             ## Create default rules for monitoring the cluster
             ##
@@ -174,16 +168,6 @@ spec:
                 name: ""
                 annotations: {}
 
-              ## Configure pod disruption budgets for Alertmanager
-              ## ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/#specifying-a-poddisruptionbudget
-              ## This configuration is immutable once created and will require the PDB to be deleted to be changed
-              ## https://github.com/kubernetes/kubernetes/issues/45398
-              ##
-              podDisruptionBudget:
-                enabled: false
-                minAvailable: 1
-                maxUnavailable: ""
-
               ## Alertmanager configuration directives
               ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
               ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
@@ -247,36 +231,6 @@ spec:
               ingress:
                 enabled: false
 
-                # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-                # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-                # ingressClassName: nginx
-
-                annotations: {}
-
-                labels: {}
-
-                ## Hosts must be provided if Ingress is enabled.
-                ##
-                hosts: []
-                  # - alertmanager.domain.com
-
-                ## Paths to use for ingress rules - one path should match the alertmanagerSpec.routePrefix
-                ##
-                paths: []
-                # - /
-
-                ## For Kubernetes >= 1.18 you should specify the pathType (determines how Ingress paths should be matched)
-                ## See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#better-path-matching-with-path-types
-                # pathType: ImplementationSpecific
-
-                ## TLS configuration for Alertmanager Ingress
-                ## Secret must be manually created in the namespace
-                ##
-                tls: []
-                # - secretName: alertmanager-general-tls
-                #   hosts:
-                #   - alertmanager.example.com
-
               ## Configuration for Alertmanager secret
               ##
               secret:
@@ -288,43 +242,6 @@ spec:
               ingressPerReplica:
                 enabled: false
 
-                # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-                # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
-                # ingressClassName: nginx
-
-                annotations: {}
-                labels: {}
-
-                ## Final form of the hostname for each per replica ingress is
-                ## {{ ingressPerReplica.hostPrefix }}-{{ $replicaNumber }}.{{ ingressPerReplica.hostDomain }}
-                ##
-                ## Prefix for the per replica ingress that will have `-$replicaNumber`
-                ## appended to the end
-                hostPrefix: ""
-                ## Domain that will be used for the per replica ingress
-                hostDomain: ""
-
-                ## Paths to use for ingress rules
-                ##
-                paths: []
-                # - /
-
-                ## For Kubernetes >= 1.18 you should specify the pathType (determines how Ingress paths should be matched)
-                ## See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#better-path-matching-with-path-types
-                # pathType: ImplementationSpecific
-
-                ## Secret name containing the TLS certificate for alertmanager per replica ingress
-                ## Secret must be manually created in the namespace
-                tlsSecretName: ""
-
-                ## Separated secret for each per replica Ingress. Can be used together with cert-manager
-                ##
-                tlsSecretPerReplica:
-                  enabled: false
-                  ## Final form of the secret for each per replica ingress is
-                  ## {{ tlsSecretPerReplica.prefix }}-{{ $replicaNumber }}
-                  ##
-                  prefix: "alertmanager"
 
               ## Configuration for Alertmanager service
               ##
@@ -366,31 +283,6 @@ spec:
               ##
               servicePerReplica:
                 enabled: false
-                annotations: {}
-
-                ## Port for Alertmanager Service per replica to listen on
-                ##
-                port: 9093
-
-                ## To be used with a proxy extraContainer port
-                targetPort: 9093
-
-                ## Port to expose on each node
-                ## Only used if servicePerReplica.type is 'NodePort'
-                ##
-                nodePort: 30904
-
-                ## Loadbalancer source IP ranges
-                ## Only used if servicePerReplica.type is "LoadBalancer"
-                loadBalancerSourceRanges: []
-
-                ## Denotes if this Service desires to route external traffic to node-local or cluster-wide endpoints
-                ##
-                externalTrafficPolicy: Cluster
-
-                ## Service type
-                ##
-                type: ClusterIP
 
               ## If true, create a serviceMonitor for alertmanager
               ##
@@ -445,8 +337,6 @@ spec:
                 ##
                 image:
                   repository: quay.io/prometheus/alertmanager
-                  tag: v0.23.0
-                  sha: ""
 
                 ## If true then the user will be responsible to provide a secret with alertmanager configuration
                 ## So when true the config part will be ignored (including templateFiles) and the one in the secret will be used
@@ -542,7 +432,7 @@ spec:
 
                 ## The external URL the Alertmanager instances will be available under. This is necessary to generate correct URLs. This is necessary if Alertmanager is not served from root of a DNS name. string  false
                 ##
-                externalUrl:
+                externalUrl: ''
 
                 ## The route prefix Alertmanager registers HTTP handlers for. This is useful, if using ExternalURL and a proxy is rewriting HTTP routes of a request, and the actual ExternalURL is still true,
                 ## but the server serves requests under a different route prefix. For example for use with kubectl proxy.
@@ -706,34 +596,6 @@ spec:
                 ##
                 enabled: false
 
-                ## Annotations for Grafana Ingress
-                ##
-                annotations: {}
-                  # kubernetes.io/ingress.class: nginx
-                  # kubernetes.io/tls-acme: "true"
-
-                ## Labels to be added to the Ingress
-                ##
-                labels: {}
-
-                ## Hostnames.
-                ## Must be provided if Ingress is enable.
-                ##
-                # hosts:
-                #   - grafana.domain.com
-                hosts: []
-
-                ## Path for grafana ingress
-                path: /
-
-                ## TLS configuration for grafana Ingress
-                ## Secret must be manually created in the namespace
-                ##
-                tls: []
-                # - secretName: grafana-general-tls
-                #   hosts:
-                #   - grafana.example.com
-
               sidecar:
                 dashboards:
                   enabled: true
@@ -752,7 +614,7 @@ spec:
                     allowUiUpdates: false
                 datasources:
                   enabled: true
-                  defaultDatasourceEnabled: true
+                  defaultDatasourceEnabled: false
 
                   ## URL of prometheus datasource
                   ##
@@ -1590,7 +1452,8 @@ spec:
 
               ## Labels to add to the operator pod
               ##
-              podLabels: {}
+              podLabels:
+                logs: loki-myloginspace
 
               ## Annotations to add to the operator pod
               ##
@@ -1711,8 +1574,6 @@ spec:
               ##
               image:
                 repository: quay.io/prometheus-operator/prometheus-operator
-                tag: v0.55.0
-                sha: ""
                 pullPolicy: IfNotPresent
 
               ## Prometheus image to use for prometheuses managed by the operator
@@ -1729,8 +1590,6 @@ spec:
                 # image to use for config and rule reloading
                 image:
                   repository: quay.io/prometheus-operator/prometheus-config-reloader
-                  tag: v0.55.0
-                  sha: ""
 
                 # resource config for prometheusConfigReloader
                 resources:
@@ -1745,8 +1604,6 @@ spec:
               ##
               thanosImage:
                 repository: quay.io/thanos/thanos
-                tag: v0.25.1
-                sha: ""
 
               ## Set a Field Selector to filter watched secrets
               ##
@@ -2256,7 +2113,7 @@ spec:
                 ## prometheus resource to be created with selectors based on values in the helm deployment,
                 ## which will also match the PrometheusRule resources created
                 ##
-                ruleSelectorNilUsesHelmValues: true
+                ruleSelectorNilUsesHelmValues: false
 
                 ## PrometheusRules to be selected for target discovery.
                 ## If {}, select all PrometheusRules
