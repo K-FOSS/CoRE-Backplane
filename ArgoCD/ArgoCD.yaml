@@ -79,6 +79,7 @@ spec:
               styles: ''
               tlsCerts: {}
               tlsCertsAnnotations: {}
+
             controller:
               affinity: {}
               args:
@@ -167,6 +168,7 @@ spec:
               volumeMounts: null
               volumes: null
             createAggregateRoles: false
+
             dex:
               affinity: {}
               containerPortGrpc: 5557
@@ -197,14 +199,14 @@ spec:
                 successThreshold: 1
                 timeoutSeconds: 1
               metrics:
-                enabled: false
+                enabled: true
                 service:
                   annotations: {}
                   labels: {}
                 serviceMonitor:
                   additionalLabels: {}
-                  enabled: false
-                  interval: 30s
+                  enabled: true
+                  interval: 60s
                   metricRelabelings: null
                   namespace: ''
                   relabelings: null
@@ -218,6 +220,7 @@ spec:
               podAnnotations: {}
               podLabels: {}
               priorityClassName: 'tier2-priority'
+
               readinessProbe:
                 enabled: false
                 failureThreshold: 3
@@ -225,7 +228,9 @@ spec:
                 periodSeconds: 10
                 successThreshold: 1
                 timeoutSeconds: 1
+
               resources: {}
+
               serviceAccount:
                 annotations: {}
                 automountServiceAccountToken: true
@@ -238,9 +243,11 @@ spec:
               servicePortMetrics: 5558
               tolerations: null
               topologySpreadConstraints: null
+
               volumeMounts:
                 - mountPath: /shared
                   name: static-files
+
               volumes:
                 - emptyDir: {}
                   name: static-files
@@ -258,8 +265,10 @@ spec:
               networkPolicy:
                 create: false
                 defaultDenyIngress: false
-              podAnnotations: {}
-              podLabels: {}
+              podAnnotations:
+                sidecar.istio.io/inject: 'true'
+              podLabels:
+                sidecar.istio.io/inject: 'true'
               securityContext: {}
               systemDefaultRegistry: ''
             kubeVersionOverride: ''
@@ -270,21 +279,27 @@ spec:
 
             redis:
               enabled: false
+
             redis-ha:
               enabled: false
+
             repoServer:
               affinity: {}
+
               autoscaling:
                 enabled: false
                 maxReplicas: 5
                 minReplicas: 1
                 targetCPUUtilizationPercentage: 50
                 targetMemoryUtilizationPercentage: 50
+
               clusterAdminAccess:
                 enabled: false
+
               clusterRoleRules:
                 enabled: false
                 rules: null
+
               containerPort: 8081
               containerSecurityContext: {}
               copyutil:
@@ -292,6 +307,9 @@ spec:
               env:
                 - name: REDIS_DB
                   value: '10'
+                
+                - name: LOVELY_PLUGINS
+                  value: argocd-vault-replacer
               envFrom:
                 - secretRef:
                     name: argocd-vault-replacer-credentials
@@ -305,6 +323,12 @@ spec:
                 repository: ''
                 tag: ''
               initContainers:
+                - name: argocd-lovely-plugin-download
+                  image: ghcr.io/crumbhole/argocd-lovely-plugin:stable
+                  imagePullPolicy: Always
+                  volumeMounts:
+                    - mountPath: /custom-tools
+                      name: custom-tools
                 - name: argocd-vault-replacer-install
                   image: ghcr.io/crumbhole/argocd-vault-replacer
                   imagePullPolicy: Always
@@ -340,7 +364,8 @@ spec:
                 enabled: false
                 labels: {}
               podAnnotations: {}
-              podLabels: {}
+              podLabels:
+                logs: loki-myloginspace
               priorityClassName: 'tier2-priority'
               rbac: null
               readinessProbe:
@@ -367,9 +392,14 @@ spec:
                 - name: custom-tools
                   mountPath: /bin/argocd-vault-replacer
                   subPath: argocd-vault-replacer
+
+                - name: custom-tools
+                  mountPath: /usr/local/bin/argocd-lovely-plugin
+                  subPath: argocd-lovely-plugin
               volumes:
                 - name: custom-tools
                   emptyDir: {}
+
             server:
               GKEbackendConfig:
                 enabled: false
@@ -394,13 +424,19 @@ spec:
                 application.instanceLabelKey: argocd.argoproj.io/instance
                 url: https://argo.writemy.codes
                 configManagementPlugins: |-
+                  - name: argocd-lovely-plugin
+                    generate:
+                      command: ["argocd-lovely-plugin"]
+
                   - name: argocd-vault-replacer
                     generate:
                       command: ["argocd-vault-replacer"]
+
                   - name: kustomize-argocd-vault-replacer
                     generate:
                       command: ["sh", "-c"]
                       args: ["kustomize build . | argocd-vault-replacer"]
+
                   - name: helm-argocd-vault-replacer
                     init:
                       command: ["/bin/sh", "-c"]
@@ -408,6 +444,7 @@ spec:
                     generate:
                       command: [sh, -c]
                       args: ["helm template -n $ARGOCD_APP_NAMESPACE $ARGOCD_APP_NAME . | argocd-vault-replacer"]
+
                 oidc.config: >
                   name: Authentik
 
