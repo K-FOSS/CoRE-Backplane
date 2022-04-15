@@ -2243,10 +2243,10 @@ spec:
                 ## Standard object's metadata. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#metadata
                 ## Metadata Labels and Annotations gets propagated to the prometheus pods.
                 ##
-                podMetadata: {}
-                # labels:
-                #   app: prometheus
-                #   k8s-app: prometheus
+                podMetadata:
+                  labels:
+                    logs: loki-myloginspace
+                    prometheusComponent: collector
 
                 ## Pod anti-affinity can prevent the scheduler from placing Prometheus replicas on the same node.
                 ## The default value "soft" means that the scheduler should *prefer* to not schedule two replica pods onto the same node but no guarantee is provided.
