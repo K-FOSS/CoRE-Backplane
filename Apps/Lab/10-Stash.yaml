@@ -38,6 +38,17 @@ spec:
         podAnnotations:
           sidecar.istio.io/inject: 'true'
           
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution: 
+              - labelSelector:
+                  matchExpressions:
+                    - key: tenant 
+                      operator: In 
+                      values:
+                        - kjmedia 
+                topologyKey: kubernetes.io/hostname
+
         ingress:
           main:
             enabled: true
