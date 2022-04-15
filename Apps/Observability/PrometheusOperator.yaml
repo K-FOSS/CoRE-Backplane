@@ -2163,7 +2163,6 @@ spec:
                 ##
                 image:
                   repository: quay.io/prometheus/prometheus
-                  tag: v2.33.5
                   sha: ""
 
                 ## Tolerations for use with node taints
@@ -2191,15 +2190,15 @@ spec:
                 ##
                 ## Default configuration will connect to the alertmanager deployed as part of this release
                 ##
-                alertingEndpoints: []
-                # - name: ""
-                #   namespace: ""
-                #   port: http
-                #   scheme: http
-                #   pathPrefix: ""
-                #   tlsConfig: {}
-                #   bearerTokenFile: ""
-                #   apiVersion: v2
+                alertingEndpoints:
+                  - name: cortex-core-mimir-distributed-alertmanager
+                    namespace: core-prod
+                    port: http-metrics
+                    scheme: http
+                    pathPrefix: ""
+                    tlsConfig: {}
+                    bearerTokenFile: ""
+                    apiVersion: v2
 
                 ## External labels to add to any time series or alerts when communicating with external systems
                 ##
@@ -2435,7 +2434,7 @@ spec:
                 additionalRemoteWrite: []
 
                 ## Enable/Disable Grafana dashboards provisioning for prometheus remote write feature
-                remoteWriteDashboards: false
+                remoteWriteDashboards: true
 
                 ## Resource limits & requests
                 ##
@@ -2570,7 +2569,7 @@ spec:
 
                 ## Priority class assigned to the Pods
                 ##
-                priorityClassName: ""
+                priorityClassName: tier2-priority
 
                 ## Thanos configuration allows configuring various aspects of a Prometheus server in a Thanos environment.
                 ## This section is experimental, it may change significantly without deprecation notice in any release.
