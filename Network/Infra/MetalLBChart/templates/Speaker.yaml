@@ -14,7 +14,6 @@ spec:
   template:
     metadata:
       annotations:
-        prometheus.io/port: '7472'
         prometheus.io/scrape: 'true'
       creationTimestamp: null
       labels:
@@ -117,7 +116,6 @@ spec:
           
           ports:
             - containerPort: 7572
-              hostPort: 7572
               name: monitoring
               protocol: TCP
           resources: {}
@@ -197,6 +195,9 @@ spec:
             - /etc/frr_metrics/frr-metrics
           args:
             - --metrics-port=7473
+          ports:
+            - containerPort: 7473
+              name: monitoring
           resources: {}
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
