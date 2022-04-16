@@ -133,13 +133,18 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      # affinity:
-      #   podAntiAffinity:
-      #     requiredDuringSchedulingIgnoredDuringExecution:
-      #       - labelSelector:
-      #           matchLabels:
-      #             {{- include "powerdns.selectorLabels" . | nindent 8 }}
-      #         topologyKey: kubernetes.io/hostname
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - {{ include "powerdns.name" . }}
+                topologyKey: kubernetes.io/hostname
+              weight: 100
     {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
