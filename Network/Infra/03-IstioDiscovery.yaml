@@ -173,6 +173,7 @@ spec:
               # Sidecar injector mutating webhook configuration path value for the clientConfig.service field.
               # Override to pass env variables, for example: /inject/cluster/remote/net/network2
               injectionPath: "/inject"
+
             telemetry:
               enabled: true
               v2:
@@ -303,13 +304,13 @@ spec:
                 enableAnalysis: false
 
               # To output all istio components logs in json format by adding --log_as_json argument to each container argument
-              logAsJson: false
+              logAsJson: true
 
               # Comma-separated minimum per-scope logging level of messages to output, in the form of <scope>:<level>,<scope>:<level>
               # The control plane has different scopes depending on component, but can configure default log level across all components
               # If empty, default scope and level will be used as configured in code
               logging:
-                level: "default:info"
+                level: "default:warn"
 
               omitSidecarInjectorConfigMap: false
 
@@ -396,11 +397,8 @@ spec:
                 # Resources for the sidecar.
                 resources:
                   requests:
-                    cpu: 100m
-                    memory: 128Mi
-                  limits:
-                    cpu: 2000m
-                    memory: 1024Mi
+                    cpu: 64m
+                    memory: 32Mi
 
                 # Default port for Pilot agent health checks. A value of 0 will disable health checking.
                 statusPort: 15020
@@ -416,9 +414,6 @@ spec:
                 # Base name for the proxy_init container, used to configure iptables.
                 image: proxyv2
                 resources:
-                  limits:
-                    cpu: 2000m
-                    memory: 1024Mi
                   requests:
                     cpu: 10m
                     memory: 10Mi
@@ -447,6 +442,7 @@ spec:
               # Configure the policy for validating JWT.
               # Currently, two options are supported: "third-party-jwt" and "first-party-jwt".
               jwtPolicy: "third-party-jwt"
+
 
               # Mesh ID means Mesh Identifier. It should be unique within the scope where
               # meshes will interact with each other, but it is not required to be
