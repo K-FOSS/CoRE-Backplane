@@ -61,8 +61,8 @@ spec:
           image: "{{ .Values.image.repository }}:{{ tpl .Values.image.tag . }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
-          - name: config
-            mountPath: /etc/pdns/conf.d
+            - name: config
+              mountPath: /etc/pdns/conf.d
           env:
             - name: AUTOCONF
               value: postgres 
@@ -133,13 +133,13 @@ spec:
       nodeSelector:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchLabels:
-                  {{- include "powerdns.selectorLabels" . | nindent 8 }}
-              topologyKey: kubernetes.io/hostname
+      # affinity:
+      #   podAntiAffinity:
+      #     requiredDuringSchedulingIgnoredDuringExecution:
+      #       - labelSelector:
+      #           matchLabels:
+      #             {{- include "powerdns.selectorLabels" . | nindent 8 }}
+      #         topologyKey: kubernetes.io/hostname
     {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
