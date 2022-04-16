@@ -2,6 +2,10 @@ apiVersion: helm.fluxcd.io/v1
 kind: HelmRelease
 metadata:
   name: authentik
+  annotations:
+    argocd.argoproj.io/tracking-id: k0s-cntrl-aaa
+  labels:
+    argocd.argoproj.io/tracking-id: k0s-cntrl-aaa
 spec:
   chart:
     repository: https://charts.goauthentik.io
@@ -48,6 +52,7 @@ spec:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         traefik.ingress.kubernetes.io/router.tls: 'true'
         argocd.argoproj.io/instance: k0s-cntrl-aaa
+        argocd.argoproj.io/tracking-id: k0s-cntrl-aaa
       hosts:
         - host: idp.mylogin.space
           paths:
