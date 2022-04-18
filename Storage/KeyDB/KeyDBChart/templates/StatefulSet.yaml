@@ -18,7 +18,6 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: 'true'
         checksum/secret-utils: {{ include (print $.Template.BasePath "/secret-utils.yaml") . | sha256sum }}
         {{- if .Values.exporter.enabled }}
         prometheus.io/scrape: "true"
@@ -29,7 +28,6 @@ spec:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
       labels:
-        sidecar.istio.io/inject: 'true'
         {{ include "keydb.labels" . | nindent 8 }}
     spec:
       priorityClassName: 'system-cluster-critical'
