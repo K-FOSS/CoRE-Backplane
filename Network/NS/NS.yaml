@@ -52,12 +52,12 @@ spec:
                 webserver-address: '0.0.0.0'
                 allow-axfr-ips: 172.16.0.0/12,10.0.0.0/8
                 allow-dnsupdate-from: 172.16.0.0/12,10.0.0.0/8
-                also-notify: 10.1.1.10,10.1.1.13,10.1.1.53
+                also-notify: 10.1.1.50,10.1.1.53
                 default-soa-content: ns.kristianjones.dev bots.@ 0 300 60 600 300
                 dnsupdate: 'yes'
                 expand-alias: 'yes'
                 forward-dnsupdate: 'yes'
-                forward-notify: 10.1.1.50,10.1.1.53,10.1.1.56,10.1.1.54
+                forward-notify: 10.1.1.50,10.1.1.53
                 primary: 'yes'
               dnssec: false
               domain: kristianjones.dev
@@ -65,6 +65,7 @@ spec:
                 database: pdns
                 password: pdnspass
                 username: pdns
+
             probes:
               liveness:
                 enabled: true
@@ -80,7 +81,8 @@ spec:
                 enabled: false
                 failureThreshold: 30
                 periodSeconds: 10
-            replicaCount: 3
+
+            replicaCount: 2
             resources: {}
             securityContext:
               runAsUser: 0
