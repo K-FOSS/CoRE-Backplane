@@ -5,6 +5,11 @@ metadata:
 spec:
   template:
     spec:
+      volumes:
+        - configMap:
+            defaultMode: 420
+            name: rdns-pdns-config
+          name: config
       containers:
         - env:
             - name: AUTOCONF
@@ -47,15 +52,12 @@ spec:
             timeoutSeconds: 1
           name: powerdns
           ports:
-            - containerPort: 53
-              name: dns-tcp
+            - containerPort: 1053
+              name: pdns-tcp
               protocol: TCP
-            - containerPort: 53
-              name: dns-udp
+            - containerPort: 1053
+              name: pdns-udp
               protocol: UDP
-            - containerPort: 8081
-              name: dns-webserver
-              protocol: TCP
           readinessProbe:
             failureThreshold: 5
             periodSeconds: 10
