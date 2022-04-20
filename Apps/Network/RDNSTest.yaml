@@ -30,13 +30,14 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                serviceType: LoadBalancer
-                service:
-                  annotations:
-                    purelb.io/service-group: anycast
-                  name: test-dns-rdns-core
-                  externalTrafficPolicy: Local
-                  loadBalancerIP: '{{loadBalancerIP}}'
+                coredns:
+                  serviceType: LoadBalancer
+                  service:
+                    annotations:
+                      purelb.io/service-group: anycast
+                    name: test-dns-rdns-core
+                    externalTrafficPolicy: Local
+                    loadBalancerIP: '{{loadBalancerIP}}'
       destination:
         server: '{{url}}'
         namespace: core-prod
