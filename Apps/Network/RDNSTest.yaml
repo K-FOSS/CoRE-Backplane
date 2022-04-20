@@ -29,10 +29,13 @@ spec:
           name: argocd-lovely-plugin
           env:
             - name: LOVELY_HELM_MERGE
-              value: |-
+              value: |
                 service:
+                  annotations:
+                    purelb.io/service-group: anycast
+                  name: test-dns-rdns-core
+                  externalTrafficPolicy: Local
                   loadBalancerIP: '{{loadBalancerIP}}'
-                 
       destination:
         server: '{{url}}'
         namespace: core-prod
