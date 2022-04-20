@@ -19,213 +19,22 @@ spec:
         automated:
           selfHeal: true
       source:
-        repoURL: 'https://helm.traefik.io/traefik'
-        chart: traefik
-        path: traefik
-        targetRevision: 10.19.4
-        helm:
-          releaseName: traefik-core
-          parameters:
-            - name: service.spec.loadBalancerIP
-              value: '{{loadBalancerIP}}'
-          values: |
-            additionalArguments:
-              - '--serverstransport.insecureskipverify=true'
-              - '--entryPoints.websecure.forwardedHeaders.insecure'
-              - '--tracing.jaeger=true'
-              - '--tracing.jaeger.samplingType=const'
-              - '--tracing.jaeger.localAgentHostPort=k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:6831'
-              - '--tracing.jaeger.samplingParam=0.25'
-            
-            globalArguments:
-              - '--global.checknewversion'
-              - '--global.sendanonymoususage'
-
-            env:
-              - name: JAEGER_AGENT_HOST
-                value: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev
-
-              - name: JAEGER_AGENT_PORT
-                value: '6831'
-
-              - name: JAEGER_SAMPLER_TYPE
-                value: 'const'
-
-              - name: JAEGER_SAMPLER_PARAM
-                value: '0.25'
-              
-              - name: JAEGER_TAGS
-                value: app=traefik-core
-
-            priorityClassName: 'system-cluster-critical'
-
-            securityContext:
-              capabilities:
-                add:
-                  - NET_BIND_SERVICE
-              readOnlyRootFilesystem: true
-              runAsGroup: 0
-              runAsNonRoot: false
-              runAsUser: 0
-
-            deployment:
-              kind: Deployment
-              labels: {}
-              minReadySeconds: 15
-              podAnnotations: {}
-              podLabels:
-                logs: loki-myloginspace
-              replicas: 2
-
-            ingressRoute:
-              dashboard:
-                enabled: true
-                # Additional ingressRoute annotations (e.g. for kubernetes.io/ingress.class)
-                annotations: {}
-                # Additional ingressRoute labels (e.g. for filtering IngressRoute by custom labels)
-                labels: {}
-
-            ingressClass:
-              enabled: true
-              fallbackApiVersion: ''
-              isDefaultClass: true
-
-            experimental:
-              http3:
-                enabled: false
-
-            providers:
-              kubernetesCRD:
-                allowCrossNamespace: true
-                allowExternalNameServices: true
-                enabled: true
-                namespaces: null
-              kubernetesIngress:
-                allowExternalNameServices: true
-                enabled: true
-                namespaces: null
-                publishedService:
-                  enabled: true
-
-            volumes: []
-            # - name: public-cert
-            #   mountPath: "/certs"
-            #   type: secret
-            # - name: '{{ printf "%s-configs" .Release.Name }}'
-            #   mountPath: "/config"
-            #   type: configMap
-
-            # Additional volumeMounts to add to the Traefik container
-            additionalVolumeMounts: []
-              # For instance when using a logshipper for access logs
-              # - name: traefik-logs
-              #   mountPath: /var/log/traefik
-
-            # Logs
-            # https://docs.traefik.io/observability/logs/
-            logs:
-              # Traefik logs concern everything that happens to Traefik itself (startup, configuration, events, shutdown, and so on).
-              general:
-                # By default, the logs use a text format (common), but you can
-                # also ask for the json format in the format option
-                # format: json
-                # By default, the level is set to ERROR. Alternative logging levels are DEBUG, PANIC, FATAL, ERROR, WARN, and INFO.
-                level: ERROR
-              access:
-                # To enable access logs
-                enabled: false
-                # By default, logs are written using the Common Log Format (CLF).
-                # To write logs in JSON, use json in the format option.
-                # If the given format is unsupported, the default (CLF) is used instead.
-                # format: json
-                # To write the logs in an asynchronous fashion, specify a bufferingSize option.
-                # This option represents the number of log lines Traefik will keep in memory before writing
-                # them to the selected output. In some cases, this option can greatly help performances.
-                # bufferingSize: 100
-                # Filtering https://docs.traefik.io/observability/access-logs/#filtering
-                filters: {}
-                  # statuscodes: "200,300-302"
-                  # retryattempts: true
-                  # minduration: 10ms
-                # Fields
-                # https://docs.traefik.io/observability/access-logs/#limiting-the-fieldsincluding-headers
-                fields:
-                  general:
-                    defaultmode: keep
-                    names: {}
-                      # Examples:
-                      # ClientUsername: drop
-                  headers:
-                    defaultmode: drop
-                    names: {}
-                      # Examples:
-                      # User-Agent: redact
-                      # Authorization: drop
-                      # Content-Type: keep
-
-            metrics:
-              # datadog:
-              #   address: 127.0.0.1:8125
-              # influxdb:
-              #   address: localhost:8089
-              #   protocol: udp
-              prometheus:
-                entryPoint: metrics
-                addRoutersLabels: true
-              # statsd:
-              #   address: localhost:8125
-
-            ports:
-              dhcp:
-                port: 67
-                protocol: UDP
-                expose: true
-
-              dns:
-                port: 53
-                protocol: UDP
-                expose: false
-
-              turn:
-                port: 3478
-                protocol: UDP
-                expose: true
-
-              metrics:
-                port: 9100
-                protocol: TCP
-
-              minio:
-                port: 9080
-                protocol: TCP
-
-              traefik:
-                exposedPort: 9000
-                port: 9000
-                protocol: TCP
-              web:
-                exposedPort: 80
-                port: 80
-                protocol: TCP
-              websecure:
-                exposedPort: 443
-                port: 443
-                protocol: TCP
-                proxyProtocol:
-                  insecure: true
-                  trustedIPs:
-                    - 0.0.0.0/0
-                tls:
-                  certResolver: ''
-                  domains: null
-                  enabled: true
-                  options: ''
-
-            service:
-              enabled: true
-              type: LoadBalancer
-              annotations:
-                metallb.universe.tf/allow-shared-ip: 'traefik-core'
+        path: Network/Ingress/Traefik
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                traefik:
+                  service:
+                    enabled: true
+                    type: LoadBalancer
+                    spec:
+                      loadBalancerIP: '{{loadBalancerIP}}'
+                    annotations:
+                      metallb.universe.tf/allow-shared-ip: 'traefik-core'
 
       destination:
         server: '{{url}}'
