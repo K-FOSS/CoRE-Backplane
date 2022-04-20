@@ -10,10 +10,12 @@ spec:
           - cluster: k0s-cntrl
             url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
             loadBalancerIP: 10.1.1.151
+            hostname: ns1.resolvemy.host
 
           - cluster: infra1-dc1
             url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
             loadBalancerIP: 10.1.1.150
+            hostname: ns0.resolvemy.host
   template:
     metadata:
       name: '{{cluster}}-ns-core'
@@ -92,6 +94,7 @@ spec:
               type: LoadBalancer
               annotations:
                 consul.hashicorp.com/service-name: ns-core
+                external-dns.alpha.kubernetes.io/hostname: '{{hostname}}'
 
       destination:
         server: '{{url}}'

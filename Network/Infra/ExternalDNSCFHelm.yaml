@@ -21,7 +21,7 @@ spec:
         repoURL: https://kubernetes-sigs.github.io/external-dns/
         chart: external-dns
         path: external-dns
-        targetRevision: 1.7.1
+        targetRevision: 1.9.0
         helm:
           releaseName: externaldns-cf-core
           values: |
@@ -44,7 +44,8 @@ spec:
               create: true
               additionalPermissions: {}
 
-            podLabels: {}
+            podLabels:
+              logs: loki-myloginspace
 
             podAnnotations: {}
 
@@ -56,9 +57,9 @@ spec:
               runAsUser: 65534
               readOnlyRootFilesystem: true
               capabilities:
-                drop: ["ALL"]
+                drop: ['ALL']
 
-            priorityClassName: ""
+            priorityClassName: ''
 
             terminationGracePeriodSeconds:
 
@@ -124,9 +125,9 @@ spec:
             policy: upsert-only
 
             registry: txt
-            txtOwnerId: "k0s-dc1"
-            txtPrefix: ""
-            txtSuffix: ""
+            txtOwnerId: 'k0s-dc1'
+            txtPrefix: ''
+            txtSuffix: ''
 
             domainFilters: []
 

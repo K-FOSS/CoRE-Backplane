@@ -1,0 +1,14 @@
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: ns-record
+  label:
+    lan-mode: private
+spec:
+  endpoints:
+    - dnsName: mylogin.space
+      recordTTL: 300
+      recordType: NS
+      targets:
+        - ns0.resolvemy.host
+        - ns1.resolvemy.host
