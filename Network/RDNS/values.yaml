@@ -51,7 +51,7 @@ coredns:
     periodSeconds: 10
     successThreshold: 1
     timeoutSeconds: 5
-  replicaCount: 2
+  replicaCount: 4
 
   #affinity: {}
   affinity:
@@ -86,9 +86,6 @@ coredns:
           configBlock: |-
             allow net 127.0.0.0/8 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16
             block
-
-        - name: log
-          parameters: psql.service.dc1.kjdev
 
         - name: secondary
           parameters: >-
@@ -138,7 +135,6 @@ coredns:
       port: 853
       scheme: 'tls'
       plugins:
-        - name: log
         - name: errors
 
         - name: health
@@ -169,7 +165,6 @@ coredns:
       port: 853
       scheme: 'tls'
       plugins:
-        - name: log
         - name: errors
 
         - name: health
