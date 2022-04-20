@@ -121,6 +121,7 @@ spec:
             sources:
               - service
               - ingress
+              - crd
 
             policy: sync
 
@@ -133,7 +134,7 @@ spec:
 
             provider: pdns
 
-            extraArgs: ['--pdns-server=http://k0s-dc1-ns-core-powerdns-webserver-core-prod.service.dc1.kjdev:8081', '--pdns-api-key=RANDOM', '--label-filter=lan-mode=private', '--txt-wildcard-replacement=wild']
+            extraArgs: ['--pdns-server=http://k0s-dc1-ns-core-powerdns-webserver-core-prod.service.dc1.kjdev:8081', '--pdns-api-key=RANDOM', '--label-filter=lan-mode=private', '--txt-wildcard-replacement=wild', '--crd-source-apiversion=externaldns.k8s.io/v1alpha1', '--crd-source-kind=DNSEndpoint']
 
 
       destination:
