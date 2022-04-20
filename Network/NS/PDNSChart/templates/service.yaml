@@ -4,6 +4,7 @@ metadata:
   name: {{ include "powerdns.fullname" . }}-udp
   annotations:
     metallb.universe.tf/allow-shared-ip: {{ include "powerdns.fullname" . }}
+    {{ toYaml .Values.service.annotations | nindent 4 }}
   labels:
     lan-mode: private
 {{ include "powerdns.labels" . | indent 4 }}
@@ -28,6 +29,7 @@ metadata:
   name: {{ include "powerdns.fullname" . }}-tcp
   annotations:
     metallb.universe.tf/allow-shared-ip: {{ include "powerdns.fullname" . }}
+    {{ toYaml .Values.service.annotations | nindent 4 }}
   labels:
 {{ include "powerdns.labels" . | indent 4 }}
 spec:
