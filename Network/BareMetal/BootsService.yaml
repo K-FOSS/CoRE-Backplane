@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: tinkerbell
+    app.kubernetes.io/instance: boots
+  name: boots
+spec:
+  ports:
+    - name: dhcp
+      port: 67
+      protocol: UDP
+      targetPort: dhcp
+      appProtocol: bootps
+
+    - name: tftp
+      port: 69
+      protocol: UDP
+      targetPort: tftp
+      appProtocol: tftp
+
+    - name: http
+      port: 80
+      targetPort: http
+      appProtocol: http
+  selector:
+    app.kubernetes.io/name: tinkerbell
+    app.kubernetes.io/instance: boots
