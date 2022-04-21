@@ -33,6 +33,19 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
                 coredns:
+                  affinity:
+                    podAntiAffinity:
+                      preferredDuringSchedulingIgnoredDuringExecution:
+                        - weight: 100
+                          podAffinityTerm:
+                            labelSelector:
+                              matchExpressions:
+                                - key: app.kubernetes.io/instance
+                                  operator: In
+                                  values:
+                                    - '{{cluster}}-rdns-lab'
+                            topologyKey: kubernetes.io/hostname
+
                   serviceType: LoadBalancer
                   service:
                     annotations:
@@ -40,6 +53,9 @@ spec:
                     name: test-dns-rdns-core
                     externalTrafficPolicy: Local
                     loadBalancerIP: '{{loadBalancerIP}}'
+
+
+
       destination:
         server: '{{url}}'
         namespace: core-prod

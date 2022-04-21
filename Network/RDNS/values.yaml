@@ -33,7 +33,7 @@ coredns:
   prometheus:
     monitor:
       additionalLabels: {}
-      enabled: true
+      enabled: false
       interval: 30s
       namespace: ''
     service:
@@ -54,18 +54,6 @@ coredns:
   replicaCount: 4
 
   #affinity: {}
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                    - rdns-core
-            topologyKey: kubernetes.io/hostname
 
   resources:
     limits:
