@@ -1,0 +1,26 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: tink-db-prod-sync
+spec:
+  refreshInterval: '5m'
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: tink-db-prod
+  data:
+    - secretKey: DatabaseDatabase
+      remoteRef:
+        key: Tinkerbell
+        property: DatabaseDatabase
+
+    - secretKey: DatabasePassword
+      remoteRef:
+        key: Tinkerbell
+        property: DatabasePassword
+
+    - secretKey: DatabaseUser
+      remoteRef:
+        key: Tinkerbell
+        property: DatabaseUser
