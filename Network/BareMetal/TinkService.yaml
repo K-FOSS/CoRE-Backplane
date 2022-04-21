@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: tinkerbell
+    app.kubernetes.io/instance: tink
+  name: tink-server
+spec:
+  ports:
+    - name: grpc
+      port: 42113
+      targetPort: grpc
+      appProtocol: gnmi-gnoi
+
+    - name: http
+      port: 42114
+      targetPort: http
+      appProtocol: http
+  selector:
+    app.kubernetes.io/name: tinkerbell
+    app.kubernetes.io/instance: tink
