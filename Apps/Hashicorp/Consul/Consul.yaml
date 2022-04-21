@@ -14,7 +14,7 @@ spec:
             helmName: consul-prod
             name: k0s-dc1
             main: 'true'
-            replicas: '2'
+            replicas: '3'
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
@@ -433,13 +433,21 @@ spec:
             server:
               affinity: |
                 podAntiAffinity:
-                  requiredDuringSchedulingIgnoredDuringExecution:
-                    - labelSelector:
-                        matchLabels:
-                          app: {{ template "consul.name" . }}
-                          release: "{{ .Release.Name }}"
-                          component: server
-                      topologyKey: kubernetes.io/hostname
+                  preferredDuringSchedulingIgnoredDuringExecution:
+                    - weight: 100
+                      podAffinityTerm:
+                        labelSelector:
+                          matchLabels:
+                            app: {{ template "consul.name" . }}
+                            release: "{{ .Release.Name }}"
+                            component: server
+                          matchExpressions:
+                            - key: app.kubernetes.io/instance
+                              operator: In
+                              values:
+                                - '{{cluster}}-rdns-lab'
+                        topologyKey: kubernetes.io/hostname
+
               annotations: null
               bootstrapExpect: 3
               connect: true
