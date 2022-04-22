@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'netbird-tpl-config'
+  labels:
+    app.kubernetes.io/name: netbird
+data:
+  management.json.tmpl: |{{`
+{
+    "Stuns": [
+        {
+            "Proto": "tcp",
+            "URI": "stun:nat.ipaddr.network:3478",
+            "Username": "demo",
+            "Password": ""
+        }
+    ],
+    "TURNConfig": {
+        "Turns": [
+            {
+                "Proto": "tcp",
+                "URI": "turn:nat.ipaddr.network:3478",
+                "Username": "demo",
+                "Password": ""
+            }
+        ],
+        "CredentialsTTL": "12h",
+        "Secret": "",
+        "TimeBasedCredentials": false
+    },
+    "Signal": {
+        "Proto": "http",
+        "URI": "signal.ipaddr.network:10000",
+        "Username": "",
+        "Password": null
+    },
+    "Datadir": "",
+    "HttpConfig": {
+        "Address": "0.0.0.0:$WIRETRUSTEE_MGMT_API_PORT",
+        "AuthIssuer": "https://idp.mylogin.space",
+        "AuthAudience": "$WIRETRUSTEE_AUTH0_AUDIENCE",
+        "AuthKeysLocation": "https://$WIRETRUSTEE_AUTH0_DOMAIN/.well-known/jwks.json",
+        "CertFile":"$WIRETRUSTEE_MGMT_API_CERT_FILE",
+        "CertKey":"$WIRETRUSTEE_MGMT_API_CERT_KEY_FILE"
+    },
+    "IdpManagerConfig": {
+        "Manager": "none"
+     }
+}
+`}}
