@@ -11,7 +11,7 @@ data:
           fallthrough in-addr.arpa ip6.arpa
         }
         prometheus :9153
-        forward . /etc/resolv.conf
+        fanout . 10.1.1.50:53 10.1.1.53:53
         cache 30
         loop
         reload
@@ -21,7 +21,9 @@ data:
     kjdev {
       errors
       cache 30
-      forward . 10.1.1.60 10.1.1.61
+      fanout . 10.1.1.60:53 10.1.1.61:53 {
+          network TCP
+      }
     }
 kind: ConfigMap
 metadata:
