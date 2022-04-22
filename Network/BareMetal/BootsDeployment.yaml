@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: tinkerbell
+    app.kubernetes.io/instance: boots
+  name: boots
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tinkerbell
+      app.kubernetes.io/instance: boots
+
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tinkerbell
+        app.kubernetes.io/instance: boots
+
+    spec:
+      containers:
+        - args:
+            - -log-level
+            - DEBUG
+          envFrom:
+            - configMapRef:
+                name: boots
+            - secretRef:
+                name: tink-packet-prod
+            - secretRef:
+                name: registry
+          env:
+            - name: BOOTP_BIND
+              value: 0.0.0.0:67
+            - name: FACILITY_CODE
+              value: '$(FACILITY)'
+            - name: HTTP_BIND
+              value: 0.0.0.0:80
+            - name: SYSLOG_BIND
+              value: 0.0.0.0:514
+            - name: TFTP_BIND
+              value: 0.0.0.0:69
+          image: quay.io/tinkerbell/boots:sha-e81a291c
+          imagePullPolicy: Always
+          name: boots
+          ports:
+            - containerPort: 67
+              name: dhcp
+              protocol: UDP
+            - containerPort: 69
+              hostPort: 69
+              name: tftp
+              protocol: UDP
+            - containerPort: 80
+              hostPort: 80
+              name: http
+      restartPolicy: Always

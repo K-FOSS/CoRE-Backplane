@@ -28,7 +28,7 @@ spec:
         repoURL: https://helm.goharbor.io
         chart: harbor 
         path: harbor 
-        targetRevision: 1.8.2
+        targetRevision: 1.9.0
 
         helm:
           releaseName: 'harbor-{{environment}}'
@@ -90,6 +90,8 @@ spec:
                 harbor:
                   # harbor ingress-specific annotations
                   annotations: {}
+
+
               clusterIP:
                 # The name of ClusterIP service
                 name: harbor
@@ -377,12 +379,11 @@ spec:
             nginx:
               image:
                 repository: goharbor/nginx-photon
-                tag: v2.4.2
               # set the service account to be used, default if left empty
               serviceAccountName: ""
               # mount the service account token
               automountServiceAccountToken: false
-              replicas: 0
+              replicas: 3
               # resources:
               #  requests:
               #    memory: 256Mi
@@ -398,12 +399,11 @@ spec:
             portal:
               image:
                 repository: goharbor/harbor-portal
-                tag: v2.4.2
               # set the service account to be used, default if left empty
               serviceAccountName: ""
               # mount the service account token
               automountServiceAccountToken: false
-              replicas: 0
+              replicas: 2
               # resources:
               #  requests:
               #    memory: 256Mi
@@ -419,12 +419,11 @@ spec:
             core:
               image:
                 repository: goharbor/harbor-core
-                tag: v2.4.2
               # set the service account to be used, default if left empty
               serviceAccountName: ""
               # mount the service account token
               automountServiceAccountToken: false
-              replicas: 0
+              replicas: 1
               ## Startup probe values
               startupProbe:
                 enabled: true
@@ -457,8 +456,7 @@ spec:
             jobservice:
               image:
                 repository: goharbor/harbor-jobservice
-                tag: v2.4.2
-              replicas: 0
+              replicas: 1
               # set the service account to be used, default if left empty
               serviceAccountName: ""
               # mount the service account token
@@ -494,7 +492,6 @@ spec:
               registry:
                 image:
                   repository: goharbor/registry-photon
-                  tag: v2.4.2
                 # resources:
                 #  requests:
                 #    memory: 256Mi
@@ -502,13 +499,12 @@ spec:
               controller:
                 image:
                   repository: goharbor/harbor-registryctl
-                  tag: v2.4.2
 
                 # resources:
                 #  requests:
                 #    memory: 256Mi
                 #    cpu: 100m
-              replicas: 0
+              replicas: 1
               nodeSelector: {}
               tolerations: []
               affinity: {}
@@ -550,7 +546,7 @@ spec:
               absoluteUrl: false
               image:
                 repository: goharbor/chartmuseum-photon
-              replicas: 0
+              replicas: 1
               # resources:
               #  requests:
               #    memory: 256Mi
@@ -571,8 +567,6 @@ spec:
               image:
                 # repository the repository for Trivy adapter image
                 repository: goharbor/trivy-adapter-photon
-                # tag the tag for Trivy adapter image
-                tag: v2.4.2
               # set the service account to be used, default if left empty
               serviceAccountName: ""
               # mount the service account token
@@ -645,7 +639,6 @@ spec:
                 automountServiceAccountToken: false
                 image:
                   repository: goharbor/notary-server-photon
-                  tag: v2.4.2
                 replicas: 0
                 # resources:
                 #  requests:
@@ -665,7 +658,6 @@ spec:
                 automountServiceAccountToken: false
                 image:
                   repository: goharbor/notary-signer-photon
-                  tag: v2.4.2
                 replicas: 0
                 # resources:
                 #  requests:
@@ -741,7 +733,7 @@ spec:
               podAnnotations: {}
 
             exporter:
-                replicas: 0
+                replicas: 1
               # resources:
               #  requests:
               #    memory: 256Mi
@@ -752,7 +744,6 @@ spec:
                 automountServiceAccountToken: false
                 image:
                   repository: goharbor/harbor-exporter
-                  tag: v2.4.2
                 nodeSelector: {}
                 tolerations: []
                 affinity: {}
@@ -782,8 +773,7 @@ spec:
               serviceMonitor:
                 enabled: true
                 additionalLabels: {}
-                # Scrape interval. If not set, the Prometheus default scrape interval is used.
-                interval: "15m"
+                interval: '15m'
                 # Metric relabel configs to apply to samples before ingestion.
                 metricRelabelings: []
                   # - action: keep
@@ -817,9 +807,9 @@ spec:
                 endpoint: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
                 # username:
                 # password:
-                # agent_host: hostname
+                agent_host: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev
                 # export trace data by jaeger.thrift in compact mode
-                # agent_port: 6831
+                agent_port: 6831
               otel:
                 endpoint: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:4318
                 url_path: /v1/traces
