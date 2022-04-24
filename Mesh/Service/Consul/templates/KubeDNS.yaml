@@ -5,11 +5,13 @@ data:
         errors
         health
         ready
+
         kubernetes cluster.local in-addr.arpa ip6.arpa {
           pods insecure
           ttl 120
           fallthrough in-addr.arpa ip6.arpa
         }
+
         prometheus :9153
         fanout . 10.1.1.50:53 10.1.1.53:53 1.1.1.1:53 1.0.0.1:53
         cache 300 {
@@ -19,20 +21,6 @@ data:
         loop
         reload
         loadbalance
-    }
-
-    local. cluster. k8s. kubernetes. arpa. {
-      kubernetes cluster.local in-addr.arpa ip6.arpa {
-        pods insecure
-        ttl 120
-        fallthrough in-addr.arpa ip6.arpa
-      }
-
-
-      cache 300 {
-        prefetch 500 5s
-        serve_stale 60s
-      }
     }
 
     kristianjones.dev. kjmedia.stream. mylogin.space. trackmy.finance. ksit.services. writemy.codes. ipaddr.network. resolvemy.host. syncmy.date. central.maven.org. {
