@@ -34,7 +34,6 @@ spec:
 
             operatorImageRepository: percona/percona-xtradb-cluster-operator
 
-            crVersion: 1.10.0
             pause: false
             initImage: ""
             allowUnsafeConfigurations: false
@@ -44,15 +43,13 @@ spec:
               apply: 8.0-recommended
               schedule: "0 4 * * *"
             enableCRValidationWebhook: false
-            tls: {}
-              # SANs:
-              #   - pxc-1.example.com
-              #   - pxc-2.example.com
-              #   - pxc-3.example.com
-              # issuerConf:
-              #   name: special-selfsigned-issuer
-              #   kind: ClusterIssuer
-              #   group: cert-manager.io
+            tls:
+              SANs:
+                - mysql.mylogin.space
+              issuerConf:
+                name: kjdev-cluster
+                kind: ClusterIssuer
+                group: cert-manager.io
 
             pxc:
               size: 3
