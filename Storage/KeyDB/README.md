@@ -27,4 +27,6 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 
 | 50 | NextCloud | Yay!
 
+| 70 | RSSHub | Yay!
+
 Further usage relies upon ArgoCD, Database Operator, KeyDB, TwemProxy, OAM/KubeVela, and Crossplane ****TODO: Make that stuff****
