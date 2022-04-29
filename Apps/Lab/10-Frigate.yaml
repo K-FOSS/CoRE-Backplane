@@ -38,6 +38,29 @@ spec:
         controller:
           replicas: 1
 
+        configmap:
+          config:
+            # -- Store frigate configuration as a ConfigMap
+            enabled: true
+
+            # -- See [docs](https://blakeblackshear.github.io/frigate/) for more details.
+            # @default -- see URL to default config
+            data:
+              config.yml: |
+                mqtt:
+                  host: k0s-dc1-emqx-core-prod.service.dc1.kjdev
+                cameras:
+                  back:
+                    ffmpeg:
+                      inputs:
+                        - path: rtsp://demo:demo@ipvmdemo.dyndns.org:5541/onvif-media/media.amp?profile=profile_1_h264&sessiontimeout=60&streamtype=unicast
+                          roles:
+                            - detect
+                            - rtmp
+                    detect:
+                      width: 1280
+                      height: 720
+
 
         affinity:
           podAffinity:
