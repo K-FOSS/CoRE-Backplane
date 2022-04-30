@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-backups-k8s-deploy
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+  template:
+    metadata:
+      name: '{{cluster}}-backups-k8s-deploy'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+      source:
+        path: Backups/Kubernetes
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        directory:
+          recurse: false
+          jsonnet: {}
+      destination:
+        server: '{{url}}'
+        namespace: argocd
