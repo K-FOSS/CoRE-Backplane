@@ -58,7 +58,7 @@ spec:
                 group: cert-manager.io
 
             pxc:
-              size: 3
+              size: 1
               image:
                 repository: percona/percona-xtradb-cluster
                 tag: 8.0.25
@@ -114,7 +114,19 @@ spec:
                 limits: {}
               nodeSelector: {}
               #  disktype: ssd
-              affinity: null
+              affinity:
+                advanced:
+                  podAntiAffinity:
+                    preferredDuringSchedulingIgnoredDuringExecution:
+                      - weight: 100
+                        podAffinityTerm:
+                          labelSelector:
+                            matchExpressions:
+                              - key: app.kubernetes.io/instance
+                                operator: In
+                                values:
+                                  - k0s-cntrl-database-pe
+                          topologyKey: kubernetes.io/hostname
                 #antiAffinityTopologyKey: "kubernetes.io/hostname"
                 #advanced:
                 #   nodeAffinity:
