@@ -428,7 +428,17 @@ spec:
             #       ttl: "240h"
             #       includedNamespaces:
             #       - foo
-            schedules: {}
+            schedules:
+              mybackup:
+                disabled: false
+                labels:
+                  myenv: foo
+                annotations:
+                  myenv: foo
+                schedule: "0 0 * * *"
+                useOwnerReferencesInBackup: false
+                template:
+                  ttl: "240h"
 
             # Velero ConfigMaps.
             # Eg:
