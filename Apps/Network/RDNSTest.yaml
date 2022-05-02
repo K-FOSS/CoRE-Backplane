@@ -4,6 +4,7 @@ metadata:
   name: core-backplane-rdns-lab
   namespace: argocd
 spec:
+
   generators:
     - list:
         elements:
@@ -12,17 +13,19 @@ spec:
             loadBalancerIP: 10.1.1.53
 
           - cluster: infra1-dc1
-            url: https://infra1-dc1-kubernetes-default.service.dc1.kjdev:6443
+            url: https://172.18.0.1:443
             loadBalancerIP: 10.1.1.50
   template:
     metadata:
       name: '{{cluster}}-rdns-lab'
+
     spec:
       project: core
       syncPolicy:
         automated:
           selfHeal: true
           prune: true
+
       source:
         path: Network/RDNS
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
