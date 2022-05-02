@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-qos
+  namespace: argocd
+spec:
+
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://k0s-dc1-kubernetes-default.service.dc1.kjdev:6443
+            loadBalancerIP: 10.1.1.53
+
+          - cluster: infra1-dc1
+            url: https://172.18.0.1:443
+            loadBalancerIP: 10.1.1.50
+  template:
+    metadata:
+      name: '{{cluster}}-qos'
+
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+
+      source:
+        path: QoS
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
