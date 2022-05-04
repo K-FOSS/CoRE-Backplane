@@ -16,7 +16,8 @@ spec:
             name: dhcp-pdns-config
           name: config
       containers:
-        - env:
+        - name: powerdns
+          env:
             - name: AUTOCONF
               value: postgres
             - name: PGSQL_HOST
@@ -48,40 +49,47 @@ spec:
               value: 'no'
           image: 'cybiox9/powerdns:dev'
           imagePullPolicy: Always
+
+
+          ports:
+            - containerPort: 1053
+              name: pdns-tcp
+              protocol: TCP
+
+            - containerPort: 1053
+              name: pdns-udp
+              protocol: UDP
+
+          resources: {}
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+
           livenessProbe:
             failureThreshold: 5
             periodSeconds: 10
             successThreshold: 1
             tcpSocket:
-              port: 1053
+              port: pdns-tcp
             timeoutSeconds: 1
-          name: powerdns
-          ports:
-            - containerPort: 1053
-              name: pdns-tcp
-              protocol: TCP
-            - containerPort: 1053
-              name: pdns-udp
-              protocol: UDP
+
           readinessProbe:
             failureThreshold: 5
             periodSeconds: 10
             successThreshold: 1
             tcpSocket:
-              port: 1053
+              port: pdns-tcp
             timeoutSeconds: 1
-          resources: {}
-          securityContext:
-            runAsNonRoot: false
-            runAsUser: 0
+
           startupProbe:
             failureThreshold: 30
             initialDelaySeconds: 5
             periodSeconds: 10
             successThreshold: 1
             tcpSocket:
-              port: 1053
+              port: pdns-tcp
             timeoutSeconds: 1
+
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           volumeMounts:
