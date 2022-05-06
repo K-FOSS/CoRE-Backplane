@@ -1,7 +1,7 @@
 
 authentik:
   # -- Server replicas
-  replicas: 1
+  replicas: 2
 
   priorityClassName: 'tier2-priority'
 
@@ -145,7 +145,18 @@ authentik:
   volumeMounts: []
 
   # -- affinity applied to the deployments
-  affinity: {}
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - authentik
+            topologyKey: kubernetes.io/hostname
 
   # -- nodeSelector applied to the deployments
   nodeSelector: {}
