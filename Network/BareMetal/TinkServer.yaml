@@ -34,11 +34,7 @@ spec:
                 name: tink-tink-prod
           image: quay.io/tinkerbell/tink:latest
           imagePullPolicy: Always
-          livenessProbe:
-            httpGet:
-              scheme: HTTP
-              path: /cert
-              port: 42114
+
           name: tink-server
           resources:
             limits:
@@ -54,9 +50,4 @@ spec:
             - containerPort: 42114
               hostPort: 42114
               name: http
-          readinessProbe:
-            httpGet:
-              scheme: HTTP
-              path: /cert
-              port: 42114
 
