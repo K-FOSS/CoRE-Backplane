@@ -21,8 +21,9 @@ spec:
     spec:
       containers:
         - args:
-            - -log-level
-            - DEBUG
+            - '-log-level=DEBUG'
+            - '--tls=false'
+            - '--backend=kubernetes'
           envFrom:
             - secretRef:
                 name: tink-db-prod
@@ -30,14 +31,7 @@ spec:
                 name: tink-packet-prod
             - secretRef:
                 name: tink-tink-prod
-          env:
-            - name: TINKERBELL_CERTS_DIR
-              value: /certs
-            - name: TINKERBELL_GRPC_AUTHORITY
-              value: :42113
-            - name: TINKERBELL_HTTP_AUTHORITY
-              value: :42114
-          image: quay.io/tinkerbell/tink:sha-0e8e5733
+          image: quay.io/tinkerbell/tink:latest
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -45,6 +39,14 @@ spec:
               path: /cert
               port: 42114
           name: tink-server
+          serviceAccountName: tink-server
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
           ports:
             - containerPort: 42113
               hostPort: 42113
@@ -60,30 +62,4 @@ spec:
           volumeMounts:
             - mountPath: /certs
               name: certs
-      initContainers:
-        - command:
-            - /bin/sh
-            - -c
-            - "cat /source-certs/tls.crt /source-certs/ca.crt >/certs/bundle.pem && cp /source-certs/tls.key /certs/server-key.pem"
-          image: docker.io/busybox:latest
-          name: certs
-          volumeMounts:
-            - mountPath: /source-certs
-              name: source-certs
-            - mountPath: /certs
-              name: certs
-        - envFrom:
-            - secretRef:
-                name: tink-db-prod
-          env:
-            - name: ONLY_MIGRATION
-              value: "1"
-          image: quay.io/tinkerbell/tink:sha-0e8e5733
-          imagePullPolicy: Always
-          name: migration
-      volumes:
-        - name: certs
-          emptyDir: {}
-        - name: source-certs
-          secret:
-            secretName: tink-certs
+
