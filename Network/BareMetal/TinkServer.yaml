@@ -19,6 +19,7 @@ spec:
         app.kubernetes.io/name: tinkerbell
         app.kubernetes.io/instance: tink
     spec:
+      serviceAccountName: tink-server
       containers:
         - args:
             - '-log-level=DEBUG'
@@ -39,7 +40,6 @@ spec:
               path: /cert
               port: 42114
           name: tink-server
-          serviceAccountName: tink-server
           resources:
             limits:
               cpu: 500m
