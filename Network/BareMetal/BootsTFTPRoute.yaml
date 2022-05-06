@@ -1,0 +1,13 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: ingress-boots-tftp
+spec:
+  entryPoints:
+    - tftp
+  routes:
+    - services:
+        - name: boots
+          port: tftp
+          weight: 10 
+
