@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/instance: boots
 
     spec:
+      serviceAccountName: tink-server
       containers:
         - args:
             - -log-level
@@ -43,7 +44,7 @@ spec:
               value: 0.0.0.0:514
             - name: TFTP_BIND
               value: 0.0.0.0:69
-          image: quay.io/tinkerbell/boots:sha-e81a291c
+          image: quay.io/tinkerbell/boots:latest
           imagePullPolicy: Always
           name: boots
           ports:
