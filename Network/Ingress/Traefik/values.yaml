@@ -11,6 +11,19 @@ traefik:
     - '--global.checknewversion'
     - '--global.sendanonymoususage'
 
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                    - {{ template "traefik.name" . }}
+            topologyKey: kubernetes.io/hostname
+
   env:
     - name: JAEGER_AGENT_HOST
       value: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev
