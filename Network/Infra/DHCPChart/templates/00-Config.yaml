@@ -885,6 +885,170 @@ data:
                 }
               ],
               "valid-lifetime": 3600
+            },
+            {
+              // Shared network level authoritative flag.
+              "authoritative": false,
+              // Name of the shared network. It may be an arbitrary string
+              // and it must be unique among all shared networks.
+              "name": "backend0.dc1.resolvemy.host",
+              // You may specify interface name if the shared network is
+              // reachable directly from the server.
+              // You can specify many parameters that are allowed in subnet scope
+              // here. It's useful to put them here if they apply to all subnets
+              // in this shared network. It's likely that the most common
+              // parameter here will be option values defined with option-data.
+              "match-client-id": false,
+              "option-data": [],
+              "rebind-timer": 10800,
+
+              "ddns-qualifying-suffix": "backend0.dc1.resolvemy.host.",
+              // If all the traffic coming from that shared network is reachable
+              // via relay and that relay always use the same IP address, you
+              // can specify that relay address here. Since this example shows
+              // a shared network reachable directly, we put 0.0.0.0 here.
+              // It would be better to skip the relay scope altogether, but
+              // it was left here for demonstration purposes.
+              "relay": {
+                "ip-addresses": [
+                  "172.16.100.25"
+                ]
+              },
+              // Timer values can be overridden here.
+              "renew-timer": 1800,
+
+              "store-extended-info": true,
+              "subnet4": [
+                {
+                  "id": 100,
+                  "match-client-id": false,
+                  "server-hostname": "dhcp.service.kjdev",
+                  "option-data": [
+                    {
+                      "name": "domain-name-servers",
+                      "data": "1.1.1.1"
+                    },
+                    {
+                      "name": "pcode",
+                      "data": "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00"
+                    },
+                    {
+                      "name": "tcode",
+                      "data": "America/Winnipeg"
+                    },
+                    {
+                      "name": "routers",
+                      "data": "172.16.100.25"
+                    }
+                  ],
+                  "pools": [
+                    {
+                      "pool": "172.16.100.100 - 172.16.100.240"
+                    }
+                  ],
+                  "rebind-timer": 10800,
+                  "reservations": [
+                    // Randoms
+                    {
+                      "hw-address": "00:e0:4c:68:02:f0",
+                      "ip-address": "172.16.100.41"
+                    },
+
+                    {
+                      "hw-address": "b8:ae:ed:79:5e:1d",
+                      "client-classes": [
+                        "boots"
+                      ]
+                    }
+                  ],
+                  "renew-timer": 1800,
+                  "subnet": "172.16.100.0/24",
+                  "valid-lifetime": 3600
+                }
+              ],
+              "valid-lifetime": 3600
+            },
+            {
+              // Shared network level authoritative flag.
+              "authoritative": false,
+              // Name of the shared network. It may be an arbitrary string
+              // and it must be unique among all shared networks.
+              "name": "management.dc1.resolvemy.host",
+              // You may specify interface name if the shared network is
+              // reachable directly from the server.
+              // You can specify many parameters that are allowed in subnet scope
+              // here. It's useful to put them here if they apply to all subnets
+              // in this shared network. It's likely that the most common
+              // parameter here will be option values defined with option-data.
+              "match-client-id": false,
+              "option-data": [],
+              "rebind-timer": 10800,
+
+              "ddns-qualifying-suffix": "home1.resolvemy.host.",
+              // If all the traffic coming from that shared network is reachable
+              // via relay and that relay always use the same IP address, you
+              // can specify that relay address here. Since this example shows
+              // a shared network reachable directly, we put 0.0.0.0 here.
+              // It would be better to skip the relay scope altogether, but
+              // it was left here for demonstration purposes.
+              "relay": {
+                "ip-addresses": [
+                  "172.16.100.25"
+                ]
+              },
+              // Timer values can be overridden here.
+              "renew-timer": 1800,
+
+              "store-extended-info": true,
+              "subnet4": [
+                {
+                  "id": 100,
+                  "match-client-id": false,
+                  "server-hostname": "dhcp.service.kjdev",
+                  "option-data": [
+                    {
+                      "name": "domain-name-servers",
+                      "data": "1.1.1.1"
+                    },
+                    {
+                      "name": "pcode",
+                      "data": "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00"
+                    },
+                    {
+                      "name": "tcode",
+                      "data": "America/Winnipeg"
+                    },
+                    {
+                      "name": "routers",
+                      "data": "172.16.100.25"
+                    }
+                  ],
+                  "pools": [
+                    {
+                      "pool": "172.16.100.100 - 172.16.100.240"
+                    }
+                  ],
+                  "rebind-timer": 10800,
+                  "reservations": [
+                    // Randoms
+                    {
+                      "hw-address": "00:e0:4c:68:02:f0",
+                      "ip-address": "172.16.100.41"
+                    },
+
+                    {
+                      "hw-address": "b8:ae:ed:79:5e:1d",
+                      "client-classes": [
+                        "boots"
+                      ]
+                    }
+                  ],
+                  "renew-timer": 1800,
+                  "subnet": "172.16.100.0/24",
+                  "valid-lifetime": 3600
+                }
+              ],
+              "valid-lifetime": 3600
             }
           ], // end of shared-networks
           "server-hostname": "core0.site1.kristianjones.dev",
