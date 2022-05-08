@@ -7,6 +7,13 @@ spec:
   generators:
     - list:
         elements:
+          - cluster: k0s-cntrl-new
+            url: https://k0s-kubeapi.service.dc1.kjdev:6443
+            serviceCIDR: 10.0.8.0/22
+            podCIDR: 10.4.0.0/16
+            lbServices: "['10.1.1.32/27', '10.1.1.64/29', '10.0.1.0/29', '10.1.1.88/32']"
+            peers: "[{ name: 'k0s-dc1-rt2', peerIP: '172.16.30.2', asn: '64567' }]"
+
           - cluster: k0s-cntrl
             url: https://kubernetes.default.svc
             serviceCIDR: 10.0.8.0/22
