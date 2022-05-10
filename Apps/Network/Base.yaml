@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-base
+  namespace: argocd
+spec:
+
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+  template:
+    metadata:
+      name: '{{cluster}}-core-network-base'
+
+    spec:
+      project: core
+
+      source:
+        path: Network/Base
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
