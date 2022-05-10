@@ -1,0 +1,14 @@
+apiVersion: flowcontrol.apiserver.k8s.io/v1beta2
+kind: PriorityLevelConfiguration
+metadata:
+  name: high-core
+spec:
+  limited:
+    assuredConcurrencyShares: 10
+    limitResponse:
+      queuing:
+        handSize: 6
+        queueLengthLimit: 50
+        queues: 128
+      type: Queue
+  type: Limited
