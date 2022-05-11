@@ -91,6 +91,10 @@ spec:
             - mountPath: /etc/coredns
               name: config-volume
               readOnly: true
+
+            - mountPath: /secrets/k0s
+              name: k0s-volume
+              readOnly: true
       dnsPolicy: Default
       nodeSelector:
         beta.kubernetes.io/os: linux
@@ -116,3 +120,7 @@ spec:
                 path: Corefile
             name: coredns
           name: config-volume
+
+        - secret:
+            secretName: k0s-kubeconfig
+          name: k0s-volume

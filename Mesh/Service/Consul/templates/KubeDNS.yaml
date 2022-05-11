@@ -6,6 +6,8 @@ data:
         health
         ready
 
+
+
         prometheus :9153
         fanout . 10.1.1.50:53 10.1.1.53:53 1.1.1.1:53 1.0.0.1:53
         cache 300 {
@@ -15,6 +17,17 @@ data:
         loop
         reload
         loadbalance
+    }
+
+    test.world {
+      kubernetes test.world {
+        endpoint https://10.1.1.40
+        kubeconfig /secrets/k0s/kubeconfig
+        pods insecure
+        ttl 120
+        fallthrough in-addr.arpa ip6.arpa
+      }
+      
     }
 
     cluster.local. in-addr.arpa. ip6.arpa. {
