@@ -19,25 +19,20 @@ data:
         loadbalance
     }
 
-    test.world {
-      kubernetes test.world {
+    cluster.local. in-addr.arpa. ip6.arpa. {
+      kubernetai cluster.local {
+        pods insecure
+        ttl 120
+        fallthrough in-addr.arpa ip6.arpa cluster.local
+      }
+
+      kubernetai cluster.local. {
         endpoint https://10.1.1.40
         kubeconfig /secrets/k0s/kubeconfig
         pods insecure
         ttl 120
         fallthrough in-addr.arpa ip6.arpa
       }
-      
-    }
-
-    cluster.local. in-addr.arpa. ip6.arpa. {
-      kubernetes  {
-        pods insecure
-        ttl 120
-        fallthrough in-addr.arpa ip6.arpa cluster.local
-      }
-
-      fanout . 10.0.8.10:53
     }
 
 
