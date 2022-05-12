@@ -19,20 +19,33 @@ data:
         loadbalance
     }
 
-    cluster.local. in-addr.arpa. ip6.arpa. {
-      kubernetai cluster.local {
-        pods insecure
-        ttl 120
-        fallthrough in-addr.arpa ip6.arpa cluster.local
-      }
-
-      kubernetai cluster.local. {
+    k0s.resolvemy.host. {
+      kubernetai k0s.resolvemy.host {
         endpoint https://10.1.1.40
         kubeconfig /secrets/k0s/kubeconfig
         pods insecure
         ttl 120
         fallthrough in-addr.arpa ip6.arpa
       }
+    }
+
+
+    cluster.local. in-addr.arpa. ip6.arpa. {
+      kubernetai cluster.local {
+        endpoint https://10.1.1.40
+        kubeconfig /secrets/k0s/kubeconfig
+        pods insecure
+        ttl 120
+        fallthrough in-addr.arpa ip6.arpa cluster.local
+      }
+
+      kubernetai cluster.local {
+        pods insecure
+        ttl 120
+        fallthrough in-addr.arpa ip6.arpa cluster.local
+      }
+
+
     }
 
 
