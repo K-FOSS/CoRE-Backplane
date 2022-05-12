@@ -14,16 +14,8 @@ spec:
     metadata:
       name: '{{cluster}}-istio-base-helm'
     spec:
-      ignoreDifferences:
-        - group: admissionregistration.k8s.io
-          kind: ValidatingWebhookConfiguration
-          name: istiod-default-validator
-          jqPathExpressions:
-            - '.webhooks[]?.failurePolicy'
       project: core
       syncPolicy:
-        automated:
-          selfHeal: true
         syncOptions:
           - CreateNamespace=true
       source:
