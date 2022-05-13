@@ -42,6 +42,16 @@ spec:
         controller:
           replicas: 1
 
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution: 
+              - labelSelector:
+                  matchExpressions:
+                    - key: tenant 
+                      operator: In 
+                      values:
+                        - kjmedia 
+                topologyKey: kubernetes.io/hostname
 
         resources:
           limits:
