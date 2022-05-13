@@ -15,12 +15,22 @@ spec:
     - name: udp-443
       port: 443
       protocol: UDP
+      appProtocol: https
       targetPort: 443
 
     - name: udp-67
       port: 67
       protocol: UDP
-      targetPort: 67
+      appProtocol: bootps
+      targetPort: dhcp
+      
+
+    - name: udp-stun
+      port: 3478
+      protocol: UDP
+      appProtocol: stun
+      targetPort: turn
+
   selector:
     app.kubernetes.io/instance: traefik-core
     app.kubernetes.io/name: traefik
