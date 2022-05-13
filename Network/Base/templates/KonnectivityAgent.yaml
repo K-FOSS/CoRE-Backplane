@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+    k8s-app: konnectivity-agent
+  name: konnectivity-agent
+  namespace: kube-system
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      k8s-app: konnectivity-agent
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        k8s-app: konnectivity-agent
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: infra1-dc1-infra-k0s-k8s-kubernetes-konnectivity-server
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - command:
+        - /proxy-agent
+        - --v=7
+        - --logtostderr=true
+        - --ca-cert=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        - --service-account-token-path=/var/run/secrets/tokens/konnectivity-agent-token
+        - --health-server-port=8134
+        - --proxy-server-host=10.1.1.41
+        - --proxy-server-port=8132
+        image: us.gcr.io/k8s-artifacts-prod/kas-network-proxy/proxy-agent:v0.0.30
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 8134
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: konnectivity-agent
+        ports:
+        - containerPort: 8133
+          hostPort: 8133
+          name: admin
+          protocol: TCP
+        - containerPort: 8134
+          hostPort: 8134
+          name: health
+          protocol: TCP
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /var/run/secrets/tokens
+          name: konnectivity-agent-token
+      dnsPolicy: ClusterFirst
+      hostNetwork: true
+      priorityClassName: system-cluster-critical
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccount: konnectivity-agent
+      serviceAccountName: konnectivity-agent
+      terminationGracePeriodSeconds: 30
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      volumes:
+      - name: konnectivity-agent-token
+        projected:
+          defaultMode: 420
+          sources:
+          - serviceAccountToken:
+              audience: system:konnectivity-server
+              expirationSeconds: 3600
+              path: konnectivity-agent-token
