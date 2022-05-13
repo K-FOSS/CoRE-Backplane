@@ -702,7 +702,7 @@ cilium:
         #                 certificates not provided by the user at installation
         #                 time.
         # - certmanager:  This method use cert-manager to generate & rotate certificates.
-        method: helm
+        method: certmanager
         # -- Generated certificates validity duration in days.
         certValidityDuration: 1095
         # -- Schedule for certificates regeneration (regardless of their expiration date).
@@ -867,7 +867,7 @@ cilium:
 
     ui:
       # -- Whether to enable the Hubble UI.
-      enabled: false
+      enabled: true
 
       standalone:
         # -- When true, it will allow installing the Hubble UI only, without checking dependencies.
@@ -1017,17 +1017,21 @@ cilium:
 
       # -- hubble-ui ingress configuration.
       ingress:
-        enabled: false
-        annotations: {}
-          # kubernetes.io/ingress.class: nginx
-          # kubernetes.io/tls-acme: "true"
-        className: ""
+        enabled: true
+        annotations:
+          cert-manager.io/cluster-issuer: kjdev-cluster
+          external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+          ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server", "Network"]}'
+          traefik.ingress.kubernetes.io/router.entrypoints: websecure
+          traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+          traefik.ingress.kubernetes.io/router.tls: 'true'
+        className: traefik-core
         hosts:
-          - chart-example.local
-        tls: []
-        #  - secretName: chart-example-tls
-        #    hosts:
-        #      - chart-example.local
+          - hubble.ipaddr.network
+        tls:
+          - secretName: ipaddrnetwork-default-certificates
+            hosts:
+              - '*.ipaddr.network'
 
 
   # -- Method to use for identity allocation (`crd` or `kvstore`).
@@ -1052,7 +1056,7 @@ cilium:
   # traffic. This option is only effective when Cilium is running in direct
   # routing and full KPR mode. Moreover, this option cannot be enabled when Cilium
   # is running in a managed Kubernetes environment or in a chained CNI setup.
-  installNoConntrackIptablesRules: false
+  installNoConntrackIptablesRules: true
 
   ipam:
     # -- Configure IP Address Management mode.
