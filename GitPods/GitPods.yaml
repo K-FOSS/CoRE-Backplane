@@ -586,7 +586,7 @@ metadata:
   namespace: core-prod
 spec:
   dnsNames:
-  - registry.core-prod.svc.cluster.local
+  - registry.core-prod.svc.k0s.resolvemy.host
   duration: 2160h0m0s
   issuerRef:
     group: cert-manager.io
@@ -1322,7 +1322,7 @@ data:
           "maximumBackupCount": 0
         },
         "minio": {
-          "endpoint": "minio-gitpods.core-prod.svc.cluster.local:9000",
+          "endpoint": "minio-gitpods.core-prod.svc.k0s.resolvemy.host:9000",
           "accessKey": "Kr0syWKV6WOGyXhb1c97",
           "accessKeyFile": "",
           "secretKey": "SToYAUA9pQAxEhV2.Hiu",
@@ -3135,7 +3135,7 @@ data:
             NczINQfbiu23u.UQAogx JDJhJDEwJHJGQS5aLzQuYU5GYXRaNkhEWURnTy5xT2tLSHh6WGxIUEFKSU5FaEp0emlLQ3RVSmdVWmR5
         }
 
-        reverse_proxy https://registry.core-prod.svc.cluster.local {
+        reverse_proxy https://registry.core-prod.svc.k0s.resolvemy.host {
             flush_interval -1
             transport http {
                 tls_trusted_ca_certs /etc/caddy/registry-certs/ca.crt
@@ -3150,7 +3150,7 @@ data:
         import ssl_configuration
 
         reverse_proxy  {
-            to ide-proxy.core-prod.svc.cluster.local:80
+            to ide-proxy.core-prod.svc.k0s.resolvemy.host:80
         }
     }
   vhost.kedge: |-
@@ -3162,7 +3162,7 @@ data:
 
         @kedge header_regexp host Host ^kedge-([a-z0-9]+).gitpods.writemy.codes
         handle @kedge {
-            reverse_proxy kedge.core-prod.svc.cluster.local:8080 {
+            reverse_proxy kedge.core-prod.svc.k0s.resolvemy.host:8080 {
                 import upstream_headers
                 import upstream_connection
             }
@@ -3176,7 +3176,7 @@ data:
         import remove_server_header
         import ssl_configuration
 
-        reverse_proxy minio-gitpods.core-prod.svc.cluster.local:9001 {
+        reverse_proxy minio-gitpods.core-prod.svc.k0s.resolvemy.host:9001 {
             flush_interval -1
         }
     }
@@ -3187,7 +3187,7 @@ data:
         import ssl_configuration
 
         reverse_proxy  {
-            to openvsx-proxy.core-prod.svc.cluster.local:8080
+            to openvsx-proxy.core-prod.svc.k0s.resolvemy.host:8080
         }
     }
   vhost.payment-endpoint: |-
@@ -3197,7 +3197,7 @@ data:
         import ssl_configuration
         import debug_headers
 
-        reverse_proxy payment-endpoint.core-prod.svc.cluster.local:3002 {
+        reverse_proxy payment-endpoint.core-prod.svc.k0s.resolvemy.host:3002 {
             import upstream_headers
             import upstream_connection
         }
@@ -3466,7 +3466,7 @@ data:
             "maximumBackupCount": 0
           },
           "minio": {
-            "endpoint": "minio-gitpods.core-prod.svc.cluster.local:9000",
+            "endpoint": "minio-gitpods.core-prod.svc.k0s.resolvemy.host:9000",
             "accessKey": "Kr0syWKV6WOGyXhb1c97",
             "accessKeyFile": "",
             "secretKey": "SToYAUA9pQAxEhV2.Hiu",
@@ -3929,7 +3929,7 @@ data:
     ## Clustering
     ##
     cluster_formation.peer_discovery_backend  = rabbit_peer_discovery_k8s
-    cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
+    cluster_formation.k8s.host = kubernetes.default.svc.k0s.resolvemy.host
     cluster_formation.node_cleanup.interval = 10
     cluster_formation.node_cleanup.only_log_warning = true
     cluster_partition_handling = autoheal
@@ -3994,7 +3994,7 @@ data:
               "maximumBackupCount": 0
             },
             "minio": {
-              "endpoint": "minio-gitpods.core-prod.svc.cluster.local:9000",
+              "endpoint": "minio-gitpods.core-prod.svc.k0s.resolvemy.host:9000",
               "accessKey": "Kr0syWKV6WOGyXhb1c97",
               "accessKeyFile": "",
               "secretKey": "SToYAUA9pQAxEhV2.Hiu",
@@ -4163,7 +4163,7 @@ data:
         },
         "blobServer": {
           "scheme": "http",
-          "host": "blobserve.core-prod.svc.cluster.local:4000"
+          "host": "blobserve.core-prod.svc.k0s.resolvemy.host:4000"
         },
         "gitpodInstallation": {
           "scheme": "https",
@@ -5987,7 +5987,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -6254,7 +6254,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -6466,7 +6466,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -6758,9 +6758,9 @@ spec:
             - name: RABBITMQ_FORCE_BOOT
               value: "no"
             - name: RABBITMQ_NODE_NAME
-              value: "rabbit@$(MY_POD_NAME).$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.cluster.local"
+              value: "rabbit@$(MY_POD_NAME).$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.k0s.resolvemy.host"
             - name: K8S_HOSTNAME_SUFFIX
-              value: ".$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.cluster.local"
+              value: ".$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.k0s.resolvemy.host"
             - name: RABBITMQ_MNESIA_DIR
               value: "/bitnami/rabbitmq/mnesia/$(RABBITMQ_NODE_NAME)"
             - name: RABBITMQ_LDAP_ENABLE
@@ -6921,7 +6921,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         image: eu.gcr.io/gitpod-core-dev/build/openvsx-proxy:commit-b121fec8e215abd2d0328ef28b8808a59852cb4c
@@ -7016,7 +7016,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -7273,7 +7273,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: PROXY_DOMAIN
@@ -7404,7 +7404,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         image: eu.gcr.io/gitpod-core-dev/build/dashboard:commit-b121fec8e215abd2d0328ef28b8808a59852cb4c
@@ -7490,7 +7490,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: DB_HOST
@@ -7762,7 +7762,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -7853,7 +7853,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         image: eu.gcr.io/gitpod-core-dev/build/ide-proxy:commit-543bcac06d630ef821c44c2fde787feddfbe52b6
@@ -8027,7 +8027,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -8182,7 +8182,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -8314,7 +8314,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -8562,7 +8562,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: info
         - name: JAEGER_DISABLED
@@ -8801,7 +8801,7 @@ spec:
             - name: GITPOD_INSTALLATION_VERSION
               value: main.2739
             - name: SERVER_URL
-              value: http://server.core-prod.svc.cluster.local:9000
+              value: http://server.core-prod.svc.k0s.resolvemy.host:9000
             image: eu.gcr.io/gitpod-core-dev/build/installation-telemetry:commit-b121fec8e215abd2d0328ef28b8808a59852cb4c
             imagePullPolicy: IfNotPresent
             name: gitpod-telemetry
