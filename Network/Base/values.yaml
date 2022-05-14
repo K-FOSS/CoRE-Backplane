@@ -591,7 +591,7 @@ cilium:
   # -- Configure ClusterIP service handling in the host namespace (the node).
   hostServices:
     # -- Enable host reachable services.
-    enabled: true
+    enabled: false
 
     # -- Supported list of protocols to apply ClusterIP translation to.
     protocols: tcp,udp
@@ -629,7 +629,7 @@ cilium:
     # Possible values are:
     #   1, 3, 7, 15, 31, 63, 127, 255, 511, 1023,
     #   2047, 4095, 8191, 16383, 32767, 65535
-    # eventBufferCapacity: "4095"
+    eventBufferCapacity: "32767"
 
     # -- Hubble metrics configuration.
     # See https://docs.cilium.io/en/stable/operations/metrics/#hubble-metrics
@@ -1047,7 +1047,7 @@ cilium:
   # traffic. This option is only effective when Cilium is running in direct
   # routing and full KPR mode. Moreover, this option cannot be enabled when Cilium
   # is running in a managed Kubernetes environment or in a chained CNI setup.
-  installNoConntrackIptablesRules: true
+  installNoConntrackIptablesRules: false
 
   ipam:
     # -- Configure IP Address Management mode.
@@ -1268,7 +1268,7 @@ cilium:
   # -- Configure N-S k8s service loadbalancing
   nodePort:
     # -- Enable the Cilium NodePort service implementation.
-    enabled: false
+    enabled: true
 
     # -- Port range to use for NodePort services.
     # range: "30000,32767"
@@ -1635,7 +1635,7 @@ cilium:
 
   nodeinit:
     # -- Enable the node initialization DaemonSet
-    enabled: false
+    enabled: true
 
     # -- node-init image.
     image:
