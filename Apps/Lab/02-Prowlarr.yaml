@@ -38,6 +38,17 @@ spec:
               http:
                 port: 9696
 
+        affinity:
+          podAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution: 
+              - labelSelector:
+                  matchExpressions:
+                    - key: tenant 
+                      operator: In 
+                      values:
+                        - kjmedia 
+                topologyKey: kubernetes.io/hostname
+
         ingress:
           main:
             enabled: true
