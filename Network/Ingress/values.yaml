@@ -218,9 +218,11 @@ pomerium:
 
   resources: null
 
-  podLabels: {}
+  podLabels:
+    sidecar.istio.io/inject: 'true'
 
-  podAnnotations: {}
+  podAnnotations:
+    sidecar.istio.io/inject: 'true'
 
   affinity:
     podAntiAffinity:
@@ -241,6 +243,9 @@ pomerium:
       readOnly: true              
 
   authenticate:
+    ingress:
+      tls:
+        secretName: myloginspace-int-default-certificates
     existingTLSSecret: pomerium-tls
     idp:
       provider: oidc
@@ -358,6 +363,9 @@ pomerium:
 
   proxy:
     existingTLSSecret: pomerium-tls
+    deployment:
+      podAnnotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: '80,443'
     replicaCount: 2
 
   rbac:
