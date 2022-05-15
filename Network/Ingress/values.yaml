@@ -218,11 +218,9 @@ pomerium:
 
   resources: null
 
-  podLabels:
-    sidecar.istio.io/inject: 'true'
+  podLabels: {}
 
-  podAnnotations:
-    sidecar.istio.io/inject: 'true'
+  podAnnotations: {}
 
   affinity:
     podAntiAffinity:
@@ -243,15 +241,11 @@ pomerium:
       readOnly: true              
 
   authenticate:
-    ingress:
-      tls:
-        secretName: myloginspace-int-default-certificates
     existingTLSSecret: pomerium-tls
-    existingExternalTLSSecret: myloginspace-int-default-certificates
     idp:
       provider: oidc
       url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
-    proxied: true
+    proxied: false
     replicaCount: 2
 
   authorize:
@@ -270,7 +264,7 @@ pomerium:
     generateSigningKey: false
     existingCASecret: pomerium-tls
     generateTLS: false
-    insecure: true
+    insecure: false
     insecureProxy: false
     rootDomain: int.mylogin.space
     sharedSecret: ''
@@ -362,18 +356,8 @@ pomerium:
     enabled: true
     port: 9090
 
-  service:
-    authorize:
-      headless: false # send traffic to the Pomerium Authorize through the Istio service rather than to individual pods
-    databroker:
-      headless: false # send traffic to the Pomerium Databroker through the Istio service rather than to individual pods
-
   proxy:
     existingTLSSecret: pomerium-tls
-    authenticateServiceUrl: https://authenticate.int.mylogin.space
-    deployment:
-      podAnnotations:
-        traffic.sidecar.istio.io/excludeInboundPorts: '80,443'
     replicaCount: 2
 
   rbac:
