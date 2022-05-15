@@ -16,6 +16,17 @@ spec:
     - 'bitwarden.kristianjones.dev'
   gateways:
     - traefik-gateway
+  http:
+    - name: pomerium-authn
+      match:
+        - headers:
+            host:
+              exact: 'authenticate.int.mylogin.space'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: traefik-core-pomerium-authenticate.core-prod.svc.cluster.local
   tls:
     - match:
         - port: 443
