@@ -31,13 +31,14 @@ spec:
           # -- image pull policy
           pullPolicy: Always
 
+
         podLabels:
           # sidecar.istio.io/inject: 'true'
           tenant: 'kjmedia'
 
         podAnnotations: {}
           # sidecar.istio.io/inject: 'true'
-
+          
         controller:
           replicas: 1
 
@@ -51,14 +52,6 @@ spec:
                       values:
                         - kjmedia 
                 topologyKey: kubernetes.io/hostname
-
-        resources:
-          limits:
-            cpu: 1024m	
-            memory: 2048Mi	
-          requests:
-            cpu: 64m	
-            memory: 64Mi
 
         ingress:
           main:
@@ -100,4 +93,3 @@ spec:
             enabled: true
             mountPath: /Media
             existingClaim: lab-core-kjmedia-media
-
