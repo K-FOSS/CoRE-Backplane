@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: pomerium-service
+spec:
+  hosts:
+    - authenticate.int.mylogin.space
+  gateways:
+    - traefik-gateway
+  http:
+    - route:
+        - destination:
+            port:
+              number: 80
+            host: traefik-core-pomerium-authenticate.core-prod.svc.cluster.local
