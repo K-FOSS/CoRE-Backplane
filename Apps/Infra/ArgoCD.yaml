@@ -11,7 +11,7 @@ spec:
             url: https://10.1.1.40:443
   template:
     metadata:
-      name: '{{cluster}}-argocd'
+      name: '{{cluster}}-argocd-helm'
     spec:
       project: core
       syncPolicy:
@@ -23,9 +23,9 @@ spec:
         path: ArgoCD
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
-        directory:
-          recurse: true
-          jsonnet: {}
+        plugin:
+          name: argocd-lovely-plugin
+
       destination:
         server: '{{url}}'
         namespace: argocd
