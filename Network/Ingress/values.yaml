@@ -218,9 +218,11 @@ pomerium:
 
   resources: null
 
-  podLabels: {}
+  podLabels:
+    sidecar.istio.io/inject: 'true'
 
-  podAnnotations: {}
+  podAnnotations:
+    sidecar.istio.io/inject: 'true'
 
   affinity:
     podAntiAffinity:
@@ -359,6 +361,9 @@ pomerium:
   proxy:
     existingTLSSecret: pomerium-tls
     replicaCount: 2
+    deployment:
+      podAnnotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: '80,443'
 
   rbac:
     create: true
