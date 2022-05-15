@@ -207,3 +207,172 @@ traefik:
         domains: null
         enabled: true
         options: ''
+
+pomerium:
+  extraVolumes:
+    - name: minio-token
+      secret:
+        secretName: test-tmp-minio
+
+  priorityClassName: 'tier2-priority'
+
+  resources: null
+
+  podLabels: {}
+
+  podAnnotations: {}
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                    - pomerium-core
+            topologyKey: kubernetes.io/hostname
+
+  extraVolumeMounts:
+    - name: minio-token
+      mountPath: "/var/secrets/minio-token"
+      readOnly: true              
+
+  authenticate:
+    existingTLSSecret: pomerium-tls
+    idp:
+      provider: oidc
+      url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
+    proxied: false
+    replicaCount: 2
+
+  authorize:
+    existingTLSSecret: pomerium-tls
+    replicaCount: 2
+
+  config:
+    administrators: k@kristianjones.dev
+    existingSharedSecret: pomerium-secrets
+    existingSigningKeySecret: pomerium-signing-key
+    extraOpts:
+      jwt_claims_headers: email,groups,user,nickname,preferred_username
+    forceGenerateServiceSecrets: false
+    forceGenerateSigningKey: false
+    forceGenerateTLS: false
+    generateSigningKey: false
+    existingCASecret: pomerium-tls
+    generateTLS: false
+    insecure: false
+    insecureProxy: false
+    rootDomain: int.mylogin.space
+    sharedSecret: ''
+    signingKey: ''
+    routes:
+      - from: https://test-k8s.int.mylogin.space
+        to: http://console.minio-operator.svc.cluster.local:9090
+        tls_skip_verify: true
+        kubernetes_service_account_token_file: /var/secrets/minio-token/token
+        allowed_idp_claims:
+          groups:
+            - Network
+
+      - from: https://kubernetes.int.mylogin.space
+        to: https://kubernetes.default.svc
+        tls_skip_verify: true
+        kubernetes_service_account_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        allowed_idp_claims:
+          groups:
+            - Network
+
+      - from: https://kiali.int.mylogin.space
+        to: http://kiali.kiali-operator.svc:20001
+        tls_skip_verify: true
+        kubernetes_service_account_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        allow_websockets: true
+        allowed_idp_claims:
+          groups:
+            - Network
+            - Server
+
+      - from: https://controlcenter.house
+        to: http://k0s-dc1-homeassistant-core-home-assistant-core-prod.service.dc1.kjdev:8123
+        pass_identity_headers: true
+        allow_websockets: true
+        allowed_idp_claims:
+          groups:
+            - Home Users
+
+  databroker:
+    existingTLSSecret: pomerium-tls
+    replicaCount: 2
+    service:
+      annotations: {}
+      clusterIP: None
+      type: ClusterIP
+    storage:
+      connectionString: redis://10.1.1.68:6379/5
+      tlsSkipVerify: false
+      type: redis
+
+  extraArgs: {}
+  extraEnv: {}
+
+  forwardAuth:
+    enabled: true
+    internal: true
+
+  fullnameOverride: ''
+
+  ingress:
+    enabled: false
+    className: traefik-core
+    annotations:
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: 'true'
+    secret:
+      name: myloginspace-int-default-certificates
+    tls:
+      hosts:
+        - '*.int.mylogin.space'
+
+  apiProxy:
+    enabled: true
+    ingress: false
+
+  ingressController:
+    config:
+      operatorMode: true
+      updateStatus: true
+      ingressClass: 'traefik.io/ingress-controller'
+    ingressClassResource:
+      enabled: false
+      name: traefik-core
+
+    enabled: true
+
+  metrics:
+    enabled: true
+    port: 9090
+
+  proxy:
+    existingTLSSecret: pomerium-tls
+    replicaCount: 2
+
+  rbac:
+    create: true
+
+  redis:
+    enabled: false
+
+  replicaCount: 2
+  serviceMonitor:
+    enabled: true
+  tracing:
+    debug: false
+    enabled: true
+    jaeger:
+      agent_endpoint: k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:6831
+      collector_endpoint: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
+    provider: jaeger

@@ -9,7 +9,8 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
-            loadBalancerIP: 10.1.1.88
+            traefikLBIP: 10.1.1.88
+            pomeriumLBIP: 
   template:
     metadata:
       name: 'traefik-core'
@@ -20,7 +21,7 @@ spec:
         automated: {}
 
       source:
-        path: Network/Ingress/Traefik
+        path: Network/Ingress
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
         plugin:
@@ -33,7 +34,7 @@ spec:
                     enabled: true
                     type: LoadBalancer
                     spec:
-                      loadBalancerIP: '{{loadBalancerIP}}'
+                      loadBalancerIP: '{{traefikLBIP}}'
                     annotations:
                       metallb.universe.tf/allow-shared-ip: 'traefik-core'
 
