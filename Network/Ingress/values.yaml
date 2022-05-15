@@ -269,7 +269,7 @@ pomerium:
     generateSigningKey: false
     existingCASecret: pomerium-tls
     generateTLS: false
-    insecure: false
+    insecure: true
     insecureProxy: false
     rootDomain: int.mylogin.space
     sharedSecret: ''
@@ -360,6 +360,12 @@ pomerium:
   metrics:
     enabled: true
     port: 9090
+
+  service:
+    authorize:
+      headless: false # send traffic to the Pomerium Authorize through the Istio service rather than to individual pods
+    databroker:
+      headless: false # send traffic to the Pomerium Databroker through the Istio service rather than to individual pods
 
   proxy:
     existingTLSSecret: pomerium-tls
