@@ -241,11 +241,11 @@ cilium:
     root: /sys/fs/bpf
 
     # -- Enable BPF clock source probing for more efficient tick retrieval.
-    clockProbe: false
+    clockProbe: true
 
     # -- Enables pre-allocation of eBPF map values. This increases
     # memory usage but can reduce latency.
-    preallocateMaps: true
+    preallocateMaps: false
 
     # -- Configure the maximum number of entries in the TCP connection tracking
     # table.
@@ -1243,7 +1243,7 @@ cilium:
   loadBalancer:
     # -- standalone enables the standalone L4LB which does not connect to
     # kube-apiserver.
-    # standalone: false
+    standalone: true
 
     # -- algorithm is the name of the load balancing algorithm for backend
     # selection e.g. random or maglev
@@ -1251,15 +1251,15 @@ cilium:
 
     # -- mode is the operation mode of load balancing for remote backends
     # e.g. snat, dsr, hybrid
-    #mode: dsr
+    mode: dsr
 
     # -- acceleration is the option to accelerate service handling via XDP
     # e.g. native, disabled
-    # acceleration: disabled
+    acceleration: native
 
     # -- dsrDispatch configures whether IP option or IPIP encapsulation is
     # used to pass a service IP and port to remote backend
-    # dsrDispatch: opt
+    dsrDispatch: ipip
 
     # -- serviceTopology enables K8s Topology Aware Hints -based service
     # endpoints filtering
