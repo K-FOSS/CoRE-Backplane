@@ -300,7 +300,7 @@ cilium:
     # host stack (true) or directly and more efficiently out of BPF (false) if
     # the kernel supports it. The latter has the implication that it will also
     # bypass netfilter in the host namespace.
-    #hostLegacyRouting: false
+    hostLegacyRouting: false
 
     # -- Configure the eBPF-based TPROXY to reduce reliance on iptables rules
     # for implementing Layer 7 policy.
@@ -402,7 +402,7 @@ cilium:
   # -- Tail call hooks for custom eBPF programs.
   customCalls:
     # -- Enable tail call hooks for custom eBPF programs.
-    enabled: false
+    enabled: true
 
   # -- Configure which datapath mode should be used for configuring container
   # connectivity. Valid options are "veth" or "ipvlan". Deprecated, to be removed
@@ -1240,18 +1240,18 @@ cilium:
     enabled: false
 
   # -- Configure service load balancing
-  # loadBalancer:
+  loadBalancer:
     # -- standalone enables the standalone L4LB which does not connect to
     # kube-apiserver.
     # standalone: false
 
     # -- algorithm is the name of the load balancing algorithm for backend
     # selection e.g. random or maglev
-    # algorithm: random
+    algorithm: maglev
 
     # -- mode is the operation mode of load balancing for remote backends
     # e.g. snat, dsr, hybrid
-    # mode: snat
+    mode: dsr
 
     # -- acceleration is the option to accelerate service handling via XDP
     # e.g. native, disabled
@@ -1400,70 +1400,6 @@ cilium:
     # -- Enable etcd mode for the agent.
     enabled: false
 
-    # -- cilium-etcd-operator image.
-    image:
-      override: ~
-      repository: quay.io/cilium/cilium-etcd-operator
-      tag: v2.0.7
-      pullPolicy: IfNotPresent
-
-    # -- The priority class to use for cilium-etcd-operator
-    priorityClassName: ""
-
-    # -- Additional cilium-etcd-operator container arguments.
-    extraArgs: []
-
-    # -- Node tolerations for cilium-etcd-operator scheduling to nodes with taints
-    # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-    tolerations:
-    - operator: Exists
-      # - key: "key"
-      #   operator: "Equal|Exists"
-      #   value: "value"
-      #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
-
-    # -- Node labels for cilium-etcd-operator pod assignment
-    # ref: https://kubernetes.io/docs/user-guide/node-selection/
-    nodeSelector: {}
-
-    # -- Annotations to be added to cilium-etcd-operator pods
-    podAnnotations: {}
-
-    # -- Labels to be added to cilium-etcd-operator pods
-    podLabels: {}
-
-    # PodDisruptionBudget settings
-    podDisruptionBudget:
-      # -- enable PodDisruptionBudget
-      # ref: https://kubernetes.io/docs/concepts/workloads/pods/disruptions/
-      enabled: false
-      # -- Minimum number/percentage of pods that should remain scheduled.
-      # When it's set, maxUnavailable must be disabled by `maxUnavailable: null`
-      minAvailable: null
-      # -- Maximum number/percentage of pods that may be made unavailable
-      maxUnavailable: 1
-
-    # -- cilium-etcd-operator resource limits & requests
-    # ref: https://kubernetes.io/docs/user-guide/compute-resources/
-    resources: {}
-      # limits:
-      #   cpu: 4000m
-      #   memory: 4Gi
-      # requests:
-      #   cpu: 100m
-      #   memory: 512Mi
-
-    # -- Security context to be added to cilium-etcd-operator pods
-    securityContext: {}
-      # runAsUser: 0
-
-    # -- cilium-etcd-operator update strategy
-    updateStrategy:
-      type: RollingUpdate
-      rollingUpdate:
-        maxSurge: 1
-        maxUnavailable: 1
-
     # -- If etcd is behind a k8s service set this option to true so that Cilium
     # does the service translation automatically without requiring a DNS to be
     # running.
@@ -1472,9 +1408,6 @@ cilium:
     # -- Cluster domain for cilium-etcd-operator.
     clusterDomain: k0s.resovlemy.host
 
-    # -- List of etcd endpoints (not needed when using managed=true).
-    endpoints:
-      - https://CHANGE-ME:2379
 
     # -- Enable use of TLS/SSL for connectivity to etcd. (auto-enabled if
     # managed=true)
@@ -2150,7 +2083,7 @@ kube-router:
       bgpRouterId:
 
       # kubeRouter.router.routesSyncPeriod -- The delay between route updates and advertisements (e.g. '5s', '1m', '2h22m'). Must be greater than 0
-      routesSyncPeriod: '1m'
+      routesSyncPeriod: '3m'
 
       # kubeRouter.router.peers -- List of external BGP peers, see values.yaml for example
       peers:
@@ -2193,7 +2126,7 @@ kube-router:
       bgpPort:
 
       # kubeRouter.router.bgpGracefulRestartDeferralTime -- BGP Graceful restart deferral time according to RFC4724 4.1, maximum 18h
-      bgpGracefulRestartDeferralTime: '10m'
+      bgpGracefulRestartDeferralTime: '5m'
 
       # kubeRouter.router.bgpGracefulRestart -- Enables the BGP Graceful Restart capability so that routes are preserved on unexpected restarts
       bgpGracefulRestart: true
