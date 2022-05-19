@@ -95,6 +95,10 @@ spec:
             - mountPath: /secrets/k0s
               name: k0s-volume
               readOnly: true
+
+            - mountPath: /secrets/infra1
+              name: infra1-volume
+              readOnly: true
       dnsPolicy: Default
       nodeSelector:
         beta.kubernetes.io/os: linux
@@ -124,3 +128,7 @@ spec:
         - secret:
             secretName: k0s-kubeconfig
           name: k0s-volume
+
+        - secret:
+            secretName: infra1-kubeconfig
+          name: infra1-volume
