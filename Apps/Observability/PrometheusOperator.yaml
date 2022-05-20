@@ -10,11 +10,15 @@ spec:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
             controller: infra1-dc1-infra1-dc1-infra-k0s-k8s-kubernetes-controller-manager-core-prod.service.dc1.kjdev
+            controllerPort: '10257'
             scheduler: infra1-dc1-infra1-dc1-infra-k0s-k8s-kubernetes-scheduler-core-prod.service.dc1.kjdev
+            schedulerPort: '10259'
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
             controller: ''
+            controllerPort: 'null'
+            schedulerPort: 'null'
             scheduler: ''
   template:
     metadata:
@@ -882,7 +886,7 @@ spec:
                 ## If null or unset, the value is determined dynamically based on target Kubernetes version due to change
                 ## of default port in Kubernetes 1.22.
                 ##
-                port: null
+                port: {{controllerPort}}
                 targetPort: null
                 # selector:
                 #   component: kube-controller-manager
@@ -1111,7 +1115,7 @@ spec:
                 ## If null or unset, the value is determined dynamically based on target Kubernetes version due to change
                 ## of default port in Kubernetes 1.23.
                 ##
-                port: null
+                port: {{ schedulerPort }}
                 targetPort: null
                 # selector:
                 #   component: kube-scheduler
