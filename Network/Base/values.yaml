@@ -419,7 +419,7 @@ cilium:
   # that a packet sent from a pod to a destination outside the cluster will be
   # masqueraded (to an output device IPv4 address), if the output device runs the
   # program. When not specified, probing will automatically detect devices.
-  devices: "ens+"
+  devices: "ens193,ens161,ens224,ens256"
 
   # -- Chains to ignore when installing feeder rules.
   # disableIptablesFeederRules: ""
@@ -1277,6 +1277,8 @@ cilium:
 
     # -- Set to true to prevent applications binding to service ports.
     bindProtection: true
+
+    directRoutingDevice: 'ens193,ens161,ens224,ens256'
 
     # -- Append NodePort range to ip_local_reserved_ports if clash with ephemeral
     # ports is detected.
