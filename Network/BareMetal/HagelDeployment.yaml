@@ -22,9 +22,8 @@ spec:
 
     spec:
       containers:
-        - args:
-            - -log-level
-            - DEBUG
+        - name: hegel
+          image: registry.writemy.codes/tinkerbell/hegel
           envFrom:
             - configMapRef:
                 name: tink-client
@@ -39,9 +38,7 @@ spec:
               value: "50061"
             - name: HEGEL_USE_TLS
               value: "0"
-          image: registry.writemy.codes/tinkerbell/hegel
           imagePullPolicy: Always
-          name: hegel
           ports:
             - containerPort: 42115
               hostPort: 42115
