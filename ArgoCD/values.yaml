@@ -262,7 +262,7 @@ argo-cd:
 
     autoscaling:
       enabled: true
-      maxReplicas: 2
+      maxReplicas: 4
       minReplicas: 1
       targetCPUUtilizationPercentage: 50
       targetMemoryUtilizationPercentage: 50
@@ -349,7 +349,15 @@ argo-cd:
       successThreshold: 1
       timeoutSeconds: 1
     replicas: 1
-    resources: {}
+
+    resources:
+      limits:
+        cpu: 500m
+        memory: 1G
+      requests:
+        cpu: 125m
+        memory: 128Mi
+
     service:
       annotations: {}
       labels: {}
