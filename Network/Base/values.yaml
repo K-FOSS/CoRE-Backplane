@@ -2169,7 +2169,7 @@ kube-router:
       #peerRouterMultihopTtl: 
 
       # kubeRouter.router.overrideNexthop -- Override the next-hop in bgp routes sent to peers with the local ip
-      overrideNexthop:
+      overrideNexthop: true
 
       # kubeRouter.router.overlayType -- Topology of overlay network. Possible values: subnet or full.
       overlayType:
@@ -2184,7 +2184,7 @@ kube-router:
       enableOverlay: false
 
       # kubeRouter.router.enableIbgp -- Enables peering with nodes with the same ASN, if disabled will only peer with external BGP peers (true or false)
-      enableIbgp: true
+      enableIbgp: false
 
       # kubeRouter.router.enableCni -- Enable CNI plugin. Disable if you want to use kube-router features alongside another CNI plugin (true or false)
       enableCni: false
@@ -2196,10 +2196,10 @@ kube-router:
       clusterAsn: 64512
 
       # kubeRouter.router.bgpPort -- The port open for incoming BGP connections and to use for connecting with other BGP peers
-      bgpPort:
+      bgpPort: 179
 
       # kubeRouter.router.bgpGracefulRestartDeferralTime -- BGP Graceful restart deferral time according to RFC4724 4.1, maximum 18h
-      bgpGracefulRestartDeferralTime: '5m'
+      bgpGracefulRestartDeferralTime: '15m'
 
       # kubeRouter.router.bgpGracefulRestart -- Enables the BGP Graceful Restart capability so that routes are preserved on unexpected restarts
       bgpGracefulRestart: true
