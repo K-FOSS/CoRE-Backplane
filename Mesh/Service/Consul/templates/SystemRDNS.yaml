@@ -99,7 +99,13 @@ spec:
             - mountPath: /secrets/infra1
               name: infra1-volume
               readOnly: true
-      dnsPolicy: Default
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+          - 1.0.0.1
+          - 8.8.8.8
+          - 8.8.4.4
       nodeSelector:
         beta.kubernetes.io/os: linux
       restartPolicy: Always
