@@ -17,6 +17,9 @@ spec:
     - 'radarr.kjmedia.stream'
     - 'prowlarr.kjmedia.stream'
     - 'bitwarden.kristianjones.dev'
+
+    # IP Addresses
+    - 10.1.1.83
   gateways:
     - traefik-gateway
   http:
@@ -30,6 +33,23 @@ spec:
             port:
               number: 80
             host: traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
+
+    - name: wip-static-cdn
+      match:
+        - headers:
+            host:
+              exact: 'static.mylogin.space'
+
+        - headers:
+            host:
+              exact: '10.1.1.83'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
+
+
   tls:
     - match:
         - port: 443
