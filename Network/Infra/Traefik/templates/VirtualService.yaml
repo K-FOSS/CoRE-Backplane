@@ -12,11 +12,9 @@ spec:
     - '*.mylogin.space'
     - '*.writemy.codes'
     - '*.ipaddr.network'
-    - 'ytdl.kjmedia.stream'
-    - 'sonarr.kjmedia.stream'
-    - 'radarr.kjmedia.stream'
-    - 'prowlarr.kjmedia.stream'
+    - '*.kjmedia.stream'
     - 'bitwarden.kristianjones.dev'
+    - '*.ipaddr.network'
 
     # IP Addresses
     - 10.1.1.83
@@ -27,7 +25,7 @@ spec:
       match:
         - headers:
             host:
-              exact: 'authenticate.int.mylogin.space'
+              exact: authenticate.int.mylogin.space
       route:
         - destination:
             port:
@@ -71,16 +69,44 @@ spec:
       match:
         - headers:
             host:
-              exact: 'static.mylogin.space'
+              exact: static.mylogin.space
 
         - headers:
             host:
-              exact: '10.1.1.83'
+              exact: 10.1.1.83
       route:
         - destination:
             port:
               number: 80
             host: traefik-core-s3-proxy.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              exact: jellyfin.kjmedia.stream
+      route:
+        - destination:
+            port:
+              number: 8096
+            host: jellyfin-core.lab-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              exact: 10.1.1.83
+          uri:
+            prefix: /inform
+        - headers:
+            host:
+              exact: unifi.ipaddr.network
+          uri:
+            prefix: /inform
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: unifi-ingress.core-prod.svc.k0s.resolvemy.host
+
 
   tls:
     - match:
