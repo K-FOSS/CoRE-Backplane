@@ -218,9 +218,11 @@ pomerium:
 
   resources: null
 
-  podLabels: {}
+  podLabels:
+    sidecar.istio.io/inject: 'true'
 
-  podAnnotations: {}
+  podAnnotations:
+    sidecar.istio.io/inject: 'true'
 
   affinity:
     podAntiAffinity:
@@ -992,13 +994,14 @@ s3-proxy:
 
   # Arbitrary non-identifying metadata for s3-proxy pods.
   podAnnotations:
-    {}
+    sidecar.istio.io/inject: 'true'
     # prometheus.io/scrape: "true"
     # prometheus.io/path: "/metrics"
     # prometheus.io/port: "9090"
 
   # Extra pod labels.
-  podLabels: {}
+  podLabels:
+    sidecar.istio.io/inject: 'true'
 
   grafana:
     # Use this only if you are using the Grafana operator from https://github.com/integr8ly/grafana-operator
