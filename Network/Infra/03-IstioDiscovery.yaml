@@ -37,7 +37,7 @@ spec:
 
               # Can be a full hub/image:tag
               image: pilot
-              traceSampling: 0.25
+              traceSampling: 0.0025
 
               # Resources for a small pilot install
               resources:
@@ -244,10 +244,10 @@ spec:
               # No hurry to do this in 1.6, we're trying to prove the code.
               defaultConfig:
                 tracing:
-                  sampling: 25
+                  sampling: '0.0025'
                   max_path_tag_length: 99999
                   zipkin:
-                    address: otel-collector.core-prod.svc:9411
+                    address: otel-collector.core-prod.svc.k0s.resolvemy.host:9411
 
 
             global:
@@ -549,7 +549,7 @@ spec:
                 zipkin:
                   # Host:Port for reporting trace data in zipkin format. If not specified, will default to
                   # zipkin service (port 9411) in the same namespace as the other istio components.
-                  address: otel-collector.core-prod.svc:9411
+                  address: otel-collector.core-prod.svc.k0s.resolvemy.host:9411
 
               # Use the Mesh Control Protocol (MCP) for configuring Istiod. Requires an MCP source.
               useMCP: false
