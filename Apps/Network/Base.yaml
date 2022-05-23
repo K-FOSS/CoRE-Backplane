@@ -4,15 +4,16 @@ metadata:
   name: core-backplane-network-base
   namespace: argocd
 spec:
-
   generators:
     - list:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
+            apiHost: 10.1.1.40
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
+            apiHost: 172.18.0.1
   template:
     metadata:
       name: '{{cluster}}-core-network-base'
@@ -24,6 +25,16 @@ spec:
         path: Network/Base
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                cilium:
+
+                  k8sServiceHost: '{{ apiHost }}'
+                  k8sServicePort: 443
+
 
       destination:
         server: '{{url}}'
