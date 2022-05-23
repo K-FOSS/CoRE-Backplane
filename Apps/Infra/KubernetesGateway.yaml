@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-infra-k8s-gatewayapi
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+  template:
+    metadata:
+      name: '{{cluster}}-infra-k8s-gatewayapi'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        path: Rancher
+        repoURL: https://github.com/kubernetes-sigs/gateway-api/tree/v0.4.3/config/crd/v1alpha2
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: kube-system
