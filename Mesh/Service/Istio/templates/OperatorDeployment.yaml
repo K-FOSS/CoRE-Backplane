@@ -22,7 +22,9 @@ spec:
         {{ include "istio.labels" . | nindent 8 }}
     spec:
       containers:
-        - command:
+        - name: istio-operator
+          image: 'gcr.io/istio-testing/operator:latest'
+          command:
             - operator
             - server
           env:
@@ -47,9 +49,9 @@ spec:
               value: 300s
 
             - name: REVISION
-          image: 'gcr.io/istio-testing/operator:latest'
+          
           imagePullPolicy: IfNotPresent
-          name: istio-operator
+          
           resources:
             limits:
               cpu: 200m
