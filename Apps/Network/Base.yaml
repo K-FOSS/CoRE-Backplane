@@ -10,10 +10,30 @@ spec:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
             apiHost: 10.1.1.40
+            peers: |-
+              - ip: 172.16.51.100
+                asn: 64567
+                port: 179
+
+              - ip: 172.16.52.100
+                asn: 64567
+                port: 179
+
+              - ip: 172.16.53.100
+                asn: 64567
+                port: 179
+
+              - ip: 172.16.54.100
+                asn: 64567
+                port: 179
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
             apiHost: 172.18.0.1
+            peers: |-
+              - ip: 172.31.241.69
+                asn: 64567
+                port: 179
   template:
     metadata:
       name: '{{cluster}}-core-network-base'
@@ -34,6 +54,11 @@ spec:
 
                   k8sServiceHost: '{{ apiHost }}'
                   k8sServicePort: 443
+
+                kube-router:
+                  peers:
+                    {{ peers }}
+
 
 
       destination:
