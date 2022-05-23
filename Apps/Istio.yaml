@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-infra-istio-operator
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+
+          - cluster: infra1-dc1
+            url: https://172.18.0.1:443
+  template:
+    metadata:
+      name: '{{cluster}}-istio-operator'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        path: Mesh/Service/Istio
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: istio-operator
