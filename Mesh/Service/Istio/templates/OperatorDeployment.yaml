@@ -28,17 +28,24 @@ spec:
           env:
             - name: WATCH_NAMESPACE
               value: istio-system
+            - name: KUBERNETES_SERVICE_HOST
+              value: '10.1.1.40'
+
             - name: LEADER_ELECTION_NAMESPACE
               value: istio-operator
+
             - name: POD_NAME
               valueFrom:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.name
+
             - name: OPERATOR_NAME
               value: istio-operator
+
             - name: WAIT_FOR_RESOURCES_TIMEOUT
               value: 300s
+
             - name: REVISION
           image: 'gcr.io/istio-testing/operator:latest'
           imagePullPolicy: IfNotPresent
