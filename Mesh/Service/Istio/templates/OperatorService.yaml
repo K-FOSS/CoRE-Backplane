@@ -15,7 +15,7 @@ spec:
       targetPort: 8383
 
   selector:
-    name: istio-operator
+    {{ include "istio.selectorLabels" . | nindent 4 }}
   sessionAffinity: None
   type: ClusterIP
 
