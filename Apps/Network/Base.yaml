@@ -10,6 +10,7 @@ spec:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
             apiHost: 10.1.1.40
+            apiPort: '6443'
             NICs: 'ens+'
             konnectivity: 'true'
             peers: | 
@@ -30,8 +31,9 @@ spec:
                       port: 179
 
           - cluster: infra1-dc1
-            url: https://172.18.0.1:6443
-            apiHost: 172.18.0.1
+            url: https://172.31.241.70:6443
+            apiHost: 172.31.241.70
+            apiPort: '6443'
             konnectivity: 'false'
             NICs: 'bond0'
             peers: | 
@@ -56,7 +58,7 @@ spec:
               value: |- 
                 cilium:
                   k8sServiceHost: '{{ apiHost }}'
-                  k8sServicePort: 443
+                  k8sServicePort: '{{ apiPort }}'
 
                   devices: '{{NICs}}'
                   
