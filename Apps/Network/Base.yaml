@@ -14,21 +14,21 @@ spec:
             NICs: 'ens+'
             konnectivity: 'true'
             peers: | 
-                  - ip: 172.16.51.100
-                          asn: 64567
-                          port: 179
+                - ip: 172.16.51.100
+                    asn: 64567
+                    port: 179
 
-                        - ip: 172.16.52.100
-                          asn: 64567
-                          port: 179
+                  - ip: 172.16.52.100
+                    asn: 64567
+                    port: 179
 
-                        - ip: 172.16.53.100
-                          asn: 64567
-                          port: 179
+                  - ip: 172.16.53.100
+                    asn: 64567
+                    port: 179
 
-                        - ip: 172.16.54.100
-                          asn: 64567
-                          port: 179
+                  - ip: 172.16.54.100
+                    asn: 64567
+                    port: 179
 
           - cluster: infra1-dc1
             url: https://172.20.52.1:6443
@@ -37,9 +37,8 @@ spec:
             konnectivity: 'false'
             NICs: 'bond0'
             peers: | 
-                  - ip: 172.31.241.69
-                          asn: 64567
-                          port: 179
+                - ip: 172.31.241.69
+                    asn: 64567
   template:
     metadata:
       name: '{{cluster}}-core-network-base'
@@ -86,11 +85,14 @@ spec:
                 konnectivity:
                   enabled: {{ konnectivity }}
 
-                kube-router:
-                  kubeRouter:
-                    router:
-                      peers:
-                      {{ peers }}
+                peers:
+                {{peers}}
+
+                # kube-router:
+                #   kubeRouter:
+                #     router:
+                #       peers:
+                #       {{ peers }}
 
 
 
