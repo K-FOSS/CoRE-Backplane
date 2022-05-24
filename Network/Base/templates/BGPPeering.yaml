@@ -6,11 +6,12 @@ spec:
  nodeSelector:
    matchLabels:
      beta.kubernetes.io/os-policy: linux
- virtualRouters: # []CiliumBGPVirtualRouter
+ virtualRouters:
   - localASN: 64512
     exportPodCIDR: true
     neighbors:
-  {{- range .Values.peers }}
+    {{- range .Values.peers }}
       - peerAddress: {{ .ip }}
         peerASN: {{ .asn }
-  {{- end }}
+
+    {{- end }}
