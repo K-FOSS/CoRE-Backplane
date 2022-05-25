@@ -32,7 +32,11 @@ spec:
                 traefik:
                   service:
                     enabled: true
-                    type: ClusterIP
+                    type: LoadBalancer
+                    spec:
+                      loadBalancerIP: '{{traefikLBIP}}'
+                    annotations:
+                      metallb.universe.tf/allow-shared-ip: 'traefik-core'
 
       destination:
         server: '{{url}}'
