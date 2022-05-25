@@ -315,7 +315,7 @@ netbox:
     port: 5432
     database: <secret:CORE0_SITE1/data/Netbox~DatabaseDatabase>
     username: <secret:CORE0_SITE1/data/Netbox~DatabaseUsername>
-    existingSecretName: '{{ include "ipam.fullname" . }}-netbox-db'
+    existingSecretName: netbox-ipam-netbox-db-sync
     existingSecretKey: DatabasePassword
 
     # The following settings apply when using the bundled PostgreSQL chart, too:
@@ -404,32 +404,24 @@ netbox:
     # - 10.0.0.0/8
 
   ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-      # kubernetes.io/ingress.class: nginx
-      # kubernetes.io/tls-acme: "true"
+    enabled: true
+    className: traefik-core
+    annotations:
+      cert-manager.io/cluster-issuer: kjdev-cluster
+      external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+      traefik.ingress.kubernetes.io/router.tls: 'true'
+      ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
     hosts:
-      - host: chart-example.local
+      - host: ipam.ipaddr.network
         paths:
-          # You can manually specify the service name and service port if
-          # required. This could be useful if for exemple you are using the AWS
-          # ALB Ingress Controller and want to set up automatic SSL redirect.
-          # https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/#redirect-traffic-from-http-to-https
-          # - path: /*
-          #   backend:
-          #     serviceName: ssl-redirect
-          #     servicePort: use-annotation
-          #
-          # Or you can let the template set it for you.
-          # Both types of rule can be combined.
-          # NB: You may also want to set the basePath above
           - /
 
-    tls: []
-    #  - secretName: chart-example-tls
-    #    hosts:
-    #      - chart-example.local
+    tls:
+      - secretName: ipaddrnetwork-default-certificates
+        hosts:
+          - '*.ipaddr.network'
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
