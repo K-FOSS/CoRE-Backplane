@@ -1,0 +1,24 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: '{{ include "ipam.fullname" . }}-netbox-s3-sync'
+  labels:
+    {{ include "ipam.labels" . | nindent 4 }}
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: '{{ include "ipam.fullname" . }}-netbox-s3'
+  data:
+    - secretKey: S3AccessKey
+      remoteRef:
+        key: Netbox
+        property: S3AccessKey
+
+    - secretKey: S3SecretKey
+      remoteRef:
+        key: Netbox
+        property: S3SecretKey
+      
+

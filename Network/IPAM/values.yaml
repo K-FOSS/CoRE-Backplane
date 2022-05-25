@@ -156,10 +156,10 @@ netbox:
   # driver in storageBackend and any configuration options in storageConfig.
   storageBackend: storages.backends.s3boto3.S3Boto3Storage
   storageConfig:
-    AWS_ACCESS_KEY_ID: 'Key ID'
-    AWS_SECRET_ACCESS_KEY: 'Secret'
-    AWS_STORAGE_BUCKET_NAME: 'netbox'
-    AWS_S3_REGION_NAME: 'eu-west-1'
+    AWS_STORAGE_BUCKET_NAME: ipam-netbox
+    AWS_S3_REGION_NAME: 'us-east-1'
+    AWS_S3_ADDRESSING_STYLE: 'path'
+    AWS_S3_ENDPOINT_URL: 'https://s3.mylogin.space'
 
   # Expose Prometheus monitoring metrics at the HTTP endpoint '/metrics'
   metricsEnabled: false
@@ -273,15 +273,6 @@ netbox:
   # These can be passed as arbitrary configuration values set in the chart, or
   # you can load arbitrary *.yaml keys from ConfigMaps and Secrets.
   extraConfig: []
-    # - values:
-    #     STORAGE_CONFIG: |
-    #       {
-    #         "AWS_ACCESS_KEY_ID": "<secret:CORE0_SITE1/data/Netbox~S3AccessKey>",
-    #         "AWS_SECRET_ACCESS_KEY": "<secret:CORE0_SITE1/data/Netbox~S3SecretKey>",
-    #         "AWS_STORAGE_BUCKET_NAME": "<secret:CORE0_SITE1/data/Netbox~S3Bucket>",
-    #         "AWS_S3_REGION_NAME": "us-east-1"
-    #       }
-
     # - values:
     #     EXTRA_SETTING_ONE: example
     #     ANOTHER_SETTING: foobar
@@ -481,6 +472,18 @@ netbox:
   extraEnvs:
     - name: NETBOX_DELETE_LEGACY_DATA
       value: '1'
+
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          key: S3AccessKey
+          name: netbox-ipam-netbox-s3
+
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          key: S3SecretKey
+          name: netbox-ipam-netbox-s3
   #  - name: FOO
   #    valueFrom:
   #      secretKeyRef:
