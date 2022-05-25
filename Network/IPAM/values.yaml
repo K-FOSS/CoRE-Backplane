@@ -12,8 +12,8 @@ netbox:
     tag: ""
 
   superuser:
-    name: admin
-    email: admin@example.com
+    name: kjones
+    email: k@kristianjones.dev
     password: admin
     apiToken: 0123456789abcdef0123456789abcdef01234567
 
@@ -156,10 +156,10 @@ netbox:
   # driver in storageBackend and any configuration options in storageConfig.
   storageBackend: storages.backends.s3boto3.S3Boto3Storage
   storageConfig:
-    # AWS_ACCESS_KEY_ID: 'Key ID'
-    # AWS_SECRET_ACCESS_KEY: 'Secret'
-    # AWS_STORAGE_BUCKET_NAME: 'netbox'
-    # AWS_S3_REGION_NAME: 'eu-west-1'
+    AWS_ACCESS_KEY_ID: <secret:CORE0_SITE1/data/Netbox~S3AccessKey>
+    AWS_SECRET_ACCESS_KEY: <secret:CORE0_SITE1/data/Netbox~S3SecretKey>
+    AWS_STORAGE_BUCKET_NAME: <secret:CORE0_SITE1/data/Netbox~S3Bucket>
+    AWS_S3_REGION_NAME: 'us-east-1'
 
   # Expose Prometheus monitoring metrics at the HTTP endpoint '/metrics'
   metricsEnabled: false
@@ -287,7 +287,7 @@ netbox:
 
   # If provided, this should be a 50+ character string of random characters. It
   # will be randomly generated if left blank.
-  secretKey: ""
+  secretKey: <secret:CORE0_SITE1/data/Netbox~SecretKey>
 
   ## Provide passwords using existing secret
   # If set, this Secret must contain the following keys:
@@ -313,14 +313,13 @@ netbox:
   externalDatabase:
     host: psql.service.dc1.kjdev
     port: 5432
-    database: netbox
-    username: netbox
-    password: ""
-    existingSecretName: ""
-    existingSecretKey: postgresql-password
+    database: <secret:CORE0_SITE1/data/Netbox~DatabaseDatabase>
+    username: <secret:CORE0_SITE1/data/Netbox~DatabaseUsername>
+    existingSecretName: '{{ include "ipam.fullname" . }}-netbox-db'
+    existingSecretKey: DatabasePassword
 
     # The following settings apply when using the bundled PostgreSQL chart, too:
-    sslMode: prefer
+    sslMode: disable
     connMaxAge: 300
 
   redis:
