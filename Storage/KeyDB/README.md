@@ -29,4 +29,12 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 
 | 70 | RSSHub | Yay!
 
+| 80 | Netbox | Yay!
+| 81 | Netbox | Yay!
+| 82 | Netbox | Yay!
+| 83 | Netbox | Yay!
+| 84 | Netbox | Yay!
+| 85 | Netbox | Yay!
+
+
 Further usage relies upon ArgoCD, Database Operator, KeyDB, TwemProxy, OAM/KubeVela, and Crossplane ****TODO: Make that stuff****

@@ -1,0 +1,670 @@
+netbox:
+  # Default values for netbox.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  replicaCount: 1
+
+  image:
+    repository: netboxcommunity/netbox
+    pullPolicy: IfNotPresent
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
+
+  superuser:
+    name: admin
+    email: admin@example.com
+    password: admin
+    apiToken: 0123456789abcdef0123456789abcdef01234567
+
+  # Skip the netbox-docker startup scripts which can pre-populate objects into a
+  # fresh NetBox installation. By default these do nothing, but they take a while
+  # to run, so we skip them. See:
+  # https://github.com/netbox-community/netbox-docker/tree/master/startup_scripts
+  skipStartupScripts: true
+
+  # This is a list of valid fully-qualified domain names (FQDNs) for the NetBox
+  # server. NetBox will not permit write access to the server via any other
+  # hostnames. The first FQDN in the list will be treated as the preferred name.
+  allowedHosts:
+    - 'ipam.ipaddr.network'
+    - netbox.core-prod.svc
+    - netbox-ui.core-prod.svc
+    - netbox-ui
+    - netbox-ui.service.dc1.kjdev
+    - netbox-ui.service
+    - netbox-ui
+
+  # Specify one or more name and email address tuples representing NetBox
+  # administrators. These people will be notified of application errors (assuming
+  # correct email settings are provided).
+  admins:
+    - ['Kristian Jones', 'k@kristianjones.dev']
+
+  # URL schemes that are allowed within links in NetBox
+  allowedUrlSchemes: [file, ftp, ftps, http, https, irc, mailto, sftp, ssh, tel,
+                      telnet, tftp, vnc, xmpp]
+
+  banner:
+    # Optionally display a persistent banner at the top and/or bottom of every
+    # page. HTML is allowed.
+    top: ''
+    bottom: ''
+
+    # Text to include on the login page above the login form. HTML is allowed.
+    login: ''
+
+  # Base URL path if accessing NetBox within a directory. For example, if
+  # installed at http://example.com/netbox/, set to 'netbox/'. If using
+  # Kubernetes Ingress, make sure you set ingress.hosts[].paths[] appropriately.
+  basePath: ''
+
+  # Maximum number of days to retain logged changes. Set to 0 to retain change
+  # logs indefinitely. (Default: 90)
+  changelogRetention: 90
+
+  # API Cross-Origin Resource Sharing (CORS) settings. If originAllowAll
+  # is set to true, all origins will be allowed. Otherwise, define a list of
+  # allowed origins using either originWhitelist or originRegexWhitelist. For
+  # more information, see https://github.com/ottoyiu/django-cors-headers
+  cors:
+    originAllowAll: false
+    originWhitelist: []
+    originRegexWhitelist: []
+    #  - '^(https?://)?(\w+\.)?example\.com$'
+
+  # Note: this is where the CUSTOM_VALIDATORS setting naturally fits in relation
+  # to the upstream NetBox configuration, but the setting cannot be reflected in
+  # YAML/JSON as it depends on creating instances of Python classes.
+
+  # Set to True to enable server debugging. WARNING: Debugging introduces a
+  # substantial performance penalty and may reveal sensitive information about
+  # your installation. Only enable debugging while performing testing. Never
+  # enable debugging on a production system.
+  debug: false
+
+  # Email settings
+  email:
+    server: localhost
+    port: 25
+    username: ''
+    password: ''
+    useSSL: false
+    useTLS: false
+    timeout: 10  # seconds
+    from: ''
+
+  # Enforcement of unique IP space can be toggled on a per-VRF basis. To enforce
+  # unique IP space within the global table (all prefixes and IP addresses not
+  # assigned to a VRF), set enforceGlobalUnique to True.
+  enforceGlobalUnique: false
+
+  # Exempt certain models from the enforcement of view permissions. Models listed
+  # here will be viewable by all users and by anonymous users. List models in the
+  # form `<app>.<model>`. Add '*' to this list to exempt all models.
+  exemptViewPermissions: []
+  #  - dcim.site
+  #  - dcim.region
+  #  - ipam.prefix
+
+  # Enable the GraphQL API
+  graphQlEnabled: true
+
+  # HTTP proxies NetBox should use when sending outbound HTTP requests (e.g. for
+  # webhooks).
+  httpProxies: null
+    # http: http://10.10.1.10:3128
+    # https: http://10.10.1.10:1080
+
+  # IP addresses recognized as internal to the system. The debugging toolbar will
+  # be available only to clients accessing NetBox from an internal IP.
+  internalIPs: ['127.0.0.1', '::1']
+
+  # Enable custom logging. Please see the Django documentation for detailed
+  # guidance on configuring custom logs:
+  # https://docs.djangoproject.com/en/1.11/topics/logging/
+  logging: {}
+
+  # Automatically reset the lifetime of a valid session upon each authenticated
+  # request. Enables users to remain authenticated to NetBox indefinitely.
+  loginPersistence: false
+
+  # Setting this to True will permit only authenticated users to access any part
+  # of NetBox. By default, anonymous users are permitted to access most data in
+  # NetBox but not make any changes.
+  loginRequired: false
+
+  # The length of time (in seconds) for which a user will remain logged into the
+  # web UI before being prompted to re-authenticate.
+  loginTimeout: 1209600  # 14 days
+
+  # Setting this to True will display a "maintenance mode" banner at the top of
+  # every page.
+  maintenanceMode: false
+
+  # The URL to use when mapping physical addresses or GPS coordinates
+  mapsUrl: 'https://maps.google.com/?q='
+
+  # An API consumer can request an arbitrary number of objects by appending the
+  # "limit" parameter to the URL (e.g. "?limit=1000"). This setting defines the
+  # maximum limit. Setting it to 0 or None will allow an API consumer to request
+  # all objects by specifying "?limit=0".
+  maxPageSize: 1000
+
+  # By default uploaded media is stored in an attached volume. Using
+  # Django-storages is also supported. Provide the class path of the storage
+  # driver in storageBackend and any configuration options in storageConfig.
+  storageBackend: storages.backends.s3boto3.S3Boto3Storage
+  storageConfig:
+    # AWS_ACCESS_KEY_ID: 'Key ID'
+    # AWS_SECRET_ACCESS_KEY: 'Secret'
+    # AWS_STORAGE_BUCKET_NAME: 'netbox'
+    # AWS_S3_REGION_NAME: 'eu-west-1'
+
+  # Expose Prometheus monitoring metrics at the HTTP endpoint '/metrics'
+  metricsEnabled: false
+
+  napalm:
+    # Credentials that NetBox will use to access live devices.
+    username: ''
+    password: ''
+
+    # NAPALM timeout (in seconds). (Default: 30)
+    timeout: 30
+
+    # NAPALM optional arguments (see
+    # http://napalm.readthedocs.io/en/latest/support/#optional-arguments).
+    # Arguments must be provided as a dictionary.
+    args: {}
+
+  # Determine how many objects to display per page within a list. (Default: 50)
+  paginateCount: 50
+
+  # Enable installed plugins. Add the name of each plugin to the list.
+  plugins: []
+
+  # Plugins configuration settings. These settings are used by various plugins
+  # that the user may have installed. Each key in the dictionary is the name of
+  # an installed plugin and its value is a dictionary of settings.
+  pluginsConfig: {}
+
+  # When determining the primary IP address for a device, IPv6 is preferred over
+  # IPv4 by default. Set this to True to prefer IPv4 instead.
+  preferIPv4: false
+
+  # Rack elevation size defaults, in pixels. For best results, the ratio of width
+  # to height should be roughly 10:1.
+  rackElevationDefaultUnitHeight: 22
+  rackElevationDefaultUnitWidth: 220
+
+  # Remote authentication support
+  remoteAuth:
+    enabled: true
+    backend: netbox.authentication.RemoteUserBackend
+    header: HTTP_X_POMERIUM_CLAIM_NICKNAME
+    autoCreateUser: true
+    defaultGroups: []
+    defaultPermissions: {}
+    groupSyncEnabled: true
+    groupHeader: HTTP_X_POMERIUM_CLAIM_GROUPS
+    superuserGroups: ['Network Admins', 'Server Admins']
+    superusers: ['kjones']
+    staffGroups: ['Network', 'Servers', 'Developers']
+    staffUsers: []
+    groupSeparator: '|'
+
+    # The following options are specific for backend "netbox.authentication.LDAPBackend"
+    # you can use an existing netbox secret with "ldap_bind_password" instead of "bindPassword"
+    # see https://django-auth-ldap.readthedocs.io
+    #
+    # When enabling LDAP support please see "Using LDAP Authentication" in README.md and
+    # uncomment ALL of the configuration settings below, or your configuration will be invalid.
+    #
+    # ldap:
+    #   serverUri: 'ldap://domain.com'
+    #   startTls: true
+    #   ignoreCertErrors: false
+    #   bindDn: 'CN=Netbox,OU=EmbeddedDevices,OU=MyCompany,DC=domain,dc=com'
+    #   bindPassword: 'TopSecretPassword'
+    #   userDnTemplate: null
+    #   userSearchBaseDn: 'OU=Users,OU=MyCompany,DC=domain,dc=com'
+    #   userSearchAttr: 'sAMAccountName'
+    #   groupSearchBaseDn: 'OU=Groups,OU=MyCompany,DC=domain,dc=com'
+    #   groupSearchClass: 'group'
+    #   groupType: 'GroupOfNamesType'
+    #   requireGroupDn: ''
+    #   findGroupPerms: true
+    #   mirrorGroups: true
+    #   mirrorGroupsExcept: null
+    #   cacheTimeout: 3600
+    #   isAdminDn: 'CN=Network Configuration Operators,CN=Builtin,DC=domain,dc=com'
+    #   isSuperUserDn: 'CN=Domain Admins,CN=Users,DC=domain,dc=com'
+    #   attrFirstName: 'givenName'
+    #   attrLastName: 'sn'
+    #   attrMail: 'mail'
+
+  releaseCheck:
+    # This repository is used to check whether there is a new release of NetBox
+    # available. Set to null to disable the version check or use the URL below to
+    # check for release in the official NetBox repository.
+    url: null
+    # url: https://api.github.com/repos/netbox-community/netbox/releases
+
+  # Maximum execution time for background tasks, in seconds.
+  rqDefaultTimeout: 300  # 5 mins
+
+  # The name to use for the session cookie.
+  sessionCookieName: sessionid
+
+  # Time zone (default: UTC)
+  timeZone: UTC
+
+  # Date/time formatting. See the following link for supported formats:
+  # https://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
+  dateFormat: 'N j, Y'
+  shortDateFormat: 'Y-m-d'
+  timeFormat: 'g:i a'
+  shortTimeFormat: 'H:i:s'
+  dateTimeFormat: 'N j, Y g:i a'
+  shortDateTimeFormat: 'Y-m-d H:i'
+
+  ## Extra configuration settings
+  # You can pass additional YAML files to be loaded into NetBox's configuration.
+  # These can be passed as arbitrary configuration values set in the chart, or
+  # you can load arbitrary *.yaml keys from ConfigMaps and Secrets.
+  extraConfig: []
+    # - values:
+    #     EXTRA_SETTING_ONE: example
+    #     ANOTHER_SETTING: foobar
+    # - configMap: # pod.spec.volumes.configMap
+    #     name: netbox-extra
+    #     items: []
+    #     optional: false
+    # - secret: # same as pod.spec.volumes.secret
+    #     secretName: netbox-extra
+    #     items: []
+    #     optional: false
+
+  # If provided, this should be a 50+ character string of random characters. It
+  # will be randomly generated if left blank.
+  secretKey: ""
+
+  ## Provide passwords using existing secret
+  # If set, this Secret must contain the following keys:
+  # - db_password: database password (if postgresql.enabled is false and
+  #     externalDatabase.existingSecretName is blank)
+  # - email_password: SMTP user password
+  # - napalm_password: NAPALM user password
+  # - redis_tasks_password: Redis password for tasks Redis instance (if
+  #     redis.enabled is false and tasksRedis.existingSecretName is blank)
+  # - redis_cache_password: Redis password for caching Redis instance (if
+  #     redis.enabled is false and cachingRedis.existingSecretName is blank)
+  # - secret_key: session encryption token (50+ random characters)
+  existingSecret: ""
+
+  postgresql:
+    ## Deploy PostgreSQL using bundled chart
+    # To use an external database, set this to false and configure the settings
+    # under externalDatabase
+    enabled: false
+
+  ## External database settings
+  # These are used if postgresql.enabled is false, and are ignored otherwise
+  externalDatabase:
+    host: psql.service.dc1.kjdev
+    port: 5432
+    database: netbox
+    username: netbox
+    password: ""
+    existingSecretName: ""
+    existingSecretKey: postgresql-password
+
+    # The following settings apply when using the bundled PostgreSQL chart, too:
+    sslMode: prefer
+    connMaxAge: 300
+
+  redis:
+    ## Deploy Redis using bundled chart
+    # To use an external Redis instance, set this to false and configure the
+    # settings under *both* tasksRedis *and* cachingRedis
+    enabled: false
+
+  tasksRedis:
+    database: 80
+    ssl: false
+    insecureSkipTlsVerify: false
+
+    # Used only when redis.enabled is false. host and port are not used if
+    # sentinels are given.
+    host: 10.1.1.68
+    port: 6379
+    sentinels: []
+
+  cachingRedis:
+    database: 81
+    ssl: false
+    insecureSkipTlsVerify: false
+
+    host: 10.1.1.68
+    port: 6379
+    sentinels: []
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  serviceAccount:
+    # Specifies whether a service account should be created
+    create: true
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  ## Storage configuration for media
+  persistence:
+    enabled: false
+
+
+  ## Storage configuration for reports
+  reportsPersistence:
+    enabled: false
+
+  commonLabels: {}
+
+  commonAnnotations: {}
+
+  podAnnotations: {}
+
+  podLabels: {}
+
+  podSecurityContext:
+    fsGroup: 1000
+    runAsNonRoot: true
+    # runAsUser: 1000
+    # runAsGroup: 1000
+
+  securityContext:
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+
+  service:
+    annotations: {}
+      # service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+      # service.beta.kubernetes.io/aws-load-balancer-ssl-cert: <acm_cert_arn>
+      # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: http
+    type: ClusterIP
+    port: 80
+    loadBalancerSourceRanges: []
+    # - 10.0.0.0/8
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    hosts:
+      - host: chart-example.local
+        paths:
+          # You can manually specify the service name and service port if
+          # required. This could be useful if for exemple you are using the AWS
+          # ALB Ingress Controller and want to set up automatic SSL redirect.
+          # https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/#redirect-traffic-from-http-to-https
+          # - path: /*
+          #   backend:
+          #     serviceName: ssl-redirect
+          #     servicePort: use-annotation
+          #
+          # Or you can let the template set it for you.
+          # Both types of rule can be combined.
+          # NB: You may also want to set the basePath above
+          - /
+
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  init:
+    image:
+      repository: busybox
+      tag: 1.32.1
+      pullPolicy: IfNotPresent
+
+    resources: {}
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000  # Keep the same as securityContext.runAsGroup
+
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 100
+    targetCPUUtilizationPercentage: 80
+    # targetMemoryUtilizationPercentage: 80
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  updateStrategy: {}
+    # type: RollingUpdate
+
+  affinity: {}
+
+  ## Additional environment variables to set
+  extraEnvs: []
+  #  - name: FOO
+  #    valueFrom:
+  #      secretKeyRef:
+  #        key: FOO
+  #        name: secret-resource
+
+  ## Additional volumes to mount
+  extraVolumeMounts: []
+  #  - name: extra-volume
+  #    mountPath: /run/secrets/super-secret
+  #    readOnly: true
+
+  extraVolumes: []
+  #  - name: extra-volume
+  #    secret:
+  #      secretName: super-secret
+
+  ## Additional containers to be added to the NetBox pod.
+  extraContainers: []
+  #  - name: my-sidecar
+  #    image: nginx:latest
+
+  ## Containers which are run before the NetBox containers are started.
+  extraInitContainers: []
+  #  - name: init-myservice
+  #    image: busybox
+  #    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+
+
+  # Configuration of Cron settings
+  housekeeping:
+    enabled: true
+    concurrencyPolicy: Forbid
+    failedJobsHistoryLimit: 5
+    restartPolicy: OnFailure
+    schedule: '0 0 * * *'
+    successfulJobsHistoryLimit: 5
+    suspend: false
+
+    podAnnotations: {}
+
+    podLabels: {}
+
+    podSecurityContext:
+      fsGroup: 1000
+      runAsNonRoot: true
+      # runAsUser: 1000
+      # runAsGroup: 1000
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+    resources: {}
+
+    nodeSelector: {}
+
+    tolerations: []
+
+    affinity: {}
+
+    ## Additional environment variables to set
+    extraEnvs: []
+    #  - name: FOO
+    #    valueFrom:
+    #      secretKeyRef:
+    #        key: FOO
+    #        name: secret-resource
+
+    ## Additional volumes to mount
+    extraVolumeMounts: []
+    #  - name: extra-volume
+    #    mountPath: /run/secrets/super-secret
+    #    readOnly: true
+
+    extraVolumes: []
+    #  - name: extra-volume
+    #    secret:
+    #      secretName: super-secret
+
+    ## Additional containers to be added to the NetBox pod.
+    extraContainers: []
+    #  - name: my-sidecar
+    #    image: nginx:latest
+
+    ## Containers which are run before the NetBox containers are started.
+    extraInitContainers: []
+    #  - name: init-myservice
+    #    image: busybox
+    #    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
+
+  # Worker for Netbox
+  # Only required for Netbox Jobs, e.g. Webhooks
+  worker:
+    enabled: true
+
+    replicaCount: 1
+
+    podAnnotations: {}
+
+    podLabels: {}
+
+    podSecurityContext:
+      fsGroup: 1000
+      runAsNonRoot: true
+      # runAsUser: 1000
+      # runAsGroup: 1000
+
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 1000
+
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+    resources: {}
+
+    autoscaling:
+      enabled: false
+      minReplicas: 1
+      maxReplicas: 100
+      targetCPUUtilizationPercentage: 80
+      # targetMemoryUtilizationPercentage: 80
+
+    nodeSelector: {}
+
+    tolerations: []
+
+    updateStrategy: {}
+      # type: RollingUpdate
+
+    affinity: {}
+
+    ## Additional environment variables to set
+    extraEnvs: []
+    #  - name: FOO
+    #    valueFrom:
+    #      secretKeyRef:
+    #        key: FOO
+    #        name: secret-resource
+
+    ## Additional volumes to mount
+    extraVolumeMounts: []
+    #  - name: extra-volume
+    #    mountPath: /run/secrets/super-secret
+    #    readOnly: true
+
+    extraVolumes: []
+    #  - name: extra-volume
+    #    secret:
+    #      secretName: super-secret
+
+    ## Additional containers to be added to the NetBox pod.
+    extraContainers: []
+    #  - name: my-sidecar
+    #    image: nginx:latest
+
+    ## Containers which are run before the NetBox containers are started.
+    extraInitContainers: []
+    #  - name: init-myservice
+    #    image: busybox
+    #    command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']

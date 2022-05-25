@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-ipam
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+
+          - cluster: infra1-dc1
+            url: https://172.20.52.1:6443
+  template:
+    metadata:
+      name: '{{cluster}}-network-ipam'
+
+    spec:
+      project: core
+
+      source:
+        path: Network/IPAM
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+        #   env:
+        #     - name: LOVELY_HELM_MERGE
+        #       value: |-
+        #         coredns:
+        #           affinity:
+        #             podAntiAffinity:
+        #               preferredDuringSchedulingIgnoredDuringExecution:
+        #                 - weight: 100
+        #                   podAffinityTerm:
+        #                     labelSelector:
+        #                       matchExpressions:
+        #                         - key: app.kubernetes.io/instance
+        #                           operator: In
+        #                           values:
+        #                             - '{{cluster}}-rdns-lab'
+        #                     topologyKey: kubernetes.io/hostname
+
+        #           serviceType: LoadBalancer
+        #           service:
+        #             annotations:
+        #               purelb.io/service-group: anycast
+        #             name: test-dns-rdns-core
+        #             externalTrafficPolicy: Local
+        #             loadBalancerIP: '{{loadBalancerIP}}'
+
+
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
