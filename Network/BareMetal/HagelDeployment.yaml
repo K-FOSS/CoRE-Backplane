@@ -21,6 +21,7 @@ spec:
         app.kubernetes.io/instance: hegel
 
     spec:
+      serviceAccountName: tink-server
       containers:
         - name: hegel
           image: registry.writemy.codes/tinkerbell/hegel
@@ -31,18 +32,19 @@ spec:
                 name: tink-packet-prod
           env:
             - name: GRPC_PORT
-              value: "42115"
+              value: '42115'
             - name: HEGEL_FACILITY
               value: "$(FACILITY)"
             - name: HEGEL_HTTP_PORT
-              value: "50061"
+              value: '50061'
             - name: HEGEL_USE_TLS
-              value: "0"
+              value: '0'
           imagePullPolicy: Always
           ports:
             - containerPort: 42115
               hostPort: 42115
               name: grpc
+
             - containerPort: 50061
               hostPort: 50061
               name: http
