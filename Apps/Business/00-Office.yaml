@@ -1,21 +1,42 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
   name: core-backplane-business-office
   namespace: argocd
 spec:
-  destination:
-    server: https://10.1.1.40:443
-    namespace: argocd
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+            ingress: office.mylogin.space
+            environment: 'prod'
+  template:
+    metadata:
+      name: '{{cluster}}-business-office'
+    spec:
+      project: core
 
-  project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - CreateNamespace=true
 
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/core-business.git
+        path: Office
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                nextcloud:
+                  nextcloud:
+                    host: {{ingress}}
 
-  source:
-    repoURL: https://gitlab.git.writemy.codes/KJDev/core-business.git
-    path: Office
-    targetRevision: HEAD
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
