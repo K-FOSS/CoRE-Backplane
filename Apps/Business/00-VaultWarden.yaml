@@ -1,23 +1,81 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
   name: core-backplane-business-vaultwarden
   namespace: argocd
 spec:
-  destination:
-    server: https://10.1.1.40:443
-    namespace: argocd
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+            ingress: bitwarden.kristianjones.dev
+            environment: 'prod'
+  template:
+    metadata:
+      name: '{{cluster}}-business-passwords-vaultwarden'
+    spec:
+      project: core
+      syncPolicy:
+        automated:
+          selfHeal: true
+          prune: true
+        syncOptions:
+          - CreateNamespace=true
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/core-business.git
+        path: Passwords/VaultWarden
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                vaultwarden:
+                  # -- environment variables. See [image docs](https://github.com/dani-garcia/vaultwarden/blob/main/.env.template) for more details.
+                  # @default -- See below
+                  env:
+                  # -- Config dir
+                    DATA_FOLDER: "/tmp"
+                    DOMAIN: https://bitwarden.kristianjones.dev
 
-  project: core
+                    DATABASE_URL:
+                      valueFrom:
+                        secretKeyRef:
+                          key: DBURI
+                          name: business-vaultwarden-database-{{ environment }}
 
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+                  ingress:
+                    # -- Enable and configure ingress settings for the chart under this key.
+                    # @default -- See values.yaml
+                    main:
+                      enabled: true
+                      ingressClassName: traefik-core
+                      labels:
+                        wan-mode: 'public'
+                        lan-mode: 'private'
+                      annotations:
+                        cert-manager.io/cluster-issuer: kjdev-cluster
+                        external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
+                        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+                        traefik.ingress.kubernetes.io/router.tls: 'true'
+                      hosts:
+                        - host: {{ ingress }}
+                          paths:
+                            - path: /
+                              pathType: Prefix
 
-  source:
-    repoURL: https://gitlab.git.writemy.codes/KJDev/core-business.git
-    path: Apps/VaultWarden
-    targetRevision: HEAD
+                            - path: /notifications/hub/negotiate
+                              pathType: Prefix
+
+                            - path: /notifications/hub
+                              pathType: Prefix
+                      tls:
+                        - hosts:
+                            - '*.kristianjones.dev'
+                          secretName: kristianjonesdev-default-certificates
+
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
