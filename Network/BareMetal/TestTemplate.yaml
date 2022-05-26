@@ -3,14 +3,29 @@ kind: Template
 metadata:
   name: helloworld
 spec:
-  data: |
+  data: | 
     version: "0.1"
     name: helloworld
     global_timeout: 1800
     tasks:
-      - name: "hello world"
-        worker: "{{.device_1}}"
+      - name: "flatcar-install"
+        worker: "{{.machine1}}"
+        volumes:
+          - /dev:/dev
+          - /statedir:/statedir
         actions:
-          - name: "hello_world"
-            image: hello-world
-            timeout: 60
+          - name: "dump-ignition"
+            image: flatcar-install
+            command:
+              - sh
+              - -c
+              - echo '{{.ignition}}' | base64 -d > /statedir/ignition.json
+          - name: "flatcar-install"
+            image: flatcar-install
+            command:
+              - /usr/local/bin/flatcar-install
+              - -s
+              - -i
+              - /statedir/ignition.json
+              - -b
+              - http://10.1.1.83/misc/flatcar/amd64-usr
