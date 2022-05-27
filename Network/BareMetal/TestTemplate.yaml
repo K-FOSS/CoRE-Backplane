@@ -19,7 +19,7 @@ spec:
             command:
               - sh
               - -c
-              - echo "{{.config}}" > /statedir/config.yaml
+              - echo "{{.config}}" | base64 -d > /statedir/config.yaml
 
           - name: "create-ignition"
             image: flatcar-config
@@ -27,7 +27,7 @@ spec:
               - /usr/local/bin/flatcar-config
               - -in-file
               - /statedir/config.yaml
-              - -out-file 
+              - -out-file
               - /statedir/ignition.json
 
           - name: "flatcar-install"
