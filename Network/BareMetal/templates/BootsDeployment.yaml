@@ -7,6 +7,7 @@ metadata:
   name: boots
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app.kubernetes.io/name: tinkerbell
@@ -23,7 +24,12 @@ spec:
     spec:
       serviceAccountName: tink-server
       containers:
-        - args:
+        - name: boots
+
+          image: registry.writemy.codes/tinkerbell/boots
+          imagePullPolicy: Always
+
+          args:
             - -ipxe-tftp-timeout=300s
             - -log-level
             - DEBUG
@@ -51,9 +57,7 @@ spec:
 
             - name: TFTP_BIND
               value: 0.0.0.0:69
-          image: registry.writemy.codes/tinkerbell/boots
-          imagePullPolicy: Always
-          name: boots
+          
           ports:
             - containerPort: 67
               name: dhcp
@@ -69,4 +73,5 @@ spec:
             - containerPort: 514
               name: syslog
               protocol: UDP
+
       restartPolicy: Always

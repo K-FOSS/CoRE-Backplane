@@ -7,21 +7,31 @@ metadata:
   name: tink-server
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app.kubernetes.io/name: tinkerbell
       app.kubernetes.io/instance: tink
+
   strategy:
     type: Recreate
+
   template:
     metadata:
       labels:
         app.kubernetes.io/name: tinkerbell
         app.kubernetes.io/instance: tink
+
     spec:
       serviceAccountName: tink-server
+
       containers:
-        - args:
+        - name: tink-server
+
+          image: registry.writemy.codes/tinkerbell/tink-server
+          imagePullPolicy: Always
+
+          args:
             - '--backend=kubernetes'
             - '--tls=false'
           envFrom:
@@ -31,22 +41,22 @@ spec:
                 name: tink-packet-prod
             - secretRef:
                 name: tink-tink-prod
-          image: registry.writemy.codes/tinkerbell/tink-server
-          imagePullPolicy: Always
 
-          name: tink-server
+
+          
           resources:
             limits:
               cpu: 500m
               memory: 128Mi
+
             requests:
               cpu: 10m
               memory: 64Mi
+
           ports:
             - containerPort: 42113
-              hostPort: 42113
               name: grpc
+
             - containerPort: 42114
-              hostPort: 42114
               name: http
 
