@@ -28,6 +28,7 @@ spec:
             persistence:
               data:
                 enabled: false
+
             image:
               pullPolicy: IfNotPresent
               repository: ngoduykhanh/powerdns-admin
@@ -39,7 +40,9 @@ spec:
                   name: pdns-admin-secrets
 
             env:
-              GUNICORN_LOGLEVEL: DEBUG
+              GUNICORN_LOGLEVEL: warning
+              PDNS_ADMIN_LOG_LEVEL: warning
+              LOG_LEVEL: warning
               GUNICORN_TIMEOUT: 60
               GUNICORN_WORKERS: 2
               TZ: UTC
