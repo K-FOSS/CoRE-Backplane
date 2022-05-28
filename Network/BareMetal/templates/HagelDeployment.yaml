@@ -22,24 +22,31 @@ spec:
 
     spec:
       serviceAccountName: tink-server
+      
       containers:
         - name: hegel
+          
           image: registry.writemy.codes/tinkerbell/hegel
+          imagePullPolicy: Always
+
           envFrom:
             - configMapRef:
                 name: tink-client
             - secretRef:
                 name: tink-packet-prod
           env:
-            - name: GRPC_PORT
-              value: '42115'
             - name: HEGEL_FACILITY
-              value: "$(FACILITY)"
+              value: '$(FACILITY)'
+
             - name: HEGEL_HTTP_PORT
               value: '50061'
+
+            - name: GRPC_PORT
+              value: '42115'
+
             - name: HEGEL_USE_TLS
               value: '0'
-          imagePullPolicy: Always
+
           ports:
             - containerPort: 42115
               name: grpc
