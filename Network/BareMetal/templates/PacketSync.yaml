@@ -12,7 +12,7 @@ spec:
     template:
       engineVersion: v2
       data:
-        API_AUTH_TOKEN: '{{ .DatabaseDatabase }}'
+        API_AUTH_TOKEN: '{{`{{ .DatabaseDatabase }}`}}'
         API_BASE_URL: ignored
 
         API_CONSUMER_TOKEN: ignored
@@ -31,8 +31,8 @@ spec:
 
         PGSSLMODE: disable
         
-        PGUSER: '{{ .DatabaseUser }}'
-        PGPASSWORD: '{{ .DatabasePassword }}'
+        PGUSER: '{{`{{ .DatabaseUser }}`}}'
+        PGPASSWORD: '{{`{{ .DatabasePassword }}`}}'
   data:
     - secretKey: DatabaseDatabase
       remoteRef:

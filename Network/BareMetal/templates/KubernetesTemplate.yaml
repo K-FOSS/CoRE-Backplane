@@ -9,7 +9,7 @@ spec:
     global_timeout: 1800
     tasks:
       - name: "flatcar-install"
-        worker: "{{.machine1}}"
+        worker: "{{`{{.machine1}}`}}"
         volumes:
           - /dev:/dev
           - /statedir:/statedir
@@ -19,7 +19,7 @@ spec:
             command:
               - sh
               - -c
-              - echo "{{.config}}" | base64 -d > /statedir/config.yaml
+              - echo "{{`{{.config}}`}}" | base64 -d > /statedir/config.yaml
 
           - name: "create-ignition"
             image: flatcar-config
