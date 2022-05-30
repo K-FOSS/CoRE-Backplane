@@ -12,7 +12,12 @@ metadata:
   labels:
 {{ include "dhcp.labels" . | indent 4 }}
 spec:
-  clusterIP: None
+  externalTrafficPolicy: Local
+  type: LoadBalancer
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  loadBalancerIP: 10.1.1.67
   ports:
     - port: 67
       targetPort: udp-dhcp
