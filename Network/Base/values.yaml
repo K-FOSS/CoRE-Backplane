@@ -39,35 +39,43 @@ cilium:
       create: true
       name: cilium
       annotations: {}
+
     etcd:
       create: true
       name: cilium-etcd-operator
       annotations: {}
+
     operator:
       create: true
       name: cilium-operator
       annotations: {}
+
     preflight:
       create: true
       name: cilium-pre-flight
       annotations: {}
+
     relay:
       create: true
       name: hubble-relay
       annotations: {}
+
     ui:
       create: true
       name: hubble-ui
       annotations: {}
+
     clustermeshApiserver:
       create: true
       name: clustermesh-apiserver
       annotations: {}
+
     # -- Clustermeshcertgen is used if clustermesh.apiserver.tls.auto.method=cronJob
     clustermeshcertgen:
       create: true
       name: clustermesh-apiserver-generate-certs
       annotations: {}
+    
     # -- Hubblecertgen is used if hubble.tls.auto.method=cronJob
     hubblecertgen:
       create: true
@@ -99,10 +107,10 @@ cilium:
   affinity:
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
-      - topologyKey: kubernetes.io/hostname
-        labelSelector:
-          matchLabels:
-            k8s-app: cilium
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              k8s-app: cilium
 
   # -- Node selector for cilium-agent.
   nodeSelector:
@@ -111,11 +119,11 @@ cilium:
   # -- Node tolerations for agent scheduling to nodes with taints
   # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
   tolerations:
-  - operator: Exists
-    # - key: "key"
-    #   operator: "Equal|Exists"
-    #   value: "value"
-    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+    - operator: Exists
+      # - key: "key"
+      #   operator: "Equal|Exists"
+      #   value: "value"
+      #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
 
   # -- Host aliases for cilium-agent.
   hostAliases: []
@@ -251,11 +259,11 @@ cilium:
 
     # -- Configure the maximum number of entries in the TCP connection tracking
     # table.
-    # ctTcpMax: '524288'
+    ctTcpMax: '1524288'
 
     # -- Configure the maximum number of entries for the non-TCP connection
     # tracking table.
-    # ctAnyMax: '262144'
+    ctAnyMax: '1262144'
 
     # -- Configure the maximum number of service entries in the
     # load balancer maps.
@@ -265,7 +273,7 @@ cilium:
     # natMax: 524288
 
     # -- Configure the maximum number of entries for the neighbor table.
-    # neighMax: 524288
+    neighMax: 1524288
 
     # -- Configure the maximum number of entries in endpoint policy map (per endpoint).
     policyMapMax: 16384
@@ -513,7 +521,7 @@ cilium:
 
   endpointHealthChecking:
     # -- Enable connectivity health checking between virtual endpoints.
-    enabled: true
+    enabled: false
 
   # -- Enable endpoint status.
   # Status can be: policy, health, controllers, logs and / or state. For 2 or more options use a comma.
@@ -570,7 +578,7 @@ cilium:
     enabled: false
 
   # -- Enable connectivity health checking.
-  healthChecking: true
+  healthChecking: false
 
   # -- TCP port for the agent health API. This is not the port for cilium-health.
   healthPort: 9876
