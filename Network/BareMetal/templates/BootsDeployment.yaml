@@ -36,10 +36,13 @@ spec:
           envFrom:
             - configMapRef:
                 name: boots
+
             - configMapRef:
                 name: tink-client
+
             - secretRef:
                 name: tink-packet-prod
+
             - secretRef:
                 name: tink-registry-prod
           env:
@@ -58,6 +61,8 @@ spec:
             - name: TFTP_BIND
               value: 0.0.0.0:69
           
+            - name: KUBERNETES_SERVICE_HOST
+              value: '10.1.1.40'
           ports:
             - containerPort: 67
               name: dhcp
