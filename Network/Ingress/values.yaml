@@ -246,7 +246,7 @@ pomerium:
     idp:
       provider: oidc
       url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
-    proxied: true
+    proxied: false
     replicaCount: 3
     ingress:
       # cert-manager example
@@ -328,8 +328,10 @@ pomerium:
 
   extraArgs: {}
   extraEnv:
+    AUTHENTICATE_INTERNAL_SERVICE_URL: https://traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
     AUTHORIZE_SERVICE_URL: https://traefik-core-pomerium-authorize.core-prod.svc.k0s.resolvemy.host
     DATABROKER_INTERNAL_SERVICE_URL: https://traefik-core-pomerium-databroker.core-prod.svc.k0s.resolvemy.host
+                
 
   forwardAuth:
     enabled: true
