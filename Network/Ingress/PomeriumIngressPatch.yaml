@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik-core-pomerium-ingress-controller
+spec:
+  template:
+    spec:
+      containers:
+        - args:
+            - '--name=pomerium.io/ingress-controller'
+            - >-
+              --databroker-service-url=https://traefik-core-pomerium-databroker.core-prod.svc.k0s.resolvemy.host
+            - '--databroker-tls-ca-file=/pomerium/ca/ca.crt'
+            - '--metrics-bind-address=:8080'
+            - '--health-probe-bind-address=:8081'
+            - '--update-status-from-service=core-prod/pomerium-proxy'
