@@ -1105,11 +1105,13 @@ cilium:
     failureThreshold: 105
     # -- interval between checks of the startup probe
     periodSeconds: 2
+
   livenessProbe:
     # -- failure threshold of liveness probe
     failureThreshold: 10
     # -- interval between checks of the liveness probe
     periodSeconds: 30
+
   readinessProbe:
     # -- failure threshold of readiness probe
     failureThreshold: 3
@@ -1176,7 +1178,7 @@ cilium:
   vtep:
   # -- Enables VXLAN Tunnel Endpoint (VTEP) Integration (beta) to allow
   # Cilium-managed pods to talk to third party VTEP devices over Cilium tunnel.
-    enabled: false
+    enabled: true
 
   # -- A space separated list of VTEP device endpoint IPs, for example "1.1.1.1  1.1.2.1"
     endpoint: ""
@@ -1228,7 +1230,7 @@ cilium:
   # -- cilium-monitor sidecar.
   monitor:
     # -- Enable the cilium-monitor sidecar.
-    enabled: false
+    enabled: true
 
   # -- Configure service load balancing
   loadBalancer:
@@ -1330,7 +1332,7 @@ cilium:
   # TODO: Add documentation, default value
   # svcSourceRangeCheck:
 
-  # synchronizeK8sNodes: true
+  synchronizeK8sNodes: true
 
   # -- Configure TLS configuration in the agent.
   tls:
@@ -1339,7 +1341,7 @@ cilium:
     # Possible values:
     #   - local
     #   - k8s
-    secretsBackend: local
+    secretsBackend: k8s
 
     # -- Base64 encoded PEM values for the CA certificate and private key.
     # This can be used as common CA to generate certificates used by hubble and clustermesh components
@@ -1367,7 +1369,7 @@ cilium:
 
   wellKnownIdentities:
     # -- Enable the use of well-known identities.
-    enabled: false
+    enabled: true
 
   etcd:
     # -- Enable etcd mode for the agent.
