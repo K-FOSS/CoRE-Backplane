@@ -338,8 +338,7 @@ pomerium:
   fullnameOverride: ''
 
   ingress:
-    enabled: false
-    className: traefik-core
+    enabled: true
     annotations:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: 'true'
@@ -355,12 +354,9 @@ pomerium:
 
   ingressController:
     config:
-      operatorMode: true
       updateStatus: true
-      ingressClass: 'traefik.io/ingress-controller'
     ingressClassResource:
-      enabled: false
-      name: traefik-core
+      enabled: true
 
     enabled: true
 
@@ -382,6 +378,7 @@ pomerium:
     enabled: false
 
   replicaCount: 3
+
   serviceMonitor:
     enabled: true
 
