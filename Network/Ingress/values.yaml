@@ -246,11 +246,11 @@ pomerium:
       provider: oidc
       url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
     proxied: false
-    replicaCount: 1
+    replicaCount: 3
 
   authorize:
     existingTLSSecret: pomerium-tls
-    replicaCount: 1
+    replicaCount: 3
 
   config:
     administrators: k@kristianjones.dev
@@ -306,7 +306,7 @@ pomerium:
 
   databroker:
     existingTLSSecret: pomerium-tls
-    replicaCount: 1
+    replicaCount: 3
     service:
       annotations: {}
       clusterIP: None
@@ -358,7 +358,7 @@ pomerium:
 
   proxy:
     existingTLSSecret: pomerium-tls
-    replicaCount: 1
+    replicaCount: 3
     deployment:
       podAnnotations:
         traffic.sidecar.istio.io/excludeInboundPorts: '80,443'
@@ -369,7 +369,7 @@ pomerium:
   redis:
     enabled: false
 
-  replicaCount: 1
+  replicaCount: 3
   serviceMonitor:
     enabled: true
   tracing:
