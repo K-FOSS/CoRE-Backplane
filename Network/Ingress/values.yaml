@@ -247,6 +247,15 @@ pomerium:
       url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
     proxied: false
     replicaCount: 3
+    ingress:
+      # cert-manager example
+      # annotations:
+      #   cert-manager.io/cluster-issuer: letsencrypt-prod
+      annotations: {}
+      tls:
+        secretName: myloginspace-int-default-certificates
+        # secretName: authenticate-ingress-tls
+
 
   authorize:
     existingTLSSecret: pomerium-tls
