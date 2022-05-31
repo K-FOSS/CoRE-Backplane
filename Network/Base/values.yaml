@@ -259,21 +259,21 @@ cilium:
 
     # -- Configure the maximum number of entries in the TCP connection tracking
     # table.
-    ctTcpMax: '1524288'
+    #ctTcpMax: '1524288'
 
     # -- Configure the maximum number of entries for the non-TCP connection
     # tracking table.
-    ctAnyMax: '1262144'
+    #ctAnyMax: '1262144'
 
     # -- Configure the maximum number of service entries in the
     # load balancer maps.
-    lbMapMax: 65536
+    lbMapMax: 131072
 
     # -- Configure the maximum number of entries for the NAT table.
     # natMax: 524288
 
     # -- Configure the maximum number of entries for the neighbor table.
-    neighMax: 1524288
+    #neighMax: 1524288
 
     # -- Configure the maximum number of entries in endpoint policy map (per endpoint).
     policyMapMax: 16384
@@ -469,7 +469,7 @@ cilium:
   # module is missing and it is needed for the datapath L7 redirection to work
   # properly. See documentation for details on when this can be disabled:
   # https://docs.cilium.io/en/stable/operations/system_requirements/#linux-kernel.
-  enableXTSocketFallback: false
+  enableXTSocketFallback: true
 
   encryption:
     # -- Enable transparent network encryption.
@@ -1144,7 +1144,7 @@ cilium:
     refreshPeriod: "30s"
 
   # -- Enable Layer 7 network policy.
-  l7Proxy: false
+  l7Proxy: true
 
   # -- Enable Local Redirect Policy.
   localRedirectPolicy: true
@@ -1335,7 +1335,7 @@ cilium:
   # -- Configure BPF socket operations configuration
   sockops:
     # enabled enables installation of socket options acceleration.
-    enabled: false
+    enabled: true
 
   # TODO: Add documentation, default value
   # svcSourceRangeCheck:
@@ -1377,7 +1377,7 @@ cilium:
 
   wellKnownIdentities:
     # -- Enable the use of well-known identities.
-    enabled: true
+    enabled: false
 
   etcd:
     # -- Enable etcd mode for the agent.
