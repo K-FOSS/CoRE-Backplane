@@ -227,16 +227,13 @@ spec:
                 annotations:
                   cert-manager.io/cluster-issuer: kjdev-cluster
                   external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
-                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
-                  traefik.ingress.kubernetes.io/router.tls: 'true'
                   ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
                 enabled: true
                 extraPaths: null
                 hosts:
                   - host: corevault.int.mylogin.space
                     paths: ['/']
-                ingressClassName: traefik-core
+                ingressClassName: pomerium
                 labels:
                   wan-mode: 'public'
                   lan-mode: 'private'
