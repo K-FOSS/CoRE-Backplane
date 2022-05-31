@@ -18,18 +18,7 @@ spec:
     - 10.1.1.83
   gateways:
     - traefik-gateway
-  http:
-    - name: pomerium-authn
-      match:
-        - headers:
-            host:
-              exact: authenticate.int.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 443
-            host: traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
-
+  http: 
     - name: minio
       match:
         - headers:
@@ -111,6 +100,22 @@ spec:
     - match:
         - port: 443
           sniHosts:
+            - '*.int.mylogin.space'
+            - 'controlcenter.house'
+            - '*.controlcenter.house'
+      route:
+        - destination:
+            host: .core-prod.svc.k0s.resolvemy.host
+            port:
+              number: 443
+          weight: 100
+
+    #
+    # Traefik
+    # 
+    - match:
+        - port: 443
+          sniHosts:
             - accessmyporn.download
             - resolvemy.host
             - controlcenter.house
@@ -124,7 +129,7 @@ spec:
             - draw.mylogin.space
             - wwwdb.mylogin.space
             - 'cyberchef.mylogin.space'
-            - '*.int.mylogin.space'
+            - 'rancher.int.mylogin.space'
             - '*.writemy.codes'
             - '*.ipaddr.network'
             - bitwarden.kristianjones.dev
