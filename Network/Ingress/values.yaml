@@ -243,6 +243,9 @@ pomerium:
   authenticate:
     existingTLSSecret: pomerium-tls
     existingExternalTLSSecret: myloginspace-int-default-certificates
+
+    databrokerServiceUrl: https://traefik-core-pomerium-databroker.core-prod.svc.k0s.resolvemy.host
+
     idp:
       provider: oidc
       url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
@@ -373,6 +376,10 @@ pomerium:
     existingTLSSecret: pomerium-tls
     replicaCount: 3
     fullnameOverride: pomerium-proxy
+
+
+    authorizeInternalUrl: https://traefik-core-pomerium-authorize.core-prod.svc.k0s.resolvemy.host
+
     authenticateServiceUrl: https://authenticate.int.mylogin.space
     deployment:
       podAnnotations: {}
