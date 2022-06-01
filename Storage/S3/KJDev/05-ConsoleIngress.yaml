@@ -7,13 +7,11 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: kjdev-cluster
     external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-    traefik.ingress.kubernetes.io/router.tls: 'true'
     ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server", "Network"]}'
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
+    ingress.pomerium.io/service_proxy_upstream: 'true'
   name: s3-kjdev-console-ingress
 spec:
-  ingressClassName: traefik-core
+  ingressClassName: pomerium
   rules:
     - host: s3.int.mylogin.space
       http:
