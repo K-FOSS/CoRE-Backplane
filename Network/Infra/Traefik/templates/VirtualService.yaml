@@ -19,21 +19,6 @@ spec:
   gateways:
     - traefik-gateway
   http: 
-
-    - name: pomerium-authn
-      match:
-        - headers:
-            host:
-              exact: authenticate.int.mylogin.space
-      rewrite:
-        authority: traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
-      route:
-        - destination:
-            port:
-              number: 443
-            host: traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
-
-
     - name: minio
       match:
         - headers:
@@ -112,6 +97,17 @@ spec:
 
 
   tls:
+    - match:
+        - port: 443
+          sniHosts:
+            - 'authenticate.int.mylogin.space'
+      route:
+        - destination:
+            host: pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
+            port:
+              number: 443
+          weight: 100
+
     - match:
         - port: 443
           sniHosts:
