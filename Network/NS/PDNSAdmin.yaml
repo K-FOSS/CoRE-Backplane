@@ -58,9 +58,6 @@ spec:
                   ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server", "Network"]}'
                   ingress.pomerium.io/pass_identity_headers: 'true'
                   ingress.pomerium.io/preserve_host_header: 'true'
-                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
-                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
-                  traefik.ingress.kubernetes.io/router.tls: 'true'
                 hosts:
                   - host: ns.int.mylogin.space
                     paths:
@@ -68,7 +65,7 @@ spec:
                         pathType: Prefix
                         service:
                           port: 80
-                ingressClassName: traefik-core
+                ingressClassName: pomerium
                 tls:
                   - hosts:
                       - '*.int.mylogin.space'
