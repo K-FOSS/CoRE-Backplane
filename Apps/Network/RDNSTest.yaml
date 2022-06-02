@@ -11,10 +11,12 @@ spec:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
             loadBalancerIP: 10.1.1.53
+            publicIP: 66.165.222.102
 
           - cluster: infra1-dc1
             url: https://172.20.52.1:6443
             loadBalancerIP: 10.1.1.50
+            publicIP: 66.165.222.101
   template:
     metadata:
       name: '{{cluster}}-rdns-lab'
@@ -55,6 +57,9 @@ spec:
                       purelb.io/service-group: anycast
                     name: test-dns-rdns-core
                     externalTrafficPolicy: Local
+                    externalIPs:
+                      - 66.165.222.100
+                      - {{ loadBalancerIP }}
                     loadBalancerIP: '{{loadBalancerIP}}'
 
 
