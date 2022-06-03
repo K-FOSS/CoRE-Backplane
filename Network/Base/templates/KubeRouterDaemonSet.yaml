@@ -118,21 +118,6 @@ spec:
             periodSeconds: 3
             successThreshold: 1
             timeoutSeconds: 1
-          
-          readinessProbe:
-            exec:
-              command:
-                - sh
-                - '-c'
-                - >-
-                  neighbors="$(/usr/local/bin/gobgp neighbor 2>/dev/null | tail
-                  -n +2)"; test $(echo "$neighbors" | wc -l) -ge 1; test $(echo
-                  "$neighbors" | grep -v ' Establ ' | wc -l) -eq 0
-            failureThreshold: 3
-            initialDelaySeconds: 5
-            periodSeconds: 3
-            successThreshold: 1
-            timeoutSeconds: 1
           resources:
             limits:
               cpu: 250m
