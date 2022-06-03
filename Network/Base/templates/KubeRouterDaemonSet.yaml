@@ -25,7 +25,7 @@ spec:
       containers:
         - name: kube-router
 
-          image: 'docker.io/cloudnativelabs/kube-router:v1.4.0'
+          image: 'docker.io/cloudnativelabs/kube-router:v1.5.0'
           imagePullPolicy: IfNotPresent
           args:
             #
@@ -47,13 +47,15 @@ spec:
             
             {{- $peerIPs := list -}}
             {{- $peerASNs := list -}}
+            {{- $peerPorts := list -}}
             {{ range .Values.peers }}
               {{- $peerIPs = .ip | append $peerIPs -}}
               {{- $peerASNs = .asn | append $peerASNs -}}
+              {{- $peerPorts = .port | append $peerASNs  -}}
             {{- end }}
             - --peer-router-ips={{ join "," $peerIPs }}
             - --peer-router-asns={{ join "," $peerASNs }}
-            - --peer-router-multihop-ttl=2
+            - --peer-router-ports={{ join "," $peerPorts }}
             
 
             #
@@ -89,7 +91,7 @@ spec:
             # BGP Settings
             #
             - --override-nexthop=true
-            - --bgp-port=179
+            - --bgp-port=180
 
             #
             # Misc Flags
