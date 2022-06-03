@@ -89,6 +89,7 @@ spec:
                         secret: gitlab-ldap-{{ environment }}
                       port: 636
                       uid: cn
+                
                 lfs:
                   bucket: 623579a1-8adc-0b12-dd3f-f24793c3a00f-imy3gs
 
@@ -232,6 +233,32 @@ spec:
                   enabled: true
                   serviceMonitor:
                     enabled: true
+
+              toolbox:
+                enabled: true
+                replicas: 1
+
+                backups:
+                  cron:
+                    enabled: false
+                    concurrencyPolicy: Replace
+                    failedJobsHistoryLimit: 1
+                    schedule: "0 1 * * *"
+                    successfulJobsHistoryLimit: 3
+                    suspend: false
+                    backoffLimit: 6
+                    restartPolicy: "OnFailure"
+                    resources:
+                      requests:
+                        cpu: 50m
+                        memory: 350M
+                    persistence:
+                      enabled: false
+                      accessMode: ReadWriteOnce
+                      size: 10Gi
+                  objectStorage:
+                    backend: s3
+                    config: {}
 
 
             nginx-ingress:
