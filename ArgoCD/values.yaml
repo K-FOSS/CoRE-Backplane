@@ -297,6 +297,23 @@ argo-cd:
     enabled: false
 
   repoServer:
+    name: repo-server
+
+    image:
+      imagePullPolicy: ''
+      repository: ''
+      tag: ''
+
+    resources:
+      requests:
+        cpu: 125m
+        memory: 128M
+
+      limits:
+        cpu: 2048m
+        memory: 512M
+
+
     affinity: {}
 
     autoscaling:
@@ -315,14 +332,17 @@ argo-cd:
 
     containerPort: 8081
     containerSecurityContext: {}
+
     copyutil:
       resources: {}
+
     env:
       - name: REDIS_DB
         value: '10'
       
       - name: LOVELY_PLUGINS
         value: argocd-vault-replacer
+
     envFrom:
       - secretRef:
           name: argocd-vault-replacer-credentials
@@ -331,10 +351,8 @@ argo-cd:
       - '--redis'
       - 10.1.1.68:6379
     extraContainers: null
-    image:
-      imagePullPolicy: ''
-      repository: ''
-      tag: ''
+
+
     initContainers:
       - name: argocd-lovely-plugin-download
         image: ghcr.io/crumbhole/argocd-lovely-plugin:stable
@@ -348,14 +366,17 @@ argo-cd:
         volumeMounts:
           - mountPath: /custom-tools
             name: custom-tools
+
     livenessProbe:
       failureThreshold: 3
       initialDelaySeconds: 10
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
+
     logFormat: json
     logLevel: warn
+
     metrics:
       enabled: true
       service:
@@ -370,7 +391,7 @@ argo-cd:
         namespace: ''
         relabelings: null
         selector: {}
-    name: repo-server
+
     nodeSelector: {}
     pdb:
       annotations: {}
@@ -389,13 +410,7 @@ argo-cd:
       timeoutSeconds: 1
     replicas: 1
 
-    resources:
-      limits:
-        cpu: 500m
-        memory: 1G
-      requests:
-        cpu: 125m
-        memory: 128Mi
+
 
     service:
       annotations: {}
