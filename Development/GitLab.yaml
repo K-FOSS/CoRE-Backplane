@@ -50,8 +50,25 @@ spec:
                         BucketLocation = "runners-cache"
                         Insecure = false
                         AuthenticationType = "access-key"
+            
+            webservice:
+              registry:
+              enabled: false
+
+            registry:
+              enabled: false
+
+
             global:
+              registry:
+                enabled: false
+
+
               appConfig:
+                defaultProjectsFeatures:
+                  containerRegistry: false
+
+
 
                 artifacts:
                   bucket: 56c4bfd0-20f8-93d7-476f-a86435dde7df-w8qn40
@@ -199,9 +216,17 @@ spec:
                   serviceMonitor:
                     enabled: true
 
+              unicorn:
+                registry:
+                  enabled: false
+
+
               sidekiq:
                 enabled: true
                 priorityClassName: 'tier2-priority'
+                registry:
+                  enabled: false
+
 
                 metrics:
                   enabled: true
@@ -220,6 +245,8 @@ spec:
               webservice:
                 enabled: true
                 priorityClassName: 'tier2-priority'
+                registry:
+                  enabled: false
 
                 metrics:
                   enabled: true
