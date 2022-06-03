@@ -384,6 +384,21 @@ argo-cd:
 
   server:
 
+    replicas: 1
+    resources:
+      limits:
+        cpu: 256m
+        memory: 512Mi
+      requests:
+        cpu: 32m
+        memory: 128M
+
+    extraArgs:
+      - --insecure=true
+      - '--redisdb=10'
+      - '--redis'
+      - 10.1.1.68:6379
+
     GKEbackendConfig:
       enabled: false
 
@@ -470,11 +485,7 @@ argo-cd:
         tag: v0.1.0
       resources: {}
     
-    extraArgs:
-      - --insecure=true
-      - '--redisdb=10'
-      - '--redis'
-      - 10.1.1.68:6379
+
     
     extraContainers: null
     
@@ -572,14 +583,7 @@ argo-cd:
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
-    replicas: 1
-    resources:
-      limits:
-        cpu: 256m
-        memory: 256Mi
-      requests:
-        cpu: 32m
-        memory: 64M
+
 
     route:
       annotations: {}
