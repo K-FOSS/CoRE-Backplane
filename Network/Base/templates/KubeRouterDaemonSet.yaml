@@ -51,7 +51,7 @@ spec:
             {{ range .Values.peers }}
               {{- $peerIPs = .ip | append $peerIPs -}}
               {{- $peerASNs = .asn | append $peerASNs -}}
-              {{- $peerPorts = .port | append $peerASNs  -}}
+              {{- $peerPorts = .port | append $peerPorts  -}}
             {{- end }}
             - --peer-router-ips={{ join "," $peerIPs }}
             - --peer-router-asns={{ join "," $peerASNs }}
