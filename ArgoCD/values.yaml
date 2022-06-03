@@ -57,41 +57,41 @@ argo-cd:
     tlsCertsAnnotations: {}
 
   controller:
+    name: application-controller
+
+    replicas: 2
+
+    resources:
+      requests:
+        memory: 500M
+        cpu: 128Mi
+      limits:
+        memory: 4G
+        cpu: 1024Mi
+
+    image:
+      imagePullPolicy: ''
+      repository: ''
+      tag: ''
+
     affinity: {}
+
     args:
       appResyncPeriod: '600'
       operationProcessors: '4'
       repoServerTimeoutSeconds: '60'
       selfHealTimeout: '5'
       statusProcessors: '4'
-    clusterAdminAccess:
-      enabled: true
-    clusterRoleRules:
-      enabled: false
-      rules: null
-    containerPort: 8082
-    containerSecurityContext: {}
-    enableStatefulSet: true
+
     env: null
+
     envFrom: null
+
     extraArgs:
       - '--redisdb=10'
       - '--redis'
       - 10.1.1.68:6379
-    extraContainers: null
-    image:
-      imagePullPolicy: ''
-      repository: ''
-      tag: ''
-    initContainers: null
-    livenessProbe:
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
-    logFormat: json
-    logLevel: warn
+
     metrics:
       applicationLabels:
         enabled: false
@@ -112,37 +112,76 @@ argo-cd:
         namespace: ''
         relabelings: null
         selector: {}
-    name: application-controller
+
+
+
+    clusterAdminAccess:
+      enabled: true
+
+    clusterRoleRules:
+      enabled: false
+      rules: null
+
+    containerPort: 8082
+
+    containerSecurityContext: {}
+
+    enableStatefulSet: true
+
+    extraContainers: null
+
+    initContainers: null
+
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+
+    logFormat: json
+    logLevel: warn
+
     nodeSelector: {}
+
     pdb:
       annotations: {}
       enabled: true
       labels: {}
+
     podAnnotations: {}
+
     podLabels: {}
+
     priorityClassName: 'tier2-priority'
+
     readinessProbe:
       failureThreshold: 3
       initialDelaySeconds: 10
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
-    replicas: 2
-    resources: {}
+
+
+
+
     service:
       annotations: {}
       labels: {}
       port: 8082
       portName: https-controller
+
     serviceAccount:
       annotations: {}
       automountServiceAccountToken: true
       create: true
       name: argocd-application-controller
+
     tolerations: null
     topologySpreadConstraints: null
     volumeMounts: null
     volumes: null
+
   createAggregateRoles: false
 
   dex:
