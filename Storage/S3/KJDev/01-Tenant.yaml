@@ -35,6 +35,7 @@ spec:
           resources:
             requests:
               storage: '50G'
+
         status: {}
     resources: {}
     securityContext:
@@ -47,8 +48,14 @@ spec:
 
   pools:
     - name: pool-0
-      resources: {}
+
+      resources:
+        requests:
+          cpu: 128Mi
+          memory: 4G
+
       servers: 4
+
       volumeClaimTemplate:
         metadata:
           name: data

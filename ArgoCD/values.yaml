@@ -383,25 +383,36 @@ argo-cd:
         emptyDir: {}
 
   server:
+
     GKEbackendConfig:
       enabled: false
+
     GKEfrontendConfig:
       enabled: false
+
     GKEmanagedCertificate:
       enabled: false
+
     additionalApplications: null
+
     additionalProjects: null
+
+
     affinity: {}
+
     autoscaling:
       enabled: true
       maxReplicas: 2
       minReplicas: 1
       targetCPUUtilizationPercentage: 50
       targetMemoryUtilizationPercentage: 50
+
     certificate:
       enabled: false
+
     clusterAdminAccess:
       enabled: true
+
     config:
       application.instanceLabelKey: argocd.argoproj.io/instance
       url: https://argo.writemy.codes
@@ -437,12 +448,19 @@ argo-cd:
         clientSecret: $oidc.clientSecret
 
         requestedScopes: ["openid", "profile", "email"]
+    
     configAnnotations: {}
+    
     configEnabled: true
+    
     containerPort: 8080
+    
     containerSecurityContext: {}
+    
     env: null
+    
     envFrom: null
+    
     extensions:
       contents: null
       enabled: false
@@ -451,12 +469,15 @@ argo-cd:
         repository: ghcr.io/argoproj-labs/argocd-extensions
         tag: v0.1.0
       resources: {}
+    
     extraArgs:
       - --insecure=true
       - '--redisdb=10'
       - '--redis'
       - 10.1.1.68:6379
+    
     extraContainers: null
+    
     image:
       imagePullPolicy: ''
       repository: ''
@@ -554,11 +575,12 @@ argo-cd:
     replicas: 1
     resources:
       limits:
-        cpu: 512m
-        memory: 1024Mi
+        cpu: 256m
+        memory: 256Mi
       requests:
-        cpu: 50m
-        memory: 64Mi
+        cpu: 32m
+        memory: 64M
+
     route:
       annotations: {}
       enabled: false
