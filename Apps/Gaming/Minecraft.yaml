@@ -25,9 +25,12 @@ spec:
         helm:
           releaseName: mc-lab
           values: | 
-            # ref: https://hub.docker.com/r/itzg/minecraft-server/
-            image: itzg/minecraft-server
-            imageTag: latest
+            image:
+              repository: itzg/minecraft-server
+              tag: latest
+              pullPolicy: IfNotPresent
+              pullSecret: ""
+
 
             replicaCount: 1
 
