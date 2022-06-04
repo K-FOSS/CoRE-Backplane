@@ -6,14 +6,19 @@ metadata:
     {{ include "privatenetworking-core.labels" . | nindent 4 }}
 data:
   management.json.tmpl: |
-    {{`
       {
         "Stuns": [
           {
             "Proto": "tcp",
             "URI": "stun:nat.ipaddr.network:3478",
             "Username": "demo",
-            "Password": ""
+            "Password": "secret"
+          },
+          {
+            "Proto": "udp",
+            "URI": "stun:nat.ipaddr.network:3478",
+            "Username": "demo",
+            "Password": "secret"
           }
         ],
         "TURNConfig": {
@@ -22,7 +27,13 @@ data:
               "Proto": "tcp",
               "URI": "turn:nat.ipaddr.network:3478",
               "Username": "demo",
-              "Password": ""
+              "Password": "secret"
+            },
+            {
+              "Proto": "udp",
+              "URI": "turn:nat.ipaddr.network:3478",
+              "Username": "demo",
+              "Password": "secret"
             }
           ],
           "CredentialsTTL": "12h",
@@ -31,15 +42,15 @@ data:
         },
         "Signal": {
           "Proto": "http",
-          "URI": "signal.ipaddr.network:10000",
+          "URI": "nat.ipaddr.network:10000",
           "Username": "",
           "Password": null
         },
         "Datadir": "",
         "HttpConfig": {
-          "Address": "0.0.0.0:$WIRETRUSTEE_MGMT_API_PORT",
+          "Address": "0.0.0.0:443",
           "AuthIssuer": "https://idp.mylogin.space",
-          "AuthAudience": "$WIRETRUSTEE_AUTH0_AUDIENCE",
+          "AuthAudience": "",
           "AuthKeysLocation": "https://$WIRETRUSTEE_AUTH0_DOMAIN/.well-known/jwks.json",
           "CertFile":"$WIRETRUSTEE_MGMT_API_CERT_FILE",
           "CertKey":"$WIRETRUSTEE_MGMT_API_CERT_KEY_FILE"
@@ -48,4 +59,3 @@ data:
           "Manager": "none"
         }
       }
-    `}}
