@@ -3,14 +3,14 @@ kind: Deployment
 metadata:
   name: istio-operator
   labels:
-    {{ include "istio.labels" . | nindent 4 }}
+    {{ include "istiooperator.labels" . | nindent 4 }}
 spec:
   progressDeadlineSeconds: 600
   replicas: 1
   revisionHistoryLimit: 3
   selector:
     matchLabels:
-      {{ include "istio.selectorLabels" . | nindent 6 }}
+      {{ include "istiooperator.selectorLabels" . | nindent 6 }}
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -19,7 +19,7 @@ spec:
   template:
     metadata:
       labels:
-        {{ include "istio.labels" . | nindent 8 }}
+        {{ include "istiooperator.labels" . | nindent 8 }}
     spec:
       containers:
         - name: istio-operator

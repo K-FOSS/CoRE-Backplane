@@ -1,0 +1,16 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  namespace: external-istiod
+spec:
+  profile: external
+  values:
+    global:
+      istioNamespace: external-istiod
+      configCluster: true
+    pilot:
+      configMap: true
+    istiodRemote:
+      injectionURL: https://istio-ingressgateway.istio-system.svc.cluster.local:15017/inject/:ENV:cluster=core:ENV:net=network1
+    base:
+      validationURL: https://istio-ingressgateway.istio-system.svc.cluster.local:15017/validate
