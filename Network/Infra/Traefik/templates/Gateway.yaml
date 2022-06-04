@@ -4,7 +4,7 @@ metadata:
   name: traefik-gateway
 spec:
   selector:
-    istio: ingress # use istio default ingress gateway
+    istio: ingress
   servers:
     - port:
         number: 443
@@ -18,6 +18,7 @@ spec:
         - metrics.mylogin.space
         - logs.mylogin.space
         - traces.mylogin.space
+
 
     - port:
         number: 443
@@ -42,6 +43,7 @@ spec:
         - '*.gitpods.writemy.codes'
         - '*.ws.gitpods.writemy.codes'
 
+
     - port:
         number: 80
         name: http-main
@@ -49,6 +51,7 @@ spec:
       hosts:
         - static.mylogin.space
         - 10.1.1.83
+
 
     - port:
         number: 80
@@ -69,6 +72,8 @@ spec:
       tls:
         httpsRedirect: true
 
+
+
     - port:
         number: 443
         name: https
@@ -79,6 +84,8 @@ spec:
       hosts:
         - jellyfin.kjmedia.stream
         - speed.kjmedia.stream
+
+
 
     - hosts:
         - unifi.ipaddr.network
