@@ -1,1 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: wirebird
+    app.kubernetes.io/instance: signal
+  name: wirebird-signal
 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wirebird
+      app.kubernetes.io/instance: signal
+
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wirebird
+        app.kubernetes.io/instance: signal
+
+    spec:
+      containers:
+        - name: signal
+
+          image: wiretrustee/signal:main
+          imagePullPolicy: Always
+
+          env:
+            - name: NETBIRD_MGMT_API_ENDPOINT
+              value: 0.0.0.0:67
+
+            - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
+              value: ''
+
+
+
+          ports:
+            - containerPort: 10000
+              name: http
+
+            - containerPort: 443
+              name: https

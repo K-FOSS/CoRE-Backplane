@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: wirebird
+    app.kubernetes.io/instance: management
+  name: wirebird-management
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: wirebird
+      app.kubernetes.io/instance: management
+
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: wirebird
+        app.kubernetes.io/instance: management
+
+    spec:
+      containers:
+        - name: management
+
+          image: wiretrustee/management:main
+          imagePullPolicy: Always
+
+          env:
+            - name: NETBIRD_MGMT_API_ENDPOINT
+              value: 0.0.0.0:67
+
+            - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
+              value: ''
+
+
+
+          ports:
+            - containerPort: 80
+              name: http
+
+            - containerPort: 443
+              name: https
