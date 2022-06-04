@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-network-infra-istio
+  name: core-backplane-network-infra-istio-operator
   namespace: argocd
 spec:
   generators:
@@ -14,7 +14,7 @@ spec:
             url: https://172.20.52.1:6443
   template:
     metadata:
-      name: '{{cluster}}-istio'
+      name: '{{cluster}}-istio-operator'
     spec:
       project: core
       syncPolicy:
@@ -24,7 +24,7 @@ spec:
         syncOptions:
           - CreateNamespace=true
       source:
-        path: Mesh/Service/Istio
+        path: Mesh/Service/IstioOperator
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
         plugin:
@@ -32,4 +32,4 @@ spec:
 
       destination:
         server: '{{url}}'
-        namespace: external-istiod
+        namespace: istio-operator
