@@ -52,6 +52,7 @@ gitlab:
       create: false
       links: []
       allowClusterRoles: true
+
     ## https://docs.gitlab.com/charts/charts/globals#configure-host-settings
     hosts:
       domain: example.com
@@ -71,7 +72,7 @@ gitlab:
     ingress:
       apiVersion: ""
       configureCertmanager: true
-      provider: nginx
+      provider: traefik
       # class:
       annotations: {}
       enabled: true
@@ -104,18 +105,18 @@ gitlab:
       keepalivesInterval:
       keepalivesCount:
       tcpUserTimeout:
-      password: {}
-        # useSecret:
-        # secret:
-        # key:
-        # file:
-      # host: postgresql.hostedsomewhere.else
+      password:
+        useSecret: true
+        secret: gitlab-database-prod
+        key: DatabasePassword
+      host: psql.service.dc1.kjdev
       # port: 123
-      # username: gitlab
-      # database: gitlabhq_production
+      
+      username: <secret:CORE0_SITE1/data/GitLab~PraefectDatabase>
+      database: <secret:CORE0_SITE1/data/GitLab~PraefectDatabase>
       # applicationName:
-      # preparedStatements: false
-      # databaseTasks: true
+      preparedStatements: true
+      databaseTasks: true
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-redis-settings
     redis:
@@ -156,14 +157,18 @@ gitlab:
       replaceInternalGitaly: true
       authToken: {}
       autoMigrate: true
-      dbSecret: {}
+      dbSecret:
+        key: DatabasePassword
+        secret: gitlab-praefect-database-{{ environment }}
       virtualStorages:
         - name: default
           gitalyReplicas: 3
           maxUnavailable: 1
       psql:
-        sslMode: disable
-      # serviceName:
+        dbName: <secret:CORE0_SITE1/data/GitLab~PraefectDatabase>
+        host: psql.service.dc1.kjdev
+        port: 5432
+        user: <secret:CORE0_SITE1/data/GitLab~PraefectDatabase>
       service:
         name: praefect
         type: ClusterIP
@@ -296,6 +301,7 @@ gitlab:
         connection: {}
           # secret:
           # key:
+
       lfs:
         enabled: true
         proxy_download: true
@@ -303,6 +309,7 @@ gitlab:
         connection: {}
           # secret:
           # key:
+
       artifacts:
         enabled: true
         proxy_download: true
@@ -310,6 +317,7 @@ gitlab:
         connection: {}
           # secret:
           # key:
+
       uploads:
         enabled: true
         proxy_download: true
@@ -317,25 +325,30 @@ gitlab:
         connection: {}
           # secret:
           # key:
+
       packages:
         enabled: true
         proxy_download: true
         bucket: gitlab-packages
         connection: {}
+
       externalDiffs:
         enabled: false
         when:
         proxy_download: true
         bucket: gitlab-mr-diffs
         connection: {}
+
       terraformState:
         enabled: false
         bucket: gitlab-terraform-state
         connection: {}
+
       ciSecureFiles:
         enabled: false
         bucket: gitlab-ci-secure-files
         connection: {}
+
       dependencyProxy:
         enabled: false
         proxy_download: true
@@ -1279,7 +1292,7 @@ harbor:
   # in each components tls cert files need to provided in advance.
   internalTLS:
     # If internal TLS enabled
-    enabled: false
+    enabled: true
     # There are three ways to provide tls
     # 1) "auto" will generate cert automatically
     # 2) "manual" need provide cert file manually in following value
@@ -1608,7 +1621,7 @@ harbor:
     # Secret is used when core server communicates with other components.
     # If a secret key is not specified, Helm will generate one.
     # Must be a string of 16 chars.
-    secret: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
+    secret: <secret:CORE0_SITE1/data/Harbor~CoreSecret>
 
     # Fill the name of a kubernetes secret if you want to use your own
     # TLS certificate and private key for token encryption/decryption.
@@ -1671,7 +1684,7 @@ harbor:
     # Secret is used when job service communicates with other components.
     # If a secret key is not specified, Helm will generate one.
     # Must be a string of 16 chars.
-    secret: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
+    secret: <secret:CORE0_SITE1/data/Harbor~JobServiceSecret>
 
     ## The priority class to run the pod as
     priorityClassName:
@@ -1721,7 +1734,7 @@ harbor:
     # See: https://github.com/docker/distribution/blob/master/docs/configuration.md#http
     # If a secret key is not specified, Helm will generate one.
     # Must be a string of 16 chars.
-    secret: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
+    secret: <secret:CORE0_SITE1/data/Harbor~RegistrySecret>
 
     # If true, the registry returns relative URLs in Location headers. The client is responsible for resolving the correct URL.
     relativeurls: false
@@ -1963,10 +1976,10 @@ harbor:
 
       port: '5432'
       
-      username: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
-      password: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
+      username: <secret:CORE0_SITE1/data/Harbor~DatabaseUsername>
+      password: <secret:CORE0_SITE1/data/Harbor~DatabasePassword>
       
-      coreDatabase: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
+      coreDatabase: <secret:CORE0_SITE1/data/Harbor~DatabaseDatabase>
       
       notaryServerDatabase: "notary_server"
       
