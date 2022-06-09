@@ -30,7 +30,7 @@ spec:
             # revision declares which revision this gateway is a part of
             revision: ""
 
-            replicaCount: 3
+            replicaCount: 5
 
             rbac:
               # If enabled, roles will be created to enable accessing certificates from Gateways. This is not needed
@@ -121,7 +121,19 @@ spec:
 
             tolerations: []
 
-            affinity: {}
+            affinity:
+              podAntiAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    podAffinityTerm:
+                      labelSelector:
+                        matchExpressions:
+                          - key: service.istio.io/canonical-name
+                            operator: In
+                            values:
+                              - istio-ingress
+                      topologyKey: kubernetes.io/hostname
+
 
             imagePullSecrets: []
 
