@@ -265,10 +265,28 @@ spec:
                 enabled: true
                 replicas: 1
 
+                extraEnv:
+                  - name: AWS_ACCESS_KEY_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: gitlab-s3-backups-{{ environment }}
+                        key: S3AccessKey
+                        optional: false
+
+                  - name: AWS_SECRET_ACCESS_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: gitlab-s3-backups-{{ environment }}
+                        key: S3SecretKey
+                        optional: false
+
+                  - name: 
+
                 backups:
                   cron:
                     enabled: true
                     concurrencyPolicy: Replace
+                    extraArgs: '--s3tool awscli'
                     failedJobsHistoryLimit: 1
                     schedule: "0 1 * * *"
                     successfulJobsHistoryLimit: 3
