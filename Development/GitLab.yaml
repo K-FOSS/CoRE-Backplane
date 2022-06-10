@@ -266,24 +266,6 @@ spec:
                 enabled: true
                 replicas: 1
 
-                extraEnv:
-                  - name: AWS_ACCESS_KEY_ID
-                    valueFrom:
-                      secretKeyRef:
-                        name: gitlab-s3-backups-{{ environment }}
-                        key: S3AccessKey
-                        optional: false
-
-                  - name: AWS_SECRET_ACCESS_KEY
-                    valueFrom:
-                      secretKeyRef:
-                        name: gitlab-s3-backups-{{ environment }}
-                        key: S3SecretKey
-                        optional: false
-
-                  - name: AWS_S3_ENDPOINT
-                    value: 'https://s3.mylogin.space'
-
                 backups:
                   cron:
                     enabled: true
