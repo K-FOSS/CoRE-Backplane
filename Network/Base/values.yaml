@@ -185,6 +185,15 @@ cilium:
   securityContext:
     # runAsUser: 0
     privileged: false
+    extraCapabilities:
+      # Allow discretionary access control (e.g. required for package installation)
+      - DAC_OVERRIDE
+      # Allow to set Access Control Lists (ACLs) on arbitrary files (e.g. required for package installation)
+      - FOWNER
+      # Allow to execute program that changes GID (e.g. required for package installation)
+      - SETGID
+      # Allow to execute program that changes UID (e.g. required for package installation)
+      - SETUID
 
   # -- Cilium agent update strategy
   updateStrategy:
