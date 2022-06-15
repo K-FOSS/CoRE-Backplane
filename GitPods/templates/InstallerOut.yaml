@@ -9,7 +9,7 @@ metadata:
     app: gitpod
     component: content-service
   name: content-service
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - {}
@@ -29,7 +29,7 @@ metadata:
     app: gitpod
     component: openvsx-proxy
   name: openvsx-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - ports:
@@ -61,7 +61,7 @@ metadata:
     app: gitpod
     component: server
   name: server
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - from:
@@ -104,7 +104,7 @@ metadata:
     app: gitpod
     component: proxy
   name: proxy-deny-all-allow-explicit
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - ports:
@@ -140,7 +140,7 @@ metadata:
     app: gitpod
     component: dashboard
   name: dashboard-deny-all-allow-explicit
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - from:
@@ -166,7 +166,7 @@ metadata:
     app: gitpod
     component: ws-daemon
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - from:
@@ -201,7 +201,7 @@ metadata:
     app: gitpod
     component: workspace
   name: workspace-default
-  namespace: default
+  namespace: core-prod
 spec:
   egress:
   - to:
@@ -282,7 +282,7 @@ kind: NetworkPolicy
 apiVersion: networking.k8s.io/v1
 metadata:
   name: messagebus
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -314,7 +314,7 @@ metadata:
     app: gitpod
     component: agent-smith
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 spec:
   podSelector:
     matchLabels:
@@ -332,7 +332,7 @@ metadata:
     app: gitpod
     component: image-builder-mk3
   name: image-builder-mk3
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - from:
@@ -358,7 +358,7 @@ metadata:
     app: gitpod
     component: blobserve
   name: blobserve
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - from:
@@ -387,7 +387,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - {}
@@ -407,7 +407,7 @@ metadata:
     app: gitpod
     component: registry-facade
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - {}
@@ -427,7 +427,7 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   ingress:
   - ports:
@@ -450,7 +450,7 @@ kind: ResourceQuota
 metadata:
   creationTimestamp: null
   name: gitpod-resource-quota
-  namespace: default
+  namespace: core-prod
 spec:
   hard:
     pods: 10k
@@ -471,7 +471,7 @@ metadata:
     app: gitpod
     component: cluster
   name: ca-issuer
-  namespace: default
+  namespace: core-prod
 spec:
   ca:
     secretName: ca-issuer-ca
@@ -486,7 +486,7 @@ metadata:
     app: gitpod
     component: cluster
   name: gitpod-selfsigned-issuer
-  namespace: default
+  namespace: core-prod
 spec:
   selfSigned: {}
 status: {}
@@ -500,11 +500,11 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager-tls
-  namespace: default
+  namespace: core-prod
 spec:
   dnsNames:
-  - gitpod.default
-  - ws-manager.default.svc
+  - gitpod.core-prod
+  - ws-manager.core-prod.svc
   - ws-manager
   - ws-manager-dev
   duration: 2160h0m0s
@@ -524,7 +524,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 spec:
   dnsNames:
   - registry-facade
@@ -549,7 +549,7 @@ metadata:
     app: gitpod
     component: cluster
   name: ca-issuer-ca
-  namespace: default
+  namespace: core-prod
 spec:
   commonName: ca-issuer-ca
   duration: 2160h0m0s
@@ -573,7 +573,7 @@ metadata:
     app: gitpod
     component: registry-facade
   name: builtin-registry-facade-cert
-  namespace: default
+  namespace: core-prod
 spec:
   dnsNames:
   - reg.gitpods.writemy.codes
@@ -594,10 +594,10 @@ metadata:
     app: gitpod
     component: docker-registry
   name: builtin-registry-certs
-  namespace: default
+  namespace: core-prod
 spec:
   dnsNames:
-  - registry.default.svc.cluster.local
+  - registry.core-prod.svc.cluster.local
   duration: 2160h0m0s
   issuerRef:
     group: cert-manager.io
@@ -615,11 +615,11 @@ metadata:
     app: gitpod
     component: ws-daemon
   name: ws-daemon-tls
-  namespace: default
+  namespace: core-prod
 spec:
   dnsNames:
-  - gitpod.default
-  - ws-daemon.default.svc
+  - gitpod.core-prod
+  - ws-daemon.core-prod.svc
   - ws-daemon
   - wsdaemon
   duration: 2160h0m0s
@@ -630,7 +630,7 @@ spec:
   secretName: ws-daemon-tls
 status: {}
 ---
-# policy/v1beta1/PodSecurityPolicy default-ns-unprivileged
+# policy/v1beta1/PodSecurityPolicy core-prod-ns-unprivileged
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -640,8 +640,8 @@ metadata:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
     seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
   creationTimestamp: null
-  name: default-ns-unprivileged
-  namespace: default
+  name: core-prod-ns-unprivileged
+  namespace: core-prod
 spec:
   allowPrivilegeEscalation: false
   fsGroup:
@@ -667,7 +667,7 @@ spec:
   - secret
   - persistentVolumeClaim
 ---
-# policy/v1beta1/PodSecurityPolicy default-ns-registry-facade
+# policy/v1beta1/PodSecurityPolicy core-prod-ns-registry-facade
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -680,7 +680,7 @@ metadata:
   labels:
     app: gitpod
     component: registry-facade
-  name: default-ns-registry-facade
+  name: core-prod-ns-registry-facade
 spec:
   fsGroup:
     ranges:
@@ -706,7 +706,7 @@ spec:
   - emptyDir
   - hostPath
 ---
-# policy/v1beta1/PodSecurityPolicy default-ns-restricted-root-user
+# policy/v1beta1/PodSecurityPolicy core-prod-ns-restricted-root-user
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -716,8 +716,8 @@ metadata:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
     seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
   creationTimestamp: null
-  name: default-ns-restricted-root-user
-  namespace: default
+  name: core-prod-ns-restricted-root-user
+  namespace: core-prod
 spec:
   fsGroup:
     ranges:
@@ -746,7 +746,7 @@ spec:
   - persistentVolumeClaim
   - hostPath
 ---
-# policy/v1beta1/PodSecurityPolicy default-ns-privileged
+# policy/v1beta1/PodSecurityPolicy core-prod-ns-privileged
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -756,8 +756,8 @@ metadata:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
     seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
   creationTimestamp: null
-  name: default-ns-privileged
-  namespace: default
+  name: core-prod-ns-privileged
+  namespace: core-prod
 spec:
   allowPrivilegeEscalation: true
   allowedCapabilities:
@@ -780,7 +780,7 @@ spec:
   volumes:
   - '*'
 ---
-# policy/v1beta1/PodSecurityPolicy default-ns-workspace
+# policy/v1beta1/PodSecurityPolicy core-prod-ns-workspace
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -790,8 +790,8 @@ metadata:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
     seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
   creationTimestamp: null
-  name: default-ns-workspace
-  namespace: default
+  name: core-prod-ns-workspace
+  namespace: core-prod
 spec:
   allowPrivilegeEscalation: true
   allowedCapabilities:
@@ -820,7 +820,7 @@ spec:
   - secret
   - hostPath
 ---
-# policy/v1beta1/PodSecurityPolicy default-ns-privileged-unconfined
+# policy/v1beta1/PodSecurityPolicy core-prod-ns-privileged-unconfined
 apiVersion: policy/v1beta1
 kind: PodSecurityPolicy
 metadata:
@@ -830,8 +830,8 @@ metadata:
     seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default,unconfined
     seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
   creationTimestamp: null
-  name: default-ns-privileged-unconfined
-  namespace: default
+  name: core-prod-ns-privileged-unconfined
+  namespace: core-prod
 spec:
   allowPrivilegeEscalation: true
   allowedCapabilities:
@@ -858,7 +858,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: messagebus
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -881,7 +881,7 @@ metadata:
     app: gitpod
     component: workspace
   name: workspace
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount ws-daemon
 apiVersion: v1
@@ -893,7 +893,7 @@ metadata:
     app: gitpod
     component: ws-daemon
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount dashboard
 apiVersion: v1
@@ -905,7 +905,7 @@ metadata:
     app: gitpod
     component: dashboard
   name: dashboard
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount registry-facade
 apiVersion: v1
@@ -917,7 +917,7 @@ metadata:
     app: gitpod
     component: registry-facade
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount gitpod
 apiVersion: v1
@@ -929,7 +929,7 @@ metadata:
     app: gitpod
     component: gitpod
   name: gitpod
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount nobody
 apiVersion: v1
@@ -941,7 +941,7 @@ metadata:
     app: gitpod
     component: nobody
   name: nobody
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount openvsx-proxy
 apiVersion: v1
@@ -953,7 +953,7 @@ metadata:
     app: gitpod
     component: openvsx-proxy
   name: openvsx-proxy
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount blobserve
 apiVersion: v1
@@ -965,7 +965,7 @@ metadata:
     app: gitpod
     component: blobserve
   name: blobserve
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount db
 apiVersion: v1
@@ -977,7 +977,7 @@ metadata:
     app: gitpod
     component: db
   name: db
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount ws-proxy
 apiVersion: v1
@@ -989,7 +989,7 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount agent-smith
 apiVersion: v1
@@ -1001,7 +1001,7 @@ metadata:
     app: gitpod
     component: agent-smith
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount ide-proxy
 apiVersion: v1
@@ -1013,7 +1013,7 @@ metadata:
     app: gitpod
     component: ide-proxy
   name: ide-proxy
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount image-builder-mk3
 apiVersion: v1
@@ -1025,7 +1025,7 @@ metadata:
     app: gitpod
     component: image-builder-mk3
   name: image-builder-mk3
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount docker-registry
 apiVersion: v1
@@ -1037,7 +1037,7 @@ metadata:
     app: gitpod
     component: docker-registry
   name: docker-registry
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount server
 apiVersion: v1
@@ -1049,7 +1049,7 @@ metadata:
     app: gitpod
     component: server
   name: server
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount migrations
 apiVersion: v1
@@ -1061,7 +1061,7 @@ metadata:
     app: gitpod
     component: migrations
   name: migrations
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount content-service
 apiVersion: v1
@@ -1073,7 +1073,7 @@ metadata:
     app: gitpod
     component: content-service
   name: content-service
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount proxy
 apiVersion: v1
@@ -1085,7 +1085,7 @@ metadata:
     app: gitpod
     component: proxy
   name: proxy
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount rabbitmq
 # Source: rabbitmq/charts/rabbitmq/templates/serviceaccount.yaml
@@ -1093,7 +1093,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: rabbitmq
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -1113,7 +1113,7 @@ metadata:
     app: gitpod
     component: ws-manager-bridge
   name: ws-manager-bridge
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ServiceAccount ws-manager
 apiVersion: v1
@@ -1125,12 +1125,12 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 ---
 # v1/Secret messagebus-erlang-cookie
 apiVersion: v1
 data:
-  rabbitmq-erlang-cookie: MHladUt3eThCUFRPRWFaR0hzZzU=
+  rabbitmq-erlang-cookie: bXVibzN1WU5lTzhTZU9ySmMyanM=
 kind: Secret
 metadata:
   creationTimestamp: null
@@ -1138,7 +1138,7 @@ metadata:
     app: gitpod
     component: rabbitmq
   name: messagebus-erlang-cookie
-  namespace: default
+  namespace: core-prod
 ---
 # v1/Secret rabbitmq
 # Source: rabbitmq/charts/rabbitmq/templates/secrets.yaml
@@ -1146,7 +1146,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: rabbitmq
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -1154,7 +1154,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 type: Opaque
 stringData:
-  password: Sw2hTmcrL61WFv2cTvPv
+  password: .f7UUZCjtZjo_dwRhGp9
   username: gitpod
 ---
 # v1/Secret db-password
@@ -1169,7 +1169,7 @@ metadata:
     app: gitpod
     component: db
   name: db-password
-  namespace: default
+  namespace: core-prod
 ---
 # v1/Secret messagebus-certificates-secret-core
 apiVersion: v1
@@ -1184,7 +1184,7 @@ metadata:
     app: gitpod
     component: rabbitmq
   name: messagebus-certificates-secret-core
-  namespace: default
+  namespace: core-prod
 ---
 # v1/Secret load-definition
 # Source: rabbitmq/charts/rabbitmq/templates/secrets.yaml
@@ -1192,7 +1192,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: load-definition
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -1200,7 +1200,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 type: Opaque
 stringData:
-  load_definition.json: '{"users":[{"name":"gitpod","password":"Sw2hTmcrL61WFv2cTvPv","tags":"administrator"}],"vhosts":[{"name":"/"}],"parameters":[],"permissions":[{"user":"gitpod","vhost":"/","configure":".*","write":".*","read":".*"}],"exchanges":[{"name":"gitpod.ws.local","vhost":"/","type":"topic","durable":true,"auto_delete":false},{"name":"consensus-leader","vhost":"/","type":"fanout","durable":false,"auto_delete":false}],"bindings":[],"queues":[{"name":"consensus-peers","vhost":"/","durable":false,"auto_delete":false,"arguments":{}},{"name":"pwsupdatable","vhost":"/","durable":true,"auto_delete":false,"arguments":{}}],"policies":[{"name":"ha-all","vhost":"/","pattern":".*","definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}}]}'
+  load_definition.json: '{"users":[{"name":"gitpod","password":".f7UUZCjtZjo_dwRhGp9","tags":"administrator"}],"vhosts":[{"name":"/"}],"parameters":[],"permissions":[{"user":"gitpod","vhost":"/","configure":".*","write":".*","read":".*"}],"exchanges":[{"name":"gitpod.ws.local","vhost":"/","type":"topic","durable":true,"auto_delete":false},{"name":"consensus-leader","vhost":"/","type":"fanout","durable":false,"auto_delete":false}],"bindings":[],"queues":[{"name":"consensus-peers","vhost":"/","durable":false,"auto_delete":false,"arguments":{}},{"name":"pwsupdatable","vhost":"/","durable":true,"auto_delete":false,"arguments":{}}],"policies":[{"name":"ha-all","vhost":"/","pattern":".*","definition":{"ha-mode":"all","ha-sync-mode":"automatic","ha-sync-batch-size":5}}]}'
 ---
 # v1/Secret messagebus
 # Source: rabbitmq/charts/rabbitmq/templates/secrets.yaml
@@ -1208,7 +1208,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: messagebus
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -1216,7 +1216,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
 type: Opaque
 data:
-  rabbitmq-password: "U3cyaFRtY3JMNjFXRnYyY1R2UHY="
+  rabbitmq-password: "LmY3VVVaQ2p0WmpvX2R3UmhHcDk="
 ---
 # v1/Secret messagebus-config
 # Source: rabbitmq/charts/rabbitmq/templates/config-secret.yaml
@@ -1224,7 +1224,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: messagebus-config
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -1251,14 +1251,14 @@ metadata:
     app: gitpod
     component: db
   name: mysql
-  namespace: default
+  namespace: core-prod
 ---
 # v1/Secret builtin-registry-auth
 apiVersion: v1
 data:
-  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5naXRwb2RzLndyaXRlbXkuY29kZXMiOnsiYXV0aCI6IlVqUnVaemg2YW01VGJFZFlOM1ZXVEdwTmRGODZXVmRsV1VoTlJUQnBWekZRZHk1WGNrazNiV1E9In19fQ==
-  password: WVdlWUhNRTBpVzFQdy5Xckk3bWQ=
-  user: UjRuZzh6am5TbEdYN3VWTGpNdF8=
+  .dockerconfigjson: eyJhdXRocyI6eyJyZWdpc3RyeS5naXRwb2RzLndyaXRlbXkuY29kZXMiOnsiYXV0aCI6Ik1WQkpjR0V5VG1GbVYxSnlRMUZZVm5sR1kxVTZaVWx2TlRVd1FXOW9hVzh1T0ZObVRuRmFNVVk9In19fQ==
+  password: ZUlvNTUwQW9oaW8uOFNmTnFaMUY=
+  user: MVBJcGEyTmFmV1JyQ1FYVnlGY1U=
 kind: Secret
 metadata:
   creationTimestamp: null
@@ -1266,7 +1266,7 @@ metadata:
     app: gitpod
     component: docker-registry
   name: builtin-registry-auth
-  namespace: default
+  namespace: core-prod
 type: kubernetes.io/dockerconfigjson
 ---
 # v1/Secret registry-secret
@@ -1275,7 +1275,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: registry-secret
-  namespace: default
+  namespace: core-prod
   labels:
     app: docker-registry
     chart: docker-registry-1.16.0
@@ -1283,7 +1283,7 @@ metadata:
     release: docker-registry
 type: Opaque
 data:
-  haSharedSecret: "STE4Z0ZOUW1PQmx1Z3lBOQ=="
+  haSharedSecret: "YUhkWEtiZlRPczg5OHhsRA=="
   proxyUsername: ""
   proxyPassword: ""
 ---
@@ -1310,7 +1310,7 @@ data:
         },
         "blobServer": {
           "scheme": "http",
-          "host": "blobserve.default.svc.cluster.local:4000"
+          "host": "blobserve.core-prod.svc.cluster.local:4000"
         },
         "gitpodInstallation": {
           "scheme": "https",
@@ -1330,7 +1330,7 @@ data:
       "pprofAddr": ":60060",
       "prometheusAddr": "127.0.0.1:9500",
       "readinessProbeAddr": ":8086",
-      "namespace": "default",
+      "namespace": "core-prod",
       "wsManager": {
         "addr": "ws-manager:8080",
         "tls": {
@@ -1347,7 +1347,7 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap ws-daemon
 apiVersion: v1
@@ -1369,7 +1369,7 @@ data:
             }
           },
           "kubeconfig": "",
-          "namespace": "default"
+          "namespace": "core-prod"
         },
         "content": {
           "workingArea": "/mnt/workingarea",
@@ -1486,7 +1486,7 @@ metadata:
     app: gitpod
     component: ws-daemon
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap db-init-scripts
 apiVersion: v1
@@ -1541,7 +1541,7 @@ metadata:
     app: gitpod
     component: db
   name: db-init-scripts
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap server-config
 apiVersion: v1
@@ -1614,7 +1614,7 @@ data:
       },
       "oauthServer": {
         "enabled": true,
-        "jwtSecret": "cMb-NbnjkQfOMjQeQ3-X"
+        "jwtSecret": "wBgeDpNzhEAJRcbE3KH3"
       },
       "rateLimiter": {
         "groups": {
@@ -1658,7 +1658,7 @@ metadata:
     app: gitpod
     component: server
   name: server-config
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap agent-smith
 apiVersion: v1
@@ -1697,7 +1697,7 @@ metadata:
     app: gitpod
     component: agent-smith
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap server-ide-config
 apiVersion: v1
@@ -1800,7 +1800,7 @@ metadata:
     app: gitpod
     component: server
   name: server-ide-config
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap registry-facade
 apiVersion: v1
@@ -1852,7 +1852,7 @@ metadata:
     app: gitpod
     component: registry-facade
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap mysql
 # Source: mysql/charts/mysql/templates/primary/configmap.yaml
@@ -1860,7 +1860,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: mysql
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: mysql
     helm.sh/chart: mysql-9.1.2
@@ -1906,7 +1906,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: registry-config
-  namespace: default
+  namespace: core-prod
   labels:
     app: docker-registry
     chart: docker-registry-1.16.0
@@ -1949,7 +1949,7 @@ data:
         app: gitpod
         component: docker-registry
       name: builtin-registry-certs
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -1959,7 +1959,7 @@ data:
         app: gitpod
         component: docker-registry
       name: docker-registry
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -1969,7 +1969,7 @@ data:
         app: gitpod
         component: docker-registry
       name: builtin-registry-auth
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -1979,7 +1979,7 @@ data:
         app: gitpod
         component: docker-registry
       name: docker-registry
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: cert-manager.io/v1
     kind: Issuer
@@ -1989,7 +1989,7 @@ data:
         app: gitpod
         component: cluster
       name: gitpod-selfsigned-issuer
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: cert-manager.io/v1
     kind: Certificate
@@ -1999,7 +1999,7 @@ data:
         app: gitpod
         component: cluster
       name: ca-issuer-ca
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: cert-manager.io/v1
     kind: Issuer
@@ -2009,31 +2009,31 @@ data:
         app: gitpod
         component: cluster
       name: ca-issuer
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
     metadata:
       creationTimestamp: null
-      name: default-kube-rbac-proxy
+      name: core-prod-kube-rbac-proxy
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
     metadata:
       creationTimestamp: null
-      name: default-ns-psp:privileged
+      name: core-prod-ns-psp:privileged
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
     metadata:
       creationTimestamp: null
-      name: default-ns-psp:restricted-root-user
+      name: core-prod-ns-psp:restricted-root-user
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
     metadata:
       creationTimestamp: null
-      name: default-ns-psp:unprivileged
+      name: core-prod-ns-psp:unprivileged
     ---
     apiVersion: policy/v1beta1
     kind: PodSecurityPolicy
@@ -2044,8 +2044,8 @@ data:
         seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
       creationTimestamp: null
-      name: default-ns-privileged
-      namespace: default
+      name: core-prod-ns-privileged
+      namespace: core-prod
     ---
     apiVersion: policy/v1beta1
     kind: PodSecurityPolicy
@@ -2056,8 +2056,8 @@ data:
         seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default,unconfined
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
       creationTimestamp: null
-      name: default-ns-privileged-unconfined
-      namespace: default
+      name: core-prod-ns-privileged-unconfined
+      namespace: core-prod
     ---
     apiVersion: policy/v1beta1
     kind: PodSecurityPolicy
@@ -2068,8 +2068,8 @@ data:
         seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
       creationTimestamp: null
-      name: default-ns-restricted-root-user
-      namespace: default
+      name: core-prod-ns-restricted-root-user
+      namespace: core-prod
     ---
     apiVersion: policy/v1beta1
     kind: PodSecurityPolicy
@@ -2080,22 +2080,22 @@ data:
         seccomp.security.alpha.kubernetes.io/allowedProfileNames: runtime/default
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
       creationTimestamp: null
-      name: default-ns-unprivileged
-      namespace: default
+      name: core-prod-ns-unprivileged
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ResourceQuota
     metadata:
       creationTimestamp: null
       name: gitpod-resource-quota
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
     metadata:
       creationTimestamp: null
-      name: default-ns-nobody
-      namespace: default
+      name: core-prod-ns-nobody
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2105,7 +2105,7 @@ data:
         app: gitpod
         component: nobody
       name: nobody
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2115,7 +2115,7 @@ data:
         app: gitpod
         component: gitpod
       name: gitpod
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: batch/v1
     kind: CronJob
@@ -2125,7 +2125,7 @@ data:
         app: gitpod
         component: gitpod
       name: gitpod-telemetry
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2135,7 +2135,7 @@ data:
         app: gitpod
         component: gitpod
       name: gitpod
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2145,7 +2145,7 @@ data:
         app: gitpod
         component: gitpod
       name: gitpod
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2155,7 +2155,7 @@ data:
         app: gitpod
         component: content-service
       name: content-service
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2165,7 +2165,7 @@ data:
         app: gitpod
         component: content-service
       name: content-service
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2175,7 +2175,7 @@ data:
         app: gitpod
         component: content-service
       name: content-service
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2185,7 +2185,7 @@ data:
         app: gitpod
         component: content-service
       name: content-service
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2196,7 +2196,7 @@ data:
         component: content-service
         kind: service
       name: content-service
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2206,7 +2206,7 @@ data:
         app: gitpod
         component: content-service
       name: content-service
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2216,7 +2216,7 @@ data:
         app: gitpod
         component: dashboard
       name: dashboard
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2226,7 +2226,7 @@ data:
         app: gitpod
         component: dashboard
       name: dashboard-deny-all-allow-explicit
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2236,7 +2236,7 @@ data:
         app: gitpod
         component: dashboard
       name: dashboard
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2247,7 +2247,7 @@ data:
         component: dashboard
         kind: service
       name: dashboard
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2257,7 +2257,7 @@ data:
         app: gitpod
         component: dashboard
       name: dashboard
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2267,7 +2267,7 @@ data:
         app: gitpod
         component: db
       name: db-init-scripts
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2277,7 +2277,7 @@ data:
         app: gitpod
         component: db
       name: db
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -2287,7 +2287,7 @@ data:
         app: gitpod
         component: db
       name: db-password
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -2297,7 +2297,7 @@ data:
         app: gitpod
         component: db
       name: mysql
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2307,7 +2307,7 @@ data:
         app: gitpod
         component: db
       name: db
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2317,7 +2317,7 @@ data:
         app: gitpod
         component: db
       name: db
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2327,7 +2327,7 @@ data:
         app: gitpod
         component: ide-proxy
       name: ide-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2337,7 +2337,7 @@ data:
         app: gitpod
         component: ide-proxy
       name: ide-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2348,7 +2348,7 @@ data:
         component: ide-proxy
         kind: service
       name: ide-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2358,7 +2358,7 @@ data:
         app: gitpod
         component: ide-proxy
       name: ide-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2368,7 +2368,7 @@ data:
         app: gitpod
         component: migrations
       name: migrations
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2378,7 +2378,7 @@ data:
         app: gitpod
         component: migrations
       name: migrations
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2388,7 +2388,7 @@ data:
         app: gitpod
         component: minio
       name: minio
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2398,7 +2398,7 @@ data:
         app: gitpod
         component: openvsx-proxy
       name: openvsx-proxy-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2408,7 +2408,7 @@ data:
         app: gitpod
         component: openvsx-proxy
       name: openvsx-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2418,7 +2418,7 @@ data:
         app: gitpod
         component: openvsx-proxy
       name: openvsx-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2427,7 +2427,7 @@ data:
       labels:
         app: gitpod
         component: openvsx-proxy
-      name: default-openvsx-proxy-kube-rbac-proxy
+      name: core-prod-openvsx-proxy-kube-rbac-proxy
     ---
     apiVersion: apps/v1
     kind: StatefulSet
@@ -2437,7 +2437,7 @@ data:
         app: gitpod
         component: openvsx-proxy
       name: openvsx-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2448,7 +2448,7 @@ data:
         component: openvsx-proxy
         kind: service
       name: openvsx-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2458,7 +2458,7 @@ data:
         app: gitpod
         component: openvsx-proxy
       name: openvsx-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2468,7 +2468,7 @@ data:
         app: gitpod
         component: proxy
       name: proxy-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2478,7 +2478,7 @@ data:
         app: gitpod
         component: proxy
       name: proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2488,7 +2488,7 @@ data:
         app: gitpod
         component: proxy
       name: proxy-deny-all-allow-explicit
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2498,7 +2498,7 @@ data:
         app: gitpod
         component: proxy
       name: proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2507,7 +2507,7 @@ data:
       labels:
         app: gitpod
         component: proxy
-      name: default-proxy-kube-rbac-proxy
+      name: core-prod-proxy-kube-rbac-proxy
     ---
     apiVersion: v1
     kind: Service
@@ -2521,7 +2521,7 @@ data:
         component: proxy
         kind: service
       name: proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2531,7 +2531,7 @@ data:
         app: gitpod
         component: proxy
       name: proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2541,7 +2541,7 @@ data:
         app: gitpod
         component: rabbitmq
       name: rabbitmq
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -2551,7 +2551,7 @@ data:
         app: gitpod
         component: rabbitmq
       name: messagebus-erlang-cookie
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -2561,7 +2561,7 @@ data:
         app: gitpod
         component: rabbitmq
       name: messagebus-certificates-secret-core
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2571,7 +2571,7 @@ data:
         app: gitpod
         component: server
       name: server-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2581,7 +2581,7 @@ data:
         app: gitpod
         component: server
       name: server
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2591,7 +2591,7 @@ data:
         app: gitpod
         component: server
       name: server-ide-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2601,7 +2601,7 @@ data:
         app: gitpod
         component: server
       name: server
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -2611,7 +2611,7 @@ data:
         app: gitpod
         component: server
       name: server
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2621,7 +2621,7 @@ data:
         app: gitpod
         component: server
       name: server
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2630,7 +2630,7 @@ data:
       labels:
         app: gitpod
         component: server
-      name: default-server-rb-kube-rbac-proxy
+      name: core-prod-server-rb-kube-rbac-proxy
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2640,7 +2640,7 @@ data:
         app: gitpod
         component: server
       name: server-unprivileged
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2651,7 +2651,7 @@ data:
         component: server
         kind: service
       name: server
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2661,7 +2661,7 @@ data:
         app: gitpod
         component: server
       name: server
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2671,7 +2671,7 @@ data:
         app: gitpod
         component: ws-manager-bridge
       name: ws-manager-bridge-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2681,7 +2681,7 @@ data:
         app: gitpod
         component: ws-manager-bridge
       name: ws-manager-bridge
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2690,7 +2690,7 @@ data:
       labels:
         app: gitpod
         component: ws-manager-bridge
-      name: default-ws-manager-bridge-rb-kube-rbac-proxy
+      name: core-prod-ws-manager-bridge-rb-kube-rbac-proxy
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2700,7 +2700,7 @@ data:
         app: gitpod
         component: ws-manager-bridge
       name: ws-manager-bridge
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2710,7 +2710,7 @@ data:
         app: gitpod
         component: ws-manager-bridge
       name: ws-manager-bridge
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2720,19 +2720,19 @@ data:
         app: gitpod
         component: agent-smith
       name: agent-smith
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: DaemonSet
     metadata:
       annotations:
-        gitpod.io/checksum_config: 5095db7c3a53bb89fb4de3b954a42a48ba0d1837c48bf55599a8ee7c1525290d
+        gitpod.io/checksum_config: 8844a70ad63dd38c01df5c620461eb34fd52f2104b1da196c8fe504b4ab6f0ba
       creationTimestamp: null
       labels:
         app: gitpod
         component: agent-smith
       name: agent-smith
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2742,7 +2742,7 @@ data:
         app: gitpod
         component: agent-smith
       name: agent-smith
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -2752,7 +2752,7 @@ data:
         app: gitpod
         component: agent-smith
       name: agent-smith
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2762,7 +2762,7 @@ data:
         app: gitpod
         component: agent-smith
       name: agent-smith
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2771,7 +2771,7 @@ data:
       labels:
         app: gitpod
         component: agent-smith
-      name: default-agent-smith-rb-kube-rbac-proxy
+      name: core-prod-agent-smith-rb-kube-rbac-proxy
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2781,7 +2781,7 @@ data:
         app: gitpod
         component: agent-smith
       name: agent-smith
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2791,7 +2791,7 @@ data:
         app: gitpod
         component: blobserve
       name: blobserve
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -2801,7 +2801,7 @@ data:
         app: gitpod
         component: blobserve
       name: blobserve
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2811,7 +2811,7 @@ data:
         app: gitpod
         component: blobserve
       name: blobserve
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2821,7 +2821,7 @@ data:
         app: gitpod
         component: blobserve
       name: blobserve
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2830,7 +2830,7 @@ data:
       labels:
         app: gitpod
         component: blobserve
-      name: default-blobserve-kube-rbac-proxy
+      name: core-prod-blobserve-kube-rbac-proxy
     ---
     apiVersion: v1
     kind: Service
@@ -2841,7 +2841,7 @@ data:
         component: blobserve
         kind: service
       name: blobserve
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2851,7 +2851,7 @@ data:
         app: gitpod
         component: blobserve
       name: blobserve
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
@@ -2860,7 +2860,7 @@ data:
       labels:
         app: gitpod
         component: registry-facade
-      name: default-ns-registry-facade
+      name: core-prod-ns-registry-facade
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -2870,7 +2870,7 @@ data:
         app: gitpod
         component: registry-facade
       name: registry-facade
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: DaemonSet
@@ -2880,7 +2880,7 @@ data:
         app: gitpod
         component: registry-facade
       name: registry-facade
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2890,7 +2890,7 @@ data:
         app: gitpod
         component: registry-facade
       name: registry-facade
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: policy/v1beta1
     kind: PodSecurityPolicy
@@ -2904,7 +2904,7 @@ data:
       labels:
         app: gitpod
         component: registry-facade
-      name: default-ns-registry-facade
+      name: core-prod-ns-registry-facade
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2913,7 +2913,7 @@ data:
       labels:
         app: gitpod
         component: registry-facade
-      name: default-registry-facade-rb
+      name: core-prod-registry-facade-rb
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -2922,7 +2922,7 @@ data:
       labels:
         app: gitpod
         component: registry-facade
-      name: default-registry-facade-kube-rbac-proxy
+      name: core-prod-registry-facade-kube-rbac-proxy
     ---
     apiVersion: cert-manager.io/v1
     kind: Certificate
@@ -2932,7 +2932,7 @@ data:
         app: gitpod
         component: registry-facade
       name: builtin-registry-facade-cert
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -2943,7 +2943,7 @@ data:
         component: registry-facade
         kind: service
       name: registry-facade
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -2953,7 +2953,7 @@ data:
         app: gitpod
         component: registry-facade
       name: registry-facade
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -2963,7 +2963,7 @@ data:
         app: gitpod
         component: workspace
       name: workspace-default
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: policy/v1beta1
     kind: PodSecurityPolicy
@@ -2974,8 +2974,8 @@ data:
         seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
         seccomp.security.alpha.kubernetes.io/defaultProfileName: runtime/default
       creationTimestamp: null
-      name: default-ns-workspace
-      namespace: default
+      name: core-prod-ns-workspace
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -2985,7 +2985,7 @@ data:
         app: gitpod
         component: workspace
       name: workspace
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -2995,7 +2995,7 @@ data:
         app: gitpod
         component: workspace
       name: workspace
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -3005,7 +3005,7 @@ data:
         app: gitpod
         component: workspace
       name: workspace
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
@@ -3014,7 +3014,7 @@ data:
       labels:
         app: gitpod
         component: ws-daemon
-      name: default-ns-ws-daemon
+      name: core-prod-ns-ws-daemon
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3024,7 +3024,7 @@ data:
         app: gitpod
         component: ws-daemon
       name: ws-daemon
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -3034,7 +3034,7 @@ data:
         app: gitpod
         component: ws-daemon
       name: ws-daemon
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: DaemonSet
@@ -3044,7 +3044,7 @@ data:
         app: gitpod
         component: ws-daemon
       name: ws-daemon
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -3054,7 +3054,7 @@ data:
         app: gitpod
         component: ws-daemon
       name: ws-daemon
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -3063,7 +3063,7 @@ data:
       labels:
         app: gitpod
         component: ws-daemon
-      name: default-ws-daemon-rb-kube-rbac-proxy
+      name: core-prod-ws-daemon-rb-kube-rbac-proxy
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -3072,7 +3072,7 @@ data:
       labels:
         app: gitpod
         component: ws-daemon
-      name: default-ws-daemon-rb
+      name: core-prod-ws-daemon-rb
     ---
     apiVersion: v1
     kind: Service
@@ -3083,7 +3083,7 @@ data:
         component: ws-daemon
         kind: service
       name: ws-daemon
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: cert-manager.io/v1
     kind: Certificate
@@ -3093,7 +3093,7 @@ data:
         app: gitpod
         component: ws-daemon
       name: ws-daemon-tls
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3103,7 +3103,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3113,7 +3113,7 @@ data:
         app: gitpod
         component: ws-manager
       name: workspace-templates
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -3123,7 +3123,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -3133,7 +3133,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
@@ -3143,7 +3143,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -3153,7 +3153,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -3162,7 +3162,7 @@ data:
       labels:
         app: gitpod
         component: ws-manager
-      name: default-ws-manager-kube-rbac-proxy
+      name: core-prod-ws-manager-kube-rbac-proxy
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -3181,7 +3181,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -3191,7 +3191,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3202,7 +3202,7 @@ data:
         component: ws-manager
         kind: service
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: cert-manager.io/v1
     kind: Certificate
@@ -3212,7 +3212,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager-tls
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: cert-manager.io/v1
     kind: Certificate
@@ -3222,7 +3222,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -3232,7 +3232,7 @@ data:
         app: gitpod
         component: ws-manager
       name: ws-manager-unpriviledged
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3242,7 +3242,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -3252,7 +3252,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -3262,7 +3262,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -3271,7 +3271,7 @@ data:
       labels:
         app: gitpod
         component: ws-proxy
-      name: default-ws-proxy-kube-rbac-proxy
+      name: core-prod-ws-proxy-kube-rbac-proxy
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -3281,7 +3281,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -3291,7 +3291,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy-api
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -3301,7 +3301,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3312,7 +3312,7 @@ data:
         component: ws-proxy
         kind: service
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -3322,7 +3322,7 @@ data:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRole
@@ -3331,7 +3331,7 @@ data:
       labels:
         app: gitpod
         component: image-builder-mk3
-      name: default-ns-image-builder-mk3
+      name: core-prod-ns-image-builder-mk3
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3341,7 +3341,7 @@ data:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -3351,7 +3351,7 @@ data:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -3361,7 +3361,7 @@ data:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -3371,7 +3371,7 @@ data:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: ClusterRoleBinding
@@ -3380,7 +3380,7 @@ data:
       labels:
         app: gitpod
         component: image-builder-mk3
-      name: default-image-builder-mk3-proxy-kube-rbac-proxy
+      name: core-prod-image-builder-mk3-proxy-kube-rbac-proxy
     ---
     apiVersion: v1
     kind: Service
@@ -3391,7 +3391,7 @@ data:
         component: image-builder-mk3
         kind: service
       name: image-builder-mk3
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -3401,7 +3401,7 @@ data:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -3413,7 +3413,7 @@ data:
         heritage: Helm
         release: docker-registry
       name: registry-secret
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3425,7 +3425,7 @@ data:
         heritage: Helm
         release: docker-registry
       name: registry-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3437,7 +3437,7 @@ data:
         heritage: Helm
         release: docker-registry
       name: registry
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: Deployment
@@ -3449,7 +3449,7 @@ data:
         heritage: Helm
         release: docker-registry
       name: registry
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3462,7 +3462,7 @@ data:
         app.kubernetes.io/name: mysql
         helm.sh/chart: mysql-9.1.2
       name: mysql
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3475,7 +3475,7 @@ data:
         app.kubernetes.io/name: mysql
         helm.sh/chart: mysql-9.1.2
       name: mysql-headless
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3488,7 +3488,7 @@ data:
         app.kubernetes.io/name: mysql
         helm.sh/chart: mysql-9.1.2
       name: mysql
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: StatefulSet
@@ -3501,7 +3501,7 @@ data:
         app.kubernetes.io/name: mysql
         helm.sh/chart: mysql-9.1.2
       name: mysql
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: networking.k8s.io/v1
     kind: NetworkPolicy
@@ -3513,7 +3513,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: policy/v1
     kind: PodDisruptionBudget
@@ -3525,7 +3525,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ServiceAccount
@@ -3537,7 +3537,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: rabbitmq
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -3549,7 +3549,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus-config
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -3561,7 +3561,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -3573,7 +3573,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: load-definition
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Secret
@@ -3585,7 +3585,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: rabbitmq
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: Role
@@ -3597,7 +3597,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus-endpoint-reader
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: rbac.authorization.k8s.io/v1
     kind: RoleBinding
@@ -3609,7 +3609,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus-endpoint-reader
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3621,7 +3621,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus-headless
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: Service
@@ -3633,7 +3633,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: apps/v1
     kind: StatefulSet
@@ -3645,7 +3645,7 @@ data:
         app.kubernetes.io/name: rabbitmq
         helm.sh/chart: rabbitmq-10.1.1
       name: messagebus
-      namespace: default
+      namespace: core-prod
     ---
     apiVersion: v1
     kind: ConfigMap
@@ -3655,7 +3655,7 @@ data:
         app: gitpod
         component: gitpod-app
       name: gitpod-app
-      namespace: default
+      namespace: core-prod
 kind: ConfigMap
 metadata:
   creationTimestamp: null
@@ -3663,7 +3663,7 @@ metadata:
     app: gitpod
     component: gitpod-app
   name: gitpod-app
-  namespace: default
+  namespace: core-prod
 
 ---
 # v1/ConfigMap openvsx-proxy-config
@@ -3689,7 +3689,7 @@ metadata:
     app: gitpod
     component: openvsx-proxy
   name: openvsx-proxy-config
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap workspace-templates
 apiVersion: v1
@@ -3700,7 +3700,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: workspace-templates
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap blobserve
 apiVersion: v1
@@ -3800,7 +3800,7 @@ metadata:
     app: gitpod
     component: blobserve
   name: blobserve
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap ws-manager-bridge-config
 apiVersion: v1
@@ -3848,7 +3848,7 @@ metadata:
     app: gitpod
     component: ws-manager-bridge
   name: ws-manager-bridge-config
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap content-service
 apiVersion: v1
@@ -3892,7 +3892,7 @@ metadata:
     app: gitpod
     component: content-service
   name: content-service
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap proxy-config
 apiVersion: v1
@@ -3904,10 +3904,10 @@ data:
         import ssl_configuration
 
         basicauth bcrypt "Docker Registry" {
-            R4ng8zjnSlGX7uVLjMt_ JDJhJDEwJG9QUlcvQ21aSXJVb3JKRm4wR1dNSXVOUkJZN0hQR3dNMkNZTGNlNG44WjVDcENsZlpKNDAu
+            1PIpa2NafWRrCQXVyFcU JDJhJDEwJDY0SkRWT2F2Tm9ML0czV3ZFdFdXNi5rejE0M1J6dW5OYkZoeEhVVGlWblZhek1ZL1lxUTVp
         }
 
-        reverse_proxy https://registry.default.svc.cluster.local {
+        reverse_proxy https://registry.core-prod.svc.cluster.local {
             flush_interval -1
             transport http {
                 tls_trusted_ca_certs /etc/caddy/registry-certs/ca.crt
@@ -3922,7 +3922,7 @@ data:
         import ssl_configuration
 
         reverse_proxy  {
-            to ide-proxy.default.svc.cluster.local:80
+            to ide-proxy.core-prod.svc.cluster.local:80
         }
     }
   vhost.minio: |-
@@ -3931,7 +3931,7 @@ data:
         import remove_server_header
         import ssl_configuration
 
-        reverse_proxy minio.default.svc.cluster.local:9001 {
+        reverse_proxy minio.core-prod.svc.cluster.local:9001 {
             flush_interval -1
         }
     }
@@ -3942,7 +3942,7 @@ data:
         import ssl_configuration
 
         reverse_proxy  {
-            to openvsx-proxy.default.svc.cluster.local:8080
+            to openvsx-proxy.core-prod.svc.cluster.local:8080
         }
     }
   vhost.payment-endpoint: |-
@@ -3952,7 +3952,7 @@ data:
         import ssl_configuration
         import debug_headers
 
-        reverse_proxy payment-endpoint.default.svc.cluster.local:3002 {
+        reverse_proxy payment-endpoint.core-prod.svc.cluster.local:3002 {
             import upstream_headers
             import upstream_connection
         }
@@ -3968,7 +3968,7 @@ metadata:
     app: gitpod
     component: proxy
   name: proxy-config
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap image-builder-mk3-config
 apiVersion: v1
@@ -4023,7 +4023,7 @@ metadata:
     app: gitpod
     component: image-builder-mk3
   name: image-builder-mk3-config
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap gitpod
 apiVersion: v1
@@ -4233,7 +4233,7 @@ metadata:
     app: gitpod
     component: gitpod
   name: gitpod
-  namespace: default
+  namespace: core-prod
 ---
 # v1/ConfigMap ws-manager
 apiVersion: v1
@@ -4241,7 +4241,7 @@ data:
   config.json: |-
     {
       "manager": {
-        "namespace": "default",
+        "namespace": "core-prod",
         "schedulerName": "",
         "seccompProfile": "localhost/workspace_default_release-2022.05.2.5.json",
         "timeouts": {
@@ -4334,7 +4334,7 @@ data:
         "ratelimits": {}
       },
       "imageBuilderProxy": {
-        "targetAddr": "image-builder-mk3.default.svc.cluster.local:8080"
+        "targetAddr": "image-builder-mk3.core-prod.svc.cluster.local:8080"
       },
       "pprof": {
         "addr": "localhost:6060"
@@ -4350,9 +4350,9 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-ns-ws-daemon
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-ns-ws-daemon
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -4360,12 +4360,12 @@ metadata:
   labels:
     app: gitpod
     component: ws-daemon
-  name: default-ns-ws-daemon
+  name: core-prod-ns-ws-daemon
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-privileged-unconfined
+  - core-prod-ns-privileged-unconfined
   resources:
   - podsecuritypolicies
   verbs:
@@ -4397,28 +4397,28 @@ rules:
   - update
   - patch
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-ns-psp:unprivileged
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-ns-psp:unprivileged
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-unprivileged
+  - core-prod-ns-unprivileged
   resources:
   - podsecuritypolicies
   verbs:
   - use
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 rules:
 - apiGroups:
   - authentication.k8s.io
@@ -4433,7 +4433,7 @@ rules:
   verbs:
   - create
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-ns-image-builder-mk3
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-ns-image-builder-mk3
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -4441,12 +4441,12 @@ metadata:
   labels:
     app: gitpod
     component: image-builder-mk3
-  name: default-ns-image-builder-mk3
+  name: core-prod-ns-image-builder-mk3
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-privileged-unconfined
+  - core-prod-ns-privileged-unconfined
   resources:
   - podsecuritypolicies
   verbs:
@@ -4461,7 +4461,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 rules:
 - apiGroups:
   - snapshot.storage.k8s.io
@@ -4477,23 +4477,23 @@ rules:
   - delete
   - deletecollection
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-ns-psp:restricted-root-user
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-ns-psp:restricted-root-user
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-restricted-root-user
+  - core-prod-ns-restricted-root-user
   resources:
   - podsecuritypolicies
   verbs:
   - use
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-ns-registry-facade
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-ns-registry-facade
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -4501,12 +4501,12 @@ metadata:
   labels:
     app: gitpod
     component: registry-facade
-  name: default-ns-registry-facade
+  name: core-prod-ns-registry-facade
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-registry-facade
+  - core-prod-ns-registry-facade
   resources:
   - podsecuritypolicies
   verbs:
@@ -4519,23 +4519,23 @@ rules:
   - get
   - patch
 ---
-# rbac.authorization.k8s.io/v1/ClusterRole default-ns-psp:privileged
+# rbac.authorization.k8s.io/v1/ClusterRole core-prod-ns-psp:privileged
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: default-ns-psp:privileged
+  name: core-prod-ns-psp:privileged
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-privileged
+  - core-prod-ns-privileged
   resources:
   - podsecuritypolicies
   verbs:
   - use
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-ws-proxy-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-ws-proxy-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4543,17 +4543,17 @@ metadata:
   labels:
     app: gitpod
     component: ws-proxy
-  name: default-ws-proxy-kube-rbac-proxy
+  name: core-prod-ws-proxy-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-ws-daemon-rb
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-ws-daemon-rb
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4561,17 +4561,17 @@ metadata:
   labels:
     app: gitpod
     component: ws-daemon
-  name: default-ws-daemon-rb
+  name: core-prod-ws-daemon-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-ws-daemon
+  name: core-prod-ns-ws-daemon
 subjects:
 - kind: ServiceAccount
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-blobserve-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-blobserve-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4579,17 +4579,17 @@ metadata:
   labels:
     app: gitpod
     component: blobserve
-  name: default-blobserve-kube-rbac-proxy
+  name: core-prod-blobserve-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: blobserve
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-ws-daemon-rb-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-ws-daemon-rb-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4597,15 +4597,15 @@ metadata:
   labels:
     app: gitpod
     component: ws-daemon
-  name: default-ws-daemon-rb-kube-rbac-proxy
+  name: core-prod-ws-daemon-rb-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 ---
 # rbac.authorization.k8s.io/v1/ClusterRoleBinding ws-manager
 apiVersion: rbac.authorization.k8s.io/v1
@@ -4623,9 +4623,9 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-image-builder-mk3-proxy-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-image-builder-mk3-proxy-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4633,17 +4633,17 @@ metadata:
   labels:
     app: gitpod
     component: image-builder-mk3
-  name: default-image-builder-mk3-proxy-kube-rbac-proxy
+  name: core-prod-image-builder-mk3-proxy-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: image-builder-mk3
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-ws-manager-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-ws-manager-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4651,17 +4651,17 @@ metadata:
   labels:
     app: gitpod
     component: ws-manager
-  name: default-ws-manager-kube-rbac-proxy
+  name: core-prod-ws-manager-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-ws-manager-bridge-rb-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-ws-manager-bridge-rb-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4669,17 +4669,17 @@ metadata:
   labels:
     app: gitpod
     component: ws-manager-bridge
-  name: default-ws-manager-bridge-rb-kube-rbac-proxy
+  name: core-prod-ws-manager-bridge-rb-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: ws-manager-bridge
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-proxy-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-proxy-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4687,17 +4687,17 @@ metadata:
   labels:
     app: gitpod
     component: proxy
-  name: default-proxy-kube-rbac-proxy
+  name: core-prod-proxy-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: proxy
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-openvsx-proxy-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-openvsx-proxy-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4705,17 +4705,17 @@ metadata:
   labels:
     app: gitpod
     component: openvsx-proxy
-  name: default-openvsx-proxy-kube-rbac-proxy
+  name: core-prod-openvsx-proxy-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: openvsx-proxy
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-registry-facade-rb
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-registry-facade-rb
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4723,17 +4723,17 @@ metadata:
   labels:
     app: gitpod
     component: registry-facade
-  name: default-registry-facade-rb
+  name: core-prod-registry-facade-rb
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-registry-facade
+  name: core-prod-ns-registry-facade
 subjects:
 - kind: ServiceAccount
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-registry-facade-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-registry-facade-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4741,17 +4741,17 @@ metadata:
   labels:
     app: gitpod
     component: registry-facade
-  name: default-registry-facade-kube-rbac-proxy
+  name: core-prod-registry-facade-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-server-rb-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-server-rb-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4759,17 +4759,17 @@ metadata:
   labels:
     app: gitpod
     component: server
-  name: default-server-rb-kube-rbac-proxy
+  name: core-prod-server-rb-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: server
-  namespace: default
+  namespace: core-prod
 ---
-# rbac.authorization.k8s.io/v1/ClusterRoleBinding default-agent-smith-rb-kube-rbac-proxy
+# rbac.authorization.k8s.io/v1/ClusterRoleBinding core-prod-agent-smith-rb-kube-rbac-proxy
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -4777,15 +4777,15 @@ metadata:
   labels:
     app: gitpod
     component: agent-smith
-  name: default-agent-smith-rb-kube-rbac-proxy
+  name: core-prod-agent-smith-rb-kube-rbac-proxy
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-kube-rbac-proxy
+  name: core-prod-kube-rbac-proxy
 subjects:
 - kind: ServiceAccount
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 ---
 # rbac.authorization.k8s.io/v1/Role ws-proxy
 apiVersion: rbac.authorization.k8s.io/v1
@@ -4796,7 +4796,7 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 rules:
 - apiGroups:
   - ""
@@ -4816,12 +4816,12 @@ metadata:
     app: gitpod
     component: agent-smith
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-privileged-unconfined
+  - core-prod-ns-privileged-unconfined
   resources:
   - podsecuritypolicies
   verbs:
@@ -4843,7 +4843,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 rules:
 - apiGroups:
   - ""
@@ -4887,12 +4887,12 @@ metadata:
     app: gitpod
     component: workspace
   name: workspace
-  namespace: default
+  namespace: core-prod
 rules:
 - apiGroups:
   - policy
   resourceNames:
-  - default-ns-workspace
+  - core-prod-ns-workspace
   resources:
   - podsecuritypolicies
   verbs:
@@ -4907,7 +4907,7 @@ metadata:
     app: gitpod
     component: server
   name: server
-  namespace: default
+  namespace: core-prod
 rules:
 - apiGroups:
   - ""
@@ -4939,7 +4939,7 @@ kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: messagebus-endpoint-reader
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -4962,11 +4962,11 @@ metadata:
     app: gitpod
     component: rabbitmq
   name: rabbitmq
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: rabbitmq
@@ -4980,11 +4980,11 @@ metadata:
     app: gitpod
     component: image-builder-mk3
   name: image-builder-mk3
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-image-builder-mk3
+  name: core-prod-ns-image-builder-mk3
 subjects:
 - kind: ServiceAccount
   name: image-builder-mk3
@@ -4998,7 +4998,7 @@ metadata:
     app: gitpod
     component: server
   name: server
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -5013,7 +5013,7 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: messagebus-endpoint-reader
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -5036,11 +5036,11 @@ metadata:
     app: gitpod
     component: db
   name: db
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: db
@@ -5054,11 +5054,11 @@ metadata:
     app: gitpod
     component: ws-manager-bridge
   name: ws-manager-bridge
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 subjects:
 - kind: ServiceAccount
   name: ws-manager-bridge
@@ -5072,11 +5072,11 @@ metadata:
     app: gitpod
     component: blobserve
   name: blobserve
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: blobserve
@@ -5090,7 +5090,7 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy-api
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -5108,11 +5108,11 @@ metadata:
     app: gitpod
     component: server
   name: server-unprivileged
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 subjects:
 - kind: ServiceAccount
   name: server
@@ -5126,11 +5126,11 @@ metadata:
     app: gitpod
     component: openvsx-proxy
   name: openvsx-proxy
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: openvsx-proxy
@@ -5144,7 +5144,7 @@ metadata:
     app: gitpod
     component: workspace
   name: workspace
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -5162,11 +5162,11 @@ metadata:
     app: gitpod
     component: proxy
   name: proxy
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: proxy
@@ -5180,11 +5180,11 @@ metadata:
     app: gitpod
     component: ide-proxy
   name: ide-proxy
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: ide-proxy
@@ -5198,11 +5198,11 @@ metadata:
     app: gitpod
     component: minio
   name: minio
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 subjects:
 - kind: ServiceAccount
   name: minio
@@ -5216,11 +5216,11 @@ metadata:
     app: gitpod
     component: dashboard
   name: dashboard
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: dashboard
@@ -5234,7 +5234,7 @@ metadata:
     app: gitpod
     component: agent-smith
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -5243,21 +5243,21 @@ subjects:
 - kind: ServiceAccount
   name: agent-smith
 ---
-# rbac.authorization.k8s.io/v1/RoleBinding default-ns-nobody
+# rbac.authorization.k8s.io/v1/RoleBinding core-prod-ns-nobody
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   creationTimestamp: null
-  name: default-ns-nobody
-  namespace: default
+  name: core-prod-ns-nobody
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 subjects:
 - kind: ServiceAccount
   name: nobody
-  namespace: default
+  namespace: core-prod
 ---
 # rbac.authorization.k8s.io/v1/RoleBinding ws-manager
 apiVersion: rbac.authorization.k8s.io/v1
@@ -5268,7 +5268,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
@@ -5286,11 +5286,11 @@ metadata:
     app: gitpod
     component: migrations
   name: migrations
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: migrations
@@ -5304,11 +5304,11 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 subjects:
 - kind: ServiceAccount
   name: ws-proxy
@@ -5322,11 +5322,11 @@ metadata:
     app: gitpod
     component: docker-registry
   name: docker-registry
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: docker-registry
@@ -5340,11 +5340,11 @@ metadata:
     app: gitpod
     component: gitpod
   name: gitpod
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: gitpod
@@ -5358,11 +5358,11 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager-unpriviledged
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:unprivileged
+  name: core-prod-ns-psp:unprivileged
 subjects:
 - kind: ServiceAccount
   name: ws-manager
@@ -5376,11 +5376,11 @@ metadata:
     app: gitpod
     component: content-service
   name: content-service
-  namespace: default
+  namespace: core-prod
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: default-ns-psp:restricted-root-user
+  name: core-prod-ns-psp:restricted-root-user
 subjects:
 - kind: ServiceAccount
   name: content-service
@@ -5398,7 +5398,7 @@ metadata:
     component: proxy
     kind: service
   name: proxy
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: http
@@ -5430,17 +5430,17 @@ metadata:
     component: content-service
     kind: service
   name: content-service
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
-  - name: metrics
-    port: 9502
-    protocol: TCP
-    targetPort: 9502
   - name: rpc
     port: 8080
     protocol: TCP
     targetPort: 8080
+  - name: metrics
+    port: 9502
+    protocol: TCP
+    targetPort: 9502
   selector:
     app: gitpod
     component: content-service
@@ -5458,7 +5458,7 @@ metadata:
     component: ide-proxy
     kind: service
   name: ide-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: http
@@ -5482,17 +5482,17 @@ metadata:
     component: openvsx-proxy
     kind: service
   name: openvsx-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
-  - name: http
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
   - name: metrics
     port: 9500
     protocol: TCP
     targetPort: 9500
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
   selector:
     app: gitpod
     component: openvsx-proxy
@@ -5510,7 +5510,7 @@ metadata:
     component: ws-daemon
     kind: service
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 spec:
   clusterIP: None
   selector:
@@ -5530,17 +5530,9 @@ metadata:
     component: server
     kind: service
   name: server
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
-  - name: http
-    port: 3000
-    protocol: TCP
-    targetPort: 3000
-  - name: metrics
-    port: 9500
-    protocol: TCP
-    targetPort: 9500
   - name: install-admin
     port: 9000
     protocol: TCP
@@ -5553,6 +5545,14 @@ spec:
     port: 9229
     protocol: TCP
     targetPort: 9229
+  - name: http
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  - name: metrics
+    port: 9500
+    protocol: TCP
+    targetPort: 9500
   selector:
     app: gitpod
     component: server
@@ -5570,7 +5570,7 @@ metadata:
     component: ws-proxy
     kind: service
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: http-proxy
@@ -5602,7 +5602,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql-headless
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: mysql
     helm.sh/chart: mysql-9.1.2
@@ -5629,7 +5629,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mysql
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: mysql
     helm.sh/chart: mysql-9.1.2
@@ -5661,7 +5661,7 @@ metadata:
     component: blobserve
     kind: service
   name: blobserve
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: service
@@ -5681,7 +5681,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: messagebus
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -5728,7 +5728,7 @@ metadata:
     app: gitpod
     component: db
   name: db
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - port: 3306
@@ -5746,7 +5746,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: messagebus-headless
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -5785,7 +5785,7 @@ metadata:
     component: dashboard
     kind: service
   name: dashboard
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: http
@@ -5809,7 +5809,7 @@ metadata:
     component: image-builder-mk3
     kind: service
   name: image-builder-mk3
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: service
@@ -5829,7 +5829,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: registry
-  namespace: default
+  namespace: core-prod
   labels:
     app: docker-registry
     chart: docker-registry-1.16.0
@@ -5856,7 +5856,7 @@ metadata:
     component: ws-manager
     kind: service
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: rpc
@@ -5880,7 +5880,7 @@ metadata:
     component: registry-facade
     kind: service
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 spec:
   ports:
   - name: registry
@@ -5899,13 +5899,13 @@ apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   annotations:
-    gitpod.io/checksum_config: 5095db7c3a53bb89fb4de3b954a42a48ba0d1837c48bf55599a8ee7c1525290d
+    gitpod.io/checksum_config: 8844a70ad63dd38c01df5c620461eb34fd52f2104b1da196c8fe504b4ab6f0ba
   creationTimestamp: null
   labels:
     app: gitpod
     component: agent-smith
   name: agent-smith
-  namespace: default
+  namespace: core-prod
 spec:
   selector:
     matchLabels:
@@ -6024,7 +6024,7 @@ metadata:
     app: gitpod
     component: registry-facade
   name: registry-facade
-  namespace: default
+  namespace: core-prod
 spec:
   selector:
     matchLabels:
@@ -6033,7 +6033,7 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: cc84ebdef6f89c68086c001445d590051383365f58dec31d643d7b6c9c2521e1
+        gitpod.io/checksum_config: 5bbdf9a36ebe3fbbcb9c6dfd7bb17d037014f381068185bd31d5b02d5be1329e
       creationTimestamp: null
       labels:
         app: gitpod
@@ -6227,7 +6227,7 @@ metadata:
     app: gitpod
     component: ws-daemon
   name: ws-daemon
-  namespace: default
+  namespace: core-prod
 spec:
   selector:
     matchLabels:
@@ -6236,7 +6236,7 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: fc5fca764ea3bd5ed3c91068322255bce1926e26c762c8d0213c4d9a49de7bc1
+        gitpod.io/checksum_config: 6ad59fb379752e27c72b1823f6930ff0bf06dc5dc5b8f7a01be6ea6371151984
         seccomp.security.alpha.kubernetes.io/shiftfs-module-loader: unconfined
       creationTimestamp: null
       labels:
@@ -6509,7 +6509,7 @@ metadata:
     app: gitpod
     component: openvsx-proxy
   name: openvsx-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -6520,13 +6520,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 146ef8ffb134ee0659d7700027c9096daff7112c045777f532796859d6cff10e
+        gitpod.io/checksum_config: 46ab819456a176318abdda4b55c483c31dc520aa6242383efda64239f7a30bb0
       creationTimestamp: null
       labels:
         app: gitpod
         component: openvsx-proxy
       name: openvsx-proxy
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -6628,7 +6628,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: messagebus
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: rabbitmq
     helm.sh/chart: rabbitmq-10.1.1
@@ -6652,8 +6652,8 @@ spec:
         app.kubernetes.io/instance: RabbitMQ
         app.kubernetes.io/managed-by: Helm
       annotations:
-        checksum/config: 57b71edd6161d27a16d419d0a972455d13b77c3e31b641c4f484619042487094
-        checksum/secret: aa3650f886c7620e2b656dcb04a9272e0b1cbbe282a3e7038bc24484ebf25be5
+        checksum/config: 0940ec1a28b65215d1927f0a22ed381f42665320d4a877400c4a1309d9c51a97
+        checksum/secret: f92e4c01a7b244dc7fbcc49b5b953a9d024716a1a6b1427f37301ecca3627c20
         prometheus.io/port: '9419'
         prometheus.io/scrape: "true"
     spec:
@@ -6825,7 +6825,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql
-  namespace: "default"
+  namespace: "core-prod"
   labels:
     app.kubernetes.io/name: mysql
     helm.sh/chart: mysql-9.1.2
@@ -6846,7 +6846,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/configuration: f96f510015050d9b0165d12f144f5eca5641c065ccbe9c75e64f58e81a9b3d8c
+        checksum/configuration: c4e678da87fbef175cbd6ccf085e13b36e82cfa73e84b39b4be4dffc27600196
       labels:
         app.kubernetes.io/name: mysql
         helm.sh/chart: mysql-9.1.2
@@ -6987,7 +6987,7 @@ metadata:
     app: gitpod
     component: ws-manager
   name: ws-manager
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7002,13 +7002,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 68e3e42d58a3c4568a96c4e4ba8e82f544bad543a902abb8845c775879f9f983
+        gitpod.io/checksum_config: 19accd3450fabe9af151df212431a4ecf894330995572994eee4ee99fc9a816b
       creationTimestamp: null
       labels:
         app: gitpod
         component: ws-manager
       name: ws-manager
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -7131,7 +7131,7 @@ metadata:
     app: gitpod
     component: ws-proxy
   name: ws-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7146,13 +7146,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 53a583ff4ec325fd910eb78459fed3bb23d94642f2311f7c7e0f46aba5ee6af9
+        gitpod.io/checksum_config: 2dc667b0be2aca0fe2dd1e6ba9a6cb0a33f2c892881d3ecdcf99c8bd4724f968
       creationTimestamp: null
       labels:
         app: gitpod
         component: ws-proxy
       name: ws-proxy
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -7287,7 +7287,7 @@ metadata:
     app: gitpod
     component: dashboard
   name: dashboard
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7306,7 +7306,7 @@ spec:
         app: gitpod
         component: dashboard
       name: dashboard
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -7369,7 +7369,7 @@ metadata:
     app: gitpod
     component: server
   name: server
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7384,13 +7384,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 9b274b2b8110cfecc06ea2d11c92ddfb529c4e8805d7b46873e5a8fb4a475b48
+        gitpod.io/checksum_config: c00844dd7caea8ef13cd7cae01f6a0f13d5b90ad704fc8b7a6287b9d59aa6b88
       creationTimestamp: null
       labels:
         app: gitpod
         component: server
       name: server
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -7645,7 +7645,7 @@ metadata:
     app: gitpod
     component: blobserve
   name: blobserve
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7660,13 +7660,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: ada87867a02441a4e4b24c27526d85c41528ee6a377bbcf44acb914a2ceadf97
+        gitpod.io/checksum_config: 9f7c3d50cbfaf93914f45693637c55575795dedd0e984fb203bd5292283fa2d3
       creationTimestamp: null
       labels:
         app: gitpod
         component: blobserve
       name: blobserve
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -7788,7 +7788,7 @@ metadata:
     app: gitpod
     component: proxy
   name: proxy
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7803,13 +7803,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 68ef41180146f5b55bfce7d65a6109d150df2eaafdff941455bd16679e2c678b
+        gitpod.io/checksum_config: ed7c5fd4b7b4eed63e3aa651074a56e4524e127121431e61782790cba53c4014
       creationTimestamp: null
       labels:
         app: gitpod
         component: proxy
       name: proxy
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -7945,7 +7945,7 @@ metadata:
     app: gitpod
     component: ide-proxy
   name: ide-proxy
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -7964,7 +7964,7 @@ spec:
         app: gitpod
         component: ide-proxy
       name: ide-proxy
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -8027,7 +8027,7 @@ metadata:
     app: gitpod
     component: content-service
   name: content-service
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -8042,13 +8042,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 8f37d79eb16d1f501dbfdb00b3b9744159573120032483ba0e3651220b96be05
+        gitpod.io/checksum_config: 6306e64e728ad750f3f6a61123953bdfabd2437a332dc32e352f168e2e46a1ee
       creationTimestamp: null
       labels:
         app: gitpod
         component: content-service
       name: content-service
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -8129,7 +8129,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  namespace: default
+  namespace: core-prod
   labels:
     app: docker-registry
     chart: docker-registry-1.16.0
@@ -8148,8 +8148,8 @@ spec:
         app: docker-registry
         release: docker-registry
       annotations:
-        checksum/config: 1d22b82e19bbc654e029029c4fb86ad02dc13422dc3ac52f8175ad190e52a0bb
-        gitpod.io/checksum_config: 96f4b02aaf386f63aa983cac3c84f9f30f039175c25e7003f85c0b18e74a7054
+        checksum/config: 57be1ca5dc23857f5ed36a2fabba137ebf2784d8c0c1a84248180d677c69a56c
+        gitpod.io/checksum_config: abda2e3b9b82c8b792bc6fb76ea40cab2c7020f146c1b1127b5c817ce537b62e
     spec:
       serviceAccountName: docker-registry
       securityContext:
@@ -8230,7 +8230,7 @@ metadata:
     app: gitpod
     component: image-builder-mk3
   name: image-builder-mk3
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -8245,13 +8245,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 2d9a8e5befa4598e378e559e7a4ae129a550d8062f2e9ff7b315836f732e1b88
+        gitpod.io/checksum_config: e89a0a53571e4d36e9fff22c890a63f2021d918f588ba77a8b73853a78a0b9bc
       creationTimestamp: null
       labels:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -8381,7 +8381,7 @@ metadata:
     app: gitpod
     component: ws-manager-bridge
   name: ws-manager-bridge
-  namespace: default
+  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -8396,13 +8396,13 @@ spec:
   template:
     metadata:
       annotations:
-        gitpod.io/checksum_config: 85c30d04f4b45048bcc8501d9333fba223335fd5b5afdd30399e33c6197b369a
+        gitpod.io/checksum_config: d2408af6fff0bc982233c1bb2e27f3df64da2b29862d1a0d01c8014fe583d5f6
       creationTimestamp: null
       labels:
         app: gitpod
         component: ws-manager-bridge
       name: ws-manager-bridge
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -8630,7 +8630,7 @@ metadata:
     app: gitpod
     component: migrations
   name: migrations
-  namespace: default
+  namespace: core-prod
 spec:
   template:
     metadata:
@@ -8639,7 +8639,7 @@ spec:
         app: gitpod
         component: migrations
       name: migrations
-      namespace: default
+      namespace: core-prod
     spec:
       affinity:
         nodeAffinity:
@@ -8739,7 +8739,7 @@ metadata:
     app: gitpod
     component: gitpod
   name: gitpod-telemetry
-  namespace: default
+  namespace: core-prod
 spec:
   concurrencyPolicy: Replace
   failedJobsHistoryLimit: 1
@@ -8750,7 +8750,7 @@ spec:
         app: gitpod
         component: gitpod
       name: gitpod-telemetry
-      namespace: default
+      namespace: core-prod
     spec:
       template:
         metadata:
@@ -8759,7 +8759,7 @@ spec:
             app: gitpod
             component: gitpod
           name: gitpod-telemetry
-          namespace: default
+          namespace: core-prod
         spec:
           containers:
           - args:
@@ -8768,7 +8768,7 @@ spec:
             - name: GITPOD_INSTALLATION_VERSION
               value: release-2022.05.2.5
             - name: SERVER_URL
-              value: http://server.default.svc.cluster.local:9000
+              value: http://server.core-prod.svc.cluster.local:9000
             image: registry.writemy.codes/workspaces/gitpod-core-dev/build/installation-telemetry:commit-df6f9b5ab510202c5719724d67c00bff8ee83000
             imagePullPolicy: IfNotPresent
             name: gitpod-telemetry
