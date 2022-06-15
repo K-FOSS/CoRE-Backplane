@@ -2,7 +2,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app: gitpod
     component: proxy
@@ -23,7 +22,6 @@ spec:
     metadata:
       annotations:
         gitpod.io/checksum_config: ed7c5fd4b7b4eed63e3aa651074a56e4524e127121431e61782790cba53c4014
-      creationTimestamp: null
       labels:
         app: gitpod
         component: proxy
@@ -49,7 +47,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: status.podIP
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/brancz/kube-rbac-proxy:v0.11.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.12.0
         imagePullPolicy: IfNotPresent
         name: kube-rbac-proxy
         ports:
@@ -128,7 +126,7 @@ spec:
         - -c
         - sysctl -w net.core.somaxconn=32768; sysctl -w net.ipv4.ip_local_port_range='1024
           65000'
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/library/alpine:3.15
+        image: alpine:3.15
         imagePullPolicy: IfNotPresent
         name: sysctl
         resources: {}
