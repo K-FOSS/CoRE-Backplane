@@ -1,1 +1,31 @@
-
+# v1/Service proxy
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    cloud.google.com/neg: '{"exposed_ports": {"80":{},"443": {}}}'
+    external-dns.alpha.kubernetes.io/hostname: gitpods.writemy.codes,*.gitpods.writemy.codes,*.ws.gitpods.writemy.codes
+  labels:
+    app: gitpod
+    component: proxy
+    kind: service
+  name: proxy
+  namespace: core-prod
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  - name: metrics
+    port: 9500
+    protocol: TCP
+    targetPort: 9500
+  selector:
+    app: gitpod
+    component: proxy
+  type: LoadBalancer
