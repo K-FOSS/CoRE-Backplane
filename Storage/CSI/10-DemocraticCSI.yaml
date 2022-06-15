@@ -130,7 +130,7 @@ spec:
 
               # https://kubernetes-csi.github.io/docs/external-resizer.html
               externalResizer:
-                enabled: true
+                enabled: false
                 image: k8s.gcr.io/sig-storage/csi-resizer:v1.4.0
                 args:
                 - --v=5
@@ -203,7 +203,10 @@ spec:
             #        - SYS_ADMIN
             #      privileged: true
 
-                extraEnv: []
+                extraEnv:
+                  - name: KUBERNETES_SERVICE_HOST
+                    value: '10.1.1.40'
+
                 extraVolumeMounts: []
             #    - name: foo
             #      mountPath: /foo
