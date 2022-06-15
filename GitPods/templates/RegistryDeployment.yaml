@@ -32,66 +32,85 @@ spec:
         runAsUser: 1000
       containers:
         - name: docker-registry
+          
           image: registry:2.7.1
           imagePullPolicy: IfNotPresent
+          
           command:
-          - /bin/registry
-          - serve
-          - /etc/docker/registry/config.yml
+            - /bin/registry
+            - serve
+            - /etc/docker/registry/config.yml
+
           ports:
             - containerPort: 5000
+
           livenessProbe:
             httpGet:
               scheme: HTTPS
               path: /
               port: 5000
+
           readinessProbe:
             httpGet:
               scheme: HTTPS
               path: /
               port: 5000
+
           resources:
             {}
+
           env:
             - name: REGISTRY_HTTP_SECRET
               valueFrom:
                 secretKeyRef:
                   name: registry-secret
                   key: haSharedSecret
+
             - name: REGISTRY_HTTP_TLS_CERTIFICATE
               value: /etc/ssl/docker/tls.crt
+
             - name: REGISTRY_HTTP_TLS_KEY
               value: /etc/ssl/docker/tls.key
+
             - name: REGISTRY_STORAGE_S3_ACCESSKEY
               valueFrom:
                 secretKeyRef:
                   name: gitpods-registry-s3
                   key: s3AccessKey
+
             - name: REGISTRY_STORAGE_S3_SECRETKEY
               valueFrom:
                 secretKeyRef:
                   name: gitpods-registry-s3
                   key: s3SecretKey
+
             - name: REGISTRY_STORAGE_S3_REGION
               value: us-east-1
+
             - name: REGISTRY_STORAGE_S3_REGIONENDPOINT
               value: s3.mylogin.space
+
             - name: REGISTRY_STORAGE_S3_BUCKET
               value: gitpods-registry
+
             - name: REGISTRY_STORAGE_S3_ENCRYPT
               value: "true"
+
             - name: REGISTRY_STORAGE_S3_SECURE
               value: "true"
+
           volumeMounts:
             - name: "registry-config"
               mountPath: "/etc/docker/registry"
             - mountPath: /etc/ssl/docker
               name: tls-cert
               readOnly: true
+
       volumes:
         - name: registry-config
           configMap:
             name: registry-config
+
         - name: tls-cert
           secret:
             secretName: builtin-registry-certs
