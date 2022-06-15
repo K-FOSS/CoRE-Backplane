@@ -63,34 +63,43 @@ spec:
               mountPath: /bitnami/mysql
       containers:
         - name: mysql
+        
           image: bitnami/mysql:5.7.34-debian-10-r55
           imagePullPolicy: "IfNotPresent"
+        
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
+        
           env:
             - name: BITNAMI_DEBUG
               value: "false"
+        
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: db-password
                   key: mysql-root-password
+        
             - name: MYSQL_USER
               value: "gitpod"
+        
             - name: MYSQL_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: db-password
                   key: mysql-password
+        
             - name: MYSQL_DATABASE
               value: "gitpod"
+        
             - name: MYSQL_EXTRA_FLAGS
               value: --explicit-defaults-for-timestamp=OFF
           envFrom:
           ports:
             - name: mysql
               containerPort: 3306
+          
           livenessProbe:
             failureThreshold: 3
             initialDelaySeconds: 30
@@ -107,6 +116,7 @@ spec:
                       password_aux=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
                   fi
                   mysqladmin status -uroot -p"${password_aux}"
+          
           readinessProbe:
             failureThreshold: 3
             initialDelaySeconds: 5
@@ -123,18 +133,23 @@ spec:
                       password_aux=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
                   fi
                   mysqladmin status -uroot -p"${password_aux}"
+
           resources: 
             limits: {}
             requests:
               memory: 128Mi
+
           volumeMounts:
             - name: data
               mountPath: /bitnami/mysql
+
             - name: custom-init-scripts
               mountPath: /docker-entrypoint-initdb.d
+
             - name: config
               mountPath: /opt/bitnami/mysql/conf/my.cnf
               subPath: my.cnf
+
       volumes:
         - name: config
           configMap:
