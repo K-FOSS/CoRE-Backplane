@@ -1,0 +1,21 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: gitpods-registry-s3
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitpods-registry-s3
+
+  data:
+    - secretKey: s3AccessKey
+      remoteRef:
+        key: GitPods
+        property: S3AccessKey
+
+    - secretKey: s3SecretKey
+      remoteRef:
+        key: GitPods
+        property: S3SecretKey
