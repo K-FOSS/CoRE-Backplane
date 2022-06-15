@@ -1,0 +1,17 @@
+# v1/ResourceQuota gitpod-resource-quota
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  creationTimestamp: null
+  name: gitpod-resource-quota
+  namespace: core-prod
+spec:
+  hard:
+    pods: 10k
+  scopeSelector:
+    matchExpressions:
+    - operator: In
+      scopeName: PriorityClass
+      values:
+      - system-node-critical
+status: {}
