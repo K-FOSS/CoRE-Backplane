@@ -1,9 +1,15 @@
 
 rancher:
+  hostname: rancher.int.mylogin.space
+
   addLocal: 'true'
+
   additionalTrustedCAs: false
+
   antiAffinity: preferred
+
   topologyKey: kubernetes.io/hostname
+
   auditLog:
     destination: sidecar
     hostPath: /var/log/rancher/audit/
@@ -11,10 +17,14 @@ rancher:
     maxAge: 1
     maxBackup: 1
     maxSize: 100
+
   bootstrapPassword: ''
+
   busyboxImage: busybox
+
   certmanager:
     version: ''
+
   customLogos:
     accessMode: ReadWriteOnce
     enabled: false
@@ -23,8 +33,11 @@ rancher:
     volumeSubpaths:
       emberUi: ember
       vueUi: vue
+
   debug: false
+
   imagePullSecrets: null
+
   ingress:
     enabled: true
     labels:
@@ -39,11 +52,14 @@ rancher:
     tls:
       secretName: tls-rancher-ingress
       source: secret
+
   letsEncrypt:
     environment: production
     ingress:
       class: traefik-core
+
   noProxy: 127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local
+
   postDelete:
     enabled: false
     ignoreTimeoutError: false
@@ -55,13 +71,19 @@ rancher:
       - cattle-system
       - rancher-operator-system
     timeout: 120
+
   privateCA: false
+
   rancherImage: rancher/rancher
+
   replicas: 3
+
   resources: {}
+
   restrictedAdmin: false
+
   systemDefaultRegistry: ''
+
   tls: ingress
 
   useBundledSystemChart: false
-  hostname: rancher.int.mylogin.space
