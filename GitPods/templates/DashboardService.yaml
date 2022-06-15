@@ -1,0 +1,23 @@
+# v1/Service dashboard
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gitpod
+    component: dashboard
+    kind: service
+  name: dashboard
+  namespace: core-prod
+spec:
+  ports:
+  - name: http
+    port: 3001
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: gitpod
+    component: dashboard
+  type: ClusterIP
+status:
+  loadBalancer: {}
