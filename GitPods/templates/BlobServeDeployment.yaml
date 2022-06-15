@@ -1,0 +1,142 @@
+# apps/v1/Deployment blobserve
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gitpod
+    component: blobserve
+  name: blobserve
+  namespace: core-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitpod
+      component: blobserve
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        gitpod.io/checksum_config: 9f7c3d50cbfaf93914f45693637c55575795dedd0e984fb203bd5292283fa2d3
+      creationTimestamp: null
+      labels:
+        app: gitpod
+        component: blobserve
+      name: blobserve
+      namespace: core-prod
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: gitpod.io/workload_workspace_services
+                operator: Exists
+      containers:
+      - args:
+        - run
+        - /mnt/config/config.json
+        env:
+        - name: GITPOD_DOMAIN
+          value: gitpods.writemy.codes
+        - name: GITPOD_INSTALLATION_SHORTNAME
+          value: default
+        - name: GITPOD_REGION
+          value: us-east-1
+        - name: HOST_URL
+          value: https://gitpods.writemy.codes
+        - name: KUBE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: KUBE_DOMAIN
+          value: svc.k0s.resolvemy.host
+        - name: LOG_LEVEL
+          value: debug
+        - name: JAEGER_ENDPOINT
+          value: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
+        - name: JAEGER_SAMPLER_TYPE
+          value: const
+        - name: JAEGER_SAMPLER_PARAM
+          value: "1"
+        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/blobserve:commit-1c8e2ad0b16fbfef87968573eb853c322c8d2513
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /live
+            port: 8086
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: blobserve
+        ports:
+        - containerPort: 32224
+          name: service
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ready
+            port: 8086
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 100m
+            memory: 32Mi
+        securityContext:
+          privileged: false
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /mnt/config
+          name: config
+          readOnly: true
+        - mountPath: /mnt/cache
+          name: cache
+        - mountPath: /mnt/pull-secret.json
+          name: pull-secret
+          subPath: .dockerconfigjson
+      - args:
+        - --v=5
+        - --logtostderr
+        - --insecure-listen-address=[$(IP)]:9500
+        - --upstream=http://127.0.0.1:9500/
+        env:
+        - name: IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/brancz/kube-rbac-proxy:v0.11.0
+        name: kube-rbac-proxy
+        ports:
+        - containerPort: 9500
+          name: metrics
+        resources:
+          requests:
+            cpu: 1m
+            memory: 30Mi
+        securityContext:
+          runAsGroup: 65532
+          runAsNonRoot: true
+          runAsUser: 65532
+        terminationMessagePolicy: FallbackToLogsOnError
+      enableServiceLinks: false
+      serviceAccountName: blobserve
+      volumes:
+      - emptyDir: {}
+        name: cache
+      - configMap:
+          name: blobserve
+        name: config
+      - name: pull-secret
+        secret:
+          secretName: builtin-registry-auth
+status: {}
