@@ -76,6 +76,7 @@ spec:
         volumeMounts:
         - mountPath: /config
           name: config
+
       - args:
         - --v=5
         - --logtostderr
@@ -86,7 +87,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/brancz/kube-rbac-proxy:v0.11.0
+        image: quay.io/brancz/kube-rbac-proxy:v0.12.0
         name: kube-rbac-proxy
         ports:
         - containerPort: 9500
