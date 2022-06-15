@@ -597,7 +597,7 @@ metadata:
   namespace: core-prod
 spec:
   dnsNames:
-  - registry.core-prod.svc.cluster.local
+  - registry.core-prod.svc.k0s.resolvemy.host
   duration: 2160h0m0s
   issuerRef:
     group: cert-manager.io
@@ -1310,7 +1310,7 @@ data:
         },
         "blobServer": {
           "scheme": "http",
-          "host": "blobserve.core-prod.svc.cluster.local:4000"
+          "host": "blobserve.core-prod.svc.k0s.resolvemy.host:4000"
         },
         "gitpodInstallation": {
           "scheme": "https",
@@ -3907,7 +3907,7 @@ data:
             1PIpa2NafWRrCQXVyFcU JDJhJDEwJDY0SkRWT2F2Tm9ML0czV3ZFdFdXNi5rejE0M1J6dW5OYkZoeEhVVGlWblZhek1ZL1lxUTVp
         }
 
-        reverse_proxy https://registry.core-prod.svc.cluster.local {
+        reverse_proxy https://registry.core-prod.svc.k0s.resolvemy.host {
             flush_interval -1
             transport http {
                 tls_trusted_ca_certs /etc/caddy/registry-certs/ca.crt
@@ -3922,7 +3922,7 @@ data:
         import ssl_configuration
 
         reverse_proxy  {
-            to ide-proxy.core-prod.svc.cluster.local:80
+            to ide-proxy.core-prod.svc.k0s.resolvemy.host:80
         }
     }
   vhost.minio: |-
@@ -3931,7 +3931,7 @@ data:
         import remove_server_header
         import ssl_configuration
 
-        reverse_proxy minio.core-prod.svc.cluster.local:9001 {
+        reverse_proxy minio.core-prod.svc.k0s.resolvemy.host:9001 {
             flush_interval -1
         }
     }
@@ -3942,7 +3942,7 @@ data:
         import ssl_configuration
 
         reverse_proxy  {
-            to openvsx-proxy.core-prod.svc.cluster.local:8080
+            to openvsx-proxy.core-prod.svc.k0s.resolvemy.host:8080
         }
     }
   vhost.payment-endpoint: |-
@@ -3952,7 +3952,7 @@ data:
         import ssl_configuration
         import debug_headers
 
-        reverse_proxy payment-endpoint.core-prod.svc.cluster.local:3002 {
+        reverse_proxy payment-endpoint.core-prod.svc.k0s.resolvemy.host:3002 {
             import upstream_headers
             import upstream_connection
         }
@@ -4334,7 +4334,7 @@ data:
         "ratelimits": {}
       },
       "imageBuilderProxy": {
-        "targetAddr": "image-builder-mk3.core-prod.svc.cluster.local:8080"
+        "targetAddr": "image-builder-mk3.core-prod.svc.k0s.resolvemy.host:8080"
       },
       "pprof": {
         "addr": "localhost:6060"
@@ -5948,7 +5948,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -6068,7 +6068,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -6272,7 +6272,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -6552,7 +6552,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         image: registry.writemy.codes/workspaces/gitpod-core-dev/build/openvsx-proxy:commit-df6f9b5ab510202c5719724d67c00bff8ee83000
@@ -6712,9 +6712,9 @@ spec:
             - name: RABBITMQ_FORCE_BOOT
               value: "no"
             - name: RABBITMQ_NODE_NAME
-              value: "rabbit@$(MY_POD_NAME).$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.cluster.local"
+              value: "rabbit@$(MY_POD_NAME).$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.k0s.resolvemy.host"
             - name: K8S_HOSTNAME_SUFFIX
-              value: ".$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.cluster.local"
+              value: ".$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.k0s.resolvemy.host"
             - name: RABBITMQ_MNESIA_DIR
               value: "/bitnami/rabbitmq/mnesia/$(RABBITMQ_NODE_NAME)"
             - name: RABBITMQ_LDAP_ENABLE
@@ -7036,7 +7036,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -7179,7 +7179,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -7330,7 +7330,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         image: registry.writemy.codes/workspaces/gitpod-core-dev/build/dashboard:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
@@ -7414,7 +7414,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: DB_HOST
@@ -7693,7 +7693,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -7859,7 +7859,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: PROXY_DOMAIN
@@ -7988,7 +7988,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ide-proxy:commit-490f4f1d7a3e31d8b21d42eb0691f847a5d258a6
@@ -8076,7 +8076,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -8279,7 +8279,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -8426,7 +8426,7 @@ spec:
             fieldRef:
               fieldPath: metadata.namespace
         - name: KUBE_DOMAIN
-          value: svc.cluster.local
+          value: svc.k0s.resolvemy.host
         - name: LOG_LEVEL
           value: debug
         - name: JAEGER_ENDPOINT
@@ -8768,7 +8768,7 @@ spec:
             - name: GITPOD_INSTALLATION_VERSION
               value: release-2022.05.2.5
             - name: SERVER_URL
-              value: http://server.core-prod.svc.cluster.local:9000
+              value: http://server.core-prod.svc.k0s.resolvemy.host:9000
             image: registry.writemy.codes/workspaces/gitpod-core-dev/build/installation-telemetry:commit-df6f9b5ab510202c5719724d67c00bff8ee83000
             imagePullPolicy: IfNotPresent
             name: gitpod-telemetry
