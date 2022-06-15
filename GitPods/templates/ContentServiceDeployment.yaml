@@ -1,0 +1,104 @@
+# apps/v1/Deployment content-service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gitpod
+    component: content-service
+  name: content-service
+  namespace: core-prod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitpod
+      component: content-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        gitpod.io/checksum_config: 6306e64e728ad750f3f6a61123953bdfabd2437a332dc32e352f168e2e46a1ee
+      creationTimestamp: null
+      labels:
+        app: gitpod
+        component: content-service
+      name: content-service
+      namespace: core-prod
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: gitpod.io/workload_meta
+                operator: Exists
+      containers:
+      - args:
+        - run
+        - --config
+        - /config/config.json
+        env:
+        - name: GITPOD_DOMAIN
+          value: gitpods.writemy.codes
+        - name: GITPOD_INSTALLATION_SHORTNAME
+          value: default
+        - name: GITPOD_REGION
+          value: us-east-1
+        - name: HOST_URL
+          value: https://gitpods.writemy.codes
+        - name: KUBE_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: KUBE_DOMAIN
+          value: svc.k0s.resolvemy.host
+        - name: LOG_LEVEL
+          value: debug
+        - name: JAEGER_ENDPOINT
+          value: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
+        - name: JAEGER_SAMPLER_TYPE
+          value: const
+        - name: JAEGER_SAMPLER_PARAM
+          value: "1"
+        - name: GRPC_GO_RETRY
+          value: "on"
+        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/content-service:commit-922c9e8fceace4abc3ed37e92baaee6f10e6a4b7
+        imagePullPolicy: IfNotPresent
+        name: content-service
+        ports:
+        - containerPort: 8080
+          name: rpc
+        - containerPort: 9502
+          name: metrics
+        resources:
+          requests:
+            cpu: 100m
+            memory: 32Mi
+        securityContext:
+          privileged: false
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /mnt/secrets/storage
+          name: storage-volume
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      enableServiceLinks: false
+      restartPolicy: Always
+      serviceAccountName: content-service
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          name: content-service
+        name: config
+      - name: storage-volume
+        secret:
+          secretName: storage-s3
+status: {}
