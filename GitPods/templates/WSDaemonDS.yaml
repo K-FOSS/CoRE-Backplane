@@ -263,61 +263,74 @@ spec:
       serviceAccountName: ws-daemon
       terminationGracePeriodSeconds: 30
       tolerations:
-      - effect: NoExecute
-        key: node.kubernetes.io/disk-pressure
-        operator: Exists
-      - effect: NoExecute
-        key: node.kubernetes.io/memory-pressure
-        operator: Exists
-      - effect: NoExecute
-        key: node.kubernetes.io/out-of-disk
-        operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/disk-pressure
+          operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/memory-pressure
+          operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/out-of-disk
+          operator: Exists
+
       volumes:
-      - hostPath:
-          path: /
-        name: hostfs
-      - hostPath:
-          path: /var/gitpod/workspaces
-          type: DirectoryOrCreate
-        name: working-area
-      - name: tls-certs
-        secret:
-          secretName: ws-daemon-tls
-      - configMap:
-          name: ws-daemon
-        name: config
-      - hostPath:
-          path: /run/containerd/containerd.sock
-          type: Socket
-        name: containerd-socket
-      - hostPath:
-          path: /var/lib/containerd/io.containerd.runtime.v2.task/k8s.io
-          type: Directory
-        name: node-fs0
-      - hostPath:
-          path: /proc/mounts
-          type: File
-        name: node-mounts
-      - hostPath:
-          path: /sys/fs/cgroup
-          type: Directory
-        name: node-cgroups
-      - hostPath:
-          path: /etc/hosts
-          type: File
-        name: node-hosts
-      - hostPath:
-          path: /usr/src
-          type: Directory
-        name: node-linux-src
-      - hostPath:
-          path: /var/lib/kubelet/seccomp
-        name: hostseccomp
-      - hostPath:
-          path: /var/gitpod/tmp/backup
-          type: DirectoryOrCreate
-        name: gcloud-tmp
-      - name: storage-volume
-        secret:
-          secretName: storage-s3
+        - hostPath:
+            path: /
+          name: hostfs
+
+        - hostPath:
+            path: /var/gitpod/workspaces
+            type: DirectoryOrCreate
+          name: working-area
+
+        - name: tls-certs
+          secret:
+            secretName: ws-daemon-tls
+
+        - configMap:
+            name: ws-daemon
+          name: config
+
+        - hostPath:
+            path: /run/containerd/containerd.sock
+            type: Socket
+          name: containerd-socket
+
+        - hostPath:
+            path: /var/lib/containerd/io.containerd.runtime.v2.task/k8s.io
+            type: Directory
+          name: node-fs0
+
+        - hostPath:
+            path: /proc/mounts
+            type: File
+          name: node-mounts
+
+        - hostPath:
+            path: /sys/fs/cgroup
+            type: Directory
+          name: node-cgroups
+
+        - hostPath:
+            path: /etc/hosts
+            type: File
+          name: node-hosts
+
+        - hostPath:
+            path: /usr/src
+            type: Directory
+          name: node-linux-src
+
+        - hostPath:
+            path: /var/lib/kubelet/seccomp
+          name: hostseccomp
+
+        - hostPath:
+            path: /var/gitpod/tmp/backup
+            type: DirectoryOrCreate
+          name: gcloud-tmp
+
+        - name: storage-volume
+          secret:
+            secretName: storage-s3
   updateStrategy: {}

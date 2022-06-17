@@ -36,106 +36,124 @@ spec:
               - key: gitpod.io/workload_workspace_services
                 operator: Exists
       containers:
-      - args:
-        - run
-        - --config
-        - /config/config.json
-        env:
-        - name: GITPOD_DOMAIN
-          value: gitpods.writemy.codes
-        - name: GITPOD_INSTALLATION_SHORTNAME
-          value: default
-        - name: GITPOD_REGION
-          value: us-east-1
-        - name: HOST_URL
-          value: https://gitpods.writemy.codes
-        - name: KUBE_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: KUBE_DOMAIN
-          value: svc.k0s.resolvemy.host
-        - name: LOG_LEVEL
-          value: debug
-        - name: JAEGER_ENDPOINT
-          value: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
-        - name: JAEGER_SAMPLER_TYPE
-          value: const
-        - name: JAEGER_SAMPLER_PARAM
-          value: "1"
-        - name: GRPC_GO_RETRY
-          value: "on"
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ws-manager:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
-        imagePullPolicy: IfNotPresent
-        name: ws-manager
-        ports:
-        - containerPort: 8080
-          name: rpc
-        resources:
-          requests:
-            cpu: 100m
-            memory: 32Mi
-        securityContext:
-          privileged: false
-        volumeMounts:
-        - mountPath: /config
-          name: config
-          readOnly: true
-        - mountPath: /workspace-templates
-          name: workspace-template
-          readOnly: true
-        - mountPath: /ws-daemon-tls-certs
-          name: ws-daemon-tls-certs
-          readOnly: true
-        - mountPath: /certs
-          name: tls-certs
-          readOnly: true
-        - mountPath: /mnt/secrets/storage
-          name: storage-volume
-          readOnly: true
-      - args:
-        - --v=5
-        - --logtostderr
-        - --insecure-listen-address=[$(IP)]:9500
-        - --upstream=http://127.0.0.1:9500/
-        env:
-        - name: IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        image: quay.io/brancz/kube-rbac-proxy:v0.12.0
-        name: kube-rbac-proxy
-        ports:
-        - containerPort: 9500
-          name: metrics
-        resources:
-          requests:
-            cpu: 1m
-            memory: 30Mi
-        securityContext:
-          runAsGroup: 65532
-          runAsNonRoot: true
-          runAsUser: 65532
-        terminationMessagePolicy: FallbackToLogsOnError
+        - name: ws-manager
+
+          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ws-manager:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
+          imagePullPolicy: IfNotPresent
+
+          args:
+            - run
+            - --config
+            - /config/config.json
+          env:
+            - name: GITPOD_DOMAIN
+              value: gitpods.writemy.codes
+            - name: GITPOD_INSTALLATION_SHORTNAME
+              value: default
+            - name: GITPOD_REGION
+              value: us-east-1
+            - name: HOST_URL
+              value: https://gitpods.writemy.codes
+            - name: KUBE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: KUBE_DOMAIN
+              value: svc.k0s.resolvemy.host
+            - name: LOG_LEVEL
+              value: debug
+            - name: JAEGER_ENDPOINT
+              value: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
+            - name: JAEGER_SAMPLER_TYPE
+              value: const
+            - name: JAEGER_SAMPLER_PARAM
+              value: "1"
+            - name: GRPC_GO_RETRY
+              value: "on"
+
+          
+          ports:
+            - containerPort: 8080
+              name: rpc
+          resources:
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            privileged: false
+          volumeMounts:
+            - mountPath: /config
+              name: config
+              readOnly: true
+
+            - mountPath: /workspace-templates
+              name: workspace-template
+              readOnly: true
+
+            - mountPath: /ws-daemon-tls-certs
+              name: ws-daemon-tls-certs
+              readOnly: true
+
+            - mountPath: /certs
+              name: tls-certs
+              readOnly: true
+
+            - mountPath: /mnt/secrets/storage
+              name: storage-volume
+              readOnly: true
+
+
+        - name: kube-rbac-proxy
+
+          image: quay.io/brancz/kube-rbac-proxy:v0.12.0
+
+          args:
+            - --v=5
+            - --logtostderr
+            - --insecure-listen-address=[$(IP)]:9500
+            - --upstream=http://127.0.0.1:9500/
+          env:
+            - name: IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+
+          ports:
+            - containerPort: 9500
+              name: metrics
+          resources:
+            requests:
+              cpu: 1m
+              memory: 30Mi
+          securityContext:
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+          terminationMessagePolicy: FallbackToLogsOnError
       enableServiceLinks: false
       priorityClassName: system-node-critical
       securityContext:
         runAsUser: 31002
       serviceAccountName: ws-manager
-      volumes:
-      - configMap:
-          name: ws-manager
-        name: config
-      - configMap:
-          name: workspace-templates
-        name: workspace-template
-      - name: ws-daemon-tls-certs
-        secret:
-          secretName: ws-daemon-tls
-      - name: tls-certs
-        secret:
-          secretName: ws-manager-tls
-      - name: storage-volume
-        secret:
-          secretName: storage-s3
 
+      volumes:
+        - configMap:
+            name: ws-manager
+          name: config
+
+        - configMap:
+            name: workspace-templates
+          name: workspace-template
+
+        - name: ws-daemon-tls-certs
+          secret:
+            secretName: ws-daemon-tls
+
+        - name: tls-certs
+          secret:
+            secretName: ws-manager-tls
+
+        - name: storage-volume
+          secret:
+            secretName: storage-s3
