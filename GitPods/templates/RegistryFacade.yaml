@@ -40,6 +40,7 @@ spec:
           args:
             - run
             - /mnt/config/config.json
+
           env:
             - name: GITPOD_DOMAIN
               value: gitpods.writemy.codes
@@ -81,7 +82,6 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
 
-
           lifecycle:
             postStart:
               exec:
@@ -111,15 +111,19 @@ spec:
           volumeMounts:
             - mountPath: /mnt/cache
               name: cache
+
             - mountPath: /mnt/config
               name: config
               readOnly: true
+
             - mountPath: /ws-manager-client-tls-certs
               name: ws-manager-client-tls-certs
               readOnly: true
+
             - mountPath: /mnt/pull-secret.json
               name: pull-secret
               subPath: .dockerconfigjson
+
             - mountPath: /mnt/certificates
               name: config-certificates
 
