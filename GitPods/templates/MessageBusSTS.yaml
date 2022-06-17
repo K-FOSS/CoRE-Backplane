@@ -49,11 +49,14 @@ spec:
       initContainers:
       containers:
         - name: rabbitmq
+
           image: bitnami/rabbitmq:3.10.2-debian-10-r7
           imagePullPolicy: "IfNotPresent"
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 1001
+
           lifecycle:
             preStop:
               exec:
@@ -66,77 +69,107 @@ spec:
                     else
                         rabbitmqctl stop_app
                     fi
+
           env:
             - name: BITNAMI_DEBUG
               value: "false"
+
             - name: MY_POD_IP
               valueFrom:
                 fieldRef:
                   fieldPath: status.podIP
+
             - name: MY_POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
+
             - name: MY_POD_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+
             - name: K8S_SERVICE_NAME
               value: messagebus-headless
+
             - name: K8S_ADDRESS_TYPE
               value: hostname
+
             - name: RABBITMQ_FORCE_BOOT
               value: "no"
+
             - name: RABBITMQ_NODE_NAME
               value: "rabbit@$(MY_POD_NAME).$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.k0s.resolvemy.host"
+
             - name: K8S_HOSTNAME_SUFFIX
               value: ".$(K8S_SERVICE_NAME).$(MY_POD_NAMESPACE).svc.k0s.resolvemy.host"
+
             - name: RABBITMQ_MNESIA_DIR
               value: "/bitnami/rabbitmq/mnesia/$(RABBITMQ_NODE_NAME)"
+
             - name: RABBITMQ_LDAP_ENABLE
               value: "no"
+
             - name: RABBITMQ_LOGS
               value: "-"
+
             - name: RABBITMQ_ULIMIT_NOFILES
               value: "65536"
+
             - name: RABBITMQ_USE_LONGNAME
               value: "true"
+
             - name: RABBITMQ_ERL_COOKIE
               valueFrom:
                 secretKeyRef:
                   name: messagebus-erlang-cookie
                   key: rabbitmq-erlang-cookie
+
             - name: RABBITMQ_LOAD_DEFINITIONS
               value: "yes"
+
             - name: RABBITMQ_DEFINITIONS_FILE
               value: "/app/load_definition.json"
+
             - name: RABBITMQ_SECURE_PASSWORD
               value: "yes"
+
             - name: RABBITMQ_USERNAME
               value: "gitpod"
+
             - name: RABBITMQ_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: messagebus
                   key: rabbitmq-password
+
             - name: RABBITMQ_PLUGINS
               value: "rabbitmq_management, rabbitmq_peer_discovery_k8s, rabbitmq_prometheus"
+
             - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
               value: +sbwt none +sbwtdcpu none +sbwtdio none
+
           envFrom:
+
           ports:
             - name: amqp
               containerPort: 5672
+
             - name: dist
               containerPort: 25672
+
             - name: stats
               containerPort: 15672
+
             - name: epmd
               containerPort: 4369
+
             - name: metrics
               containerPort: 9419
+
             - name: amqp-ssl
               containerPort: 5671
+
           livenessProbe:
             failureThreshold: 6
             initialDelaySeconds: 30
@@ -148,6 +181,7 @@ spec:
                 - /bin/bash
                 - -ec
                 - rabbitmq-diagnostics -q ping
+
           readinessProbe:
             failureThreshold: 3
             initialDelaySeconds: 10
@@ -162,13 +196,17 @@ spec:
           resources:
             limits: {}
             requests: {}
+
           volumeMounts:
             - name: configuration
               mountPath: /bitnami/rabbitmq/conf
+
             - name: data
               mountPath: /bitnami/rabbitmq/mnesia
+
             - name: certs
               mountPath: /opt/bitnami/rabbitmq/certs
+
             - name: load-definition-volume
               mountPath: /app
               readOnly: true
@@ -183,14 +221,17 @@ spec:
                 path: server_certificate.pem
               - key: tls.key
                 path: server_key.pem
+
         - name: configuration
           secret:
             secretName: messagebus-config
             items:
               - key: rabbitmq.conf
                 path: rabbitmq.conf
+
         - name: load-definition-volume
           secret:
             secretName: "load-definition"
+
         - name: data
           emptyDir: {}

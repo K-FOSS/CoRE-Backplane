@@ -2,10 +2,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app: gitpod
     component: image-builder-mk3
+
   name: image-builder-mk3
   namespace: core-prod
 spec:
@@ -14,21 +14,24 @@ spec:
     matchLabels:
       app: gitpod
       component: image-builder-mk3
+
   strategy:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
     type: RollingUpdate
+
   template:
     metadata:
       annotations:
         gitpod.io/checksum_config: e89a0a53571e4d36e9fff22c890a63f2021d918f588ba77a8b73853a78a0b9bc
-      creationTimestamp: null
+
       labels:
         app: gitpod
         component: image-builder-mk3
       name: image-builder-mk3
       namespace: core-prod
+
     spec:
       affinity:
         nodeAffinity:
@@ -37,6 +40,7 @@ spec:
             - matchExpressions:
               - key: gitpod.io/workload_meta
                 operator: Exists
+
       containers:
         - name: image-builder-mk3
 
