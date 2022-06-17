@@ -97,33 +97,15 @@ spec:
                   - -c
                   - kubectl label nodes ${NODENAME} gitpod.io/registry-facade_ready_ns_${KUBE_NAMESPACE}-
           
-          livenessProbe:
-            failureThreshold: 3
-            httpGet:
-              path: /live
-              port: 8086
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            successThreshold: 1
-            timeoutSeconds: 1
-          
           ports:
             - containerPort: 32223
               hostPort: 20000
               name: registry
-          readinessProbe:
-            failureThreshold: 5
-            httpGet:
-              path: /ready
-              port: 8086
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            successThreshold: 2
-            timeoutSeconds: 1
+
           resources:
             requests:
               cpu: 100m
-              memory: 32Mi
+              memory: 512Mi
           securityContext:
             privileged: false
             runAsUser: 1000
