@@ -2,7 +2,6 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app: gitpod
     component: dashboard
@@ -21,7 +20,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: gitpod
         component: dashboard
@@ -36,46 +34,56 @@ spec:
               - key: gitpod.io/workload_meta
                 operator: Exists
       containers:
-      - env:
-        - name: GITPOD_DOMAIN
-          value: gitpods.writemy.codes
-        - name: GITPOD_INSTALLATION_SHORTNAME
-          value: default
-        - name: GITPOD_REGION
-          value: us-east-1
-        - name: HOST_URL
-          value: https://gitpods.writemy.codes
-        - name: KUBE_NAMESPACE
-          valueFrom:
-            fieldRef:
-              fieldPath: metadata.namespace
-        - name: KUBE_DOMAIN
-          value: svc.k0s.resolvemy.host
-        - name: LOG_LEVEL
-          value: debug
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/dashboard:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
-        imagePullPolicy: IfNotPresent
-        name: dashboard
-        ports:
-        - containerPort: 80
-          name: http
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /ready
-            port: 8080
-            scheme: HTTP
-          successThreshold: 1
-          timeoutSeconds: 1
-        resources:
-          requests:
-            cpu: 100m
-            memory: 32Mi
-        securityContext:
-          privileged: false
+        - name: dashboard
+
+          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/dashboard:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
+          imagePullPolicy: IfNotPresent
+
+          env:
+            - name: GITPOD_DOMAIN
+              value: gitpods.writemy.codes
+
+            - name: GITPOD_INSTALLATION_SHORTNAME
+              value: default
+
+            - name: GITPOD_REGION
+              value: us-east-1
+
+            - name: HOST_URL
+              value: https://gitpods.writemy.codes
+
+            - name: KUBE_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+
+            - name: KUBE_DOMAIN
+              value: svc.k0s.resolvemy.host
+
+            - name: LOG_LEVEL
+              value: debug
+          
+          ports:
+            - containerPort: 80
+              name: http
+
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: 8080
+              scheme: HTTP
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            privileged: false
+
       dnsPolicy: ClusterFirst
       enableServiceLinks: false
       restartPolicy: Always
       serviceAccountName: dashboard
       terminationGracePeriodSeconds: 30
-status: {}
