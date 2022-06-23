@@ -163,23 +163,7 @@ spec:
             - mountPath: /sys/fs/bpf
               mountPropagation: Bidirectional
               name: bpf-maps
-        - command:
-            - sh
-            - '-c'
-            - |
-              until test -s "/tmp/cilium-bootstrap.d/cilium-bootstrap-time"; do
-                echo "Waiting on node-init to run...";
-                sleep 1;
-              done
-          image: 'quay.io/cilium/cilium-ci:85819de7518f411d61df106200dae247973c5117'
-          imagePullPolicy: IfNotPresent
-          name: wait-for-node-init
-          resources: {}
-          terminationMessagePath: /dev/termination-log
-          terminationMessagePolicy: File
-          volumeMounts:
-            - mountPath: /tmp/cilium-bootstrap.d
-              name: cilium-bootstrap-file-dir
+
         - command:
             - /init-container.sh
           name: clean-cilium-state
