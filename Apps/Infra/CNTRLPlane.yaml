@@ -10,7 +10,7 @@ spec:
     - list:
         elements:
           - cluster: k0s-cntrl
-            url: https://10.1.1.40:443
+            url: 10.1.1.40:6443
 
   template:
     metadata:
@@ -25,7 +25,17 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                liqo:
+                  apiServer:
+                    # -- The address that must be used to contact your API server, it needs to be reachable from the clusters that you will peer with (defaults to your master IP)
+                    address: {{url}}
+                    # -- Indicates that the API Server is exposing a certificate issued by a trusted Certification Authority
+                    trustedCA: false
+
 
       destination:
-        server: '{{url}}'
+        server: 'https://{{url}}'
         namespace: core-prod
