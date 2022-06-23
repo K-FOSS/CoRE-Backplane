@@ -11,9 +11,13 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: 10.1.1.40:443
+            podCIDR: 192.168.250.0/24
+            serviceCIDR: 10.6.8.0/24
 
           - cluster: infra1-dc1
             url: 172.20.52.1:6443
+            podCIDR: 192.168.251.0/24
+            serviceCIDR: 10.6.9.0/24
 
   template:
     metadata:
@@ -38,6 +42,12 @@ spec:
                     # -- Indicates that the API Server is exposing a certificate issued by a trusted Certification Authority
                     trustedCA: false
 
+                  networkManager:
+                    config:
+                      # -- The subnet used by the cluster for the pods, in CIDR notation
+                      podCIDR: {{podCIDR}}
+                      # -- The subnet used by the cluster for the services, in CIDR notation
+                      serviceCIDR: {{serviceCIDR}}
 
       destination:
         server: 'https://{{url}}'
