@@ -14,12 +14,15 @@ spec:
             podCIDR: 10.4.0.0/16
             serviceCIDR: 10.0.8.0/22
             provider: core
+            installMode: host
+            domain: k0s.resolvemy.host
 
           - cluster: infra1-dc1
             url: 172.20.52.1:6443
             podCIDR: 172.20.52.0/22
             serviceCIDR: 172.18.0.0/16
             provider: truenas-scale
+            domain: cluster.local
 
   template:
     metadata:
@@ -38,6 +41,9 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
 
+                karmada:
+                  clusterDomain: '{{domain}}'
+                  
                 liqo:
                   apiServer:
                     # -- The address that must be used to contact your API server, it needs to be reachable from the clusters that you will peer with (defaults to your master IP)
