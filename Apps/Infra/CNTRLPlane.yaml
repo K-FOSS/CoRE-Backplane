@@ -13,11 +13,13 @@ spec:
             url: 10.1.1.40:443
             podCIDR: 192.168.250.0/24
             serviceCIDR: 10.6.8.0/24
+            provider: core
 
           - cluster: infra1-dc1
             url: 172.20.52.1:6443
             podCIDR: 192.168.251.0/24
             serviceCIDR: 10.6.9.0/24
+            provider: truenas-scale
 
   template:
     metadata:
@@ -35,6 +37,7 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
+
                 liqo:
                   apiServer:
                     # -- The address that must be used to contact your API server, it needs to be reachable from the clusters that you will peer with (defaults to your master IP)
@@ -48,6 +51,20 @@ spec:
                       podCIDR: {{podCIDR}}
                       # -- The subnet used by the cluster for the services, in CIDR notation
                       serviceCIDR: {{serviceCIDR}}
+
+                  discovery:
+                    config:
+                      # -- Set a mnemonic name for your cluster
+                      clusterName: '{{cluster}}'
+
+                      # -- A set of labels which characterizes the local cluster when exposed remotely as a virtual node.
+                      # It is suggested to specify the distinguishing characteristics that may be used to decide whether to offload pods on this cluster.
+                      clusterLabels:
+                        app.kubernetes.io/name: '{{cluster}}'
+
+                        liqo.io/provider: '{{provider}}'
+
+                        # topology.kubernetes.io/zone: us-east-1
 
       destination:
         server: 'https://{{url}}'
