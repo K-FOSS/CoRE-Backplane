@@ -1,0 +1,15 @@
+apiVersion: policy.karmada.io/v1alpha1
+kind: PropagationPolicy
+metadata:
+  name: example-policy
+
+spec:
+  resourceSelectors:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: nginx # If no namespace is specified, the namespace is inherited from the parent object scope.
+
+  placement:
+    clusterAffinity:
+      clusterNames:
+        - k0s-dc1
