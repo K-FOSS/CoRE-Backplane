@@ -39,6 +39,42 @@ spec:
                     DATA_FOLDER: "/tmp"
                     DOMAIN: https://bitwarden.kristianjones.dev
 
+                    SMTP_FROM_NAME: 'Vaultwarden'
+                    SMTP_SECURITY: 'off'
+
+                    SMTP_TIMEOUT: '120'
+
+                    SMTP_HOST:
+                      valueFrom:
+                        secretKeyRef:
+                          key: Hostname
+                          name: business-vaultwarden-mail-{{ environment }}
+
+                    SMTP_FROM:
+                      valueFrom:
+                        secretKeyRef:
+                          key: Username
+                          name: business-vaultwarden-mail-{{ environment }}
+
+                    SMTP_PORT:
+                      valueFrom:
+                        secretKeyRef:
+                          key: Port
+                          name: business-vaultwarden-mail-{{ environment }}
+
+                    SMTP_USERNAME:
+                      valueFrom:
+                        secretKeyRef:
+                          key: Username
+                          name: business-vaultwarden-mail-{{ environment }}
+
+                    SMTP_PASSWORD:
+                      valueFrom:
+                        secretKeyRef:
+                          key: Password
+                          name: business-vaultwarden-mail-{{ environment }}
+
+
                     DATABASE_URL:
                       valueFrom:
                         secretKeyRef:
