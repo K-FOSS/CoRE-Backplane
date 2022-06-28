@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: cntrl-plane-infra-cntrl-plane-test
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: vela-core
+    app.kubernetes.io/version: 1.5.0-nightly-build
+    argocd.argoproj.io/instance: cntrl-plane-infra-cntrl-plane-test
+    controller.oam.dev/name: vela-core
+    helm.sh/chart: vela-core-1.5.0-nightly-build
+  name: cntrlplane-kubevela
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: cntrl-plane-infra-cntrl-plane-test
+      app.kubernetes.io/name: vela-core
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: '8080'
+        prometheus.io/scrape: 'true'
+      labels:
+        app.kubernetes.io/instance: cntrl-plane-infra-cntrl-plane-test
+        app.kubernetes.io/name: vela-core
+    spec:
+      containers:
+        - args:
+            - '--metrics-addr=:8080'
+            - '--enable-leader-election'
+            - '--use-webhook=true'
+            - '--webhook-port=9443'
+            - '--webhook-cert-dir=/etc/k8s-webhook-certs'
+            - '--optimize-mark-with-prob=0.1'
+            - '--health-addr=:9440'
+            - '--disable-caps=rollout'
+            - '--system-definition-namespace=default'
+            - '--application-revision-limit=10'
+            - '--definition-revision-limit=20'
+            - '--oam-spec-ver=v0.3'
+            - '--enable-cluster-gateway'
+            - '--application-re-sync-period=5m'
+            - '--concurrent-reconciles=4'
+            - '--kube-api-qps=50'
+            - '--kube-api-burst=100'
+            - '--max-workflow-wait-backoff-time=60'
+            - '--max-workflow-failed-backoff-time=300'
+            - '--max-workflow-step-error-retry-times=10'
+            - '--feature-gates=EnableSuspendOnFailure=false'
+            - '--feature-gates=AuthenticateApplication=false'
+          image: 'oamdev/vela-core:latest'
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 90
+            periodSeconds: 5
+          name: cntrl-plane-infra-cntrl-plane-test
+          env:
+            - name: KUBERNETES_SERVICE_HOST
+              value: infra1-dc1-cntrlplane-apiserver.core-prod.svc.cluster.local
+            - name: KUBERNETES_SERVICE_PORT
+              value: '5443'
+            - name: KUBECONFIG
+              value: /var/run/kubeconfig
+          ports:
+            - containerPort: 9443
+              name: webhook-server
+              protocol: TCP
+            - containerPort: 9440
+              name: healthz
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: healthz
+            initialDelaySeconds: 30
+            periodSeconds: 5
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 50m
+              memory: 20Mi
+          securityContext: {}
+          volumeMounts:
+            - mountPath: /etc/k8s-webhook-certs
+              name: tls-cert-vol
+              readOnly: true
+
+            - mountPath: /var/run/kubeconfig
+              name: kubeconfig
+              subPath: kubeconfig
+      securityContext: {}
+      serviceAccountName: default
+      volumes:
+        - name: tls-cert-vol
+          secret:
+            defaultMode: 420
+            secretName: cntrlplane-kubevela-admission
+
+        - name: kubeconfig
+          secret:
+            defaultMode: 420
+            secretName: infra1-dc1-cntrlplane-kubeconfig
