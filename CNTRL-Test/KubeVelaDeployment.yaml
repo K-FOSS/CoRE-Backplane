@@ -64,27 +64,6 @@ spec:
               value: '5443'
             - name: KUBECONFIG
               value: /var/run/kubeconfig
-          ports:
-            - containerPort: 9443
-              name: webhook-server
-              protocol: TCP
-            - containerPort: 9440
-              name: healthz
-              protocol: TCP
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: healthz
-            initialDelaySeconds: 30
-            periodSeconds: 5
-          resources:
-            limits:
-              cpu: 500m
-              memory: 1Gi
-            requests:
-              cpu: 50m
-              memory: 20Mi
-          securityContext: {}
           volumeMounts:
 
             - mountPath: /var/run/kubeconfig
