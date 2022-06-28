@@ -31,9 +31,6 @@ spec:
         - args:
             - '--metrics-addr=:8080'
             - '--enable-leader-election'
-            - '--use-webhook=true'
-            - '--webhook-port=9443'
-            - '--webhook-cert-dir=/etc/k8s-webhook-certs'
             - '--optimize-mark-with-prob=0.1'
             - '--health-addr=:9440'
             - '--disable-caps=rollout'
@@ -89,9 +86,6 @@ spec:
               memory: 20Mi
           securityContext: {}
           volumeMounts:
-            - mountPath: /etc/k8s-webhook-certs
-              name: tls-cert-vol
-              readOnly: true
 
             - mountPath: /var/run/kubeconfig
               name: kubeconfig
@@ -99,11 +93,6 @@ spec:
       securityContext: {}
       serviceAccountName: default
       volumes:
-        - name: tls-cert-vol
-          secret:
-            defaultMode: 420
-            secretName: cntrlplane-kubevela-admission
-
         - name: kubeconfig
           secret:
             defaultMode: 420
