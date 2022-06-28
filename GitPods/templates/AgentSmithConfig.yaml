@@ -1,0 +1,38 @@
+# v1/ConfigMap agent-smith
+apiVersion: v1
+data:
+  config.json: |-
+    {
+      "gitpodAPI": {
+        "hostURL": "https://gitpods.writemy.codes",
+        "apiToken": ""
+      },
+      "blocklists": {
+        "very": {
+          "signatures": [
+            {
+              "name": "testtarget",
+              "domain": "process",
+              "kind": "elf",
+              "pattern": "WVdkbGJuUlRiV2wwYUZSbGMzUlVZWEpuWlhRPQ==",
+              "regexp": false,
+              "slice": {}
+            }
+          ]
+        }
+      },
+      "enforcement": {},
+      "kubernetes": {
+        "enabled": true
+      },
+      "pprofAddr": "localhost:6060",
+      "prometheusAddr": "localhost:9500"
+    }
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gitpod
+    component: agent-smith
+  name: agent-smith
+  namespace: core-prod

@@ -1,0 +1,61 @@
+# v1/ConfigMap ws-proxy
+apiVersion: v1
+data:
+  config.json: |-
+    {
+      "ingress": {
+        "httpAddress": ":8080",
+        "httpsAddress": ":9090",
+        "header": "x-wsproxy-host"
+      },
+      "proxy": {
+        "https": {
+          "key": "/mnt/certificates/tls.key",
+          "crt": "/mnt/certificates/tls.crt"
+        },
+        "transportConfig": {
+          "connectTimeout": "10s",
+          "idleConnTimeout": "1m0s",
+          "maxIdleConns": 0,
+          "maxIdleConnsPerHost": 100
+        },
+        "blobServer": {
+          "scheme": "http",
+          "host": "blobserve.core-prod.svc.k0s.resolvemy.host:4000"
+        },
+        "gitpodInstallation": {
+          "scheme": "https",
+          "hostName": "gitpods.writemy.codes",
+          "workspaceHostSuffix": ".ws.gitpods.writemy.codes",
+          "workspaceHostSuffixRegex": "\\.ws[^\\.]*\\.gitpods.writemy.codes"
+        },
+        "workspacePodConfig": {
+          "theiaPort": 23000,
+          "supervisorPort": 22999,
+          "supervisorImage": "eu.gcr.io/gitpod-core-dev/build/supervisor:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca"
+        },
+        "builtinPages": {
+          "location": "/app/public"
+        }
+      },
+      "pprofAddr": ":60060",
+      "prometheusAddr": "127.0.0.1:9500",
+      "readinessProbeAddr": ":8086",
+      "namespace": "core-prod",
+      "wsManager": {
+        "addr": "ws-manager.core-prod.svc.k0s.resolvemy.host:8080",
+        "tls": {
+          "ca": "/ws-manager-client-tls-certs/ca.crt",
+          "crt": "/ws-manager-client-tls-certs/tls.crt",
+          "key": "/ws-manager-client-tls-certs/tls.key"
+        }
+      }
+    }
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gitpod
+    component: ws-proxy
+  name: ws-proxy
+  namespace: core-prod

@@ -1,0 +1,51 @@
+# v1/ConfigMap registry-facade
+apiVersion: v1
+data:
+  config.json: |-
+    {
+      "registry": {
+        "port": 20000,
+        "prefix": "",
+        "staticLayer": [
+          {
+            "ref": "eu.gcr.io/gitpod-core-dev/build/supervisor:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca",
+            "type": "image"
+          },
+          {
+            "ref": "eu.gcr.io/gitpod-core-dev/build/workspacekit:commit-df6f9b5ab510202c5719724d67c00bff8ee83000",
+            "type": "image"
+          },
+          {
+            "ref": "eu.gcr.io/gitpod-core-dev/build/docker-up:commit-59a5657dbd3a4157bb10eafcbfb3ab6b3bb1dbe9",
+            "type": "image"
+          }
+        ],
+        "remoteSpecProvider": {
+          "addr": "dns:///ws-manager.core-prod.svc.k0s.resolvemy.host:8080",
+          "tls": {
+            "ca": "/ws-manager-client-tls-certs/ca.crt",
+            "crt": "/ws-manager-client-tls-certs/tls.crt",
+            "key": "/ws-manager-client-tls-certs/tls.key"
+          }
+        },
+        "store": "/mnt/cache/registry",
+        "requireAuth": false,
+        "tls": {
+          "ca": "",
+          "crt": "/mnt/certificates/tls.crt",
+          "key": "/mnt/certificates/tls.key"
+        }
+      },
+      "dockerAuth": "/mnt/pull-secret.json",
+      "pprofAddr": ":6060",
+      "prometheusAddr": "127.0.0.1:9500",
+      "readinessProbeAddr": ":8086"
+    }
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gitpod
+    component: registry-facade
+  name: registry-facade
+  namespace: core-prod
