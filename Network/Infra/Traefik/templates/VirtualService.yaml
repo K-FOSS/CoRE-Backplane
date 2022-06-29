@@ -102,6 +102,16 @@ spec:
     - match:
         - headers:
             host:
+              exact: teams.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: mattermost-team-edition.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
               exact: 10.1.1.83
           uri:
             prefix: /inform
@@ -154,7 +164,6 @@ spec:
             - resolvemy.host
             - idp.mylogin.space
             - db.mylogin.space
-            - teams.mylogin.space
             - projects.mylogin.space
             - simplelogin.mylogin.space
             - office.mylogin.space
