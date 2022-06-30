@@ -6,9 +6,11 @@ metadata:
 spec:
   propagateDeps: true
   resourceSelectors:
-    - apiVersion: apps/v1
-      kind: Deployment
-      name: vitess-operator
+    - apiVersion: v1
+      kind: Pod
+      labelSelector:
+        matchLabels:
+          app: vitess-operator
 
   placement:
     clusterAffinity:
