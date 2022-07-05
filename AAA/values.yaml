@@ -114,7 +114,13 @@ authentik:
   # AUTHENTIK_VAR_NAME: VALUE
 
   envFrom: []
-  envValueFrom: {}
+
+  envValueFrom:
+    AUTHENTIK_POSTGRESQL__NAME:
+      secretKeyRef:
+        key: DatabaseDatabase
+        name: authentik-database-prod
+
 
   service:
     # -- Service that is created to access authentik
