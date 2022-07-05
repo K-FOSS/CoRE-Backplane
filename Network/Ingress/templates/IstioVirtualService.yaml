@@ -20,6 +20,16 @@ spec:
   gateways:
     - core-gateway
   http: 
+    - name: s3
+      match:
+        - headers:
+            host:
+              exact: s3.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 443
+            host: s3.mylogin.space
 
     - name: jitsi
       match:
