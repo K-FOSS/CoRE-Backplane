@@ -15,6 +15,16 @@ spec:
 
 
   servers:
+    - match:
+        - headers:
+            host:
+              exact: s3.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 443
+            host: s3.mylogin.space
+
     - port:
         number: 443
         name: https-mylogin
@@ -23,6 +33,7 @@ spec:
         mode: SIMPLE
         credentialName: myloginspace-default-certificates
       hosts:
+        - s3.mylogin.space
         - metrics.mylogin.space
         - logs.mylogin.space
         - traces.mylogin.space
