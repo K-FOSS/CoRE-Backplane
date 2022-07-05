@@ -20,6 +20,8 @@ spec:
           service:
             type: LoadBalancer
             loadBalancerIP: 10.1.1.83
+            annotations:
+              metallb.universe.tf/allow-shared-ip: istio
             externalIPs:
               - 66.165.222.101
         
@@ -31,3 +33,7 @@ spec:
 
     global:
       istioNamespace: external-istiod
+    
+    service:
+      annotations:
+        metallb.universe.tf/allow-shared-ip: istio
