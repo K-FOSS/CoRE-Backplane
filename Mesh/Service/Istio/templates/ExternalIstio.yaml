@@ -9,6 +9,14 @@ spec:
     global:
       istioNamespace: external-istiod
       configCluster: true
+
+      proxy:
+        resources:
+          requests:
+            cpu: 64m
+            memory: 32Mi
+          limits: null
+
     pilot:
       configMap: true
 
@@ -18,3 +26,5 @@ spec:
       injectionURL: https://istio.mylogin.space:15017/inject/:ENV:cluster=core:ENV:net=network1
     base:
       validationURL: https://istio.mylogin.space:15017/validate
+
+
