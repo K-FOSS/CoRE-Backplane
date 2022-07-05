@@ -1,0 +1,14 @@
+
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  labels:
+    argocd.argoproj.io/instance: k0s-cntrl-storage-s3-kjdev
+  name: minio-originate-tls
+  namespace: core-prod
+spec:
+  host: minio.core-prod.svc.k0s.resolvemy.host
+  trafficPolicy:
+    tls:
+      insecureSkipVerify: true
+      mode: SIMPLE
