@@ -97,6 +97,7 @@ authentik:
       host: psql.service.dc1.kjdev
       password: ""
       port: 5432
+      name: 
     redis:
       # -- set the redis hostname to talk to
       # @default -- `{{ .Release.Name }}-redis-master`
@@ -112,26 +113,7 @@ authentik:
   # AUTHENTIK_VAR_NAME: VALUE
 
   envFrom: []
-  envValueFrom:
-    AUTHENTIK_POSTGRESQL__NAME:
-      secretKeyRef:
-        key: DatabaseDatabase
-        name: authentik-database-prod
-
-    AUTHENTIK_POSTGRESQL__PASSWORD:
-      secretKeyRef:
-        key: DatabasePassword
-        name: authentik-database-prod
-
-    AUTHENTIK_POSTGRESQL__USER:
-      secretKeyRef:
-        key: DatabaseUser
-        name: authentik-database-prod
-
-    AUTHENTIK_SECRET_KEY:
-      secretKeyRef:
-        key: SecretKey
-        name: authentik-database-prod
+  envValueFrom: {}
 
   service:
     # -- Service that is created to access authentik
