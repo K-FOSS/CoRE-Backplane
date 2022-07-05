@@ -102,6 +102,16 @@ spec:
     - match:
         - headers:
             host:
+              exact: rancher.int.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
               exact: speed.kjmedia.stream
       route:
         - destination:
@@ -180,7 +190,6 @@ spec:
             - draw.mylogin.space
             - wwwdb.mylogin.space
             - 'cyberchef.mylogin.space'
-            - 'rancher.int.mylogin.space'
             - '*.writemy.codes'
             - '*.ipaddr.network'
             - bitwarden.kristianjones.dev
