@@ -5,6 +5,10 @@ metadata:
   name: istio-ingressgateway
 spec:
   profile: empty
+  meshConfig:
+    accessLogFile: /dev/stdout
+    enableTracing: true
+
   components:
     ingressGateways:
       - namespace: external-istiod
@@ -15,3 +19,6 @@ spec:
     gateways:
       istio-ingressgateway:
         injectionTemplate: gateway
+
+    global:
+      istioNamespace: external-istiod
