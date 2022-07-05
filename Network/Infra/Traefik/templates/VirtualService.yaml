@@ -102,6 +102,16 @@ spec:
     - match:
         - headers:
             host:
+              exact: office.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
               exact: rancher.int.mylogin.space
       route:
         - destination:
@@ -185,7 +195,6 @@ spec:
             - db.mylogin.space
             - projects.mylogin.space
             - simplelogin.mylogin.space
-            - office.mylogin.space
             - collabora.mylogin.space
             - draw.mylogin.space
             - wwwdb.mylogin.space
