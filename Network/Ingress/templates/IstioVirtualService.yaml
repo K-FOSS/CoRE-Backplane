@@ -1,4 +1,3 @@
-
 apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
 metadata:
@@ -20,7 +19,7 @@ spec:
   gateways:
     - core-gateway
   http: 
-    - name: s3
+    - name: minio
       match:
         - headers:
             host:
@@ -193,7 +192,6 @@ spec:
         - port: 443
           sniHosts:
             - resolvemy.host
-            - s3.mylogin.space
             - db.mylogin.space
             - projects.mylogin.space
             - simplelogin.mylogin.space
