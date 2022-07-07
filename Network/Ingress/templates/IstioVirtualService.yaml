@@ -18,7 +18,16 @@ spec:
     - 10.1.1.83
   gateways:
     - core-gateway
-  http: 
+  http:
+    #
+    # Storage and Delivery
+    #
+
+
+    #
+    # S3 Object Storage
+    #
+
     - name: minio
       match:
         - headers:
@@ -29,6 +38,17 @@ spec:
             port:
               number: 443
             host: s3.mylogin.space
+
+    #
+    #
+    # AVoIP
+    #
+    #
+
+    
+    #
+    # Jitsi Meet Video System
+    #
 
     - name: jitsi
       match:
@@ -41,6 +61,16 @@ spec:
               number: 80
             host: k0s-cntrl-business-avoip-jitsi-meet-web.core-prod.svc.k0s.resolvemy.host
 
+    #
+    #
+    # Observability 
+    #
+    #
+
+
+    #
+    # Logs
+    #
 
     - name: logs-web
       match:
@@ -53,6 +83,10 @@ spec:
               number: 80
             host: loki-core-loki-distributed-gateway.core-prod.svc.k0s.resolvemy.host
 
+    #
+    # Metrics
+    #
+
     - name: metrics-web
       match:
         - headers:
@@ -63,6 +97,18 @@ spec:
             port:
               number: 80
             host: core-mimir-nginx.core-prod.svc.k0s.resolvemy.host
+
+
+    #
+    #
+    # Content Delivery and Caching
+    #
+    #
+
+
+    #
+    # Static Files/CDN
+    #
 
     - name: wip-static-cdn
       match:
@@ -79,6 +125,10 @@ spec:
               number: 80
             host: traefik-core-s3-proxy.core-prod.svc.k0s.resolvemy.host
 
+    #
+    # Media Streaming
+    #
+
     - match:
         - headers:
             host:
@@ -89,35 +139,10 @@ spec:
               number: 8096
             host: jellyfin-core.lab-prod.svc.k0s.resolvemy.host
 
-    - match:
-        - headers:
-            host:
-              exact: idp.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 80
-            host: k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
 
-    - match:
-        - headers:
-            host:
-              exact: office.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 8080
-            host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
-
-    - match:
-        - headers:
-            host:
-              exact: rancher.int.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 80
-            host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
+    #
+    # Speed Test and Connectivity Testing  
+    #
 
     - match:
         - headers:
@@ -129,6 +154,47 @@ spec:
               number: 80
             host: speed.kjmedia.stream
 
+
+    #
+    # AAA
+    #
+
+    - match:
+        - headers:
+            host:
+              exact: idp.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
+
+
+    ####################
+    #
+    #     Business
+    #
+    ####################
+
+    
+    #
+    # NextCloud/Office/Docs/Sheets/Slides/Notes/Chat/Talk/Mail
+    #
+
+    - match:
+        - headers:
+            host:
+              exact: office.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
+
+    #
+    # Mattermost/Teams/Chat/ChatOps/Notifications/Bots
+    #
+
     - match:
         - headers:
             host:
@@ -138,7 +204,41 @@ spec:
             port:
               number: 8080
             host: mattermost-team-edition.core-prod.svc.k0s.resolvemy.host
+    
+    ###########################
+    #
+    #       Infrastructure
+    #
+    ############################
 
+
+    #
+    # Rancher Kubernetes Administration and Management
+    #
+
+    - match:
+        - headers:
+            host:
+              exact: rancher.int.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
+
+
+
+
+    ########################
+    #
+    #       Networking
+    #
+    #########################
+
+
+    #
+    # Unifi Network Management
+    #
     - match:
         - headers:
             host:
@@ -159,6 +259,13 @@ spec:
 
 
   tls:
+    #
+    # SSO Proxy
+    #
+
+    #
+    # Pomerium Authentication/Auditing
+    #
     - match:
         - port: 443
           sniHosts:
@@ -170,6 +277,9 @@ spec:
               number: 443
           weight: 100
 
+    #
+    # Pomerium SSO Proxy
+    #
     - match:
         - port: 443
           sniHosts:
@@ -213,6 +323,10 @@ spec:
               number: 443
           weight: 100
 
+
+    #
+    # GitPods Development Environments
+    #
 
     - match:
         - port: 443
