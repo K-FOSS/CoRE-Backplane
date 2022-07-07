@@ -14,13 +14,16 @@ spec:
 
 
   servers:
+
     - port:
         number: 443
         name: https-mylogin
         protocol: HTTPS
+
       tls:
         mode: SIMPLE
         credentialName: myloginspace-default-certificates
+
       hosts:
         - s3.mylogin.space
         - metrics.mylogin.space
@@ -31,6 +34,7 @@ spec:
         - idp.mylogin.space
         - office.mylogin.space
 
+
     - port:
         number: 443
         name: https-mylogin-int
@@ -40,6 +44,7 @@ spec:
         credentialName: myloginspace-int-default-certificates
       hosts:
         - rancher.int.mylogin.space
+
 
     - port:
         number: 443
@@ -64,7 +69,17 @@ spec:
         - '*.gitpods.writemy.codes'
         - '*.ws.gitpods.writemy.codes'
 
+    #
+    #
+    # Storage
+    #
+    #
 
+
+
+    #
+    # Content Delivery and Caching 
+    #
     - port:
         number: 80
         name: http-main
@@ -73,7 +88,25 @@ spec:
         - static.mylogin.space
         - 10.1.1.83
 
+    #
+    # Media Delivery
+    #
 
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: kjmediastream-default-certificates
+      hosts:
+        - jellyfin.kjmedia.stream
+        - speed.kjmedia.stream
+
+
+    #
+    # HTTPS Redirects
+    #
     - port:
         number: 80
         name: http
@@ -95,16 +128,6 @@ spec:
 
 
 
-    - port:
-        number: 443
-        name: https
-        protocol: HTTPS
-      tls:
-        mode: SIMPLE
-        credentialName: kjmediastream-default-certificates
-      hosts:
-        - jellyfin.kjmedia.stream
-        - speed.kjmedia.stream
 
 
 

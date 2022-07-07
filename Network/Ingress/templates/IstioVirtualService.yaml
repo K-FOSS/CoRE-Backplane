@@ -19,9 +19,36 @@ spec:
   gateways:
     - core-gateway
   http:
+    #########################################################
+    #                                                       #
+    #     Authentication Authorization Accounting (AAA)     #
+    #                                                       #
+    #########################################################
+
     #
-    # Storage and Delivery
+    # Authentik
     #
+    # Identity Platform
+    #
+
+    - match:
+        - headers:
+            host:
+              exact: idp.mylogin.space
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
+
+
+
+    ################################
+    #
+    #      Storage and Delivery
+    #
+    ################################
 
 
     #
@@ -39,71 +66,10 @@ spec:
               number: 443
             host: s3.mylogin.space
 
-    #
-    #
-    # AVoIP
-    #
-    #
 
-    
-    #
-    # Jitsi Meet Video System
-    #
-
-    - name: jitsi
-      match:
-        - headers:
-            host:
-              exact: meet.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 80
-            host: k0s-cntrl-business-avoip-jitsi-meet-web.core-prod.svc.k0s.resolvemy.host
-
-    #
-    #
-    # Observability 
-    #
-    #
-
-
-    #
-    # Logs
-    #
-
-    - name: logs-web
-      match:
-        - headers:
-            host:
-              exact: logs.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 80
-            host: loki-core-loki-distributed-gateway.core-prod.svc.k0s.resolvemy.host
-
-    #
-    # Metrics
-    #
-
-    - name: metrics-web
-      match:
-        - headers:
-            host:
-              exact: metrics.mylogin.space
-      route:
-        - destination:
-            port:
-              number: 80
-            host: core-mimir-nginx.core-prod.svc.k0s.resolvemy.host
-
-
-    #
-    #
-    # Content Delivery and Caching
-    #
-    #
+    ###################################
+    #  Content Delivery and Caching   #
+    ###################################
 
 
     #
@@ -119,6 +85,7 @@ spec:
         - headers:
             host:
               exact: 10.1.1.83
+
       route:
         - destination:
             port:
@@ -155,25 +122,76 @@ spec:
             host: speed.kjmedia.stream
 
 
+
+    #############################
+    #                           #
+    #            AVoIP          #
+    #                           #
+    #############################
+
+    
     #
-    # AAA
+    # Jitsi Meet Video System
     #
 
-    - match:
+    - name: jitsi
+      match:
         - headers:
             host:
-              exact: idp.mylogin.space
+              exact: meet.mylogin.space
       route:
         - destination:
             port:
               number: 80
-            host: k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
+            host: k0s-cntrl-business-avoip-jitsi-meet-web.core-prod.svc.k0s.resolvemy.host
+
+
+
+    ###################################
+    #                                 #
+    #           Observability         #
+    #                                 #
+    ###################################
+
+
+    #
+    # Logs
+    #
+
+    - name: logs-web
+      match:
+        - headers:
+            host:
+              exact: logs.mylogin.space
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: loki-core-loki-distributed-gateway.core-prod.svc.k0s.resolvemy.host
+
+    #
+    # Metrics
+    #
+
+    - name: metrics-web
+      match:
+        - headers:
+            host:
+              exact: metrics.mylogin.space
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: core-mimir-nginx.core-prod.svc.k0s.resolvemy.host
+
 
 
     ####################
-    #
-    #     Business
-    #
+    #                  #
+    #     Business     #
+    #                  #
     ####################
 
     
@@ -204,7 +222,9 @@ spec:
             port:
               number: 8080
             host: mattermost-team-edition.core-prod.svc.k0s.resolvemy.host
-    
+
+
+
     ###########################
     #
     #       Infrastructure
@@ -225,7 +245,6 @@ spec:
             port:
               number: 80
             host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
-
 
 
 
