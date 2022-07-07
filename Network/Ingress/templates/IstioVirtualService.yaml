@@ -12,7 +12,7 @@ spec:
     - '*.writemy.codes'
     - '*.ipaddr.network'
     - '*.kjmedia.stream'
-    - 'bitwarden.kristianjones.dev'
+    - '*.kristianjones.dev'
 
     # IP Addresses
     - 10.1.1.83
@@ -209,6 +209,45 @@ spec:
               number: 8080
             host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
 
+
+    #
+    # Bitwarden/Vaultwarden Password Manager
+    #
+    - match:
+        - headers:
+            host:
+              exact: bitwarden.kristianjones.dev
+          uri:
+            prefix: /notifications/hub
+          ignoreUriCase: true
+
+        - headers:
+            host:
+              exact: passwords.mylogin.space
+          uri:
+            prefix: /notifications/hub
+          ignoreUriCase: true
+
+      route:
+        - destination:
+            port:
+              number: 3012
+            host: k0s-cntrl-business-passwords-vaultwarden.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              exact: bitwarden.kristianjones.dev
+
+        - headers:
+            host:
+              exact: passwords.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-cntrl-business-passwords-vaultwarden.core-prod.svc.k0s.resolvemy.host
+
     #
     # Mattermost/Teams/Chat/ChatOps/Notifications/Bots
     #
@@ -330,7 +369,6 @@ spec:
             - 'cyberchef.mylogin.space'
             - '*.writemy.codes'
             - '*.ipaddr.network'
-            - bitwarden.kristianjones.dev
             - feeds.kjmedia.stream
             - share.kjmedia.stream
             - 'controlcenter.house'
