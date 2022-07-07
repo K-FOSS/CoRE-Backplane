@@ -218,9 +218,11 @@ pomerium:
 
   resources: null
 
-  podLabels: {}
+  podLabels:
+    sidecar.istio.io/inject: 'true'
 
-  podAnnotations: {}
+  podAnnotations:
+    sidecar.istio.io/inject: 'true'
 
   affinity:
     podAntiAffinity:
@@ -252,6 +254,7 @@ pomerium:
     idp:
       provider: oidc
       url: https://idp.mylogin.space/application/o/pomeriumproxy-auth/
+
     proxied: false
     replicaCount: 3
     ingress:
@@ -323,6 +326,13 @@ pomerium:
           groups:
             - Home Users
 
+
+  service:
+    authorize:
+      headless: false
+    databroker:
+      headless: false
+
   databroker:
     existingTLSSecret: pomerium-tls
     replicaCount: 3
@@ -382,8 +392,10 @@ pomerium:
     authorizeInternalUrl: https://traefik-core-pomerium-authorize.core-prod.svc.k0s.resolvemy.host
 
     authenticateServiceUrl: https://authenticate.int.mylogin.space
+    
     deployment:
-      podAnnotations: {}
+      podAnnotations:
+        traffic.sidecar.istio.io/excludeInboundPorts: '80,443'
 
   rbac:
     create: true
