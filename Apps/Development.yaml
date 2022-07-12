@@ -1,29 +1,44 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-development-deploy
+  name: core-backplane-development
   namespace: argocd
+
 spec:
   generators:
     - list:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
+
   template:
     metadata:
-      name: '{{cluster}}-development-deploy'
+      name: '{{cluster}}-development'
+
     spec:
       project: core
 
-      syncPolicy:
-        automated: {}
-
       source:
-        path: Development
+        path: DevelopmentNew
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
         plugin:
-          name: argocd-vault-replacer
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+
+                artifacthub:
+                  fullnameOverride: ''
+
+                gitlab:
+                  fullnameOverride: ''
+                
+                harbor:
+                  fullnameOverride: ''
+
+                
+
       destination:
         server: '{{url}}'
-        namespace: argocd
+        namespace: core-prod
