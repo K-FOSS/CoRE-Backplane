@@ -20,8 +20,11 @@ spec:
 
       source:
         path: DevelopmentNew
+
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+
         targetRevision: HEAD
+
         plugin:
           name: argocd-lovely-plugin
           env:
@@ -29,15 +32,13 @@ spec:
               value: |- 
 
                 artifacthub:
-                  fullnameOverride: ''
+                  fullnameOverride: '{{cluster}}-artifacthub'
 
                 gitlab:
-                  fullnameOverride: ''
+                  fullnameOverride: '{{cluster}}-gitlab'
                 
                 harbor:
-                  fullnameOverride: ''
-
-                
+                  fullnameOverride: '{{cluster}}-development-harbor-helm'
 
       destination:
         server: '{{url}}'
