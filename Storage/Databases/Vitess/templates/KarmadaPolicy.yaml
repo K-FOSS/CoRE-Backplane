@@ -12,6 +12,30 @@ spec:
         matchLabels:
           app: vitess-operator
 
+    - apiVersion: v1
+      kind: Pod
+      labelSelector:
+        matchLabels:
+          app: vitess-operator
+
+    - apiVersion: v1
+      kind: Service
+      labelSelector:
+        matchLabels:
+          planetscale.com/component: vtgate
+
+    - apiVersion: v1
+      kind: Service
+      labelSelector:
+        matchLabels:
+          planetscale.com/component: vttablet
+
+    - apiVersion: v1
+      kind: Service
+      labelSelector:
+        matchLabels:
+          etcd.planetscale.com/lockserver: example-etcd-faf13de3
+
   placement:
     clusterAffinity:
       clusterNames:
