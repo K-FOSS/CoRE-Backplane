@@ -281,13 +281,21 @@ spec:
     # Unifi Network Management
     #
     - match:
-        - headers:
+        - port: 8080
+          headers:
             host:
               exact: 10.1.1.83
+          uri:
+            prefix: /inform
+          ignoreUriCase: true
 
-        - headers:
+        - port: 8080
+          headers:
             host:
               exact: unifi.mylogin.space 
+          uri:
+            prefix: /inform
+          ignoreUriCase: true
       route:
         - destination:
             port:
