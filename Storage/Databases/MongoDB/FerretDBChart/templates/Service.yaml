@@ -9,21 +9,16 @@ spec:
   selector:
     app.kubernetes.io/name: ferretdb-core
 
-  allocateLoadBalancerNodePorts: false
-
   loadBalancerIP: 10.1.1.17
 
   ports:
-    # Plaintext LDAP
     - name: mongodb
       protocol: TCP
       appProtocol: mongodb
       targetPort: 27017
       port: 27017
 
-  externalTrafficPolicy: Local
-
   ipFamilies:
     - IPv4
   ipFamilyPolicy: SingleStack
-  sessionAffinity: None
+
