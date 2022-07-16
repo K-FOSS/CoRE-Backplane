@@ -170,29 +170,6 @@ spec:
             - name: amqp-ssl
               containerPort: 5671
 
-          livenessProbe:
-            failureThreshold: 6
-            initialDelaySeconds: 30
-            periodSeconds: 30
-            successThreshold: 1
-            timeoutSeconds: 20
-            exec:
-              command:
-                - /bin/bash
-                - -ec
-                - rabbitmq-diagnostics -q ping
-
-          readinessProbe:
-            failureThreshold: 3
-            initialDelaySeconds: 10
-            periodSeconds: 30
-            successThreshold: 1
-            timeoutSeconds: 20
-            exec:
-              command:
-                - /bin/bash
-                - -ec
-                - rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_local_alarms
           resources:
             limits: {}
             requests: {}
