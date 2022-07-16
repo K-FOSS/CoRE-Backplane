@@ -1,0 +1,142 @@
+{{- $fullName := include "spilo.fullname" . -}}
+{{- $clusterName := include "spilo.clusterName" . -}}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ $fullName }}-db
+
+  labels:
+    app: {{ $fullName }}-db
+    spilo-cluster: {{ $clusterName }}
+
+spec:
+  selector:
+    matchLabels:
+      app: {{ $fullName }}-db
+
+  replicas: 3
+
+  serviceName: 
+
+  template:
+    metadata:
+      labels:
+        app: {{ $fullName }}-db
+        spilo-cluster: {{ $clusterName }}
+
+    spec:
+      # service account that allows changing endpoints and assigning pod labels
+      # in the given namespace: https://kubernetes.io/docs/user-guide/service-accounts/
+      # not required unless you've changed the default service account in the namespace
+      # used to deploy Spilo
+      serviceAccountName: operator
+
+      containers:
+        - name: {{ $clusterName }}
+
+          {{- with .Values.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+
+          {{- with .Values.image.pullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+
+          ports:
+            - containerPort: 8008
+              protocol: TCP
+
+            - name: psql
+              containerPort: 5432
+              protocol: TCP
+
+          volumeMounts:
+            - mountPath: /home/postgres/pgdata
+              name: pgdata
+
+          env:
+          - name: DCS_ENABLE_KUBERNETES_API
+            value: 'true'
+
+  #        - name: ETCD_HOST
+  #          value: 'test-etcd.default.svc.cluster.local:2379' # where is your etcd?
+
+  #        - name: WAL_S3_BUCKET
+  #          value: example-spilo-dbaas
+
+  #        - name: LOG_S3_BUCKET # may be the same as WAL_S3_BUCKET
+  #          value: example-spilo-dbaas
+
+  #        - name: BACKUP_SCHEDULE
+  #          value: "00 01 * * *"
+
+          - name: KUBERNETES_SCOPE_LABEL
+            value: spilo-cluster
+
+          - name: KUBERNETES_ROLE_LABEL
+            value: role
+
+          - name: SPILO_CONFIGURATION
+            value: | ## https://github.com/zalando/patroni#yaml-configuration
+              bootstrap:
+                initdb:
+                  - auth-host: md5
+                  - auth-local: trust
+
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+
+          - name: PGPASSWORD_SUPERUSER
+            valueFrom:
+              secretKeyRef:
+                name: *cluster_name
+                key: superuser-password
+
+          - name: PGUSER_ADMIN
+            value: superadmin
+
+          - name: PGPASSWORD_ADMIN
+            valueFrom:
+              secretKeyRef:
+                name: *cluster_name
+                key: admin-password
+
+          - name: PGPASSWORD_STANDBY
+            valueFrom:
+              secretKeyRef:
+                name: *cluster_name
+                key: replication-password
+
+          - name: PGROOT
+            value: /home/postgres/pgdata/pgroot
+
+      terminationGracePeriodSeconds: 0
+
+  volumeClaimTemplates:
+    - metadata:
+        labels:
+          application: spilo
+          spilo-cluster: *cluster_name
+
+        annotations:
+          volume.beta.kubernetes.io/storage-class: standard
+        name: pgdata
+
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
