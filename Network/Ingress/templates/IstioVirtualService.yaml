@@ -44,6 +44,20 @@ spec:
             host: k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
 
 
+    #
+    # IoT
+    #
+
+    - match:
+        - headers:
+            host:
+              exact: controlcenter.house
+      route:
+        - destination:
+            port:
+              number: 8123
+            host: homeassistant-core-home-assistant.core-prod.svc.k0s.resolvemy.host
+
 
     ################################
     #
@@ -335,7 +349,6 @@ spec:
           sniHosts:
             - '*.int.mylogin.space'
             - ipam.ipaddr.network
-            - grocy.controlcenter.house
             - accessmyporn.download
       route:
         - destination:
@@ -360,8 +373,6 @@ spec:
             - 'cyberchef.mylogin.space'
             - '*.writemy.codes'
             - '*.ipaddr.network'
-            - 'controlcenter.house'
-            - '*.controlcenter.house'
       route:
         - destination:
             host: traefik-core.core-prod.svc.k0s.resolvemy.host
