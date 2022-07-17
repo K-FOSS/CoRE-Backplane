@@ -161,6 +161,75 @@ spec:
             host: speed.kjmedia.stream
 
 
+    
+    #
+    # Development 
+    #
+    - match:
+        - headers:
+            host:
+              regex: '*.git.writemy.codes'
+      route:
+        - destination:
+            port:
+              number: 8181
+            host: gitlab-prod-webservice-default.core-prod.svc.k0s.resolvemy.host
+
+
+    #
+    # Registry
+    #
+
+    - match:
+        - headers:
+            host:
+              regex: 'registry.writemy.codes'
+          uri:
+            prefix: /api/
+          ignoreUriCase: true
+
+        - headers:
+            host:
+              regex: 'registry.writemy.codes'
+          uri:
+            prefix: /service/
+          ignoreUriCase: true
+
+        - headers:
+            host:
+              regex: 'registry.writemy.codes'
+          uri:
+            prefix: /v2
+          ignoreUriCase: true
+
+        - headers:
+            host:
+              regex: 'registry.writemy.codes'
+          uri:
+            prefix: /chartrepo/
+          ignoreUriCase: true
+
+        - headers:
+            host:
+              regex: 'registry.writemy.codes'
+          uri:
+            prefix: /c/
+          ignoreUriCase: true
+      route:
+        - destination:
+            port:
+              number: 80
+            host: harbor-prod-core.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              regex: 'registry.writemy.codes'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: harbor-prod-portal.core-prod.svc.k0s.resolvemy.host
 
     #############################
     #                           #
@@ -229,6 +298,63 @@ spec:
             port:
               number: 8080
             host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
+
+
+    #
+    # Documents
+    # 
+
+    - match:
+        - headers:
+            host:
+              exact: collabora.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 9980
+            host: k0s-cntrl-business-office-collabora-code.core-prod.svc.k0s.resolvemy.host
+
+    #
+    # Projects
+    #
+
+    - match:
+        - headers:
+            host:
+              exact: projects.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: openproject-svc.core-prod.svc.k0s.resolvemy.host
+
+
+    #
+    # Drawing
+    # 
+    - match:
+        - headers:
+            host:
+              exact: draw.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: drawio-ui.core-prod.svc.k0s.resolvemy.host
+
+
+    #
+    # CyberChef
+    #
+    - match:
+        - headers:
+            host:
+              exact: cyberchef.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cyberchef-ui.core-prod.svc.k0s.resolvemy.host
 
 
     #
@@ -307,7 +433,6 @@ spec:
             host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
 
 
-
     ########################
     #
     #       Networking
@@ -330,43 +455,20 @@ spec:
               number: 8080
             host: unifi-ingress.core-prod.svc.k0s.resolvemy.host
 
-
+    #
+    # Netbox
+    #
+    - match:
+        - headers:
+            host:
+              exact: ipam.ipaddr.network
+      route:
+        - destination:
+            port:
+              number: 80
+            host: netbox-ipam.core-prod.svc.k0s.resolvemy.host
 
   tls:
-    #
-    # SSO Proxy
-    #
-
-    #
-    # Pomerium Authentication/Auditing
-    #
-    - match:
-        - port: 443
-          sniHosts:
-            - 'authenticate.int.mylogin.space'
-      route:
-        - destination:
-            host: traefik-core-pomerium-authenticate.core-prod.svc.k0s.resolvemy.host
-            port:
-              number: 443
-          weight: 100
-
-    #
-    # Pomerium SSO Proxy
-    #
-    - match:
-        - port: 443
-          sniHosts:
-            - '*.int.mylogin.space'
-            - ipam.ipaddr.network
-            - accessmyporn.download
-      route:
-        - destination:
-            host: pomerium-proxy.core-prod.svc.k0s.resolvemy.host
-            port:
-              number: 443
-          weight: 100
-
     #
     # Traefik
     # 
@@ -374,14 +476,8 @@ spec:
         - port: 443
           sniHosts:
             - resolvemy.host
-            - db.mylogin.space
-            - projects.mylogin.space
             - simplelogin.mylogin.space
-            - collabora.mylogin.space
-            - draw.mylogin.space
             - wwwdb.mylogin.space
-            - 'cyberchef.mylogin.space'
-            - '*.writemy.codes'
             - '*.ipaddr.network'
       route:
         - destination:
