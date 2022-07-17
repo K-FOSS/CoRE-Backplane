@@ -91,6 +91,17 @@ spec:
               number: 443
             host: s3-minio.core-prod.svc.k0s.resolvemy.host
 
+    - name: minio-dashboard
+      match:
+        - headers:
+            host:
+              exact: s3.int.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 9443
+            host: kjdev-core-console.core-prod.svc.k0s.resolvemy.host
+
 
     ###################################
     #  Content Delivery and Caching   #
@@ -174,6 +185,33 @@ spec:
             port:
               number: 8181
             host: gitlab-prod-webservice-default.core-prod.svc.k0s.resolvemy.host
+
+    #
+    # ArgoCD
+    #
+    - match:
+        - headers:
+            host:
+              regex: 'argo.writemy.codes'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: argocd-server.argocd.svc.k0s.resolvemy.host
+
+    #
+    # ArtifactHub
+    #
+    - match:
+        - headers:
+            host:
+              regex: 'artifacthub.int.mylogin.space'
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: hub.core-prod.svc.k0s.resolvemy.host
 
 
     #
