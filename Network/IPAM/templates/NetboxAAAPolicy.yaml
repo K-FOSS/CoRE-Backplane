@@ -1,0 +1,21 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+    name: netbox-ipam-aaa-policy
+    namespace: external-istiod
+
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+
+  action: CUSTOM
+
+  provider:
+    name: 'authentik'
+
+  rules:
+    - to:
+        - operation:
+            hosts:
+              - ipam.ipaddr.network
