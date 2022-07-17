@@ -110,6 +110,19 @@ spec:
 
 
     #
+    # Quick Sharing
+    #
+    - match:
+        - headers:
+            host:
+              exact: share.kjmedia.stream
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-cntrl-business-sharing-xbackbone.core-prod.svc.k0s.resolvemy.host
+
+    #
     # Speed Test and Connectivity Testing  
     #
 
@@ -321,7 +334,6 @@ spec:
         - port: 443
           sniHosts:
             - '*.int.mylogin.space'
-            - '*.kjmedia.stream'
             - ipam.ipaddr.network
             - grocy.controlcenter.house
             - accessmyporn.download
@@ -348,8 +360,6 @@ spec:
             - 'cyberchef.mylogin.space'
             - '*.writemy.codes'
             - '*.ipaddr.network'
-            - feeds.kjmedia.stream
-            - share.kjmedia.stream
             - 'controlcenter.house'
             - '*.controlcenter.house'
       route:
