@@ -470,6 +470,24 @@ spec:
               number: 80
             host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
 
+    - match:
+        - headers:
+            host:
+              exact: 'consul.int.mylogin.space'
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: k0s-dc1-ui.core-prod.svc.k0s.resolvemy.host
+          weight: 25
+
+        - destination:
+            port:
+              number: 80
+            host: infra1-dc1-ui.core-prod.svc.cluster.local
+          weight: 75
+
 
     ########################
     #
