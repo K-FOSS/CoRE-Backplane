@@ -46,8 +46,28 @@ spec:
                 port: 443
                 targetPort: 443
                 protocol: UDP
-        
+          
+          overlays:
+            - kind: Deployment
+              name: istio-ingressgateway
+              patches:
+                # Enable BPF for QUIC
+                - path: spec.template.spec.containers.[name:istio-proxy].securityContext.capabilities.add
+                  value:
+                    - BPF
+  
+                - path: spec.template.spec.volumes.[-1]
+                  value:
+                    name: bpffs
+                    hostPath:
+                      path: /sys/fs/bpf
+                      type: Directory
 
+                - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts.[-1]
+                  value:
+                    name: bpffs
+                    mountPath: /sys/fs/bpf
+  
   values:
     gateways:
       istio-ingressgateway:
