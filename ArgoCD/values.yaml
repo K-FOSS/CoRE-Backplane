@@ -59,15 +59,7 @@ argo-cd:
   controller:
     name: application-controller
 
-    replicas: 1
-
-    # resources:
-    #   requests:
-    #     memory: 500
-    #     cpu: 128m
-    #   limits:
-    #     memory: 4G
-    #     cpu: 1024m
+    replicas: 2
 
     image:
       imagePullPolicy: ''
@@ -76,15 +68,20 @@ argo-cd:
     affinity: {}
 
     args:
-      appResyncPeriod: '600'
-      operationProcessors: '4'
-      repoServerTimeoutSeconds: '60'
+      # -- define the application controller `--status-processors`
+      statusProcessors: '20'
+      # -- define the application controller `--operation-processors`
+      operationProcessors: '10'
+      # -- define the application controller `--app-resync`
+      appResyncPeriod: '180'
+      # -- define the application controller `--self-heal-timeout-seconds`
       selfHealTimeout: '5'
-      statusProcessors: '4'
+      # -- define the application controller `--repo-server-timeout-seconds`
+      repoServerTimeoutSeconds: '60'
 
     env:
       - name: ARGOCD_CONTROLLER_REPLICAS
-        value: '1'
+        value: '2'
 
     envFrom: null
 
@@ -351,6 +348,7 @@ argo-cd:
       - '--redisdb=$(REDIS_DB)'
       - '--redis'
       - 10.1.1.68:6379
+
     extraContainers: null
 
 
@@ -361,6 +359,7 @@ argo-cd:
         volumeMounts:
           - mountPath: /custom-tools
             name: custom-tools
+
       - name: argocd-vault-replacer-install
         image: ghcr.io/crumbhole/argocd-vault-replacer:stable
         imagePullPolicy: Always
@@ -401,6 +400,7 @@ argo-cd:
     podAnnotations: {}
     podLabels:
       logs: loki-myloginspace
+
     priorityClassName: 'tier2-priority'
     rbac: null
     readinessProbe:
@@ -433,6 +433,7 @@ argo-cd:
       - name: custom-tools
         mountPath: /usr/local/bin/argocd-lovely-plugin
         subPath: argocd-lovely-plugin
+
     volumes:
       - name: custom-tools
         emptyDir: {}
