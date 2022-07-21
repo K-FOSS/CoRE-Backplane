@@ -51,6 +51,13 @@ spec:
             - kind: Deployment
               name: istio-ingressgateway
               patches:
+                - path: spec.template.spec.securityContext
+                  value:
+                    runAsUser: 0
+                    runAsGroup: 0
+                    runAsNonRoot: false
+                    fsGroup: 0
+
                 # Enable BPF for QUIC
                 - path: spec.template.spec.containers.[name:istio-proxy].securityContext.capabilities.add
                   value:
