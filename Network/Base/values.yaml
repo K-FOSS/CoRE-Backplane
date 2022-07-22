@@ -97,7 +97,10 @@ cilium:
   # -- Agent container image.
   image:
     override: ~
-    pullPolicy: IfNotPresent
+    repository: "quay.io/cilium/cilium-ci"
+    tag: "latest"
+    pullPolicy: "Always"
+    # cilium-digest
     digest: ""
     useDigest: false
 
@@ -170,19 +173,12 @@ cilium:
 
   # -- Agent resource limits & requests
   # ref: https://kubernetes.io/docs/user-guide/compute-resources/
-  resources:
-    requests:
-      cpu: 200m
-      memory: 128M
-
-    limits:
-      cpu: 500m
-      memory: 2G
+  resources: {}
 
   # -- Security context to be added to agent pods
   securityContext:
     # runAsUser: 0
-    privileged: true
+    privileged: false
     extraCapabilities:
       # Allow discretionary access control (e.g. required for package installation)
       - DAC_OVERRIDE
