@@ -77,7 +77,7 @@ argo-cd:
       # -- define the application controller `--self-heal-timeout-seconds`
       selfHealTimeout: '5'
       # -- define the application controller `--repo-server-timeout-seconds`
-      repoServerTimeoutSeconds: '60'
+      repoServerTimeoutSeconds: '300'
 
     env:
       - name: ARGOCD_CONTROLLER_REPLICAS
@@ -344,7 +344,9 @@ argo-cd:
     envFrom:
       - secretRef:
           name: argocd-vault-replacer-credentials
+
     extraArgs:
+      - '--parallelismlimit=8'
       - '--redisdb=$(REDIS_DB)'
       - '--redis'
       - 10.1.1.68:6379
