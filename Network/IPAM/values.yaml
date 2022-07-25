@@ -15,8 +15,6 @@ netbox:
   image:
     repository: netboxcommunity/netbox
     pullPolicy: IfNotPresent
-    # Overrides the image tag whose default is the chart appVersion.
-    tag: latest-ldap
 
   # You can also use an existing secret for the superuser password and API token
   # See `existingSecret` for details
@@ -36,20 +34,13 @@ netbox:
   # server. NetBox will not permit write access to the server via any other
   # hostnames. The first FQDN in the list will be treated as the preferred name.
   allowedHosts:
-    - 'ipam.ipaddr.network'
-    - netbox.core-prod.svc
-    - netbox-ui.core-prod.svc
-    - netbox-ui
-    - netbox-ui.service.dc1.kjdev
-    - netbox-ui.service
-    - netbox-ui
-  
+    - '*'
 
   # Specify one or more name and email address tuples representing NetBox
   # administrators. These people will be notified of application errors (assuming
   # correct email settings are provided).
-  admins:
-    - ['Kristian Jones', 'k@kristianjones.dev']
+  admins: []
+    # - ['John Doe', 'jdoe@example.com']
 
   # This parameter acts as a pass-through for configuring Django's built-in
   # password validators for local user accounts. If configured, these will be
@@ -102,6 +93,17 @@ netbox:
     originRegexWhitelist: []
     #  - '^(https?://)?(\w+\.)?example\.com$'
 
+  # CSRF settings.  Needed for netbox v3.2.0 and newer. For more information
+  # see https://docs.netbox.dev/en/stable/configuration/optional-settings/#csrf_trusted_origins
+  csrf:
+    # The name of the cookie to use for the cross-site request forgery (CSRF)
+    # authentication token.
+    cookieName: csrftoken
+    # Defines a list of trusted origins for unsafe (e.g. POST) requests. This is
+    # a pass-through to Django's CSRF_TRUSTED_ORIGINS setting. Note that each
+    # host listed must specify a scheme (e.g. http:// or `https://).
+    trustedOrigins: []
+
   # Note: this is where the CUSTOM_VALIDATORS setting naturally fits in relation
   # to the upstream NetBox configuration, but the setting cannot be reflected in
   # YAML/JSON as it depends on creating instances of Python classes.
@@ -112,6 +114,8 @@ netbox:
   # enable debugging on a production system.
   debug: false
 
+  # Display full traceback of errors that occur when applying database
+  # migrations.
   dbWaitDebug: false
 
   # Email settings
@@ -122,6 +126,8 @@ netbox:
     password: ''
     useSSL: false
     useTLS: false
+    sslCertFile: ''
+    sslKeyFile: ''
     timeout: 10  # seconds
     from: ''
 
@@ -138,6 +144,18 @@ netbox:
   #  - dcim.region
   #  - ipam.prefix
 
+  # Some static choice fields on models can be configured with custom values.
+  # Each choice in the list must have a database value and a human-friendly
+  # label, and may optionally specify a color.
+  # https://docs.netbox.dev/en/stable/configuration/optional-settings/#field_choices
+  fieldChoices: {}
+    # 'dcim.Site.status':
+    #   - [foo, Foo, red]
+    #   - [bar, Bar, green]
+    #   - [baz, Baz, blue]
+    # 'dcim.Site.status+':
+    #   ...
+
   # Enable the GraphQL API
   graphQlEnabled: true
 
@@ -150,6 +168,11 @@ netbox:
   # IP addresses recognized as internal to the system. The debugging toolbar will
   # be available only to clients accessing NetBox from an internal IP.
   internalIPs: ['127.0.0.1', '::1']
+
+  # The number of days to retain job results (scripts and reports). Set this to 0
+  # to retain job results in the database indefinitely.
+  # https://docs.netbox.dev/en/stable/configuration/dynamic-settings/#jobresult_retention
+  jobResultRetention: 90
 
   # Enable custom logging. Please see the Django documentation for detailed
   # guidance on configuring custom logs:
@@ -218,6 +241,19 @@ netbox:
   # that the user may have installed. Each key in the dictionary is the name of
   # an installed plugin and its value is a dictionary of settings.
   pluginsConfig: {}
+
+  # The default value for the amperage field when creating new power feeds.
+  # https://docs.netbox.dev/en/stable/configuration/dynamic-settings/#powerfeed_default_amperage
+  powerFeedDefaultAmperage: 15
+
+  # The default value (percentage) for the max_utilization field when creating
+  # new power feeds.
+  # https://docs.netbox.dev/en/stable/configuration/dynamic-settings/#powerfeed_default_max_utilization
+  powerFeedMaxUtilisation: 80
+
+  # The default value for the voltage field when creating new power feeds.
+  # https://docs.netbox.dev/en/stable/configuration/dynamic-settings/#powerfeed_default_voltage
+  powerFeedDefaultVoltage: 120
 
   # When determining the primary IP address for a device, IPv6 is preferred over
   # IPv4 by default. Set this to True to prefer IPv4 instead.
@@ -319,6 +355,8 @@ netbox:
 
   # If provided, this should be a 50+ character string of random characters. It
   # will be randomly generated if left blank.
+  # You can also use an existing secret with "secret_key" instead of "secretKey"
+  # See `existingSecret` for details
   secretKey: <secret:CORE0_SITE1/data/Netbox~SecretKey>
 
   ## Provide passwords using existing secret
@@ -326,12 +364,15 @@ netbox:
   # - db_password: database password (if postgresql.enabled is false and
   #     externalDatabase.existingSecretName is blank)
   # - email_password: SMTP user password
+  # - ldap_bind_password: Password for LDAP bind DN
   # - napalm_password: NAPALM user password
   # - redis_tasks_password: Redis password for tasks Redis instance (if
   #     redis.enabled is false and tasksRedis.existingSecretName is blank)
   # - redis_cache_password: Redis password for caching Redis instance (if
   #     redis.enabled is false and cachingRedis.existingSecretName is blank)
   # - secret_key: session encryption token (50+ random characters)
+  # - superuser_password: Password for the initial super-user account
+  # - superuser_api_token: API token created for the initial super-user account
   existingSecret: ""
 
   postgresql:
@@ -353,6 +394,7 @@ netbox:
     # The following settings apply when using the bundled PostgreSQL chart, too:
     sslMode: disable
     connMaxAge: 300
+    disableServerSideCursors: false
 
   redis:
     ## Deploy Redis using bundled chart
@@ -370,15 +412,29 @@ netbox:
     host: 10.1.1.68
     port: 6379
     sentinels: []
+    #  - mysentinel:26379
+    sentinelService: netbox-redis
+    sentinelTimeout: 300
+    password: ""
+    existingSecretName: ""
+    existingSecretKey: redis-password
 
   cachingRedis:
     database: 81
     ssl: false
     insecureSkipTlsVerify: false
 
+    # Used only when redis.enabled is false. host and port are not used if
+    # sentinels are given.
     host: 10.1.1.68
     port: 6379
     sentinels: []
+    #  - mysentinel:26379
+    sentinelService: netbox-redis
+    sentinelTimeout: 300
+    password: ""
+    existingSecretName: ""
+    existingSecretKey: redis-password
 
   imagePullSecrets: []
   nameOverride: ""
@@ -396,11 +452,54 @@ netbox:
   ## Storage configuration for media
   persistence:
     enabled: false
-
+    ##
+    ## Existing claim to use
+    existingClaim: ""
+    ## Existing claim's subPath to use, e.g. "media" (optional)
+    subPath: ""
+    ##
+    ## Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    storageClass: ""
+    ## Persistent Volume Selector
+    ## if enabled, define any Selectors for choosing existing Persistent Volumes here
+    # selector:
+    #   matchLabel:
+    #     netbox-storage: media
+    accessMode: ReadWriteOnce
+    ##
+    ## Persistant storage size request
+    size: 1Gi
 
   ## Storage configuration for reports
   reportsPersistence:
     enabled: false
+    ##
+    ## Existing claim to use
+    existingClaim: ""
+    ## Existing claim's subPath to use, e.g. "media" (optional)
+    subPath: ""
+    ##
+    ## Persistent Volume Storage Class
+    ## If defined, storageClassName: <storageClass>
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+    ## If undefined (the default) or set to null, no storageClassName spec is
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+    ##   GKE, AWS & OpenStack)
+    storageClass: ""
+    ## Persistent Volume Selector
+    ## if enabled, define any Selectors for choosing existing Persistent Volumes here
+    # selector:
+    #   matchLabel:
+    #     netbox-storage: reports
+    accessMode: ReadWriteOnce
+    ##
+    ## Persistant storage size request
+    size: 1Gi
 
   commonLabels: {}
 
@@ -432,28 +531,43 @@ netbox:
       # service.beta.kubernetes.io/aws-load-balancer-ssl-ports: http
     type: ClusterIP
     port: 80
+    nodePort: ""
+    clusterIP: ""
+    clusterIPs: []
+    externalIPs: []
+    externalTrafficPolicy: ""
+    ipFamilyPolicy: ""
+    loadBalancerIP: ""
     loadBalancerSourceRanges: []
     # - 10.0.0.0/8
 
   ingress:
     enabled: false
-    className: pomerium
-    annotations:
-      cert-manager.io/cluster-issuer: kjdev-cluster
-      external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-      ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Network", "Server"]}'
-      ingress.pomerium.io/preserve_host_header: 'true'
-      ingress.pomerium.io/pass_identity_headers: 'true'
-      ingress.pomerium.io/allow_websockets: 'true'
+    className: ""
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
     hosts:
-      - host: ipam.ipaddr.network
+      - host: chart-example.local
         paths:
+          # You can manually specify the service name and service port if
+          # required. This could be useful if for exemple you are using the AWS
+          # ALB Ingress Controller and want to set up automatic SSL redirect.
+          # https://kubernetes-sigs.github.io/aws-alb-ingress-controller/guide/tasks/ssl_redirect/#redirect-traffic-from-http-to-https
+          # - path: /*
+          #   backend:
+          #     serviceName: ssl-redirect
+          #     servicePort: use-annotation
+          #
+          # Or you can let the template set it for you.
+          # Both types of rule can be combined.
+          # NB: You may also want to set the basePath above
           - /
 
-    tls:
-      - secretName: ipaddrnetwork-default-certificates
-        hosts:
-          - '*.ipaddr.network'
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
 
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -466,6 +580,13 @@ netbox:
     # requests:
     #   cpu: 100m
     #   memory: 128Mi
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 0
+    timeoutSeconds: 1
+    periodSeconds: 10
+    successThreshold: 1
 
   init:
     image:
@@ -495,27 +616,15 @@ netbox:
 
   tolerations: []
 
+  hostAliases: []
+
   updateStrategy: {}
     # type: RollingUpdate
 
   affinity: {}
 
   ## Additional environment variables to set
-  extraEnvs:
-    - name: NETBOX_DELETE_LEGACY_DATA
-      value: '1'
-
-    - name: AWS_ACCESS_KEY_ID
-      valueFrom:
-        secretKeyRef:
-          key: S3AccessKey
-          name: netbox-ipam-netbox-s3
-
-    - name: AWS_SECRET_ACCESS_KEY
-      valueFrom:
-        secretKeyRef:
-          key: S3SecretKey
-          name: netbox-ipam-netbox-s3
+  extraEnvs: []
   #  - name: FOO
   #    valueFrom:
   #      secretKeyRef:
@@ -670,6 +779,8 @@ netbox:
     nodeSelector: {}
 
     tolerations: []
+
+    hostAliases: []
 
     updateStrategy: {}
       # type: RollingUpdate
