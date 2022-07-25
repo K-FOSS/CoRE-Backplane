@@ -18,6 +18,8 @@ netbox:
     # Overrides the image tag whose default is the chart appVersion.
     tag: latest-ldap
 
+  # You can also use an existing secret for the superuser password and API token
+  # See `existingSecret` for details
   superuser:
     name: kjones
     email: k@kristianjones.dev
@@ -41,12 +43,20 @@ netbox:
     - netbox-ui.service.dc1.kjdev
     - netbox-ui.service
     - netbox-ui
+  
 
   # Specify one or more name and email address tuples representing NetBox
   # administrators. These people will be notified of application errors (assuming
   # correct email settings are provided).
   admins:
     - ['Kristian Jones', 'k@kristianjones.dev']
+
+  # This parameter acts as a pass-through for configuring Django's built-in
+  # password validators for local user accounts. If configured, these will be
+  # applied whenever a user's password is updated to ensure that it meets minimum
+  # criteria such as length or complexity.
+  # https://docs.netbox.dev/en/stable/configuration/optional-settings/#auth_password_validators
+  authPasswordValidators: []
 
   # URL schemes that are allowed within links in NetBox
   allowedUrlSchemes: [file, ftp, ftps, http, https, irc, mailto, sftp, ssh, tel,
@@ -70,6 +80,18 @@ netbox:
   # logs indefinitely. (Default: 90)
   changelogRetention: 90
 
+  # This is a mapping of models to custom validators that have been defined
+  # locally to enforce custom validation logic.
+  # https://docs.netbox.dev/en/stable/configuration/dynamic-settings/#custom_validators
+  customValidators: {}
+
+  # This is a dictionary defining the default preferences to be set for newly-
+  # created user accounts.
+  # https://docs.netbox.dev/en/stable/configuration/dynamic-settings/#default_user_preferences
+  defaultUserPreferences: {}
+    # pagination:
+    #   per_page: 100
+
   # API Cross-Origin Resource Sharing (CORS) settings. If originAllowAll
   # is set to true, all origins will be allowed. Otherwise, define a list of
   # allowed origins using either originWhitelist or originRegexWhitelist. For
@@ -89,6 +111,8 @@ netbox:
   # your installation. Only enable debugging while performing testing. Never
   # enable debugging on a production system.
   debug: false
+
+  dbWaitDebug: false
 
   # Email settings
   email:
