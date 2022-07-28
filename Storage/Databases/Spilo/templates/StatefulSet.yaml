@@ -93,27 +93,6 @@ spec:
                 apiVersion: v1
                 fieldPath: metadata.namespace
 
-          - name: PGPASSWORD_SUPERUSER
-            valueFrom:
-              secretKeyRef:
-                name: $clusterName
-                key: superuser-password
-
-          - name: PGUSER_ADMIN
-            value: superadmin
-
-          - name: PGPASSWORD_ADMIN
-            valueFrom:
-              secretKeyRef:
-                name: $clusterName
-                key: admin-password
-
-          - name: PGPASSWORD_STANDBY
-            valueFrom:
-              secretKeyRef:
-                name: $clusterName
-                key: replication-password
-
           - name: PGROOT
             value: /home/postgres/pgdata/pgroot
 
