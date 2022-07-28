@@ -314,6 +314,58 @@ spec:
         - headers:
             host:
               exact: office.mylogin.space
+
+          uri:
+            prefix: /.well-known/carddav
+      
+        - headers:
+            host:
+              exact: office.mylogin.space
+
+          uri:
+            prefix: /.well-known/caldav
+      rewrite:
+        uri: /nextcloud/remote.php/dav
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              exact: office.mylogin.space
+
+          uri:
+            prefix: /.well-known/webfinger
+      rewrite:
+        uri: /nextcloud/index.php/.well-known/webfinger
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              exact: office.mylogin.space
+
+          uri:
+            prefix: /.well-known/nodeinfo
+      rewrite:
+        uri: /nextcloud/index.php/.well-known/nodeinfo
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - headers:
+            host:
+              exact: office.mylogin.space
       route:
         - destination:
             port:
