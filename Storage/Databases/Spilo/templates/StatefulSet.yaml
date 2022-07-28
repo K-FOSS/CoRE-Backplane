@@ -59,19 +59,7 @@ spec:
 
           env:
           - name: DCS_ENABLE_KUBERNETES_API
-            value: 'true'
-
-  #        - name: ETCD_HOST
-  #          value: 'test-etcd.default.svc.cluster.local:2379' # where is your etcd?
-
-  #        - name: WAL_S3_BUCKET
-  #          value: example-spilo-dbaas
-
-  #        - name: LOG_S3_BUCKET # may be the same as WAL_S3_BUCKET
-  #          value: example-spilo-dbaas
-
-  #        - name: BACKUP_SCHEDULE
-  #          value: "00 01 * * *"
+            value: 'false'
 
           - name: KUBERNETES_SCOPE_LABEL
             value: spilo-cluster
@@ -101,7 +89,7 @@ spec:
           - name: PGPASSWORD_SUPERUSER
             valueFrom:
               secretKeyRef:
-                name: *cluster_name
+                name: $clusterName
                 key: superuser-password
 
           - name: PGUSER_ADMIN
@@ -110,13 +98,13 @@ spec:
           - name: PGPASSWORD_ADMIN
             valueFrom:
               secretKeyRef:
-                name: *cluster_name
+                name: $clusterName
                 key: admin-password
 
           - name: PGPASSWORD_STANDBY
             valueFrom:
               secretKeyRef:
-                name: *cluster_name
+                name: $clusterName
                 key: replication-password
 
           - name: PGROOT
