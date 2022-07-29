@@ -56,7 +56,10 @@ spec:
             value: ''
 
           - name: PATRONI_CONSUL_HOST
-            value: consul.service.dc1.kjdev:8500
+            value: consul.service.dc1.kjdev
+
+          - name: PATRONI_CONSUL_PORT
+            value: '8500'
 
           - name: PATRONI_CONSUL_URL
             value: http://consul.service.dc1.kjdev:8500
@@ -147,11 +150,35 @@ spec:
                 port: 8500
                 scheme: http
                 register_service: true
-
+              
               bootstrap:
+                dcs:
+                  ttl: 30
+                  loop_wait: 10
+                  retry_timeout: 10
+                  maximum_lag_on_failover: 1048576
+                  postgresql:
+                    use_pg_rewind: true
+
+                method: clone_with_walg
+                clone_with_walg:
+                    command: /scripts/clone_with_walg.sh
+                    recovery_conf:
+                        restore_command: envdir /etc/wal-g.d/env wal-g wal-fetch "%f" "%p"
+                        recovery_target_timeline: latest
+                        recovery_target_action: promote
+                        recovery_target_time: ''
+
                 initdb:
-                  - auth-host: md5
-                  - auth-local: trust
+                  - encoding: UTF8
+                  - data-checksums
+
+                pg_hba:
+                  - host replication replicator 127.0.0.1/32 md5
+                  - host replication replicator 10.0.1.4/0 md5
+                  - host replication replicator 10.0.1.8/0 md5
+                  - host replication replicator 10.0.1.6/0 md5
+                  - host all all 0.0.0.0/0 md5
 
           - name: POD_IP
             valueFrom:
