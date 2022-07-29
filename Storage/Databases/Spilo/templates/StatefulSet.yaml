@@ -54,15 +54,93 @@ spec:
           env:
           - name: DCS_ENABLE_KUBERNETES_API
             value: 'false'
+
+          - name: PATRONI_CONSUL_HOST
+            value: consul.service.dc1.kjdev:8500
+
+          - name: PATRONI_CONSUL_URL
+            value: http://consul.service.dc1.kjdev:8500
+
+          - name: PATRONI_CONSUL_REGISTER_SERVICE
+            value: 'true'
+
+          #
+          # Backups
+          #
+          - name: WAL_S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                key: S3Bucket
+                name: psql-backup-creds
+
+          - name: AWS_REGION
+            value: us-east-1
+
+
+          - name: WALE_S3_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: S3Endpoint
+                name: psql-backup-creds
+
+          - name: WALE_S3_PREFIX
+            valueFrom:
+              secretKeyRef:
+                key: S3Prefix
+                name: psql-backup-creds
+
+          - name: USE_WALG_BACKUP
+            value: 'true'
+
+          - name: USE_WALG_RESTORE
+            value: 'true'
+
+          - name: AWS_S3_FORCE_PATH_STYLE
+            value: 'true'
+
+          - name: AWS_REGION
+            value: us-east-1
+
+
+
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                key: S3AccessKey
+                name: psql-backup-creds
+
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                key: S3SecretKey
+                name: psql-backup-creds
+          - name: AWS_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                key: S3Endpoint
+                name: psql-backup-creds
+          - name: WALG_S3_PREFIX
+            valueFrom:
+              secretKeyRef:
+                key: S3Prefix
+                name: psql-backup-creds
+
+          - name: PATRONI_SUPERUSER_USERNAME
+            valueFrom:
+              secretKeyRef:
+                key: Username
+                name: psql-backup-creds
+
+          - name: PATRONI_SUPERUSER_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                key: Password
+                name: psql-backup-creds
+
+
           - name: SPILO_CONFIGURATION
             value: | ## https://github.com/zalando/patroni#yaml-configuration
-              consul:
-                host: consul.service.dc1.kjdev
-                url: http://consul.service.dc1.kjdev:8500
 
-                port: 8500
-                scheme: http
-                register_service: true
               bootstrap:
                 initdb:
                   - auth-host: md5
