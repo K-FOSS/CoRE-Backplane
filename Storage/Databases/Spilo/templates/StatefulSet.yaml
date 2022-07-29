@@ -26,12 +26,6 @@ spec:
         spilo-cluster: {{ $clusterName }}
 
     spec:
-      # service account that allows changing endpoints and assigning pod labels
-      # in the given namespace: https://kubernetes.io/docs/user-guide/service-accounts/
-      # not required unless you've changed the default service account in the namespace
-      # used to deploy Spilo
-      serviceAccountName: operator
-
       containers:
         - name: {{ $clusterName }}
 
@@ -60,13 +54,6 @@ spec:
           env:
           - name: DCS_ENABLE_KUBERNETES_API
             value: 'false'
-
-          - name: KUBERNETES_SCOPE_LABEL
-            value: spilo-cluster
-
-          - name: KUBERNETES_ROLE_LABEL
-            value: role
-
           - name: SPILO_CONFIGURATION
             value: | ## https://github.com/zalando/patroni#yaml-configuration
               consul:
