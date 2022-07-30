@@ -147,18 +147,32 @@ spec:
           #       key: S3Prefix
           #       name: psql-backup-creds
 
-          # - name: PGUSER_SUPERUSER
-          #   valueFrom:
-          #     secretKeyRef:
-          #       key: Username
-          #       name: psql-backup-creds
+          - name: PGUSER_SUPERUSER
+            valueFrom:
+              secretKeyRef:
+                key: Username
+                name: psql-backup-creds
 
-          # - name: PGPASSWORD_SUPERUSER
-          #   valueFrom:
-          #     secretKeyRef:
-          #       key: Password
-          #       name: psql-backup-creds
+          - name: PGPASSWORD_SUPERUSER
+            valueFrom:
+              secretKeyRef:
+                key: Password
+                name: psql-backup-creds
 
+          - name: PGPASSWORD_ADMIN
+            valueFrom:
+              secretKeyRef:
+                key: Password
+                name: psql-backup-creds
+
+          - name: PGPASSWORD_STANDBY
+            valueFrom:
+              secretKeyRef:
+                key: Password
+                name: psql-backup-creds
+
+          - name: PGUSER_ADMIN
+            value: superadmin
 
           - name: SPILO_CONFIGURATION
             value: | ## https://github.com/zalando/patroni#yaml-configuration
