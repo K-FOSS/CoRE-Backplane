@@ -19,6 +19,8 @@ spec:
 
   serviceName: {{ $fullName }}-db
 
+  podManagementPolicy: Parallel
+
   template:
     metadata:
       labels:
@@ -79,6 +81,9 @@ spec:
 
           - name: SCOPE
             value: 'core'
+
+          - name: ALLOW_NOSSL
+            value: 'true'
 
           - name: PATRONI_CONSUL_HOST
             value: consul.service.dc1.kjdev
