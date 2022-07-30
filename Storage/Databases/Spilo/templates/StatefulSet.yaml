@@ -9,6 +9,7 @@ metadata:
   labels:
     app: {{ $fullName }}-db
     spilo-cluster: {{ $clusterName }}
+    spilo-scope: core
 
 spec:
   selector:
@@ -28,6 +29,8 @@ spec:
         spilo-cluster: {{ $clusterName }}
 
     spec:
+      serviceAccountName: {{ $fullName }}-db
+
       containers:
         - name: spilo
 
@@ -78,6 +81,12 @@ spec:
           env:
           - name: DCS_ENABLE_KUBERNETES_API
             value: ''
+
+          - name: KUBERNETES_SCOPE_LABEL
+            value: spilo-scope
+
+          - name: KUBERNETES_ROLE_LABEL
+            value: role
 
           - name: SCOPE
             value: 'core'
