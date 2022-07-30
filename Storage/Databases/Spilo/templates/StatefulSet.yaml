@@ -81,10 +81,7 @@ spec:
 
 
           - name: WALE_S3_ENDPOINT
-            valueFrom:
-              secretKeyRef:
-                key: S3Endpoint
-                name: psql-backup-creds
+            value: https://s3.mylogin.space:443
 
           - name: WALE_S3_PREFIX
             valueFrom:
@@ -128,13 +125,13 @@ spec:
                 key: S3Prefix
                 name: psql-backup-creds
 
-          - name: PATRONI_SUPERUSER_USERNAME
+          - name: PGUSER_SUPERUSER
             valueFrom:
               secretKeyRef:
                 key: Username
                 name: psql-backup-creds
 
-          - name: PATRONI_SUPERUSER_PASSWORD
+          - name: PGPASSWORD_SUPERUSER
             valueFrom:
               secretKeyRef:
                 key: Password
@@ -160,24 +157,11 @@ spec:
                   postgresql:
                     use_pg_rewind: true
 
-                method: clone_with_walg
-                clone_with_walg:
-                  command: /scripts/clone_with_walg.sh
-                  recovery_conf:
-                    recovery_target_timeline: latest
-                    recovery_target_action: promote
-                    recovery_target_time: ''
-
                 initdb:
                   - encoding: UTF8
                   - data-checksums
-
-                pg_hba:
-                  - host replication replicator 127.0.0.1/32 md5
-                  - host replication replicator 10.0.1.4/0 md5
-                  - host replication replicator 10.0.1.8/0 md5
-                  - host replication replicator 10.0.1.6/0 md5
-                  - host all all 0.0.0.0/0 md5
+                  - auth-host: md5
+                  - auth-local: trust
 
           - name: POD_IP
             valueFrom:
