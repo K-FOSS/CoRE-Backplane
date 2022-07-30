@@ -95,69 +95,69 @@ spec:
           #
           # Backups
           #
-          - name: WAL_S3_BUCKET
-            valueFrom:
-              secretKeyRef:
-                key: S3Bucket
-                name: psql-backup-creds
+          # - name: WAL_S3_BUCKET
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: S3Bucket
+          #       name: psql-backup-creds
 
-          - name: AWS_REGION
-            value: us-east-1
-
-
-          - name: WALE_S3_PREFIX
-            valueFrom:
-              secretKeyRef:
-                key: S3Prefix
-                name: psql-backup-creds
-
-          - name: USE_WALG_BACKUP
-            value: 'true'
-
-          - name: USE_WALG_RESTORE
-            value: 'true'
-
-          - name: AWS_S3_FORCE_PATH_STYLE
-            value: 'true'
-
-          - name: AWS_REGION
-            value: us-east-1
+          # - name: AWS_REGION
+          #   value: us-east-1
 
 
+          # - name: WALE_S3_PREFIX
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: S3Prefix
+          #       name: psql-backup-creds
 
-          - name: AWS_ACCESS_KEY_ID
-            valueFrom:
-              secretKeyRef:
-                key: S3AccessKey
-                name: psql-backup-creds
+          # - name: USE_WALG_BACKUP
+          #   value: 'true'
 
-          - name: AWS_SECRET_ACCESS_KEY
-            valueFrom:
-              secretKeyRef:
-                key: S3SecretKey
-                name: psql-backup-creds
-          - name: AWS_ENDPOINT
-            valueFrom:
-              secretKeyRef:
-                key: S3Endpoint
-                name: psql-backup-creds
-          - name: WALG_S3_PREFIX
-            valueFrom:
-              secretKeyRef:
-                key: S3Prefix
-                name: psql-backup-creds
+          # - name: USE_WALG_RESTORE
+          #   value: 'true'
 
-          - name: PGUSER_SUPERUSER
-            valueFrom:
-              secretKeyRef:
-                key: Username
-                name: psql-backup-creds
+          # - name: AWS_S3_FORCE_PATH_STYLE
+          #   value: 'true'
 
-          - name: PGPASSWORD_SUPERUSER
-            valueFrom:
-              secretKeyRef:
-                key: Password
-                name: psql-backup-creds
+          # - name: AWS_REGION
+          #   value: us-east-1
+
+
+
+          # - name: AWS_ACCESS_KEY_ID
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: S3AccessKey
+          #       name: psql-backup-creds
+
+          # - name: AWS_SECRET_ACCESS_KEY
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: S3SecretKey
+          #       name: psql-backup-creds
+          # - name: AWS_ENDPOINT
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: S3Endpoint
+          #       name: psql-backup-creds
+          # - name: WALG_S3_PREFIX
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: S3Prefix
+          #       name: psql-backup-creds
+
+          # - name: PGUSER_SUPERUSER
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: Username
+          #       name: psql-backup-creds
+
+          # - name: PGPASSWORD_SUPERUSER
+          #   valueFrom:
+          #     secretKeyRef:
+          #       key: Password
+          #       name: psql-backup-creds
 
 
           - name: SPILO_CONFIGURATION
@@ -172,7 +172,10 @@ spec:
 
               postgresql:
                 parameters:
-                  max_connections: 512 
+                  max_connections: 512
+
+              log:
+                level: DEBUG  
               
               bootstrap:
                 initdb:
