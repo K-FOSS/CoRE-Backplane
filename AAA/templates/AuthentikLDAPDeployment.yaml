@@ -29,6 +29,17 @@ spec:
         - name: ldap
           image: ghcr.io/goauthentik/ldap:2022.7
 
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /outpost.goauthentik.io/ping
+              port: http-metrics
+              scheme: HTTP
+            initialDelaySeconds: 50
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+
           securityContext:
             readOnlyRootFilesystem: true
 
