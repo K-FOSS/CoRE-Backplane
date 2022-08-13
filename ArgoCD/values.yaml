@@ -342,7 +342,7 @@ argo-cd:
         value: argocd-vault-replacer
 
       - name: ARGOCD_EXEC_TIMEOUT
-        value: 5m30s
+        value: 10m30s
 
     envFrom:
       - secretRef:
@@ -350,6 +350,7 @@ argo-cd:
 
     extraArgs:
       - '--redisdb=$(REDIS_DB)'
+      - '--parallelismlimit=10'
       - '--redis'
       - 10.1.1.68:6379
 
