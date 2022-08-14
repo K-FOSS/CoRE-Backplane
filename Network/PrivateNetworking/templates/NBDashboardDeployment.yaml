@@ -1,17 +1,20 @@
+{{- $fullName := include "pnetwork.fullname" . -}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: {{ $fullName }}-netbird-dashbord
+
   labels:
     app.kubernetes.io/name: wirebird
-    app.kubernetes.io/instance: management
-  name: wirebird-management
+    app.kubernetes.io/instance: dashboard
 
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: wirebird
-      app.kubernetes.io/instance: management
+      app.kubernetes.io/instance: dashboard
 
   strategy:
     type: Recreate
@@ -19,13 +22,13 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: wirebird
-        app.kubernetes.io/instance: management
+        app.kubernetes.io/instance: dashboard
 
     spec:
       containers:
-        - name: management
+        - name: dashboard
 
-          image: wiretrustee/management:main
+          image: wiretrustee/dashboard:main
           imagePullPolicy: Always
 
           env:
@@ -38,8 +41,8 @@ spec:
 
 
           ports:
-            - containerPort: 33071
+            - containerPort: 80
               name: http
 
-            - containerPort: 33073
-              name: grpc
+            - containerPort: 443
+              name: https

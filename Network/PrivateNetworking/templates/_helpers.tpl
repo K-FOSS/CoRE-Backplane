@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "privatenetworking-core.name" -}}
+{{- define "pnetwork.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "privatenetworking-core.fullname" -}}
+{{- define "pnetwork.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "privatenetworking-core.chart" -}}
+{{- define "pnetwork.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
 Common labels
 */}}
-{{- define "privatenetworking-core.labels" -}}
-helm.sh/chart: {{ include "privatenetworking-core.chart" . }}
-{{ include "privatenetworking-core.selectorLabels" . }}
+{{- define "pnetwork.labels" -}}
+helm.sh/chart: {{ include "pnetwork.chart" . }}
+{{ include "pnetwork.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -46,17 +46,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "privatenetworking-core.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "privatenetworking-core.name" . }}
+{{- define "pnetwork.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "pnetwork.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "privatenetworking-core.serviceAccountName" -}}
+{{- define "pnetwork.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create -}}
-    {{ default (include "privatenetworking-core.fullname" .) .Values.serviceAccount.name }}
+    {{ default (include "pnetwork.fullname" .) .Values.serviceAccount.name }}
 {{- else -}}
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}

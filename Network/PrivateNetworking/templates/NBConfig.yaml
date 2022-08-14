@@ -1,9 +1,9 @@
+{{- $fullName := include "pnetwork.fullname" . -}}
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: '{{ include "privatenetworking-core.fullname" . }}-netbird-tpl-conf'
-  labels:
-    {{ include "privatenetworking-core.labels" . | nindent 4 }}
+  name: {{ $fullName }}-netbird-signal
 data:
   management.json.tmpl: |
       {

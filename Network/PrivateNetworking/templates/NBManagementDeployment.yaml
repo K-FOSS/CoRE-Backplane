@@ -1,17 +1,16 @@
+{{- $fullName := include "pnetwork.fullname" . -}}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app.kubernetes.io/name: wirebird
-    app.kubernetes.io/instance: signal
-  name: wirebird-signal
+  name: {{ $fullName }}-netbird-management
 
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: wirebird
-      app.kubernetes.io/instance: signal
+      app.kubernetes.io/instance: management
 
   strategy:
     type: Recreate
@@ -19,13 +18,13 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: wirebird
-        app.kubernetes.io/instance: signal
+        app.kubernetes.io/instance: management
 
     spec:
       containers:
-        - name: signal
+        - name: management
 
-          image: wiretrustee/signal:main
+          image: wiretrustee/management:main
           imagePullPolicy: Always
 
           env:
@@ -38,5 +37,8 @@ spec:
 
 
           ports:
-            - containerPort: 10000
-              name: signal
+            - containerPort: 33071
+              name: http
+
+            - containerPort: 33073
+              name: grpc

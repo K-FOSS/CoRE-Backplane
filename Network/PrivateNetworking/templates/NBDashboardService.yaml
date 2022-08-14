@@ -1,10 +1,13 @@
+{{- $fullName := include "pnetwork.fullname" . -}}
+---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app.kubernetes.io/name: wirebird
     app.kubernetes.io/instance: dashboard
-  name: wirebird-dashboard
+
+  name: {{ $fullName }}-netbird-dashbord
 spec:
   ports:
     - name: http
@@ -16,6 +19,7 @@ spec:
       port: 443
       targetPort: https
       appProtocol: https
+
   selector:
     app.kubernetes.io/name: wirebird
     app.kubernetes.io/instance: dashboard
