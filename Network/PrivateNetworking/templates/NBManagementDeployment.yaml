@@ -34,7 +34,11 @@ spec:
             - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
               value: ''
 
-
+          volumeMounts:
+            - name: netbird-config
+              mountPath: /etc/netbird/management.json
+              subPath: management.json
+              readOnly: true
 
           ports:
             - containerPort: 33071
@@ -42,3 +46,11 @@ spec:
 
             - containerPort: 33073
               name: grpc
+
+      volumes:
+        - name: netbird-config
+          secret:
+            secretName: {{ $fullName }}-netbird-signal
+            items:
+              - key: management.json
+                path: management.json

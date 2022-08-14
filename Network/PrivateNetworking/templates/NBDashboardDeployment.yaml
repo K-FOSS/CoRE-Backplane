@@ -33,11 +33,10 @@ spec:
 
           env:
             - name: NETBIRD_MGMT_API_ENDPOINT
-              value: 0.0.0.0:67
+              value: {{ $fullName }}-netbird-management.{{ .Release.Namespace }}.svc.{{ .Values.netbird.clusterDomain }}
 
             - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
-              value: ''
-
+              value: {{ $fullName }}-netbird-management.{{ .Release.Namespace }}.svc.{{ .Values.netbird.clusterDomain }}
 
 
           ports:
