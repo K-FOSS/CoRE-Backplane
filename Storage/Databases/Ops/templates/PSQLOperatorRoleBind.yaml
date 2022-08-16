@@ -1,0 +1,22 @@
+{{- if and .Values.psql.operator.rbac.create .Values.psql.enabled }}
+{{- $fullName := include "dbops.fullname" . -}}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $fullName }}-psql
+
+  labels:
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: {{ $fullName }}-psql
+    app.kubernetes.io/component: psql-operator
+subjects:
+  - kind: ServiceAccount
+    name: {{ $fullName }}-psql
+
+roleRef:
+  kind: Role
+  name: {{ $fullName }}-psql
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
