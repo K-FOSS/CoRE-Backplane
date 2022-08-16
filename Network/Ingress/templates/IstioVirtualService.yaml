@@ -632,6 +632,16 @@ spec:
               number: 80
             host: netbox-ipam.core-prod.svc.k0s.resolvemy.host
 
+    - match:
+        - headers:
+            host:
+              exact: db.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 80
+            host: bytebase.core-prod.svc.k0s.resolvemy.host
+
   tls:
     #
     # Traefik
@@ -640,8 +650,6 @@ spec:
         - port: 443
           sniHosts:
             - resolvemy.host
-            - simplelogin.mylogin.space
-            - wwwdb.mylogin.space
       route:
         - destination:
             host: traefik-core.core-prod.svc.k0s.resolvemy.host
