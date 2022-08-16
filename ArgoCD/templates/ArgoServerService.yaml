@@ -1,0 +1,22 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: argocd-server-main
+
+spec:
+  hosts:
+    - core-argocd-server.argocd.svc.k0s.resolvemy.host
+
+  location: MESH_INTERNAL
+
+  ports:
+    - number: 80
+      name: http
+      targetPort: 8080
+      protocol: GRPC
+
+  resolution: STATIC
+  workloadSelector:
+    labels:
+      app.kubernetes.io/instance: k0s-cntrl-argocd-helm
+      app.kubernetes.io/name: argocd-server
