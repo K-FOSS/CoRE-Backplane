@@ -6,9 +6,15 @@ artifacthub:
 
   fullnameOverride: artifacthub-prod
 
-  postgresql:
-    fullnameOverride: artifacthub-prod
-  
+  postgresql::
+    enabled: false
+
+  db:
+    host: psql.service.dc1.kjdev
+    port: '5432'
+    database: <secret:CORE0_SITE1/data/ArtifactHub~DatabaseDatabase>
+    user: <secret:CORE0_SITE1/data/ArtifactHub~DatabaseUsername>
+    password: <secret:CORE0_SITE1/data/ArtifactHub~DatabasePassword>
 
   # Hub configuration
   hub:
@@ -18,16 +24,6 @@ artifacthub:
     service:
       type: ClusterIP
       port: 80
-
-    postgresql:
-      resources:
-        requests:
-          memory: 128M
-          cpu: 64m
-
-        limits:
-          memory: 512M
-          cpu: 256m
 
     deploy:
       readinessGates: []
