@@ -37,6 +37,7 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 | 85 | Netbox | Yay!
 
 | 95 | Blink | Link Sharing | |
+| 100 | Outline | Docs |
 
 
 Further usage relies upon ArgoCD, Database Operator, KeyDB, TwemProxy, OAM/KubeVela, and Crossplane ****TODO: Make that stuff****

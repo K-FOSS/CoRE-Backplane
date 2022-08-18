@@ -78,7 +78,6 @@ spec:
               number: 8123
             host: homeassistant-core-home-assistant.core-prod.svc.k0s.resolvemy.host
 
-
     ################################
     #
     #      Storage and Delivery
@@ -447,6 +446,19 @@ spec:
             port:
               number: 9980
             host: k0s-cntrl-business-office-collabora-code.core-prod.svc.k0s.resolvemy.host
+
+    #
+    # Outline/Notion
+    #
+    - match:
+        - headers:
+            host:
+              exact: outline.mylogin.space
+      route:
+        - destination:
+            port:
+              number: 10196
+            host: k0s-cntrl-business-knowledge-outline.core-prod.svc.k0s.resolvemy.host
 
     #
     # Projects
