@@ -44,21 +44,7 @@ spec:
 
         ingress:
           main:
-            enabled: true
-            ingressClassName: pomerium
-            annotations:
-              cert-manager.io/cluster-issuer: kjdev-cluster
-              external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-              ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Media Admins"]}'
-            hosts:
-              - host: accessmyporn.download
-                paths:
-                  - path: '/'
-                    pathType: Prefix
-            tls:
-              - hosts:
-                  - 'accessmyporn.download'
-                secretName: accessmyporndownload-default-certificates
+            enabled: false
 
         env:
           # -- Set the container port
