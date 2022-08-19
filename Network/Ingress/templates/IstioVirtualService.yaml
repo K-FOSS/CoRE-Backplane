@@ -80,9 +80,8 @@ spec:
     # Family
     #
     - match:
-        - headers:
-            host:
-              exact: grocy.controlcenter.house
+        - authority:
+            exact: grocy.controlcenter.house
       route:
         - destination:
             port:
@@ -103,9 +102,8 @@ spec:
 
     - name: minio
       match:
-        - headers:
-            host:
-              exact: s3.mylogin.space
+        - authority:
+            exact: s3.mylogin.space
       route:
         - destination:
             port:
@@ -114,9 +112,8 @@ spec:
 
     - name: minio-dashboard
       match:
-        - headers:
-            host:
-              exact: s3.int.mylogin.space
+        - authority:
+            exact: s3.int.mylogin.space
       route:
         - destination:
             port:
@@ -135,14 +132,12 @@ spec:
 
     - name: wip-static-cdn
       match:
-        - headers:
-            host:
-              exact: static.mylogin.space
+        - authority:
+            exact:static.mylogin.space
 
         - port: 80
-          headers:
-            host:
-              exact: 10.1.1.83
+          authority:
+            exact: 10.1.1.83
 
       route:
         - destination:
@@ -180,9 +175,8 @@ spec:
     # Quick Sharing
     #
     - match:
-        - headers:
-            host:
-              exact: share.kjmedia.stream
+        - authority:
+            exact: share.kjmedia.stream
       route:
         - destination:
             port:
@@ -202,9 +196,8 @@ spec:
           string: 'TODO'
 
     - match:
-        - headers:
-            host:
-              exact: ksit.services
+        - authority:
+            exact: ksit.services
 
       directResponse:
         status: 200
@@ -230,9 +223,8 @@ spec:
     # Status
     #
     - match:
-        - headers:
-            host:
-              exact: uptime.writemy.codes
+        - authority:
+            exact: uptime.writemy.codes
       route:
         - destination:
             port:
@@ -268,9 +260,8 @@ spec:
     # ArtifactHub
     #
     - match:
-        - headers:
-            host:
-              regex: 'artifacthub.int.mylogin.space'
+        - authority:
+            exact: 'artifacthub.int.mylogin.space'
 
       route:
         - destination:
@@ -284,37 +275,32 @@ spec:
     #
 
     - match:
-        - headers:
-            host:
-              regex: 'registry.writemy.codes'
+        - authority:
+            exact: 'registry.writemy.codes'
           uri:
             prefix: /api/
           ignoreUriCase: true
 
-        - headers:
-            host:
-              regex: 'registry.writemy.codes'
+        - authority:
+            exact: 'registry.writemy.codes'
           uri:
             prefix: /service/
           ignoreUriCase: true
-
-        - headers:
-            host:
-              regex: 'registry.writemy.codes'
+        
+        - authority:
+            exact: 'registry.writemy.codes'
           uri:
             prefix: /v2
           ignoreUriCase: true
 
-        - headers:
-            host:
-              regex: 'registry.writemy.codes'
+        - authority:
+            exact: 'registry.writemy.codes'
           uri:
             prefix: /chartrepo/
           ignoreUriCase: true
 
-        - headers:
-            host:
-              regex: 'registry.writemy.codes'
+        - authority:
+            exact: 'registry.writemy.codes'
           uri:
             prefix: /c/
           ignoreUriCase: true
@@ -325,9 +311,8 @@ spec:
             host: harbor-prod-core.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              regex: 'registry.writemy.codes'
+        - authority:
+            exact: 'registry.writemy.codes'
       route:
         - destination:
             port:
@@ -374,9 +359,8 @@ spec:
     # Education
     #
     - match:
-        - headers:
-            host:
-              exact: edu.mylogin.space
+        - authority:
+            exact: edu.mylogin.space
       route:
         - destination:
             port:
@@ -388,9 +372,8 @@ spec:
     #
 
     - match:
-        - headers:
-            host:
-              exact: contextualise.writemy.codes
+        - authority:
+            exact: contextualise.writemy.codes
       route:
         - destination:
             port:
@@ -402,16 +385,14 @@ spec:
     #
 
     - match:
-        - headers:
-            host:
-              exact: office.mylogin.space
+        - authority:
+            exact: office.mylogin.space
 
           uri:
             exact: /.well-known/carddav
       
-        - headers:
-            host:
-              exact: office.mylogin.space
+        - authority:
+            exact: office.mylogin.space
 
           uri:
             exact: /.well-known/caldav
@@ -424,9 +405,8 @@ spec:
             host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: office.mylogin.space
+        - authority:
+            exact: office.mylogin.space
 
           uri:
             prefix: /.well-known/webfinger
@@ -439,9 +419,8 @@ spec:
             host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: office.mylogin.space
+        - authority:
+            exact: office.mylogin.space
 
           uri:
             prefix: /.well-known/nodeinfo
@@ -454,9 +433,8 @@ spec:
             host: k0s-cntrl-business-office-nextcloud.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: office.mylogin.space
+        - authority:
+            exact: office.mylogin.space
       route:
         - destination:
             port:
@@ -469,9 +447,8 @@ spec:
     # 
 
     - match:
-        - headers:
-            host:
-              exact: collabora.mylogin.space
+        - authority:
+            exact: collabora.mylogin.space
       route:
         - destination:
             port:
@@ -482,9 +459,8 @@ spec:
     # Outline/Notion
     #
     - match:
-        - headers:
-            host:
-              exact: outline.mylogin.space
+        - authority:
+            exact: outline.mylogin.space
       route:
         - destination:
             port:
@@ -496,9 +472,8 @@ spec:
     #
 
     - match:
-        - headers:
-            host:
-              exact: projects.mylogin.space
+        - authority:
+            exact: projects.mylogin.space
       route:
         - destination:
             port:
@@ -510,9 +485,8 @@ spec:
     # Drawing
     # 
     - match:
-        - headers:
-            host:
-              exact: draw.mylogin.space
+        - authority:
+            exact: draw.mylogin.space
       route:
         - destination:
             port:
@@ -524,9 +498,8 @@ spec:
     # CyberChef
     #
     - match:
-        - headers:
-            host:
-              exact: cyberchef.mylogin.space
+        - authority:
+            exact: cyberchef.mylogin.space
       route:
         - destination:
             port:
@@ -538,16 +511,14 @@ spec:
     # Bitwarden/Vaultwarden Password Manager
     #
     - match:
-        - headers:
-            host:
-              exact: bitwarden.kristianjones.dev
+        - authority:
+            exact: bitwarden.kristianjones.dev
           uri:
             prefix: /notifications/hub
           ignoreUriCase: true
 
-        - headers:
-            host:
-              exact: passwords.mylogin.space
+        - authority:
+            exact: passwords.mylogin.space
           uri:
             prefix: /notifications/hub
           ignoreUriCase: true
@@ -559,13 +530,11 @@ spec:
             host: k0s-cntrl-business-passwords-vaultwarden.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: bitwarden.kristianjones.dev
+        - authority:
+            exact: bitwarden.kristianjones.dev
 
-        - headers:
-            host:
-              exact: passwords.mylogin.space
+        - authority:
+            exact: passwords.mylogin.space
       route:
         - destination:
             port:
@@ -577,9 +546,8 @@ spec:
     #
 
     - match:
-        - headers:
-            host:
-              exact: teams.mylogin.space
+        - authority:
+            exact: teams.mylogin.space
       route:
         - destination:
             port:
@@ -600,9 +568,8 @@ spec:
     #
 
     - match:
-        - headers:
-            host:
-              exact: rancher.int.mylogin.space
+        - authority:
+            exact: rancher.int.mylogin.space
       route:
         - destination:
             port:
@@ -610,9 +577,8 @@ spec:
             host: k0s-cntrl-rancher.cattle-system.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: 'consul.int.mylogin.space'
+        - authority:
+            exact: 'consul.int.mylogin.space'
 
       route:
         - destination:
@@ -622,9 +588,8 @@ spec:
           weight: 100
 
     - match:
-        - headers:
-            host:
-              exact: 'vault.int.mylogin.space'
+        - authority:
+            exact: 'vault.int.mylogin.space'
 
       route:
         - destination:
@@ -661,9 +626,8 @@ spec:
     # Netbox
     #
     - match:
-        - headers:
-            host:
-              exact: ipam.ipaddr.network
+        - authority:
+            exact: ipam.ipaddr.network
       route:
         - destination:
             port:
@@ -671,9 +635,8 @@ spec:
             host: netbox-ipam.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: db.mylogin.space
+        - authority:
+            exact: db.mylogin.space
       route:
         - destination:
             port:
@@ -681,9 +644,8 @@ spec:
             host: bytebase.core-prod.svc.k0s.resolvemy.host
 
     - match:
-        - headers:
-            host:
-              exact: wwwsql.mylogin.space
+        - authority:
+            exact: wwwsql.mylogin.space
       route:
         - destination:
             port:
