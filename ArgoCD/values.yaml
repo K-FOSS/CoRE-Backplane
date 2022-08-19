@@ -59,7 +59,16 @@ argo-cd:
   controller:
     name: application-controller
 
-    replicas: 2
+    replicas: 4
+
+    resources:
+      requests:
+        cpu: 512m
+        memory: 1Gi
+
+      limits:
+        cpu: '2'
+        memory: 2Gi
 
     image:
       imagePullPolicy: ''
@@ -81,7 +90,7 @@ argo-cd:
 
     env:
       - name: ARGOCD_CONTROLLER_REPLICAS
-        value: '2'
+        value: '4'
 
     envFrom: null
 
