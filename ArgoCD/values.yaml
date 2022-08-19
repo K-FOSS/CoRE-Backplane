@@ -448,14 +448,14 @@ argo-cd:
   server:
 
     replicas: 1
-    # resources:
-    #   limits:
-    #     cpu: 256m
-    #     memory: 512M
+    resources:
+      limits:
+        cpu: 256m
+        memory: 300Mi
 
-    #   requests:
-    #     cpu: 32m
-    #     memory: 64M
+      requests:
+        cpu: 32m
+        memory: 64Mi
 
     extraArgs:
       - '--redisdb=10'
@@ -481,7 +481,7 @@ argo-cd:
     autoscaling:
       enabled: true
       maxReplicas: 3
-      minReplicas: 1
+      minReplicas: 2
       targetCPUUtilizationPercentage: 50
       targetMemoryUtilizationPercentage: 50
 
