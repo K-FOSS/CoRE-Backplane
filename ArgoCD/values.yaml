@@ -213,26 +213,13 @@ argo-cd:
       imagePullPolicy: ''
       repository: ''
       tag: ''
+
     livenessProbe:
       enabled: false
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
+
     metrics:
-      enabled: true
-      service:
-        annotations: {}
-        labels: {}
-      serviceMonitor:
-        additionalLabels: {}
-        enabled: true
-        interval: 5m
-        metricRelabelings: null
-        namespace: ''
-        relabelings: null
-        selector: {}
+      enabled: false
+
     name: dex-server
     nodeSelector: {}
     pdb:
@@ -245,11 +232,6 @@ argo-cd:
 
     readinessProbe:
       enabled: false
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
 
     resources: {}
 
@@ -273,8 +255,12 @@ argo-cd:
     volumes:
       - emptyDir: {}
         name: static-files
+
+
   extraObjects: null
   fullnameOverride: 'argocd'
+
+
 
   global:
     additionalLabels: {}
@@ -287,11 +273,17 @@ argo-cd:
     networkPolicy:
       create: false
       defaultDenyIngress: false
+
     podAnnotations: {}
+
     podLabels: {}
+
     securityContext: {}
+
     systemDefaultRegistry: ''
+
   kubeVersionOverride: ''
+
   nameOverride: argocd
 
   openshift:
@@ -305,6 +297,8 @@ argo-cd:
 
   repoServer:
     name: repo-server
+
+    replicas: 2
 
     image:
       imagePullPolicy: ''
@@ -408,31 +402,34 @@ argo-cd:
         selector: {}
 
     nodeSelector: {}
+
     pdb:
       annotations: {}
       enabled: false
       labels: {}
+
     podAnnotations: {}
+
     podLabels:
       logs: loki-myloginspace
 
     priorityClassName: 'tier2-priority'
+
     rbac: null
+
     readinessProbe:
       failureThreshold: 3
       initialDelaySeconds: 10
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
-    replicas: 2
-
-
 
     service:
       annotations: {}
       labels: {}
       port: 8081
       portName: https-repo-server
+
     serviceAccount:
       annotations: {}
       automountServiceAccountToken: true
@@ -440,7 +437,9 @@ argo-cd:
       name: argocd
 
     tolerations: null
+
     topologySpreadConstraints: null
+
     volumeMounts:
       - name: custom-tools
         mountPath: /bin/argocd-vault-replacer
@@ -545,7 +544,7 @@ argo-cd:
     configAnnotations: {}
     
     configEnabled: true
-    
+
     containerPort: 8080
     
     containerSecurityContext: {}
@@ -571,21 +570,7 @@ argo-cd:
       https: false
 
     ingressGrpc:
-      annotations: {}
-      awsALB:
-        backendProtocolVersion: HTTP2
-        serviceType: NodePort
       enabled: false
-      extraPaths: null
-      hosts: null
-      https: false
-      ingressClassName: traefik-core
-      isAWSALB: false
-      labels: {}
-      pathType: Prefix
-      paths:
-        - /
-      tls: null
 
     initContainers: null
 
@@ -629,6 +614,7 @@ argo-cd:
     rbacConfig: {}
     rbacConfigAnnotations: {}
     rbacConfigCreate: true
+
     readinessProbe:
       failureThreshold: 3
       initialDelaySeconds: 10
@@ -643,6 +629,7 @@ argo-cd:
       hostname: ''
       termination_policy: None
       termination_type: passthrough
+
     service:
       annotations: {}
       externalIPs: null
@@ -659,17 +646,21 @@ argo-cd:
       servicePortHttpsName: https
       sessionAffinity: ''
       type: ClusterIP
+
     serviceAccount:
       annotations: {}
       automountServiceAccountToken: true
       create: true
       name: argocd-server
+
     staticAssets:
       enabled: true
+
     tolerations: null
     topologySpreadConstraints: null
     volumeMounts: null
     volumes: null
+
 
 
   applicationSet:
