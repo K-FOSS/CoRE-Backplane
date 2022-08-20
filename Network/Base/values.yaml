@@ -455,7 +455,7 @@ cilium:
   # module is missing and it is needed for the datapath L7 redirection to work
   # properly. See documentation for details on when this can be disabled:
   # https://docs.cilium.io/en/stable/operations/system_requirements/#linux-kernel.
-  enableXTSocketFallback: true
+  enableXTSocketFallback: false
 
   encryption:
     # -- Enable transparent network encryption.
@@ -1184,7 +1184,7 @@ cilium:
   # direct routing and the Kubernetes CIDR is included in the native routing CIDR,
   # the user must configure the routes to reach pods, either manually or by
   # setting the auto-direct-node-routes flag.
-  # ipv4NativeRoutingCIDR:
+  ipv4NativeRoutingCIDR: 0.0.0.0/0
 
   # -- Allows to explicitly specify the IPv6 CIDR for native routing.
   # When specified, Cilium assumes networking for this CIDR is preconfigured and
