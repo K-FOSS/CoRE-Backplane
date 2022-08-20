@@ -59,7 +59,7 @@ argo-cd:
   controller:
     name: application-controller
 
-    replicas: 4
+    replicas: 3
 
     resources:
       requests:
@@ -78,19 +78,23 @@ argo-cd:
 
     args:
       # -- define the application controller `--status-processors`
-      statusProcessors: '50'
+      statusProcessors: '20'
+
       # -- define the application controller `--operation-processors`
-      operationProcessors: '25'
+      operationProcessors: '10'
+
       # -- define the application controller `--app-resync`
       appResyncPeriod: '180'
+
       # -- define the application controller `--self-heal-timeout-seconds`
       selfHealTimeout: '5'
+
       # -- define the application controller `--repo-server-timeout-seconds`
       repoServerTimeoutSeconds: '60'
 
     env:
       - name: ARGOCD_CONTROLLER_REPLICAS
-        value: '4'
+        value: '3'
 
     envFrom: null
 
