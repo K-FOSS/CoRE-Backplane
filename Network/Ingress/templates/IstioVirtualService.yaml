@@ -612,15 +612,34 @@ spec:
     #
     - match:
         - port: 8080
-          headers:
-            host:
-              exact: 10.1.1.83
+          authority:
+            exact: 10.1.1.83
 
       route:
         - destination:
             port:
               number: 8080
             host: unifi-ingress.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - authority:
+            exact: unifi.ipaddr.network
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: unifi-ingress.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - authority:
+            exact: awx.int.mylogin.space
+
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: awx.core-prod.svc.k0s.resolvemy.host
 
     #
     # Netbox
