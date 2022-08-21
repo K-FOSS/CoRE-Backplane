@@ -1089,19 +1089,19 @@ cilium:
     # 105 x 2s translates to the old behaviour of the readiness probe (120s delay + 30 x 3s)
     failureThreshold: 105
     # -- interval between checks of the startup probe
-    periodSeconds: 30
+    periodSeconds: 2
 
   livenessProbe:
     # -- failure threshold of liveness probe
-    failureThreshold: 20
+    failureThreshold: 10
     # -- interval between checks of the liveness probe
-    periodSeconds: 120
+    periodSeconds: 30
 
   readinessProbe:
     # -- failure threshold of readiness probe
-    failureThreshold: 10
+    failureThreshold: 3
     # -- interval between checks of the readiness probe
-    periodSeconds: 120
+    periodSeconds: 30
 
   # -- Configure the kube-proxy replacement in Cilium BPF datapath
   # Valid options are "disabled", "partial", "strict".
