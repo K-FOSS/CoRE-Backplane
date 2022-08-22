@@ -74,7 +74,7 @@ spec:
         - destination:
             port:
               number: 8123
-            host: homeassistant-core-home-assistant.core-prod.svc.k0s.resolvemy.host
+            host: hassio.core-prod.svc.k0s.resolvemy.host
 
     #
     # Family
@@ -255,6 +255,18 @@ spec:
             port:
               number: 8080
             host: core-argocd-server.argocd.svc.k0s.resolvemy.host
+
+    - match:
+        - authority:
+            exact: 'argo.writemy.codes'
+          headers:
+            content-type:
+              regex: 'application/grpc.*'
+      route:
+        - destination:
+            port:
+              number: 8080
+            host: core-argocd-server-grpc.argocd.svc.k0s.resolvemy.host
 
     #
     # ArtifactHub

@@ -1,0 +1,22 @@
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: homeassistant-main
+
+spec:
+  hosts:
+    - hassio.core-prod.svc.k0s.resolvemy.host
+
+  location: MESH_INTERNAL
+
+  ports:
+    - number: 8123
+      name: http
+      targetPort: 8123
+      protocol: HTTP
+
+  resolution: STATIC
+  workloadSelector:
+    labels:
+      app.kubernetes.io/instance: homeassistant-core
+      app.kubernetes.io/name: home-assistant
