@@ -41,6 +41,22 @@ spec:
               containerPort: 67
               protocol: TCP
 
+          readinessProbe:
+            exec:
+              command:
+                - /Healthcheck.sh
+            initialDelaySeconds: 5
+            failureThreshold: 2
+            periodSeconds: 5
+
+          livenessProbe:
+            exec:
+              command:
+                - /Healthcheck.sh
+            initialDelaySeconds: 5
+            failureThreshold: 6
+            periodSeconds: 10
+
           volumeMounts:
             - name: dhcp-socket
               mountPath: /var/run/DHCP
@@ -65,11 +81,12 @@ spec:
 
         - name: script-vol
           configMap:
-            name: '{{ template "dhcp.fullname" . }}-entryscript'
+            name: '{{ template "dhcp.fullname" . }}-scripts'
             defaultMode: 0755
             items:
               - key: entry.sh
                 path: entry.sh
+
         - name: dhcp-config
           secret:
             secretName: {{ include "dhcp.fullname" . }}
