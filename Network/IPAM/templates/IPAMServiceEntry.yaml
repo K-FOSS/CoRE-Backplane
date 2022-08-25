@@ -1,4 +1,4 @@
-{{- $fullName := include "netbox.fullname" . -}}
+{{- $fullName := include "ipam-netbox.fullname" . -}}
 ---
 apiVersion: networking.istio.io/v1beta1
 kind: ServiceEntry
@@ -20,5 +20,5 @@ spec:
   resolution: STATIC
   workloadSelector:
     labels:
-      {{- include "netbox.selectorLabels" . | nindent 6 }}
       app.kubernetes.io/component: netbox
+      app.kubernetes.io/name: netbox
