@@ -116,7 +116,9 @@ argo-cd:
         labels: {}
         servicePort: 8082
       serviceMonitor:
-        additionalLabels: {}
+        additionalLabels:
+          resolvemy.host/metrics: mimir
+
         enabled: true
         interval: 5m
         metricRelabelings: null
@@ -399,7 +401,9 @@ argo-cd:
         servicePort: 8084
 
       serviceMonitor:
-        additionalLabels: {}
+        additionalLabels:
+          resolvemy.host/metrics: mimir
+
         enabled: true
         interval: 5m
         metricRelabelings: null
@@ -599,7 +603,8 @@ argo-cd:
         labels: {}
         servicePort: 8083
       serviceMonitor:
-        additionalLabels: {}
+        additionalLabels:
+          resolvemy.host/metrics: mimir
         enabled: true
         interval: 5m
         metricRelabelings: null
@@ -988,7 +993,8 @@ argo-cd:
         selector: {}
           # prometheus: kube-prometheus
         # -- Prometheus ServiceMonitor labels
-        additionalLabels: {}
+        additionalLabels:
+          resolvemy.host/metrics: mimir
         # namespace: monitoring
         # interval: 30s
         # scrapeTimeout: 10s
