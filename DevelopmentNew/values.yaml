@@ -4,6 +4,8 @@ argo-cd:
 artifact-hub:
   enabled: true
 
+  restrictedHTTPClient: false
+
   fullnameOverride: artifacthub-prod
 
   postgresql:
@@ -156,9 +158,18 @@ artifact-hub:
     cronjob:
       image:
         repository: artifacthub/tracker
+      resources:
+        requests:
+          memory: 4G
+          cpu: 1024m
+
     cacheDir: ''
     configDir: '/home/tracker/.cfg'
-    concurrency: 64
+    concurrency: 12
+    bypassDigestCheck: true
+    repositoryTimeout: 4h
+
+  pullPolicy: Always
 
 #
 # TODO
