@@ -22,6 +22,22 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: ARGOCD_ENV_LOVELY_KUSTOMIZE_PATCH
+              value: |-
+                apiVersion: apps/v1
+                kind: Deployment
+                metadata:
+                  name: {{cluster}}-aaa-authentik-server
+
+                  labels:
+                    logs: loki-myloginspace
+
+                spec:
+                  template:
+                    metadata:
+                      labels:
+                        logs: loki-myloginspace
 
       destination:
         server: '{{url}}'
