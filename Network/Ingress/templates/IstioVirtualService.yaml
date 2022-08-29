@@ -669,6 +669,29 @@ spec:
             host: awx.core-prod.svc.k0s.resolvemy.host
 
     #
+    # NS Admin
+    #
+    - match:
+        - authority:
+            exact: ns.ipaddr.network
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: ns-admin-powerdns-admin.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - authority:
+            exact: ns.int.mylogin.space
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: ns-admin-powerdns-admin.core-prod.svc.k0s.resolvemy.host
+
+    #
     # Netbox
     #
     - match:
