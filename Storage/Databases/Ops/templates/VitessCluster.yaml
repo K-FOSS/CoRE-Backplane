@@ -17,101 +17,52 @@ spec:
       address: consul.service.dc1.kjdev:8500
       rootPath: 'vitess-core'
 
-  images:
-    vtctld: vitess/lite:latest
-
-    vtgate: vitess/lite:latest
-
-    vttablet: vitess/lite:latest
-
-    vtbackup: vitess/lite:latest
-
-    mysqld:
-      mysql56Compatible: vitess/lite:latest
-
-    mysqldExporter: prom/mysqld-exporter:v0.11.0
-
   cells:
-    - name: zone1
-
-      gateway:
-        authentication:
-          static:
-            secret:
-              name: example-cluster-config
-              key: users.json
-
-        replicas: 1
-
-        resources:
-          requests:
-            cpu: 100m
-            memory: 128Mi
-
-          limits:
-            memory: 512Mi
-
-  vitessDashboard:
-    cells:
-      - zone1
-
-    extraFlags:
-      security_policy: read-only
-
-    replicas: 1
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 64Mi
-
-      limits:
-        memory: 256Mi
-
+  - name: gcpuswest1b
+    gateway:
+      authentication:
+        static:
+          secret:
+            name: example-cluster-config
+            key: users.json
+      secureTransport:
+        tls:
+          certSecret:
+            name: example-cluster-config
+            key: cert.pem
+          keySecret:
+            name: example-cluster-config
+            key: key.pem
   keyspaces:
-    - name: commerce
-      turndownPolicy: Immediate
-      partitionings:
-        - equal:
-            parts: 1
-            shardTemplate:
-              databaseInitScriptSecret:
-                name: example-cluster-config
-                key: init_db.sql
-              replication:
-                enforceSemiSync: false
-              tabletPools:
-                - cell: zone1
-                  type: replica
-
-                  replicas: 2
-
-                  vttablet:
-                    extraFlags:
-                      db_charset: utf8mb4
-
-                    resources:
-                      requests:
-                        cpu: 100m
-                        memory: 128Mi
-
-                      limits:
-                        memory: 512Mi
-
-                  mysqld:
-                    resources:
-                      requests:
-                        cpu: 100m
-                        memory: 128Mi
-
-                      limits:
-                        memory: 512Mi
-
-                  dataVolumeClaimTemplate:
-                    accessModes: ["ReadWriteOnce"]
-                    resources:
-                      requests:
-                        storage: 10Gi
+  - name: main
+    partitionings:
+    - equal:
+        parts: 2
+        shardTemplate:
+          databaseInitScriptSecret:
+            name: example-cluster-config
+            key: init_db.sql
+          replication:
+            enforceSemiSync: true
+          tabletPools:
+          - cell: gcpuswest1b
+            type: replica
+            replicas: 3
+            vttablet:
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+            mysqld:
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+            dataVolumeClaimTemplate:
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 10Gi
   updateStrategy:
     type: Immediate
 ---
