@@ -228,24 +228,8 @@ spec:
                 repository: hashicorp/vault
               ingress:
                 activeService: false
-                annotations:
-                  cert-manager.io/cluster-issuer: kjdev-cluster
-                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-                  ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
-                enabled: true
-                extraPaths: null
-                hosts:
-                  - host: corevault.int.mylogin.space
-                    paths: ['/']
-                ingressClassName: pomerium
-                labels:
-                  wan-mode: 'public'
-                  lan-mode: 'private'
-                pathType: Prefix
-                tls:
-                  - hosts:
-                      - '*.int.mylogin.space'
-                    secretName: myloginspace-int-default-certificates
+                enabled: false
+                
               livenessProbe:
                 enabled: false
                 failureThreshold: 2
@@ -254,6 +238,7 @@ spec:
                 periodSeconds: 5
                 successThreshold: 1
                 timeoutSeconds: 3
+
               logFormat: json
               logLevel: warn
               networkPolicy:
