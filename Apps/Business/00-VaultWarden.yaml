@@ -9,7 +9,7 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
-            ingress: bitwarden.kristianjones.dev
+            ingress: passwords.mylogin.space
             environment: 'prod'
   template:
     metadata:
@@ -37,7 +37,7 @@ spec:
                   env:
                   # -- Config dir
                     DATA_FOLDER: "/tmp"
-                    DOMAIN: https://bitwarden.kristianjones.dev
+                    DOMAIN: https://{{ ingress }}
 
                     SMTP_FROM_NAME: 'Vaultwarden'
                     SMTP_SECURITY: 'off'
@@ -86,31 +86,6 @@ spec:
                     # @default -- See values.yaml
                     main:
                       enabled: false
-                      ingressClassName: traefik-core
-                      labels:
-                        wan-mode: 'public'
-                        lan-mode: 'private'
-                      annotations:
-                        cert-manager.io/cluster-issuer: kjdev-cluster
-                        external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-                        traefik.ingress.kubernetes.io/router.entrypoints: websecure
-                        traefik.ingress.kubernetes.io/router.tls: 'true'
-                      hosts:
-                        - host: {{ ingress }}
-                          paths:
-                            - path: /
-                              pathType: Prefix
-
-                            - path: /notifications/hub/negotiate
-                              pathType: Prefix
-
-                            - path: /notifications/hub
-                              pathType: Prefix
-                      tls:
-                        - hosts:
-                            - '*.kristianjones.dev'
-                          secretName: kristianjonesdev-default-certificates
-
 
       destination:
         server: '{{url}}'
