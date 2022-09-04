@@ -57,24 +57,6 @@ spec:
         ingress:
           main:
             enabled: false
-            ingressClassName: traefik-core
-            labels:
-              wan-mode: 'public'
-              lan-mode: 'private'
-            annotations:
-              cert-manager.io/cluster-issuer: kjdev-cluster
-              external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-              traefik.ingress.kubernetes.io/router.entrypoints: websecure
-              traefik.ingress.kubernetes.io/router.tls: 'true'
-            hosts:
-              - host: jellyfin.kjmedia.stream
-                paths:
-                  - path: '/'
-                    pathType: Prefix
-            tls:
-              - hosts:
-                  - '*.kjmedia.stream'
-                secretName: kjmediastream-default-certificates
 
         env:
           HOST_WHITELIST_ENTRIES: sabnzbd.kjmedia.stream
