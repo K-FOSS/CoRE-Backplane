@@ -16,17 +16,22 @@ spec:
   template:
     metadata:
       name: '{{cluster}}-security-tls-deploy'
+
     spec:
       project: core
+
       syncPolicy:
         automated: {}
+
       source:
         path: Security/TLS
         repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
         targetRevision: HEAD
+
         directory:
           recurse: false
           jsonnet: {}
+
       destination:
         server: '{{url}}'
         namespace: argocd
