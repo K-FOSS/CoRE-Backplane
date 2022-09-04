@@ -9,18 +9,23 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://172.20.52.1:6443
+
   template:
     metadata:
       name: '{{cluster}}-observability-deploy'
+
     spec:
       project: core
+
       syncPolicy:
         automated:
           selfHeal: true
+
       source:
         path: Apps
         repoURL: https://gitlab.git.writemy.codes/KJDev/core-observability.git
         targetRevision: HEAD
+
         directory:
           recurse: true
           jsonnet: {}
