@@ -8,22 +8,28 @@ spec:
     - list:
         elements:
           - cluster: k0s-cntrl
-            url: https://10.1.1.40:443
+            url: https://172.20.52.1:6443
+
   template:
     metadata:
       name: '{{cluster}}-pomerium-deploy'
+
     spec:
       project: core
+
       syncPolicy:
         automated:
           selfHeal: true
+
       source:
         path: Ingress/Pomerium
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
+
         directory:
           recurse: false
           jsonnet: {}
+
       destination:
         server: '{{url}}'
         namespace: argocd
