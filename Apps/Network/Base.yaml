@@ -12,6 +12,8 @@ spec:
             domain: k0s.resolvemy.host
             apiHost: 10.1.1.40
             apiPort: '443'
+            bareMetal: 'true'
+            vmware: 'true'
             NICs: 'ens+'
             konnectivity: 'true'
             peers: | 
@@ -35,8 +37,11 @@ spec:
             url: https://172.20.52.1:6443
             domain: cluster.local
             apiHost: 172.20.52.1
+            vmware: 'false'
+            bareMetal: 'true'
             apiPort: '6443'
             konnectivity: 'false'
+            cilium: 'true'
             NICs: 'bond0'
             peers: | 
                 - ip: 172.31.241.69
@@ -46,12 +51,28 @@ spec:
           - cluster: home1-k8s
             url: https://10.1.1.42:6443
             domain: home1-k8s.resolvemy.host
+            bareMetal: 'true'
+            vmware: 'false'
             apiHost: 10.1.1.42
             apiPort: '6443'
             konnectivity: 'false'
             NICs: 'eno0'
             peers: | 
                 - ip: 192.168.4.10
+                  asn: 64567
+                  port: 179
+
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
+            domain: k0s-lab.resolvemy.host
+            bareMetal: 'true'
+            vmware: 'false'
+            apiHost: 10.1.1.44
+            apiPort: '6443'
+            konnectivity: 'false'
+            NICs: 'eno0'
+            peers: | 
+                - ip: 172.31.241.69
                   asn: 64567
                   port: 179
   
@@ -75,6 +96,7 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |- 
                 cilium:
+                  enabled: {{bareMetal}}
                   k8sServiceHost: '{{ apiHost }}'
                   k8sServicePort: '{{ apiPort }}'
 
@@ -110,6 +132,19 @@ spec:
 
                 konnectivity:
                   enabled: {{ konnectivity }}
+
+                kube-router:
+                  enabled: {{bareMetal}}
+
+                merbridge:
+                  enabled: {{bareMetal}}
+
+                metallb:
+                  enabled: {{bareMetal}}
+
+                vmtools:
+                  enabled: {{vmware}}
+                
 
                 peers:
                 {{peers}}
