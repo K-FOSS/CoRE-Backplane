@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-security-tls-certmanager-custom
+  name: core-backplane-tls
   namespace: argocd
 spec:
   generators:
@@ -12,20 +12,26 @@ spec:
 
           - cluster: infra1-dc1
             url: https://172.20.52.1:6443
+
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
   template:
     metadata:
-      name: '{{cluster}}-certmanager-main-core'
+      name: '{{cluster}}-tls'
     spec:
       project: core
-      syncPolicy:
-        automated:
-          selfHeal: true
+
       source:
-        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
-        path: Security/TLS/CertManagerChart
-        targetRevision: main
-        helm:
-          releaseName: certmanager-custom
+        path: TLS
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
       destination:
         server: '{{url}}'
         namespace: cert-manager
