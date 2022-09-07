@@ -63,7 +63,6 @@ vela-core:
   ## @param image.pullPolicy Image pull policy
   image:
     repository: oamdev/vela-core
-    tag: v1.6.0-alpha.2
     pullPolicy: Always
 
   ## @param resources.limits.cpu KubeVela controller's cpu limit
@@ -137,23 +136,29 @@ vela-core:
   ## @param multicluster.clusterGateway.secureTLS.certManager.enabled Whether to enable cert-manager
   multicluster:
     enabled: false
+
     metrics:
       enabled: false
+
     clusterGateway:
       replicaCount: 1
+
       port: 9443
+
       image:
         repository: oamdev/cluster-gateway
-        tag: v1.4.0
         pullPolicy: IfNotPresent
       resources:
         limits:
           cpu: 100m
           memory: 200Mi
+
       secureTLS:
         enabled: true
+
         certManager:
-          enabled: false
+          enabled: true
+
         certPath: /etc/k8s-cluster-gateway-certs
 
 
@@ -231,20 +236,14 @@ vela-core:
   ## @skip admissionWebhooks
   admissionWebhooks:
     enabled: true
+
     failurePolicy: Fail
 
     certificate:
       mountPath: /etc/k8s-webhook-certs
 
     patch:
-      enabled: true
-      image:
-        repository: oamdev/kube-webhook-certgen
-        tag: v2.4.1
-        pullPolicy: IfNotPresent
-      nodeSelector: {}
-      affinity: {}
-      tolerations: []
+      enabled: false
 
     appConversion:
       enabled: false
