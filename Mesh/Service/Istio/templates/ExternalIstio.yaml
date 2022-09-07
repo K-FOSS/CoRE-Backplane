@@ -9,7 +9,11 @@ spec:
     global:
       istioNamespace: external-istiod
 
+      externalIstiod: true
+
       remotePilotAddress: istio.mylogin.space
+
+      configCluster: false
 
       proxy:
         resources:
@@ -21,6 +25,8 @@ spec:
             cpu: null
             memory: 2048Mi
 
+    multiCluster:
+      clusterName: {{ .Values.clusterName }}
 
     pilot:
       configMap: true
@@ -28,7 +34,7 @@ spec:
 
       
     istiodRemote:
-      injectionURL: https://istio.mylogin.space:15017/inject/:ENV:cluster={{ .Values.clusterName }}:ENV:net=network1
+      injectionURL: https://istio.mylogin.space:15017/inject
     base:
       validationURL: https://istio.mylogin.space:15017/validate
 
