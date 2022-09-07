@@ -8,7 +8,8 @@ spec:
   values:
     global:
       istioNamespace: external-istiod
-      configCluster: true
+
+      remotePilotAddress: istio.mylogin.space
 
       proxy:
         resources:
@@ -27,7 +28,7 @@ spec:
 
       
     istiodRemote:
-      injectionURL: https://istio.mylogin.space:15017/inject/:ENV:cluster=core:ENV:net=network1
+      injectionURL: https://istio.mylogin.space:15017/inject/:ENV:cluster={{ .Values.clusterName }}:ENV:net=network1
     base:
       validationURL: https://istio.mylogin.space:15017/validate
 

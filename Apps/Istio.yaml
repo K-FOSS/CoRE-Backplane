@@ -8,9 +8,11 @@ spec:
     - list:
         elements:
           - cluster: k0s-cntrl
+            clusterName: 'k0s'
             url: https://10.1.1.40:443
 
           - cluster: infra1-dc1
+            clusterName: 'infra1-dc1'
             url: https://172.20.52.1:6443
   template:
     metadata:
@@ -24,6 +26,10 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                clusterName: {{ clusterName }}
 
       destination:
         server: '{{url}}'
