@@ -75,6 +75,12 @@ spec:
                   value:
                     name: bpffs
                     mountPath: /sys/fs/bpf
+
+                - path: spec.template.spec.volumes.[name:istio-token].projected.sources.[0].serviceAccountToken
+                  value:
+                    path: istio-token
+                    expirationSeconds: 43200
+                    audience: istio-ca
   
   values:
     gateways:
