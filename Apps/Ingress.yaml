@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-traefik-core
+  name: core-backplane-ingress
   namespace: argocd
 spec:
   generators:
@@ -18,7 +18,7 @@ spec:
 
   template:
     metadata:
-      name: 'traefik-core'
+      name: '{{cluster}}-ingress'
     spec:
       project: core
 
