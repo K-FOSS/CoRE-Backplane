@@ -9,7 +9,9 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
-            traefikLBIP: 10.1.1.88
+
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -27,17 +29,6 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-          env:
-            - name: LOVELY_HELM_MERGE
-              value: |-
-                traefik:
-                  service:
-                    enabled: true
-                    type: LoadBalancer
-                    spec:
-                      loadBalancerIP: '{{traefikLBIP}}'
-                    annotations:
-                      metallb.universe.tf/allow-shared-ip: 'traefik-core'
 
       destination:
         server: '{{url}}'
