@@ -769,7 +769,26 @@ gitlab:
       ldap:
         # prevent the use of LDAP for sign-in via web.
         preventSignin: false
-        servers: {}
+        servers:
+          main:
+            active_directory: false
+            attributes:
+              email: mail
+              first_name: cn
+              last_name: sn
+              name: cn
+              username: cn
+            base: ou=users,dc=ldap,dc=mylogin,dc=space
+            bind_dn: cn=GitLab,ou=users,dc=ldap,dc=mylogin,dc=space
+            encryption: simple_tls
+            group_base: ou=groups,dc=ldap,dc=mylogin,dc=space
+            host: ldap.mylogin.space
+            label: Authentik LDAP
+            password:
+              key: LDAPPassword
+              secret: gitlab-ldap-prod
+            port: 636
+            uid: cn
         ## See documentation for complete example of a configured LDAP server
 
       ## https://docs.gitlab.com/charts/charts/globals#kas-settings
