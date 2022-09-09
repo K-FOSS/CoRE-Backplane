@@ -55,33 +55,3 @@ spec:
 
     base:
       validationURL: https://istio.mylogin.space:15017/validate
-
-
-  meshConfig:
-    enableTracing: true
-    accessLogFile: /dev/stdout
-
-    defaultProviders:
-      accessLogging:
-        - envoy
-        - otel
-
-    extensionProviders:
-      - name: otel
-        envoyOtelAls:
-          service: otel-core.core-prod.svc.k0s.resolvemy.host
-          port: 4317
-
-      - name: 'authentik'
-        envoyExtAuthzHttp:
-          service: k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
-          port: '80'
-          pathPrefix: '/outpost.goauthentik.io/auth/envoy'
-          headersToDownstreamOnAllow:
-            - cookie
-          headersToUpstreamOnAllow:
-            - set-cookie
-            - x-authentik-*
-            - x-remote-*
-          includeRequestHeadersInCheck:
-            - cookie
