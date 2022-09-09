@@ -442,7 +442,6 @@ gitlab:
         # secret:
         # key:
 
-      # serviceName:
       internal:
         names: [default]
 
@@ -901,9 +900,10 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitlab-shell
     shell:
-      authToken: {}
-      # secret:
-      # key:
+      authToken:
+        key: shared_secret
+        secret: gitlab-shell-prod
+
       hostKeys: {}
         # secret:
       ## https://docs.gitlab.com/charts/charts/globals#tcp-proxy-protocol
@@ -1048,8 +1048,9 @@ gitlab:
       # host:
       # port:
       ## https://docs.gitlab.com/charts/installation/secrets#gitlab-workhorse-secret
-      # secret:
-      # key:
+      secret: gitlab-workhorse-prod
+      key: shared_secret
+
       tls: {}
         # enabled: true
 
@@ -1625,14 +1626,17 @@ gitlab:
           suspend: false
           backoffLimit: 6
           restartPolicy: "OnFailure"
+
           resources:
             requests:
               cpu: 50m
               memory: 350M
+
           persistence:
             enabled: false
             accessMode: ReadWriteOnce
             size: 10Gi
+
         objectStorage:
           backend: s3
           config:
