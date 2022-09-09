@@ -3,6 +3,12 @@ authentik:
   # -- Server replicas
   replicas: 3
 
+  enabled: true
+
+  ldap:
+    enabled: true
+    replicas: 2
+
   common:
     podLabels:
       logs: loki-myloginspace
@@ -48,7 +54,9 @@ authentik:
     email:
       # -- SMTP Server emails are sent from, fully optional
       host: mail.mylogin.space
+
       port: 25
+
       # -- SMTP credentials, when left empty, not authentication will be done
       username: ""
 
@@ -74,6 +82,7 @@ authentik:
       # %(build_hash)s - only for beta versions, the build hash of the image
       container_image_base: ghcr.io/goauthentik/%(type)s:%(version)s
 
+
     error_reporting:
       # -- This sends anonymous usage-data, stack traces on errors and
       # performance data to sentry.beryju.org, and is fully opt-in
@@ -82,6 +91,7 @@ authentik:
       environment: "k8s"
       # -- Send PII (Personally identifiable information) data to sentry
       send_pii: false
+
 
     postgresql:
       # -- set the postgresql hostname to talk to

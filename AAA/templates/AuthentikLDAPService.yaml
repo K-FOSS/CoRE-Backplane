@@ -1,3 +1,4 @@
+{{- if .Values.authentik.ldap.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -5,12 +6,16 @@ metadata:
     app.kubernetes.io/instance: test-ldap
     app.kubernetes.io/name: myloginspace-ldap
     lan-mode: 'private'
+
   annotations:
     consul.hashicorp.com/service-name: ldap
     external-dns.alpha.kubernetes.io/hostname: 'ldap.mylogin.space'
+
   name: myloginspace-ldap
+
 spec:
   type: LoadBalancer
+
   selector:
     app.kubernetes.io/name: myloginspace-ldap
 
@@ -58,4 +63,4 @@ spec:
     - IPv4
   ipFamilyPolicy: SingleStack
   sessionAffinity: None
-
+{{- end }}

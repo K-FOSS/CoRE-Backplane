@@ -1,3 +1,4 @@
+{{- if .Values.authentik.ldap.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/name: myloginspace-ldap
 spec:
-  replicas: 2
+  replicas: {{ .Values.authentik.ldap.replicas }}
 
   selector:
     matchLabels:
@@ -25,7 +26,9 @@ spec:
 
     spec:
       restartPolicy: Always
+
       terminationGracePeriodSeconds: 30
+
       containers:
         - name: ldap
           image: ghcr.io/goauthentik/ldap:2022.8
@@ -92,3 +95,4 @@ spec:
 
             - name: AUTHENTIK_INSECURE
               value: 'false'
+{{- end }}
