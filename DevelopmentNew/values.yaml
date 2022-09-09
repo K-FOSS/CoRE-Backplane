@@ -538,6 +538,7 @@ gitlab:
         wiki: true
         snippets: true
         builds: true
+        containerRegistry: false
 
       webhookTimeout:
 
@@ -886,7 +887,7 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/gitlab/kas/
     kas:
-      enabled: true
+      enabled: false
       service:
         apiExternalPort: 8153 # port for connections from the GitLab backend
 
@@ -1416,8 +1417,8 @@ gitlab:
   ## Installation & configuration charts/registry
   ## https://docs.gitlab.com/charts/architecture/decisions#registry
   ## https://docs.gitlab.com/charts/charts/registry/
-  # registry:
-  #   enabled: false
+  registry:
+    enabled: false
 
   ## Automatic shared secret generation
   ## https://docs.gitlab.com/charts/installation/secrets
@@ -1465,7 +1466,8 @@ gitlab:
   ## Installation & configuration of gitlab/gitlab-runner
   ## See requirements.yaml for current version
   gitlab-runner:
-    install: true
+    install: false
+
     rbac:
       create: true
 
@@ -1578,7 +1580,7 @@ gitlab:
       enabled: true
       priorityClassName: 'tier2-priority'
       #nameOverride: gitlab-prod
-      fullnameOverride: gitlab-prod
+      nameOverride: gitlab-prod
       registry:
         enabled: false
 
