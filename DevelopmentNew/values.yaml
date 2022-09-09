@@ -265,7 +265,9 @@ reflector:
 
 
 gitlab:
-  enabled: false
+  enabled: true
+
+  fullnameOverride: gitlab-prod
 
   ## NOTICE
   #
@@ -361,6 +363,19 @@ gitlab:
       path: /
 
       pathType: Prefix
+
+    # Override the API version to use for HorizontalPodAutoscaler
+    hpa:
+      apiVersion: ""
+  
+    # Override the API version to use for PodDisruptionBudget
+    pdb:
+      apiVersion: ""
+  
+    # Override the API version to use for CronJob
+    batch:
+      cronJob:
+        apiVersion: ""
 
     gitlab:
       ## Enterprise license for this GitLab installation
@@ -718,7 +733,6 @@ gitlab:
 
         pollInterval: 60
 
-        deliveryMethod: sidekiq
 
         authToken: {}
           # secret:
@@ -746,7 +760,6 @@ gitlab:
         clientSecret:
           key: secret
         pollInterval: 60
-        deliveryMethod: sidekiq
         authToken: {}
           # secret:
           # key:
@@ -790,6 +803,9 @@ gitlab:
         clientside_dsn:
         environment:
 
+      gitlab_docs:
+        enabled: false
+        host: ""
 
       smartcard:
         enabled: false
@@ -887,6 +903,9 @@ gitlab:
       notificationSecret: {}
         # secret:
         # key:
+      redis:
+        cache:
+          password: {}
       # https://docs.docker.com/registry/notifications/#configuration
       notifications: {}
         # endpoints:
@@ -903,6 +922,8 @@ gitlab:
         #         secret: gitlab-registry-specific-password
         #         key: password
         # events: {}
+
+
 
     pages:
       enabled: false
@@ -1000,6 +1021,8 @@ gitlab:
       ## https://docs.gitlab.com/charts/installation/secrets#gitlab-workhorse-secret
       # secret:
       # key:
+      tls: {}
+        # enabled: true
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-webservice
     webservice:
@@ -1021,6 +1044,13 @@ gitlab:
       customCAs: []
       # - secret: custom-CA
       # - secret: more-custom-CAs
+      #   keys:
+      #     - custom-ca-1.crt
+      # - configMap: custom-CA-cm
+      # - configMap: more-custom-CAs-cm
+      #   keys:
+      #     - custom-ca-2.crt
+      #     - custom-ca-3.crt
 
 
     ## kubectl image used by hooks to carry out specific jobs
