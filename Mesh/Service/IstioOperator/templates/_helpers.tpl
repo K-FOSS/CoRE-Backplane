@@ -36,6 +36,7 @@ Common labels
 */}}
 {{- define "istiooperator.labels" -}}
 helm.sh/chart: {{ include "istiooperator.chart" . }}
+logs: loki-myloginspace
 {{ include "istiooperator.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
