@@ -801,20 +801,22 @@ gitlab:
 
       ## https://docs.gitlab.com/charts/charts/globals#omniauth
       omniauth:
-        enabled: false
+        enabled: true
         autoSignInWithProvider:
-        syncProfileFromProvider: []
         syncProfileAttributes: [email]
-        allowSingleSignOn: [saml]
         blockAutoCreatedUsers: true
-        autoLinkLdapUser: false
+        autoLinkLdapUser: true
         autoLinkSamlUser: false
         autoLinkUser: []
         externalProviders: []
         allowBypassTwoFactor: []
-        providers: []
-        # - secret: gitlab-google-oauth2
-        #   key: provider
+
+        allowSingleSignOn:
+          - openid_connect
+
+        providers:
+          - secret: gitlab-oidc-prod
+
 
       ## https://docs.gitlab.com/charts/charts/globals#configure-appconfig-settings
       sentry:
