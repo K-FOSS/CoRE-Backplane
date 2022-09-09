@@ -17,11 +17,12 @@ spec:
           priorityClassName: system-cluster-critical
           serviceAnnotations:
             metallb.universe.tf/allow-shared-ip: istio
+
           service:
             type: LoadBalancer
             loadBalancerIP: 10.1.1.83
             externalIPs:
-              - 66.165.222.101
+              - {{ .Values.ingressGateway.publicIP }}
 
             ports:
               - name: status-port
@@ -76,11 +77,9 @@ spec:
                     name: bpffs
                     mountPath: /sys/fs/bpf
 
-                - path: spec.template.spec.volumes.[name:istio-token].projected.sources.[0].serviceAccountToken
-                  value:
-                    path: istio-token
-                    expirationSeconds: 43200
-                    audience: istio-ca
+
+                - path:  spec.template.metadata.labels.logs
+                  value: loki-myloginspace
   
   values:
     gateways:
