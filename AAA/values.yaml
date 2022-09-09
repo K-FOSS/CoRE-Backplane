@@ -36,6 +36,7 @@ authentik:
   authentik:
     # -- Log level for server and worker
     log_level: warn
+
     # -- Secret key used for cookie singing and unique user IDs,
     # don't change this after the first install
     #secret_key: ""
@@ -43,20 +44,26 @@ authentik:
     geoip: /geoip/GeoLite2-City.mmdb
     # -- Mode for the avatars. Defaults to gravatar. Possible options 'gravatar' and 'none'
     avatars: gravatar
+
     email:
       # -- SMTP Server emails are sent from, fully optional
       host: mail.mylogin.space
       port: 25
       # -- SMTP credentials, when left empty, not authentication will be done
       username: ""
+
       # -- SMTP credentials, when left empty, not authentication will be done
       password: ""
+
       # -- Enable either use_tls or use_ssl, they can't be enabled at the same time.
       use_tls: false
+
       # -- Enable either use_tls or use_ssl, they can't be enabled at the same time.
       use_ssl: false
+
       # -- Connection timeout
       timeout: 30
+
       # -- Email from address, can either be in the format "foo@bar.baz" or "authentik <foo@bar.baz>"
       from: bots@mylogin.space
 
@@ -66,6 +73,7 @@ authentik:
       # %(version)s - version of your authentik install
       # %(build_hash)s - only for beta versions, the build hash of the image
       container_image_base: ghcr.io/goauthentik/%(type)s:%(version)s
+
     error_reporting:
       # -- This sends anonymous usage-data, stack traces on errors and
       # performance data to sentry.beryju.org, and is fully opt-in
@@ -74,6 +82,7 @@ authentik:
       environment: "k8s"
       # -- Send PII (Personally identifiable information) data to sentry
       send_pii: false
+
     postgresql:
       # -- set the postgresql hostname to talk to
       # if unset and .Values.postgresql.enabled == true, will generate the default
@@ -82,6 +91,7 @@ authentik:
       password: ""
       port: 5432
       name: 
+
     redis:
       # -- set the redis hostname to talk to
       # @default -- `{{ .Release.Name }}-redis-master`
@@ -99,6 +109,11 @@ authentik:
   envFrom: []
 
   envValueFrom:
+    AUTHENTIK_SECRET_KEY:
+      secretKeyRef:
+        key: SecretKey
+        name: authentik-database-prod
+
     AUTHENTIK_POSTGRESQL__NAME:
       secretKeyRef:
         key: DatabaseDatabase
@@ -107,11 +122,6 @@ authentik:
     AUTHENTIK_POSTGRESQL__USER:
       secretKeyRef:
         key: DatabaseUser
-        name: authentik-database-prod
-
-    AUTHENTIK_SECRET_KEY:
-      secretKeyRef:
-        key: SecretKey
         name: authentik-database-prod
 
     AUTHENTIK_POSTGRESQL__PASSWORD:
@@ -188,26 +198,23 @@ authentik:
   geoip:
     # -- optional GeoIP, deploys a cronjob to download the maxmind database
     enabled: false
+
     # -- sign up under https://www.maxmind.com/en/geolite2/signup
     accountId: ""
+
     # -- sign up under https://www.maxmind.com/en/geolite2/signup
     licenseKey: ""
+
     editionIds: "GeoLite2-City"
+
     image: maxmindinc/geoipupdate:v4.8
+
     # -- number of hours between update runs
     updateInterval: 8
 
   postgresql:
     # -- enable the bundled bitnami postgresql chart
     enabled: false
-    postgresqlUsername: "authentik"
-    # postgresqlPassword: ""
-    postgresqlDatabase: "authentik"
-    # persistence:
-    #   enabled: true
-    #   storageClass:
-    #   accessModes:
-    #     - ReadWriteOnce
 
   redis:
     # -- enable the bundled bitnami redis chart
