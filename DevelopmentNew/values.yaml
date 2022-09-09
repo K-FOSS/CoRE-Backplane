@@ -347,14 +347,12 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
     ingress:
       apiVersion: ''
-      configureCertmanager: true
-
-      provider: traefik
+      configureCertmanager: false
 
       # class:
       annotations: {}
 
-      enabled: true
+      enabled: false
 
       tls: {}
       #   enabled: true
@@ -1061,7 +1059,6 @@ gitlab:
         # ensuring that the image tag is available from both instances. The digest can be
         # found in the 'sync_images' job.
         #   https://dev.gitlab.org/gitlab/charts/components/images/-/tags
-        tag: 1.18.20@sha256:8d27c191af306cafddba2f293c5613f8966363f779d79a5599ad0231e60069e4
         # pullPolicy: IfNotPresent
         # pullSecrets: []
       securityContext:
@@ -1152,7 +1149,7 @@ gitlab:
     # Other cert-manager configurations from upstream
     # See https://github.com/jetstack/cert-manager/blob/master/deploy/charts/cert-manager/README#configuration
     rbac:
-      create: true
+      create: false
 
 
   ## https://docs.gitlab.com/charts/charts/nginx/
@@ -1213,7 +1210,7 @@ gitlab:
       # https://github.com/kubernetes/ingress-nginx/issues/7519
       scope: false
     serviceAccount:
-      create: true
+      create: false
 
   ## Installation & configuration of stable/prometheus
   ## See requirements.yaml for current version
