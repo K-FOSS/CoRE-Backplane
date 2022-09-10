@@ -10,9 +10,13 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
+
   template:
     metadata:
       name: '{{cluster}}-pnet'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
 
     spec:
       project: core
