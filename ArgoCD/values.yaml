@@ -1,5 +1,37 @@
 argo-cd:
 
+  extraObjects: null
+  fullnameOverride: 'argocd'
+
+  global:
+    additionalLabels: {}
+      
+
+    hostAliases: null
+    image:
+      imagePullPolicy: IfNotPresent
+      repository: quay.io/argoproj/argocd
+      tag: latest
+
+    imagePullSecrets: null
+
+    networkPolicy:
+      create: false
+      defaultDenyIngress: false
+
+    podAnnotations: {}
+
+    podLabels:
+      logs: loki-myloginspace
+
+    securityContext: {}
+
+    systemDefaultRegistry: ''
+
+  kubeVersionOverride: ''
+
+  nameOverride: argocd
+
   apiVersionOverrides:
     certmanager: ''
     ingress: ''
@@ -261,37 +293,6 @@ argo-cd:
     volumes:
       - emptyDir: {}
         name: static-files
-
-
-  extraObjects: null
-  fullnameOverride: 'argocd'
-
-
-
-  global:
-    additionalLabels: {}
-    hostAliases: null
-    image:
-      imagePullPolicy: IfNotPresent
-      repository: quay.io/argoproj/argocd
-      tag: latest
-
-    imagePullSecrets: null
-    networkPolicy:
-      create: false
-      defaultDenyIngress: false
-
-    podAnnotations: {}
-
-    podLabels: {}
-
-    securityContext: {}
-
-    systemDefaultRegistry: ''
-
-  kubeVersionOverride: ''
-
-  nameOverride: argocd
 
   openshift:
     enabled: false
