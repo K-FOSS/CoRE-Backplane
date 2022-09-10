@@ -1,0 +1,125 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k0s-cntrl-development-gitaly-praefect
+  namespace: core-prod
+
+data:
+  config.toml.erb: >
+    # The directory where Gitaly's executables are stored
+
+    bin_dir = "/usr/local/bin"
+
+
+    # listen on a TCP socket. This is insecure (no authentication)
+
+    listen_addr = "0.0.0.0:8075"
+
+
+    # Directory where internal sockets reside
+
+    # note: no value will result in a `/tmp/gitlab-internal-*` path
+
+    # internal_socket_dir = "/home/git"
+
+
+    # If metrics collection is enabled, inform gitaly about that
+
+    prometheus_listen_addr = "0.0.0.0:9236"
+
+
+    <% @storages = [  "gitlab-prod-gitaly-default-0",
+    "gitlab-prod-gitaly-default-1", "gitlab-prod-gitaly-default-2"  ] %>
+
+
+    <% @hostname=ENV['HOSTNAME'].strip %>
+
+    <% if @storages.any? { |s| s.include?(@hostname) } %>
+
+    [[storage]]
+
+    name = "<%= @hostname %>"
+
+    path = "/home/git/repositories"
+
+    <% else %>
+
+    <% raise Exception, "Storage for node #{@hostname} is not present in the
+    storageNames array. Did you use kubectl to scale up? You need to solely use
+    helm for this purpose." %>
+
+    <% end %>
+
+
+    [logging]
+
+    format = "json"
+
+    dir = "/var/log/gitaly"
+
+
+    [auth]
+
+    token = <%=
+    File.read('/etc/gitlab-secrets/gitaly/gitaly_token').strip.to_json %>
+
+
+    [git]
+
+    use_bundled_binaries = true
+
+    ignore_gitconfig = true
+
+
+    [gitaly-ruby]
+
+    # The directory where gitaly-ruby is installed
+
+    dir = "/srv/gitaly-ruby"
+
+
+    [gitlab-shell]
+
+    # The directory where gitlab-shell is installed
+
+    dir = "/srv/gitlab-shell"
+
+
+    [gitlab]
+
+    # location of shared secret for GitLab Shell / API interaction
+
+    secret_file = "/etc/gitlab-secrets/shell/.gitlab_shell_secret"
+
+    # URL of API
+
+    url = "http://gitlab-prod-webservice-default.core-prod.svc:8181/"
+
+
+    [gitlab.http-settings]
+
+    # read_timeout = 300
+
+    # user = someone
+
+    # password = somepass
+
+    # ca_file = /etc/ssl/cert.pem
+
+    # ca_path = /etc/pki/tls/certs
+
+
+    [hooks]
+
+    # directory containing custom hooks
+
+    custom_hooks_dir = "/home/git/custom_hooks"
+  configure: >
+    set -e
+
+    mkdir -p /init-secrets/gitaly /init-secrets/shell
+
+    cp -v -r -L /init-config/.gitlab_shell_secret 
+    /init-secrets/shell/.gitlab_shell_secret
+
+    cp -v -r -L /init-config/gitaly_token  /init-secrets/gitaly/gitaly_token
