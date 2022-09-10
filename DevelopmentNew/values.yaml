@@ -946,16 +946,20 @@ gitlab:
       localStore:
         enabled: false
         # path: /srv/gitlab/shared/pages
+
       objectStore:
         enabled: true
         bucket: gitlab-pages
         # proxy_download: true
+
         connection: {}
           # secret:
           # key:
+
       apiSecret: {}
         # secret:
         # key:
+
       authSecret: {}
         # secret:
         # key:
@@ -1085,7 +1089,7 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/globals#service-accounts
     serviceAccount:
-      enabled: false
+      enabled: true
       create: true
       annotations: {}
       ## Name to be used for serviceAccount, otherwise defaults to chart fullname
@@ -1168,60 +1172,7 @@ gitlab:
   ## Installation & configuration of charts/ingress-nginx:
   nginx-ingress:
     enabled: false
-    tcpExternalConfig: "true"
-    controller:
-      addHeaders:
-        Referrer-Policy: strict-origin-when-cross-origin
-      config:
-        hsts: "true"
-        hsts-include-subdomains: "false"
-        hsts-max-age: "63072000"
-        server-name-hash-bucket-size: "256"
-        use-http2: "true"
-        ssl-ciphers: "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:!aNULL:!eNULL:!EXPORT:!DES:!MD5:!PSK:!RC4"
-        ssl-protocols: "TLSv1.3 TLSv1.2"
-        server-tokens: "false"
-      service:
-        externalTrafficPolicy: "Local"
-      ingressClassByName: false
-      ingressClassResource:
-        name: '{{ include "ingress.class.name" $ }}'
-      resources:
-        requests:
-          cpu: 100m
-          memory: 100Mi
-      publishService:
-        enabled: true
-      replicaCount: 2
-      minAvailable: 1
-      scope:
-        enabled: true
-      metrics:
-        enabled: true
-        service:
-          annotations:
-            gitlab.com/prometheus_scrape: "true"
-            gitlab.com/prometheus_port: "10254"
-            prometheus.io/scrape: "true"
-            prometheus.io/port: "10254"
-      admissionWebhooks:
-        enabled: false
-    defaultBackend:
-      enabled: true
-      minAvailable: 1
-      replicaCount: 1
-      resources:
-        requests:
-          cpu: 5m
-          memory: 5Mi
-    rbac:
-      create: true
-      # Needed for k8s 1.20 and 1.21
-      # https://github.com/kubernetes/ingress-nginx/issues/7510
-      # https://github.com/kubernetes/ingress-nginx/issues/7519
-      scope: false
-    serviceAccount:
-      create: false
+
 
   ## Installation & configuration of stable/prometheus
   ## See requirements.yaml for current version
@@ -1570,7 +1521,7 @@ gitlab:
       priorityClassName: 'tier2-priority'
       #nameOverride: gitlab-prod
       fullnameOverride: gitlab-prod-webservice
-      host: gitlab-prod-webservice-default
+      host: gitlab-prod-webservice-default55.core-prod.svc.k0s.resolvemy.host
       registry:
         enabled: false
 
