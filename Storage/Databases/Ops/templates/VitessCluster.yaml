@@ -84,9 +84,45 @@ spec:
         cpu: 100m
         memory: 128Mi
 
+  vtadmin:
+    rbac:
+      name: core-cluster-config
+      key: rbac.yaml
+    cells:
+      - zone1
+    apiAddresses:
+      - http://localhost:14001
+    replicas: 1
+    readOnly: false
+    apiResources:
+      limits:
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    webResources:
+      limits:
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+
   keyspaces:
     - name: bytebase
       turndownPolicy: Immediate
+      vitessOrchestrator:
+      configSecret:
+        name: core-cluster-config
+        key: orc_config.json
+
+      resources:
+        limits:
+          memory: 128Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+
       partitionings:
         - equal:
             parts: 1
@@ -95,14 +131,16 @@ spec:
                 name: core-cluster-config
                 key: init_db.sql
               replication:
-                enforceSemiSync: false
+                enforceSemiSync: true
+
               tabletPools:
                 - cell: zone1
                   type: replica
-                  replicas: 2
+                  replicas: 3
                   vttablet:
                     extraFlags:
                       db_charset: utf8mb4
+                      disable_active_reparents: "true"
                     resources:
                       limits:
                         memory: 2G
@@ -132,9 +170,9 @@ type: Opaque
 stringData:
   users.json: |
     {
-      "kjones": [{
-        "UserData": "kjones",
-        "Password": "password"
+      "user": [{
+        "UserData": "user",
+        "Password": ""
       }]
     }
   init_db.sql: |
@@ -179,7 +217,7 @@ stringData:
     CREATE USER 'vt_app'@'localhost';
     GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, PROCESS, FILE,
       REFERENCES, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES,
-      LOCK TABLES, EXECUTE, REPLICATION SLAVE, REPLICATION CLIENT, CREATE VIEW,
+      LOCK TABLES, EXECUTE, REPLICATION CLIENT, CREATE VIEW,
       SHOW VIEW, CREATE ROUTINE, ALTER ROUTINE, CREATE USER, EVENT, TRIGGER
       ON *.* TO 'vt_app'@'localhost';
     # User for app debug traffic, with global read access.
@@ -198,7 +236,6 @@ stringData:
     CREATE USER 'vt_repl'@'%';
     GRANT REPLICATION SLAVE ON *.* TO 'vt_repl'@'%';
     # User for Vitess filtered replication (binlog player).
-    # Same permissions as vt_app.
     CREATE USER 'vt_filtered'@'localhost';
     GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, DROP, RELOAD, PROCESS, FILE,
       REFERENCES, INDEX, ALTER, SHOW DATABASES, CREATE TEMPORARY TABLES,
@@ -207,11 +244,37 @@ stringData:
       ON *.* TO 'vt_filtered'@'localhost';
     # User for Orchestrator (https://github.com/openark/orchestrator).
     # TODO: Reenable when the password is randomly generated.
-    #CREATE USER 'orc_client_user'@'%' IDENTIFIED BY 'orc_client_user_password';
-    #GRANT SUPER, PROCESS, REPLICATION SLAVE, RELOAD
-    #  ON *.* TO 'orc_client_user'@'%';
-    #GRANT SELECT
-    #  ON _vt.* TO 'orc_client_user'@'%';
+    CREATE USER 'orc_client_user'@'%' IDENTIFIED BY 'orc_client_user_password';
+    GRANT SUPER, PROCESS, REPLICATION SLAVE, RELOAD
+      ON *.* TO 'orc_client_user'@'%';
+    GRANT SELECT
+      ON _vt.* TO 'orc_client_user'@'%';
     FLUSH PRIVILEGES;
     RESET SLAVE ALL;
     RESET MASTER;
+  rbac.yaml: |
+    rules:
+    - resource: "*"
+      actions:
+        - "get"
+        - "create"
+        - "put"
+        - "ping"
+      subjects: ["*"]
+      clusters: ["*"]
+    - resource: "Shard"
+      actions:
+        - "emergency_reparent_shard"
+        - "planned_reparent_shard"
+      subjects: ["*"]
+      clusters:
+        - "local"
+  orc_config.json: |
+    {
+      "Debug": true,
+      "MySQLTopologyUser": "orc_client_user",
+      "MySQLTopologyPassword": "orc_client_user_password",
+      "MySQLReplicaUser": "vt_repl",
+      "MySQLReplicaPassword": "",
+      "RecoveryPeriodBlockSeconds": 5
+    }
