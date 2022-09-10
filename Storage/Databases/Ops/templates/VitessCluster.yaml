@@ -7,6 +7,13 @@ kind: VitessCluster
 metadata:
   name: core-kjdev
 spec:
+  globalLockserver:
+    external:
+      implementation: consul
+      address: consul.service.dc1.kjdev:8500
+      rootPath: 'vitess-main-core'
+
+
   cells:
     - name: zone1
       gateway:
