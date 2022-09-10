@@ -18,6 +18,9 @@ spec:
     metadata:
       name: '{{cluster}}-development'
 
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
     spec:
       project: core
 
@@ -33,12 +36,8 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |- 
-
-                artifacthub:
-                  fullnameOverride: '{{cluster}}-artifacthub'
-
                 gitlab:
-                  fullnameOverride: '{{cluster}}-gitlab'
+                  fullnameOverride: 'gitlab-prod'
                 
                 harbor:
                   fullnameOverride: '{{cluster}}-development-harbor-helm'

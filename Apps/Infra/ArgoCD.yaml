@@ -3,6 +3,7 @@ kind: ApplicationSet
 metadata:
   name: core-backplane-argocd
   namespace: argocd
+
 spec:
   generators:
     - list:
@@ -16,6 +17,10 @@ spec:
   template:
     metadata:
       name: '{{cluster}}-argocd-helm'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
     spec:
       project: core
       syncPolicy:
@@ -23,6 +28,7 @@ spec:
           selfHeal: true
         syncOptions:
           - CreateNamespace=true
+
       source:
         path: ArgoCD
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
