@@ -18,44 +18,45 @@ spec:
       rootPath: 'vitess-core'
 
   cells:
-  - name: gcpuswest1b
-    gateway:
-      authentication:
-        static:
-          secret:
-            name: example-cluster-config
-            key: users.json
+    - name: dc1
+      gateway:
+        replicas: 1
+        authentication:
+          static:
+            secret:
+              name: example-cluster-config
+              key: users.json
 
   keyspaces:
-  - name: main
-    partitionings:
-    - equal:
-        parts: 2
-        shardTemplate:
-          databaseInitScriptSecret:
-            name: example-cluster-config
-            key: init_db.sql
-          replication:
-            enforceSemiSync: true
-          tabletPools:
-          - cell: gcpuswest1b
-            type: replica
-            replicas: 1
-            vttablet:
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 256Mi
-            mysqld:
-              resources:
-                requests:
-                  cpu: 100m
-                  memory: 256Mi
-            dataVolumeClaimTemplate:
-              accessModes: ["ReadWriteOnce"]
-              resources:
-                requests:
-                  storage: 10Gi
+    - name: hpphp
+      partitionings:
+        - equal:
+            parts: 1
+            shardTemplate:
+              databaseInitScriptSecret:
+                name: example-cluster-config
+                key: init_db.sql
+              replication:
+                enforceSemiSync: false
+              tabletPools:
+                - cell: dc1
+                  type: replica
+                  replicas: 2
+                  vttablet:
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                  mysqld:
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                  dataVolumeClaimTemplate:
+                    accessModes: ['ReadWriteOnce']
+                    resources:
+                      requests:
+                        storage: 10Gi
   updateStrategy:
     type: Immediate
 ---
