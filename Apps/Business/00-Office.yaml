@@ -11,9 +11,17 @@ spec:
             url: https://10.1.1.40:443
             ingress: office.mylogin.space
             environment: 'prod'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
   template:
     metadata:
       name: '{{cluster}}-business-office'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
     spec:
       project: core
 
