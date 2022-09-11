@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aaa-openldap-config
+
+data:
+  slapd.conf: |
+    ### Schema includes ###########################################################
+    include                 /etc/openldap/schema/core.schema
+    include                 /etc/openldap/schema/cosine.schema
+    include                 /etc/openldap/schema/inetorgperson.schema
+    include                 /etc/openldap/schema/misc.schema
+    include                 /etc/openldap/schema/nis.schema
+
+    ## Module paths ##############################################################
+    modulepath              /usr/lib/openldap
+    moduleload              back_ldap
+    moduleload              rwm
+
+    # Main settings ###############################################################
+    pidfile                 /var/run/openldap/slapd.pid
+    argsfile                /var/run/openldap/slapd.args
+
+    ### Database definition (Proxy to AD) #########################################
+    database                ldap
+    readonly                yes
+    protocol-version        3
+    rebind-as-user
+    uri                     "ldaps://ldap.mylogin.space:636"
+    suffix                  "dc=ldap,dc=mylogin,dc=space"
+    overlay                 rwm
+    rwm-map                 attribute       cn      mail    
+
+    ### Logging ###################################################################
+    loglevel                8

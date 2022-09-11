@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openldap-ldap
+  labels:
+    app.kubernetes.io/name: openldap-ldap
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: openldap-ldap
+
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: openldap-ldap
+        logs: loki-myloginspace
+
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: config
+        configMap:
+          # Provide the name of the ConfigMap you want to mount.
+          name: aaa-openldap-config
+
+      containers:
+        - name: ldap
+          image: kristianfjones/openldap:core
+
+          command: ['slapd', '-d8', '-f=/etc/openldap/slapd.conf']
+
+          resources:
+            requests:
+              cpu: 32m
+              memory: 16M
+
+          ports:
+            - containerPort: 389
+              name: tcp-ldap
+              protocol: TCP
+
+            - containerPort: 389
+              name: udp-ldap
+              protocol: UDP
+
+            - containerPort: 636
+              name: tcp-ldaps
+              protocol: TCP
+
+            - containerPort: 636
+              name: udp-ldaps
+              protocol: UDP
+
+          volumeMounts:
+            - name: config
+              mountPath: /etc/openldap/slapd.conf
+              subPath: slapd.conf
