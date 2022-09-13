@@ -1,25 +1,37 @@
+{{- if and .Values.netbird.dashboard.enabled .Values.netbird.dashboard.service.enabled }}
 {{- $fullName := include "pnetwork.fullname" . -}}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/name: wirebird
-    app.kubernetes.io/instance: dashboard
+    app.kubernetes.io/instance: {{ $fullName }}
 
-  name: {{ $fullName }}-netbird-dashbord
+    app.kubernetes.io/name: netbird
+    app.kubernetes.io/component: dashboard
+
+    {{- with .Values.netbird.dashboard.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+
+  name: {{ $fullName }}-netbird-dashboard
+
 spec:
-  ports:
-    - name: http
-      port: 80
-      targetPort: http
-      appProtocol: http
+  type: {{ .Values.netbird.dashboard.service.type }}
 
-    - name: https
-      port: 443
-      targetPort: https
-      appProtocol: https
+  {{- with .Values.netbird.dashboard.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+
+  ports:
+    - name: dashboard
+      port: 10000
+      targetPort: dashboard
 
   selector:
-    app.kubernetes.io/name: wirebird
-    app.kubernetes.io/instance: dashboard
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: netbird
+    app.kubernetes.io/component: dashboard
+
+{{- end }}

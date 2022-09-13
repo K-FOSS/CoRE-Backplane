@@ -22,9 +22,17 @@ spec:
   loadBalancerIP: {{ . }}
   {{- end }}
 
+  {{- with .Values.netbird.signal.service.externalIPs }}
+  externalIPs:
+  {{- range . }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
+
+
   ports:
     - name: signal
-      port: 10000
+      port: {{ .Values.netbird.signal.port }}
       targetPort: signal
 
   selector:

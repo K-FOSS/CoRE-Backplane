@@ -1,11 +1,132 @@
 netbird:
-  clusterDomain: k0s.resolvemy.host
+  clusterDomain: k0s-lab.resolvemy.host
+
+  auth:
+    useAuth0: false
+
+    oidc:
+      provider: https://idp.mylogin.space/application/o/netbird/
+      tokenEndpoint: https://idp.mylogin.space/application/o/token/
+
+  secrets:
+    secretStoreRef:
+      name: vault-backend
+      kind: ClusterSecretStore
+
+    oidc:
+      VaultKey: Netbird
+
+      ClientIDPath: OpenIDClientID
+      ClientSecretPath: OpenIDClientSecret
+
 
   signal:
     enabled: true
 
     image:
       repository: wiretrustee/signal
+      tag: main
+      pullPolicy: Always
+      pullSecrets: []
+
+    replicaCount: 1
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    certSANs:
+      dnsNames: []
+      ipAddresses: []
+
+    extraArgs: {}
+
+    labels: {}
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    nodeSelector: {}
+    tolerations: []
+    podAntiAffinity: soft
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+    affinity: {}
+    extraEnv: []
+    sidecars: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+
+    port: 10000
+    service:
+      enabled: true
+      type: LoadBalancer # or LoadBalancer
+      labels: {}
+
+      annotations:
+        metallb.universe.tf/allow-shared-ip: istio
+
+      externalIPs:
+        - 66.165.222.101
+      loadBalancerIP: 10.1.1.83
+
+  management:
+    enabled: true
+
+    image:
+      repository: netbirdio/management
+      tag: latest
+      pullPolicy: Always
+      pullSecrets: []
+
+    replicaCount: 1
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    certSANs:
+      dnsNames: []
+      ipAddresses: []
+
+    extraArgs: {}
+
+    labels: {}
+    annotations: {}
+    podLabels: {}
+    podAnnotations: {}
+    nodeSelector: {}
+    tolerations: []
+    podAntiAffinity: soft
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+    affinity: {}
+    extraEnv: []
+    sidecars: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+
+    port: 10000
+    service:
+      enabled: true
+      type: ClusterIP
+      labels: {}
+      annotations: {}
+      loadBalancerIP: ''
+  
+  dashboard:
+    enabled: true
+
+    image:
+      repository: wiretrustee/dashboard
       tag: main
       pullPolicy: Always
       pullSecrets: []
@@ -41,10 +162,10 @@ netbird:
     extraVolumeMounts: []
 
 
-    port: 6443
+    port: 80
     service:
       enabled: true
-      type: LoadBalancer # or LoadBalancer
+      type: ClusterIP # or LoadBalancer
       labels: {}
       annotations: {}
-      loadBalancerIP: 66.165.222.101
+      loadBalancerIP: ''

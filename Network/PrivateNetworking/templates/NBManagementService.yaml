@@ -1,26 +1,36 @@
+{{- if and .Values.netbird.signal.enabled .Values.netbird.signal.service.enabled }}
 {{- $fullName := include "pnetwork.fullname" . -}}
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $fullName }}-netbird-management
+  labels:
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: netbird
+    app.kubernetes.io/component: signal
+
+    {{- with .Values.netbird.signal.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+
+  name: {{ $fullName }}-netbird-signal
 
 spec:
+  type: {{ .Values.netbird.signal.service.type }}
+  {{- with .Values.netbird.signal.service.loadBalancerIP }}
+  loadBalancerIP: {{ . }}
+  {{- end }}
+
   ports:
-    - name: grpc
-      port: 33073
-      targetPort: grpc
-      appProtocol: gnmi-gnoi
+    - name: signal
+      port: 10000
+      targetPort: signal
 
-    - name: api
-      port: 33071
-      targetPort: api
-      appProtocol: http
-
-    - name: https
-      port: 443
-      targetPort: https
-      appProtocol: https
   selector:
-    app.kubernetes.io/name: wirebird
-    app.kubernetes.io/instance: management
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: netbird
+    app.kubernetes.io/component: signal
+
+{{- end }}
