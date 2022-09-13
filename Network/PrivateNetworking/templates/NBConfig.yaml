@@ -37,7 +37,7 @@ data:
             }
           ],
           "CredentialsTTL": "12h",
-          "Secret": "",
+          "Secret": "c29tZV9wYXNzd29yZA==",
           "TimeBasedCredentials": false
         },
         "Signal": {
@@ -50,7 +50,7 @@ data:
         "HttpConfig": {
           "Address": "0.0.0.0:80",
           "AuthIssuer": "{{ .Values.netbird.auth.oidc.provider }}/",
-          "AuthAudience": "netbird-client",
+          "AuthAudience": "{{`{{ .OIDCClientID }}`}}",
           "AuthKeysLocation": "{{ .Values.netbird.auth.oidc.provider }}/jwks/",
           "OIDCConfigEndpoint": "{{ .Values.netbird.auth.oidc.provider }}/.well-known/openid-configuration"
         },
@@ -60,10 +60,9 @@ data:
         "DeviceAuthorizationFlow": {
           "Provider": "hosted",
           "ProviderConfig": {
-            "Audience": "netbird-client",
+            "Audience": "{{`{{ .OIDCClientID }}`}}",
             "Domain": "{{ .Values.netbird.auth.oidc.provider }}",
-            "TokenEndpoint": "{{ .Values.netbird.auth.oidc.tokenEndpoint }}",
-            {{`"ClientID": "{{ .OIDCClientID}}"`}}
+            "TokenEndpoint": "{{ .Values.netbird.auth.oidc.tokenEndpoint }}"
           }
         }
       }
