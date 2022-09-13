@@ -70,6 +70,8 @@ spec:
           imagePullPolicy: {{ .pullPolicy }}
           {{- end }}
 
+          args: []
+
           resources:
             {{- toYaml .Values.netbird.dashboard.resources | nindent 12 }}
 
@@ -124,14 +126,10 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
-      
+
+      {{- with .Values.netbird.dashboard.extraVolumes }}      
       volumes:
-        - configMap:
-            name: "{{ $fullName }}-apiserver-config"
-          name: apiserver-config
-    
-        {{- with .Values.netbird.dashboard.extraVolumes }}
         {{- toYaml . | nindent 8 }}
-        {{- end }}
+      {{- end }}
 
 {{- end }}

@@ -70,6 +70,9 @@ spec:
           imagePullPolicy: {{ .pullPolicy }}
           {{- end }}
 
+          args:
+            - --config=/etc/netbird/management.json
+
           resources:
             {{- toYaml .Values.netbird.management.resources | nindent 12 }}
 
@@ -80,7 +83,11 @@ spec:
             - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
               value: ''
 
-
+          volumeMounts:
+            - name: config
+              subPath: management.json
+              mountPath: /etc/netbird/management.json
+              readOnly: true
 
           ports:
             - containerPort: 80
@@ -98,10 +105,13 @@ spec:
           type: RuntimeDefault
       
       volumes:
-        - configMap:
-            name: "{{ $fullName }}-apiserver-config"
-          name: apiserver-config
-    
+        - name: config
+          secret:
+            secretName: {{ $fullName }}-netbird-config
+            items:
+              - key: management.json
+                path: management.json
+
         {{- with .Values.netbird.management.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
