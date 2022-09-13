@@ -765,38 +765,6 @@ spec:
     - match:
         - authority:
             exact: nat.ipaddr.network
-          uri:
-            prefix: /api
-          ignoreUriCase: true
-          headers:
-            content-length:
-              regex: '\d*'
-      route:
-        - destination:
-            port:
-              number: 80
-            host: k0s-cntrl-pnet-privatenetworking-core-netbird-management.core-prod.svc.k0s.resolvemy.host
-
-    - match:
-        - authority:
-            exact: nat.ipaddr.network
-          uri:
-            prefix: /api
-          ignoreUriCase: true
-
-      route:
-        - destination:
-            port:
-              number: 80
-            host: k0s-cntrl-pnet-privatenetworking-core-netbird-management.core-prod.svc.k0s.resolvemy.host
-          headers:
-            request:
-              add:
-                content-length: '0'
-
-    - match:
-        - authority:
-            exact: nat.ipaddr.network
       route:
         - destination:
             port:
