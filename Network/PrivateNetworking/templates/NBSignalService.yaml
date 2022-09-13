@@ -16,6 +16,12 @@ metadata:
 
   name: {{ $fullName }}-netbird-signal
 
+  annotations:
+    {{- with .Values.netbird.signal.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+
+
 spec:
   type: {{ .Values.netbird.signal.service.type }}
   {{- with .Values.netbird.signal.service.loadBalancerIP }}
