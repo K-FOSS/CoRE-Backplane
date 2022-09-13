@@ -73,19 +73,20 @@ spec:
           args:
             - --config=/etc/netbird/management.json
             - --log-file=console
+            - --cert-file=/etc/tls/tls.crt
+            - --cert-key=/etc/tls/tls.key
             - --log-level=debug
 
           resources:
             {{- toYaml .Values.netbird.management.resources | nindent 12 }}
 
-          env:
-            - name: NETBIRD_MGMT_API_ENDPOINT
-              value: 0.0.0.0:67
-
-            - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
-              value: ''
+          env: []
 
           volumeMounts:
+            - name: tls-certs
+              mountPath: /etc/tls
+
+
             - name: config
               subPath: management.json
               mountPath: /etc/netbird/management.json
@@ -107,6 +108,10 @@ spec:
           type: RuntimeDefault
       
       volumes:
+        - name: tls-certs
+          secret:
+            secretName: ipaddrnetwork-default-certificates
+
         - name: config
           secret:
             secretName: {{ $fullName }}-netbird-config

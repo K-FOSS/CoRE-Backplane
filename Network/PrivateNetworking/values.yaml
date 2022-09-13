@@ -116,13 +116,17 @@ netbird:
     extraVolumeMounts: []
 
 
-    port: 10000
+    port: 33073
     service:
       enabled: true
-      type: ClusterIP
+      type: LoadBalancer
       labels: {}
-      annotations: {}
-      loadBalancerIP: ''
+      annotations:
+        metallb.universe.tf/allow-shared-ip: istio
+
+      externalIPs:
+        - 66.165.222.101
+      loadBalancerIP: 10.1.1.83
   
   dashboard:
     enabled: true
