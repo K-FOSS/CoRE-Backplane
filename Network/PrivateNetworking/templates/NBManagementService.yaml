@@ -1,4 +1,4 @@
-{{- if and .Values.netbird.signal.enabled .Values.netbird.signal.service.enabled }}
+{{- if and .Values.netbird.management.enabled .Values.netbird.management.service.enabled }}
 {{- $fullName := include "pnetwork.fullname" . -}}
 ---
 apiVersion: v1
@@ -8,17 +8,17 @@ metadata:
     app.kubernetes.io/instance: {{ $fullName }}
 
     app.kubernetes.io/name: netbird
-    app.kubernetes.io/component: signal
+    app.kubernetes.io/component: management
 
-    {{- with .Values.netbird.signal.labels }}
+    {{- with .Values.netbird.management.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
 
-  name: {{ $fullName }}-netbird-signal
+  name: {{ $fullName }}-netbird-management
 
 spec:
-  type: {{ .Values.netbird.signal.service.type }}
-  {{- with .Values.netbird.signal.service.loadBalancerIP }}
+  type: {{ .Values.netbird.management.service.type }}
+  {{- with .Values.netbird.management.service.loadBalancerIP }}
   loadBalancerIP: {{ . }}
   {{- end }}
 
@@ -31,6 +31,6 @@ spec:
     app.kubernetes.io/instance: {{ $fullName }}
 
     app.kubernetes.io/name: netbird
-    app.kubernetes.io/component: signal
+    app.kubernetes.io/component: management
 
 {{- end }}
