@@ -100,6 +100,13 @@ spec:
                   key: AUTH_CLIENT_ID
                   optional: false
 
+            - name: AUTH_AUTHORITY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netbird-config
+                  key: AUTH_AUTHORITY
+                  optional: false
+
             - name: NETBIRD_MGMT_API_ENDPOINT
               value: http://{{ $fullName }}-netbird-management.{{ .Release.Namespace }}.svc.{{ .Values.netbird.clusterDomain }}:80
 
