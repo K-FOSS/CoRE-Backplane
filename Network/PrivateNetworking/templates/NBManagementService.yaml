@@ -27,6 +27,14 @@ spec:
   loadBalancerIP: {{ . }}
   {{- end }}
 
+  {{- with .Values.netbird.management.service.externalIPs }}
+  externalIPs:
+  {{- range . }}
+    - {{ . }}
+  {{- end }}
+  {{- end }}
+
+
   ports:
     - name: https
       port: 33073
