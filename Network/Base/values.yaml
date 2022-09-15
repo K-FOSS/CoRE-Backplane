@@ -1135,8 +1135,8 @@ cilium:
   # labels: ""
 
   # logOptions allows you to define logging options. eg:
-  # logOptions:
-  #   format: json
+  logOptions:
+    format: json
 
   # -- Enables periodic logging of system load
   logSystemLoad: false
@@ -1267,19 +1267,20 @@ cilium:
 
   # -- Configure prometheus metrics on the configured port at /metrics
   prometheus:
-    enabled: false
+    enabled: true
     port: 9962
     serviceMonitor:
       # -- Enable service monitors.
       # This requires the prometheus CRDs to be available (see https://github.com/prometheus-operator/prometheus-operator/blob/master/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml)
-      enabled: false
+      enabled: true
       # -- Labels to add to ServiceMonitor cilium-agent
-      labels: {}
+      labels:
+        resolvemy.host/metrics: mimir
       # -- Annotations to add to ServiceMonitor cilium-agent
       annotations: {}
       # -- Specify the Kubernetes namespace where Prometheus expects to find
       # service monitors configured.
-      # namespace: ""
+      namespace: core-prod
     # -- Metrics that should be enabled or disabled from the default metric
     # list. (+metric_foo to enable metric_foo , -metric_bar to disable
     # metric_bar).
