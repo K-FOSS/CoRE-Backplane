@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    resolvemy.host/metrics: mimir
+  name: cilium
+  namespace: core-prod
+spec:
+  endpoints:
+    - interval: 1m
+      path: /metrics
+      port: metrics
+      honorLabels: true
+  namespaceSelector:
+    matchNames:
+      - kube-system
+  selector:
+    matchLabels:
+      k8s-app: cilium
