@@ -735,15 +735,16 @@ netbox:
     #        name: secret-resource
 
     ## Additional volumes to mount
-    extraVolumeMounts: []
-    #  - name: extra-volume
-    #    mountPath: /run/secrets/super-secret
-    #    readOnly: true
+    extraVolumeMounts: 
+      - name: services-volume
+        subPath: services
+        mountPath: /etc/services
+        readOnly: true
 
-    extraVolumes: []
-    #  - name: extra-volume
-    #    secret:
-    #      secretName: super-secret
+    extraVolumes:
+      - name: services-volume
+        configMap:
+          name: netbox-worker-services
 
     ## Additional containers to be added to the NetBox pod.
     extraContainers: []
