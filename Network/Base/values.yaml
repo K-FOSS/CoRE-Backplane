@@ -57,7 +57,6 @@ cilium:
   # -- Agent container image.
   image:
     override: ~
-    repository: 'quay.io/cilium/cilium'
     pullPolicy: IfNotPresent
     useDigest: true
 
@@ -1064,6 +1063,11 @@ cilium:
   ipMasqAgent:
     enabled: false
 
+    # the config of nonMasqueradeCIDRs
+    # config:
+      # nonMasqueradeCIDRs: []
+      # masqLinkLocal: false
+
   # iptablesLockTimeout defines the iptables "--wait" option when invoked from Cilium.
   # iptablesLockTimeout: "5s"
 
@@ -1155,6 +1159,8 @@ cilium:
 
   # -- Enables masquerading of IPv4 traffic leaving the node from endpoints.
   enableIPv4Masquerade: true
+
+  #enableIPv6BIGTCP: true
 
   # -- Enables masquerading of IPv6 traffic leaving the node from endpoints.
   enableIPv6Masquerade: false
@@ -1360,6 +1366,13 @@ cilium:
   #   - vxlan (default)
   #   - geneve
   tunnel: 'disabled'
+
+  # -- Configure VXLAN and Geneve tunnel port.
+  # @default -- Port 8472 for VXLAN, Port 6081 for Geneve
+  tunnelPort: 0
+
+  # -- Configure the underlying network MTU to overwrite auto-detected MTU.
+  MTU: 0
 
   # -- Disable the usage of CiliumEndpoint CRD.
   disableEndpointCRD: "false"
@@ -1792,8 +1805,6 @@ cilium:
       # -- Clustermesh API server image.
       image:
         override: ~
-        repository: "quay.io/cilium/clustermesh-apiserver"
-        tag: "v1.12.1"
         # clustermesh-apiserver-digest
         digest: "sha256:c80a8d6ffdf7cab4699441496f628a09a31d0300e623cadb2837c86fa368c02f"
         useDigest: true
@@ -1803,8 +1814,6 @@ cilium:
         # -- Clustermesh API server etcd image.
         image:
           override: ~
-          repository: "quay.io/coreos/etcd"
-          tag: "v3.5.4@sha256:795d8660c48c439a7c3764c2330ed9222ab5db5bb524d8d0607cac76f7ba82a3"
           pullPolicy: "IfNotPresent"
 
       service:
