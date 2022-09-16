@@ -82,24 +82,8 @@ spec:
                 runAsUser: 1000
                 runAsNonRoot: true
               ingress:
-                enabled: true
-                ingressClassName: traefik-core
-                labels:
-                  wan-mode: 'public'
-                  lan-mode: 'private'
-                annotations:
-                  cert-manager.io/cluster-issuer: kjdev-cluster
-                  external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-                  traefik.ingress.kubernetes.io/router.entrypoints: websecure
-                  traefik.ingress.kubernetes.io/router.tls: 'true'
-                  traefik.ingress.kubernetes.io/router.middlewares: core-prod-pomerium-auth@kubernetescrd
-                  ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins", "Network Admins"]}'
-                tls:
-                  - hosts:
-                      - '*.int.mylogin.space'
-                    secretName: myloginspace-int-default-certificates
-                host: '{{ingress}}'
-                path: /
+                enabled: false
+
               volumes: [ ]
               volumeMounts: [ ]
 
