@@ -44,7 +44,11 @@ spec:
       runAsUser: 1000
 
   mountPath: /export
-
+  features:
+    bucketDNS: true
+    domains:
+      minio:
+        - s3.mylogin.space
   pools:
     - name: pool-0
 
@@ -70,7 +74,7 @@ spec:
 
   priorityClassName: tier2-priority
 
-  prometheusOperator: true
+  prometheusOperator: false
   # prometheus:
   #   diskCapacityGB: 20
   #   resources: {}
