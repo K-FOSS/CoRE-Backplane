@@ -1,0 +1,68 @@
+onos-umbrella:
+  # SPDX-FileCopyrightText: 2022 2020-present Open Networking Foundation <info@opennetworking.org>
+  #
+  # SPDX-License-Identifier: Apache-2.0
+
+  # Default values for all µONOS Helm charts.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  global:
+    fullnameOverride: "onos"
+    nameOverride: ""
+    store:
+      consensus:
+        enabled: true
+        name: ""
+        image:
+          registry: ""
+          repository: atomix/atomix-raft-storage-node
+          tag: ""
+          pullPolicy: IfNotPresent
+          pullSecrets: []
+        replicas: 1
+        partitions: 1
+        raft: {}
+        persistence:
+          storageClass: ""
+          storageSize: 1Gi
+
+  import:
+    onos-topo:
+      enabled: true
+
+    onos-config:
+      enabled: true
+
+    onos-gui:
+      enabled: false
+
+    onos-cli:
+      enabled: true
+
+    wcmp-app:
+      enabled: false
+
+    device-provisioner:
+      enabled: false
+
+    topo-discovery:
+      enabled: false
+
+  # ONOS-TOPO
+  onos-topo:
+    store:
+      consensus:
+        enabled: false
+
+  # ONOS-CONFIG
+  onos-config:
+    store:
+      consensus:
+        enabled: false
+
+  # ONOS-GUI
+  onos-gui: {}
+
+  # ONOS-CLI
+  onos-cli: {}
