@@ -1,0 +1,52 @@
+
+atomix-controller:
+  enabled: true
+  replicas: 1
+
+  scope: Cluster
+
+  image:
+    registry: ""
+    repository: atomix/atomix-controller
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+  init:
+    image:
+      registry: ""
+      repository: atomix/atomix-controller-init-certs
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+
+  broker:
+    image:
+      registry: ""
+      repository: atomix/atomix-broker
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+
+atomix-raft-storage:
+  enabled: true
+  replicas: 1
+  scope: Cluster
+  clusterDomain: k0s-lab.resolvemy.host
+
+  image:
+    registry: ""
+    repository: atomix/atomix-raft-storage-controller
+    pullPolicy: IfNotPresent
+    pullSecrets: []
+
+  node:
+    image:
+      registry: ""
+      repository: atomix/atomix-raft-storage-node
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+
+  driver:
+    image:
+      registry: ""
+      repository: atomix/atomix-raft-storage-driver
+      pullPolicy: IfNotPresent
+      pullSecrets: []
