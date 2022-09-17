@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-workspace-workshop
+  namespace: core-prod
+
+spec:
+
+  generators:
+    - list:
+        elements:
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+  template:
+    metadata:
+      name: '{{cluster}}-workshop-ws'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        path: Workspace
+        repoURL: https://gitlab.git.writemy.codes/KJDev/core-workspace.git
+        targetRevision: HEAD
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
