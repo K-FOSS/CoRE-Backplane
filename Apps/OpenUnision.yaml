@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-aaa-openunision
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{cluster}}-openunision'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
+      source:
+        path: SSO/OpenUnision
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
