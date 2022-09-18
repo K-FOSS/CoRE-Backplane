@@ -266,6 +266,68 @@ spec:
               number: 8181
             host: gitlab-prod-webservice-default.core-prod.svc.k0s.resolvemy.host
 
+
+    - match:
+        - authority:
+            exact: workshop.writemy.codes
+          uri:
+            prefix: /api/
+
+          ignoreUriCase: true
+          headers:
+            content-length:
+              regex: '\d*'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cntrl-plane-workshop-ws-onyxia-api.core-prod.svc.k0s.resolvemy.host
+
+
+    - match:
+        - authority:
+            exact: workshop.writemy.codes
+          uri:
+            prefix: /api/
+          ignoreUriCase: true
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cntrl-plane-workshop-ws-onyxia-api.core-prod.svc.k0s.resolvemy.host
+          headers:
+            request:
+              add:
+                content-length: '0'
+
+
+    - match:
+        - authority:
+            exact: workshop.writemy.codes
+
+          headers:
+            content-length:
+              regex: '\d*'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cntrl-plane-workshop-ws-onyxia-ui.core-prod.svc.k0s.resolvemy.host
+
+
+    - match:
+        - authority:
+            exact: workshop.writemy.codes
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cntrl-plane-workshop-ws-onyxia-ui.core-prod.svc.k0s.resolvemy.host
+          headers:
+            request:
+              add:
+                content-length: '0'
+
     #
     # ArgoCD
     #
