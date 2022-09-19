@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-media-downloaders
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+  template:
+    metadata:
+      name: '{{cluster}}-media-downloaders'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        path: Downloading
+        repoURL: https://gitlab.git.writemy.codes/KJDev/kjmedia-lab.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                clusterName: {{ clusterName }}
+
+      destination:
+        server: '{{url}}'
+        namespace: lab-prod
