@@ -144,7 +144,9 @@ argo-cd:
       applicationLabels:
         enabled: false
         labels: {}
+
       enabled: true
+
       rules:
         enabled: false
 
@@ -152,6 +154,7 @@ argo-cd:
         annotations: {}
         labels: {}
         servicePort: 8082
+
       serviceMonitor:
         additionalLabels:
           resolvemy.host/metrics: mimir
@@ -162,7 +165,6 @@ argo-cd:
         namespace: ''
         relabelings: null
         selector: {}
-
 
 
     clusterAdminAccess:
@@ -189,6 +191,13 @@ argo-cd:
       successThreshold: 1
       timeoutSeconds: 1
 
+    readinessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 1
+
     nodeSelector: {}
 
     pdb:
@@ -201,14 +210,6 @@ argo-cd:
     podLabels: {}
 
     priorityClassName: 'tier2-priority'
-
-    readinessProbe:
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
-
 
 
 
@@ -229,91 +230,14 @@ argo-cd:
     volumeMounts: null
     volumes: null
 
+
   createAggregateRoles: false
 
-  dex:
-    affinity: {}
-    containerPortGrpc: 5557
-    containerPortHttp: 5556
-    containerPortMetrics: 5558
-    containerSecurityContext: {}
-    enabled: false
-    env: null
-    envFrom: null
-    extraArgs: null
-    extraContainers: null
-    extraVolumeMounts: null
-    extraVolumes: null
-    image:
-      imagePullPolicy: IfNotPresent
-      repository: ghcr.io/dexidp/dex
-
-    initContainers: null
-    initImage:
-      imagePullPolicy: ''
-      repository: ''
-      tag: ''
-
-    livenessProbe:
-      enabled: false
-
-    metrics:
-      enabled: false
-
-    name: dex-server
-    nodeSelector: {}
-    pdb:
-      annotations: {}
-      enabled: false
-      labels: {}
-    podAnnotations: {}
-    podLabels: {}
-    priorityClassName: 'tier2-priority'
-
-    readinessProbe:
-      enabled: false
-
-    resources: {}
-
-    serviceAccount:
-      annotations: {}
-      automountServiceAccountToken: true
-      create: true
-      name: argocd-dex-server
-    servicePortGrpc: 5557
-    servicePortGrpcName: grpc
-    servicePortHttp: 5556
-    servicePortHttpName: http
-    servicePortMetrics: 5558
-    tolerations: null
-    topologySpreadConstraints: null
-
-    volumeMounts:
-      - mountPath: /shared
-        name: static-files
-
-    volumes:
-      - emptyDir: {}
-        name: static-files
-
-  openshift:
-    enabled: false
-
-  redis:
-    enabled: false
-
-  redis-ha:
-    enabled: false
 
   repoServer:
     name: repo-server
 
     replicas: 1
-
-    image:
-      imagePullPolicy: ''
-      repository: ''
-      tag: ''
 
     resources:
       requests:
@@ -323,9 +247,6 @@ argo-cd:
       limits:
         cpu: '2'
         memory: 2Gi
-
-
-
 
     affinity: {}
 
@@ -371,7 +292,6 @@ argo-cd:
       - 10.1.1.68:6379
 
     extraContainers: null
-
 
     initContainers:
       - name: argocd-lovely-plugin-download
@@ -465,8 +385,11 @@ argo-cd:
       - name: custom-tools
         emptyDir: {}
 
+
   server:
-    replicas: 1
+    name: server
+
+    replicas: 2
     
     image:
       imagePullPolicy: ''
@@ -501,7 +424,6 @@ argo-cd:
     additionalApplications: null
 
     additionalProjects: null
-
 
     affinity: {}
 
@@ -575,8 +497,6 @@ argo-cd:
         repository: ghcr.io/argoproj-labs/argocd-extensions
       resources: {}
     
-
-    
     extraContainers: null
     
 
@@ -603,17 +523,22 @@ argo-cd:
         annotations: {}
         labels: {}
         servicePort: 8083
+
       serviceMonitor:
+        enabled: true
+
+
         additionalLabels:
           resolvemy.host/metrics: mimir
-        enabled: true
+
         interval: 5m
+
         metricRelabelings: null
         namespace: ''
         relabelings: null
         selector: {}
 
-    name: server
+
     nodeSelector: {}
 
     pdb:
@@ -699,14 +624,19 @@ argo-cd:
     args:
       # -- The default metric address
       metricsAddr: :8080
+
       # -- The default health check port
       probeBindAddr: :8081
+
       # -- The default leader election setting
       enableLeaderElection: false
+
       # -- How application is synced between the generator and the cluster
       policy: sync
+
       # -- Print debug logs
       debug: false
+
       # -- Enable dry run mode
       dryRun: false
 
@@ -717,6 +647,7 @@ argo-cd:
     metrics:
       # -- Deploy metrics service
       enabled: false
+
       service:
         # -- Metrics service annotations
         annotations: {}
@@ -726,25 +657,33 @@ argo-cd:
         servicePort: 8085
         # -- Metrics service port name
         portName: http-metrics
+
       serviceMonitor:
         # -- Enable a prometheus ServiceMonitor
         enabled: false
+
         # -- Prometheus ServiceMonitor interval
         interval: 30s
+
         # -- Prometheus [RelabelConfigs] to apply to samples before scraping
         relabelings: []
+
         # -- Prometheus [MetricRelabelConfigs] to apply to samples before ingestion
         metricRelabelings: []
+
         # -- Prometheus ServiceMonitor selector
         selector: {}
           # prometheus: kube-prometheus
 
         # -- Prometheus ServiceMonitor scheme
         scheme: ""
+
         # -- Prometheus ServiceMonitor tlsConfig
         tlsConfig: {}
+
         # -- Prometheus ServiceMonitor namespace
         namespace: ""  # monitoring
+
         # -- Prometheus ServiceMonitor labels
         additionalLabels: {}
 
@@ -755,18 +694,23 @@ argo-cd:
     service:
       # -- Application set service annotations
       annotations: {}
+
       # -- Application set service labels
       labels: {}
+
       # -- Application set service port
       port: 7000
+
       # -- Application set service port name
       portName: webhook
 
     serviceAccount:
       # -- Specifies whether a service account should be created
       create: true
+
       # -- Annotations to add to the service account
       annotations: {}
+
       # -- The name of the service account to use.
       # If not set and create is true, a name is generated using the fullname template
       name: ""
@@ -813,7 +757,7 @@ argo-cd:
     affinity: {}
 
     # -- If specified, indicates the pod's priority. If not specified, the pod priority will be default or zero if there is no default.
-    priorityClassName: ""
+    priorityClassName: ''
 
     # -- List of extra mounts to add (normally used with extraVolumes)
     extraVolumeMounts: []
@@ -1391,3 +1335,20 @@ argo-cd:
 
         # -- [Node selector]
         nodeSelector: {}
+
+
+  dex:
+    enabled: false
+
+
+  openshift:
+    enabled: false
+
+
+  redis:
+    enabled: false
+
+
+  redis-ha:
+    enabled: false
+
