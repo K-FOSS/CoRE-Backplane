@@ -11,6 +11,12 @@ argo-cd:
       repository: quay.io/argoproj/argocd
       tag: latest
 
+    logging:
+      # -- Set the global logging format. Either: `text` or `json`
+      format: json
+      # -- Set the global logging level. One of: `debug`, `info`, `warn` or `error`
+      level: warn
+
     imagePullSecrets: null
 
     networkPolicy:
@@ -182,9 +188,6 @@ argo-cd:
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
-
-    logFormat: json
-    logLevel: warn
 
     nodeSelector: {}
 
@@ -392,9 +395,6 @@ argo-cd:
       successThreshold: 1
       timeoutSeconds: 1
 
-    logFormat: json
-    logLevel: warn
-
     metrics:
       enabled: true
       service:
@@ -596,9 +596,6 @@ argo-cd:
       periodSeconds: 10
       successThreshold: 1
       timeoutSeconds: 1
-
-    logFormat: json
-    logLevel: debug
 
     metrics:
       enabled: true
@@ -956,11 +953,6 @@ argo-cd:
         # email-username:
         # email-password:
           # For more information: https://argocd-notifications.readthedocs.io/en/stable/services/email/
-
-    # -- Set the logging level. (One of: `debug`, `info`, `warn`, `error`)
-    logLevel: info
-    # -- Application controller log format. Either `text` or `json`
-    logFormat: json
 
     # -- Extra arguments to provide to the controller
     extraArgs: []
