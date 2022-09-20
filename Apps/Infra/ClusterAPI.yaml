@@ -9,20 +9,17 @@ spec:
         elements:
           - cluster: cntrlplane
             url: https://10.1.1.44:6443
-            servingCluster: 'k0s'
+  
   template:
     metadata:
       name: '{{cluster}}-capi'
-
-      annotations:
-        argocd.argoproj.io/manifest-generate-paths: .
 
     spec:
       project: core
 
       source:
-        path: ClusterAPI
-        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: config/default
+        repoURL: https://github.com/platform9-incubator/cluster-api-provider-external.git
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
