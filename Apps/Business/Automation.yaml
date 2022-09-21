@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-business-automation
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
+  template:
+    metadata:
+      name: '{{cluster}}-business-automation'
+    spec:
+      project: core
+
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/core-business2.git
+        path: Automation
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
