@@ -18,13 +18,12 @@ spec:
             bearer_token: {{ .Token }}
             metrics_path: /minio/v2/metrics/cluster
             scheme: https
-            scrape_interval: 2m
+            scrape_interval: 15s
             scrape_timeout: 30s
-            tls_config:
-              insecure_skip_verify: true
             static_configs:
-            - targets:
-              - minio.core-prod.svc.k0s.resolvemy.host:443
+              - targets:
+                  - s3.mylogin.space
+                
 
   data:
     - secretKey: Token
