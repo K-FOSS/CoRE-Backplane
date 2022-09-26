@@ -15,14 +15,15 @@ spec:
       data:
         config.env: |
           - job_name: kjdev-core-minio-job
-            bearer_token: {{ .Token }}
+            authorization:
+              credentials: {{ .Token }}
             metrics_path: /minio/v2/metrics/cluster
-            scheme: https
+            scheme: http
             scrape_interval: 15s
             scrape_timeout: 30s
             static_configs:
               - targets:
-                  - s3.mylogin.space
+                  - kjdev-core-console.core-prod.svc.k0s.resolvemy.host:9090
                 
 
   data:
