@@ -85,42 +85,57 @@ argo-cd:
       annotations: {}
 
       ## Generic parameters
+
       # -- Open-Telemetry collector address: (e.g. "otel-collector:4317")
       otlp.address: 'core-tempo-distributor.core-prod.svc.k0s.resolvemy.host:4317'
+
       # -- Time period in seconds for application resync
       timeout.reconciliation: 180
+
       # -- Time period in seconds for application hard resync
       timeout.hard.reconciliation: 0
 
       ## Controller Properties
+
       # -- Number of application status processors
       controller.status.processors: 20
+
       # -- Number of application operation processors
       controller.operation.processors: 10
+
       # -- Specifies timeout between application self heal attempts
       controller.self.heal.timeout.seconds: 5
+
       # -- Repo server RPC call timeout seconds.
       controller.repo.server.timeout.seconds: 60
 
       ## Server properties
+
       # -- Run server without TLS
       server.insecure: true
+
       # -- Value for base href in index.html. Used if Argo CD is running behind reverse proxy under subpath different from /
       server.basehref: /
+
       # -- Used if Argo CD is running behind reverse proxy under subpath different from /
       server.rootpath: ''
+
       # -- Directory path that contains additional static assets
       server.staticassets: /shared/app
+
       # -- Disable Argo CD RBAC for user authentication
       server.disable.auth: false
+
       # -- Enable GZIP compression
       server.enable.gzip: false
+
       # -- Set X-Frame-Options header in HTTP responses to value. To disable, set to "".
       server.x.frame.options: sameorigin
 
       ## Repo-server properties
       # -- Limit on number of concurrent manifests generate requests. Any value less the 1 means no limit.
       reposerver.parallelism.limit: 12
+
 
   controller:
     name: application-controller
@@ -143,25 +158,7 @@ argo-cd:
 
     affinity: {}
 
-    # args:
-    #   # -- define the application controller `--status-processors`
-    #   statusProcessors: '6'
-
-    #   # -- define the application controller `--operation-processors`
-    #   operationProcessors: '3'
-
-    #   # -- define the application controller `--app-resync`
-    #   appResyncPeriod: '180'
-
-    #   # -- define the application controller `--self-heal-timeout-seconds`
-    #   selfHealTimeout: '5'
-
-    #   # -- define the application controller `--repo-server-timeout-seconds`
-    #   repoServerTimeoutSeconds: '60'
-
-    env:
-      - name: ARGOCD_CONTROLLER_REPLICAS
-        value: '1'
+    env: []
 
     envFrom: null
 
@@ -323,7 +320,7 @@ argo-cd:
 
     initContainers:
       - name: argocd-lovely-plugin-download
-        image: ghcr.io/crumbhole/argocd-lovely-plugin:0.5.3
+        image: ghcr.io/crumbhole/argocd-lovely-plugin:0.6.0
         imagePullPolicy: Always
         volumeMounts:
           - mountPath: /custom-tools
