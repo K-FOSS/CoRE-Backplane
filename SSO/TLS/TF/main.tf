@@ -17,7 +17,7 @@ variable "Token" {
 
 provider "authentik" {
   url   = "https://idp.mylogin.space"
-  token = "${var.aaatoken}"
+  token = "${var.Token}"
   # Optionally set insecure to ignore TLS Certificates
   # insecure = true
 }
