@@ -36,6 +36,13 @@ provider "authentik" {
 }
 
 
+resource "authentik_certificate_key_pair" "myloginspace" {
+  name = "MyLogin.Space Wildcard"
+
+  certificate_data = "${var.tlscert}"
+  key_data = "${var.tlssecret}"
+}
+
 output "hello_world" {
   value = "hey hey ya, ${var.aaatoken}! my cert is: ${var.tlscert} and my secret is: ${var.tlssecret}"
 }
