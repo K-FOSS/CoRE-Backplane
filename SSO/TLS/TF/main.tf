@@ -37,5 +37,5 @@ provider "authentik" {
 // }
 
 output "hello_world" {
-  value = "hey hey ya, ${var.Token}"
+  value = "hey hey ya, ${var.Token}  test"
 }
