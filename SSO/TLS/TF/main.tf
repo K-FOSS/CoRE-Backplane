@@ -9,24 +9,11 @@ terraform {
   }
 }
 
-variable "aaatoken" {
+variable "Token" {
   type = string
   default = "tfctl-rc"
   description = "Authentik Token"
 }
-
-variable "tlscert" {
-  type = string
-  default = "tfctl-rc"
-  description = "Authentik Token"
-}
-
-variable "tlssecret" {
-  type = string
-  default = "tfctl-rc"
-  description = "Authentik Token"
-}
-
 
 provider "authentik" {
   url   = "https://idp.mylogin.space"
@@ -36,13 +23,13 @@ provider "authentik" {
 }
 
 
-resource "authentik_certificate_key_pair" "myloginspace" {
-  name = "MyLogin.Space Wildcard"
+// resource "authentik_certificate_key_pair" "myloginspace" {
+//   name = "MyLogin.Space Wildcard"
 
-  certificate_data = "${var.tlscert}"
-  key_data = "${var.tlssecret}"
-}
+//   certificate_data = "${var.tls.crt}"
+//   key_data = "${var.tlssecret}"
+// }
 
 output "hello_world" {
-  value = "hey hey ya, ${var.aaatoken}! my cert is: ${var.tlscert} and my secret is: ${var.tlssecret}"
+  value = "hey hey ya, ${var.Token} ${jsonencode(var)}"
 }
