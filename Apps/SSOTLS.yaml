@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-sso-tls
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://172.20.52.1:6443
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+
+  template:
+    metadata:
+      name: '{{cluster}}-sso-tls'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - FluxSubsystem=true
+          - AutoCreateFluxResources=true
+
+      source:
+        path: SSO/TLS/Infra
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod

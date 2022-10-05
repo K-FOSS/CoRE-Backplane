@@ -1,0 +1,39 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha1
+kind: Terraform
+metadata:
+  name: k0s-cntrl-sso-tls
+spec:
+  path: ./SSO/TLS/TF
+  approvePlan: auto
+  interval: 1m
+
+  varsFrom:
+    - kind: Secret
+      name: k0s-cntrl-sso-tls-aaatoken
+
+  vars:
+    - name: aaatoken
+      valueFrom:
+        secretKeyRef:
+          name: k0s-cntrl-sso-tls-aaatoken
+          key: Token
+
+    - name: tlscert
+      valueFrom:
+        secretKeyRef:
+          name: myloginspace-default-certificates
+          key: tls.crt
+
+    - name: tlssecret
+      valueFrom:
+        secretKeyRef:
+          name: myloginspace-default-certificates
+          key: tls.key
+
+  sourceRef:
+    kind: GitRepository
+    name: k0s-cntrl-sso-tls
+  
+  writeOutputsToSecret:
+    name: k0s-cntrl-sso-tls-output
+
