@@ -267,3 +267,30 @@ vela-core:
     withUser: false
     defaultUser: kubevela:vela-core
     groupPattern: kubevela:*
+
+terraform-controller:
+  replicaCount: 1
+
+  image:
+    repository: oamdev/terraform-controller
+    pullPolicy: Always
+
+  gitImage: alpine/git:latest
+  busyboxImage: busybox:latest
+  controllerNamespace: ""
+
+  # "{\"nat\": \"true\"}"
+  jobNodeSelector: ""
+
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+
+  backend:
+    namespace: core-prod
+
+  githubBlocked: "'false'"
