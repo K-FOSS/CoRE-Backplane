@@ -31,5 +31,5 @@ provider "authentik" {
 // }
 
 output "hello_world" {
-  value = "hey hey ya, ${var.Token} ${jsonencode(var)}"
+  value = "hey hey ya, ${var.Token}"
 }
