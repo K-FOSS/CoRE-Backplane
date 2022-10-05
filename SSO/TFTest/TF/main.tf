@@ -10,9 +10,9 @@ terraform {
 }
 
 variable "aaatoken" {
-   type = string
-   default = "tfctl-rc"
-   description = "Authentik Token"
+  type = string
+  default = "tfctl-rc"
+  description = "Authentik Token"
 }
 
 provider "authentik" {
@@ -25,4 +25,3 @@ provider "authentik" {
 output "hello_world" {
   value = "hey hey ya, ${var.aaatoken}!"
 }
-
