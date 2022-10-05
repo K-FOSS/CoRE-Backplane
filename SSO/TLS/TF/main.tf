@@ -15,6 +15,12 @@ variable "Token" {
   description = "Authentik Token"
 }
 
+variable "aaatoken" {
+  type = string
+  default = "tfctl-rc"
+  description = "Test"
+}
+
 provider "authentik" {
   url   = "https://idp.mylogin.space"
   token = "${var.Token}"
@@ -31,5 +37,5 @@ provider "authentik" {
 // }
 
 output "hello_world" {
-  value = "hey hey ya, ${var.Token}"
+  value = "hey hey ya, ${var.Token} ${var.aaatoken}"
 }
