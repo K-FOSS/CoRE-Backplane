@@ -35,6 +35,7 @@ provider "authentik" {
   # insecure = true
 }
 
+
 output "hello_world" {
-  value = "hey hey ya, ${var.aaatoken}! my cert is: ${var.tlscert} and my secret is: ${tlssecret}"
+  value = "hey hey ya, ${var.aaatoken}! my cert is: ${var.tlscert} and my secret is: ${var.tlssecret}"
 }
