@@ -1,13 +1,20 @@
 apiVersion: infra.contrib.fluxcd.io/v1alpha1
 kind: Terraform
 metadata:
-  name: helloworld-tf
+  name: sso-tftest
 spec:
-  path: ./terraform
+  path: ./SSO/TFTest/TF
   approvePlan: ""
   interval: 1m
+
+  varsFrom:
+  - kind: Secret
+    name: sso-tftest-authentiktoken
+
   sourceRef:
     kind: GitRepository
-    name: helloworld-tf
+    name: sso-tftest
+  
   writeOutputsToSecret:
-    name: helloworld-outputs
+    name: ssotest-output
+
