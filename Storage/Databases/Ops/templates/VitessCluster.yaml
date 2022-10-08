@@ -166,6 +166,57 @@ spec:
                     resources:
                       requests:
                         storage: 10Gi
+
+    - name: gitpods
+      turndownPolicy: Immediate
+      vitessOrchestrator:
+        configSecret:
+          name: core-cluster-config
+          key: orc_config.json
+
+        resources:
+          limits:
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+
+      partitionings:
+        - equal:
+            parts: 1
+            shardTemplate:
+              databaseInitScriptSecret:
+                name: core-cluster-config
+                key: init_db.sql
+              replication:
+                enforceSemiSync: true
+
+              tabletPools:
+                - cell: zone1
+                  type: replica
+                  replicas: 3
+                  vttablet:
+                    extraFlags:
+                      db_charset: utf8mb4
+                      disable_active_reparents: "true"
+                    resources:
+                      limits:
+                        memory: 2G
+                      requests:
+                        cpu: 100m
+                        memory: 892Mi
+                  mysqld:
+                    resources:
+                      limits:
+                        memory: 2G
+                      requests:
+                        cpu: 100m
+                        memory: 512Mi
+                  dataVolumeClaimTemplate:
+                    accessModes: ["ReadWriteOnce"]
+                    resources:
+                      requests:
+                        storage: 10Gi
   updateStrategy:
     type: Immediate
 ---
