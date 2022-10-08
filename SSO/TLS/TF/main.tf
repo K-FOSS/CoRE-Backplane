@@ -15,6 +15,12 @@ variable "Token" {
   description = "Authentik Token"
 }
 
+variable "Cert" {
+  type = string
+  default = "tfctl-rc"
+  description = "TLS Cert Public"
+}
+
 provider "authentik" {
   url   = "https://idp.mylogin.space"
   token = "${var.Token}"
@@ -32,4 +38,8 @@ provider "authentik" {
 
 output "hello_world" {
   value = "hey hey  blah ya, ${var.Token} test"
+}
+
+output "cert" {
+  value = var.Cert
 }
