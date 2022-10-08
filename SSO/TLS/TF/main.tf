@@ -4,6 +4,11 @@ terraform {
       source = "goauthentik/authentik"
       version = "2022.8.1"
     }
+
+    time = {
+      source = "hashicorp/time"
+      version = "0.8.0"
+    }
   }
 }
 
@@ -18,6 +23,19 @@ provider "authentik" {
   # Optionally set insecure to ignore TLS Certificates
   # insecure = true
 }
+
+provider "time" {
+  # Configuration options
+}
+
+resource "null_resource" "previous" {}
+
+resource "time_sleep" "wait_30_seconds" {
+  depends_on = [null_resource.previous]
+
+  create_duration = "30s"
+}
+
 
 
 // resource "authentik_certificate_key_pair" "myloginspace" {
