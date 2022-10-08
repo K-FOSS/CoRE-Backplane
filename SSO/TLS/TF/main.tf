@@ -12,12 +12,6 @@ variable "keycloak_administrator_password" {
   description = "Authentik Token"
 }
 
-variable "Cert" {
-  type = string
-  default = "tfctl-rc"
-  description = "TLS Cert Public"
-}
-
 provider "authentik" {
   url   = "https://idp.mylogin.space"
   token = var.keycloak_administrator_password
