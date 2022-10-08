@@ -33,10 +33,3 @@ provider "authentik" {
 //   key_data = "${var.tlssecret}"
 // }
 
-output "hello_world" {
-  value = "hey hey ${var.keycloak_administrator_password}  blah ya, test"
-}
-
-output "cert" {
-  value = var.keycloak_administrator_password
-}
