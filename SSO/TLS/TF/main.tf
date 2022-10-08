@@ -9,7 +9,6 @@ terraform {
 
 variable "Token" {
   type = string
-  default = "tfctl-rc"
   description = "Authentik Token"
 }
 
