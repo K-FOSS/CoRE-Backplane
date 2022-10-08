@@ -12,13 +12,18 @@ spec:
   enableInventory: true
   alwaysCleanupRunnerPod: false
 
-  varsFrom:
-  - kind: Secret
-    name: k0s-cntrl-sso-tls-aaatoken
-
 
   vars:
+    - name: Token
+      value: 'BLAH'
+      valueFrom:
+        secretKeyRef:
+          name: k0s-cntrl-sso-tls-aaatoken
+          key: Token
+          optional: false
+
     - name: aaatoken
+      value: 'BLAH'
       valueFrom:
         secretKeyRef:
           name: k0s-cntrl-sso-tls-aaatoken
