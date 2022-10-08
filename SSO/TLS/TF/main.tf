@@ -9,6 +9,11 @@ terraform {
       source = "hashicorp/time"
       version = "0.8.0"
     }
+
+    null = {
+      source = "hashicorp/null"
+      version = "3.1.1"
+    }
   }
 }
 
@@ -22,6 +27,19 @@ provider "authentik" {
   token = var.keycloak_administrator_password
   # Optionally set insecure to ignore TLS Certificates
   # insecure = true
+}
+
+terraform {
+  required_providers {
+    null = {
+      source = "hashicorp/null"
+      version = "3.1.1"
+    }
+  }
+}
+
+provider "null" {
+  # Configuration options
 }
 
 provider "time" {
