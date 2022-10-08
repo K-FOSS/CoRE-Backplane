@@ -5,6 +5,14 @@ metadata:
 
 data:
   slapd.conf: |
+    #######################################################################
+    # Global Directives:
+
+    # Features to permit
+    # allow bind_v2
+
+
+
     ### Schema includes ###########################################################
     include                 /etc/openldap/schema/core.schema
     include                 /etc/openldap/schema/cosine.schema
@@ -20,6 +28,9 @@ data:
     # Main settings ###############################################################
     pidfile                 /var/run/openldap/slapd.pid
     argsfile                /var/run/openldap/slapd.args
+
+    TLSCertificateKeyFile /etc/tls/tls.key
+    TLSCertificateFile /etc/tls/tls.crt
 
     ### Database definition (Proxy to AD) #########################################
     database                ldap
