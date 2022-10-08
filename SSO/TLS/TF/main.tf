@@ -7,7 +7,7 @@ terraform {
   }
 }
 
-variable "Token" {
+variable "keycloak_administrator_password" {
   type = string
   description = "Authentik Token"
 }
@@ -20,7 +20,7 @@ variable "Cert" {
 
 provider "authentik" {
   url   = "https://idp.mylogin.space"
-  token = "${var.Token}"
+  token = var.keycloak_administrator_password
   # Optionally set insecure to ignore TLS Certificates
   # insecure = true
 }
@@ -34,9 +34,9 @@ provider "authentik" {
 // }
 
 output "hello_world" {
-  value = "hey hey ${var.Token}  blah ya, test"
+  value = "hey hey ${var.keycloak_administrator_password}  blah ya, test"
 }
 
 output "cert" {
-  value = var.Cert
+  value = var.keycloak_administrator_password
 }

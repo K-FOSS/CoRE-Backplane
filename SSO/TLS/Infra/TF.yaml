@@ -8,32 +8,11 @@ spec:
   interval: 1m
 
   vars:
-    - name: Token
+    - name: keycloak_administrator_password
       valueFrom:
         secretKeyRef:
           name: k0s-cntrl-sso-tls-aaatoken
           key: Token
-          optional: false
-
-    - name: aaatoken
-      value: 'BLAH'
-      valueFrom:
-        secretKeyRef:
-          name: k0s-cntrl-sso-tls-aaatoken
-          key: Token
-          optional: false
-
-    - name: Cert
-      valueFrom:
-        secretKeyRef:
-          name: myloginspace-default-certificates
-          key: tls.crt
-
-    - name: tlssecret
-      valueFrom:
-        secretKeyRef:
-          name: myloginspace-default-certificates
-          key: tls.key
 
   sourceRef:
     kind: GitRepository
