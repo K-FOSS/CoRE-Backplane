@@ -8,12 +8,28 @@ spec:
   interval: 1m
   alwaysCleanupRunnerPod: false
 
-  vars:
-    - name: keycloak_administrator_password
-      valueFrom:
-        secretKeyRef:
-          name: k0s-cntrl-sso-tls-aaatoken
-          key: Token
+  runnerPodTemplate:
+    spec:
+      env:
+        - name: AUTHENTIK_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: k0s-cntrl-sso-tls-aaatoken
+              key: Token
+
+  fileMappings:
+    - location: workspace
+      path: /TLS/MyLogin/TLS.crt
+      secretRef:
+        name: myloginspace-default-certificates
+        key: tls.crt
+
+    - location: workspace
+      path: /TLS/MyLogin/TLS.key
+      secretRef:
+        name: myloginspace-default-certificates
+        key: tls.key
+      
 
   sourceRef:
     kind: GitRepository
