@@ -46,7 +46,7 @@ data "local_file" "tlscert" {
 }
 
 data "local_file" "tlskey" {
-  filename = "${path.module}TLS/MyLogin/TLS.key"
+  filename = "${path.module}/TLS/MyLogin/TLS.key"
 }
 
 
