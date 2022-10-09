@@ -63,7 +63,7 @@ resource "time_sleep" "wait_30_seconds" {
 resource "authentik_certificate_key_pair" "myloginspace" {
   name = "MyLogin.Space Wildcard"
 
-  certificate_data = "${data.local_file.tlscert}"
-  key_data = "${data.local_file.tlssecret}"
+  certificate_data = "${data.local_file.tlscert.content}"
+  key_data = "${data.local_file.tlskey.content}"
 }
 
