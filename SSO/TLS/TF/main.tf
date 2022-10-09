@@ -42,7 +42,11 @@ provider "local" {
 }
 
 data "local_file" "tlscert" {
-    filename = "${path.module}/TLS/MyLogin/TLS.crt"
+  filename = "${path.module}/TLS/MyLogin/TLS.crt"
+}
+
+data "local_file" "tlskey" {
+  filename = "${path.module}TLS/MyLogin/TLS.key"
 }
 
 
@@ -56,10 +60,10 @@ resource "time_sleep" "wait_30_seconds" {
 
 
 
-// resource "authentik_certificate_key_pair" "myloginspace" {
-//   name = "MyLogin.Space Wildcard"
+resource "authentik_certificate_key_pair" "myloginspace" {
+  name = "MyLogin.Space Wildcard"
 
-//   certificate_data = "${data.local_file.tlscert}"
-//   key_data = "${data.local_file.tlssecret}"
-// }
+  certificate_data = "${data.local_file.tlscert}"
+  key_data = "${data.local_file.tlssecret}"
+}
 
