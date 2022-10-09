@@ -1,0 +1,20 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-ldap-prod-sync
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-ldap-prod
+  data:
+    - secretKey: LDAPUsername
+      remoteRef:
+        key: GitLab
+        property: LDAPUsername
+
+    - secretKey: LDAPPassword
+      remoteRef:
+        key: GitLab
+        property: LDAPPassword

@@ -1,0 +1,26 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-database-prod
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-database-prod
+  data:
+    - secretKey: DatabaseDatabase
+      remoteRef:
+        key: GitLab
+        property: DatabaseDatabase
+
+    - secretKey: DatabasePassword
+      remoteRef:
+        key: GitLab
+        property: DatabasePassword
+      
+    - secretKey: DatabaseUsername
+      remoteRef:
+        key: GitLab
+        property: DatabaseUsername
+
