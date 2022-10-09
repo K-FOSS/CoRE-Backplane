@@ -63,23 +63,26 @@ spec:
       {{- end }}
 
       containers:
-        - name: signal
+        - name: netmaker-ui
 
           {{- with .Values.netmaker.ui.image }}
           image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
           imagePullPolicy: {{ .pullPolicy }}
           {{- end }}
 
-          args:
-            - --log-file=console
-            - --log-level=debug
+          args: []
+
+          env:
+            - name: BACKEND_URL
+              value: https://mesh.ipaddr.network
+
 
           resources:
             {{- toYaml .Values.netmaker.ui.resources | nindent 12 }}
 
           ports:
             - containerPort: 80
-              name: http-signal
+              name: http
 
         {{- with .Values.netmaker.ui.sidecars }}
         {{- toYaml . | nindent 8 }}

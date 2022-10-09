@@ -63,16 +63,14 @@ spec:
       {{- end }}
 
       containers:
-        - name: signal
+        - name: netmaker-server
 
           {{- with .Values.netmaker.server.image }}
           image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
           imagePullPolicy: {{ .pullPolicy }}
           {{- end }}
 
-          args:
-            - --log-file=console
-            - --log-level=debug
+          args: []
 
           resources:
             {{- toYaml .Values.netmaker.server.resources | nindent 12 }}
