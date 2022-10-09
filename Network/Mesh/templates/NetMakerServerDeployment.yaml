@@ -1,0 +1,92 @@
+{{- if .Values.netmaker.server.enabled }}
+{{- $fullName := include "meshnet.fullname" . -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: netmaker
+    app.kubernetes.io/component: server
+
+    {{- with .Values.netmaker.server.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+
+  {{- with .Values.netmaker.server.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  
+  name: {{ $fullName }}-netmaker
+
+spec:
+  replicas: {{ .Values.netmaker.server.replicaCount }}
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ $fullName }}
+
+      app.kubernetes.io/name: netmaker
+      app.kubernetes.io/component: server
+
+  strategy:
+    type: Recreate
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: {{ $fullName }}
+
+        app.kubernetes.io/name: netmaker
+        app.kubernetes.io/component: server
+
+        {{- with .Values.netmaker.server.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+      {{- with .Values.netmaker.server.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+    spec:
+      {{- with .Values.netmaker.server.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.netmaker.server.tolerations }}
+      tolerations:
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+
+      containers:
+        - name: signal
+
+          {{- with .Values.netmaker.server.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+
+          args:
+            - --log-file=console
+            - --log-level=debug
+
+          resources:
+            {{- toYaml .Values.netmaker.server.resources | nindent 12 }}
+
+          ports:
+            - containerPort: 80
+              name: http-signal
+
+        {{- with .Values.netmaker.server.sidecars }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+{{- end }}

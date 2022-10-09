@@ -1,0 +1,32 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-mesh
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: cntrl-plane
+            url: https://10.1.1.44:6443
+  template:
+    metadata:
+      name: '{{cluster}}-network-mesh'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        path: Network/Mesh
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+
+        helm:
+          releaseName: onos
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
