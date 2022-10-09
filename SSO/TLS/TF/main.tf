@@ -14,17 +14,17 @@ terraform {
       source = "hashicorp/null"
       version = "3.1.1"
     }
-  }
-}
 
-variable "keycloak_administrator_password" {
-  type = string
-  description = "Authentik Token"
+    local = {
+      source = "hashicorp/local"
+      version = "2.2.3"
+    }
+  }
 }
 
 provider "authentik" {
   url   = "https://idp.mylogin.space"
-  token = var.keycloak_administrator_password
+
   # Optionally set insecure to ignore TLS Certificates
   # insecure = true
 }
@@ -36,6 +36,15 @@ provider "null" {
 provider "time" {
   # Configuration options
 }
+
+provider "local" {
+  # Configuration options
+}
+
+data "local_file" "tlscert" {
+  filename = "/TLS/MyLogin/TLS.crt"
+}
+
 
 resource "null_resource" "previous" {}
 
@@ -50,7 +59,7 @@ resource "time_sleep" "wait_30_seconds" {
 // resource "authentik_certificate_key_pair" "myloginspace" {
 //   name = "MyLogin.Space Wildcard"
 
-//   certificate_data = "${var.tls.crt}"
-//   key_data = "${var.tlssecret}"
+//   certificate_data = "${data.local_file.tlscert}"
+//   key_data = "${data.local_file.tlssecret}"
 // }
 
