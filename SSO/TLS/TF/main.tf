@@ -41,11 +41,6 @@ provider "local" {
   # Configuration options
 }
 
-data "local_file" "tlscert" {
-  filename = "/TLS/MyLogin/TLS.crt"
-}
-
-
 resource "null_resource" "previous" {}
 
 resource "time_sleep" "wait_30_seconds" {
