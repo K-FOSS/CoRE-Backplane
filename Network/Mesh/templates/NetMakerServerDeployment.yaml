@@ -164,6 +164,18 @@ spec:
             - containerPort: 8080
               name: http
 
+
+        {{ range untilStep (.Values.netmaker.server.wireguard.min|int) (.Values.netmaker.server.wireguard.max|int) 1 }}
+            - name: 'udp-{{ . }}'
+              containerPort: {{ . }}
+              protocol: UDP
+
+            - name: 'tcp-{{ . }}'
+              containerPort: {{ . }}
+              protocol: TCP
+        {{ end }}
+
+
         {{- with .Values.netmaker.server.sidecars }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
