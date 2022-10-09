@@ -1,0 +1,30 @@
+{{- $fullName := include "meshnet.fullname" . -}}
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ $fullName }}-netmaker-db
+
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+
+  target:
+    name: {{ $fullName }}-netmaker-db
+
+  data:
+    - secretKey: Database
+      remoteRef:
+        key: NetMaker
+        property: Database
+
+    - secretKey: Username
+      remoteRef:
+        key: NetMaker
+        property: Username
+
+    - secretKey: Password
+      remoteRef:
+        key: NetMaker
+        property: Password
