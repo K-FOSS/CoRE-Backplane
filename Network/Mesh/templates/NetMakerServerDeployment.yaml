@@ -77,9 +77,58 @@ spec:
           resources:
             {{- toYaml .Values.netmaker.server.resources | nindent 12 }}
 
+          env:
+            - name: PLATFORM
+              value: Kubernetes
+
+            - name: API_PORT
+              value: '8080'
+
+            - name: NODE_ID
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+
+            
+            #
+            # Database
+            #
+
+            - name: DATABASE
+              value: postgres
+
+            - name: SQL_HOST
+              value: {{ .Values.netmaker.database.host }}
+
+            - name: SQL_PORT
+              value: {{ .Values.netmaker.database.port }}
+
+            - name: SQL_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netmaker-db
+                  key: Database
+                  optional: false
+
+            - name: SQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netmaker-db
+                  key: Username
+                  optional: false
+
+            - name: SQL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netmaker-db
+                  key: Password
+                  optional: false
+
+
           ports:
-            - containerPort: 80
-              name: http-signal
+            - containerPort: 8080
+              name: http
 
         {{- with .Values.netmaker.server.sidecars }}
         {{- toYaml . | nindent 8 }}
