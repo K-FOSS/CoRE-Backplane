@@ -911,6 +911,32 @@ spec:
 
     - match:
         - authority:
+            exact: meshapi.ipaddr.network
+          headers:
+            content-length:
+              regex: '\d*'
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cntrl-plane-network-mesh-core-network-mesh-netmaker-server.core-prod.svc.k0s.resolvemy.host
+
+    - match:
+        - authority:
+            exact: meshapi.ipaddr.network
+
+      route:
+        - destination:
+            port:
+              number: 80
+            host: cntrl-plane-network-mesh-core-network-mesh-netmaker-server.core-prod.svc.k0s.resolvemy.host
+          headers:
+            request:
+              add:
+                content-length: '0'
+
+    - match:
+        - authority:
             exact: vpn.ipaddr.network
       route:
         - destination:
