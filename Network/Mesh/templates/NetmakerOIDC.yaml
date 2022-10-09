@@ -1,0 +1,26 @@
+{{- $fullName := include "meshnet.fullname" . -}}
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ $fullName }}-netmaker-oidc
+
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+
+  target:
+    name: {{ $fullName }}-netmaker-oidc
+
+  data:
+    - secretKey: OIDCClientID
+      remoteRef:
+        key: NetMaker
+        property: OIDCClientID
+
+    - secretKey: OIDCClientSecret
+      remoteRef:
+        key: NetMaker
+        property: OIDCClientSecret
+

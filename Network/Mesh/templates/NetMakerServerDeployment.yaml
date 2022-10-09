@@ -97,6 +97,30 @@ spec:
             - name: DNS_MODE
               value: 'off'
 
+            #
+            # Auth
+            #
+            - name: AUTH_PROVIDER
+              value: oidc
+
+            - name: OIDC_ISSUER
+              value: https://idp.mylogin.space/application/o/netmaker/
+
+            - name: CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netmaker-oidc
+                  key: OIDCClientID
+                  optional: false
+
+            - name: CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netmaker-oidc
+                  key: OIDCClientSecret
+                  optional: false
+
+
             
             #
             # Database
