@@ -1,0 +1,41 @@
+{{- $fullName := include "meshnet.fullname" . -}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: netmaker
+    app.kubernetes.io/component: server
+
+  name: {{ $fullName }}-netmaker-server-wg
+
+  annotations:
+    metallb.universe.tf/allow-shared-ip: istio
+
+
+
+spec:
+  type: LoadBalancer
+
+  loadBalancerIP: 10.1.1.83
+
+  externalIPs:
+    - 66.165.222.101
+
+  ports:
+{{- range untilStep (.Values.netmaker.server.wireguard.min|int) (.Values.netmaker.server.wireguard.max|int) 1 }}
+    - port: {{ . }}
+      targetPort: {{ . }}
+      protocol: UDP
+      name: 'udp-{{ . }}'
+{{ end }}
+
+
+  selector:
+    app.kubernetes.io/instance: {{ $fullName }}
+
+    app.kubernetes.io/name: netmaker
+    app.kubernetes.io/component: server
+
