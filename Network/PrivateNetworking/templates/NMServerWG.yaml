@@ -32,6 +32,12 @@ spec:
       name: 'udp-{{ . }}'
 {{ end }}
 
+{{- range untilStep (.Values.netmaker.server.extraPorts.min|int) (.Values.netmaker.server.extraPorts.max|int) 1 }}
+    - port: {{ . }}
+      targetPort: {{ . }}
+      protocol: UDP
+      name: 'udp-{{ . }}'
+{{ end }}
 
     - name: grpc-agent
       protocol: TCP
