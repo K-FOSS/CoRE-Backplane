@@ -69,9 +69,13 @@ spec:
         - name: config-vol
           configMap:
             name: {{ $fullName }}-netmaker-server-config
+            defaultMode: 0755
             items:
               - key: mosquitto.conf
                 path: mosquitto.conf
+
+              - key: wait.sh
+                path: wait.sh
 
       containers:
         - name: netmaker-server
@@ -232,6 +236,8 @@ spec:
         - name: mq
           image: eclipse-mosquitto:2.0.11-openssl
 
+          command: ['/wait.sh']
+
           volumeMounts:
             - mountPath: /mosquitto/data
               name: test-volume
@@ -239,6 +245,10 @@ spec:
             - mountPath: /mosquitto/config/mosquitto.conf
               name: config-vol
               subPath: mosquitto.conf
+
+            - mountPath: /wait.sh
+              name: config-vol
+              subPath: wait.sh
 
           env:
             - name: NETMAKER_SERVER_HOST
