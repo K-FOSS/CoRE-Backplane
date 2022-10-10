@@ -5,6 +5,16 @@ kind: ConfigMap
 metadata:
   name: {{ $fullName }}-netmaker-server-config
 data:
+  mosquitto.conf: |
+    per_listener_settings false
+    listener 8883
+    allow_anonymous false
+
+    listener 1883
+    allow_anonymous false
+
+    plugin /usr/lib/mosquitto_dynamic_security.so
+    plugin_opt_config_file /mosquitto/data/dynamic-security.json
   netmaker.yaml: |
     server:
       apihost: "" # defaults to 127.0.0.1 or remote ip (SERVER_HOST) if DisableRemoteIPCheck is not set to true. SERVER_API_HOST if set
