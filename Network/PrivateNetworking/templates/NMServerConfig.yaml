@@ -11,7 +11,7 @@ data:
     wait_for_netmaker() {
       echo "SERVER: ${NETMAKER_SERVER_HOST}"
       until curl --output /dev/null --silent --fail --head \
-        --location "${NETMAKER_SERVER_HOST}/api/server/health"; do
+        --location "http://127.0.0.1:8080"; do
         echo "Waiting for netmaker server to startup"
         sleep 1
       done
