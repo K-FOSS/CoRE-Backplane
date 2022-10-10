@@ -97,6 +97,10 @@ spec:
             - name: REST_BACKEND
               value: 'on'
 
+            - name: AGENT_BACKEND
+              value: 'on'
+
+
             - name: NODE_ID
               valueFrom:
                 fieldRef:
@@ -175,6 +179,9 @@ spec:
           ports:
             - containerPort: 8080
               name: http
+
+            - containerPort: 50051
+              name: grpc-agent
 
 
         {{ range untilStep (.Values.netmaker.server.wireguard.min|int) (.Values.netmaker.server.wireguard.max|int) 1 }}
