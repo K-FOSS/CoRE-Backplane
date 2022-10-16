@@ -2,7 +2,7 @@
 {{- $fullName := include "pnetwork.fullname" . -}}
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   labels:
     app.kubernetes.io/instance: {{ $fullName }}
@@ -22,8 +22,6 @@ metadata:
   name: {{ $fullName }}-netmaker-server
 
 spec:
-  replicas: {{ .Values.netmaker.server.replicaCount }}
-
   selector:
     matchLabels:
       app.kubernetes.io/instance: {{ $fullName }}
@@ -31,8 +29,12 @@ spec:
       app.kubernetes.io/name: netmaker
       app.kubernetes.io/component: server
 
-  strategy:
-    type: Recreate
+  serviceName: {{ $fullName }}-netmaker-server-wg
+
+  podManagementPolicy: Parallel
+
+  minReadySeconds: 60
+  replicas: {{ .Values.netmaker.server.replicaCount }}
 
   template:
     metadata:
