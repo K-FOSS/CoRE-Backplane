@@ -1,0 +1,41 @@
+{{- $fullName := include "spilo.fullname" . -}}
+{{- $clusterName := include "spilo.clusterName" . -}}
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: ExternalSecret
+metadata:
+  name: {{ $fullName }}-db-cfg
+
+  labels:
+    app: {{ $fullName }}-db
+    spilo-cluster: {{ $clusterName }}
+
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: {{ $fullName }}-db-cfg
+    template:
+      engineVersion: v2
+      templateFrom:
+        - configMap:
+            # name of the configmap to pull in
+            name: {{ $fullName }}-db-cfg
+            # here you define the keys that should be used as template
+            items:
+              - key: config.yaml
+  data:
+    #
+    # LDAP
+    # 
+    - secretKey: Username
+      remoteRef:
+        key: PSQL
+        property: Username
+
+    - secretKey: Password
+      remoteRef:
+        key: PSQL
+        property: Password
+      

@@ -1,0 +1,38 @@
+{{- $fullName := include "spilo.fullname" . -}}
+{{- $clusterName := include "spilo.clusterName" . -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $fullName }}-db-cfg
+
+data:
+  config.yaml: |
+    ## https://github.com/zalando/patroni#yaml-configuration
+    consul:
+      host: consul.service.dc1.kjdev
+      url: http://consul.service.dc1.kjdev:8500
+
+      port: 8500
+      scheme: http
+      register_service: true
+
+    postgresql:
+      parameters:
+        max_connections: 512
+
+      pg_hba:
+        - local all all  trust
+        - local replication standby  md5
+        - host all all 0.0.0.0/0 md5
+        - host replication replicator 0.0.0.0/0 md5
+        - host replication standby 0.0.0.0/0 md5
+
+    log:
+      level: DEBUG  
+    
+    bootstrap:
+      initdb:
+        - encoding: UTF8
+        - auth-host: md5
+        - auth-local: trust
