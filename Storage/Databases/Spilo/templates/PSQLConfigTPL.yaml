@@ -7,7 +7,7 @@ metadata:
   name: {{ $fullName }}-db-cfg
 
 data:
-  config.yaml: |
+  config.yaml: |{{`
     ## https://github.com/zalando/patroni#yaml-configuration
     consul:
       host: consul.service.dc1.kjdev
@@ -22,9 +22,10 @@ data:
         max_connections: 512
 
       pg_hba:
-        - local all all  trust
-        - local replication standby  md5
+        - local all all trust
+        - local replication standby md5
         - host all all 0.0.0.0/0 md5
+        - host all all 0.0.0.0/0 ldap ldapserver=ldap.mylogin.space ldapport=636 ldapscheme=ldaps ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn={{ .Username }},ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="{{ .Password }}" ldapsearchattribute="cn"
         - host replication replicator 0.0.0.0/0 md5
         - host replication standby 0.0.0.0/0 md5
 
@@ -36,3 +37,4 @@ data:
         - encoding: UTF8
         - auth-host: md5
         - auth-local: trust
+  `}}
