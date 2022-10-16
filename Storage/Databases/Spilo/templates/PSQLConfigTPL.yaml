@@ -24,8 +24,9 @@ data:
       pg_hba:
         - local all all trust
         - local replication standby md5
-        - host all all 0.0.0.0/0 md5
         - host all all 0.0.0.0/0 ldap ldapserver=ldap.mylogin.space ldapport=636 ldapscheme=ldaps ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn={{ .Username }},ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="{{ .Password }}" ldapsearchattribute="cn"
+        - host all all 0.0.0.0/0 md5
+
         - host replication replicator 0.0.0.0/0 md5
         - host replication standby 0.0.0.0/0 md5
 
