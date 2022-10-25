@@ -288,6 +288,13 @@ spec:
         - name: frr
           image: frrouting/frr:v8.3.1
 
+          securityContext:
+            capabilities:
+              add:
+              - NET_ADMIN
+              - NET_RAW
+              - SYS_MODULE
+
           volumeMounts:
             - name: frr-config
               mountPath: /etc/frr/daemons
