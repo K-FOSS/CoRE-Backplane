@@ -18,42 +18,36 @@ data:
     log syslog informational
 
     router bgp 64512
-      bgp router-id 1.1.1.1
-      bgp graceful-restart stalepath-time 300
-      neighbor 172.16.51.100 remote-as 64567
-      neighbor 172.16.51.100 ebgp-multihop 16
-      no neighbor 172.16.51.100 shutdown
-
-      neighbor 172.16.52.100 remote-as 64567
-      neighbor 172.16.52.100 ebgp-multihop 16
-      no neighbor 172.16.52.100 shutdown
-
-      neighbor 172.16.53.100 remote-as 64567
-      neighbor 172.16.53.100 ebgp-multihop 16
-      no neighbor 172.16.53.100 shutdown
-
-      neighbor 172.16.54.100 remote-as 64567
-      neighbor 172.16.54.100 ebgp-multihop 16
-      no neighbor 172.16.54.100 shutdown
-
-      no bgp default shutdown
-      !
-      address-family ipv4 unicast
-        redistribute kernel route-map OUT
-        redistribute connected route-map OUT
-        neighbor 172.16.51.100 soft-reconfiguration inbound
-        neighbor 172.16.52.100 soft-reconfiguration inbound
-        neighbor 172.16.53.100 soft-reconfiguration inbound
-        neighbor 172.16.54.100 soft-reconfiguration inbound
-      exit-address-family
+    bgp router-id 1.1.1.1
+    no bgp ebgp-requires-policy
+    bgp disable-ebgp-connected-route-check
+    bgp graceful-restart stalepath-time 300
+    neighbor 172.16.51.100 remote-as 64567
+    neighbor 172.16.51.100 ebgp-multihop 16
+    neighbor 172.16.52.100 remote-as 64567
+    neighbor 172.16.52.100 ebgp-multihop 16
+    neighbor 172.16.53.100 remote-as 64567
+    neighbor 172.16.53.100 ebgp-multihop 6
+    neighbor 172.16.54.100 remote-as 64567
+    neighbor 172.16.54.100 ebgp-multihop 16
+    !
+    address-family ipv4 unicast
+      redistribute kernel route-map OUT
+      redistribute connected route-map OUT
+      neighbor 172.16.51.100 soft-reconfiguration inbound
+      neighbor 172.16.52.100 soft-reconfiguration inbound
+      neighbor 172.16.54.100 soft-reconfiguration inbound
+    exit-address-family
     exit
     !
     ip prefix-list ADV seq 5 permit 192.168.4.0/22
     ip prefix-list ADV seq 10 permit 192.152.110.0/24 ge 24
     !
     route-map OUT permit 10
-      match ip address prefix-list ADV
+    match ip address prefix-list ADV
     exit
+    !
+    end
 
   daemons: |
     # This file tells the frr package which daemons to start.
