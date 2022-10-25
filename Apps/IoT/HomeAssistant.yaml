@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-iot-home
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+            environment: 'prod'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{cluster}}-iot-home'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+      # syncPolicy:
+      #   automated:
+      #     selfHeal: true
+      #     prune: true
+
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/core-iot
+        path: Home
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
