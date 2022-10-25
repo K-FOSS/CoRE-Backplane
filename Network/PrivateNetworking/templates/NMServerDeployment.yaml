@@ -292,11 +292,8 @@ spec:
           image: frrouting/frr:v8.3.1
 
           securityContext:
-            capabilities:
-              add:
-              - NET_ADMIN
-              - NET_RAW
-              - SYS_MODULE
+            allowPrivilegeEscalation: true
+            privileged: true
 
           volumeMounts:
             - mountPath: /etc/frr
