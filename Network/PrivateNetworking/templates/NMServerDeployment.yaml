@@ -67,6 +67,9 @@ spec:
         - name: test-volume
           emptyDir: {}
 
+        - name: frr-tmp
+          emptyDir: {}
+
         - name: frr-config
           configMap:
             name: {{ $fullName }}-nm-frr-config
@@ -296,6 +299,9 @@ spec:
               - SYS_MODULE
 
           volumeMounts:
+            - mountPath: /etc/frr
+              name: frr-tmp
+
             - name: frr-config
               mountPath: /etc/frr/daemons
               
