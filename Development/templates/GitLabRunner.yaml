@@ -1,0 +1,24 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: development-gitlab-s3-runner
+spec:
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: gitlab-s3-runner
+    template:
+      engineVersion: v2
+      data:
+        accesskey: 'gitlab'
+
+        secretkey: '{{`{{ .S3SecretKey }}`}}'
+
+
+  data:
+    - secretKey: S3SecretKey
+      remoteRef:
+        key: GitLab
+        property: S3SecretKey
+
