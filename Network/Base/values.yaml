@@ -24,6 +24,20 @@ cilium:
   # For example: 1.7, 1.8, 1.9
   # upgradeCompatibility: '1.8'
 
+  securityContext:
+    # runAsUser: 0
+    privileged: true
+    extraCapabilities:
+      # Allow discretionary access control (e.g. required for package installation)
+      - DAC_OVERRIDE
+      # Allow to set Access Control Lists (ACLs) on arbitrary files (e.g. required for package installation)
+      - FOWNER
+      # Allow to execute program that changes GID (e.g. required for package installation)
+      - SETGID
+      # Allow to execute program that changes UID (e.g. required for package installation)
+      - SETUID
+
+
   debug:
     # -- Enable debug logging
     enabled: false
