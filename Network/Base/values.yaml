@@ -11,7 +11,6 @@ cilium:
 
   image:
     repository: cilium/cilium
-    tag: v1.13.0-rc2
     pullPolicy: "Always"
     # cilium-digest
     digest: ""
@@ -137,19 +136,10 @@ cilium:
     #   cpu: 100m
     #   memory: 512Mi
 
-  # -- Security context to be added to agent pods
-  securityContext:
-    # runAsUser: 0
-    privileged: true
-    extraCapabilities:
-      # Allow discretionary access control (e.g. required for package installation)
-      - DAC_OVERRIDE
-      # Allow to set Access Control Lists (ACLs) on arbitrary files (e.g. required for package installation)
-      - FOWNER
-      # Allow to execute program that changes GID (e.g. required for package installation)
-      - SETGID
-      # Allow to execute program that changes UID (e.g. required for package installation)
-      - SETUID
+  pmtuDiscovery:
+    # -- Enable path MTU discovery to send ICMP fragmentation-needed replies to
+    # the client.
+    enabled: false
 
   # -- Cilium agent update strategy
   updateStrategy:
@@ -1469,7 +1459,6 @@ cilium:
     image:
       override: ~
       repository: quay.io/cilium/operator-generic-ci
-      tag: 86f6ea81cbb2647d63d72f8638fae3f276d53a0a
 
     # -- Roll out cilium-operator pods automatically when configmap is updated.
     rollOutPods: false
