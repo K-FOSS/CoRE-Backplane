@@ -1,0 +1,62 @@
+frr:
+  routeserver:
+    enabled: true
+
+    wireguard:
+      min: 51821
+      max: 51830
+
+    extraPorts:
+      min: 31821
+      max: 32000
+
+    image:
+      repository: gravitl/netmaker
+      tag: latest
+      pullPolicy: Always
+      pullSecrets: []
+
+    replicaCount: 1
+
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+      # limits:
+      #   cpu: 100m
+      #   memory: 128Mi
+
+    certSANs:
+      dnsNames: []
+      ipAddresses: []
+
+    extraArgs: {}
+
+    labels: {}
+    annotations: {}
+    podLabels:
+      logs: loki-myloginspace
+
+    podAnnotations: {}
+    nodeSelector: {}
+    tolerations: []
+    podAntiAffinity: soft
+    podAntiAffinityTopologyKey: kubernetes.io/hostname
+    affinity: {}
+    extraEnv: []
+    sidecars: []
+    extraVolumes: []
+    extraVolumeMounts: []
+
+
+    port: 8080
+    service:
+      enabled: true
+      type: ClusterIP # or LoadBalancer
+      labels: {}
+
+      annotations: {}
+
+      externalIPs: []
+      loadBalancerIP: ''
