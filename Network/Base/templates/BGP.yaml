@@ -13,7 +13,7 @@ spec: # CiliumBGPPeeringPolicySpec
       exportPodCIDR: true
       neighbors: # []CiliumBGPNeighbor
         {{ range .Values.peers }}
-        - peerAddress: '{{ .ip }}'
-          peerASN: '{{ .asn }}'
+        - peerAddress: {{ .ip }}/24
+          peerASN: {{ .asn }}
         {{- end }}
 {{- end }}
