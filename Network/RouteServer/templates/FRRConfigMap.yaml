@@ -31,10 +31,14 @@ data:
       neighbor kuberouter peer-group
       neighbor kuberouter ebgp-multihop 4
       neighbor kuberouter remote-as 64512
+      neighbor pnet peer-group
+      neighbor pnet ebgp-multihop 6
+      neighbor pnet remote-as 64512
       bgp listen range 172.16.51.0/24 peer-group kuberouter
       bgp listen range 172.16.52.0/24 peer-group kuberouter
       bgp listen range 172.16.53.0/24 peer-group kuberouter
       bgp listen range 172.16.54.0/24 peer-group kuberouter
+      bgp listen range 10.4.0.0/16 peer-group pnet
 
       neighbor 172.31.241.69 remote-as 64567
       neighbor 172.31.241.69 ebgp-multihop 16
