@@ -19,6 +19,8 @@ data:
     !
     ip prefix-list ADV seq 1 permit any
     !
+    ip nht resolve-via-default
+    !
     route-map OUT permit 10
       match ip address prefix-list ADV
     exit
@@ -47,8 +49,7 @@ data:
         neighbor kuberouter soft-reconfiguration inbound
         neighbor pnet soft-reconfiguration inbound
         neighbor 172.31.241.69 soft-reconfiguration inbound
-        neighbor 172.31.241.69 route-server-client
-        neighbor 172.31.241.69 attribute-unchanged next-hop
+        neighbor 172.31.241.69 route-reflector-client
       exit-address-family
     exit
     !
