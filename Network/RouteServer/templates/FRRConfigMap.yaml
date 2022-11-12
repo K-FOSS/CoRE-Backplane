@@ -17,8 +17,7 @@ data:
     # vtysh to write configuration to a different file.
     log syslog informational
     !
-    ip prefix-list ADV seq 5 permit 192.168.4.0/22
-    ip prefix-list ADV seq 10 permit 192.152.110.0/24 ge 24
+    ip prefix-list ADV seq 1 permit any
     !
     route-map OUT permit 10
       match ip address prefix-list ADV
@@ -41,9 +40,6 @@ data:
       neighbor 172.31.241.69 ebgp-multihop 16
       !
       address-family ipv4 unicast
-        redistribute kernel route-map OUT
-        redistribute connected route-map OUT
-        neighbor 172.31.241.69 soft-reconfiguration inbound
         neighbor 172.31.241.69 soft-reconfiguration inbound
         neighbor 172.31.241.69 route-server-client
         neighbor 172.31.241.69 attribute-unchanged next-hop
