@@ -20,6 +20,8 @@ data:
     ip prefix-list ADV seq 5 permit 192.168.4.0/22
     ip prefix-list ADV seq 10 permit 192.152.110.0/24 ge 24
     !
+    ip nht resolve-via-default
+    !
     route-map OUT permit 10
       match ip address prefix-list ADV
     exit
@@ -29,7 +31,6 @@ data:
       no bgp ebgp-requires-policy
       bgp disable-ebgp-connected-route-check
       bgp graceful-restart stalepath-time 300
-
       neighbor 172.18.113.48 remote-as 64512
       neighbor 172.18.113.48 ebgp-multihop 16
       !

@@ -23,7 +23,7 @@ data:
       match ip address prefix-list ADV
     exit
     !
-    router bgp 64512
+    router bgp 64567
       bgp router-id 2.2.2.2
       no bgp ebgp-requires-policy
       bgp disable-ebgp-connected-route-check
@@ -45,6 +45,7 @@ data:
       !
       address-family ipv4 unicast
         neighbor kuberouter soft-reconfiguration inbound
+        neighbor pnet soft-reconfiguration inbound
         neighbor 172.31.241.69 soft-reconfiguration inbound
         neighbor 172.31.241.69 route-server-client
         neighbor 172.31.241.69 attribute-unchanged next-hop
