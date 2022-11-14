@@ -11,6 +11,8 @@ spec:
             url: https://10.1.1.40:443
             domain: k0s.resolvemy.host
             apiHost: 10.1.1.40
+            anycastPool: '10.1.1.0/24'
+            lbPool: '10.0.1.0/26'
             containerRuntime: 'containerd'
             containerSocket: '/run/containerd/containerd.sock'
             apiPort: '443'
@@ -39,6 +41,8 @@ spec:
             url: https://172.20.52.1:6443
             domain: cluster.local
             apiHost: 172.20.52.1
+            anycastPool: '10.1.1.0/24'
+            lbPool: '10.0.1.64/26'
             containerRuntime: 'docker'
             containerSocket: '/var/run/docker.sock'
             vmware: 'false'
@@ -162,6 +166,10 @@ spec:
 
                 metallb:
                   enabled: {{bareMetal}}
+              
+                anycastPool: '{{ anycastPool }}'
+
+                lbPool: '{{ lbPool }}'
 
                 vmtools:
                   enabled: {{vmware}}
