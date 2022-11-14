@@ -13,8 +13,6 @@ spec:
             apiHost: 10.1.1.40
             anycastPool: '10.1.1.0/24'
             lbPool: '10.0.1.0/26'
-            containerRuntime: 'containerd'
-            containerSocket: '/run/containerd/containerd.sock'
             apiPort: '443'
             bareMetal: 'true'
             vmware: 'true'
@@ -43,8 +41,6 @@ spec:
             apiHost: 172.20.52.1
             anycastPool: '10.1.1.0/24'
             lbPool: '10.0.1.64/26'
-            containerRuntime: 'docker'
-            containerSocket: '/var/run/docker.sock'
             vmware: 'false'
             bareMetal: 'true'
             apiPort: '6443'
@@ -59,8 +55,6 @@ spec:
           - cluster: home1-k8s
             url: https://10.1.1.42:6443
             domain: home1-k8s.resolvemy.host
-            containerRuntime: 'containerd'
-            containerSocket: '/run/containerd/containerd.sock'
             bareMetal: 'true'
             vmware: 'false'
             apiHost: 10.1.1.42
@@ -75,8 +69,6 @@ spec:
           - cluster: cntrl-plane
             url: https://10.1.1.44:6443
             domain: k0s-lab.resolvemy.host
-            containerRuntime: 'containerd'
-            containerSocket: '/run/containerd/containerd.sock'
             bareMetal: 'false'
             vmware: 'false'
             apiHost: 10.1.1.44
@@ -116,18 +108,6 @@ spec:
                   k8sServicePort: '{{ apiPort }}'
 
                   devices: '{{NICs}}'
-
-                  containerRuntime:
-                    # -- Enables specific integrations for container runtimes.
-                    # Supported values:
-                    # - containerd
-                    # - crio
-                    # - docker
-                    # - none
-                    # - auto (automatically detect the container runtime)
-                    integration: '{{containerRuntime}}'
-                    # -- Configure the path to the container runtime control socket.
-                    socketPath: '{{containerSocket}}'
 
                   # -- Configure N-S k8s service loadbalancing
                   nodePort:
