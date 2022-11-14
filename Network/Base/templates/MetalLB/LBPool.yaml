@@ -1,0 +1,10 @@
+{{- if .Values.metallb.enabled }}
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: metallb-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - {{ .values.lbPool }} 
+{{- end }}
