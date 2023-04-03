@@ -65,7 +65,8 @@ democratic-csi:
     hostAliases: []
     hostIPC: false
     podAnnotations: {}
-    podLabels: {}
+    podLabels:
+      logs: loki-myloginspace
     priorityClassName: ""
     
     # deployment = deploy controller parts in a distinct deployment
@@ -206,11 +207,13 @@ democratic-csi:
     # windows support
     windows:
       enabled: false
+
     rbac:
       enabled: true
       openshift:
         # set to true if running on openshift
         privileged: false
+
     enabled: true
     hostNetwork: true
     hostAliases: []
@@ -218,7 +221,9 @@ democratic-csi:
     hostPID: false
     kubeletHostPath: /var/lib/kubelet
     podAnnotations: {}
-    podLabels: {}
+    podLabels:
+      logs: loki-myloginspace
+
     priorityClassName: ""
 
     livenessProbe:
