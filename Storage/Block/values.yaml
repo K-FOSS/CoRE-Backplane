@@ -105,7 +105,7 @@ democratic-csi:
 
     # https://kubernetes-csi.github.io/docs/external-resizer.html
     externalResizer:
-      enabled: true
+      enabled: false
       #image: registry.k8s.io/sig-storage/csi-resizer:v1.4.0
       args:
       - --v=5
@@ -120,7 +120,7 @@ democratic-csi:
 
     # https://kubernetes-csi.github.io/docs/external-snapshotter.html
     externalSnapshotter:
-      enabled: true
+      enabled: false
       # 1.20+ should use v4.0.0+
       # READ *before* updating from beta https://github.com/kubernetes-csi/external-snapshotter#usage
      # image: registry.k8s.io/sig-storage/csi-snapshotter:v5.0.1
@@ -277,7 +277,15 @@ democratic-csi:
     affinity: {}
 
   # add note here about volume expansion requirements
-  storageClasses: []
+  storageClasses:
+    - name: infra1-storage
+      annotations: {}
+      labels: {}
+      defaultClass: true
+      reclaimPolicy: Delete
+      volumeBindingMode: Immediate
+      allowVolumeExpansion: true
+      mountOptions: []
   #- name:
   #  annotations: {}
   #  labels: {}
