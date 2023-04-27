@@ -405,7 +405,7 @@ minecraft-server:
     ## Use loadBalancerIP to request a specific static IP,
     ## otherwise leave blank
     ##
-    # loadBalancerIP:
+    loadBalancerIP: 10.1.1.83
     ## Address that are allowed when svc is LoadBalancer
     ##
     loadBalancerSourceRanges: []
@@ -413,7 +413,8 @@ minecraft-server:
     ## set the LoadBalancer service type to internal only.
     ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
     ##
-    annotations: {}
+    annotations:
+      metallb.universe.tf/allow-shared-ip: istio
 
     ## Provide any additional labels which may be required. This can be used to
     ## have qumine show up in `kubectl cluster-info`
@@ -637,7 +638,7 @@ minecraft-server:
 
     ## GeyserMC
     geysermc:
-      enabled: false
+      enabled: true
 
       ## GeyserMC image version
       ## ref: https://hub.docker.com/repository/docker/qumine/integrations-bluemap/tags
@@ -645,7 +646,7 @@ minecraft-server:
       image:
         registry: docker.io
         repository: qumine/integrations-geysermc
-        tag: 1188
+        #tag: 1188
         ## Specify a imagePullPolicy
         ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
         ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
@@ -663,7 +664,7 @@ minecraft-server:
       service:
         ## Kubernetes svc type
         ##
-        type: ClusterIP
+        type: LoadBalancer
         port: 19132
         ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
         ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
@@ -678,7 +679,7 @@ minecraft-server:
         ## Use loadBalancerIP to request a specific static IP,
         ## otherwise leave blank
         ##
-        # loadBalancerIP:
+        loadBalancerIP: 10.1.1.83
         ## Address that are allowed when svc is LoadBalancer
         ##
         loadBalancerSourceRanges: []
@@ -686,7 +687,8 @@ minecraft-server:
         ## set the LoadBalancer service type to internal only.
         ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
         ##
-        annotations: {}
+        annotations:
+          metallb.universe.tf/allow-shared-ip: istio
 
         ## Provide any additional labels which may be required. This can be used to
         ## have qumine show up in `kubectl cluster-info`
