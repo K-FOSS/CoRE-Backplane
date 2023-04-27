@@ -54,7 +54,7 @@ minecraft-server:
     # The url for the ServerStarter server-setup-config file.
     starterConfigURL: ""
     # Whether AIKAR's optimized flags should be used or not
-    useAikarFlags: false
+    useAikarFlags: true
 
     properties:
       # Allows users to use flight on the server while in Survival mode, if they have a mod that provides flight installed.
@@ -162,7 +162,7 @@ minecraft-server:
       #   The MOTD supports color and formatting codes.
       #   The MOTD supports special characters, such as "♥". However, such characters must be converted to escaped Unicode form. An online converter can be found here.
       #   If the MOTD is over 59 characters, the server list may report a communication error.
-      motd: "A Minecraft Server"
+      motd: "KK's house Server"
       # By default it allows packets that are n-1 bytes big to go normally, but a packet of n bytes or more gets compressed down.
       # So, a lower number means more compression but compressing small amounts of bytes might actually end up with a larger result
       # than what went in.
@@ -284,7 +284,7 @@ minecraft-server:
     whitelistOverride: false
 
     # Players to add to the initial ops list.
-    ops: ""
+    ops: "KristineFJ"
     # Override the ops.json if they already exist.
     opsOverride: false
 
@@ -436,20 +436,20 @@ minecraft-server:
     capabilities:
       drop: ["ALL"]
   podSecurityContext:
-    fsGroup: 4242
-    runAsUser: 4242
-    runAsNonRoot: true
+    fsGroup: 0
+    runAsUser: 0
+    runAsNonRoot: false
 
   ## Configure resource requests and limits
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources:
     limits:
-      cpu: 1000m
-      memory: 2000Mi
+      cpu: 6000m
+      memory: 6000Mi
     requests:
       memory: 1000Mi
-      cpu: 250m
+      cpu: 500m
 
   ## Liveness Probe. The block is directly forwarded into the deployment, so you can use whatever livenessProbe configuration you want.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
@@ -460,7 +460,7 @@ minecraft-server:
       port: http
     periodSeconds: 5
     timeoutSeconds: 1
-    failureThreshold: 5
+    failureThreshold: 50
     successThreshold: 1
 
   ## Readiness Probe. The block is directly forwarded into the deployment, so you can use whatever readinessProbe configuration you want.
@@ -472,7 +472,7 @@ minecraft-server:
       port: http
     periodSeconds: 5
     timeoutSeconds: 1
-    failureThreshold: 5
+    failureThreshold: 50
     successThreshold: 1
 
   ## Readiness Probe. The block is directly forwarded into the deployment, so you can use whatever readinessProbe configuration you want.
@@ -482,7 +482,7 @@ minecraft-server:
     httpGet:
       path: /health/ready
       port: http
-    periodSeconds: 5
+    periodSeconds: 600
     failureThreshold: 24
 
   extraVolumeMounts:
