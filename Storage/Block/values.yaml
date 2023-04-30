@@ -183,6 +183,7 @@ democratic-csi:
   #      privileged: true
 
       resources:
+
       extraEnv:
         - name: KUBERNETES_SERVICE_HOST
           value: '10.1.1.40'
@@ -242,18 +243,10 @@ democratic-csi:
       # RancherOS, openshift, etc 
       localtimeHostPath: /etc/localtime
       lifecycle:
-  #      postStart:
-  #        exec:
-  #          command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
-  #      preStop:
-  #        exec:
-  #          command: ["/bin/sh","-c","nginx -s quit; while killall -0 nginx; do sleep 1; done"]
 
-      resources:
       extraEnv: []
       extraVolumeMounts: []
-  #    - name: foo
-  #      mountPath: /foo
+
     
       iscsiDirHostPath: /etc/iscsi
       iscsiDirHostPathType: Directory
@@ -268,6 +261,13 @@ democratic-csi:
       # if you do not want to completely override the defaults use this
       extraArgs: []
       resources:
+        requests:
+          memory: "64Mi"
+          cpu: "250m"
+
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
 
     extraVolumes: []
   #  - name: foo
