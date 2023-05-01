@@ -1,0 +1,37 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-dev-main
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            clusterName: 'k0s'
+            url: https://10.1.1.40:443
+
+  template:
+    metadata:
+      name: '{{cluster}}-dev-main'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        path: DevelopmentNew
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+        #   env:
+        #     - name: LOVELY_HELM_MERGE
+        #       value: |-
+        #         clusterName: {{ clusterName }}
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
