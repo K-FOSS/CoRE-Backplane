@@ -487,11 +487,23 @@ minecraft-server:
     failureThreshold: 24
 
   extraVolumeMounts:
-  - name: tmp
-    mountPath: /tmp
+    - name: tmp
+      mountPath: /tmp
+
+    - name: geyser-config
+      mountPath: /home/qumine/config.yml
+      subPath: config.yml
+
   extraVolumes:
-  - name: tmp
-    emptyDir: {}
+    - name: tmp
+      emptyDir: {}
+
+    - name: geyser-config
+      configMap:
+        name: gaming-kk-geyser-config
+        items:
+          - key: config.yml
+            path: config.yml
 
   ## Containers, which are run before the app containers are started.
   extraInitContainers: []
