@@ -497,6 +497,10 @@ minecraft-server:
       mountPath: /home/qumine/config.yml
       subPath: config.yml
 
+    - name: floodgate-config
+      mountPath: /data/plugins/floodgate/config.yml
+      subPath: config.yml
+
   extraVolumes:
     - name: tmp
       emptyDir: {}
@@ -504,6 +508,13 @@ minecraft-server:
     - name: geyser-config
       configMap:
         name: gaming-kk-geyser-config
+        items:
+          - key: config.yml
+            path: config.yml
+
+    - name: floodgate-config
+      configMap:
+        name: gaming-kk-floodgate-config
         items:
           - key: config.yml
             path: config.yml
