@@ -1,0 +1,66 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-infra-dbrain
+  namespace: argocd
+spec:
+
+  generators:
+    - list:
+        elements:
+          - cluster: infra1-dc1
+            url: https://172.20.52.1:6443
+  
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+  template:
+    metadata:
+      name: '{{cluster}}-infra-dbrain'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+    #   syncPolicy:
+    #     automated:
+    #       selfHeal: true
+    #       prune: true
+
+      source:
+        path: DistributedBrain
+        repoURL: https://github.com/K-FOSS/CoRE-CNTRL.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+        #   env:
+        #     - name: LOVELY_HELM_MERGE
+        #       value: |-
+        #         coredns:
+        #           affinity:
+        #             podAntiAffinity:
+        #               preferredDuringSchedulingIgnoredDuringExecution:
+        #                 - weight: 100
+        #                   podAffinityTerm:
+        #                     labelSelector:
+        #                       matchExpressions:
+        #                         - key: app.kubernetes.io/instance
+        #                           operator: In
+        #                           values:
+        #                             - '{{cluster}}-rdns-lab'
+        #                     topologyKey: kubernetes.io/hostname
+
+        #           serviceType: LoadBalancer
+        #           service:
+        #             annotations:
+        #               purelb.io/service-group: anycast
+        #             name: test-dns-rdns-core
+        #             externalTrafficPolicy: Local
+        #             loadBalancerIP: '{{loadBalancerIP}}'
+
+
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
