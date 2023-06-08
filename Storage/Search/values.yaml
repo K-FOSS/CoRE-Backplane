@@ -134,10 +134,10 @@ openobserve:
     ZO_ETCD_LOAD_PAGE_SIZE: "10000"
     ZO_SLED_DATA_DIR: ""
     ZO_SLED_PREFIX: "/zinc/observe/"
-    # ZO_S3_PROVIDER: "minio" # Need to set this up only if minio is being for object storage. Will be set automatically if enabled minio is being used.
-    ZO_S3_SERVER_URL: "" # do not need to set this if enabled minio is being used. settings will be picked from minio section
-    ZO_S3_REGION_NAME: "" # do not need to set this if enabled minio is being used. settings will be picked from minio section
-    ZO_S3_BUCKET_NAME: "mysuperduperbucket" # do not need to set this if enabled minio is being used. settings will be picked from minio section
+    ZO_S3_PROVIDER: "minio" # Need to set this up only if minio is being for object storage. Will be set automatically if enabled minio is being used.
+    ZO_S3_SERVER_URL: "https://s3.mylogin.space" # do not need to set this if enabled minio is being used. settings will be picked from minio section
+    ZO_S3_REGION_NAME: "us-east-1" # do not need to set this if enabled minio is being used. settings will be picked from minio section
+    ZO_S3_BUCKET_NAME: "search-lab" # do not need to set this if enabled minio is being used. settings will be picked from minio section
     RUST_BACKTRACE: "1"
     ZO_LUA_FN_ENABLED: "false"
     ZO_PROMETHEUS_HA_CLUSTER: "cluster"
@@ -145,11 +145,11 @@ openobserve:
 
   service:
     type: ClusterIP
-    # type: LoadBalancer
+#    type: LoadBalancer
     port: 5080
 
   certIssuer:
-    enabled: false
+    enabled: true
 
   ingress:
     enabled: false
@@ -197,7 +197,7 @@ openobserve:
   affinity: {}
 
   etcd:
-    enabled: true # if true then etcd will be deployed as part of openobserve
+    enabled: false # if true then etcd will be deployed as part of openobserve
     externalUrl: "my_custom_host.com:2379" # if enabled is false then this is required
     replicaCount: 3 # if enabled is true then this is required. should be odd number
     image:
@@ -260,10 +260,10 @@ openobserve:
   # zPlane is a commercial software and requires a license to be used.
   # Reach out to hello@zinclabs.io for commercial license if you continue to use zPlane
   zplane:
-    enabled: false # if true then zPlane will be deployed as part of openobserve
+    enabled: true # if true then zPlane will be deployed as part of openobserve
     image:
       repository: public.ecr.aws/zinclabs/zplane
-      tag: 0.1.6
+      #tag: 0.1.6
       pullPolicy: IfNotPresent
     service:
       type: ClusterIP
