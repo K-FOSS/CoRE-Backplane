@@ -123,14 +123,15 @@ minecraft-proxy:
     jvmXXOpts: ""
     # DEPRECATED: use top-level rconServiceAnnotations instead
     serviceAnnotations: {}
-    serviceType: ClusterIP
+    serviceType: LoadBalancer
     ## Set the port used if the serviceType is NodePort
     # nodePort:
-    loadBalancerIP:
+    loadBalancerIP: 10.1.1.83
     # loadBalancerSourceRanges: []
     ## Set the externalTrafficPolicy in the Service to either Cluster or Local
     # externalTrafficPolicy: Cluster
     externalIPs:
+      - 66.165.222.101
     # If set, this overrides the default config file path
     configFilePath: /server/config.yml
     # This can be set to the contents of your config file (only works with yaml currently)
@@ -281,7 +282,7 @@ minecraft-proxy:
       map = "Velocity"
 
       # Whether plugins should be shown in query response by default or not
-      show-plugins = false
+      show-plugins = true
     #  player_limit: -1
     #  ip_forward: false
     #  permissions:
