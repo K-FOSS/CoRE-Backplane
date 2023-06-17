@@ -299,25 +299,25 @@ minecraft-proxy:
       ## Set the externalTrafficPolicy in the Service to either Cluster or Local
       # externalTrafficPolicy: Cluster
 
-    extraPorts: []
+    extraPorts:
 
-      # - name: bedrock
-      #   containerPort: 19132
-      #   protocol: UDP
-      #   service:
-      #     enabled: true
-      #     embedded: true
-          #annotations: {}
-          #type: ClusterIP
-    #     ## Set the external port if the rcon serviceType is NodePort
-    ##     nodePort:
-    #     loadBalancerIP: ""
-    #     loadBalancerSourceRanges: []
-    #     externalTrafficPolicy: Cluster
-    #     port: 8192
-    #   ingress:
-    #     ingressClassName: nginx
-    #     enabled: false
+      - name: bedrock
+        containerPort: 19132
+        protocol: UDP
+        service:
+          enabled: true
+          embedded: true
+          annotations: {}
+          type: ClusterIP
+        ## Set the external port if the rcon serviceType is NodePort
+    #     nodePort:
+        loadBalancerIP: ""
+        loadBalancerSourceRanges: []
+        externalTrafficPolicy: Cluster
+        port: 19132
+        ingress:
+          ingressClassName: nginx
+          enabled: false
     #     annotations:
     ## Deprecated way for specifying the ingressClass. Kube.version < 1.18
     ##       kubernetes.io/ingress.class: nginx
