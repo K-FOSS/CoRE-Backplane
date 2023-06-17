@@ -392,7 +392,7 @@ minecraft-server:
   service:
     ## Kubernetes svc type
     ##
-    type: LoadBalancer
+    type: ClusterIP
     port: 25565
     ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
     ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
@@ -403,12 +403,12 @@ minecraft-server:
     # clusterIP: ""
     ## External IP list to use with ClusterIP service type
     ##
-    externalIPs:
-      - 66.165.222.101
+    # externalIPs:
+    #   - 66.165.222.101
     ## Use loadBalancerIP to request a specific static IP,
     ## otherwise leave blank
     ##
-    loadBalancerIP: 10.1.1.83
+    #loadBalancerIP: 10.1.1.83
     ## Address that are allowed when svc is LoadBalancer
     ##
     loadBalancerSourceRanges: []
@@ -416,8 +416,8 @@ minecraft-server:
     ## set the LoadBalancer service type to internal only.
     ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
     ##
-    annotations:
-      metallb.universe.tf/allow-shared-ip: istio
+    #annotations:
+    #  metallb.universe.tf/allow-shared-ip: istio
 
     ## Provide any additional labels which may be required. This can be used to
     ## have qumine show up in `kubectl cluster-info`
