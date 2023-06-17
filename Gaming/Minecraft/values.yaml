@@ -527,205 +527,6 @@ minecraft-server:
   #   command: ['sh', '-c', 'until nslookup myservice; do echo waiting for myservice; sleep 2; done;']
 
   integrations:
-    ## QuMine-Ingress
-    qumineIngress:
-      enabled: false
-      ## The hostname for the ingress
-      hostname: ""
-
-    ## Prometheus Exporter / Metrics
-    metrics:
-      enabled: false
-      ## Metrics exporter pod Annotation and Labels
-      ##
-      # podAnnotations:
-      #   prometheus.io/scrape: "true"
-      #   prometheus.io/port: "7979"
-
-      ## Kubernetes svc configutarion
-      ##
-      service:
-        ## Kubernetes svc type
-        ##
-        type: ClusterIP
-        port: 9225
-        ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
-        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
-        ##
-        # nodePort:
-        ## Static clusterIP or None for headless services
-        ##
-        # clusterIP: ""
-        ## External IP list to use with ClusterIP service type
-        ##
-        externalIPs: []
-        ## Use loadBalancerIP to request a specific static IP,
-        ## otherwise leave blank
-        ##
-        # loadBalancerIP:
-        ## Address that are allowed when svc is LoadBalancer
-        ##
-        loadBalancerSourceRanges: []
-        ## Provide any additional annotations which may be required. This can be used to
-        ## set the LoadBalancer service type to internal only.
-        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-        ##
-        annotations: {}
-
-        ## Provide any additional labels which may be required. This can be used to
-        ## have qumine show up in `kubectl cluster-info`
-        ##  kubernetes.io/cluster-service: "true"
-        ##  kubernetes.io/name: "qumine"
-        labels:
-          metrics: "true"
-
-      ## Prometheus Operator ServiceMonitor configuration
-      ##
-      serviceMonitor:
-        enabled: false
-        ## Namespace in which Prometheus is running
-        ##
-        # namespace: monitoring
-
-        ## Interval at which metrics should be scraped.
-        ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
-        ##
-        # interval: 10s
-
-        ## Timeout after which the scrape is ended
-        ## ref: https://github.com/coreos/prometheus-operator/blob/master/Documentation/api.md#endpoint
-        ##
-        # scrapeTimeout: 10s
-
-        ## ServiceMonitor selector labels
-        ## ref: https://github.com/bitnami/charts/tree/master/bitnami/prometheus-operator#prometheus-configuration
-        ##
-        # selector:
-        #   prometheus: my-prometheus
-
-    ## BlueMap
-    bluemap:
-      enabled: false
-
-      ## QuMine image version
-      ## ref: https://hub.docker.com/repository/docker/qumine/integrations-bluemap/tags
-      ##
-      image:
-        registry: docker.io
-        repository: qumine/integrations-bluemap
-        tag: 3.3
-        ## Specify a imagePullPolicy
-        ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
-        ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-        ##
-        pullPolicy: Always
-        ## Optionally specify an array of imagePullSecrets.
-        ## Secrets must be manually created in the namespace.
-        ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-        ##
-        # pullSecrets:
-        #   - myRegistryKeySecretName
-
-      ## The hostname for the ingress
-      hostname: ""
-      ## Kubernetes svc configutarion
-      ##
-      service:
-        ## Kubernetes svc type
-        ##
-        type: ClusterIP
-        port: 9090
-        ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
-        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
-        ##
-        # nodePort:
-        ## Static clusterIP or None for headless services
-        ##
-        # clusterIP: ""
-        ## External IP list to use with ClusterIP service type
-        ##
-        externalIPs: []
-        ## Use loadBalancerIP to request a specific static IP,
-        ## otherwise leave blank
-        ##
-        # loadBalancerIP:
-        ## Address that are allowed when svc is LoadBalancer
-        ##
-        loadBalancerSourceRanges: []
-        ## Provide any additional annotations which may be required. This can be used to
-        ## set the LoadBalancer service type to internal only.
-        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-        ##
-        annotations: {}
-
-        ## Provide any additional labels which may be required. This can be used to
-        ## have qumine show up in `kubectl cluster-info`
-        ##  kubernetes.io/cluster-service: "true"
-        ##  kubernetes.io/name: "qumine"
-        labels: {}
-
-    ## GeyserMC
-    geysermc:
-      enabled: false
-
-      ## GeyserMC image version
-      ## ref: https://hub.docker.com/repository/docker/qumine/integrations-bluemap/tags
-      ##
-      image:
-        registry: docker.io
-        repository: kristianfjones/mc-proxy
-        tag: latest
-        ## Specify a imagePullPolicy
-        ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
-        ## ref: http://kubernetes.io/docs/user-guide/images/#pre-pulling-images
-        ##
-        pullPolicy: Always
-        ## Optionally specify an array of imagePullSecrets.
-        ## Secrets must be manually created in the namespace.
-        ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-        ##
-        # pullSecrets:
-        #   - myRegistryKeySecretName
-
-      ## Kubernetes svc configutarion
-      ##
-      service:
-        ## Kubernetes svc type
-        ##
-        type: LoadBalancer
-        port: 19132
-        ## Specify the nodePort value for the LoadBalancer and NodePort service types for the client port
-        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
-        ##
-        # nodePort:
-        ## Static clusterIP or None for headless services
-        ##
-        # clusterIP: ""
-        ## External IP list to use with ClusterIP service type
-        ##
-        externalIPs:
-          - 66.165.222.101
-        ## Use loadBalancerIP to request a specific static IP,
-        ## otherwise leave blank
-        ##
-        loadBalancerIP: 10.1.1.83
-        ## Address that are allowed when svc is LoadBalancer
-        ##
-        loadBalancerSourceRanges: []
-        ## Provide any additional annotations which may be required. This can be used to
-        ## set the LoadBalancer service type to internal only.
-        ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
-        ##
-        annotations:
-          metallb.universe.tf/allow-shared-ip: istio
-
-        ## Provide any additional labels which may be required. This can be used to
-        ## have qumine show up in `kubectl cluster-info`
-        ##  kubernetes.io/cluster-service: "true"
-        ##  kubernetes.io/name: "qumine"
-        labels:
-          geysermc: "true"
-
     ## Templates
     templates:
       enabled: false
@@ -753,8 +554,12 @@ vanilla:
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources:
+    limits:
+      cpu: 4000m
+      memory: 8000Mi
+
     requests:
-      memory: 512Mi
+      memory: 1000Mi
       cpu: 500m
 
   # upgrade strategy type (e.g. Recreate or RollingUpdate)
@@ -842,6 +647,18 @@ vanilla:
   #           - hard
   #           - vers=4
   extraVolumes: []
+  #   - volumeMounts:
+  #       - name: nfs
+  #         mountPath: /mnt/volume
+  #         readOnly: true
+  #     volumes:
+  #       - name: nfs
+  #         server: some.nfs.server.com
+  #         path: /
+  #         mountOptions:
+  #           - port=2049
+  #           - hard
+  #           - vers=4
 
   minecraftServer:
     # This must be overridden, since we can't accept this for the user.
@@ -1101,7 +918,7 @@ vanilla:
     ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
     ##   GKE, AWS & OpenStack)
     ##
-    # storageClass: "-"
+    storageClass: infra1-storage
     dataDir:
       # Set this to false if you don't care to persist state between restarts.
       enabled: true
@@ -1225,7 +1042,7 @@ vanilla:
       ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
       ##   GKE, AWS & OpenStack)
       ##
-      # storageClass: "-"
+      # storageClass: 
       backupDir:
         # Set this to false if you don't care to persist state between restarts.
         enabled: false
