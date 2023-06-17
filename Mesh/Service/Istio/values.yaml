@@ -46,6 +46,7 @@ minecraft-proxy:
     failureThreshold: 10
     successThreshold: 1
     timeoutSeconds: 1
+
   readinessProbe:
     initialDelaySeconds: 30
     periodSeconds: 5
@@ -140,7 +141,7 @@ minecraft-proxy:
       config-version = "2.6"
 
       # What port should the proxy be bound to? By default, we'll bind to all addresses on port 25577.
-      bind = "0.0.0.0:25577"
+      bind = "0.0.0.0:25565"
 
       # What should be the MOTD? This gets displayed when the player adds your server to
       # their server list. Only MiniMessage format is accepted.
@@ -283,53 +284,6 @@ minecraft-proxy:
 
       # Whether plugins should be shown in query response by default or not
       show-plugins = true
-    #  player_limit: -1
-    #  ip_forward: false
-    #  permissions:
-    #    default:
-    #    - bungeecord.command.server
-    #    - bungeecord.command.list
-    #    admin:
-    #    - bungeecord.command.alert
-    #    - bungeecord.command.end
-    #    - bungeecord.command.ip
-    #    - bungeecord.command.reload
-    #  timeout: 30000
-    #  log_pings: true
-    #  log_commands: false
-    #  online_mode: true
-    #  servers:
-    #    lobby:
-    #      motd: '&1Just another BungeeCord - Forced Host'
-    #      address: localhost:25565
-    #      restricted: false
-    #  listeners:
-    #  - query_port: 25577
-    #    motd: '&1Another Bungee server'
-    #    priorities:
-    #    - lobby
-    #    bind_local_address: true
-    #    tab_list: GLOBAL_PING
-    #    query_enabled: false
-    #    host: 0.0.0.0:25577
-    #    forced_hosts:
-    #      pvp.md-5.net: pvp
-    #    max_players: 1
-    #    tab_size: 60
-    #    ping_passthrough: false
-    #    force_default_server: false
-    #    proxy_protocol: false
-    #  disabled_commands:
-    #  - disabledcommandhere
-    #  network_compression_threshold: 256
-    #  groups:
-    #    md_5:
-    #    - admin
-    #  connection_throttle: 4000
-    #  connection_throttle_limit: 3
-    #  stats: f2876aa6-74d2-468c-90ee-1377111f1c9f
-    #  forge_support: false
-    #  inject_commands: false
 
     rcon:
       # If you enable this, make SURE to change your password below.
@@ -342,18 +296,18 @@ minecraft-proxy:
       ## Set the externalTrafficPolicy in the Service to either Cluster or Local
       # externalTrafficPolicy: Cluster
 
-    extraPorts: []
+    extraPorts:
     # These options allow you to expose another port from the Minecraft proxy, plugins such
     # as NuVotifier (8192) will require this for incoming webhooks
     #
-    # - name: vote
-    #   containerPort: 8192
-    #   protocol: TCP
-    #   service:
-    #     enabled: false
-    #     embedded: false
-    #     annotations: {}
-    #     type: ClusterIP
+      - name: bedrock
+        containerPort: 19132
+        protocol: UDP
+        service:
+          enabled: false
+          embedded: false
+          #annotations: {}
+          #type: ClusterIP
     #     ## Set the external port if the rcon serviceType is NodePort
     ##     nodePort:
     #     loadBalancerIP: ""
