@@ -79,22 +79,29 @@ minecraft-proxy:
   sidecarContainers: []
 
 
-  extraVolumes: []
-    # - volumeMounts:
-    #     - name: mcproxy-config
-    #       mountPath: /home/qumine/config.yml
-    #       subPath: config.yml
+  extraVolumes:
+    - volumeMounts:
+        # - name: mcproxy-config
+        #   mountPath: /home/qumine/config.yml
+        #   subPath: config.yml
+        # - name: mcproxy-config
+        #   mountPath: /home/qumine/config.yml
+        #   subPath: config.yml
 
-    #     - name: mcproxy-config
-    #       mountPath: /data/plugins/floodgate/config.yml
-    #       subPath: config.yml
-    #   volumes:
-    #     - name: mcproxy-config
-    #       configMap:
-    #         name: mcproxy-configs
-    #         items:
-    #           - key: geyserconfig.yml
-    #             path: config.yml
+
+        - name: mcproxy-config
+          mountPath: /server/velocity.toml
+          subPath: velocity.toml
+      volumes:
+        - name: mcproxy-config
+          configMap:
+            name: mcproxy-configs
+            items:
+              - key: geyserconfig.yml
+                path: config.yml
+
+              - key: velocity.toml
+                path: velocity.toml
 
   minecraftProxy:
     # This can be one of "BUNGEECORD", "WATERFALL", "VELOCITY", "CUSTOM"
