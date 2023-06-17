@@ -633,143 +633,181 @@ vanilla:
   #         readOnly: true
   sidecarContainers: []
 
-  # extraVolumes:
-  #   - volumeMounts:
-  #       - name: nfs
-  #         mountPath: /mnt/volume
-  #         readOnly: true
-  #     volumes:
-  #       - name: nfs
-  #         server: some.nfs.server.com
-  #         path: /
-  #         mountOptions:
-  #           - port=2049
-  #           - hard
-  #           - vers=4
-  extraVolumes: []
-  #   - volumeMounts:
-  #       - name: nfs
-  #         mountPath: /mnt/volume
-  #         readOnly: true
-  #     volumes:
-  #       - name: nfs
-  #         server: some.nfs.server.com
-  #         path: /
-  #         mountOptions:
-  #           - port=2049
-  #           - hard
-  #           - vers=4
+  extraVolumes:
+    - volumeMounts:
+        - name: config
+          mountPath: /data/plugins/floodgate/config.yml
+          subPath: floodgateconfig.yml
+      volumes:
+        - name: config
+          configMap:
+            name: gaming-kk-mcvanilla-config
+            items:
+              - key: floodgateconfig.yml
+                path: floodgateconfig.yml
 
   minecraftServer:
     # This must be overridden, since we can't accept this for the user.
     eula: 'TRUE'
+
     # One of: LATEST, SNAPSHOT, or a specific version (ie: "1.7.9").
     version: LATEST
+
     # This can be one of "VANILLA", "FORGE", "SPIGOT", "BUKKIT", "PAPER", "FTBA", "SPONGEVANILLA", "CURSEFORGE"
     type: PAPER
+
     # If type is set to FORGE, this sets the version; this is ignored if forgeInstallerUrl is set
     forgeVersion:
+
     # If type is set to SPONGEVANILLA, this sets the version
     spongeVersion:
+
     # If type is set to FORGE, this sets the URL to download the Forge installer
     forgeInstallerUrl:
+
     # If type is set to BUKKIT, this sets the URL to download the Bukkit package
     bukkitDownloadUrl:
+
     # If type is set to SPIGOT, this sets the URL to download the Spigot package
     spigotDownloadUrl:
+
     # If type is set to PAPER, this sets the URL to download the PaperSpigot package
     paperDownloadUrl:
+
     # If type is set to FTBA, this sets the modpack to run
     ftbModpackId:
+
     # If type is set to FTBA and a modpack is set, this sets the version to run
     ftbModpackVersionId:
+
     # If type is set to CURSEFORGE, this sets the server mod to run. Can also provide url to curseforge package.
     cfServerMod:
+
     # Set to true if running Feed The Beast and get an error like "unable to launch forgemodloader"
     ftbLegacyJavaFixer: default
+
     # One of: peaceful, easy, normal, and hard
     difficulty: easy
+
     # A comma-separated list of player names to whitelist.
     whitelist:
+
     # A comma-separated list of player names who should be admins.
     ops:
+
     # A server icon URL for server listings. Auto-scaled and transcoded.
     icon:
+
     # Max connected players.
     maxPlayers: 20
+
     # This sets the maximum possible size in blocks, expressed as a radius, that the world border can obtain.
     maxWorldSize: 10000
+
     # Allows players to travel to the Nether.
     allowNether: default
+
     # Allows server to announce when a player gets an achievement.
     announcePlayerAchievements: default
+
     # Enables command blocks.
     enableCommandBlock: default
+
     # If true, players will always join in the default gameMode even if they were previously set to something else.
     forcegameMode: default
+
     # Defines whether structures (such as villages) will be generated.
     generateStructures: default
+
     # If set to true, players will be set to spectator mode if they die.
     hardcore: default
+
     # The maximum height in which building is allowed.
     maxBuildHeight: 256
+
     # The maximum number of milliseconds a single tick may take before the server watchdog stops the server with the message. -1 disables this entirely.
     maxTickTime: 60000
+
     # Determines if animals will be able to spawn.
     spawnAnimals: default
+
     # Determines if monsters will be spawned.
     spawnMonsters: default
+
     # Determines if villagers will be spawned.
     spawnNPCs: default
+
     # Sets the area that non-ops can not edit (0 to disable)
-    spawnProtection: 16
+    spawnProtection: 0
+    
     # Max view distance (in chunks).
     viewDistance: 10
+    
     # Define this if you want a specific map generation seed.
     levelSeed:
+    
     # One of: creative, survival, adventure, spectator
     gameMode: survival
+
     # Message of the Day
-    motd: "Welcome to Minecraft on Kubernetes!"
+    motd: "KK's house Server"
+
     # If true, enable player-vs-player damage.
     pvp: default
+
     # One of: DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED
     levelType: DEFAULT
+
     # When levelType == FLAT or CUSTOMIZED, this can be used to further customize map generation.
     # ref: https://hub.docker.com/r/itzg/minecraft-server/
     generatorSettings:
     worldSaveName: world
+
     # If set, this URL will be downloaded at startup and used as a starting point
     downloadWorldUrl:
+
     # force re-download of server file
     forceReDownload: false
+
     # If set, the modpack at this URL will be downloaded at startup
     downloadModpackUrl:
+
     # If true, old versions of downloaded mods will be replaced with new ones from downloadModpackUrl
     removeOldMods: false
+
     # A list of VanillaTweaks Share Codes to download. (https://vanillatweaks.net/share#wUq1iz => "wUq1iz")
     vanillaTweaksShareCodes: []
+
     # Optional URI to a resource pack. The player may choose to use it.
     resourcePackUrl:
+
     # Optional SHA-1 digest of the resource pack, in lowercase hexadecimal.
     # It is recommended to specify this, because it is used to verify the integrity of the resource pack.
     resourcePackSha:
+
     # When true, players will be prompted for a response and will be disconnected if they decline the required pack
     resourcePackEnforce: false
+
     # Check accounts against Minecraft account service.
     onlineMode: default
+
     # Require public key to be signed by Mojang to join
     enforceSecureProfile: default
+
     # If you adjust this, you may need to adjust resources.requests above to match.
     memory: 1024M
+
     # General JVM options to be passed to the Minecraft server invocation
     jvmOpts: ""
+
     # Options like -X that need to proceed general JVM options
     jvmXXOpts: ""
+
     # By default, the server configuration will be created and set based on the following environment variables, but only the first time the server is started
     # If you would like to override the server configuration each time the container starts up, you can set this to true
     # see https://github.com/itzg/docker-minecraft-server#server-configuration
     overrideServerProperties: false
+
     # DEPRECATED: use top-level rconServiceAnnotations instead
     serviceAnnotations: {}
     serviceType: ClusterIP
@@ -835,19 +873,25 @@ vanilla:
 
     rcon:
       # If you enable this, make SURE to change your password below.
-      enabled: false
+      enabled: true
       # By default, the container will generate a random password at startup
       # to ensure internal RCON tooling, including a backup container,
       # can be used, but the password is secure.
       withGeneratedPassword: false
       port: 25575
-      password: "CHANGEME!"
+      password: "RANDOMTEXT"
+
       existingSecret:
+
       secretKey: rcon-password
+
       serviceType: ClusterIP
+
       ## Set the external port if the rcon serviceType is NodePort
       nodePort:
+
       clusterIP:
+
       loadBalancerIP:
       # loadBalancerSourceRanges: []
       ## Set the externalTrafficPolicy in the Service to either Cluster or Local
