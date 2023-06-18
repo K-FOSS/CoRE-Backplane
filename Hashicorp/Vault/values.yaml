@@ -38,7 +38,7 @@ vault:
   server:
     # If true, or "-" with global.enabled true, Vault server will be installed.
     # See vault.mode in _helpers.tpl for implementation details.
-    enabled: "-"
+    enabled: true
 
     # Configure the Update Strategy Type for the StatefulSet
     # See https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
@@ -72,19 +72,6 @@ vault:
     # By default the created route will be of type passthrough
     route:
       enabled: false
-
-      # When HA mode is enabled and K8s service registration is being used,
-      # configure the route to point to the Vault active service.
-      activeService: true
-
-      labels: {}
-      annotations: {}
-      host: chart-example.local
-      # tls will be passed directly to the route's TLS config, which
-      # can be used to configure other termination methods that terminate
-      # TLS at the router
-      tls:
-        termination: passthrough
 
     # authDelegator enables a cluster role binding to be attached to the service
     # account.  This cluster role binding can be used to setup Kubernetes auth
@@ -135,31 +122,44 @@ vault:
 
       # Port number on which readinessProbe will be checked.
       port: 8200
+
       # When a probe fails, Kubernetes will try failureThreshold times before giving up
       failureThreshold: 2
+
       # Number of seconds after the container has started before probe initiates
       initialDelaySeconds: 5
+
       # How often (in seconds) to perform the probe
       periodSeconds: 5
+
       # Minimum consecutive successes for the probe to be considered successful after having failed
       successThreshold: 1
+
       # Number of seconds after which the probe times out.
       timeoutSeconds: 3
 
     # Used to enable a livenessProbe for the pods
     livenessProbe:
       enabled: false
+
       path: "/v1/sys/health?standbyok=true"
+
       # Port nuumber on which livenessProbe will be checked.
+
       port: 8200
+
       # When a probe fails, Kubernetes will try failureThreshold times before giving up
       failureThreshold: 2
+
       # Number of seconds after the container has started before probe initiates
       initialDelaySeconds: 60
+
       # How often (in seconds) to perform the probe
       periodSeconds: 5
+
       # Minimum consecutive successes for the probe to be considered successful after having failed
       successThreshold: 1
+
       # Number of seconds after which the probe times out.
       timeoutSeconds: 3
 
@@ -283,6 +283,7 @@ vault:
       # Does not affect the headless vault-internal service with `ClusterIP: None`
       instanceSelector:
         enabled: true
+
       # clusterIP controls whether a Cluster IP address is attached to the
       # Vault service within Kubernetes.  By default, the Vault service will
       # be given a Cluster IP address, set to None to disable.  When disabled
