@@ -848,6 +848,20 @@ spec:
             host: infra1-dc1-ui.core-prod.svc.k0s.resolvemy.host
           weight: 100
 
+          
+
+    - match:
+        - authority:
+            exact: 'corevault.int.mylogin.space'
+
+      route:
+        - destination:
+            port:
+              number: 8200
+            host: infra1-dc1-corevault-active.core-prod.svc.k0s.resolvemy.host
+          weight: 100
+
+
     - match:
         - authority:
             exact: 'vault.int.mylogin.space'
