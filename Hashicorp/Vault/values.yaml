@@ -187,7 +187,11 @@ vault:
 
     # extraSecretEnvironmentVars is a list of extra environment variables to set with the stateful set.
     # These variables take value from existing Secret objects.
-    extraSecretEnvironmentVars: []
+    extraSecretEnvironmentVars:
+      - envName: VAULT_TOKEN
+        secretKey: token
+        secretName: maincore-vault-token
+
       # - envName: AWS_SECRET_ACCESS_KEY
       #   secretName: vault
       #   secretKey: AWS_SECRET_ACCESS_KEY
