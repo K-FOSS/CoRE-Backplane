@@ -2,7 +2,7 @@ argo-cd:
   enabled: false
 
 artifact-hub:
-  enabled: true
+  enabled: false
 
   restrictedHTTPClient: false
 
@@ -403,20 +403,28 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
       connectTimeout:
+
       keepalives:
+
       keepalivesIdle:
+
       keepalivesInterval:
+
       keepalivesCount:
+
       tcpUserTimeout:
+
       password:
         useSecret: true
         secret: gitlab-database-prod
         key: DatabasePassword
+
       host: psql.service.dc1.kjdev
       # port: 123
       
-      username: <secret:CORE0_SITE1/data/GitLab~DatabaseUsername>
-      database: <secret:CORE0_SITE1/data/GitLab~DatabaseUsername>
+      username: WNUoZH3HCm
+      database: WNUoZH3HCm
+
       # applicationName:
       preparedStatements: true
       databaseTasks: true
@@ -463,10 +471,10 @@ gitlab:
           maxUnavailable: 1
 
       psql:
-        dbName: <secret:CORE0_SITE1/data/GitLab~PraefectDatabase>
+        dbName: uwneOPXzji
         host: psql.service.dc1.kjdev
         port: 5432
-        user: <secret:CORE0_SITE1/data/GitLab~PraefectDatabase>
+        user: uwneOPXzji
 
       service:
         name: praefect
@@ -1580,6 +1588,8 @@ fullnameOverride: harbor-core
 
 harbor:
   fullnameOverride: testing123
+
+  enabled: false
 
   expose:
     # Set how to expose the service. Set the type as "ingress", "clusterIP", "nodePort" or "loadBalancer"
