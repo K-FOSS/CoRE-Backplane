@@ -8,11 +8,14 @@ spec:
     - list:
         elements:
           - cluster: k0s-cntrl
-            url: https://172.20.52.1:6443
+            url: https://172.18.0.1:443
 
   template:
     metadata:
       name: '{{cluster}}-observability-deploy'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
 
     spec:
       project: core
