@@ -409,6 +409,14 @@ vault:
 
         service_registration "kubernetes" {}
 
+        seal "transit" {
+          address = "http://infra1-dc1-corevault-active.core-prod.svc.cluster.local:8200"
+          disable_renewal = "false"
+          key_name = "autounseal"
+          mount_path = "transit/"
+          tls_skip_verify = "true"
+        }
+
       # A disruption budget limits the number of pods of a replicated application
       # that are down simultaneously from voluntary disruptions
       disruptionBudget:
