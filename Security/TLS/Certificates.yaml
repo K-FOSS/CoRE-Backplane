@@ -12,6 +12,9 @@ spec:
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
+
+          - cluster: cntrl-plane
+            url: 'https://10.1.1.44:6443'
   template:
     metadata:
       name: '{{cluster}}-tls-certificates-core'
@@ -24,10 +27,12 @@ spec:
       syncPolicy:
         automated:
           selfHeal: true
+
       source:
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         path: Security/TLS/Certificates
         targetRevision: main
+
       destination:
         server: '{{url}}'
         namespace: core-prod
