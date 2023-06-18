@@ -1,6 +1,5 @@
 vault:
-  # Copyright (c) HashiCorp, Inc.
-  # SPDX-License-Identifier: MPL-2.0
+  enabled: true
 
   # Available parameters and their default values for the Vault chart.
 
@@ -8,12 +7,6 @@ vault:
     # enabled is the master enabled switch. Setting this to true or false
     # will enable or disable all the components within this chart by default.
     enabled: true
-
-    # Image pull secret to use for registry authentication.
-    # Alternatively, the value may be specified as an array of strings.
-    imagePullSecrets: []
-    # imagePullSecrets:
-    #   - name: image-pull-secret
 
     # TLS for end-to-end encrypted transport
     tlsDisable: true
@@ -351,31 +344,9 @@ vault:
     # See vault.mode in _helpers.tpl for implementation details.
     enabled: "-"
 
-    # [Enterprise Only] This value refers to a Kubernetes secret that you have
-    # created that contains your enterprise license. If you are not using an
-    # enterprise image or if you plan to introduce the license key via another
-    # route, then leave secretName blank ("") or set it to null.
-    # Requires Vault Enterprise 1.8 or later.
-    enterpriseLicense:
-      # The name of the Kubernetes secret that holds the enterprise license. The
-      # secret must be in the same namespace that Vault is installed into.
-      secretName: ""
-      # The key within the Kubernetes secret that holds the enterprise license.
-      secretKey: "license"
-
-    # Resource requests, limits, etc. for the server cluster placement. This
-    # should map directly to the value of the resources field for a PodSpec.
-    # By default no direct resource request is made.
-
-    image:
-      repository: "hashicorp/vault"
-      tag: "1.13.1"
-      # Overrides the default Image Pull Policy
-      pullPolicy: IfNotPresent
-
     # Configure the Update Strategy Type for the StatefulSet
     # See https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#update-strategies
-    updateStrategyType: "OnDelete"
+    updateStrategyType: OnDelete
 
     # Configure the logging verbosity for the Vault server.
     # Supported log levels include: trace, debug, info, warn, error
@@ -454,20 +425,28 @@ vault:
       successThreshold: 1
       # Number of seconds after which the probe times out.
       timeoutSeconds: 3
+
     # Used to enable a livenessProbe for the pods
     livenessProbe:
       enabled: false
+
       path: "/v1/sys/health?standbyok=true"
+
       # Port nuumber on which livenessProbe will be checked.
       port: 8200
+
       # When a probe fails, Kubernetes will try failureThreshold times before giving up
       failureThreshold: 2
+
       # Number of seconds after the container has started before probe initiates
       initialDelaySeconds: 60
+
       # How often (in seconds) to perform the probe
       periodSeconds: 5
+
       # Minimum consecutive successes for the probe to be considered successful after having failed
       successThreshold: 1
+
       # Number of seconds after which the probe times out.
       timeoutSeconds: 3
 
@@ -741,7 +720,7 @@ vault:
     # Helm project by default.  It is possible to manually configure Vault to use a
     # different HA backend.
     ha:
-      enabled: false
+      enabled: true
       replicas: 3
 
       # Set the api_addr configuration for Vault HA
@@ -759,34 +738,9 @@ vault:
       # persistent volumes for Vault to store data according to the configuration under server.dataStorage.
       # The Vault cluster will coordinate leader elections and failovers internally.
       raft:
-
         # Enables Raft integrated storage
         enabled: false
-        # Set the Node Raft ID to the name of the pod
-        setNodeId: false
 
-        # Note: Configuration files are stored in ConfigMaps so sensitive data
-        # such as passwords should be either mounted through extraSecretEnvironmentVars
-        # or through a Kube secret.  For more information see:
-        # https://www.vaultproject.io/docs/platform/k8s/helm/run#protecting-sensitive-vault-configurations
-        config: |
-          ui = true
-
-          listener "tcp" {
-            tls_disable = 1
-            address = "[::]:8200"
-            cluster_address = "[::]:8201"
-            # Enable unauthenticated metrics access (necessary for Prometheus Operator)
-            #telemetry {
-            #  unauthenticated_metrics_access = "true"
-            #}
-          }
-
-          storage "raft" {
-            path = "/vault/data"
-          }
-
-          service_registration "kubernetes" {}
 
       # config is a raw string of default configuration when using a Stateful
       # deployment. Default is to use a Consul for its HA storage backend.
@@ -804,6 +758,7 @@ vault:
           address = "[::]:8200"
           cluster_address = "[::]:8201"
         }
+
         storage "consul" {
           path = "vault"
           address = "HOST_IP:8500"
