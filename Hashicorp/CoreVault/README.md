@@ -60,3 +60,8 @@ VAULT_TOKEN=INSERT_WRAPPING_TOKEN_HERE vault unwrap
 
 
 From this copy the enitre output and create a new SecureNote called CoreVault-TransitProcess
+
+Using the token field create a new secret on CoRE-VAULT under `CORE_SECRETS/VAULT_BOOTSTRAP`
+
+
+
