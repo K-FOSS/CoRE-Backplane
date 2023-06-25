@@ -10,7 +10,7 @@ stack:
       app: tink-stack
 
     loadBalancerIP: 10.1.1.66
-    lbClass: ''
+    lbClass: null
 
     image: nginx:1.23.1
 
@@ -40,11 +40,17 @@ stack:
   # See individual chart documentation for additional detail.
 
   boots:
-    image: quay.io/tinkerbell/boots:v0.8.0
-    tinkWorkerImage: quay.io/tinkerbell/tink-worker:v0.8.0
+    #image: quay.io/tinkerbell/boots:v0.8.0
+    #tinkWorkerImage: quay.io/tinkerbell/tink-worker:v0.8.0
     trustedProxies: []
     # This will be the IP address that machines use to reach Boots (via unicast for DHCP) for netbooting. It should be a unused IP address in your network.
     remoteIp: 10.1.1.66
+
+    service:
+      enabled: true
+      type: LoadBalancer
+      class: ''
+      loadBalancerIP: ''
 
     # Once the Kubernetes Gateway API is more stable, we will use that and be able to require only a single IP for all Tinkerbell services.
 
