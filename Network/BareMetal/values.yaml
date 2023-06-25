@@ -5,11 +5,15 @@ stack:
     service:
       enabled: true
       type: LoadBalancer
+
     selector:
       app: tink-stack
-    loadBalancerIP: 192.168.2.112
-    lbClass: kube-vip.io/kube-vip-class
+
+    loadBalancerIP: 10.1.1.66
+    lbClass: ''
+
     image: nginx:1.23.1
+
     hook:
       enabled: true
       name: hook-files
@@ -19,26 +23,15 @@ stack:
       downloads:
         - url: https://github.com/tinkerbell/hook/releases/download/v0.8.0/hook_x86_64.tar.gz
           sha512sum: 498cccba921c019d4526a2a562bd2d9c8efba709ab760fa9d38bd8de1efeefc8e499c9249af9571aa28a1e371e6c928d5175fa70d5d7addcf3dd388caeff1a45
+
         - url: https://github.com/tinkerbell/hook/releases/download/v0.8.0/hook_aarch64.tar.gz
           sha512sum: 56e3959722c9ae85aec6c214448108e2dc1d581d2c884ca7a23265c1ae28489589481730fbb941fac8239f6222f9b5bb757987a5238f20194e184ae7e83b6a5b
+
     kubevip:
-      enabled: true
-      name: kube-vip
-      image: ghcr.io/kube-vip/kube-vip:v0.5.7
-      imagePullPolicy: IfNotPresent
-      roleName: kube-vip-role
-      roleBindingName: kube-vip-rolebinding
-      # Customize the interface KubeVIP advertises on. When unset, KubeVIP will autodetect the
-      # interface.
-      #interface: enp0s8
-    relay: # relay allows us to listen and respond to layer broadcast DHCP requests
-      name: dhcp-relay
-      enabled: true
-      # This image (ghcr.io/jacobweinstock/dhcrelay) is used because `dhcrelay` doesn't respect signals properly when run as PID 1.
-      image: ghcr.io/jacobweinstock/dhcrelay
-      maxHopCount: 10
-      # sourceInterface is the Host/Node interface to use for listening for DHCP broadcast packets.
-      sourceInterface: eno1 # TODO(jacobweinstock): investigate autodetecting a default
+      enabled: false
+
+    relay:
+      enabled: false
 
   # -- Overrides
   # The values defined here override those in the individual charts. Some of them require tweaking
@@ -51,14 +44,17 @@ stack:
     tinkWorkerImage: quay.io/tinkerbell/tink-worker:v0.8.0
     trustedProxies: []
     # This will be the IP address that machines use to reach Boots (via unicast for DHCP) for netbooting. It should be a unused IP address in your network.
-    remoteIp: 192.168.2.113
+    remoteIp: 10.1.1.66
+
     # Once the Kubernetes Gateway API is more stable, we will use that and be able to require only a single IP for all Tinkerbell services.
+
     tinkServer:
       # This should be the same as `stack.loadBalancerIP`.
-      ip: 192.168.2.112
+      ip: 10.1.1.66
+
     osieBase:
       # This should be the same as `stack.loadBalancerIP`.
-      ip: 192.168.2.112
+      ip: 10.1.1.66
 
   hegel:
     image: quay.io/tinkerbell/hegel:v0.10.1
