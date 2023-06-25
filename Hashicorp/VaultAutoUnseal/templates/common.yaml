@@ -3,8 +3,8 @@
 
 {{/* Append the secretVolume volume to the volumes */}}
 {{- define "vault-autounseal.secretVolume" -}}
-enabled: "true"
-mountPath: "/etc/wireguard/wg0.conf"
+enabled: 'true'
+mountPath: /etc/vault-unseal.yaml
 subPath: "wg0.conf"
 type: "custom"
 volumeSpec:
@@ -12,7 +12,7 @@ volumeSpec:
     defaultMode: 0600
     secretName: {{ include "common.names.fullname" . }}-config
 {{- end -}}
-{{- $_ := set .Values.persistence "vault-autounseal-config" (include "vault-autounseal.configVolume" . | fromYaml) -}}
+{{- $_ := set .Values.persistence "vault-autounseal-config" (include "vault-autounseal.secretVolume" . | fromYaml) -}}
 
 {{/* Render the templates */}}
 {{ include "common.all" . }}
