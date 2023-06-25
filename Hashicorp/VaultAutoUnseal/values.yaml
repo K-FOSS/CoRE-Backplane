@@ -7,7 +7,7 @@
 
 image:
   # -- image repository
-  repository: ghcr.io/geek-cookbook/webhook-receiver
+  repository: ghcr.io/lrstanley/vault-unseal
   # @default -- chart.appVersion
   tag: 
   # -- image pull policy
@@ -19,13 +19,13 @@ env:
   # -- Set the container timezone
   TZ: UTC
 
-# See https://raw.githubusercontent.com/webhook-receiver/webhook-receiver/develop/config.toml
-config: |
-  id: date 
-  execute-command: /usr/bin/date
-  response-message: Online
-  include-command-output-in-response: true
+vaultURLs:
+  - infra1-dc1-corevault-0.infra1-dc1-corevault-internal.core-prod.svc.cluster.local:8200
+  - infra1-dc1-corevault-1.infra1-dc1-corevault-internal.core-prod.svc.cluster.local:8200
+  - infra1-dc1-corevault-2.infra1-dc1-corevault-internal.core-prod.svc.cluster.local:8200
 
+externalSecret:
+  
 
 # -- Configures service settings for the chart.
 # @default -- See values.yaml
