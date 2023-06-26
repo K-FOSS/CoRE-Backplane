@@ -333,60 +333,16 @@ argo-cd:
 
     envFrom:
       - secretRef:
-          name: argocd-vault-config
+          name: argocd-vault-replacer-credentials
 
     extraArgs:
       - '--redisdb=$(REDIS_DB)'
       - '--redis'
       - 10.1.1.68:6379
 
-    extraContainers:
-      # -- sidecar to run lovely plugin
-      - name: lovely-plugin
-        # This command is actually already set in the image.
-        command: [/var/run/argocd/argocd-cmp-server]  # Entrypoint should be Argo CD lightweight CMP server i.e. argocd-cmp-server
-        # Choose your image here - this one has vault replacer in it
-        image: ghcr.io/crumbhole/argocd-lovely-plugin-cmp:0.19.4
-        env:
-          - name: LOVELY_PLUGINS
-            value: argocd-vault-plugin generate -
-        envFrom:
-          - secretRef:
-              name: argocd-vault-config
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 999
-        volumeMounts:
-          # Import the repo-server's plugin binary
-          - mountPath: /var/run/argocd
-            name: var-files
-          - mountPath: /home/argocd/cmp-server/plugins
-            name: plugins
-            # Starting with v2.4, do NOT mount the same tmp volume as the repo-server container. The filesystem separation helps
-            # mitigate path traversal attacks.
-          - mountPath: /tmp
-            name: lovely-tmp
-          # Important: Mount tools into $PATH
-          - name: custom-tools
-            subPath: argocd-vault-plugin
-            mountPath: /usr/local/bin/argocd-vault-plugin
+    extraContainers: null
 
-    initContainers:
-      - name: download-tools
-        image: registry.access.redhat.com/ubi8
-        env:
-          - name: AVP_VERSION
-            # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
-            value: 1.14.0
-        command: [sh, -c]
-        args:
-          - >-
-            curl -L https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
-            chmod +x argocd-vault-plugin &&
-            mv argocd-vault-plugin /custom-tools/
-        volumeMounts:
-          - mountPath: /custom-tools
-            name: custom-tools
+    initContainers: []
 
     livenessProbe:
       failureThreshold: 3
@@ -454,17 +410,7 @@ argo-cd:
 
     volumeMounts: []
 
-    volumes:
-      # A temporary directory for the lovely plugin to work in.
-      - emptyDir: {}
-        name: lovely-tmp
-
-      # Volumes for cmp-plugins
-      - name: custom-tools
-        emptyDir: {}
-
-      - name: tmp
-        emptyDir: {}
+    volumes: []
 
 
   server:
