@@ -28,7 +28,7 @@ argo-cd:
     image:
       imagePullPolicy: IfNotPresent
       repository: ghcr.io/flux-subsystem-argo/fsa/argocd
-      tag: v2.7.2-fl.6-main-b1742696
+      tag: v2.7.6-fl.15-main-52691a11
 
     logging:
       # -- Set the global logging format. Either: `text` or `json`
@@ -408,18 +408,9 @@ argo-cd:
 
     topologySpreadConstraints: null
 
-    volumeMounts:
-      - name: custom-tools
-        mountPath: /bin/argocd-vault-replacer
-        subPath: argocd-vault-replacer
+    volumeMounts: []
 
-      - name: custom-tools
-        mountPath: /usr/local/bin/argocd-lovely-plugin
-        subPath: argocd-lovely-plugin
-
-    volumes:
-      - name: custom-tools
-        emptyDir: {}
+    volumes: []
 
 
   server:
@@ -478,28 +469,6 @@ argo-cd:
       application.instanceLabelKey: argocd.argoproj.io/instance
       exec.enabled: 'true'
       url: https://argo.writemy.codes
-      configManagementPlugins: |-
-        - name: argocd-lovely-plugin
-          generate:
-            command: ["argocd-lovely-plugin"]
-
-        - name: argocd-vault-replacer
-          generate:
-            command: ["argocd-vault-replacer"]
-
-        - name: kustomize-argocd-vault-replacer
-          generate:
-            command: ["sh", "-c"]
-            args: ["kustomize build . | argocd-vault-replacer"]
-
-        - name: helm-argocd-vault-replacer
-          init:
-            command: ["/bin/sh", "-c"]
-            args: ["helm dependency build"]
-          generate:
-            command: [sh, -c]
-            args: ["helm template -n $ARGOCD_APP_NAMESPACE $ARGOCD_APP_NAME . | argocd-vault-replacer"]
-
       oidc.config: >
         name: Authentik
 
