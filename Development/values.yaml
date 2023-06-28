@@ -268,14 +268,6 @@ gitlab:
 
       enabled: false
 
-      tls: {}
-      #   enabled: true
-      #   secretName:
-
-      path: /
-
-      pathType: Prefix
-
     # Override the API version to use for HorizontalPodAutoscaler
     hpa:
       apiVersion: ""
@@ -339,17 +331,9 @@ gitlab:
     redis:
       auth:
         enabled: false
-        # secret:
-        # key:
-      # host: redis.hostedsomewhere.else
-      # port: 6379
-      # user: webservice
 
       host: 10.1.1.68
       port: 6379
-      # sentinels:
-      #   - host:
-      #     port:
 
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
@@ -407,12 +391,6 @@ gitlab:
     minio:
       enabled: false
 
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-grafana-integration
-    grafana:
-      enabled: false
-
-
     ## https://docs.gitlab.com/charts/charts/globals#configure-appconfig-settings
     ## Rails based portions of this chart share many settings
     appConfig:
@@ -447,61 +425,6 @@ gitlab:
 
       ## https://docs.gitlab.com/charts/charts/globals#cron-jobs-related-settings
       cron_jobs: {}
-        ## Flag stuck CI builds as failed
-        # stuck_ci_jobs_worker:
-        #   cron: "0 * * * *"
-        ## Schedule pipelines in the near future
-        # pipeline_schedule_worker:
-        #   cron: "19 * * * *"
-        ## Remove expired build artifacts
-        # expire_build_artifacts_worker:
-        #   cron: "*/7 * * * *"
-        ## Periodically run 'git fsck' on all repositories.
-        # repository_check_worker:
-        #   cron: "20 * * * *"
-        ## Send admin emails once a week
-        # admin_email_worker:
-        #   cron: "0 0 * * 0"
-        ## Remove outdated repository archives
-        # repository_archive_cache_worker:
-        #   cron: "0 * * * *"
-        ## Verify custom GitLab Pages domains
-        # pages_domain_verification_cron_worker:
-        #   cron: "*/15 * * * *"
-        # schedule_migrate_external_diffs_worker:
-        #   cron: "15 * * * *"
-        ## Prune stale group runners on opted-in namespaces
-        # ci_runners_stale_group_runners_prune_worker_cron:
-        #   cron: "30 * * * *"
-        ### GitLab Geo
-        # Geo Primary only!
-        # geo_prune_event_log_worker:
-        #   cron: "*/5 * * * *"
-        ## GitLab Geo repository sync worker
-        # geo_repository_sync_worker:
-        #   cron: "*/5 * * * *"
-        ## GitLab Geo file download dispatch worker
-        # geo_file_download_dispatch_worker:
-        #  cron: "*/10 * * * *"
-        ## GitLab Geo repository verification primary batch worker
-        # geo_repository_verification_primary_batch_worker:
-        #   cron: "*/5 * * * *"
-        ## GitLab Geo repository verification secondary scheduler worker
-        # geo_repository_verification_secondary_scheduler_worker:
-        #   cron: "*/5 * * * *"
-        ## GitLab Geo migrated local files clean up worker
-        # geo_migrated_local_files_clean_up_worker:
-        #   cron: "15 */6 * * *"
-        ### LDAP
-        # ldap_sync_worker:
-        #   cron: "30 1 * * *"
-        # ldap_group_sync_worker:
-        #   cron: "0 * * * *"
-        ### Snapshot active user statistics
-        # historical_data_worker:
-        #   cron: "0 12 * * *"
-        # loose_foreign_keys_cleanup_worker_cron:
-        #   cron: "*/5 * * * *"
 
       ## https://docs.gitlab.com/charts/charts/globals#content-security-policy
       contentSecurityPolicy:
@@ -606,68 +529,9 @@ gitlab:
       incomingEmail:
         enabled: false
 
-        address: ""
-
-        host: "imap.gmail.com"
-
-        port: 993
-
-        ssl: true
-
-        startTls: false
-
-        user: ""
-
-        password:
-          secret: ""
-          key: password
-
-        expungeDeleted: false
-
-        logger:
-          logPath: "/dev/stdout"
-
-        mailbox: inbox
-
-        idleTimeout: 60
-
-        inboxMethod: "imap"
-
-        clientSecret:
-          key: secret
-
-        pollInterval: 60
-
-
-        authToken: {}
-          # secret:
-          # key:
-
-
       ## https://docs.gitlab.com/charts/charts/gitlab/mailroom/index.html#service-desk-email
       serviceDeskEmail:
         enabled: false
-        address: ''
-        host: 'imap.gmail.com'
-        port: 993
-        ssl: true
-        startTls: false
-        user: ""
-        password:
-          secret: ""
-          key: password
-        expungeDeleted: false
-        logger:
-          logPath: "/dev/stdout"
-        mailbox: inbox
-        idleTimeout: 60
-        inboxMethod: "imap"
-        clientSecret:
-          key: secret
-        pollInterval: 60
-        authToken: {}
-          # secret:
-          # key:
 
       ## https://docs.gitlab.com/charts/charts/globals#ldap
       ldap:
@@ -761,25 +625,6 @@ gitlab:
     ## https://docs.gitlab.com/charts/advanced/geo/
     geo:
       enabled: false
-      # Valid values: primary, secondary
-      role: primary
-      ## Geo Secondary only
-      # nodeName allows multiple instances behind a load balancer.
-      nodeName: # defaults to `gitlab.gitlab.host`
-      # PostgreSQL connection details only needed for `secondary`
-      psql:
-        password: {}
-        #   secret:
-        #   key:
-        # host: postgresql.hostedsomewhere.else
-        # port: 123
-        # username: gitlab_replicator
-        # database: gitlabhq_geo_production
-        # ssl:
-        #   secret:
-        #   clientKey:
-        #   clientCertificate:
-        #   serverCA:
 
       registry:
         replication:
@@ -897,19 +742,6 @@ gitlab:
     ## Outgoing email server settings
     smtp:
       enabled: false
-      address: smtp.mailgun.org
-      port: 2525
-      user_name: ""
-      ## https://docs.gitlab.com/charts/installation/secrets#smtp-password
-      password:
-        secret: ""
-        key: password
-      # domain:
-      authentication: "plain"
-      starttls_auto: false
-      openssl_verify_mode: "peer"
-      pool: false
-
 
     ## https://docs.gitlab.com/charts/installation/deployment#outgoing-email
     ## Email persona used in email sent by GitLab
@@ -965,15 +797,6 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#custom-certificate-authorities
     # configuration of certificates container & custom CA injection
     certificates:
-      image:
-        repository: registry.gitlab.com/gitlab-org/build/cng/alpine-certificates
-        # The digest below comes from a given tag pipeline because they are mirrored to .com,
-        # ensuring that the image tag is available from both instances. The digest can be
-        # found in the 'sync_images' job.
-        #   https://dev.gitlab.org/gitlab/charts/components/images/-/tags
-        tag: 20191127-r2@sha256:367d437d024d7647432d67fb2442e3e5723af5930bad77d3535f4f8f4f8630d9
-        # pullPolicy: IfNotPresent
-        # pullSecrets: []
       customCAs: []
       # - secret: custom-CA
       # - secret: more-custom-CAs
@@ -1000,12 +823,6 @@ gitlab:
         # in most base images, this is `nobody:nogroup`
         runAsUser: 65534
         fsGroup: 65534
-    busybox:
-      image:
-        repository: registry.gitlab.com/gitlab-org/cloud-native/mirror/images/busybox
-        tag: latest
-        # pullPolicy: IfNotPresent
-        # pullSecrets: []
 
     ## https://docs.gitlab.com/charts/charts/globals#service-accounts
     serviceAccount:
@@ -1064,10 +881,6 @@ gitlab:
     # Install cert-manager chart. Set to false if you already have cert-manager
     # installed or if you are not using cert-manager.
     install: false
-    # Other cert-manager configurations from upstream
-    # See https://github.com/jetstack/cert-manager/blob/master/deploy/charts/cert-manager/README#configuration
-    rbac:
-      create: false
 
 
   ## https://docs.gitlab.com/charts/charts/nginx/
