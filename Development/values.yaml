@@ -1050,23 +1050,6 @@ gitlab:
   upgradeCheck:
     enabled: false
 
-    image: {}
-      # repository:
-      # tag:
-      # pullPolicy: IfNotPresent
-      # pullSecrets: []
-
-    securityContext:
-      # in alpine/debian/busybox based images, this is `nobody:nogroup`
-      runAsUser: 65534
-      fsGroup: 65534
-
-    tolerations: []
-
-    resources:
-      requests:
-        cpu: 50m
-
   ## Settings to for the Let's Encrypt ACME Issuer
   # certmanager-issuer:
   #   # The email address to register certificates requested from Let's Encrypt.
@@ -1114,125 +1097,6 @@ gitlab:
       retention: 15d
       strategy:
         type: Recreate
-    #
-    serverFiles:
-      prometheus.yml:
-        scrape_configs:
-          - job_name: prometheus
-            static_configs:
-              - targets:
-                  - localhost:9090
-          - job_name: kubernetes-apiservers
-            kubernetes_sd_configs:
-              - role: endpoints
-            scheme: https
-            tls_config:
-              ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-              insecure_skip_verify: true
-            bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-            relabel_configs:
-              - source_labels:
-                  [
-                    __meta_kubernetes_namespace,
-                    __meta_kubernetes_service_name,
-                    __meta_kubernetes_endpoint_port_name,
-                  ]
-                action: keep
-                regex: default;kubernetes;https
-          - job_name: kubernetes-pods
-            kubernetes_sd_configs:
-              - role: pod
-            relabel_configs:
-              - source_labels:
-                  [__meta_kubernetes_pod_annotation_gitlab_com_prometheus_scrape]
-                action: keep
-                regex: true
-              - source_labels:
-                  [__meta_kubernetes_pod_annotation_gitlab_com_prometheus_path]
-                action: replace
-                target_label: __metrics_path__
-                regex: (.+)
-              - source_labels:
-                  [
-                    __address__,
-                    __meta_kubernetes_pod_annotation_gitlab_com_prometheus_port,
-                  ]
-                action: replace
-                regex: ([^:]+)(?::\d+)?;(\d+)
-                replacement: $1:$2
-                target_label: __address__
-              - action: labelmap
-                regex: __meta_kubernetes_pod_label_(.+)
-              - source_labels: [__meta_kubernetes_namespace]
-                action: replace
-                target_label: kubernetes_namespace
-              - source_labels: [__meta_kubernetes_pod_name]
-                action: replace
-                target_label: kubernetes_pod_name
-          - job_name: kubernetes-service-endpoints
-            kubernetes_sd_configs:
-              - role: endpoints
-            relabel_configs:
-              - action: keep
-                regex: true
-                source_labels:
-                  - __meta_kubernetes_service_annotation_gitlab_com_prometheus_scrape
-              - action: replace
-                regex: (https?)
-                source_labels:
-                  - __meta_kubernetes_service_annotation_gitlab_com_prometheus_scheme
-                target_label: __scheme__
-              - action: replace
-                regex: (.+)
-                source_labels:
-                  - __meta_kubernetes_service_annotation_gitlab_com_prometheus_path
-                target_label: __metrics_path__
-              - action: replace
-                regex: ([^:]+)(?::\d+)?;(\d+)
-                replacement: $1:$2
-                source_labels:
-                  - __address__
-                  - __meta_kubernetes_service_annotation_gitlab_com_prometheus_port
-                target_label: __address__
-              - action: labelmap
-                regex: __meta_kubernetes_service_label_(.+)
-              - action: replace
-                source_labels:
-                  - __meta_kubernetes_namespace
-                target_label: kubernetes_namespace
-              - action: replace
-                source_labels:
-                  - __meta_kubernetes_service_name
-                target_label: kubernetes_name
-              - action: replace
-                source_labels:
-                  - __meta_kubernetes_pod_node_name
-                target_label: kubernetes_node
-          - job_name: kubernetes-services
-            metrics_path: /probe
-            params:
-              module: [http_2xx]
-            kubernetes_sd_configs:
-              - role: service
-            relabel_configs:
-              - source_labels:
-                  [
-                    __meta_kubernetes_service_annotation_gitlab_com_prometheus_probe,
-                  ]
-                action: keep
-                regex: true
-              - source_labels: [__address__]
-                target_label: __param_target
-              - target_label: __address__
-                replacement: blackbox
-              - source_labels: [__param_target]
-                target_label: instance
-              - action: labelmap
-                regex: __meta_kubernetes_service_label_(.+)
-              - source_labels: [__meta_kubernetes_namespace]
-                target_label: kubernetes_namespace
-              - source_labels: [__meta_kubernetes_service_name]
-                target_label: kubernetes_name
 
   ## Configuration of Redis
   ## https://docs.gitlab.com/charts/architecture/decisions#redis
@@ -1254,14 +1118,7 @@ gitlab:
     postgresqlDatabase: gitlabhq_production
     usePasswordFile: true
     existingSecret: bogus
-    initdbScriptsConfigMap: bogus
-    master:
-      extraVolumeMounts:
-        - name: custom-init-scripts
-          mountPath: /docker-entrypoint-preinitdb.d/init_revision.sh
-          subPath: init_revision.sh
-      podAnnotations:
-        postgresql.gitlab/init-revision: "1"
+
     metrics:
       enabled: true
       ## Optionally define additional custom metrics
@@ -1283,15 +1140,6 @@ gitlab:
       create: true
 
     selfsign:
-      image:
-        # pullPolicy: IfNotPresent
-        # pullSecrets: []
-        repository: registry.gitlab.com/gitlab-org/build/cng/cfssl-self-sign
-        # The digest below comes from a given tag pipeline because they are mirrored to .com,
-        # ensuring that the image tag is available from both instances. The digest can be
-        # found in the 'sync_images' job.
-        #   https://dev.gitlab.org/gitlab/charts/components/images/-/tags
-        tag: 1.6.1@sha256:e89392e13b4ef12cd48ba8c30326aacd89a8d0161cb081ac8dfbb77200d5ebac
       keyAlgorithm: "rsa"
       keySize: "4096"
       expiry: "3650d"
@@ -1345,54 +1193,6 @@ gitlab:
               Insecure = false
               ServerAddress = "s3.mylogin.space:443"
 
-  ## Installation & configuration of stable/grafana
-  ## See requirements.yaml for current version
-  ## Controlled by `global.grafana.enabled`
-  grafana:
-    ## Override and provide "bogus" administation secrets
-    ## gitlab/gitlab-grafana provides overrides via shared-secrets
-    nameOverride: grafana-app
-    admin:
-      existingSecret: bogus
-    env:
-      GF_SECURITY_ADMIN_USER: bogus
-      GF_SECURITY_ADMIN_PASSWORD: bogus
-    ## This override allows gitlab/gitlab-grafana to completely override the secret
-    ##   handling behavior of the upstream chart in combination with the above.
-    command: ["sh", "-x", "/tmp/scripts/import-secret.sh"]
-    ## The following settings allow Grafana to dynamically create
-    ## dashboards and datasources from configmaps. See
-    ## https://artifacthub.io/packages/helm/grafana/grafana#sidecar-for-dashboards
-    sidecar:
-      dashboards:
-        enabled: true
-        label: gitlab_grafana_dashboard
-      datasources:
-        enabled: true
-        label: gitlab_grafana_datasource
-    ## We host Grafana as a sub-url of GitLab
-    grafana.ini:
-      server:
-        serve_from_sub_path: true
-        root_url: http://localhost/-/grafana/
-      auth:
-        login_cookie_name: gitlab_grafana_session
-    ## We generate and provide random passwords
-    ## NOTE: the Secret & ConfigMap names are hard coded!
-    extraSecretMounts:
-      - name: initial-password
-        mountPath: /tmp/initial
-        readOnly: true
-        secretName: gitlab-grafana-initial-password
-        defaultMode: 400
-    extraConfigmapMounts:
-      - name: import-secret
-        mountPath: /tmp/scripts
-        configMap: gitlab-grafana-import-secret
-        readOnly: true
-    testFramework:
-      enabled: false
-
   ## Settings for individual sub-charts under GitLab
   ## Note: Many of these settings are configurable via globals
   gitlab:
@@ -1430,6 +1230,7 @@ gitlab:
         serviceMonitor:
           enabled: true
 
+    # https://docs.gitlab.com/charts/charts/gitlab/webservice
     webservice:
       enabled: true
       priorityClassName: 'tier2-priority'
@@ -1483,8 +1284,6 @@ gitlab:
 
           persistence:
             enabled: false
-            accessMode: ReadWriteOnce
-            size: 10Gi
 
         objectStorage:
           backend: s3
