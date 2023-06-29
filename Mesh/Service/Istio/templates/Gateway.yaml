@@ -13,11 +13,22 @@ spec:
         name: istio-ingressgateway
         enabled: true
         k8s:
-          replicaCount: 6
+          replicaCount: 4
+          resources:
+            requests:
+              memory: '16Mi'
+              cpu: '10m'
+
+            limits:
+              memory: '128Mi'
+              cpu: '500m'
+
           hpaSpec:
-            minReplicas: 3
-            maxReplicas: 6
+            minReplicas: 2
+            maxReplicas: 4
+
           priorityClassName: system-cluster-critical
+
           serviceAnnotations:
             metallb.universe.tf/allow-shared-ip: istio
 
@@ -67,6 +78,16 @@ spec:
                 - path: spec.template.spec.containers.[name:istio-proxy].securityContext.capabilities.add
                   value:
                     - BPF
+
+                # Evenly spread across nodes
+                - path: spec.template.spec.topologySpreadConstraints
+                  value:
+                    - maxSkew: 1
+                      topologyKey: kubernetes.io/hostname
+                      whenUnsatisfiable: ScheduleAnyway
+                      labelSelector:
+                        matchLabels:
+                          istio: ingressgateway
   
                 - path: spec.template.spec.volumes.[-1]
                   value:
