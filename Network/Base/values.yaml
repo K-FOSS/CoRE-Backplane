@@ -147,7 +147,7 @@ cilium:
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:
-              - key: liqo.io/type=virtual-node
+              - key: liqo.io/type
                 operator: DoesNotExist
 
     podAntiAffinity:
@@ -1568,16 +1568,17 @@ cilium:
     affinity:
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-        - topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchLabels:
-              io.cilium/app: operator
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                io.cilium/app: operator
 
     # -- Node labels for cilium-operator pod assignment
     # ref: https://kubernetes.io/docs/user-guide/node-selection/
     #
     nodeSelector:
       kubernetes.io/os: linux
+      liqo.io/type: virtual-node
 
     # -- Node tolerations for cilium-operator scheduling to nodes with taints
     # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
