@@ -143,6 +143,13 @@ cilium:
 
   # -- Affinity for cilium-agent.
   affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: liqo.io/type=virtual-node
+                operator: DoesNotExist
+
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
       - topologyKey: kubernetes.io/hostname

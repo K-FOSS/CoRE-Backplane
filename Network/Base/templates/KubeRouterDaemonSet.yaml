@@ -142,7 +142,16 @@ spec:
       securityContext: {}
       serviceAccount: k0s-cntrl-core-network-base-kube-router
       serviceAccountName: k0s-cntrl-core-network-base-kube-router
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: liqo.io/type=virtual-node
+                    operator: DoesNotExist
+      
       terminationGracePeriodSeconds: 30
+      
       tolerations:
         - key: CriticalAddonsOnly
           operator: Exists
