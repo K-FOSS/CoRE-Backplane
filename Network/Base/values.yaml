@@ -1566,6 +1566,13 @@ cilium:
 
     # -- Affinity for cilium-operator
     affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: liqo.io/type
+                  operator: DoesNotExist
+
       podAntiAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           - topologyKey: kubernetes.io/hostname
@@ -1578,7 +1585,7 @@ cilium:
     #
     nodeSelector:
       kubernetes.io/os: linux
-      liqo.io/type: virtual-node
+      #liqo.io/type: virtual-node
 
     # -- Node tolerations for cilium-operator scheduling to nodes with taints
     # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
@@ -1661,9 +1668,10 @@ cilium:
       serviceMonitor:
         # -- Enable service monitors.
         # This requires the prometheus CRDs to be available (see https://github.com/prometheus-operator/prometheus-operator/blob/master/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml)
-        enabled: false
+        enabled: true
         # -- Labels to add to ServiceMonitor cilium-operator
-        labels: {}
+        labels:
+          resolvemy.host/metrics: mimir
         # -- Annotations to add to ServiceMonitor cilium-operator
         annotations: {}
 
