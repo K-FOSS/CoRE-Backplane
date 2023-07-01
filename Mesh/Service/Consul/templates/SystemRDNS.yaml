@@ -7,21 +7,26 @@ metadata:
     kubernetes.io/name: CoreDNS
   name: coredns
   namespace: kube-system
+
 spec:
   progressDeadlineSeconds: 600
+  
   replicas: 5
+  
   revisionHistoryLimit: 10
+  
   selector:
     matchLabels:
       k8s-app: kube-dns
+  
   strategy:
     rollingUpdate:
       maxSurge: 25%
       maxUnavailable: 1
     type: RollingUpdate
+  
   template:
     metadata:
-      creationTimestamp: null
       labels:
         k8s-app: kube-dns
     spec:
@@ -43,6 +48,7 @@ spec:
             - /etc/coredns/Corefile
           image: kristianfjones/coredns-docker:core0
           imagePullPolicy: Always
+
           livenessProbe:
             failureThreshold: 3
             httpGet:
@@ -54,13 +60,16 @@ spec:
             successThreshold: 1
             timeoutSeconds: 1
           name: coredns
+
           ports:
             - containerPort: 53
               name: dns
               protocol: UDP
+
             - containerPort: 53
               name: dns-tcp
               protocol: TCP
+
             - containerPort: 9153
               name: metrics
               protocol: TCP
@@ -115,12 +124,14 @@ spec:
       serviceAccount: coredns
       serviceAccountName: coredns
       terminationGracePeriodSeconds: 30
+
       tolerations:
         - key: CriticalAddonsOnly
           operator: Exists
         - effect: NoSchedule
           key: node-role.kubernetes.io/master
           operator: Exists
+
       volumes:
         - configMap:
             defaultMode: 420
