@@ -13,19 +13,19 @@ spec:
         name: istio-ingressgateway
         enabled: true
         k8s:
-          replicaCount: 4
+          replicaCount: 6
           resources:
             requests:
-              memory: '16M'
+              memory: '100M'
               cpu: '10m'
 
             limits:
-              memory: '512M'
-              cpu: '500m'
+              memory: '2G'
+              cpu: '2'
 
           hpaSpec:
             minReplicas: 2
-            maxReplicas: 4
+            maxReplicas: 6
 
           priorityClassName: system-cluster-critical
 
@@ -74,11 +74,6 @@ spec:
                     runAsNonRoot: false
                     fsGroup: 0
 
-                # Enable BPF for QUIC
-                - path: spec.template.spec.containers.[name:istio-proxy].securityContext.capabilities.add
-                  value:
-                    - BPF
-
                 # Evenly spread across nodes
                 - path: spec.template.spec.topologySpreadConstraints
                   value:
@@ -88,19 +83,6 @@ spec:
                       labelSelector:
                         matchLabels:
                           istio: ingressgateway
-  
-                - path: spec.template.spec.volumes.[-1]
-                  value:
-                    name: bpffs
-                    hostPath:
-                      path: /sys/fs/bpf
-                      type: Directory
-
-                - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts.[-1]
-                  value:
-                    name: bpffs
-                    mountPath: /sys/fs/bpf
-
 
                 - path:  spec.template.metadata.labels.logs
                   value: loki-myloginspace
