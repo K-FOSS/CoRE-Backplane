@@ -4,57 +4,71 @@ metadata:
   name: psql-backup-sync
 spec:
   secretStoreRef:
-    name: vault-backend
+    name: hvs.xk2FUOEqIub6csfLrOlhvSnP
     kind: ClusterSecretStore
+
   target:
     name: psql-backup-creds
+
+    template:
+      engineVersion: v2
+      data:{{` 
+        Hostname: {{ .Hostname }}
+        PGPass: {{ .Hostname }}:5432:*:{{ .Username }}:{{ .Password }}
+        
+        Username: {{ .Username }}
+        Password: {{ .Password }}
+        
+
+        S3AccessKey: {{ .S3AccessKey }}
+        S3SecretKey: {{ .S3SecretKey }}
+
+        S3Bucket: {{ .S3Bucket }}
+        S3Endpoint: {{ .S3Endpoint }}
+
+        S3Prefix: {{ .S3Prefix }}
+          `}} 
   data:
     - secretKey: Hostname
       remoteRef:
-        key: PSQLBackups
+        key: Backups/PSQL
         property: Hostname
-      
-    - secretKey: PGPass
-      remoteRef:
-        key: PSQLBackups
-        property: PGPass
-      
-    - secretKey: Password
-      remoteRef:
-        key: PSQLBackups
-        property: Password
-      
-    - secretKey: Port
-      remoteRef:
-        key: PSQLBackups
-        property: Port
-      
-    - secretKey: S3AccessKey
-      remoteRef:
-        key: PSQLBackups
-        property: S3AccessKey
-      
-    - secretKey: S3Bucket
-      remoteRef:
-        key: PSQLBackups
-        property: S3Bucket
-      
-    - secretKey: S3Endpoint
-      remoteRef:
-        key: PSQLBackups
-        property: S3Endpoint
-      
-    - secretKey: S3Prefix
-      remoteRef:
-        key: PSQLBackups
-        property: S3Prefix
-      
-    - secretKey: S3SecretKey
-      remoteRef:
-        key: PSQLBackups
-        property: S3SecretKey
       
     - secretKey: Username
       remoteRef:
-        key: PSQLBackups
+        key: Backups/PSQL
         property: Username
+
+    - secretKey: Password
+      remoteRef:
+        key: Backups/PSQL
+        property: Password
+      
+    #
+    # S3
+    #
+    - secretKey: S3AccessKey
+      remoteRef:
+        key: Backups/PSQL
+        property: S3AccessKey
+
+    - secretKey: S3SecretKey
+      remoteRef:
+        key: Backups/PSQL
+        property: S3SecretKey
+      
+
+    - secretKey: S3Endpoint
+      remoteRef:
+        key: Backups/PSQL
+        property: S3Endpoint
+      
+    - secretKey: S3Bucket
+      remoteRef:
+        key: Backups/PSQL
+        property: S3Bucket
+      
+    - secretKey: S3Prefix
+      remoteRef:
+        key: Backups/PSQL
+        property: S3Prefix
