@@ -12,23 +12,16 @@ spec:
 
     template:
       engineVersion: v2
-      data: {{`
-        Hostname: {{ .Hostname }}
-
-        PGPass: {{ .Hostname }}:5432:*:{{ .Username }}:{{ .Password }}
-        
-        Username: {{ .Username }}
-        Password: {{ .Password }}
-        
-
-        S3AccessKey: {{ .S3AccessKey }}
-        S3SecretKey: {{ .S3SecretKey }}
-
-        S3Bucket: {{ .S3Bucket }}
-        S3Endpoint: {{ .S3Endpoint }}
-
-        S3Prefix: {{ .S3Prefix }}
-          `}} 
+      data:
+        Hostname: '{{`{{ .Hostname }}`}}'
+        PGPass: '{{`{{ .Hostname }}:5432:*:{{ .Username }}:{{ .Password }}`}}'
+        Username: '{{`{{ .Username }}`}}'
+        Password: '{{`{{ .Password }}`}}'
+        S3AccessKey: '{{`{{ .S3AccessKey }}`}}'
+        S3SecretKey: '{{`{{ .S3SecretKey }}`}}'
+        S3Bucket: '{{`{{ .S3Bucket }}`}}'
+        S3Endpoint: '{{`{{ .S3Endpoint }}`}}'
+        S3Prefix: '{{`{{ .S3Prefix }}`}}'
   data:
     - secretKey: Hostname
       remoteRef:
