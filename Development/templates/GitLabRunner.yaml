@@ -4,17 +4,18 @@ metadata:
   name: development-gitlab-s3-runner
 spec:
   secretStoreRef:
-    name: vault-backend
+    name: mainvault-core
     kind: ClusterSecretStore
+
   target:
     name: gitlab-s3-runner
+
     template:
       engineVersion: v2
       data:
         accesskey: 'gitlab'
 
         secretkey: '{{`{{ .S3SecretKey }}`}}'
-
 
   data:
     - secretKey: S3SecretKey

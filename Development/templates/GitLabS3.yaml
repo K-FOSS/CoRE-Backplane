@@ -4,8 +4,9 @@ metadata:
   name: development-gitlab-s3-prod-sync
 spec:
   secretStoreRef:
-    name: vault-backend
+    name: mainvault-core
     kind: ClusterSecretStore
+
   target:
     name: gitlab-s3-prod
     template:
@@ -23,6 +24,6 @@ spec:
   data:
     - secretKey: S3SecretKey
       remoteRef:
-        key: GitLab
-        property: S3SecretKey
+        key: GitLab/S3
+        property: SecretKey
 
