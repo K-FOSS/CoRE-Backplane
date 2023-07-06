@@ -4,12 +4,14 @@ metadata:
   name: development-gitlab-kas-prod-sync
 spec:
   secretStoreRef:
-    name: vault-backend
+    name: mainvault-core
     kind: ClusterSecretStore
+
   target:
     name: gitlab-kas-prod
+
   data:
     - secretKey: kas_shared_secret
       remoteRef:
-        key: GitLab
-        property: KASSecret
+        key: GitLab/KAS
+        property: SecretKey

@@ -4,17 +4,19 @@ metadata:
   name: development-gitlab-ldap-prod-sync
 spec:
   secretStoreRef:
-    name: vault-backend
+    name: mainvault-core
     kind: ClusterSecretStore
+
   target:
     name: gitlab-ldap-prod
+
   data:
     - secretKey: LDAPUsername
       remoteRef:
-        key: GitLab
-        property: LDAPUsername
+        key: GitLab/LDAP
+        property: Username
 
     - secretKey: LDAPPassword
       remoteRef:
-        key: GitLab
-        property: LDAPPassword
+        key: GitLab/LDAP
+        property: Password

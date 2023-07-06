@@ -4,23 +4,27 @@ metadata:
   name: development-gitlab-database-prod
 spec:
   secretStoreRef:
-    name: vault-backend
+    name: mainvault-core
     kind: ClusterSecretStore
+
   target:
     name: gitlab-database-prod
+
   data:
     - secretKey: DatabaseDatabase
       remoteRef:
-        key: GitLab
-        property: DatabaseDatabase
+        key: GitLab/Database
+        property: Database
+
+    - secretKey: DatabaseUsername
+      remoteRef:
+        key: GitLab/Database
+        property: Username
 
     - secretKey: DatabasePassword
       remoteRef:
-        key: GitLab
-        property: DatabasePassword
+        key: GitLab/Database
+        property: Password
       
-    - secretKey: DatabaseUsername
-      remoteRef:
-        key: GitLab
-        property: DatabaseUsername
+
 
