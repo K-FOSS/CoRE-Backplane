@@ -1,0 +1,41 @@
+{{- $fullName := include "spilo.fullname" . -}}
+---
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+
+metadata:
+  name: {{ $fullName }}-db
+
+  labels:
+    app: {{ $fullName }}-db
+
+spec:
+  secretStoreRef:
+    name: mainvault-core
+    kind: ClusterSecretStore
+
+  target:
+    name: {{ $fullName }}-db-s3
+
+  data:
+    - secretKey: Endpoint
+      remoteRef:
+        key: PSQL/S3
+        property: Endpoint
+
+    - secretKey: Bucket
+      remoteRef:
+        key: PSQL/S3
+        property: Bucket
+
+    - secretKey: AccessKey
+      remoteRef:
+        key: PSQL/S3
+        property: AccessKey
+      
+    - secretKey: SecretKey
+      remoteRef:
+        key: PSQL/S3
+        property: SecretKey
+
+
