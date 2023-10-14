@@ -282,6 +282,37 @@ cilium:
     # -- Activate BBR TCP congestion control for Pods
     bbr: false
 
+
+  # -- Configure standalone NAT46/NAT64 gateway
+  nat46x64Gateway:
+    # -- Enable RFC8215-prefixed translation
+    enabled: false
+  
+  # -- EnableHighScaleIPcache enables the special ipcache mode for high scale
+  # clusters. The ipcache content will be reduced to the strict minimum and
+  # traffic will be encapsulated to carry security identities.
+  highScaleIPcache:
+    # -- Enable the high scale mode for the ipcache.
+    enabled: false
+  
+  # -- Configure L2 announcements
+  l2announcements:
+    # -- Enable L2 announcements
+    enabled: false
+    # -- If a lease is not renewed for X duration, the current leader is considered dead, a new leader is picked
+    # leaseDuration: 15s
+    # -- The interval at which the leader will renew the lease
+    # leaseRenewDeadline: 5s
+    # -- The timeout between retries if renewal fails
+    # leaseRetryPeriod: 2s
+  
+  # -- Configure L2 pod announcements
+  l2podAnnouncements:
+    # -- Enable L2 pod announcements
+    enabled: false
+    # -- Interface used for sending Gratuitous ARP pod announcements
+    interface: "eth0"
+
   # -- Configure BGP
   bgp:
     # -- Enable BGP support inside Cilium; embeds a new ConfigMap for BGP inside
@@ -1194,10 +1225,10 @@ cilium:
     # -- interval between checks of the readiness probe
     periodSeconds: 30
 
-  # -- Configure the kube-proxy replacement in Cilium BPF datapath
-  # Valid options are "disabled", "partial", "strict".
-  # ref: https://docs.cilium.io/en/stable/gettingstarted/kubeproxy-free/
-  kubeProxyReplacement: 'strict'
+  # Valid options are "true", "false", "disabled" (deprecated), "partial" (deprecated), "strict" (deprecated).
+  # ref: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/
+  kubeProxyReplacement: true
+  #kubeProxyReplacement: "false"
 
   # -- healthz server bind address for the kube-proxy replacement.
   # To enable set the value to '0.0.0.0:10256' for all ipv4
