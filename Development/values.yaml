@@ -1291,10 +1291,10 @@ harbor:
         #maxthreads: 100
 
       s3:
-        region: us-east-1
-        bucket: <secret:CORE0_SITE1/data/Harbor~S3Bucket>
-        accesskey: <secret:CORE0_SITE1/data/Harbor~S3AccessKey>
-        secretkey: <secret:CORE0_SITE1/data/Harbor~S3SecretKey>
+        region: us-east-1 
+        bucket: <path:CORE0_SITE1/data/Harbor#S3/Bucket>
+        accesskey: <path:CORE0_SITE1/data/Harbor#S3/AccessKey>
+        secretkey: <path:CORE0_SITE1/data/Harbor#S3/SecretKey>
         regionendpoint: https://s3.mylogin.space
 
   imagePullPolicy: IfNotPresent
@@ -1322,7 +1322,7 @@ harbor:
   caSecretName: ""
 
   # The secret key used for encryption. Must be a string of 16 chars.
-  secretKey: <secret:CORE0_SITE1/data/Harbor~SecretKey>
+  secretKey: <path:CORE0_SITE1/data/Harbor#SecretKey>
 
   # The proxy settings for updating trivy vulnerabilities from the Internet and replicating
   # artifacts from/to the registries that cannot be reached directly
@@ -1448,7 +1448,7 @@ harbor:
     # Secret is used when core server communicates with other components.
     # If a secret key is not specified, Helm will generate one.
     # Must be a string of 16 chars.
-    secret: <secret:CORE0_SITE1/data/Harbor~CoreSecret>
+    secret: <path:CORE0_SITE1/data/Harbor#CoreSecret>
 
     # Fill the name of a kubernetes secret if you want to use your own
     # TLS certificate and private key for token encryption/decryption.
@@ -1459,7 +1459,7 @@ harbor:
     secretName: ''
 
     # The XSRF key. Will be generated automatically if it isn't specified
-    xsrfKey: <secret:CORE0_SITE1/data/Harbor~CSRF_KEY>
+    xsrfKey: <path:CORE0_SITE1/data/Harbor#CSRFKey>
 
     ## The priority class to run the pod as
     priorityClassName:
@@ -1511,7 +1511,7 @@ harbor:
     # Secret is used when job service communicates with other components.
     # If a secret key is not specified, Helm will generate one.
     # Must be a string of 16 chars.
-    secret: <secret:CORE0_SITE1/data/Harbor~JobServiceSecret>
+    secret: <path:CORE0_SITE1/data/Harbor#JobService/Secret>
 
     ## The priority class to run the pod as
     priorityClassName:
@@ -1561,7 +1561,7 @@ harbor:
     # See: https://github.com/docker/distribution/blob/master/docs/configuration.md#http
     # If a secret key is not specified, Helm will generate one.
     # Must be a string of 16 chars.
-    secret: <secret:CORE0_SITE1/data/Harbor~RegistrySecret>
+    secret: <path:CORE0_SITE1/data/Harbor#Registry/Secret>
 
     # If true, the registry returns relative URLs in Location headers. The client is responsible for resolving the correct URL.
     relativeurls: false
@@ -1803,10 +1803,10 @@ harbor:
 
       port: '5432'
       
-      username: <secret:CORE0_SITE1/data/Harbor~DatabaseUsername>
-      password: <secret:CORE0_SITE1/data/Harbor~DatabasePassword>
+      username: <path:CORE0_SITE1/data/Harbor~DatabaseUsername>
+      password: <path:CORE0_SITE1/data/Harbor~DatabasePassword>
       
-      coreDatabase: <secret:CORE0_SITE1/data/Harbor~DatabaseDatabase>
+      coreDatabase: <path:CORE0_SITE1/data/Harbor~DatabaseDatabase>
       
       notaryServerDatabase: "notary_server"
       
