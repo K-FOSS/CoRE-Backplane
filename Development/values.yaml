@@ -201,6 +201,8 @@ gitlab:
   ## The global properties are used to configure multiple charts at once.
   ## https://docs.gitlab.com/charts/charts/globals
   global:
+    priorityClassName: 'system-cluster-critical'
+
     common:
       labels: {}
 
@@ -350,8 +352,6 @@ gitlab:
         user: uwneOPXzji
 
       service:
-        name: praefect
-
         type: ClusterIP
 
         externalPort: 8075
@@ -986,8 +986,6 @@ gitlab:
 
     sidekiq:
       enabled: true
-      priorityClassName: ''
-
       
       registry:
         enabled: false
@@ -1006,7 +1004,6 @@ gitlab:
 
     praefect:
       enabled: true
-      priorityClassName: 'tier2-priority'
 
       metrics:
         enabled: true
@@ -1016,7 +1013,6 @@ gitlab:
     # https://docs.gitlab.com/charts/charts/gitlab/webservice
     webservice:
       enabled: true
-      priorityClassName: 'tier2-priority'
 
       registry:
         enabled: false
@@ -1033,8 +1029,6 @@ gitlab:
       
 
     gitaly:
-      priorityClassName: 'tier2-priority'
-      
       workhorse:
         serviceName: k0s-cntrl-development-webservice-default
         port: 8181
