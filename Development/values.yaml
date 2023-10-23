@@ -175,12 +175,6 @@ fullname: gitlab-prod
 gitlab:
   enabled: true
 
-  fullnameOverride: gitlab-prod
-
-  fullname: gitlab-prod
-
-  serviceName: gitlab-prod
-
   ## NOTICE
   #
   # Due to the scope and complexity of this chart, all possible values are
@@ -207,10 +201,6 @@ gitlab:
   ## The global properties are used to configure multiple charts at once.
   ## https://docs.gitlab.com/charts/charts/globals
   global:
-    fullnameOverride: gitlab-prod
-
-    nameOverride: gitlab-prod
-    
     common:
       labels: {}
 
@@ -317,6 +307,7 @@ gitlab:
     gitaly:
       external: null
       serviceName: gitlab-prod-gitaly
+
       gitaly:
         serviceName: gitlab-prod-gitaly
 
@@ -765,7 +756,7 @@ gitlab:
     workhorse:
       serviceName: webservice-default
       # scheme:
-      # host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
+      host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
       #port:
       ## https://docs.gitlab.com/charts/installation/secrets#gitlab-workhorse-secret
       secret: gitlab-workhorse-prod
@@ -993,6 +984,8 @@ gitlab:
     sidekiq:
       enabled: true
       priorityClassName: ''
+
+      
       registry:
         enabled: false
 
@@ -1014,7 +1007,7 @@ gitlab:
     webservice:
       enabled: true
       priorityClassName: 'tier2-priority'
-      fullnameOverride: gitlab-prod-webservice
+
       registry:
         enabled: false
 
@@ -1032,9 +1025,10 @@ gitlab:
     gitaly:
       priorityClassName: 'tier2-priority'
       
-      #workhorse:
-      #  serviceName: k0s-cntrl-development-webservice-default
-      #  port: 8181
+      workhorse:
+        serviceName: k0s-cntrl-development-webservice-default
+        port: 8181
+      
       metrics:
         enabled: true
         serviceMonitor:
@@ -1043,7 +1037,6 @@ gitlab:
     toolbox:
       enabled: true
       replicas: 1
-      fullnameOverride: gitlab-prod-toolbox
       backups:
         cron:
           enabled: true
