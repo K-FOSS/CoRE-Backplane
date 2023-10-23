@@ -336,19 +336,8 @@ gitlab:
       host: 10.1.1.68
       port: 6379
 
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
-    gitaly:
-      external: null
-      serviceName: gitlab-prod-gitaly
-      gitaly:
-        serviceName: gitlab-prod-gitaly
-
-
     praefect:
       enabled: true
-      
-      serviceName: gitlab-prod-praefect
 
       replaceInternalGitaly: true
 
@@ -781,7 +770,7 @@ gitlab:
     workhorse:
       serviceName: webservice-default
       # scheme:
-      host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
+      # host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
       #port:
       ## https://docs.gitlab.com/charts/installation/secrets#gitlab-workhorse-secret
       secret: gitlab-workhorse-prod
@@ -808,22 +797,6 @@ gitlab:
       #   keys:
       #     - custom-ca-2.crt
       #     - custom-ca-3.crt
-
-
-    ## kubectl image used by hooks to carry out specific jobs
-    kubectl:
-      image:
-        repository: registry.gitlab.com/gitlab-org/build/cng/kubectl
-        # The digest below comes from a given tag pipeline because they are mirrored to .com,
-        # ensuring that the image tag is available from both instances. The digest can be
-        # found in the 'sync_images' job.
-        #   https://dev.gitlab.org/gitlab/charts/components/images/-/tags
-        # pullPolicy: IfNotPresent
-        # pullSecrets: []
-      securityContext:
-        # in most base images, this is `nobody:nogroup`
-        runAsUser: 65534
-        fsGroup: 65534
 
     ## https://docs.gitlab.com/charts/charts/globals#service-accounts
     serviceAccount:
@@ -1010,7 +983,6 @@ gitlab:
   ## Settings for individual sub-charts under GitLab
   ## Note: Many of these settings are configurable via globals
   gitlab:
-    
     exporter:
       enabled: true
       metrics:
@@ -1026,7 +998,6 @@ gitlab:
     sidekiq:
       enabled: true
       priorityClassName: ''
-      fullnameOverride: gitlab-prod-sidekiq
       registry:
         enabled: false
 
@@ -1048,9 +1019,6 @@ gitlab:
     webservice:
       enabled: true
       priorityClassName: 'tier2-priority'
-      #nameOverride: gitlab-prod
-      fullnameOverride: gitlab-prod-webservice
-      host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
       registry:
         enabled: false
 
@@ -1068,9 +1036,9 @@ gitlab:
     gitaly:
       priorityClassName: 'tier2-priority'
       
-      workhorse:
-        serviceName: k0s-cntrl-development-webservice-default
-        port: 8181
+      #workhorse:
+      #  serviceName: k0s-cntrl-development-webservice-default
+      #  port: 8181
       metrics:
         enabled: true
         serviceMonitor:
