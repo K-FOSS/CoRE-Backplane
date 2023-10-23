@@ -170,43 +170,6 @@ cilium:
     #   value: "value"
     #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
 
-  # -- The priority class to use for cilium-agent.
-  priorityClassName: ""
-
-  # -- DNS policy for Cilium agent pods.
-  # Ref: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
-  dnsPolicy: ""
-
-  # -- Additional agent container arguments.
-  extraArgs: []
-
-  # -- Additional agent container environment variables.
-  extraEnv: []
-
-  # -- Additional agent hostPath mounts.
-  extraHostPathMounts: []
-    # - name: host-mnt-data
-    #   mountPath: /host/mnt/data
-    #   hostPath: /mnt/data
-    #   hostPathType: Directory
-    #   readOnly: true
-    #   mountPropagation: HostToContainer
-
-  # -- Additional agent volumes.
-  extraVolumes: []
-
-  # -- Additional agent volumeMounts.
-  extraVolumeMounts: []
-
-  # -- extraConfig allows you to specify additional configuration parameters to be
-  # included in the cilium-config configmap.
-  extraConfig: {}
-  #  my-config-a: "1234"
-  #  my-config-b: |-
-  #    test 1
-  #    test 2
-  #    test 3
-
   # -- Annotations to be added to agent pods
   podAnnotations: {}
 
@@ -223,11 +186,6 @@ cilium:
     # requests:
     #   cpu: 100m
     #   memory: 512Mi
-
-  pmtuDiscovery:
-    # -- Enable path MTU discovery to send ICMP fragmentation-needed replies to
-    # the client.
-    enabled: true
 
   # -- Cilium agent update strategy
   updateStrategy:
@@ -249,29 +207,6 @@ cilium:
 
   # -- Annotate k8s node upon initialization with Cilium's metadata.
   annotateK8sNode: false
-
-  azure:
-    # -- Enable Azure integration.
-    # Note that this is incompatible with AKS clusters created in BYOCNI mode: use
-    # AKS BYOCNI integration (`aksbyocni.enabled`) instead.
-    enabled: false
-    # usePrimaryAddress: false
-    # resourceGroup: group1
-    # subscriptionID: 00000000-0000-0000-0000-000000000000
-    # tenantID: 00000000-0000-0000-0000-000000000000
-    # clientID: 00000000-0000-0000-0000-000000000000
-    # clientSecret: 00000000-0000-0000-0000-000000000000
-    # userAssignedIdentityID: 00000000-0000-0000-0000-000000000000
-
-  alibabacloud:
-    # -- Enable AlibabaCloud ENI integration
-    enabled: false
-
-  # -- Deprecated in favor of bandwidthManager.enabled. To be removed in 1.13.
-  # Optimize TCP and UDP workloads and enable rate-limiting traffic from
-  # individual Pods with EDT (Earliest Departure Time) through the
-  # "kubernetes.io/egress-bandwidth" Pod annotation.
-  #bandwidthManager: false
 
   # -- Enable bandwidth manager to optimize TCP and UDP workloads and allow
   # for rate-limiting traffic from individual Pods with EDT (Earliest Departure
@@ -318,6 +253,7 @@ cilium:
     # -- Enable BGP support inside Cilium; embeds a new ConfigMap for BGP inside
     # cilium-agent and cilium-operator
     enabled: false
+
     announce:
       # -- Enable allocation and announcement of service LoadBalancer IPs
       loadbalancerIP: false
@@ -328,85 +264,27 @@ cilium:
   # CiliumBGPPeeringPolicy CRDs.
   bgpControlPlane:
     # -- Enables the BGP control plane.
-    enabled: false
+    enabled: true
+
+  pmtuDiscovery:
+    # -- Enable path MTU discovery to send ICMP fragmentation-needed replies to
+    # the client.
+    enabled: true
 
   bpf:
-    # -- Configure the mount point for the BPF filesystem
-    root: /sys/fs/bpf
-
-    # -- Enable BPF clock source probing for more efficient tick retrieval.
-    clockProbe: false
+    autoMount:
+      # -- Enable automatic mount of BPF filesystem
+      # When `autoMount` is enabled, the BPF filesystem is mounted at
+      # `bpf.root` path on the underlying host and inside the cilium agent pod.
+      # If users disable `autoMount`, it's expected that users have mounted
+      # bpffs filesystem at the specified `bpf.root` volume, and then the
+      # volume will be mounted inside the cilium agent pod at the same path.
+      enabled: true
 
     # -- Enables pre-allocation of eBPF map values. This increases
     # memory usage but can reduce latency.
     preallocateMaps: false
 
-    # -- Configure the maximum number of entries in the TCP connection tracking
-    # table.
-    # ctTcpMax: '524288'
-
-    # -- Configure the maximum number of entries for the non-TCP connection
-    # tracking table.
-    # ctAnyMax: '262144'
-
-    # -- Configure the maximum number of service entries in the
-    # load balancer maps.
-    lbMapMax: 65536
-
-    # -- Configure the maximum number of entries for the NAT table.
-    # natMax: 524288
-
-    # -- Configure the maximum number of entries for the neighbor table.
-    # neighMax: 524288
-
-    # -- Configure the maximum number of entries in endpoint policy map (per endpoint).
-    policyMapMax: 16384
-
-    # -- Configure auto-sizing for all BPF maps based on available memory.
-    # ref: https://docs.cilium.io/en/stable/concepts/ebpf/maps/#ebpf-maps
-    #mapDynamicSizeRatio: 0.0025
-
-    # -- Configure the level of aggregation for monitor notifications.
-    # Valid options are none, low, medium, maximum.
-    monitorAggregation: medium
-
-    # -- Configure the typical time between monitor notifications for
-    # active connections.
-    monitorInterval: "5s"
-
-    # -- Configure which TCP flags trigger notifications when seen for the
-    # first time in a connection.
-    monitorFlags: "all"
-
-    # -- Allow cluster external access to ClusterIP services.
-    lbExternalClusterIP: true
-
-    # -- Enable native IP masquerade support in eBPF
-    masquerade: true
-
-    # -- Deprecated in favor of bpf.hostLegacyRouting. To be removed in 1.13.
-    # Configure whether direct routing mode should route traffic via
-    # host stack (true) or directly and more efficiently out of BPF (false) if
-    # the kernel supports it.
-    #hostRouting: true
-
-    # -- Configure whether direct routing mode should route traffic via
-    # host stack (true) or directly and more efficiently out of BPF (false) if
-    # the kernel supports it. The latter has the implication that it will also
-    # bypass netfilter in the host namespace.
-    hostLegacyRouting: false
-
-    # -- Configure the eBPF-based TPROXY to reduce reliance on iptables rules
-    # for implementing Layer 7 policy.
-    tproxy: true
-
-    # -- Configure the FIB lookup bypass optimization for nodeport reverse
-    # NAT handling.
-    #lbBypassFIBLookup: true
-
-    # -- Configure explicitly allowed VLAN id's for bpf logic bypass.
-    # [0] will allow all VLAN id's without any filtering.
-    # vlanBypass: []
 
   # -- Clean all eBPF datapath state from the initContainer of the cilium-agent
   # DaemonSet.
@@ -430,13 +308,26 @@ cilium:
     # -- Install the CNI configuration and binary files into the filesystem.
     install: true
 
+    # -- Remove the CNI configuration and binary files on agent shutdown. Enable this
+    # if you're removing Cilium from the cluster. Disable this to prevent the CNI
+    # configuration file from being removed during agent upgrade, which can cause
+    # nodes to go unmanageable.
+    uninstall: false
+
     # -- Configure chaining on top of other CNI plugins. Possible values:
     #  - none
     #  - aws-cni
     #  - flannel
     #  - generic-veth
     #  - portmap
-    chainingMode: none
+    chainingMode: ~
+
+    # -- A CNI network name in to which the Cilium plugin should be added as a chained plugin.
+    # This will cause the agent to watch for a CNI network with this network name. When it is
+    # found, this will be used as the basis for Cilium's CNI configuration file. If this is
+    # set, it assumes a chaining mode of generic-veth. As a special case, a chaining mode
+    # of aws-cni implies a chainingTarget of aws-cni.
+    chainingTarget: ~
 
     # -- Make Cilium take ownership over the `/etc/cni/net.d` directory on the
     # node, renaming all non-Cilium CNI configurations to `*.cilium_bak`.
@@ -461,8 +352,9 @@ cilium:
     # -- Specify the path to a CNI config to read from on agent start.
     # This can be useful if you want to manage your CNI
     # configuration outside of a Kubernetes environment. This parameter is
-    # mutually exclusive with the 'cni.configMap' parameter.
-    # readCniConf: /host/etc/cni/net.d/05-cilium.conf
+    # mutually exclusive with the 'cni.configMap' parameter. The agent will
+    # write this to 05-cilium.conflist on startup.
+    # readCniConf: /host/etc/cni/net.d/05-sample.conflist.input
 
     # -- When defined, configMap will mount the provided value as ConfigMap and
     # interpret the cniConf variable as CNI configuration file and write it
@@ -480,44 +372,39 @@ cilium:
     # inside the agent pod.
     hostConfDirMountPath: /host/etc/cni/net.d
 
-  # -- Configure how frequently garbage collection should occur for the datapath
-  # connection tracking table.
-  # conntrackGCInterval: "0s"
-
-  # -- Configure container runtime specific integration.
-  containerRuntime:
-    # -- Enables specific integrations for container runtimes.
-    # Supported values:
-    # - containerd
-    # - crio
-    # - docker
-    # - none
-    # - auto (automatically detect the container runtime)
-    integration: none
-    # -- Configure the path to the container runtime control socket.
-    # socketPath: /path/to/runtime.sock
-
-  # crdWaitTimeout: ""
-
   # -- Tail call hooks for custom eBPF programs.
   customCalls:
     # -- Enable tail call hooks for custom eBPF programs.
     enabled: true
 
-  # -- Configure which datapath mode should be used for configuring container
-  # connectivity. Valid options are "veth" or "ipvlan". Deprecated, to be removed
-  # in v1.12.
-  datapathMode: veth
-
   daemon:
     # -- Configure where Cilium runtime state should be stored.
     runPath: "/var/run/cilium"
 
-  # -- Specify which network interfaces can run the eBPF datapath. This means
-  # that a packet sent from a pod to a destination outside the cluster will be
-  # masqueraded (to an output device IPv4 address), if the output device runs the
-  # program. When not specified, probing will automatically detect devices.
-  # devices: ""
+    # -- Configure a custom list of possible configuration override sources
+    # The default is "config-map:cilium-config,cilium-node-config". For supported
+    # values, see the help text for the build-config subcommand.
+    # Note that this value should be a comma-separated string.
+    configSources: ~
+
+    # -- allowedConfigOverrides is a list of config-map keys that can be overridden.
+    # That is to say, if this value is set, config sources (excepting the first one) can
+    # only override keys in this list.
+    #
+    # This takes precedence over blockedConfigOverrides.
+    #
+    # By default, all keys may be overridden. To disable overrides, set this to "none" or
+    # change the configSources variable.
+    allowedConfigOverrides: ~
+
+    # -- blockedConfigOverrides is a list of config-map keys that may not be overridden.
+    # In other words, if any of these keys appear in a configuration source excepting the
+    # first one, they will be ignored
+    #
+    # This is ignored if allowedConfigOverrides is set.
+    #
+    # By default, all keys may be overridden.
+    blockedConfigOverrides: ~
 
   # -- Enables experimental support for the detection of new and removed datapath
   # devices. When devices change the eBPF datapath is reloaded and services updated.
@@ -531,12 +418,6 @@ cilium:
   # -- Limit egress masquerading to interface selector.
   #egressMasqueradeInterfaces: ""
 
-  # -- Whether to enable CNP status updates.
-  enableCnpStatusUpdates: false
-
-  # -- Configures the use of the KVStore to optimize Kubernetes event handling by
-  # mirroring it into the KVstore for reduced overhead in large clusters.
-  enableK8sEventHandover: false
 
   # -- Enable setting identity mark for local traffic.
   # enableIdentityMark: true
@@ -547,26 +428,10 @@ cilium:
   # -- Enable CiliumEndpointSlice feature.
   enableCiliumEndpointSlice: false
 
-  ingressController:
-    # -- Enable cilium ingress controller
+  gatewayAPI:
+    # -- Enable support for Gateway API in cilium
     # This will automatically set enable-envoy-config as well.
     enabled: false
-
-    # -- Enforce https for host having matching TLS host in Ingress.
-    # Incoming traffic to http listener will return 308 http error code with respective location in header.
-    enforceHttps: true
-
-    # -- SecretsNamespace is the namespace in which envoy SDS will retrieve TLS secrets from.
-    secretsNamespace:
-      # -- Create secrets namespace for Ingress.
-      create: false
-
-      # -- Name of Ingress secret namespace.
-      name: cilium-secrets
-
-      # -- Enable secret sync, which will make sure all TLS secrets used by Ingress are synced to secretsNamespace.name.
-      # If disabled, TLS secrets must be maintained externally.
-      sync: true
 
   # -- Enables the fallback compatibility solution for when the xt_socket kernel
   # module is missing and it is needed for the datapath L7 redirection to work
@@ -622,69 +487,12 @@ cilium:
     # This option is only effective when encryption.type is set to ipsec.
     interface: ""
 
-  endpointHealthChecking:
-    # -- Enable connectivity health checking between virtual endpoints.
-    enabled: true
-
-  # -- Enable endpoint status.
-  # Status can be: policy, health, controllers, logs and / or state. For 2 or more options use a comma.
-  endpointStatus:
-    enabled: false
-    status: ""
-
-  endpointRoutes:
-    # -- Enable use of per endpoint routes instead of routing via
-    # the cilium_host interface.
-    enabled: false
-
-  eni:
-    # -- Enable Elastic Network Interface (ENI) integration.
-    enabled: false
-    # -- Update ENI Adapter limits from the EC2 API
-    updateEC2AdapterLimitViaAPI: false
-    # -- Release IPs not used from the ENI
-    awsReleaseExcessIPs: false
-    # -- Enable ENI prefix delegation
-    awsEnablePrefixDelegation: false
-    # -- EC2 API endpoint to use
-    ec2APIEndpoint: ""
-    # -- Tags to apply to the newly created ENIs
-    eniTags: {}
-    # -- If using IAM role for Service Accounts will not try to
-    # inject identity values from cilium-aws kubernetes secret.
-    # Adds annotation to service account if managed by Helm.
-    # See https://github.com/aws/amazon-eks-pod-identity-webhook
-    iamRole: ""
-    # -- Filter via subnet IDs which will dictate which subnets are going to be used to create new ENIs
-    # Important note: This requires that each instance has an ENI with a matching subnet attached
-    # when Cilium is deployed. If you only want to control subnets for ENIs attached by Cilium,
-    # use the CNI configuration file settings (cni.customConf) instead.
-    subnetIDsFilter: ""
-    # -- Filter via tags (k=v) which will dictate which subnets are going to be used to create new ENIs
-    # Important note: This requires that each instance has an ENI with a matching subnet attached
-    # when Cilium is deployed. If you only want to control subnets for ENIs attached by Cilium,
-    # use the CNI configuration file settings (cni.customConf) instead.
-    subnetTagsFilter: ""
-    # -- Filter via AWS EC2 Instance tags (k=v) which will dictate which AWS EC2 Instances
-    # are going to be used to create new ENIs
-    instanceTagsFilter: ""
-
   externalIPs:
     # -- Enable ExternalIPs service support.
     enabled: true
 
   # fragmentTracking enables IPv4 fragment tracking support in the datapath.
   fragmentTracking: true
-
-  gke:
-    # -- Enable Google Kubernetes Engine integration
-    enabled: false
-
-  # -- Enable connectivity health checking.
-  healthChecking: true
-
-  # -- TCP port for the agent health API. This is not the port for cilium-health.
-  healthPort: 9879
 
   # -- Configure the host firewall.
   hostFirewall:
@@ -1200,35 +1008,9 @@ cilium:
     # range via the Kubernetes node resource
     # requireIPv6PodCIDR: false
 
-  # -- Keep the deprecated selector labels when deploying Cilium DaemonSet.
-  keepDeprecatedLabels: false
-
-  # -- Keep the deprecated probes when deploying Cilium DaemonSet
-  keepDeprecatedProbes: false
-
-  startupProbe:
-    # -- failure threshold of startup probe.
-    # 105 x 2s translates to the old behaviour of the readiness probe (120s delay + 30 x 3s)
-    failureThreshold: 105
-    # -- interval between checks of the startup probe
-    periodSeconds: 2
-
-  livenessProbe:
-    # -- failure threshold of liveness probe
-    failureThreshold: 10
-    # -- interval between checks of the liveness probe
-    periodSeconds: 30
-
-  readinessProbe:
-    # -- failure threshold of readiness probe
-    failureThreshold: 3
-    # -- interval between checks of the readiness probe
-    periodSeconds: 30
-
   # Valid options are "true", "false", "disabled" (deprecated), "partial" (deprecated), "strict" (deprecated).
   # ref: https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/
   kubeProxyReplacement: true
-  #kubeProxyReplacement: "false"
 
   # -- healthz server bind address for the kube-proxy replacement.
   # To enable set the value to '0.0.0.0:10256' for all ipv4
@@ -1239,6 +1021,7 @@ cilium:
   l2NeighDiscovery:
     # -- Enable L2 neighbor discovery in the agent
     enabled: false
+
     # -- Override the agent's default neighbor resolution refresh period.
     refreshPeriod: "30s"
 
@@ -1367,9 +1150,6 @@ cilium:
     # -- Append NodePort range to ip_local_reserved_ports if clash with ephemeral
     # ports is detected.
     autoProtectPortRange: true
-
-    # -- Enable healthcheck nodePort server for NodePort services
-    enableHealthCheck: true
 
   # policyAuditMode: false
 
@@ -2142,6 +1922,7 @@ kube-router:
   # This is a YAML-formatted file.
   # Declare variables to be passed into your templates.
   enabled: true
+
   image:
     # image.repository -- Kube-Router image
     repository: docker.io/cloudnativelabs/kube-router
