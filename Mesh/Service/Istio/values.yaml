@@ -335,23 +335,6 @@ minecraft-proxy:
         ingress:
           ingressClassName: nginx
           enabled: false
-
-      - name: bedrock-query
-        containerPort: 25577
-        protocol: TCP
-        service:
-          enabled: true
-          embedded: true
-          port: 25577
-          annotations: {}
-          type: ClusterIP
-        loadBalancerIP: ""
-        loadBalancerSourceRanges: []
-        externalTrafficPolicy: Cluster
-        port: 19132
-        ingress:
-          ingressClassName: nginx
-          enabled: false
     #     annotations:
     ## Deprecated way for specifying the ingressClass. Kube.version < 1.18
     ##       kubernetes.io/ingress.class: nginx
