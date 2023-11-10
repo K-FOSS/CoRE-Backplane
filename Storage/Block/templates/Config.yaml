@@ -52,8 +52,8 @@ spec:
             # can be used to set arbitrary values on the dataset/zvol
             # can use handlebars templates with the parameters from the storage class/CO
             #datasetProperties:
-            #  "org.freenas:description": "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}/{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
-            #  "org.freenas:test": "{{ parameters.foo }}"
+            #  "org.freenas:description": "parameters.[csi.storage.k8s.io/pvc/namespace] / parameters.[csi.storage.k8s.io/pvc/name]"
+            #  "org.freenas:test": " parameters.foo "
             #  "org.freenas:test2": "some value"
             
             # total volume name (zvol/<datasetParentName>/<pvc name>) length cannot exceed 63 chars
@@ -82,8 +82,8 @@ spec:
 
             # MUST ensure uniqueness
             # full iqn limit is 223 bytes, plan accordingly
-            # default is "{{ name }}"
-            #nameTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}-{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
+            # default is " name "
+            #nameTemplate: " parameters.[csi.storage.k8s.io/pvc/namespace] - parameters.[csi.storage.k8s.io/pvc/name] "
             namePrefix: csi-
             nameSuffix: '-clustera'
 
@@ -99,7 +99,7 @@ spec:
                 # only required if using Chap
                 targetGroupAuthGroup:
 
-            #extentCommentTemplate: "{{ parameters.[csi.storage.k8s.io/pvc/namespace] }}/{{ parameters.[csi.storage.k8s.io/pvc/name] }}"
+            #extentCommentTemplate: " parameters.[csi.storage.k8s.io/pvc/namespace] parameters.[csi.storage.k8s.io/pvc/name]"
             extentInsecureTpc: true
             extentXenCompat: false
             extentDisablePhysicalBlocksize: true
