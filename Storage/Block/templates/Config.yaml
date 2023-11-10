@@ -1,0 +1,79 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: driver-config
+spec:
+  data:
+    - secretKey: Token
+      remoteRef:
+        key: Infra1
+        property: Token
+      
+
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    creationPolicy: Owner
+    name: democratic-csi-config
+    template:
+      engineVersion: v2
+      data:
+        driver-config-file.yaml: |-{{`
+          driver: freenas-api-iscsi
+          instance_id:
+          httpConnection:
+            protocol: http
+            host: 172.31.241.70
+            port: 80
+
+            apiKey: {{ .APIKey }}
+            allowInsecure: true
+            apiVersion: 2
+
+          zfs:
+            datasetParentName: Site1.NAS1.Pool1/k8s
+
+            # do NOT make datasetParentName and detachedSnapshotsDatasetParentName overlap
+            # they may be siblings, but neither should be nested in the other 
+            detachedSnapshotsDatasetParentName: Site1.NAS1.Pool1/k8s2
+
+            # "" (inherit), lz4, gzip-9, etc
+            zvolCompression:
+
+            # "" (inherit), on, off, verify
+            zvolDedup:
+
+            zvolEnableReservation: false
+
+            # 512, 1K, 2K, 4K, 8K, 16K, 64K, 128K default is 16K
+            zvolBlocksize:
+
+          iscsi:
+            targetPortal: 172.31.241.70:3260
+            # for multipath
+            targetPortals: []
+            interface:
+            namePrefix: csi-
+            nameSuffix: "-clustera"
+
+            # add as many as needed
+            targetGroups:
+              # get the correct ID from the "portal" section in the UI
+              - targetGroupPortalGroup: 3
+                # get the correct ID from the "initiators" section in the UI
+                targetGroupInitiatorGroup: 2
+                # None, CHAP, or CHAP Mutual
+                targetGroupAuthType: None
+                # get the correct ID from the "Authorized Access" section of the UI
+                # only required if using Chap
+                targetGroupAuthGroup:
+            extentInsecureTpc: true
+            extentXenCompat: false
+            extentDisablePhysicalBlocksize: true
+            # 512, 1024, 2048, or 4096,
+            extentBlocksize: 512
+            extentRpm: "SSD"
+            # 0-100 (0 == ignore)
+            extentAvailThreshold: 0`}}
