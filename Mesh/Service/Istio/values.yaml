@@ -179,6 +179,22 @@ minecraft-proxy:
         ingress:
           enabled: false
 
+      - name: bedrock-tcp
+        containerPort: 19132
+        protocol: TCP
+        service:
+          enabled: true
+          embedded: true
+          port: 19132
+          annotations: {}
+          type: ClusterIP
+        loadBalancerIP: ""
+        loadBalancerSourceRanges: []
+        externalTrafficPolicy: Cluster
+        port: 19132
+        ingress:
+          enabled: false
+
 
   ## Additional minecraft container environment variables
   ## Values can be either variable values or `valueFrom` yaml
