@@ -163,27 +163,19 @@ minecraft-proxy:
       # externalTrafficPolicy: Cluster
 
     extraPorts:
-      - name: bedrock-tcp
-        containerPort: 19132
-        protocol: TCP
-        service:
-          enabled: true
-          embedded: true
-          port: 19132
-        externalTrafficPolicy: Cluster
-        port: 19132
-
-      - name: bedrock-udp
-        containerPort: 19132
+      - name: query
+        containerPort: 25577
         protocol: UDP
         service:
           enabled: true
           embedded: true
-          port: 19132
+          port: 25577
+          annotations: {}
+          type: ClusterIP
         loadBalancerIP: ""
         loadBalancerSourceRanges: []
         externalTrafficPolicy: Cluster
-        port: 19132
+        port: 25577
         ingress:
           enabled: false
 
