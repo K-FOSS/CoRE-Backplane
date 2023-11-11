@@ -193,15 +193,18 @@ democratic-csi:
         - name: KUBERNETES_SERVICE_HOST
           value: '10.1.1.40'
 
-      extraVolumeMounts: []
-  #    - name: foo
-  #      mountPath: /foo
+      extraVolumeMounts:
+        - name: custom-files
+          mountPath: /home/csi/app/src/driver/freenas/http/index.js
+          subPath: index.js
 
-    extraVolumes: []
-  #  - name: foo
-  #    hostPath:
-  #      path: /dev
-  #      type: Directory
+    extraVolumes:
+      - name: custom-files
+        configMap:
+          name: block-csi-customtruenasapi
+          items:
+            - key: index
+              path: index.js
 
     nodeSelector: {}
 
