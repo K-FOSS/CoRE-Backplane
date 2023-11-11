@@ -255,14 +255,6 @@ democratic-csi:
       localtimeHostPath: /etc/localtime
       lifecycle:
 
-      resources:
-        requests:
-          memory: 64Mi
-          cpu: 64m
-
-        limits:
-          memory: 128Mi
-          cpu: 256m
 
       extraEnv: []
       extraVolumeMounts: []
@@ -280,14 +272,7 @@ democratic-csi:
       - --kubelet-registration-path={{ .Values.node.kubeletHostPath }}/plugins/{{ .Values.csiDriver.name }}/csi.sock
       # if you do not want to completely override the defaults use this
       extraArgs: []
-      resources:
-        requests:
-          memory: 64M
-          cpu: 0.5m
 
-        limits:
-          memory: 128Mi
-          cpu: 1m
 
     extraVolumes: []
   #  - name: foo
