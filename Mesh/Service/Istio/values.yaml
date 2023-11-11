@@ -180,6 +180,23 @@ minecraft-proxy:
           ingressClassName: nginx
           enabled: false
 
+      - name: bedrock-udp
+        containerPort: 19132
+        protocol: UDP
+        service:
+          enabled: true
+          embedded: true
+          port: 19132
+          annotations: {}
+          type: ClusterIP
+        loadBalancerIP: ""
+        loadBalancerSourceRanges: []
+        externalTrafficPolicy: Cluster
+        port: 19132
+        ingress:
+          ingressClassName: nginx
+          enabled: false
+
       - name: query
         containerPort: 25577
         protocol: UDP
