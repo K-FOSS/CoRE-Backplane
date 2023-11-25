@@ -77,47 +77,10 @@ spec:
               readOnly: true
 {{- end }}
 
-
-        - name: dhcp-netbox
-          image: kristianfjones/netbox-dhcp:main
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args:
-            - --config-file
-            - /config.toml
-
-          ports:
-            - name: http-netbox
-              containerPort: 8001
-              protocol: TCP
-
-          volumeMounts:
-            - name: dhcp-socket
-              mountPath: /var/run/DHCP
-
-            - name: script-vol
-              mountPath: /usr/local/bin/entry.sh
-              subPath: entry.sh
-
-            - name: netbox-config
-              mountPath: /config.toml
-              subPath: config.toml
-
-            - name: dhcp-config
-              mountPath: /etc/DHCP
-              readOnly: true
-
       volumes:
         - name: dhcp-socket
           emptyDir:
             medium: Memory
-
-        - name: netbox-config
-          configMap:
-            name: 'dhcp-netbox-cfg'
-            defaultMode: 0755
-            items:
-              - key: config.toml
-                path: config.toml
 
         - name: script-vol
           configMap:
