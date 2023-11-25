@@ -17,6 +17,7 @@ stack:
 
     # Once the Kubernetes Gateway API is more stable, we will use that for all services instead of nginx.
     image: nginx:1.25.1
+
     hook:
       enabled: true
       name: hook-files
@@ -46,7 +47,7 @@ stack:
 
   hegel:
     image: quay.io/tinkerbell/hegel:v0.11.1
-    trustedProxies: []
+    trustedProxies: ['0.0.0.0/0']
 
   rufio:
     image: quay.io/tinkerbell/rufio:v0.3.2
