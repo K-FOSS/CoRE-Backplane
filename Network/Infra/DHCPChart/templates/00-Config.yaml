@@ -481,6 +481,10 @@ data:
               "option-data": []
             },
             {
+              "name": "kioslab",
+              "server-hostname": "static.mylogin.space"
+            },
+            {
               "name": "onie",
               "test": "substring(option[60].hex,0,11) == 'onie_vendor'",
               "option-data": [
@@ -1150,6 +1154,84 @@ data:
                   ],
                   "renew-timer": 1800,
                   "subnet": "172.16.100.0/24",
+                  "valid-lifetime": 3600
+                }
+              ],
+              "valid-lifetime": 3600
+            },
+            {
+              "authoritative": false,
+
+              // Name of the shared network. It may be an arbitrary string
+              // and it must be unique among all shared networks.
+              "name": "management.dc1.resolvemy.host",
+              // You may specify interface name if the shared network is
+              // reachable directly from the server.
+              // You can specify many parameters that are allowed in subnet scope
+              // here. It's useful to put them here if they apply to all subnets
+              // in this shared network. It's likely that the most common
+              // parameter here will be option values defined with option-data.
+              "match-client-id": false,
+              "option-data": [],
+              "rebind-timer": 10800,
+
+              "ddns-qualifying-suffix": "manage.resolvemy.host.",
+              // If all the traffic coming from that shared network is reachable
+              // via relay and that relay always use the same IP address, you
+              // can specify that relay address here. Since this example shows
+              // a shared network reachable directly, we put 0.0.0.0 here.
+              // It would be better to skip the relay scope altogether, but
+              // it was left here for demonstration purposes.
+              "relay": {
+                "ip-addresses": [
+                  "172.16.20.254"
+                ]
+              },
+              // Timer values can be overridden here.
+              "renew-timer": 1800,
+
+              "store-extended-info": true,
+              "subnet4": [
+                {
+                  "id": 100,
+                  "match-client-id": false,
+                  "server-hostname": "dhcp.service.kjdev",
+                  "option-data": [
+                    {
+                      "name": "domain-name-servers",
+                      "data": "10.1.1.50,10.1.1.53"
+                    },
+                    {
+                      "name": "pcode",
+                      "data": "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00"
+                    },
+                    {
+                      "name": "tcode",
+                      "data": "America/Winnipeg"
+                    },
+                    {
+                      "name": "routers",
+                      "data": "172.16.20.254"
+                    }
+                  ],
+                  "pools": [
+                    {
+                      "pool": "172.16.20.230 - 172.16.20.240"
+                    }
+                  ],
+                  "rebind-timer": 10800,
+                  "reservations": [
+
+
+                    {
+                      "hw-address": "f0:4d:a2:09:60:ba",
+                      "client-classes": [
+                        "boots"
+                      ]
+                    }
+                  ],
+                  "renew-timer": 1800,
+                  "subnet": "172.16.20.0/24",
                   "valid-lifetime": 3600
                 }
               ],
