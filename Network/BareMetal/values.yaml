@@ -45,6 +45,18 @@ stack:
     trustedProxies: ['0.0.0.0/0']
     publicIP: 10.1.1.66
     logLevel: 'debug'
+    # Additional environment variables to pass to the smee container. Each entry is expected to have a
+    # name and value key. Some keys are already defined - refer to the deployment.yaml template for
+    # details.
+    #
+    # Example
+    additionalEnv:
+      - name: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: 'core-tempo-distributor.core-prod.svc.k0s.resolvemy.host:4317'
+
+      - name: OTEL_EXPORTER_OTLP_INSECURE
+        value: 'true'
+
 
   hegel:
     image: quay.io/tinkerbell/hegel:v0.11.1
