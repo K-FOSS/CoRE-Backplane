@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    consul.hashicorp.com/service-name: psql
+    metallb.universe.tf/ip-allocated-from-pool: anycast-pool
+  labels:
+    app: infra1-dc1-psql-spilo-spilo-db
+    spilo-cluster: k8s-0.resolvemy.host
+  name: infra1-dc1-psql-spilo-spilo-db
+spec:
+
+
+  allocateLoadBalancerNodePorts: true
+  externalTrafficPolicy: Cluster
+  internalTrafficPolicy: Cluster
+  loadBalancerIP: 10.1.1.38
+  ports:
+    - appProtocol: postgresql
+      name: psql
+      nodePort: 63102
+      port: 5432
+      protocol: TCP
+      targetPort: psql
+  publishNotReadyAddresses: true
+
+  type: LoadBalancer
+
+  selector:
+    application: spilo
+    cluster-name: psql-main
+    role: master
