@@ -9,8 +9,6 @@ metadata:
     spilo-cluster: k8s-0.resolvemy.host
   name: infra1-dc1-psql-spilo-spilo-db
 spec:
-
-
   allocateLoadBalancerNodePorts: true
   externalTrafficPolicy: Cluster
   internalTrafficPolicy: Cluster
@@ -18,15 +16,14 @@ spec:
   ports:
     - appProtocol: postgresql
       name: psql
-      nodePort: 63102
       port: 5432
       protocol: TCP
-      targetPort: psql
-  publishNotReadyAddresses: true
+      targetPort: 5432
 
   type: LoadBalancer
 
   selector:
     application: spilo
     cluster-name: psql-main
-    role: master
+    spilo-role: master
+    team: core
