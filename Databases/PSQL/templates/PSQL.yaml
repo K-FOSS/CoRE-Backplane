@@ -1,10 +1,7 @@
 apiVersion: acid.zalan.do/v1
 kind: postgresql
 metadata:
-  name: {{ include "common.lib.chart.names.fullname" . | quote }}
-  {{- with (include "common.lib.metadata.allLabels" $ | fromYaml) }}
-  labels: {{- toYaml . | nindent 4 }}
-  {{- end }}
+  name: psql-main
 
 spec:
   dockerImage: ghcr.io/zalando/spilo-15:3.0-p1
