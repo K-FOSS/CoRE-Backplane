@@ -5,24 +5,18 @@ metadata:
 
 spec:
   dockerImage: registry.opensource.zalan.do/acid/spilo-14:2.1-p7
-  teamId: ''
+  teamId: core
 
   numberOfInstances: 2
 
-  users:  # Application/Robot users
-    zalando:
-      - superuser
-      - createdb
-    #foo_user: []
+  users:
+    zalando:  # database owner
+    - superuser
+    - createdb
+    foo_user: []
 
-#    flyway: []
-
-#  usersWithSecretRotation:
-#  - foo_user
-
-#  usersWithInPlaceSecretRotation:
-#  - flyway
-#  - bar_owner_user
+  databases:
+    foo: zalando  
 
   enableMasterLoadBalancer: false
 
@@ -98,8 +92,6 @@ spec:
 #      volumeSource:
 #        configMap:
 #          name: my-config-map
-
-  enableShmVolume: true
 
 #  spiloRunAsUser: 101
 #  spiloRunAsGroup: 103
