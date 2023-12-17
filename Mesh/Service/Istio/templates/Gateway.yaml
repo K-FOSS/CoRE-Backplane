@@ -74,6 +74,11 @@ spec:
                     runAsNonRoot: false
                     fsGroup: 0
 
+                - path: spec.template.spec.containers.[name:istio-proxy].securityContext
+                  value:
+                    runAsUser: 0
+                    runAsGroup: 0
+
                 # Evenly spread across nodes
                 - path: spec.template.spec.topologySpreadConstraints
                   value:
