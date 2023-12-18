@@ -67,10 +67,13 @@ spec:
             - kind: Service
               name: istio-ingressgateway
               patches:
-                - path: spec.loadBalancerClass
-                  value: io.cilium/bgp-control-plane
+                # - path: spec.loadBalancerClass
+                #   value: io.cilium/bgp-control-plane
 
-                - path: labels.lan-mode
+                - path: metadata.labels.resolvemy.host/pool
+                  value: anycast
+
+                - path: metadata.labels.lan-mode
                   value: private
 
             - kind: Deployment
