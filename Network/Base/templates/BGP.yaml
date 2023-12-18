@@ -12,43 +12,19 @@ spec: # CiliumBGPPeeringPolicySpec
     - exportPodCIDR: true
       localASN: 64512
       neighbors:
+      {{ range .Values.peers }}
         - connectRetryTimeSeconds: 120
           eBGPMultihopTTL: 1
           gracefulRestart:
             enabled: true
             restartTimeSeconds: 120
-          holdTimeSeconds: 90
-          keepAliveTimeSeconds: 30
-          peerASN: 64567
-          peerAddress: 172.16.51.100/24
-          peerPort: 179
 
-        - connectRetryTimeSeconds: 120
-          eBGPMultihopTTL: 1
-          gracefulRestart:
-            enabled: true
-            restartTimeSeconds: 120
           holdTimeSeconds: 90
           keepAliveTimeSeconds: 30
-          peerASN: 64567
-          peerAddress: 172.16.52.100/24
-          peerPort: 179
-
-        - connectRetryTimeSeconds: 120
-          eBGPMultihopTTL: 1
-          holdTimeSeconds: 90
-          keepAliveTimeSeconds: 30
-          peerASN: 64567
-          peerAddress: 172.16.53.100/24
-          peerPort: 179
-
-        - connectRetryTimeSeconds: 120
-          eBGPMultihopTTL: 1
-          holdTimeSeconds: 90
-          keepAliveTimeSeconds: 30
-          peerASN: 64567
-          peerAddress: 172.16.54.100/24
-          peerPort: 179
+          peerASN: {{ .asn }}
+          peerAddress: {{ .ip }}/24
+          peerPort: {{ .port }}
+      {{- end }}
 
       serviceSelector:
         matchExpressions:
