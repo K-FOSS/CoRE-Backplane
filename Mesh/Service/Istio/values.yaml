@@ -139,14 +139,13 @@ minecraft-proxy:
     serviceType: LoadBalancer
     ## Set the port used if the serviceType is NodePort
     # nodePort:
-    loadBalancerIP: 10.1.1.83
+    loadBalancerIP: 66.165.222.101
 
     # loadBalancerSourceRanges: []
 
     ## Set the externalTrafficPolicy in the Service to either Cluster or Local
     # externalTrafficPolicy: Cluster
-    externalIPs:
-      - 66.165.222.101
+    externalIPs: []
 
     # If set, this overrides the default config file path
     configFilePath: /server/config.yml
@@ -245,6 +244,7 @@ minecraft-proxy:
 
   serviceAnnotations:
     metallb.universe.tf/allow-shared-ip: istio
+    io.cilium/lb-ipam-sharing-key: public-gw
 
   rconServiceAnnotations: {}
 
