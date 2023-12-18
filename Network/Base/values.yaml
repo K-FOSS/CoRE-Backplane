@@ -1302,16 +1302,32 @@ cilium:
       # -- Generated certificates validity duration in days. This will be used for auto generated CA.
       certValidityDuration: 1095
 
-  # -- Configure the encapsulation configuration for communication between nodes.
+  # -- Tunneling protocol to use in tunneling mode and for ad-hoc tunnels.
   # Possible values:
-  #   - disabled
-  #   - vxlan (default)
+  #   - ""
+  #   - vxlan
   #   - geneve
-  tunnel: 'disabled'
+  # @default -- `"vxlan"`
+  tunnelProtocol: ''
+
+  # -- Enable native-routing mode or tunneling mode.
+  # Possible values:
+  #   - ""
+  #   - native
+  #   - tunnel
+  # @default -- `"tunnel"`
+  routingMode: native
 
   # -- Configure VXLAN and Geneve tunnel port.
   # @default -- Port 8472 for VXLAN, Port 6081 for Geneve
   tunnelPort: 0
+
+  # -- Configure what the response should be to traffic for a service without backends.
+  # "reject" only works on kernels >= 5.10, on lower kernels we fallback to "drop".
+  # Possible values:
+  #  - reject (default)
+  #  - drop
+  serviceNoBackendResponse: reject
 
   # -- Configure the underlying network MTU to overwrite auto-detected MTU.
   MTU: 9000
