@@ -70,11 +70,11 @@ spec:
                 # - path: spec.loadBalancerClass
                 #   value: io.cilium/bgp-control-plane
 
-                - path: metadata.labels.resolvemy.host/pool
-                  value: anycast
-
-                - path: metadata.labels.lan-mode
-                  value: private
+                - path: metadata.labels
+                  value:
+                    resolvemy.host/pool: anycast
+                    lan-mode: private
+                    wan-mode: public
 
             - kind: Deployment
               name: istio-ingressgateway
