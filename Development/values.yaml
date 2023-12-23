@@ -292,18 +292,45 @@ gitlab:
       # key: password
 
 
+
+
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
+      connectTimeout:
+      keepalives:
+      keepalivesIdle:
+      keepalivesInterval:
+      keepalivesCount:
+      tcpUserTimeout:
       password:
         useSecret: true
         secret: gitlab-database-prod
         key: DatabasePassword
 
-      host: psql.service.dc1.kjdev
+      host: psql.mylogin.space
       # port: 123
-      
       username: WNUoZH3HCm
       database: WNUoZH3HCm
+      # applicationName:
+      # preparedStatements: false
+      # databaseTasks: true
+      main: {}
+        # host: postgresql.hostedsomewhere.else
+        # port: 123
+        # username: gitlab
+        # database: gitlabhq_production
+        # applicationName:
+        # preparedStatements: false
+        # databaseTasks: true
+      ci: {}
+        # host: postgresql.hostedsomewhere.else
+        # port: 123
+        # username: gitlab
+        # database: gitlabhq_production_ci
+        # applicationName:
+        # preparedStatements: false
+        # databaseTasks: false
+
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
     gitaly:
