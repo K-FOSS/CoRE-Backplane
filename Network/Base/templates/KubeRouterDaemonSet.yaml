@@ -29,6 +29,7 @@ spec:
             # TODO
             # 
             - '--master='
+            - --bgp-port=5555
 
             - --enable-pprof=false
 
@@ -43,6 +44,7 @@ spec:
             #
             - --peer-router-ips=172.18.113.48
             - --peer-router-asns=64567
+            - --peer-router-multihop-ttl=6
             
 
             #
@@ -69,7 +71,7 @@ spec:
             #
             # Route Propagation Rules
             #
-            - --advertise-pod-cidr=true
+            - --advertise-pod-cidr=false
             - --advertise-loadbalancer-ip=true
             - --advertise-external-ip=true
             - --advertise-cluster-ip=true
@@ -134,7 +136,7 @@ spec:
 
       dnsPolicy: ClusterFirst
 
-      hostNetwork: false
+      hostNetwork: true
 
       priorityClassName: system-node-critical
 
