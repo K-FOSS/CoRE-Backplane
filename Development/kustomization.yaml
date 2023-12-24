@@ -4,3 +4,24 @@ kind: Kustomization
 
 patchesStrategicMerge:
   - PraefectConfig.yaml
+
+patches:
+  - patch: |-
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: tracker
+      spec:
+        jobTemplate:
+          spec:
+            template:
+              spec:
+                affinity:
+                  nodeAffinity:
+                    requiredDuringSchedulingIgnoredDuringExecution:
+                      nodeSelectorTerms:
+                        - matchExpressions:
+                            - key: kubernetes.io/hostname
+                              operator: In
+                              values:
+                                - node0.k0s.dc1.resolvemy.host
