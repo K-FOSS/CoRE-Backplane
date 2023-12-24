@@ -4,8 +4,8 @@ metadata:
   name: k0s-cntrl-sso-tls-authentiktoken
 spec:
   secretStoreRef:
-    name: vault-backend
     kind: ClusterSecretStore
+    name: mainvault-core
 
   target:
     name: k0s-cntrl-sso-tls-aaatoken
@@ -13,6 +13,6 @@ spec:
   data:
     - secretKey: Token
       remoteRef:
-        key: Authentik
-        property: APIToken
+        key: AAA/Authentik/General
+        property: Token
 
