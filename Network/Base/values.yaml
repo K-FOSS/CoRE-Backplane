@@ -432,10 +432,102 @@ cilium:
   # -- Enable CiliumEndpointSlice feature.
   enableCiliumEndpointSlice: false
 
+
+  envoyConfig:
+    # -- Enable CiliumEnvoyConfig CRD
+    # CiliumEnvoyConfig CRD can also be implicitly enabled by other options.
+    enabled: true
+
+    # -- SecretsNamespace is the namespace in which envoy SDS will retrieve secrets from.
+    secretsNamespace:
+      # -- Create secrets namespace for CiliumEnvoyConfig CRDs.
+      create: true
+
+      # -- The name of the secret namespace to which Cilium agents are given read access.
+      name: cilium-secrets
+
+  ingressController:
+    # -- Enable cilium ingress controller
+    # This will automatically set enable-envoy-config as well.
+    enabled: true
+
+    # -- Set cilium ingress controller to be the default ingress controller
+    # This will let cilium ingress controller route entries without ingress class set
+    default: false
+
+    # -- Default ingress load balancer mode
+    # Supported values: shared, dedicated
+    # For granular control, use the following annotations on the ingress resource
+    # ingress.cilium.io/loadbalancer-mode: shared|dedicated,
+    loadbalancerMode: dedicated
+
+    # -- Enforce https for host having matching TLS host in Ingress.
+    # Incoming traffic to http listener will return 308 http error code with respective location in header.
+    enforceHttps: true
+
+    # -- Enable proxy protocol for all Ingress listeners. Note that _only_ Proxy protocol traffic will be accepted once this is enabled.
+    enableProxyProtocol: false
+
+    # -- IngressLBAnnotations are the annotation and label prefixes, which are used to filter annotations and/or labels to propagate from Ingress to the Load Balancer service
+    ingressLBAnnotationPrefixes: ['service.beta.kubernetes.io', 'service.kubernetes.io', 'cloud.google.com']
+
+    # -- Default secret namespace for ingresses without .spec.tls[].secretName set.
+    defaultSecretNamespace:
+
+    # -- Default secret name for ingresses without .spec.tls[].secretName set.
+    defaultSecretName:
+
+    # -- SecretsNamespace is the namespace in which envoy SDS will retrieve TLS secrets from.
+    secretsNamespace:
+      # -- Create secrets namespace for Ingress.
+      create: true
+
+      # -- Name of Ingress secret namespace.
+      name: cilium-secrets
+
+      # -- Enable secret sync, which will make sure all TLS secrets used by Ingress are synced to secretsNamespace.name.
+      # If disabled, TLS secrets must be maintained externally.
+      sync: true
+
+    # -- Load-balancer service in shared mode.
+    # This is a single load-balancer service for all Ingress resources.
+    service:
+      # -- Service name
+      name: cilium-ingress
+      # -- Labels to be added for the shared LB service
+      labels: {}
+      # -- Annotations to be added for the shared LB service
+      annotations: {}
+      # -- Service type for the shared LB service
+      type: LoadBalancer
+      # -- Configure a specific nodePort for insecure HTTP traffic on the shared LB service
+      insecureNodePort: ~
+      # -- Configure a specific nodePort for secure HTTPS traffic on the shared LB service
+      secureNodePort : ~
+      # -- Configure a specific loadBalancerClass on the shared LB service (requires Kubernetes 1.24+)
+      loadBalancerClass: ~
+      # -- Configure a specific loadBalancerIP on the shared LB service
+      loadBalancerIP : ~
+      # -- Configure if node port allocation is required for LB service
+      # ref: https://kubernetes.io/docs/concepts/services-networking/service/#load-balancer-nodeport-allocation
+      allocateLoadBalancerNodePorts: ~
+
   gatewayAPI:
     # -- Enable support for Gateway API in cilium
     # This will automatically set enable-envoy-config as well.
     enabled: true
+
+    # -- SecretsNamespace is the namespace in which envoy SDS will retrieve TLS secrets from.
+    secretsNamespace:
+      # -- Create secrets namespace for Gateway API.
+      create: true
+
+      # -- Name of Gateway API secret namespace.
+      name: cilium-secrets
+
+      # -- Enable secret sync, which will make sure all TLS secrets used by Ingress are synced to secretsNamespace.name.
+      # If disabled, TLS secrets must be maintained externally.
+      sync: true
 
   # -- Enables the fallback compatibility solution for when the xt_socket kernel
   # module is missing and it is needed for the datapath L7 redirection to work
