@@ -154,19 +154,41 @@ artifact-hub:
   tracker:
     cronjob:
       image:
+        # Tracker image repository (without the tag)
         repository: artifacthub/tracker
-      resources:
-        requests:
-          memory: 6G
-          cpu: 200m
-        limits:
-          cpu: 1
-
-    cacheDir: ''
-    configDir: '/home/tracker/.cfg'
-    concurrency: 24
-    bypassDigestCheck: true
-    repositoryTimeout: 12h
+      securityContext: {}
+      resources: {}
+      # If you do want to specify resources, uncomment the following
+      # lines and adjust them as necessary.
+      #   limits:
+      #     cpu: 100m
+      #     memory: 128Mi
+      #   requests:
+      #     cpu: 100m
+      #     memory: 128Mi
+      # Optionally specify extra list of additional labels for the tracker cronjob
+      extraCronJobLabels: {}
+      # Optionally specify extra list of additional labels for the Jobs spawned by the tracker cronjob
+      extraJobLabels: {}
+      # Optionally specify extra list of additional volumes for the tracker cronjob
+      extraVolumes: []
+      # Optionally specify extra list of additional volume mounts for the tracker cronjob
+      extraVolumeMounts: []
+    # Cache directory path. If set, the cache directory for the Helm client will be explicitly set (otherwise defaults
+    # to $HOME/.cache), and the directory will be mounted as ephemeral volume (emptyDir)
+    cacheDir: ""
+    # Directory path where the configuration files should be mounted
+    configDir: "/home/tracker/.cfg"
+    # Number of repositories to process concurrently
+    concurrency: 10
+    # Maximum duration for the tracking of a single repository
+    repositoryTimeout: 15m
+    # Repositories names to process ([] = all)
+    repositoriesNames: []
+    # Repositories kinds to process ([] = all)
+    repositoriesKinds: []
+    # Bypass digest check. Use this option to force already indexed packages to be reprocessed (use with caution)
+    bypassDigestCheck: false
 
   pullPolicy: Always
 
