@@ -944,6 +944,28 @@ spec:
             host: bytebase.core-prod.svc.k0s.resolvemy.host
 
   tls:
+    - match:
+        - port: 636
+          sniHosts:
+            - ldap.mylogin.space
+      route:
+        - destination:
+            host: myloginspace-ldap.core-prod.svc.k0s.resolvemy.host
+            port:
+              number: 636
+          weight: 100
+
+    - match:
+        - port: 5432
+          sniHosts:
+            - psql.mylogin.space
+      route:
+        - destination:
+            host: proxy.core-prod.svc.k0s.resolvemy.host
+            port:
+              number: 443
+          weight: 100
+
     #
     # Traefik
     # 
@@ -962,6 +984,8 @@ spec:
     #
     # GitPods Development Environments
     #
+ 
+
 
     - match:
         - port: 443
