@@ -1596,6 +1596,11 @@ int-dns:
   ##
   sources:
     - service
+    - gateway-httproute
+    - gateway-grpcroute
+    - gateway-tlsroute
+    - gateway-tcproute
+    - gateway-udproute
 
 
   ## @param provider DNS provider where the DNS records will be created.
@@ -1603,20 +1608,6 @@ int-dns:
   ## - alibabacloud, aws, azure, azure-private-dns, cloudflare, coredns, designate, digitalocean, google, hetzner, infoblox, linode, rfc2136, transip, oci
   ##
   provider: pdns
-
-  ## @param initContainers Attach additional init containers to the pod (evaluated as a template)
-  ##
-  initContainers: []
-
-  ## @param sidecars Attach additional containers to the pod (evaluated as a template)
-  ##
-  sidecars: []
-
-  ## Flags related to processing sources
-  ## ref: https://github.com/kubernetes-sigs/external-dns/blob/master/pkg/apis/externaldns/types.go#L272
-  ## @param namespace Limit sources of endpoints to a specific namespace (default: all namespaces)
-  ##
-  namespace: ''
 
   ## @param fqdnTemplates Templated strings that are used to generate DNS names from sources that don't define a hostname themselves
   ##
@@ -1644,87 +1635,6 @@ int-dns:
   ## @param serviceTypeFilter The service types to take care about (default: all, options: ClusterIP, NodePort, LoadBalancer, ExternalName)
   ##
   serviceTypeFilter: []
-
-
-  ## Cloudflare configuration to be set via arguments/env. variables
-  ##
-  cloudflare:
-    ## @param cloudflare.apiToken When using the Cloudflare provider, `CF_API_TOKEN` to set (optional)
-    ##
-    apiToken: ""
-    ## @param cloudflare.apiKey When using the Cloudflare provider, `CF_API_KEY` to set (optional)
-    ##
-    apiKey: ""
-    ## @param cloudflare.secretName When using the Cloudflare provider, it's the name of the secret containing cloudflare_api_token or cloudflare_api_key.
-    ## This ignores cloudflare.apiToken, and cloudflare.apiKey
-    ##
-    secretName: ""
-    ## @param cloudflare.email When using the Cloudflare provider, `CF_API_EMAIL` to set (optional). Needed when using CF_API_KEY
-    ##
-    email: ""
-    ## @param cloudflare.proxied When using the Cloudflare provider, enable the proxy feature (DDOS protection, CDN...) (optional)
-    ##
-    proxied: false
-
-
-  ## RFC 2136 configuration to be set via arguments/env. variables
-  ##
-  rfc2136:
-    ## @param rfc2136.host When using the rfc2136 provider, specify the RFC2136 host (required when provider=rfc2136)
-    ##
-    host: ""
-
-    ## @param rfc2136.port When using the rfc2136 provider, specify the RFC2136 port (optional)
-    ##
-    port: 53
-
-    ## @param rfc2136.zone When using the rfc2136 provider, specify the zone (required when provider=rfc2136)
-    ##
-    zone: ""
-
-    ## @param rfc2136.tsigSecret When using the rfc2136 provider, specify the tsig secret to enable security. (do not specify if `rfc2136.secretName` is provided.) (optional)
-    ##
-    tsigSecret: ""
-
-    ## @param rfc2136.secretName When using the rfc2136 provider, specify the existing secret which contains your tsig secret. Disables the usage of `rfc2136.tsigSecret` (optional)
-    ##
-    secretName: ""
-
-    ## @param rfc2136.tsigSecretAlg When using the rfc2136 provider, specify the tsig secret to enable security (optional)
-    ##
-    tsigSecretAlg: hmac-sha256
-
-    ## @param rfc2136.tsigKeyname When using the rfc2136 provider, specify the tsig keyname to enable security (optional)
-    ##
-    tsigKeyname: externaldns-key
-
-    ## @param rfc2136.tsigAxfr When using the rfc2136 provider, enable AFXR to enable security (optional)
-    ##
-    tsigAxfr: true
-
-    ## @param rfc2136.minTTL When using the rfc2136 provider, specify minimal TTL (in duration format) for records[ns, us, ms, s, m, h], see more https://golang.org/pkg/time/#ParseDuration
-    ##
-    minTTL: "0s"
-
-    ## @param rfc2136.rfc3645Enabled When using the rfc2136 provider, extend using RFC3645 to support secure updates over Kerberos with GSS-TSIG
-    ##
-    rfc3645Enabled: false
-
-    ## @param rfc2136.kerberosConfig When using the rfc2136 provider with rfc3645Enabled, the contents of a configuration file for krb5 (optional)
-    ##
-    kerberosConfig: ""
-
-    ## @param rfc2136.kerberosUsername When using the rfc2136 provider with rfc3645Enabled, specify the username to authenticate with (optional)
-    ##
-    kerberosUsername: ""
-
-    ## @param rfc2136.kerberosPassword When using the rfc2136 provider with rfc3645Enabled, specify the password to authenticate with (optional)
-    ##
-    kerberosPassword: ""
-
-    ## @param rfc2136.kerberosRealm When using the rfc2136 provider with rfc3645Enabled, specify the realm to authenticate to (required when provider=rfc2136 and rfc2136.rfc3645Enabled=true)
-    ##
-    kerberosRealm: ""
 
   ## PowerDNS configuration to be set via arguments/env. variables
   ##
@@ -2058,29 +1968,6 @@ int-dns:
     pspEnabled: false
 
 
-
-  ## @param containerSecurityContext Security context for the container
-  ## https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-  ## Example:
-  ## securityContext:
-  ##   allowPrivilegeEscalation: false
-  ##   readOnlyRootFilesystem: true
-  ##   capabilities:
-  ##     drop: ["ALL"]
-  ##
-  containerSecurityContext: {}
-
-
-  ## @param podSecurityContext.enabled Enable pod security context
-  ## @param podSecurityContext.fsGroup Group ID for the container
-  ## @param podSecurityContext.runAsUser User ID for the container
-  ##
-  podSecurityContext:
-    enabled: true
-    fsGroup: 1001
-    runAsUser: 1001
-
-
   ## Container resource requests and limits
   ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
   ## We usually recommend not to specify default resources and to leave this as a conscious
@@ -2355,6 +2242,11 @@ ext-dns:
   sources:
     - service
     - ingress
+    - gateway-httproute
+    - gateway-grpcroute
+    - gateway-tlsroute
+    - gateway-tcproute
+    - gateway-udproute
 
 
   ## @param provider DNS provider where the DNS records will be created.
@@ -2363,27 +2255,10 @@ ext-dns:
   ##
   provider: cloudflare
 
-  ## @param initContainers Attach additional init containers to the pod (evaluated as a template)
-  ##
-  initContainers: []
-
-  ## @param sidecars Attach additional containers to the pod (evaluated as a template)
-  ##
-  sidecars: []
-
-  ## Flags related to processing sources
-  ## ref: https://github.com/kubernetes-sigs/external-dns/blob/master/pkg/apis/externaldns/types.go#L272
-  ## @param namespace Limit sources of endpoints to a specific namespace (default: all namespaces)
-  ##
-  namespace: ''
-
   ## @param fqdnTemplates Templated strings that are used to generate DNS names from sources that don't define a hostname themselves
   ##
   fqdnTemplates: []
-  ## @param containerPorts.http HTTP Container port
-  ##
-  containerPorts:
-    http: 7979
+
   ## @param combineFQDNAnnotation Combine FQDN template and annotations instead of overwriting
   ##
   combineFQDNAnnotation: false
@@ -2414,66 +2289,6 @@ ext-dns:
     secretName: kjdev-cloudflare
 
     proxied: false
-
-  ## RFC 2136 configuration to be set via arguments/env. variables
-  ##
-  rfc2136:
-    ## @param rfc2136.host When using the rfc2136 provider, specify the RFC2136 host (required when provider=rfc2136)
-    ##
-    host: ""
-
-    ## @param rfc2136.port When using the rfc2136 provider, specify the RFC2136 port (optional)
-    ##
-    port: 53
-
-    ## @param rfc2136.zone When using the rfc2136 provider, specify the zone (required when provider=rfc2136)
-    ##
-    zone: ""
-
-    ## @param rfc2136.tsigSecret When using the rfc2136 provider, specify the tsig secret to enable security. (do not specify if `rfc2136.secretName` is provided.) (optional)
-    ##
-    tsigSecret: ""
-
-    ## @param rfc2136.secretName When using the rfc2136 provider, specify the existing secret which contains your tsig secret. Disables the usage of `rfc2136.tsigSecret` (optional)
-    ##
-    secretName: ""
-
-    ## @param rfc2136.tsigSecretAlg When using the rfc2136 provider, specify the tsig secret to enable security (optional)
-    ##
-    tsigSecretAlg: hmac-sha256
-
-    ## @param rfc2136.tsigKeyname When using the rfc2136 provider, specify the tsig keyname to enable security (optional)
-    ##
-    tsigKeyname: externaldns-key
-
-    ## @param rfc2136.tsigAxfr When using the rfc2136 provider, enable AFXR to enable security (optional)
-    ##
-    tsigAxfr: true
-
-    ## @param rfc2136.minTTL When using the rfc2136 provider, specify minimal TTL (in duration format) for records[ns, us, ms, s, m, h], see more https://golang.org/pkg/time/#ParseDuration
-    ##
-    minTTL: "0s"
-
-    ## @param rfc2136.rfc3645Enabled When using the rfc2136 provider, extend using RFC3645 to support secure updates over Kerberos with GSS-TSIG
-    ##
-    rfc3645Enabled: false
-
-    ## @param rfc2136.kerberosConfig When using the rfc2136 provider with rfc3645Enabled, the contents of a configuration file for krb5 (optional)
-    ##
-    kerberosConfig: ""
-
-    ## @param rfc2136.kerberosUsername When using the rfc2136 provider with rfc3645Enabled, specify the username to authenticate with (optional)
-    ##
-    kerberosUsername: ""
-
-    ## @param rfc2136.kerberosPassword When using the rfc2136 provider with rfc3645Enabled, specify the password to authenticate with (optional)
-    ##
-    kerberosPassword: ""
-
-    ## @param rfc2136.kerberosRealm When using the rfc2136 provider with rfc3645Enabled, specify the realm to authenticate to (required when provider=rfc2136 and rfc2136.rfc3645Enabled=true)
-    ##
-    kerberosRealm: ""
-
 
   ## @param domainFilters Limit possible target zones by domain suffixes (optional)
   ##
@@ -2720,25 +2535,6 @@ ext-dns:
     ##     timeoutSeconds: 300
     ##
     sessionAffinityConfig: {}
-  ## ServiceAccount parameters
-  ## https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
-  ##
-  serviceAccount:
-    ## @param serviceAccount.create Determine whether a Service Account should be created or it should reuse a exiting one.
-    ##
-    create: true
-    ## @param serviceAccount.name ServiceAccount to use. A name is generated using the external-dns.fullname template if it is not set
-    ##
-    name: ""
-    ## @param serviceAccount.annotations Additional Service Account annotations
-    ##
-    annotations: {}
-    ## @param serviceAccount.automountServiceAccountToken Automount API credentials for a service account.
-    ##
-    automountServiceAccountToken: true
-    ## @param serviceAccount.labels [object] Additional labels to be included on the service account
-    ##
-    labels: {}
 
   ## RBAC parameters
   ## https://kubernetes.io/docs/reference/access-authn-authz/rbac/
@@ -2762,86 +2558,8 @@ ext-dns:
 
 
 
-  ## @param containerSecurityContext Security context for the container
-  ## https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
-  ## Example:
-  ## securityContext:
-  ##   allowPrivilegeEscalation: false
-  ##   readOnlyRootFilesystem: true
-  ##   capabilities:
-  ##     drop: ["ALL"]
-  ##
-  containerSecurityContext: {}
 
 
-  ## @param podSecurityContext.enabled Enable pod security context
-  ## @param podSecurityContext.fsGroup Group ID for the container
-  ## @param podSecurityContext.runAsUser User ID for the container
-  ##
-  podSecurityContext:
-    enabled: true
-    fsGroup: 1001
-    runAsUser: 1001
-
-
-  ## Container resource requests and limits
-  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
-  ## We usually recommend not to specify default resources and to leave this as a conscious
-  ## choice for the user. This also increases chances charts run on environments with little
-  ## resources, such as Minikube. If you do want to specify resources, uncomment the following
-  ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  ## @param resources.limits The resources limits for the container
-  ## @param resources.requests The requested resources for the container
-  ##
-  resources:
-    ## Example:
-    ## limits:
-    ##    cpu: 50m
-    ##    memory: 50Mi
-    ##
-    limits: {}
-    ## Examples:
-    ## requests:
-    ##    cpu: 10m
-    ##    memory: 50Mi
-    ##
-    requests: {}
-
-
-  ## Configure extra options for liveness probe
-  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
-  ## @param livenessProbe.enabled Enable livenessProbe
-  ## @param livenessProbe.initialDelaySeconds Initial delay seconds for livenessProbe
-  ## @param livenessProbe.periodSeconds Period seconds for livenessProbe
-  ## @param livenessProbe.timeoutSeconds Timeout seconds for livenessProbe
-  ## @param livenessProbe.failureThreshold Failure threshold for livenessProbe
-  ## @param livenessProbe.successThreshold Success threshold for livenessProbe
-  ##
-  livenessProbe:
-    enabled: true
-    initialDelaySeconds: 10
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 2
-    successThreshold: 1
-
-
-  ## Configure extra options for readiness probe
-  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#configure-probes
-  ## @param readinessProbe.enabled Enable readinessProbe
-  ## @param readinessProbe.initialDelaySeconds Initial delay seconds for readinessProbe
-  ## @param readinessProbe.periodSeconds Period seconds for readinessProbe
-  ## @param readinessProbe.timeoutSeconds Timeout seconds for readinessProbe
-  ## @param readinessProbe.failureThreshold Failure threshold for readinessProbe
-  ## @param readinessProbe.successThreshold Success threshold for readinessProbe
-  ##
-  readinessProbe:
-    enabled: true
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    timeoutSeconds: 5
-    failureThreshold: 6
-    successThreshold: 1
 
 
   ## Configure extra options for startup probe
