@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+
+metadata:
+  name: gitpods
+
+spec:
+  parentRefs:
+    - name: ingress-gw
+      kind: Gateway
+      group: gateway.networking.k8s.io
+
+  hostnames:
+    - 'gitpods.writemy.codes'
+    - '*.gitpods.writemy.codes'
+    - '*.ws.gitpods.writemy.codes'
+  rules:
+    - backendRefs:
+        - name: proxy
+          port: 443
+          weight: 1
+          kind: Service
+          group: ""
