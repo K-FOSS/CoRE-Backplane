@@ -41,17 +41,8 @@ spec:
             #
             # Peers
             #
-            
-            {{- $peerIPs := list -}}
-            {{- $peerASNs := list -}}
-            {{- $peerPorts := list -}}
-            {{ range .Values.peers }}
-              {{- $peerIPs = .ip | append $peerIPs -}}
-              {{- $peerASNs = .asn | append $peerASNs -}}
-              {{- $peerPorts = .port | append $peerPorts  -}}
-            {{- end }}
-            - --peer-router-ips={{ join "," $peerIPs }}
-            - --peer-router-asns={{ join "," $peerASNs }}
+            - --peer-router-ips=172.18.113.48
+            - --peer-router-asns=64567
             
 
             #
@@ -143,7 +134,7 @@ spec:
 
       dnsPolicy: ClusterFirst
 
-      hostNetwork: true
+      hostNetwork: false
 
       priorityClassName: system-node-critical
 
