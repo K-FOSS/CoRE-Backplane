@@ -5,7 +5,7 @@ metadata:
   namespace: core-prod
 
 data:
-  config.toml.erb: >
+  config.toml.tpl: >
     # The directory where Gitaly's executables are stored
 
     bin_dir = "/usr/local/bin"
@@ -28,27 +28,28 @@ data:
     prometheus_listen_addr = "0.0.0.0:9236"
 
 
-    <% @storages = [  "gitlab-prod-gitaly-default-0",
-    "gitlab-prod-gitaly-default-1", "gitlab-prod-gitaly-default-2"  ] %>
+    {% $storages := coll.Slice  "gitlab-prod-gitaly-default-0"
+    "gitlab-prod-gitaly-default-1"
+    "gitlab-prod-gitaly-default-2" %}
 
 
-    <% @hostname=ENV['HOSTNAME'].strip %>
+    {% $hostname := .Env.HOSTNAME | strings.TrimSpace %}
 
-    <% if @storages.any? { |s| s.include?(@hostname) } %>
+    {% if coll.Has $storages $hostname %}
 
     [[storage]]
 
-    name = "<%= @hostname %>"
+    name = "{% $hostname %}"
 
     path = "/home/git/repositories"
 
-    <% else %>
+    {% else %}
 
-    <% raise Exception, "Storage for node #{@hostname} is not present in the
-    storageNames array. Did you use kubectl to scale up? You need to solely use
-    helm for this purpose." %>
+    {% printf "Storage for node %q is not present in the storageNames array. Did
+    you use kubectl to scale up? You need to solely use helm for this purpose."
+    $hostname | fail %}
 
-    <% end %>
+    {% end %}
 
 
     [logging]
@@ -60,8 +61,8 @@ data:
 
     [auth]
 
-    token = <%=
-    File.read('/etc/gitlab-secrets/gitaly/gitaly_token').strip.to_json %>
+    token = {% file.Read "/etc/gitlab-secrets/gitaly/gitaly_token" |
+    strings.TrimSpace | data.ToJSON %}
 
 
     [git]
@@ -69,13 +70,6 @@ data:
     use_bundled_binaries = true
 
     ignore_gitconfig = true
-
-
-    [gitaly-ruby]
-
-    # The directory where gitaly-ruby is installed
-
-    dir = "/srv/gitaly-ruby"
 
 
     [gitlab-shell]
@@ -93,7 +87,8 @@ data:
 
     # URL of API
 
-    url = "http://gitlab-prod-webservice-default.core-prod.svc:8181/"
+    url =
+    "http://k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host:8181/"
 
 
     [gitlab.http-settings]
