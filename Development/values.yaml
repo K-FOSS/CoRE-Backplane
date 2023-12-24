@@ -1099,12 +1099,14 @@ gitlab:
       urlTemplate: ""
 
     ## https://docs.gitlab.com/charts/charts/globals
-    extraEnv: {}
+    extraEnv:
+      GITLAB_TRACING: opentracing://jaeger?http_endpoint=http%3A%2F%2Fcore-tempo-distributor.core-prod.svc.k0s.resolvemy.host%3A14268%2Fapi%2Ftraces&sampler=const&sampler_param=0.5
     #   SOME_KEY: some_value
     #   SOME_OTHER_KEY: some_other_value
 
     ## https://docs.gitlab.com/charts/charts/globals
-    extraEnvFrom: {}
+    extraEnvFrom:
+      
     #   MY_NODE_NAME:
     #     fieldRef:
     #       fieldPath: spec.nodeName
