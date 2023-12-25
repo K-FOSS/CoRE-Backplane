@@ -71,6 +71,10 @@ spec:
     spec:
       project: core
 
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
       source:
         path: Network/Base
         repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
@@ -83,6 +87,9 @@ spec:
 
 
                 submariner-operator:
+                  broker:
+                    server: '{{apiHost}}'
+
                   submariner:
                     clusterId: '{{cluster}}'
                     clusterCidr: '{{podIPPool}}'
