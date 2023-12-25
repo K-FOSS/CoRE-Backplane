@@ -1919,6 +1919,7 @@ int-dns:
   ##
   containerPorts:
     http: 7979
+
   ## @param combineFQDNAnnotation Combine FQDN template and annotations instead of overwriting
   ##
   combineFQDNAnnotation: false
@@ -1935,9 +1936,6 @@ int-dns:
   ##
   publishHostIP: false
 
-  ## @param serviceTypeFilter The service types to take care about (default: all, options: ClusterIP, NodePort, LoadBalancer, ExternalName)
-  ##
-  serviceTypeFilter: []
 
   ## PowerDNS configuration to be set via arguments/env. variables
   ##
@@ -1954,39 +1952,9 @@ int-dns:
     ##
     secretName: powerdns-api
 
-  ## @param domainFilters Limit possible target zones by domain suffixes (optional)
-  ##
-  domainFilters: []
-
-  ## @param excludeDomains Exclude subdomains (optional)
-  ##
-  excludeDomains: []
-
-  ## @param regexDomainFilter Limit possible target zones by regex domain suffixes (optional)
-  ## If regexDomainFilter is specified, domainFilters will be ignored
-  ##
-  regexDomainFilter: ""
-
-  ## @param regexDomainExclusion Exclude subdomains by using regex pattern (optional)
-  ## If regexDomainFilter is specified, excludeDomains will be ignored and external-dns will use regexDomainExclusion even though regexDomainExclusion is empty
-  ##
-  regexDomainExclusion: ""
-
-  ## @param zoneNameFilters Filter target zones by zone domain (optional)
-  ##
-  zoneNameFilters: []
-
-  ## @param zoneIdFilters Limit possible target zones by zone id (optional)
-  ##
-  zoneIdFilters: []
-
-  ## @param annotationFilter Filter sources managed by external-dns via annotation using label selector (optional)
-  ##
-  annotationFilter: ""
-
   ## @param labelFilter Select sources managed by external-dns using label selector (optional)
   ##
-  labelFilter: 'lan-mode=private'
+  labelFilter: 'wan-mode=public'
 
   ## @param dryRun When enabled, prints DNS record changes rather than actually performing them (optional)
   ##
@@ -2522,10 +2490,6 @@ ext-dns:
     ##
     pullSecrets: []
 
-  ## @param hostAliases Deployment pod host aliases
-  ## https://kubernetes.io/docs/concepts/services-networking/add-entries-to-pod-etc-hosts-with-host-aliases/
-  ##
-  hostAliases: []
 
   ## @param updateStrategy update strategy type
   ## ref: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#update-strategies
