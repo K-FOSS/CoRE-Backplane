@@ -176,7 +176,6 @@ cilium:
   # -- Labels to be added to agent pods
   podLabels:
     logs: loki-myloginspace
-    
 
   # -- Agent resource limits & requests
   # ref: https://kubernetes.io/docs/user-guide/compute-resources/
@@ -534,7 +533,7 @@ cilium:
   # module is missing and it is needed for the datapath L7 redirection to work
   # properly. See documentation for details on when this can be disabled:
   # https://docs.cilium.io/en/stable/operations/system_requirements/#linux-kernel.
-  enableXTSocketFallback: true
+  enableXTSocketFallback: false
 
   encryption:
     # -- Enable transparent network encryption.
@@ -603,10 +602,10 @@ cilium:
   # -- Configure socket LB
   socketLB:
     # -- Enable socket LB
-    enabled: true
+    enabled: false
 
     # -- Disable socket lb for non-root ns. This is used to enable Istio routing rules.
-    hostNamespaceOnly: true
+    hostNamespaceOnly: false
 
   # -- Configure certificate generation for Hubble integration.
   # If hubble.tls.auto.method=cronJob, these values are used
