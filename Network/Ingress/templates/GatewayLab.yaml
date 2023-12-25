@@ -20,29 +20,15 @@ spec:
   listeners:
     - protocol: TLS # Other possible value is `TLS`
       port: 443
-      hostname: 'gitpods.writemy.codes'
+      hostname: '*.writemy.codes'
       name: gitpods-root
       tls:
         mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
 
-    - protocol: TLS # Other possible value is `TLS`
-      port: 443
-      hostname: '*.gitpods.writemy.codes'
-      name: gitpods-main
-      tls:
-        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
-
-    - protocol: TLS # Other possible value is `TLS`
-      port: 443
-      hostname: '*.ws.gitpods.writemy.codes'
-      name: gitpods-workspace
-      tls:
-        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
-
-    - name: https-main
+    - name: https-myloginspace
       protocol: HTTPS
-      port: 443
-      hostname: 'idp.mylogin.space'
+      port: 8443
+      hostname: '*.mylogin.space'
       tls:
         mode: Terminate
         certificateRefs:
