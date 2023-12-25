@@ -6,8 +6,10 @@ resources:
 
 patches:
   - patch: |-
-      apiVersion: submariner.io/v1alpha1
+      - op: replace
+        path: /metadata/namespace
+        value: kube-system
+    target:
+      group: submariner.io
+      version: v1alpha1
       kind: Submariner
-      metadata:
-        name: submariner
-        namespace: kube-system
