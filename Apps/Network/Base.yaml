@@ -12,6 +12,8 @@ spec:
             domain: k0s.resolvemy.host
             apiHost: 10.1.1.40
             anycastPool: '10.1.1.0/24'
+            podIPPool: '10.4.0.0/16'
+            servicesIPPool: '10.0.8.0/22'
             lbPool: '10.0.1.0/26'
             apiPort: '443'
             bareMetal: 'true'
@@ -41,6 +43,8 @@ spec:
             domain: cluster.local
             apiHost: 172.31.241.70
             anycastPool: '10.1.1.0/24'
+            podIPPool: '172.20.52.0/22'
+            servicesIPPool: '172.18.0.0/16'
             lbPool: '10.0.1.64/26'
             vmware: 'false'
             bareMetal: 'true'
@@ -75,7 +79,15 @@ spec:
           name: argocd-lovely-plugin
           env:
             - name: LOVELY_HELM_MERGE
-              value: |- 
+              value: |-
+
+
+                submariner-operator:
+                  submariner:
+                    clusterId: '{{cluster}}'
+                    clusterCidr: '{{podIPPool}}'
+                    serviceCidr: '{{servicesIPPool}}'
+
                 cilium:
                   enabled: {{bareMetal}}
                   k8sServiceHost: '{{ apiHost }}'
