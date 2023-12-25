@@ -628,23 +628,40 @@ cilium:
 
   ipam:
     # -- Configure IP Address Management mode.
-    # ref: https://docs.cilium.io/en/stable/concepts/networking/ipam/
+    # ref: https://docs.cilium.io/en/stable/network/concepts/ipam/
     mode: kubernetes
+    # -- Maximum rate at which the CiliumNode custom resource is updated.
+    ciliumNodeUpdateRate: "15s"
     operator:
-      # -- Deprecated in favor of ipam.operator.clusterPoolIPv4PodCIDRList.
-      # IPv4 CIDR range to delegate to individual nodes for IPAM.
-      clusterPoolIPv4PodCIDR: '10.0.0.0/8'
       # -- IPv4 CIDR list range to delegate to individual nodes for IPAM.
-      clusterPoolIPv4PodCIDRList: []
+      clusterPoolIPv4PodCIDRList: ["10.0.0.0/8"]
       # -- IPv4 CIDR mask size to delegate to individual nodes for IPAM.
       clusterPoolIPv4MaskSize: 24
-      # -- Deprecated in favor of ipam.operator.clusterPoolIPv6PodCIDRList.
-      # IPv6 CIDR range to delegate to individual nodes for IPAM.
-      clusterPoolIPv6PodCIDR: 'fd00::/104'
       # -- IPv6 CIDR list range to delegate to individual nodes for IPAM.
-      clusterPoolIPv6PodCIDRList: []
+      clusterPoolIPv6PodCIDRList: ["fd00::/104"]
       # -- IPv6 CIDR mask size to delegate to individual nodes for IPAM.
       clusterPoolIPv6MaskSize: 120
+      # -- IP pools to auto-create in multi-pool IPAM mode.
+      autoCreateCiliumPodIPPools: {}
+        # default:
+        #   ipv4:
+        #     cidrs:
+        #       - 10.10.0.0/8
+        #     maskSize: 24
+        # other:
+        #   ipv6:
+        #     cidrs:
+        #       - fd00:100::/80
+        #     maskSize: 96
+      # -- The maximum burst size when rate limiting access to external APIs.
+      # Also known as the token bucket capacity.
+      # @default -- `20`
+      externalAPILimitBurstSize: ~
+      # -- The maximum queries per second when rate limiting access to
+      # external APIs. Also known as the bucket refill rate, which is used to
+      # refill the bucket up to the burst size capacity.
+      # @default -- `4.0`
+      externalAPILimitQPS: ~
 
   # -- Configure the eBPF-based ip-masq-agent
   ipMasqAgent:
@@ -694,7 +711,7 @@ cilium:
     refreshPeriod: '30s'
 
   # -- Enable Layer 7 network policy.
-  l7Proxy: true
+  #l7Proxy: true
 
 
   # To include or exclude matched resources from cilium identity evaluation
@@ -781,15 +798,18 @@ cilium:
 
     # -- algorithm is the name of the load balancing algorithm for backend
     # selection e.g. random or maglev
-    algorithm: maglev
+    # algorithm: random
 
     # -- mode is the operation mode of load balancing for remote backends
     # e.g. snat, dsr, hybrid
     mode: dsr
 
     # -- acceleration is the option to accelerate service handling via XDP
-    # e.g. native, disabled
-    # acceleration: disabled
+    # Applicable values can be: disabled (do not use XDP), native (XDP BPF
+    # program is run directly out of the networking driver's early receive
+    # path), or best-effort (use native mode XDP acceleration on devices
+    # that support it).
+    acceleration: disabled
 
     # -- dsrDispatch configures whether IP option or IPIP encapsulation is
     # used to pass a service IP and port to remote backend
@@ -798,6 +818,27 @@ cilium:
     # -- serviceTopology enables K8s Topology Aware Hints -based service
     # endpoints filtering
     # serviceTopology: false
+
+    # -- L7 LoadBalancer
+    l7:
+      # -- Enable L7 service load balancing via envoy proxy.
+      # The request to a k8s service, which has specific annotation e.g. service.cilium.io/lb-l7,
+      # will be forwarded to the local backend proxy to be load balanced to the service endpoints.
+      # Please refer to docs for supported annotations for more configuration.
+      #
+      # Applicable values:
+      #   - envoy: Enable L7 load balancing via envoy proxy. This will automatically set enable-envoy-config as well.
+      #   - disabled: Disable L7 load balancing by way of service annotation.
+      backend: envoy
+      # -- List of ports from service to be automatically redirected to above backend.
+      # Any service exposing one of these ports will be automatically redirected.
+      # Fine-grained control can be achieved by using the service annotation.
+      ports: []
+      # -- Default LB algorithm
+      # The default LB algorithm to be used for services, which can be overridden by the
+      # service annotation (e.g. service.cilium.io/lb-l7-algorithm)
+      # Applicable values: round_robin, least_request, random
+      algorithm: round_robin
 
   # -- Configure N-S k8s service loadbalancing
   nodePort:
