@@ -85,10 +85,12 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
 
-                clusterName: '{{cluster}}'
+                clusterName: '{{cluster}}' 
                 submariner-operator:
                   broker:
                     server: '{{apiHost}}'
+                    ca: '<path:CORE0_SITE1/data/Network/Base/{{ cluster }}/Submariner#CA>'
+                    token: '<path:CORE0_SITE1/data/Network/Base/{{ cluster }}/Submariner#Token>'
 
                   submariner:
                     clusterId: '{{cluster}}'
