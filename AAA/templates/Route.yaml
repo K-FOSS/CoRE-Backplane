@@ -1,0 +1,11 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: authentik
+spec:
+  parentRefs:
+    - name: ingress-gw
+  rules:
+    - backendRefs:
+        - name: k0s-cntrl-aaa-authentik
+          port: 80
