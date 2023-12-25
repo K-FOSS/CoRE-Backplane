@@ -1,0 +1,14 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: s3-static
+spec:
+  parentRefs:
+    - name: ingress-gw
+  hostnames:
+    - static.mylogin.space
+    - '66.165.222.106'
+  rules:
+    - backendRefs:
+        - name: traefik-core-s3-proxy
+          port: 80
