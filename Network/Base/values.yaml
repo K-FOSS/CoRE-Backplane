@@ -15,6 +15,8 @@ vmtools:
 submariner-k8s-broker:
   enabled: true
 
+  fullnameOverride: 'submariner-broker'
+
   rbac:
     create: true
 
@@ -28,11 +30,7 @@ submariner-k8s-broker:
 
 submariner-operator:
   submariner:
-    clusterId: ''
-    token: ''
-    clusterCidr: ''
-    serviceCidr: ''
-    globalCidr: ''
+    globalCidr: '172.16.32.0/20'
     loadBalancerEnabled: false
     natEnabled: false
     colorCodes: blue
@@ -44,16 +42,19 @@ submariner-operator:
     images:
       repository: quay.io/submariner
       tag: ""
+
   broker:
-    server: ''
     token: test
-    namespace: xyz
+    namespace: kube-system
+  
     insecure: false
-    ca: ""
+    
     globalnet: false
+
   rbac:
     create: true
   images: {}
+
   ipsec:
     psk: ""
     debug: false
