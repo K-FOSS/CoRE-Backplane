@@ -32,3 +32,18 @@ spec:
       tls:
         mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
 
+    - protocol: TLS # Other possible value is `TLS`
+      port: 443
+      hostname: '*.ws.gitpods.writemy.codes'
+      name: gitpods-workspace
+      tls:
+        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
+
+    - name: https-main
+      protocol: HTTPS
+      port: 443
+      hostname: "idp.mylogin.space"
+      tls:
+        certificateRefs:
+          - kind: Secret
+            name: myloginspace-default-certificates
