@@ -29,10 +29,20 @@ spec:
           - kind: Secret
             name: myloginspace-default-certificates
 
-    - name: https-gitwritemycodes
+    - name: https-writemycodes
       protocol: HTTPS
       port: 443
       hostname: '*.writemy.codes'
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: writemycodes-default-certificates
+
+    - name: https-gitwritemycodes
+      protocol: HTTPS
+      port: 443
+      hostname: '*.git.writemy.codes'
       tls:
         mode: Terminate
         certificateRefs:
