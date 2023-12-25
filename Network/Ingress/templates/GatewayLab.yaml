@@ -11,11 +11,24 @@ metadata:
 spec:
   gatewayClassName: cilium
 
+  infrastructure:
+    annotations:
+      metallb.universe.tf/loadBalancerIPs: 66.165.222.106
+      io.cilium/lb-ipam-sharing-key: ingress-gw
+      io.cilium/lb-ipam-ips: 66.165.222.106
+
   listeners:
     - protocol: TLS # Other possible value is `TLS`
       port: 443
       hostname: 'gitpods.writemy.codes'
-      name: gitpods
+      name: gitpods-root
+      tls:
+        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
+
+    - protocol: TLS # Other possible value is `TLS`
+      port: 443
+      hostname: '*.gitpods.writemy.codes'
+      name: gitpods-main
       tls:
         mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
 
