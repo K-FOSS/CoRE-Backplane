@@ -1,0 +1,24 @@
+{{·if·eq·.Values.psql.standby }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: pqsl-admin-sync
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: admin.psql-main.credentials.postgresql.acid.zalan.do
+
+  data:
+    - secretKey: username
+      remoteRef:
+        key: PSQL/Operator
+        property: username
+
+    - secretKey: password
+      remoteRef:
+        key: PSQL/Operator
+        property: password
+{{- end }}
