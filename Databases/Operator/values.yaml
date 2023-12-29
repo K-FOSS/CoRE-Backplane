@@ -489,7 +489,7 @@ postgres-operator:
   # configure behavior of load balancers
   configLoadBalancer:
     # DNS zone for cluster DNS name when load balancer is configured for cluster
-    db_hosted_zone: db.example.com
+    db_hosted_zone: db.mylogin.space
 
     # annotations to apply to service when load balancing is enabled
     # custom_service_annotations:
@@ -497,13 +497,13 @@ postgres-operator:
     #   keya: valuea
 
     # toggles service type load balancer pointing to the master pod of the cluster
-    enable_master_load_balancer: false
+    enable_master_load_balancer: true
 
     # toggles service type load balancer pointing to the master pooler pod of the cluster
     enable_master_pooler_load_balancer: false
 
     # toggles service type load balancer pointing to the replica pod of the cluster
-    enable_replica_load_balancer: false
+    enable_replica_load_balancer: true
 
     # toggles service type load balancer pointing to the replica pooler pod of the cluster
     enable_replica_pooler_load_balancer: false
@@ -721,10 +721,10 @@ postgres-operator:
     name: 'postgres-pod'
 
   # priority class for operator pod
-  priorityClassName: 'system-cluster-critical'
+  priorityClassName: 'psql-cluster-ops'
 
   # priority class for database pods
-  podPriorityClassName: 'system-cluster-critical'
+  #podPriorityClassName: 'system-cluster-critical'
 
   resources:
     limits:
