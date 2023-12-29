@@ -1,18 +1,24 @@
+{{ if eq .Values.psql.hub }}
+
 apiVersion: acid.zalan.do/v1
 kind: postgresql
 metadata:
   name: psql-main
 
 spec:
-  dockerImage: registry.opensource.zalan.do/acid/spilo-14:2.1-p7
   teamId: core
 
   numberOfInstances: 2
 
   users:
     zalando:  # database owner
-    - superuser
-    - createdb
+      - superuser
+      - createdb
+
+    admin:
+      - superuser
+      - createdb
+
     foo_user: []
 
   databases:
@@ -253,3 +259,5 @@ spec:
 #    filter:
 #      data.orders_outbox: "[?(@.source.txId > 500 && @.source.lsn > 123456)]"
 #    batchSize: 1000
+
+{{- end }}

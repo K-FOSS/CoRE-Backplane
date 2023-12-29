@@ -1,0 +1,29 @@
+{{ if eq .Values.psql.hub }}
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: psql-admin-push
+
+spec:
+  refreshInterval: 10s
+  secretStoreRefs:
+    - name: mainvault-core
+      kind: ClusterSecretStore
+
+  selector:
+    secret:
+      name: admin.psql-main.credentials.postgresql.acid.zalan.do
+
+  data:
+    - match:
+        secretKey: username
+        remoteRef:
+          remoteKey: PSQL/Operator
+          property: username
+
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: PSQL/Operator
+          property: password
+{{- end }}
