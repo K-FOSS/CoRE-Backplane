@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-ops-multicluster
+  name: core-backplane-ops-basemcs
   namespace: argocd
 
 spec:
@@ -13,7 +13,7 @@ spec:
 
   template:
     metadata:
-      name: '{{cluster}}-ops-multicluster'
+      name: '{{cluster}}-ops-basemcs'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -27,7 +27,7 @@ spec:
           - ServerSideApply=true
 
       source:
-        path: Operations/MultiClusters
+        path: Operations/Base/MCS
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
         plugin:
@@ -35,4 +35,4 @@ spec:
 
       destination:
         server: '{{url}}'
-        namespace: multicluster-controlplane
+        namespace: open-cluster-management
