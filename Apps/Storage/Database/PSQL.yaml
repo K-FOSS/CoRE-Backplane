@@ -9,6 +9,14 @@ spec:
         elements:
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
+            primary: 'true'
+            standby: 'false'
+
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+            primary: 'false'
+            standby: 'true'
+
 
   template:
     metadata:
@@ -26,6 +34,14 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+
+                psql:
+                  hub: {{ hub }}
+
+                  standby: {{ standby }}
 
       destination:
         server: '{{url}}'
