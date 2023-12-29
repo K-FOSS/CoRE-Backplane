@@ -1,0 +1,44 @@
+multicluster-controlplane:
+  apiserver:
+    ca: ""
+    cakey: ""
+    externalHostname: ""
+    externalPort: 443
+    generateCA: false
+
+  autoApprovalBootstrapUsers: ""
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    privileged: false
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  enableDelegatingAuthentication: false
+  enableSelfManagement: false
+  etcd:
+    ca: ""
+    cert: ""
+    certkey: ""
+    mode: embed
+    servers: []
+    snapshotCount: 5000
+  features: DefaultClusterSet=true,ManagedClusterAutoApproval=true
+  image: quay.io/open-cluster-management/multicluster-controlplane:latest
+  imagePullPolicy: IfNotPresent
+  loadbalancer:
+    enabled: false
+    ip: ""
+  nodeport:
+    enabled: false
+    port: 30443
+  pvc:
+    selector: {}
+    storageCapacity: 1Gi
+    storageClassName: ""
+  replicas: 1
+  route:
+    enabled: false
+  securityContext: null
