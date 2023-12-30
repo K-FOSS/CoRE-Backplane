@@ -1,0 +1,31 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: development-renovate-config
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    name: renovate-config
+
+    template:
+      engineVersion: v2
+      data:
+        config.json: |
+
+          {
+            "platform": "gitlab",
+            "endpoint": "https://gitlab.writemy.codes/api/v4",
+            "token": "{{`{{ .Token }} `}}",
+            "autodiscover": "true",
+            "dryRun": true,
+            "printConfig": true,
+            "repositories": []
+          }
+  data:
+    - secretKey: Token
+      remoteRef:
+        key: GitLab/Renovate
+        property: Token
