@@ -166,9 +166,9 @@ kamaji:
     # -- (string) The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to. 
     nameOverride:
     # -- (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd).
-    driver: etcd
+    driver: PostgreSQL
     # -- (array) List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically.
-    endpoints: []
+    endpoints: ['psql.mylogin.space:5432']
 
     basicAuth:
       usernameSecret:
@@ -178,6 +178,7 @@ kamaji:
         namespace:
         # -- The Secret key where the data is stored.
         keyPath:
+
       passwordSecret:
         # -- The name of the Secret containing the password used to connect to the relational database.
         name:

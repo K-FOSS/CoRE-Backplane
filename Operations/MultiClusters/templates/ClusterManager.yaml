@@ -1,0 +1,20 @@
+apiVersion: operator.open-cluster-management.io/v1
+kind: ClusterManager
+metadata:
+  name: cluster-manager
+
+spec:
+  #
+  # TODO: Get renovate
+  # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
+  #
+  addOnManagerImagePullSpec: quay.io/open-cluster-management/addon-manager:v0.12.0
+  deployOption:
+    mode: Default
+  placementImagePullSpec: quay.io/open-cluster-management/placement:v0.12.0
+  registrationConfiguration:
+    featureGates:
+      - feature: DefaultClusterSet
+        mode: Enable
+  registrationImagePullSpec: quay.io/open-cluster-management/registration:v0.12.0
+  workImagePullSpec: quay.io/open-cluster-management/work:v0.12.0
