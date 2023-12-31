@@ -336,7 +336,7 @@ postgres-operator:
     enable_pod_disruption_budget: true
 
     # toogles readiness probe for database pods
-    enable_readiness_probe: false
+    enable_readiness_probe: true
 
     # enables sidecar containers to run alongside Spilo in the same pod
     enable_sidecars: true
@@ -356,8 +356,6 @@ postgres-operator:
     inherited_labels:
       - wan-mode
       - lan-mode
-    # - application
-    # - environment
 
     # timeout for successful migration of master pods from unschedulable node
     # master_pod_move_timeout: 20m
@@ -411,11 +409,11 @@ postgres-operator:
     share_pgsocket_with_sidecars: false
     
     # set user and group for the spilo container (required to run Spilo as non-root process)
-    # spilo_runasuser: 101
-    # spilo_runasgroup: 103
+    spilo_runasuser: 101
+    spilo_runasgroup: 103
 
     # group ID with write-access to volumes (required to run Spilo as non-root process)
-    # spilo_fsgroup: 103
+    spilo_fsgroup: 103
 
     # whether the Spilo container should run in privileged mode
     spilo_privileged: true
