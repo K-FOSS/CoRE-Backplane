@@ -294,8 +294,8 @@ postgres-operator:
 
   configKubernetes:
     # list of additional capabilities for postgres container
-    # additional_pod_capabilities:
-    # - "SYS_NICE"
+    additional_pod_capabilities:
+      - "SYS_NICE"
 
     # default DNS domain of K8s cluster where operator is running
     cluster_domain: cluster.local
@@ -409,14 +409,14 @@ postgres-operator:
     share_pgsocket_with_sidecars: false
     
     # set user and group for the spilo container (required to run Spilo as non-root process)
-    spilo_runasuser: 101
-    spilo_runasgroup: 103
+    #spilo_runasuser: 101
+    #spilo_runasgroup: 103
 
     # group ID with write-access to volumes (required to run Spilo as non-root process)
     spilo_fsgroup: 103
 
     # whether the Spilo container should run in privileged mode
-    spilo_privileged: true
+    #spilo_privileged: true
     
     # whether the Spilo container should run with additional permissions other than parent.
     # required by cron which needs setuid
