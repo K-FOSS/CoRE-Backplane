@@ -5,6 +5,10 @@ kind: postgresql
 metadata:
   name: psql-main
 
+  labels:
+    wan-mode: public
+    lan-mode: private
+
 spec:
   teamId: core
 
@@ -28,13 +32,13 @@ spec:
 
   enableMasterLoadBalancer: true
 
-#  masterServiceAnnotations:
-#    consul.hashicorp.com/service-name: psql
-#    metallb.universe.tf/ip-allocated-from-pool: anycast-pool
-#    external-dns.alpha.kubernetes.io/hostname: psql.mylogin.space
-#    metallb.universe.tf/loadBalancerIPs: 10.1.1.38
-#    io.cilium/lb-ipam-sharing-key: psql
-#    io.cilium/lb-ipam-ips: 10.1.1.38
+  masterServiceAnnotations:
+    consul.hashicorp.com/service-name: psql
+    metallb.universe.tf/ip-allocated-from-pool: anycast-pool
+    external-dns.alpha.kubernetes.io/hostname: psql.mylogin.space
+    metallb.universe.tf/loadBalancerIPs: 10.1.1.38
+    io.cilium/lb-ipam-sharing-key: psql
+    io.cilium/lb-ipam-ips: 10.1.1.38
 
 
   #enableReplicaLoadBalancer: false
