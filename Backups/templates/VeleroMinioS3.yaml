@@ -8,24 +8,24 @@ spec:
     name: corevault-rootsecrets
 
   target:
-    name: backups-velero-s3
+    name: backups-velero-minio-s3
 
     template:
       engineVersion: v2
       data:
         cloud: |{{`
           [default]
-          aws_access_key_id={{ .S3AccessKey }}
-          aws_secret_access_key={{ .S3SecretKey }}
+          aws_access_key_id={{ .AccessKey }}
+          aws_secret_access_key={{ .SecretKey }}
           `}}
 
   data:
     - secretKey: AccessKey
       remoteRef:
-        key: Backups/Velero/S3
+        key: Backups/Velero/S3/Minio
         property: AccessKey
       
     - secretKey: SecretKey
       remoteRef:
-        key: Velero
-        property: S3SecretKey
+        key: Backups/Velero/S3/Minio
+        property: SecretKey
