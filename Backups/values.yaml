@@ -55,25 +55,14 @@ velero:
   # Init containers to add to the Velero deployment's pod spec. At least one plugin provider image is required.
   # If the value is a string then it is evaluated as a template.
   initContainers:
-    # - name: velero-plugin-for-csi
-    #   image: velero/velero-plugin-for-csi:v0.2.0
-    #   imagePullPolicy: IfNotPresent
-    #   volumeMounts:
-    #     - mountPath: /target
-    #       name: plugins
     - name: velero-plugin-for-aws
-      image: velero/velero-plugin-for-aws:v1.4.1
+      # TODO: Get renovate to automte this
+      # renovate: datasource=github-releases depName=vmware-tanzu/velero-plugin-for-aws
+      image: velero/velero-plugin-for-aws:v1.8.2
       imagePullPolicy: IfNotPresent
       volumeMounts:
         - mountPath: /target
           name: plugins
-
-  # SecurityContext to use for the Velero deployment. Optional.
-  # Set fsGroup for `AWS IAM Roles for Service Accounts`
-  # see more informations at: https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html
-  podSecurityContext:
-    runAsUser: 1337
-    fsGroup: 1337
 
   # Container Level Security Context for the 'velero' container of the Velero deployment. Optional.
   # See: https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-container
@@ -86,21 +75,6 @@ velero:
 
   # Pod priority class name to use for the Velero deployment. Optional.
   priorityClassName: 'tier2-priority'
-
-  # Tolerations to use for the Velero deployment. Optional.
-  tolerations: []
-
-  # Affinity to use for the Velero deployment. Optional.
-  affinity: {}
-
-  # Node selector to use for the Velero deployment. Optional.
-  nodeSelector: {}
-
-  # Extra volumes for the Velero deployment. Optional.
-  extraVolumes: []
-
-  # Extra volumeMounts for the Velero deployment. Optional.
-  extraVolumeMounts: []
 
   # Extra K8s manifests to deploy
   extraObjects: []
@@ -141,9 +115,9 @@ velero:
 
     # Pod annotations for Prometheus
     podAnnotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "8085"
-      prometheus.io/path: "/metrics"
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '8085'
+      prometheus.io/path: '/metrics'
 
     serviceMonitor:
       enabled: true
