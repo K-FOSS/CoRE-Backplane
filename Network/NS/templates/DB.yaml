@@ -1,0 +1,33 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: ns-core-secret
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: ns-core-secret
+
+  data:
+    - secretKey: DatabaseDatabase
+      remoteRef:
+        key: AAA/Authentik/Database
+        property: Database
+
+    - secretKey: DatabasePassword
+      remoteRef:
+        key: AAA/Authentik/Database
+        property: Password
+
+    - secretKey: DatabaseUser
+      remoteRef:
+        key: AAA/Authentik/Database
+        property: Username
+
+    - secretKey: SecretKey
+      remoteRef:
+        key: AAA/Authentik/General
+        property: SecretKey
+
