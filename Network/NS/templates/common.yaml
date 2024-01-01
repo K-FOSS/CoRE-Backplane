@@ -33,11 +33,14 @@ persistence:
     volumeSpec:
       secret:
         secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-secrets'
+        items:
+          - key: web.conf
 
     advancedMounts:
       main: # the controller with the "main" identifier
         main: # the container with the "main" identifier
-          - path: /etc/pdns/conf.d
+          - path: /etc/pdns/conf.d/web.conf
+            subPath: web.conf
 
   database:
     enabled: true
@@ -52,7 +55,6 @@ persistence:
       main: # the controller with the "main" identifier
         main: # the container with the "main" identifier
           - path: /etc/pdns/conf.d/database.conf
-            readOnly: true
             subPath: database.conf
 
 {{- end -}}
