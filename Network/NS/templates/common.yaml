@@ -7,6 +7,17 @@
 global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
+
+persistence:
+  config:
+    enabled: true
+    mountPath: /etc/pdns/pdns.conf
+    subPath: pnds.conf
+    type: custom
+    volumeSpec:
+      configMap:
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
