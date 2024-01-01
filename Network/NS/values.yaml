@@ -123,12 +123,6 @@ configMaps:
 
         # launch        Which backends to launch and order to query them in
         launch=gpgsql
-        #gmysql-host=mysql
-        #gmysql-port=3306
-        #gmysql-dbname=pdns
-        #gmysql-user=root
-        #gmysql-password=root
-        #gmysql-dnssec=no
 
         # load-modules  Load this module - supply absolute or relative path
         load-modules=libgpgsqlbackend.so
@@ -156,10 +150,6 @@ configMaps:
 
         # loglevel      Amount of logging. Higher is more. Do not set below 3
         loglevel=3
-
-
-        # master        Act as a master
-        master=yes
 
         # max-queue-length      Maximum queuelength before considering situation lost
         # max-queue-length=5000
@@ -264,7 +254,20 @@ configMaps:
         # wildcard-url  Process URL and MBOXFW records
         # wildcard-url=no
         gpgsql-dnssec=
+        allow-axfr-ips=172.16.0.0/12,10.0.0.0/8
+        allow-dnsupdate-from=172.16.0.0/12,10.0.0.0/8
+        also-notify=10.1.1.50,10.1.1.53
 
+        webserver=yes
+        webserver-address=0.0.0.0
+        webserver-allow-from=0.0.0.0/0
+
+        default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
+        dnsupdate=yes
+        expand-alias=yes
+        forward-dnsupdate=yes
+        forward-notify=10.1.1.50,10.1.1.53
+        primary=yes
 
 # -- Configure persistence for the chart here.
 # Additional items can be added by adding a dictionary key similar to the 'config' key.

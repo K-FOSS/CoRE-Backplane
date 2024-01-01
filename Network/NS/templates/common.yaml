@@ -16,7 +16,24 @@ persistence:
     type: custom
     volumeSpec:
       configMap:
-        name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-config'
+
+  configs:
+    enabled: true
+    mountPath: /etc/pdns/conf.d
+    type: custom
+    volumeSpec:
+      secret:
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-secrets'
+
+  database:
+    enabled: true
+    mountPath: /etc/pdns/conf.d/database.conf
+    subPath: database.conf
+    type: custom
+    volumeSpec:
+      secret:
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-database'
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
