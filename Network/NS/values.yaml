@@ -20,7 +20,11 @@ controllers:
         # -- Override the command(s) for the default container
         command: ['/usr/local/sbin/pdns_server']
         # -- Override the args for the default container
-        args: ['--config=/etc/pdns/pdns.conf']
+        args: 
+          - --config-dir=/etc/pdns
+          - --disable-syslog=yes
+          - --socket-dir=/tmp
+
         # -- Override the working directory for the default container
         workingDir: /etc/pdns
 
