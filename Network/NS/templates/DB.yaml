@@ -8,26 +8,31 @@ spec:
     name: mainvault-core
 
   target:
-    name: ns-core-secret
+    name: ns-core-powerdns
 
   data:
-    - secretKey: DatabaseDatabase
+    - secretKey: postgres_host
       remoteRef:
-        key: AAA/Authentik/Database
+        key: NS/DB
+        property: Hostname
+
+    - secretKey: postgres_port
+      remoteRef:
+        key: NS/DB
+        property: Port
+
+    - secretKey: postgres_database
+      remoteRef:
+        key: NS/DB
         property: Database
 
-    - secretKey: DatabasePassword
+    - secretKey: postgres_username
       remoteRef:
-        key: AAA/Authentik/Database
-        property: Password
-
-    - secretKey: DatabaseUser
-      remoteRef:
-        key: AAA/Authentik/Database
+        key: NS/DB
         property: Username
 
-    - secretKey: SecretKey
+    - secretKey: postgres_password
       remoteRef:
-        key: AAA/Authentik/General
-        property: SecretKey
+        key: NS/DB
+        property: Password
 
