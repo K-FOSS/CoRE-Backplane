@@ -8,23 +8,12 @@ argo-cd:
 
   ## Custom resource configuration
   crds:
-    # -- Install and upgrade CRDs
-    install: true
-
-    # -- Keep CRDs on chart uninstall
-    keep: true
-
     # -- Annotations to be added to all CRDs
     annotations: {}
-
-  apiVersionOverrides:
-    certmanager: ''
-    ingress: ''
 
   global:
     additionalLabels: {}
 
-    hostAliases: null
     image:
       imagePullPolicy: IfNotPresent
       repository: ghcr.io/flux-subsystem-argo/fsa/argocd
@@ -42,16 +31,9 @@ argo-cd:
       create: false
       defaultDenyIngress: false
 
-    podAnnotations: {}
-
-    #env: []
-
     podLabels:
       logs: loki-myloginspace
 
-    securityContext: {}
-
-    systemDefaultRegistry: ''
 
 
   configs:
@@ -165,6 +147,11 @@ argo-cd:
       # -- Limit on number of concurrent manifests generate requests. Any value less the 1 means no limit.
       reposerver.parallelism.limit: 6
 
+      # Misc
+      redis.server: '10.1.1.68:6379'
+
+      redis.db: '10'
+
 
   controller:
     name: application-controller
@@ -181,16 +168,7 @@ argo-cd:
       imagePullPolicy: ''
       repository: ''
 
-    affinity: {}
-
-    #env: []
-
-    envFrom: null
-
-    extraArgs:
-      - '--redisdb=10'
-      - '--redis'
-      - 10.1.1.68:6379
+    extraArgs: []
 
     metrics:
       applicationLabels:
@@ -227,14 +205,7 @@ argo-cd:
       rules: null
 
     containerPort: 8082
-
-    containerSecurityContext: {}
-
     enableStatefulSet: true
-
-    extraContainers: null
-
-    initContainers: null
 
     livenessProbe:
       failureThreshold: 3
@@ -318,25 +289,13 @@ argo-cd:
     copyutil:
       resources: {}
 
-    env:
-      - name: REDIS_DB
-        value: '10'
-
-      - name: ARGOCD_EXEC_TIMEOUT
-        value: 10m30s
+    env: []
 
     envFrom:
       - secretRef:
           name: argocd-vault-replacer-credentials
 
-    extraArgs:
-      - '--redisdb=$(REDIS_DB)'
-      - '--redis'
-      - 10.1.1.68:6379
-
-    extraContainers: null
-
-    initContainers: []
+    extraArgs: []
 
     livenessProbe:
       failureThreshold: 3
@@ -377,8 +336,6 @@ argo-cd:
 
     priorityClassName: 'tier2-priority'
 
-    rbac: null
-
     readinessProbe:
       failureThreshold: 3
       initialDelaySeconds: 10
@@ -397,14 +354,6 @@ argo-cd:
       automountServiceAccountToken: true
       create: false
       name: argocd
-
-    tolerations: null
-
-    topologySpreadConstraints: null
-
-    volumeMounts: []
-
-    volumes: []
 
 
   server:
@@ -426,19 +375,7 @@ argo-cd:
         cpu: 32m
         memory: 64Mi
 
-    extraArgs:
-      - '--redisdb=10'
-      - '--redis'
-      - 10.1.1.68:6379
-
-    GKEbackendConfig:
-      enabled: false
-
-    GKEfrontendConfig:
-      enabled: false
-
-    GKEmanagedCertificate:
-      enabled: false
+    extraArgs: []
 
     additionalApplications: null
 
@@ -479,31 +416,12 @@ argo-cd:
     configEnabled: true
 
     containerPort: 8080
-    
-    containerSecurityContext: {}
-    
-    #env: null
-    
-    #envFrom: null
-    
-    extensions:
-      contents: null
-      enabled: false
-      image:
-        imagePullPolicy: IfNotPresent
-        repository: ghcr.io/argoproj-labs/argocd-extensions
-      resources: {}
-    
-    extraContainers: null
-    
 
     ingress:
       https: false
 
     ingressGrpc:
       enabled: false
-
-    initContainers: null
 
     lifecycle: {}
 
@@ -517,13 +435,10 @@ argo-cd:
     metrics:
       enabled: true
       service:
-        annotations: {}
-        labels: {}
         servicePort: 8083
 
       serviceMonitor:
         enabled: true
-
 
         additionalLabels:
           resolvemy.host/metrics: mimir
@@ -542,8 +457,7 @@ argo-cd:
       annotations: {}
       enabled: false
       labels: {}
-    podAnnotations: {}
-    podLabels: {}
+
     priorityClassName: 'tier2-priority'
     rbacConfig: {}
     rbacConfigAnnotations: {}
@@ -558,11 +472,7 @@ argo-cd:
 
 
     route:
-      annotations: {}
       enabled: false
-      hostname: ''
-      termination_policy: None
-      termination_type: passthrough
 
     service:
       annotations: {}
@@ -589,11 +499,6 @@ argo-cd:
 
     staticAssets:
       enabled: true
-
-    tolerations: null
-    topologySpreadConstraints: null
-    volumeMounts: null
-    volumes: null
 
 
   applicationSet:
@@ -700,25 +605,6 @@ argo-cd:
       # If not set and create is true, a name is generated using the fullname template
       name: ""
 
-    # -- Annotations for the controller pods
-    podAnnotations: {}
-
-    # -- Labels for the controller pods
-    podLabels: {}
-
-    # -- Pod Security Context
-    podSecurityContext: {}
-      # fsGroup: 2000
-
-    # -- Security Context
-    securityContext: {}
-      # capabilities:
-      #   drop:
-      #   - ALL
-      # readOnlyRootFilesystem: true
-      # runAsNonRoot: true
-      # runAsUser: 1000
-
     # -- Resource limits and requests for the controller pods.
     resources: {}
       # We usually recommend not to specify default resources and to leave this as a conscious
@@ -731,45 +617,6 @@ argo-cd:
       # requests:
       #   cpu: 100m
       #   memory: 128Mi
-
-    # -- [Node selector]
-    nodeSelector: {}
-
-    # -- [Tolerations] for use with node taints
-    tolerations: []
-
-    # -- Assign custom [affinity] rules
-    affinity: {}
-
-    # -- If specified, indicates the pod's priority. If not specified, the pod priority will be default or zero if there is no default.
-    priorityClassName: ''
-
-    # -- List of extra mounts to add (normally used with extraVolumes)
-    extraVolumeMounts: []
-      # - mountPath: /tmp/foobar
-      #   name: foobar
-
-    # -- List of extra volumes to add
-    extraVolumes: []
-      # - name: foobar
-      #   emptyDir: {}
-
-    # -- List of extra cli args to add
-    extraArgs: []
-      # - --loglevel=warn
-
-    # -- Environment variables to pass to the controller
-    extraEnv: []
-      # - name: "MY_VAR"
-      #   value: "value"
-
-    # -- envFrom to pass to the controller
-    # @default -- `[]` (See [values.yaml])
-    extraEnvFrom: []
-      # - configMapRef:
-      #     name: config-map-name
-      # - secretRef:
-      #     name: secret-name
 
     ## Webhook for the Git Generator
     ## Ref: https://argocd-applicationset.readthedocs.io/en/master/Generators-Git/#webhook-configuration)
@@ -884,21 +731,6 @@ argo-cd:
         # email-password:
           # For more information: https://argocd-notifications.readthedocs.io/en/stable/services/email/
 
-    # -- Extra arguments to provide to the controller
-    extraArgs: []
-
-    # -- Additional container environment variables
-    extraEnv: []
-
-    # -- List of extra mounts to add (normally used with extraVolumes)
-    extraVolumeMounts: []
-      # - mountPath: /tmp/foobar
-      #   name: foobar
-
-    # -- List of extra volumes to add
-    extraVolumes: []
-      # - name: foobar
-      #   emptyDir: {}
 
     metrics:
       # -- Enables prometheus metrics server
@@ -945,18 +777,6 @@ argo-cd:
     # -- Pod Security Context
     securityContext:
       runAsNonRoot: true
-
-    # -- Container Security Context
-    containerSecurityContext: {}
-
-    # -- Resource limits and requests for the controller
-    resources: {}
-      # limits:
-      #   cpu: 100m
-      #   memory: 128Mi
-      # requests:
-      #   cpu: 100m
-      #   memory: 128Mi
 
     serviceAccount:
       # -- Specifies whether a service account should be created
