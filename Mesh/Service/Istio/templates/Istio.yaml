@@ -2,13 +2,38 @@ apiVersion: install.istio.io/v1alpha1
 
 kind: IstioOperator
 metadata:
-  name: istiod
+  name: istiocontrolplane
 
   namespace: core-prod
 
+
+
 spec:
+  profile: default
+  namespace: istio-system
+  components:
+    base:
+      enabled: true
+    cni:
+      enabled: false
+    egressGateways:
+      - enabled: false
+        name: istio-egressgateway
+    ingressGateways:
+      - enabled: false
+        name: istio-ingressgateway
+    pilot:
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: "0"
   values:
+    pilot:
+      autoscaleEnabled: false
     global:
+      istioNamespace: istio-system
+
       meshID: core
 
       multiCluster:
