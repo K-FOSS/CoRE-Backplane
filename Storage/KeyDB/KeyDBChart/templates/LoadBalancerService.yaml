@@ -5,6 +5,8 @@ kind: Service
 metadata:
   name: {{ include "keydb.fullname" . }}-lb
   labels:
+    wan-mode: public
+    lan-mode: private
     {{ include "keydb.labels" . | nindent 4 }}
   annotations:
     {{ toYaml .Values.loadBalancer.annotations | nindent 4 }}

@@ -58,6 +58,12 @@ spec:
               annotations:
                 metallb.universe.tf/allow-shared-ip: keydb
                 consul.hashicorp.com/service-name: keydb
+                metallb.universe.tf/ip-allocated-from-pool: anycast-pool
+                external-dns.alpha.kubernetes.io/hostname: redis.mylogin.space
+                metallb.universe.tf/loadBalancerIPs: {{ loadBalancerIP }}
+                io.cilium/lb-ipam-sharing-key: redis
+                io.cilium/lb-ipam-ips: {{ loadBalancerIP }}
+
 
       destination:
         server: '{{url}}'
