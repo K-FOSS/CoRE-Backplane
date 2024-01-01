@@ -1,104 +1,15 @@
-powerdns:
-  # Default values for powerdns.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
+---
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: powerdns/pdns-auth-48
+          tag: 4.8.4
+          pullPolicy: IfNotPresent
 
-  replicaCount: 1
-
-  image:
-    #repository: cybiox9/powerdns:dev
-    tag: latest
-    pullPolicy: IfNotPresent
-
-  imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ns-core-powerdns
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: 
-
-  podSecurityContext:
-    {}
-    # fsGroup: 2000
-
-  securityContext:
-    {}
-    # capabilities:
-    #   drop:
-    #   - ALL
-    # readOnlyRootFilesystem: true
-    # runAsNonRoot: true
-    # runAsUser: 1000
-
-  service:
-    ## Set external traffic policy to: "Local" to preserve source IP on
-    ## providers supporting it
-    ## Ref: https://kubernetes.io/docs/tutorials/services/source-ip/#source-ip-for-services-with-typeloadbalancer
-    externalTrafficPolicy: ""
-    type: LoadBalancer
-    port: 53
-
-  probes:
-    liveness:
-      failureThreshold: 5
-      periodSeconds: 10
-    readiness:
-      failureThreshold: 5
-      periodSeconds: 10
-    startup:
-      initialDelaySeconds: 5
-      failureThreshold: 30
-      periodSeconds: 10
-
-  resources:
-    {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
-
-  nodeSelector: {}
-
-  tolerations: []
-
-  affinity: {}
-
-  podAnnotations: {}
-
-  deploymentAnnotations: {}
-
-  powerdns:
-    postgres:
-      host: localhost
-      port: 5432
-      username: pdns
-      password: ""
-      database: pdns
-    dnssec: true
-    config:
-      allow-axfr-ips=172.16.0.0/12,10.0.0.0/8
-      allow-dnsupdate-from=172.16.0.0/12,10.0.0.0/8
-      also-notify=10.1.1.50,10.1.1.53
-      api=yes
-      default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
-      dnsupdate=yes
-      expand-alias=yes
-      forward-dnsupdate=yes
-      forward-notify=10.1.1.50,10.1.1.53
-      launch=gpgsql
-      primary=yes
-      webserver=yes
-      webserver-address=0.0.0.0
-      webserver-allow-from=0.0.0.0/0
+service:
+  main:
+    ports:
+      http:
+        port: 53
