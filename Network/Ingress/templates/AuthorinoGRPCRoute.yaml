@@ -1,0 +1,14 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: GRPCRoute
+metadata:
+  name: authorino-authorization
+
+spec:
+  parentRefs:
+    - name: ingress-gw
+  hostnames:
+    - authorino
+  rules:
+    - backendRefs:
+        - name: authorino-authorino-authorization
+          port: 50051
