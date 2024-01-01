@@ -123,6 +123,26 @@ argo-cd:
       # -- Timeout to refresh application data as well as target manifests cache
       timeout.hard.reconciliation: 2h
 
+      # Configuration to customize resource behavior (optional) can be configured via splitted sub keys.
+      # Keys are in the form: resource.customizations.ignoreDifferences.<group_kind>, resource.customizations.health.<group_kind>
+      # resource.customizations.actions.<group_kind>, resource.customizations.knownTypeFields.<group-kind>
+      # resource.customizations.ignoreResourceUpdates.<group-kind>
+      resource.customizations.ignoreDifferences.admissionregistration.k8s.io_MutatingWebhookConfiguration: |
+        jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+        jqPathExpressions:
+        - .webhooks[0].clientConfig.caBundle
+        managedFieldsManagers:
+        - kube-controller-manager
+
+      # Configuration to define customizations ignoring differences between live and desired states for
+      # all resources (GK).
+      resource.customizations.ignoreDifferences.all: |
+        managedFieldsManagers:
+        - kube-controller-manager
+        jsonPointers:
+        - /spec/replicas
+
       resource.ignoreResourceUpdatesEnabled: 'true'
 
       # Configuration to define customizations ignoring differences during watched resource updates to skip application reconciles.
@@ -147,6 +167,14 @@ argo-cd:
         - /metadata/annotations/autoscaling.alpha.kubernetes.io~1conditions
         - /metadata/annotations/autoscaling.alpha.kubernetes.io~1metrics
         - /metadata/annotations/autoscaling.alpha.kubernetes.io~1current-metrics
+
+      resource.exclusions: |
+        - apiGroups:
+            - infra.contrib.fluxcd.io/v1alpha2
+          kinds:
+            - Terraform
+          clusters:
+            - "*"
 
       # Dex configuration
       # dex.config: |
