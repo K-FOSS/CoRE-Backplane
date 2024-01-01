@@ -2,8 +2,12 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: kuadrant
+  namespace: kuadrant-system
 spec:
   source: kuadrant-operator-catalog
   sourceNamespace: kuadrant-system
   name: kuadrant-operator
-  channel: "preview"
+  config:
+    env:
+    - name: LOG_LEVEL
+      value: DEBUG
