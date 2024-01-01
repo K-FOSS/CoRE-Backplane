@@ -5,7 +5,10 @@ global:
 
 controllers:
   main:
-
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
 
     containers:
       main:
