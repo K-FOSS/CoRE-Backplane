@@ -18,6 +18,14 @@ persistence:
       configMap:
         name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-config'
 
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /etc/pdns/pdns.conf
+            readOnly: true
+            subPath: pnds.conf
+
+
   configs:
     enabled: true
     mountPath: /etc/pdns/conf.d
@@ -25,6 +33,11 @@ persistence:
     volumeSpec:
       secret:
         secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-secrets'
+
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /etc/pdns/conf.d
 
   database:
     enabled: true
@@ -34,6 +47,13 @@ persistence:
     volumeSpec:
       secret:
         secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-database'
+
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /etc/pdns/conf.d/database.conf
+            readOnly: true
+            subPath: database.conf
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
