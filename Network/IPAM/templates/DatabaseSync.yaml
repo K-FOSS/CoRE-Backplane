@@ -6,25 +6,26 @@ metadata:
     {{ include "ipam.labels" . | nindent 4 }}
 spec:
   secretStoreRef:
-    name: mainvault-core
     kind: ClusterSecretStore
+    name: mainvault-core
+
   target:
     name: '{{ include "ipam.fullname" . }}-netbox-db'
   data:
-    - secretKey: DatabaseDatabase
+    - secretKey: Database
       remoteRef:
-        key: Netbox
-        property: DatabaseDatabase
+        key: Netbox/Database
+        property: Database
 
-    - secretKey: DatabaseUsername
+    - secretKey: Username
       remoteRef:
-        key: Netbox
-        property: DatabaseUsername
+        key: Netbox/Database
+        property: Username
 
 
-    - secretKey: DatabasePassword
+    - secretKey: Password
       remoteRef:
-        key: Netbox
-        property: DatabasePassword
+        key: Netbox/Database
+        property: Password
       
 

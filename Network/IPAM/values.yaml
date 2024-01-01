@@ -363,7 +363,7 @@ netbox:
   # will be randomly generated if left blank.
   # You can also use an existing secret with "secret_key" instead of "secretKey"
   # See `existingSecret` for details
-  secretKey: <path:CORE0_SITE1/data/Netbox#SecretKey>
+  secretKey: <path:CORE0_SITE1/data/Netbox/General#SecretKey>
 
   ## Provide passwords using existing secret
   # If set, this Secret must contain the following keys:
@@ -392,10 +392,10 @@ netbox:
   externalDatabase:
     host: psql.mylogin.space
     port: 5432
-    database: <path:CORE0_SITE1/data/Netbox#DatabaseDatabase>
-    username: <path:CORE0_SITE1/data/Netbox#DatabaseUsername>
+    database: <path:CORE0_SITE1/data/Netbox/Database#Database>
+    username: <path:CORE0_SITE1/data/Netbox/Database#Username>
     existingSecretName: k0s-cntrl-network-ipam-netbox-db
-    existingSecretKey: DatabasePassword
+    existingSecretKey: Password
 
     # The following settings apply when using the bundled PostgreSQL chart, too:
     sslMode: prefer
@@ -415,7 +415,7 @@ netbox:
 
     # Used only when redis.enabled is false. host and port are not used if
     # sentinels are given.
-    host: 10.1.1.68
+    host: redis.mylogin.space
     port: 6379
     sentinels: []
     #  - mysentinel:26379
@@ -432,7 +432,7 @@ netbox:
 
     # Used only when redis.enabled is false. host and port are not used if
     # sentinels are given.
-    host: 10.1.1.68
+    host: redis.mylogin.space
     port: 6379
     sentinels: []
     #  - mysentinel:26379
@@ -467,12 +467,10 @@ netbox:
 
   commonAnnotations: {}
 
-  podAnnotations:
-    sidecar.istio.io/inject: 'true'
+  podAnnotations: {}
 
   podLabels:
     logs: loki-myloginspace
-    sidecar.istio.io/inject: 'true'
 
   podSecurityContext:
     fsGroup: 1000
