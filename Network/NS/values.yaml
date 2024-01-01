@@ -5,6 +5,8 @@ global:
 
 controllers:
   main:
+
+
     containers:
       main:
         image:
@@ -12,8 +14,53 @@ controllers:
           tag: 4.8.4
           pullPolicy: IfNotPresent
 
+        # -- Override the command(s) for the default container
+        command: ['/usr/local/sbin/pdns_server']
+        # -- Override the args for the default container
+        args: ['--config', '/etc/pdns/pdns.conf']
+        # -- Override the working directory for the default container
+        workingDir: /etc/pdns
+
+
 service:
   main:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: main
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: LoadBalancer
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    externalTrafficPolicy:
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    # -- Provide additional annotations which may be required.
+    annotations:
+      consul.hashicorp.com/service-name: ns-core
+      metallb.universe.tf/ip-allocated-from-pool: anycast-pool
+      metallb.universe.tf/loadBalancerIPs: 10.1.1.150
+      io.cilium/lb-ipam-sharing-key: ns-core
+      io.cilium/lb-ipam-ips: 10.1.1.150
+
+    # -- Provide additional labels which may be required.
+    labels: {}
+
+    # -- Allow adding additional match labels
+    extraSelectorLabels: {}
+
     ports:
       http:
         # -- Enables or disables the port
