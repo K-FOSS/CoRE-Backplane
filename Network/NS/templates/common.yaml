@@ -8,6 +8,16 @@ global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
 
+controllers:
+  nsadmin:
+    containers:
+      main:
+        # -- Secrets and/or ConfigMaps that will be loaded as environment variables.
+        # [[ref]](https://unofficial-kubernetes.readthedocs.io/en/latest/tasks/configure-pod-container/configmap/#use-case-consume-configmap-in-environment-variables)
+        envFrom:
+          - secretRef:
+              name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-db
+
 persistence:
   config:
     enabled: true
