@@ -9,7 +9,7 @@ metadata:
   name: envoy-ext-authz-http
 spec:
   services:
-    - listener: 'listener-secure'
+    - listener: ''
       name: cilium-gateway-ingress-gw
       namespace: core-prod
 
@@ -26,46 +26,56 @@ spec:
 
   resources:
     - '@type': type.googleapis.com/envoy.config.listener.v3.Listener
-      filter_chains:
-        - filters:
+      name: auth
+      filterChains:
+        - filterChainMatch:
+            transportProtocol: raw_buffer
+          filters:
             - name: envoy.filters.network.http_connection_manager
-              typed_config:
+              typedConfig:
                 '@type': >-
                   type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-                http_filters:
+                commonHttpProtocolOptions:
+                  maxStreamDuration: 0s
+                httpFilters:
                   - name: envoy.filters.http.ext_authz
                     typed_config:
                       '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+                      transport_api_version: V3
                       grpc_service:
                         google_grpc:
                           target_uri: authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
+                  - name: envoy.filters.http.grpc_web
+                    typedConfig:
+                      '@type': >-
+                        type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
+                  - name: envoy.filters.http.grpc_stats
+                    typedConfig:
+                      '@type': >-
+                        type.googleapis.com/envoy.extensions.filters.http.grpc_stats.v3.FilterConfig
+                      emitFilterState: true
+                      enableUpstreamStats: true
                   - name: envoy.filters.http.router
-                    typed_config:
+                    typedConfig:
                       '@type': >-
                         type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
                 rds:
-                  route_config_name: listener-secure
-                stat_prefix: listener-secure
-      name: listener-secure
+                  routeConfigName: auth-insecure
+                statPrefix: listener-insecure
+                upgradeConfigs:
+                  - upgradeType: websocket
+                useRemoteAddress: true
 
     - '@type': type.googleapis.com/envoy.config.route.v3.RouteConfiguration
-      name: lb_route
+      name: auth-insecure
       virtual_hosts:
         - domains:
-            - '*'
-          name: lb_route
+            - 'authorino.mylogin.space'
+          name: auth-insecure
           routes:
             - match:
                 prefix: /
-              route:
-                cluster: core-prod/s3-gw
-    - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
-      connect_timeout: 15s
-      lb_policy: ROUND_ROBIN
-      name: kuadrant-system/authorino-authorino-authorization
-      type: EDS
-    - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
-      connect_timeout: 15s
-      lb_policy: ROUND_ROBIN
-      name: core-prod/s3-gw
-      type: EDS
+              directResponse:
+                body:
+                  inlineString: http_filters
+                status: 200
