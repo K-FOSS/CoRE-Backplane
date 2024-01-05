@@ -8,25 +8,17 @@ kind: CiliumClusterwideEnvoyConfig
 metadata:
   name: envoy-ext-authz-http
 spec:
-  services:
-    - listener: ''
-      name: cilium-gateway-ingress-gw
-      namespace: core-prod
-
   backendServices:
     - name: authorino-authorino-authorization
       namespace: kuadrant-system
       number:
         - '50051'
-
     - name: s3-gw
       namespace: core-prod
       number:
         - '9000'
-
   resources:
     - '@type': type.googleapis.com/envoy.config.listener.v3.Listener
-      name: auth
       filterChains:
         - filterChainMatch:
             transportProtocol: raw_buffer
@@ -40,11 +32,14 @@ spec:
                 httpFilters:
                   - name: envoy.filters.http.ext_authz
                     typed_config:
-                      '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
-                      transport_api_version: V3
+                      '@type': >-
+                        type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
                       grpc_service:
                         google_grpc:
-                          target_uri: authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
+                          statPrefix: listener-insecure
+                          target_uri: >-
+                            authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
+                      transport_api_version: V3
                   - name: envoy.filters.http.grpc_web
                     typedConfig:
                       '@type': >-
@@ -60,22 +55,52 @@ spec:
                       '@type': >-
                         type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
                 rds:
-                  routeConfigName: auth-insecure
+                  routeConfigName: listener-insecure
                 statPrefix: listener-insecure
                 upgradeConfigs:
                   - upgradeType: websocket
                 useRemoteAddress: true
-
+      listenerFilters:
+        - name: envoy.filters.listener.tls_inspector
+          typedConfig:
+            '@type': >-
+              type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
+      name: listener
+      socketOptions:
+        - description: Enable TCP keep-alive (default to enabled)
+          intValue: '1'
+          level: '1'
+          name: '9'
+          state: STATE_LISTENING
+        - description: TCP keep-alive idle time (in seconds) (defaults to 10s)
+          intValue: '10'
+          level: '6'
+          name: '4'
+          state: STATE_LISTENING
+        - description: TCP keep-alive probe intervals (in seconds) (defaults to 5s)
+          intValue: '5'
+          level: '6'
+          name: '5'
+          state: STATE_LISTENING
+        - description: TCP keep-alive probe max failures.
+          intValue: '10'
+          level: '6'
+          name: '6'
+          state: STATE_LISTENING
     - '@type': type.googleapis.com/envoy.config.route.v3.RouteConfiguration
-      name: auth-insecure
+      name: listener-insecure
       virtual_hosts:
         - domains:
-            - 'authorino.mylogin.space'
-          name: auth-insecure
+            - authorino.mylogin.space
+          name: listener-insecure
           routes:
-            - match:
-                prefix: /
-              directResponse:
+            - directResponse:
                 body:
                   inlineString: http_filters
                 status: 200
+              match:
+                prefix: /
+  services:
+    - listener: ''
+      name: cilium-gateway-ingress-gw
+      namespace: core-prod
