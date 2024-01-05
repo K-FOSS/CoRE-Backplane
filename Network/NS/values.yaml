@@ -198,7 +198,7 @@ controllers:
           # @default -- See below
           liveness:
             # -- Enable the liveness probe
-            enabled: true
+            enabled: false
             # -- Set this to `true` if you wish to specify your own livenessProbe
             custom: false
             # -- sets the probe type when not using a custom probe
@@ -217,7 +217,7 @@ controllers:
           # @default -- See below
           readiness:
             # -- Enable the readiness probe
-            enabled: true
+            enabled: false
             # -- Set this to `true` if you wish to specify your own readinessProbe
             custom: false
             # -- sets the probe type when not using a custom probe
@@ -236,7 +236,7 @@ controllers:
           # @default -- See below
           startup:
             # -- Enable the startup probe
-            enabled: true
+            enabled: false
             # -- Set this to `true` if you wish to specify your own startupProbe
             custom: false
             # -- sets the probe type when not using a custom probe
@@ -254,17 +254,17 @@ controllers:
 
         # -- Set the resource requests / limits for the container.
         resources:
-          {}
           ## We usually recommend not to specify default resources and to leave this as a conscious
           ## choice for the user. This also increases chances charts run on environments with little
           ## resources, such as Minikube. If you do want to specify resources, uncomment the following
           ## lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-          # limits:
-          #   cpu: 100m
-          #   memory: 128Mi
-          # requests:
-          #   cpu: 100m
-          #   memory: 128Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+
+          requests:
+            cpu: 100m
+            memory: 128Mi
 
         # -- Configure the Security Context for the container
         securityContext: {}
@@ -289,12 +289,42 @@ controllers:
     initContainers: {}
 
 service:
+  nsadmin:
+    enabled: true
+
+    controller: nsadmin
+
+    type: ClusterIP
+
+    clusterIP: None
+
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: false
+
+        # -- The port number
+        port: 8081
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:
+      
   webservice:
     enabled: true
 
     controller: main
 
-    type: clusterIP
+    type: ClusterIP
 
     clusterIP: None
 
