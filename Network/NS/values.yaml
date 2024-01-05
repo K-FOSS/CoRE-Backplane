@@ -124,7 +124,13 @@ controllers:
 
 
     # Controller-specific overrides for `defaultPodOptions` keys
-    pod: {}
+    pod:
+      # -- Configuring the ndots option may resolve nslookup issues on some Kubernetes setups.
+      dnsConfig:
+        options:
+          - name: ndots
+            value: '0'
+
 
     containers:
       main:
