@@ -1,0 +1,16 @@
+apiVersion: operator.istio.io/v1alpha1
+kind: Istio
+metadata:
+  name: istiocontrolplane
+  namespace: istio-system
+spec:
+  version: v1.20.0
+  namespace: istio-system
+  # Disable autoscaling to reduce dev resources
+  values:
+    pilot:
+      autoscaleEnabled: false
+  rawValues:
+    gateways:
+      istio-ingressgateway:
+        autoscaleEnabled: false
