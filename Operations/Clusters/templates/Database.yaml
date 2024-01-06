@@ -9,3 +9,27 @@ spec:
   secretName: ops-cluster-db
   instance: psql-main
   deletionProtected: true
+
+  credentials:
+    templates: 
+      - name: Hostname
+        secret: true
+        template: >- {{`
+          {{ .Hostname }}
+
+      - name: Port
+        secret: true
+        template: {{ .Port }}
+
+      - name: Database
+        secret: true
+        template: {{ .Database }}
+
+      - name: Username
+        secret: true
+        template: {{ .Username }}
+
+      - name: Password
+        secret: true
+        template: {{ .Password }}
+          `}}
