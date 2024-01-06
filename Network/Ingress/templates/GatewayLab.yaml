@@ -29,6 +29,16 @@ spec:
           - kind: Secret
             name: myloginspace-default-certificates
 
+    - name: https-intmyloginspace
+      protocol: HTTPS
+      port: 443
+      hostname: '*.int.mylogin.space'
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: myloginspace-int-default-certificates
+
     - name: https-writemycodes
       protocol: HTTPS
       port: 443
@@ -52,3 +62,7 @@ spec:
     - name: http
       protocol: HTTP
       port: 80
+
+    - name: mc-tcp
+      protocol: TCP
+      port: 25565
