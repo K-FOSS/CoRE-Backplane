@@ -1,0 +1,29 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: auth-gw
+  namespace: core-prod
+
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  gatewayClassName: cilium
+
+  infrastructure:
+    annotations:
+      metallb.universe.tf/loadBalancerIPs: 66.165.222.102
+      io.cilium/lb-ipam-sharing-key: auth-gw
+      io.cilium/lb-ipam-ips: 66.165.222.102
+
+  listeners:
+    - name: https-intmyloginspace
+      protocol: HTTPS
+      port: 443
+      hostname: '*.int.mylogin.space'
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: myloginspace-int-default-certificates
