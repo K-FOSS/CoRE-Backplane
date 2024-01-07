@@ -35,6 +35,7 @@ spec:
                   route_config_name: lb_route
                 stat_prefix: envoy-lb-listener
       name: listener
+
     - '@type': type.googleapis.com/envoy.config.route.v3.RouteConfiguration
       name: lb_route
       virtual_hosts:
@@ -46,11 +47,17 @@ spec:
                 prefix: /
               route:
                 cluster: core-prod/cilium-gateway-ingress-gw
-    - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
-      connect_timeout: 15s
-      lb_policy: ROUND_ROBIN
+
+    - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
       name: core-prod/cilium-gateway-ingress-gw
+      connect_timeout: 5s
+      lb_policy: ROUND_ROBIN
       type: EDS
+
   services:
-    - name: auth-gw
+    - name: cilium-gateway-auth-gw
+      namespace: core-prod
+
+  backendServices:
+    - name: cilium-gateway-ingress-gw   
       namespace: core-prod
