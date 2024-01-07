@@ -11,10 +11,7 @@ spec:
   resources:
     - '@type': type.googleapis.com/envoy.config.listener.v3.Listener
       filter_chains:
-        - filterchainmatch:
-            serverNames: '*.int.mylogin.space'
-            transportProtocol: tls
-          filters:
+        - filters:
             - name: envoy.filters.network.http_connection_manager
               typed_config:
                 '@type': >-
@@ -37,22 +34,7 @@ spec:
                 rds:
                   route_config_name: lb_route
                 stat_prefix: envoy-lb-listener
-          transportSocket:
-            name: envoy.transport_sockets.tls
-            typedConfig:
-              '@type': >-
-                type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
-              commonTlsContext:
-                tlsCertificateSdsSecretConfigs:
-                  - name: >-
-                      cilium-secrets/core-prod-myloginspace-int-default-certificates
-      listenerFilters:
-        - name: envoy.filters.listener.tls_inspector
-          typedConfig:
-            '@type': >-
-              type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
-      name: listener
-
+      name: envoy-lb-listener
     - '@type': type.googleapis.com/envoy.config.route.v3.RouteConfiguration
       name: lb_route
       virtual_hosts:
@@ -63,18 +45,14 @@ spec:
             - match:
                 prefix: /
               route:
-                cluster: core-prod/cilium-gateway-ingress-gw
+                cluster: core-prod/s3-static-test
 
-    - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-      name: core-prod/cilium-gateway-ingress-gw
-      connect_timeout: 5s
+    - '@type': type.googleapis.com/envoy.config.cluster.v3.Cluster
+      connect_timeout: 15s
       lb_policy: ROUND_ROBIN
+      name: core-prod/s3-static-test
       type: EDS
 
   services:
-    - name: cilium-gateway-auth-gw
-      namespace: core-prod
-
-  backendServices:
-    - name: cilium-gateway-ingress-gw   
+    - name: s3-static-test
       namespace: core-prod
