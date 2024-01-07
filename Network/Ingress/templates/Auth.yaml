@@ -37,6 +37,15 @@ spec:
                 rds:
                   route_config_name: lb_route
                 stat_prefix: envoy-lb-listener
+          transportSocket:
+            name: envoy.transport_sockets.tls
+            typedConfig:
+              '@type': >-
+                type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              commonTlsContext:
+                tlsCertificateSdsSecretConfigs:
+                  - name: >-
+                      cilium-secrets/core-prod-myloginspace-int-default-certificates
       listenerFilters:
         - name: envoy.filters.listener.tls_inspector
           typedConfig:
