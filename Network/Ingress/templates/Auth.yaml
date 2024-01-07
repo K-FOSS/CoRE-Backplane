@@ -11,7 +11,10 @@ spec:
   resources:
     - '@type': type.googleapis.com/envoy.config.listener.v3.Listener
       filter_chains:
-        - filters:
+        - filterchainmatch:
+            serverNames: '*.int.mylogin.space'
+            transportProtocol: tls
+          filters:
             - name: envoy.filters.network.http_connection_manager
               typed_config:
                 '@type': >-
@@ -34,6 +37,11 @@ spec:
                 rds:
                   route_config_name: lb_route
                 stat_prefix: envoy-lb-listener
+      listenerFilters:
+        - name: envoy.filters.listener.tls_inspector
+          typedConfig:
+            '@type': >-
+              type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
       name: listener
 
     - '@type': type.googleapis.com/envoy.config.route.v3.RouteConfiguration
