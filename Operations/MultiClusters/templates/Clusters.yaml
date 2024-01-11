@@ -13,5 +13,62 @@ spec:
   managedClusterClientConfigs:
     - caBundle: {{ .caBundle }}
       url: {{ .apiHost }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: open-cluster-management:managedcluster:{{ .name }}
+  labels:
+    open-cluster-management.io/cluster-name: {{ .name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: open-cluster-management:managedcluster:{{ .name }}
+subjects:
+- kind: Group
+  apiGroup: rbac.authorization.k8s.io
+  name: system:open-cluster-management:{{ .name }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: open-cluster-management:managedcluster:{{ .name }}
+  labels:
+    open-cluster-management.io/cluster-name: {{ .name }}
+rules:
+  # Allow agent to rotate its certificate
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests"]
+    verbs: ["create", "get", "list", "watch"]
 
+  - apiGroups: ["register.open-cluster-management.io"]
+    resources: ["managedclusters/clientcertificates"]
+    verbs: ["renew"]
+  # Allow agent to get/list/update/watch its owner managed cluster
+  - apiGroups: ["cluster.open-cluster-management.io"]
+    resources: ["managedclusters"]
+    resourceNames: ["{{ .name }}"]
+    verbs: ["get", "list", "update", "watch"]
+  # Allow agent to update the status of its owner managed cluster
+  - apiGroups: ["cluster.open-cluster-management.io"]
+    resources: ["managedclusters/status"]
+    resourceNames: ["{{ .name }}"]
+    verbs: ["patch", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: open-cluster-management:managedcluster:{{ .name }}:registration
+  labels:
+    open-cluster-management.io/cluster-name: {{ .name }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: open-cluster-management:managedcluster:registration
+subjects:
+  # Bind the role with spoke agent user group, the role will be as a common role for all spoke agents
+  # TODO: we will consider bind a specific role for each spoke agent by spoke agent name
+  - kind: Group
+    apiGroup: rbac.authorization.k8s.io
+    name: system:open-cluster-management:{{ .name }}
 {{- end }}
