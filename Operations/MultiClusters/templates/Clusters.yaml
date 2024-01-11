@@ -140,10 +140,8 @@ subjects:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  annotations:
-    kubernetes.io/enforce-mountable-secrets: "true"
   name: {{ .name }}-register
-  namespace: {{ .name }}
+
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -153,7 +151,6 @@ metadata:
 subjects:
   - kind: ServiceAccount
     name: {{ .name }}-register
-    namespace: {{ .name }}
 roleRef:
   kind: ClusterRole
   name: open-cluster-management:managedcluster:{{ .name }}
