@@ -1,16 +1,55 @@
-apiVersion: operator.istio.io/v1alpha1
-kind: Istio
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
 metadata:
   name: istiocontrolplane
+
   namespace: istio-system
+
 spec:
-  version: v1.20.0
+  profile: default
   namespace: istio-system
-  # Disable autoscaling to reduce dev resources
+  components:
+    base:
+      enabled: true
+    cni:
+      enabled: false
+    egressGateways:
+      - enabled: false
+        name: istio-egressgateway
+    ingressGateways:
+      - enabled: true
+        name: istio-ingressgateway
+        k8s:
+          service:
+            type: ClusterIP
+            ports:
+              - name: status-port
+                port: 15021
+                protocol: TCP
+                targetPort: 15021
+              - name: http2
+                port: 80
+                protocol: TCP
+                targetPort: 8080
+              - name: https
+                port: 443
+                protocol: TCP
+                targetPort: 8443
+          resources:
+            requests:
+              cpu: '0'
+    pilot:
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: "0"
   values:
     pilot:
       autoscaleEnabled: false
-  rawValues:
     gateways:
       istio-ingressgateway:
+        type: ClusterIP
         autoscaleEnabled: false
+    global:
+      istioNamespace: istio-system
