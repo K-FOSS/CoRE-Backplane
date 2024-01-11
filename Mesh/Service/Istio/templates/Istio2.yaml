@@ -1,17 +1,30 @@
-apiVersion: operator.istio.io/v1alpha1
-kind: Istio
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
 metadata:
+  namespace: istio-system
   name: istiocontrolplane
-  namespace: istio-system
 spec:
-  version: v1.20.1
+  profile: default
   namespace: istio-system
-  updateStrategy:
-    type: InPlace
-    inactiveRevisionDeletionGracePeriodSeconds: 30
-  rawValues:
+  components:
+    base:
+      enabled: true
+    cni:
+      enabled: false
+    egressGateways:
+      - enabled: false
+        name: istio-egressgateway
+    ingressGateways:
+      - enabled: false
+        name: istio-ingressgateway
     pilot:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 1024Mi
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: "0"
+  values:
+    pilot:
+      autoscaleEnabled: false
+    global:
+      istioNamespace: istio-system
