@@ -138,5 +138,31 @@ subjects:
     apiGroup: rbac.authorization.k8s.io
     name: system:open-cluster-management:{{ .name }}
 ---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: cluster-spoke-{{ .name }}
 
+spec:
+  refreshInterval: 5m
+  secretStoreRefs:
+    - name: mainvault-core
+      kind: ClusterSecretStore
+
+  selector:
+    secret:
+      name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+
+  data:
+    - match:
+        secretKey: username
+        remoteRef:
+          remoteKey: PSQL/Operator
+          property: username
+
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: PSQL/Operator
+          property: password
 {{- end }}
