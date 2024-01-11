@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-kuadrantmcs
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+
+  template:
+    metadata:
+      name: '{{cluster}}-ops-kuadrantmcs'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+
+      source:
+        path: config/mgc-install-guide
+        repoURL: github.com/kuadrant/multicluster-gateway-controller.git
+        targetRevision: release-0.3
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: multicluster-gateway-controller-system
