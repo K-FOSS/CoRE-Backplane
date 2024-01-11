@@ -138,6 +138,14 @@ subjects:
     apiGroup: rbac.authorization.k8s.io
     name: system:open-cluster-management:{{ .name }}
 ---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+ name: {{ .name }}-registration
+ annotations:
+   kubernetes.io/service-account.name: ''
+---
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
 metadata:
