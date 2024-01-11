@@ -49,7 +49,7 @@ spec:
   hubAcceptsClient: true
   leaseDurationSeconds: 60
   managedClusterClientConfigs:
-    - caBundle: <path:CORE0_SITE1/data/Ops/Clusters/Hubs/{{ .Values.clusterName }}/{{ .name }}#CA>
+    - caBundle: <path:CORE0_SITE1/data/Ops/Clusters/Hubs/k0s-dc1/{{ .name }}#CA>
       url: {{ .apiHost }}
 
 ---
@@ -139,12 +139,34 @@ subjects:
     name: system:open-cluster-management:{{ .name }}
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    kubernetes.io/enforce-mountable-secrets: "true"
+  name: open-cluster-management:managedcluster:{{ .name }}
+  namespace: {{ .name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .name }}-register
+
+subjects:
+  - kind: ServiceAccount
+    name: open-cluster-management:managedcluster:{{ .name }}
+    namespace: {{ .name }}
+roleRef:
+  kind: ClusterRole
+  name: open-cluster-management:managedcluster:{{ .name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
 kind: Secret
 type: kubernetes.io/service-account-token
 metadata:
  name: {{ .name }}-registration
  annotations:
-   kubernetes.io/service-account.name: ''
+   kubernetes.io/service-account.name: 'open-cluster-management:managedcluster:{{ .name }}'
 ---
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
@@ -159,18 +181,33 @@ spec:
 
   selector:
     secret:
-      name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+      name: {{ .name }}-registration
 
+  template:
+    data:
+      kubeconfig: |
+        clusters:
+          - cluster:
+              certificate-authority-data: {{`{{ index . "ca.crt" | b64enc }}`}}
+              server: https://10.1.1.40:6443
+            name: hub
+        contexts:
+        - context:
+            cluster: hub
+            namespace: default
+            user: bootstrap
+          name: bootstrap
+        current-context: bootstrap
+        preferences: {}
+        users:
+        - name: bootstrap
+          user:
+            token: {{`{{ .token }}`}}
+     `}}
   data:
     - match:
-        secretKey: username
+        secretKey: 'ca.crt'
         remoteRef:
-          remoteKey: PSQL/Operator
-          property: username
-
-    - match:
-        secretKey: password
-        remoteRef:
-          remoteKey: PSQL/Operator
-          property: password
+          remoteKey: Ops/Clusters/Hubs/k0s-dc1/{{ .name }}
+          property: CA
 {{- end }}
