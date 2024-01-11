@@ -1,13 +1,17 @@
+{{ range .Values.clusters }}
+---
 apiVersion: cluster.open-cluster-management.io/v1
 kind: ManagedCluster
 metadata:
   labels:
     cluster.open-cluster-management.io/clusterset: default
-  name: infra1-dc1
+  name: {{ .name }}
 
 spec:
   hubAcceptsClient: true
   leaseDurationSeconds: 60
   managedClusterClientConfigs:
-    - caBundle: 
-      url: https://:6443
+    - caBundle: {{ .caBundle }}
+      url: {{ .apiHost }}
+
+{{- end }}
