@@ -3,14 +3,64 @@ peers: []
 clusterName: 'k0s-dc1'
 pubPool: '66.165.222.101/32'
 
-merbridge:
+envoy-gw:
   enabled: true
+  deployment:
+    envoyGateway:
+      cert:
+        expiryDays: 365
+      image:
+        repository: docker.io/envoyproxy/gateway
+        tag: 'v0.6.0'
+      imagePullPolicy: Always
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1024Mi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+    ports:
+      - name: grpc
+        port: 18000
+        targetPort: 18000
+      - name: ratelimit
+        port: 18001
+        targetPort: 18001
+    replicas: 1
+    pod:
+      annotations: {}
+      labels: {}
 
-  image:
-    repository: wiretrustee/signal
-    tag: latest
-    pullPolicy: Always
-    pullSecrets: []
+  config:
+    envoyGateway:
+      gateway:
+        controllerName: gateway.envoyproxy.io/gatewayclass-controller
+      provider:
+        type: Kubernetes
+      logging:
+        level:
+          default: info
+
+  envoyGatewayMetricsService:
+    ports:
+      - name: http
+        port: 19001
+        protocol: TCP
+        targetPort: 19001
+
+  createNamespace: false
+
+  kubernetesClusterDomain: cluster.local
+
+  certgen:
+    job:
+      annotations: {}
+      ttlSecondsAfterFinished: 0
+    rbac:
+      annotations: {}
+      labels: {}
+
 
 vmtools:
   enabled: false
