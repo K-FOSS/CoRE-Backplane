@@ -1858,6 +1858,205 @@ kube-router:
       key: node-role.kubernetes.io/etcd
       operator: Exists
 
+purelb:
+  # Default values for purelb.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  # Docker image configuration
+  image:
+    repository: registry.gitlab.com/purelb/purelb
+    pullPolicy: Always
+
+  nameOverride: ""
+  fullnameOverride: ""
+
+  Prometheus:
+    allocator:
+      # Metrics service
+      Metrics:
+        enabled: false
+
+      ## ServiceMonitor
+      ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md
+      ## Note: requires Prometheus Operator to be able to work, for example:
+      ## helm install prometheus prometheus-community/kube-prometheus-stack \
+      ##   --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+      ##   --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+      serviceMonitor:
+        ## Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
+        enabled: false
+
+        ## Specify the labels to add to the ServiceMonitors to be selected for target discovery
+        extraLabels: {}
+
+        ## Specify the endpoints
+        ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/design.md#servicemonitor
+        endpoints: []
+        ## Sample
+        ## endpoints:
+        ## - port: metrics
+        ##   path: /metrics
+        ##   scheme: http
+      prometheusRules:
+        ## Toggle the prometheusRules to true if you have Prometheus Operator installed and configured
+        ##
+        enabled: false
+        ## Specify the namespace where to add to the prometheusRules
+        ##
+        namespace: ""
+        ## Specify the labels to add to the prometheusRules to be selected for target discovery
+        extraLabels: {}
+        ## Define here the Custom Prometheus rules
+        ## e.g:
+        ## rules:
+        ##   - alert: PurelbServiceGroupHigh
+        ##     expr: purelb_address_pool_addresses_in_use * 100 / purelb_address_pool_size > 90
+        ##     for: 2m
+        ##     labels:
+        ##       severity: critical
+        ##     annotations:
+        ##       summary: PureLB allocator {{`{{`}} $labels.instance {{`}}`}} as high usage of pool
+        ##       description: PureLB allocator {{`{{`}} $labels.instance {{`}}`}} as high usage of pool
+        rules: []
+
+    lbnodeagent:
+      # Metrics service
+      Metrics:
+        enabled: false
+
+      ## ServiceMonitor
+      ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/user-guides/getting-started.md
+      ## Note: requires Prometheus Operator to be able to work, for example:
+      ## helm install prometheus prometheus-community/kube-prometheus-stack \
+      ##   --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+      ##   --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+      serviceMonitor:
+        ## Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
+        enabled: false
+
+        ## Specify the labels to add to the ServiceMonitors to be selected for target discovery
+        extraLabels: {}
+
+        ## Specify the endpoints
+        ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/master/Documentation/design.md#servicemonitor
+        endpoints: []
+        ## Sample
+        ## endpoints:
+        ## - port: metrics
+        ##   path: /metrics
+        ##   scheme: http
+      prometheusRules:
+        ## Toggle the prometheusRules true if you have Prometheus Operator installed and configured
+        ##
+        enabled: false
+        ## Specify the namespace where to add to the prometheusRules
+        ##
+        namespace: ""
+        ## Specify the labels to add to the prometheusRules to be selected for target discovery
+        extraLabels: {}
+        ## Define here the Custom Prometheus rules
+        ## e.g:
+        ## rules:
+        ##   - alert: PurelbServiceGroupHigh
+        ##     expr: purelb_address_pool_addresses_in_use * 100 / purelb_address_pool_size > 90
+        ##     for: 2m
+        ##     labels:
+        ##       severity: critical
+        ##     annotations:
+        ##       summary: PureLB instance {{ "{{ $labels.instance }}" }} down
+        ##       description: Redis&trade; instance {{ "{{ $labels.instance }}" }} is down
+        rules: []
+
+  # You may define a valid spec and set create: true to create a ServiceGroup.
+  # See https://purelb.gitlab.io/docs/install/config/
+  serviceGroup:
+    name: 'default'
+    create: false
+    # For example, to configure a "default" service group, comment the above line and uncomment the following lines:
+    # create: true
+    # spec:
+    #   local:
+    #     subnet: '192.168.254.0/24'
+    #     pool: '192.168.254.200-192.168.254.201'
+    #     aggregation: default
+
+  # This can be used to define a list of arbitrary extra Kubernetes objects to be created (configmaps, serviceGroups, etc.).
+  # Example:
+  #   extraObjects:
+  #     - |
+  #       apiVersion: v1
+  #       kind: ConfigMap
+  #       metadata:
+  #         name: {{ .Release.Name }}-extra
+  #       data:
+  #         hello: world
+  #     - |
+  #       apiVersion: purelb.io/v1
+  #       kind: ServiceGroup
+  #       metadata:
+  #         name: private
+  #       spec:
+  #         local:
+  #           pool: 192.168.0.0-192.168.0.5
+  #           subnet: 192.168.0.0/27
+  extraObjects: []
+
+  # PureLB will act as the default service announcer if this value is
+  # "PureLB". This means that PureLB will handle services that do not
+  # have a Spec.LoadBalancerClass field. If this is other than "PureLB"
+  # then PureLB will handle only those services that have a
+  # Spec.LoadBalancerClass explictly set to "purelb.io/purelb".
+  defaultAnnouncer: "PureLB"
+
+  # This value is passed into the memberlist package. Quoting from the
+  # memberlist docs:
+  #
+  #   SecretKey is used to initialize the primary encryption key in a
+  #   keyring.  The primary encryption key is the only key used to
+  #   encrypt messages and the first key used while attempting to
+  #   decrypt messages. Providing a value for this primary key will
+  #   enable message-level encryption and verification, and
+  #   automatically install the key onto the keyring.  The value should
+  #   be either 16, 24, or 32 bytes to select AES-128, AES-192, or
+  #   AES-256.
+  #
+  # See PureLB's internal/election package docs for more info on how
+  # PureLB uses memberlist.
+  #
+  # This random default value is fine for most purposes but for extra
+  # security you can replace it with your own value.
+  memberlistSecretKey: "8sb7ikA5qHwQQqxc"
+
+  # Optional priorityClass to use for both allocator and lbnodeagent pods.
+  # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+  priorityClassName: ""
+
+  # Configurable values specific to lbnodeagent.
+  # See https://purelb.gitlab.io/docs/install/config/
+  lbnodeagent:
+    localint: default
+    extlbint: kube-lb0
+    sendgarp: false
+    podSecurityPolicy:
+      enabled: false
+    resources:
+      limits:
+        memory: 100Mi
+    # Tolerations: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+    tolerations: []
+    # For example, to allow lbnodeagents to run on master nodes, comment the above line and uncomment the following lines:
+    # tolerations:
+    # - effect: NoSchedule
+    #   key: node-role.kubernetes.io/master
+
+  # Configurable values specific to allocator.
+  allocator:
+    podSecurityPolicy:
+      enabled: false
+    resources:
+      limits:
+        memory: 100Mi
 
 
 int-dns:
