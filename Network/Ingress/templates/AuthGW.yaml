@@ -9,7 +9,7 @@ metadata:
     lan-mode: 'private'
 
 spec:
-  gatewayClassName: istio
+  gatewayClassName: kuadrant-multi-cluster-gateway-instance-per-cluster
 
   infrastructure:
     annotations:
@@ -19,9 +19,16 @@ spec:
 
   listeners:
     - name: https-intmyloginspace
-      protocol: HTTPS
+
       port: 443
+      protocol: HTTP
+
       hostname: '*.int.mylogin.space'
+      
+      allowedRoutes:
+        namespaces:
+          from: All
+      
       tls:
         mode: Terminate
         certificateRefs:
