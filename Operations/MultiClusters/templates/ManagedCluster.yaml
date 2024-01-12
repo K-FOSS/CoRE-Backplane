@@ -6,3 +6,8 @@ metadata:
     ingress-cluster: 'true'
 
   name: {{ .Values.clusterName }}
+spec:
+  hubAcceptsClient: true
+  leaseDurationSeconds: 60
+  managedClusterClientConfigs:
+    - url: {{ .Values.clusterAddress }}
