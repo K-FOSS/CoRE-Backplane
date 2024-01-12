@@ -1,0 +1,21 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: argocd-route
+
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  parentRefs:
+    - kind: Gateway
+      name: auth-gw
+      namespace: multi-cluster-gateways
+  hostnames:
+    - 'argo.writemy.codes'
+
+  rules:
+    - backendRefs:
+        - name: argocd-server   
+          port: 80
