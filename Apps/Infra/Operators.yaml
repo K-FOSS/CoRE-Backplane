@@ -29,6 +29,13 @@ spec:
           - CreateNamespace=true
           - ServerSideApply=true
 
+      ignoreDifferences:
+        - group: operators.coreos.com
+          kind: ClusterServiceVersion
+          name: packageserver
+          jqPathExpressions:
+            - .spec.install.spec.deployments.[0].spec.template.metadata.creationTimestamp
+
       source:
         path: Operations/Operators
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
