@@ -1,0 +1,15 @@
+kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+metadata:
+  name: argocd
+
+spec:
+  parentRefs:
+    - name: main-gw
+  rules:
+    - backendRefs:
+        - group: multicluster.x-k8s.io
+          kind: ServiceImport
+          name: argocd-server
+          namespace: argocd
+          port: 80
