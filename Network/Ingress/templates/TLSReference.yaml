@@ -1,13 +1,14 @@
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: ReferenceGrant
+apiVersion: kuadrant.io/v1alpha1
+kind: TLSPolicy
 metadata:
-  name: gw-tls
-
+  name: prod-web
+  namespace: multi-cluster-gateways
 spec:
-  from:
-  - group: gateway.networking.k8s.io
+  targetRef:
+    name: auth-gw
+    group: gateway.networking.k8s.io
     kind: Gateway
-    namespace: multi-cluster-gateways
-  to:
-  - group: ""
-    kind: Secret
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: kjdev-cluster 
