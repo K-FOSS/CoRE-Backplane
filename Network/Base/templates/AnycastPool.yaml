@@ -7,7 +7,17 @@ spec:
   autoAssign: false
   addresses:
     - 10.1.1.0/24
-    - 66.165.222.125/32
+    - 66.165.222.96/27
+---
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: pub-pool
+spec:
+  autoAssign: false
+  avoidBuggyIPs: false
+  addresses:
+    - {{ .Values.pubPool }}
 ---
 apiVersion: purelb.io/v1
 kind: ServiceGroup
