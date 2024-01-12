@@ -7,15 +7,15 @@ metadata:
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
+    cluster.open-cluster-management.io/placement: 'auth-gw'
+    io.cilium/lb-ipam-sharing-key: auth-gw
 
 spec:
   gatewayClassName: kuadrant-multi-cluster-gateway-instance-per-cluster
 
-  infrastructure:
-    annotations:
-      metallb.universe.tf/loadBalancerIPs: 66.165.222.102
-      io.cilium/lb-ipam-sharing-key: auth-gw
-      io.cilium/lb-ipam-ips: 66.165.222.102
+  addresses:
+    - value: 66.165.222.102
+      type: IPAddress
 
   listeners:
     - name: https-intmyloginspace
