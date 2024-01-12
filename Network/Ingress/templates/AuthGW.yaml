@@ -34,3 +34,21 @@ spec:
         certificateRefs:
           - kind: Secret
             name: myloginspace-int-default-certificates
+
+    - name: https-writemycodes
+
+      port: 443
+      protocol: HTTP
+
+      hostname: '*.writemy.codes'
+      
+      allowedRoutes:
+        namespaces:
+          from: All
+      
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: writemycodes-default-certificates
+
