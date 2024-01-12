@@ -8,9 +8,6 @@ metadata:
   labels:
     kubernetes.io/metadata.name: {{ .name }}
 
-  annotations:
-    argocd.argoproj.io/hook: PreSync
-
 spec:
   finalizers:
   - kubernetes
@@ -204,4 +201,20 @@ spec:
           property: token
           remoteKey: Ops/Clusters/Hubs/{{ $.Values.clusterName }}/{{ .name }}
         secretKey: token
+---
+apiVersion: addon.open-cluster-management.io/v1alpha1
+kind: ManagedClusterAddOn
+metadata:
+  name: kuadrant-addon
+  namespace: {{ .name }}
+
+  annotations:
+    addon.open-cluster-management.io/values: |-
+      {
+        "CatalogSource":"kuadrant-operator-catalog",
+        "CatalogSourceNS":"operator-lifecycle-manager"
+      }
+
+spec:
+  installNamespace: open-cluster-management-agent-addo
 {{- end }}
