@@ -1,23 +1,42 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: auth-gw
-  namespace: multi-cluster-gateways
+  name: main-gw
+
+  annotations:
+    metallb.universe.tf/address-pool: 'pub-pool'
+    metallb.universe.tf/allow-shared-ip: 'main-gw'
+    io.cilium/lb-ipam-sharing-key: main-gw
 
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
-    cluster.open-cluster-management.io/placement: 'auth-gw'
-    io.cilium/lb-ipam-sharing-key: auth-gw
+    cluster.open-cluster-management.io/placement: 'main-gw'
 
 spec:
   gatewayClassName: kuadrant-multi-cluster-gateway-instance-per-cluster
 
-  addresses:
-    - value: 66.165.222.102
-      type: IPAddress
-
   listeners:
+    - name: https-myloginspace
+
+      port: 443
+      protocol: HTTPS
+
+      hostname: '*.mylogin.space'
+      
+      allowedRoutes:
+        namespaces:
+          from: All
+      
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: myloginspace-default-certificates
+            namespace: core-prod
+
+
+
     - name: https-intmyloginspace
 
       port: 443
@@ -35,6 +54,7 @@ spec:
           - kind: Secret
             name: myloginspace-int-default-certificates
             namespace: core-prod
+
 
     - name: https-writemycodes
 
