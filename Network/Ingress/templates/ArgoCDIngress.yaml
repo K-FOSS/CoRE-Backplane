@@ -2,14 +2,15 @@ kind: HTTPRoute
 apiVersion: gateway.networking.k8s.io/v1beta1
 metadata:
   name: argocd
-
+  namespace: argocd
 spec:
   parentRefs:
-    - name: main-gw
+    - kind: Gateway
+      name: main-gw
+      namespace: kuadrant-core-prod
   rules:
     - backendRefs:
         - group: multicluster.x-k8s.io
           kind: ServiceImport
           name: argocd-server
-          namespace: argocd
           port: 80
