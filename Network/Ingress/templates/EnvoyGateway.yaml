@@ -1,0 +1,18 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-config
+
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 3
+
+      # envoyService:
+      #   annotations:
+      #     custom1: svc-annotation1
+
+  extensionApis:
+    enableEnvoyPatchPolicy: true

@@ -16,8 +16,12 @@ metadata:
 spec:
   gatewayClassName: kuadrant-multi-cluster-gateway-instance-per-cluster
 
+  addresses:
+    - type: IPAddress
+      value: 66.165.222.103
+
   listeners:
-    - name: https-myloginspace
+    - name: myloginhttps
 
       port: 443
       protocol: HTTPS
@@ -37,7 +41,7 @@ spec:
 
 
 
-    - name: https-intmyloginspace
+    - name: intmyloginhttps
 
       port: 443
       protocol: HTTPS
@@ -56,17 +60,17 @@ spec:
             namespace: core-prod
 
 
-    - name: https-writemycodes
+    - name: writemycodeshttps
 
       port: 443
       protocol: HTTPS
 
       hostname: '*.writemy.codes'
-      
+
       allowedRoutes:
         namespaces:
           from: All
-      
+
       tls:
         mode: Terminate
         certificateRefs:
@@ -74,3 +78,33 @@ spec:
             name: writemycodes-default-certificates
             namespace: core-prod
 
+    - protocol: TLS # Other possible value is `TLS`
+      port: 443
+      hostname: '*.writemy.codes'
+      name: gitpodsroot
+      tls:
+        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
+
+    - protocol: TLS # Other possible value is `TLS`
+      port: 443
+      hostname: '*.gitpods.writemy.codes'
+      name: gitpodswild
+      tls:
+        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
+
+    - protocol: TLS # Other possible value is `TLS`
+      port: 443
+      hostname: '*.ws.gitpods.writemy.codes'
+      name: gitpodsws
+      tls:
+        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
+
+
+    - name: http
+      protocol: HTTP
+      port: 80
+
+
+    - name: minecraft
+      protocol: TCP
+      port: 25565
