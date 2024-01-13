@@ -188,7 +188,7 @@ controllers:
         #      value: '{{ .Release.Name }}'
         env:
           - name: PDNS_HOST
-            value: 'ns-admin-powerdns-admin.core-prod.svc.cluster.local'
+            value: '{{ .Release.Name }}-webservice.core-prod.svc.cluster.local'
 
           - name: PDNS_PORT
             value: '8081'
@@ -306,6 +306,8 @@ service:
 
     type: ClusterIP
 
+    primary: true
+
     ports:
       http:
         # -- Enables or disables the port
@@ -313,7 +315,7 @@ service:
 
         # -- Make this the primary port (used in probes, notes, etc...)
         # If there is more than 1 service, make sure that only 1 port is marked as primary.
-        primary: false
+        primary: true
 
         # -- The port number
         port: 80
@@ -462,6 +464,60 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:
+
+# -- Configure the gateway routes for the chart here.
+# Additional routes can be added by adding a dictionary key similar to the 'main' route.
+# [[ref]](https://gateway-api.sigs.k8s.io/references/spec/)
+# @default -- See below
+route:
+  nsadmin:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    # -- Override the name suffix that is used for this route.
+    nameOverride:
+
+    # -- Provide additional annotations which may be required.
+    annotations: {}
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+        # Kind of the referent resource.
+        kind: Gateway
+        # Name of the referent resource
+        name: kuadrant-core-prod
+        # Namespace of the referent resource
+        namespace: main-gw
+
+    # -- Host addresses. Helm template can be passed.
+    hostnames:
+      - ns.int.mylogin.space
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - # -- Configure backends where matching requests should be sent.
+        backendRefs: []
+        ## Configure conditions used for matching incoming requests. Only for HTTPRoutes
+        matches:
+          - path:
+              type: PathPrefix
+              value: /
+        ## Request filters that are applied to the rules.
+        filters: []
+        ## Request timeout that are applied to the rules.
+        timeouts: {}
 
 configMaps:
   config:
