@@ -78,24 +78,47 @@ spec:
             name: writemycodes-default-certificates
             namespace: core-prod
 
-    - protocol: TLS # Other possible value is `TLS`
+    - name: gitpodsroot
+    
       port: 443
+      protocol: TLS
+
       hostname: '*.writemy.codes'
-      name: gitpodsroot
+
+      allowedRoutes:
+        namespaces:
+          from: All
+
       tls:
         mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
 
-    - protocol: TLS # Other possible value is `TLS`
+
+    - name: gitpodswild
+    
       port: 443
+      protocol: TLS
+
       hostname: '*.gitpods.writemy.codes'
-      name: gitpodswild
+
+      allowedRoutes:
+        namespaces:
+          from: All
+
       tls:
         mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
 
-    - protocol: TLS # Other possible value is `TLS`
+
+    - name: gitpodsws
+    
       port: 443
+      protocol: TLS
+
       hostname: '*.ws.gitpods.writemy.codes'
-      name: gitpodsws
+
+      allowedRoutes:
+        namespaces:
+          from: All
+
       tls:
         mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
 
