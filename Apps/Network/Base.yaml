@@ -77,9 +77,17 @@ spec:
     spec:
       project: core
 
+      ignoreDifferences:
+        - group: admissionregistration
+          kind: MutatingWebhookConfiguration
+          jsonPointers:
+            - /webhooks/0/clientConfig/caBundle
+
       syncPolicy:
         syncOptions:
           - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+
 
       source:
         path: Network/Base
