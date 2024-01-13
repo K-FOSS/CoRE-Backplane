@@ -85,7 +85,7 @@ s3-proxy:
 
   imagePullSecrets: []
   nameOverride: ""
-  fullnameOverride: ""
+  fullnameOverride: traefik-core-s3-proxy
 
 
   service:
@@ -112,8 +112,7 @@ s3-proxy:
 
   # Existing secret
   # Will be mounted in /proxy/secret-files
-  existingSecret:
-    ""
+  existingSecret: 
     # Example
     # my-awesome-secret
 
@@ -137,88 +136,6 @@ s3-proxy:
     #     name: mysecret
     # - configMapRef:
     #     name: myconfigmap
-
-  #
-  # See configuration of project: https://oxyno-zeta.github.io/s3-proxy/
-  #
-  # Note: This is used mainly for configuration parts that cannot be hot reloaded.
-  #       For example, the server parts like SSL/TLS configuration, ...
-  #       Or simply because you prefer to have it static and force a force reload of application.
-  fixedConfigFiles:
-    {}
-    # server.yaml: |-
-    #   # Server configurations
-    #   # server:
-    #   #   # SSL/TLS configuration
-    #   #   ssl:
-    #   #     # Is SSL/TLS configuration enabled ?
-    #   #     enabled: true
-    #   #     # Certificates to serve when connected
-    #   #     certificates:
-    #   #       - # Note: Exactly one of certificate/certificateUrl and privateKey/privateKeyUrl must be specified.
-    #   #         # The PEM encoded certificate
-    #   #         certificate: |
-    #   #           -----BEGIN CERTIFICATE-----
-    #   #           ....
-    #   #           -----END CERTIFICATE-----
-    #   #         # The URL of a resource containing the certificate
-    #   #         # Check other URL types in documentation
-    #   #         certificateUrl: arn:aws:ssm:region:accountId:parameter/name
-    #   #         # Additional URL configuration if certificateUrl is an S3 URL
-    #   #         certificateUrlConfig:
-    #   #           # Timeout for HTTP connections (including AWS calls) to get SSL certificate/keys
-    #   #           httpTimeout:
-    #   #           # AWS region for S3/SSM/Secrets Manager-stored documents
-    #   #           awsRegion: us-east-1
-    #   #           # Custom endpoint for S3/SSM/Secrets Manager API calls
-    #   #           awsEndpoint:
-    #   #           # Credentials to access AWS-based documents
-    #   #           awsCredentials:
-    #   #             accessKey:
-    #   #               env: AWS_ACCESS_KEY_ID
-    #   #             secretKey:
-    #   #               path: secret_key_file
-    #   #           # Disable SSL for AWS API calls. This does not affect `https` URLs
-    #   #           awsDisableSSL: false
-    #   #         # The PEM encoded private key
-    #   #         privateKey: |
-    #   #           -----BEGIN RSA PRIVATE KEY-----
-    #   #           -----END RSA PRIVATE KEY-----
-    #   #         # Additional URL configuration if privateKeyUrl is an S3 URL
-    #   #         # Check other URL types in documentation
-    #   #         privateKeyUrl: arn:aws:secretsmanager:region:accountId:secret/name
-    #   #         # Additional URL configuration if privateKeyUrl is an S3 URL
-    #   #         privateKeyUrlConfig:
-    #   #           # Timeout for HTTP connections (including AWS calls) to get SSL certificate/keys
-    #   #           httpTimeout:
-    #   #           # AWS region for S3/SSM/Secrets Manager-stored documents
-    #   #           awsRegion: us-east-1
-    #   #           # Custom endpoint for S3/SSM/Secrets Manager API calls
-    #   #           awsEndpoint:
-    #   #           # Credentials to access AWS-based documents
-    #   #           awsCredentials:
-    #   #             accessKey:
-    #   #               env: AWS_ACCESS_KEY_ID
-    #   #             secretKey:
-    #   #               path: secret_key_file
-    #   #           # Disable SSL for AWS API calls. This does not affect `https` URLs
-    #   #           awsDisableSSL: false
-    #   #     # List of hostnames to generate self-signed certificates for
-    #   #     selfSignedHostnames:
-    #   #       - localhost
-    #   #       - localhost.localdomain
-    #   #     # The minimum TLS version to allow when a client connects
-    #   #     minTLSVersion: TLSv1.2
-    #   #     # The maximum TLS version to allow when a client connects
-    #   #     maxTLSVersion: TLSv1.3
-    #   #     # The TLS ciphers to enable
-    #   #     cipherSuites: # See https://pkg.go.dev/crypto/tls#pkg-constants for valid names; the current default is shown below.
-    #   #       - TLS_AES_128_GCM_SHA256
-    #   #       - TLS_AES_256_GCM_SHA384
-    #   #       - TLS_CHACHA20_POLY1305_SHA256
-    #   #       - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-    #   #       - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
-    #   #       - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
 
   #
   # See configuration of project: https://oxyno-zeta.github.io/s3-proxy/
@@ -422,238 +339,22 @@ s3-proxy:
 
       # Targets map
       targets:
-        {}
-        # first-bucket:
-        #   ## Mount point
-        #   mount:
-        #     path:
-        #       - /
-        #     # A specific host can be added for filtering. Otherwise, all hosts will be accepted
-        #     # host: localhost:8080
-        #   # ## Resources declaration
-        #   # ## WARNING: Think about all path that you want to protect. At the end of the list, you should add a resource filter for /* otherwise, it will be public.
-        #   # resources:
-        #   #   # A Path must be declared for a resource filtering (a wildcard can be added to match every sub path)
-        #   #   - path: /
-        #   #     # Whitelist
-        #   #     whiteList: true
-        #   #   # A Path must be declared for a resource filtering (a wildcard can be added to match every sub path)
-        #   #   - path: /specific_doc/*
-        #   #     # HTTP Methods authorized (Must be in GET, PUT or DELETE)
-        #   #     methods:
-        #   #       - GET
-        #   #       - PUT
-        #   #       - DELETE
-        #   #     # A authentication provider declared in section before, here is the key name
-        #   #     provider: provider1
-        #   #     # OIDC section for access filter
-        #   #     oidc:
-        #   #       # NOTE: This list can be empty ([]) for authentication only and no group filter
-        #   #       authorizationAccesses: # Authorization accesses : groups or email or regexp
-        #   #         - group: specific_users
-        #   #   # A Path must be declared for a resource filtering (a wildcard can be added to match every sub path)
-        #   #   - path: /directory1/*
-        #   #     # HTTP Methods authorized (Must be in GET, PUT or DELETE)
-        #   #     methods:
-        #   #       - GET
-        #   #       - PUT
-        #   #       - DELETE
-        #   #     # A authentication provider declared in section before, here is the key name
-        #   #     provider: provider1
-        #   #     # Basic authentication section
-        #   #     basic:
-        #   #       credentials:
-        #   #         - user: user1
-        #   #           password:
-        #   #             path: password1-in-file
-        #   #   # A Path must be declared for a resource filtering (a wildcard can be added to match every sub path)
-        #   #   - path: /opa-protected/*
-        #   #     # OIDC section for access filter
-        #   #     oidc:
-        #   #       # Authorization through OPA server configuration
-        #   #       authorizationOPAServer:
-        #   #         # OPA server url with data path
-        #   #         url: http://localhost:8181/v1/data/example/authz/allowed
-        #   #   # A Path must be declared for a resource filtering (a wildcard can be added to match every sub path)
-        #   #   - path: /specific_doc/*
-        #   #     # HTTP Methods authorized (Must be in GET, PUT or DELETE)
-        #   #     methods:
-        #   #       - GET
-        #   #       - PUT
-        #   #       - DELETE
-        #   #     # A authentication provider declared in section before, here is the key name
-        #   #     provider: provider1
-        #   #     # Header section for access filter
-        #   #     header:
-        #   #       # NOTE: This list can be empty ([]) for authentication only and no group filter
-        #   #       authorizationAccesses: # Authorization accesses : groups or email or regexp
-        #   #         - group: specific_users
-        #   #   # A Path must be declared for a resource filtering (a wildcard can be added to match every sub path)
-        #   #   - path: /opa-protected/*
-        #   #     # Header section for access filter
-        #   #     header:
-        #   #       # Authorization through OPA server configuration
-        #   #       authorizationOPAServer:
-        #   #         # OPA server url with data path
-        #   #         url: http://localhost:8181/v1/data/example/authz/allowed
-        #   # ## Actions
-        #   # actions:
-        #   #   # Action for GET requests on target
-        #   #   GET:
-        #   #     # Will allow GET requests
-        #   #     enabled: true
-        #   #     # Configuration for GET requests
-        #   #     config:
-        #   #       # Redirect with trailing slash when a file isn't found
-        #   #       redirectWithTrailingSlashForNotFoundFile: true
-        #   #       # Index document to display if exists in folder
-        #   #       indexDocument: index.html
-        #   #       # Allow to add headers to streamed files (can be templated)
-        #   #       streamedFileHeaders: {}
-        #   #       # Redirect to a S3 signed URL
-        #   #       redirectToSignedUrl: true
-        #   #       # Signed URL expiration time
-        #   #       signedUrlExpiration: 15m
-        #   #       # Disable listing
-        #   #       # Note: This will return an empty list or you should change the folder list template (in general or in this target)
-        #   #       disableListing: false
-        #   #       # Webhooks
-        #   #       webhooks: []
-        #   #   # Action for PUT requests on target
-        #   #   PUT:
-        #   #     # Will allow PUT requests
-        #   #     enabled: true
-        #   #     # Configuration for PUT requests
-        #   #     config:
-        #   #       # Metadata key/values that will be put on S3 objects.
-        #   #       # Values can be templated. Empty values will be flushed.
-        #   #       metadata:
-        #   #         key: value
-        #   #       # System Metadata cases.
-        #   #       # Values can be templated. Empty values will be flushed.
-        #   #       systemMetadata:
-        #   #         # Cache-Control value (will be put as header after)
-        #   #         cacheControl: ""
-        #   #         # Content-Disposition value (will be put as header after)
-        #   #         contentDisposition: ""
-        #   #         # Content-Encoding value (will be put as header after)
-        #   #         contentEncoding: ""
-        #   #         # Content-Language value (will be put as header after)
-        #   #         contentLanguage: ""
-        #   #         # Expires value (will be put as header after)
-        #   #         # Side note: This must have the RFC3339 date format at the end.
-        #   #         expires: ""
-        #   #       # Storage class that will be used for uploaded objects
-        #   #       # See storage class here: https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html
-        #   #       # Values can be templated. Empty values will be flushed.
-        #   #       storageClass: STANDARD # GLACIER, ...
-        #   #       # Will allow override objects if enabled
-        #   #       allowOverride: false
-        #   #       # Canned ACL put on each file uploaded.
-        #   #       # https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl
-        #   #       # cannedACL: ""
-        #   #       # Webhooks
-        #   #       webhooks: []
-        #   #   # Action for DELETE requests on target
-        #   #   DELETE:
-        #   #     # Will allow DELETE requests
-        #   #     enabled: true
-        #   #     # Configuration for DELETE requests
-        #   #     config:
-        #   #       # Webhooks
-        #   #       webhooks: []
-        #   # # Key rewrite list
-        #   # # This will allow to rewrite keys before doing any requests to S3
-        #   # # For more information about how this works, see in the documentation.
-        #   # keyRewriteList:
-        #   #   - # Source represents a Regexp (golang format with group naming support)
-        #   #     source: ^/(?P<one>\w+)/(?P<two>\w+)/(?P<three>\w+)?$
-        #   #     # Target type: Regex or Template
-        #   #     # Regex will allow to do a simple regex replace/update, like in the example
-        #   #     # Template will allow to do golang template replace, like this example as "target" value: {{ regexReplaceAll "/input1(/.*)" .Key (printf "/input1/%s${1}" .User.Username) }}
-        #   #     # targetType: REGEX # TEMPLATE
-        #   #     # Target represents the template of the new key that will be used
-        #   #     target: /$two/$one/$three/$one/
-        #   ## Target custom templates
-        #   # templates:
-        #   #   # Helpers
-        #   #   helpers:
-        #   #   - inBucket: false
-        #   #     path: ""
-        #   #   # Folder list template
-        #   #   folderList:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "200"
-        #   #   # Not found error template
-        #   #   notFoundError:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "404"
-        #   #   # Internal server error template
-        #   #   internalServerError:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "500"
-        #   #   # Forbidden error template
-        #   #   forbiddenError:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "403"
-        #   #   # Unauthorized error template
-        #   #   unauthorizedError:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "401"
-        #   #   # Bad Request error template
-        #   #   badRequestError:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "400"
-        #   #   # PUT template
-        #   #   put:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "204"
-        #   #   # DELETE template
-        #   #   delete:
-        #   #     inBucket: false
-        #   #     path: ""
-        #   #     headers: {}
-        #   #     status: "204"
-        #   ## Bucket configuration
-        #   bucket:
-        #     name: super-bucket
-        #     prefix:
-        #     region: eu-west-1
-        #     s3Endpoint:
-        #     disableSSL: false
-        #     # s3MaxUploadParts: 10000
-        #     # s3UploadPartSize: 5
-        #     # s3UploadConcurrency: 5
-        #     # s3UploadLeavePartsOnError: false
-        #     # s3ListMaxKeys: 1000
-        #     # credentials:
-        #     #   accessKey:
-        #     #     env: AWS_ACCESS_KEY_ID
-        #     #   secretKey:
-        #     #     path: secret_key_file
-        #     # requestConfig:
-        #     #   listHeaders:
-        #     #     Accept-Encoding: gzip
-        #     #   getHeaders:
-        #     #     Accept-Encoding: gzip
-        #     #   putHeaders:
-        #     #     Accept-Encoding: gzip
-        #     #   deleteHeaders:
-        #     #     Accept-Encoding: gzip
+        first-bucket:
+          ## Mount point
+          mount:
+            path:
+              - /
+          bucket:
+            name: baremetal
+            region: us-east-1
+            s3Endpoint: https://s3.mylogin.space
+            disableSSL: false
+            # s3ListMaxKeys: 1000
+            credentials:
+              accessKey:
+                path: /proxy/secret-files/S3AccessKey
+              secretKey:
+                path: /proxy/secret-files/S3SecretKey
 
   # Sidecars
   # The full container definition is available here.
