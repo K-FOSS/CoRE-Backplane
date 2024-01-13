@@ -32,6 +32,37 @@ spec:
         targetRevision: release-0.3
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |
+                apiVersion: kustomize.config.k8s.io/v1beta1
+                kind: Kustomization
+
+                configMapGenerator:
+                  - name: gateway-params
+                    literals:
+                      - params=|
+                          {
+                            "downstreamClass": "eg"
+                          }
+
+                patches:
+                  - target:
+                      group: gateway.networking.k8s.io
+                      version: v1
+                      kind: GatewayClass
+                      name: kuadrant-multi-cluster-gateway-instance-per-cluster   
+
+                    patch: |
+                      apiVersion: gateway.networking.k8s.io/v1
+                      kind: GatewayClass
+                      spec:
+                        controllerName: kuadrant.io/mgc-gw-controller
+                        parametersRef:
+                          group: ''
+                          kind: ConfigMap
+                          name: gateway-params
+                          namespace: multi-cluster-gateways
 
       destination:
         server: '{{url}}'
