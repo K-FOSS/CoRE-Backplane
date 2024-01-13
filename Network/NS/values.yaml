@@ -306,7 +306,7 @@ service:
 
     type: ClusterIP
 
-    primary: true
+    primary: false
 
     ports:
       http:
@@ -371,7 +371,7 @@ service:
     # -- Make this the primary service for this controller (used in probes, notes, etc...).
     # If there is more than 1 service targeting the controller, make sure that only 1 service is
     # marked as primary.
-    primary: false
+    primary: true
 
     # -- Set the service type
     type: LoadBalancer
@@ -505,17 +505,15 @@ route:
 
     # -- Configure rules for routing. Defaults to the primary service.
     rules:
-      - # -- Configure backends where matching requests should be sent.
-        backendRefs: []
-        ## Configure conditions used for matching incoming requests. Only for HTTPRoutes
-        matches:
+      - matches:
           - path:
               type: PathPrefix
               value: /
-        ## Request filters that are applied to the rules.
-        filters: []
-        ## Request timeout that are applied to the rules.
-        timeouts: {}
+        backendRefs:
+          - kind: Service
+            port: 80
+            name: nsadmin
+            weight: 1
 
 configMaps:
   config:
