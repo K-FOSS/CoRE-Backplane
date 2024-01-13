@@ -78,42 +78,10 @@ spec:
             name: writemycodes-default-certificates
             namespace: core-prod
 
-    - name: gitpodsroot
+    - name: tls
     
       port: 443
       protocol: TLS
-
-      hostname: '*.writemy.codes'
-
-      allowedRoutes:
-        namespaces:
-          from: All
-
-      tls:
-        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
-
-
-    - name: gitpodswild
-    
-      port: 443
-      protocol: TLS
-
-      hostname: '*.gitpods.writemy.codes'
-
-      allowedRoutes:
-        namespaces:
-          from: All
-
-      tls:
-        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
-
-
-    - name: gitpodsws
-    
-      port: 443
-      protocol: TLS
-
-      hostname: '*.ws.gitpods.writemy.codes'
 
       allowedRoutes:
         namespaces:
@@ -124,10 +92,38 @@ spec:
 
 
     - name: http
-      protocol: HTTP
+    
       port: 80
+      protocol: HTTP
+
+      allowedRoutes:
+        namespaces:
+          from: All
 
 
-    - name: minecraft
-      protocol: TCP
+    - name: minecraftjava
+    
       port: 25565
+      protocol: TCP
+
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: minecraftbedrocktcp
+    
+      port: 19132
+      protocol: TCP
+
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: minecraftbedrockudp
+    
+      port: 19132
+      protocol: UDP
+
+      allowedRoutes:
+        namespaces:
+          from: All
