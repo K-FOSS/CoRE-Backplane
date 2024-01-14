@@ -21,12 +21,10 @@ spec:
       value: 66.165.222.103
 
   listeners:
-    - name: myloginhttps
+    - name: https
 
       port: 443
       protocol: HTTPS
-
-      hostname: '*.mylogin.space'
       
       allowedRoutes:
         namespaces:
@@ -39,44 +37,26 @@ spec:
             name: myloginspace-default-certificates
             namespace: core-prod
 
-
-
-    - name: intmyloginhttps
-
-      port: 443
-      protocol: HTTPS
-
-      hostname: '*.int.mylogin.space'
-      
-      allowedRoutes:
-        namespaces:
-          from: All
-      
-      tls:
-        mode: Terminate
-        certificateRefs:
           - kind: Secret
             name: myloginspace-int-default-certificates
             namespace: core-prod
 
-
-    - name: writemycodeshttps
-
-      port: 443
-      protocol: HTTPS
-
-      hostname: '*.writemy.codes'
-
-      allowedRoutes:
-        namespaces:
-          from: All
-
-      tls:
-        mode: Terminate
-        certificateRefs:
           - kind: Secret
             name: writemycodes-default-certificates
             namespace: core-prod
+
+          - kind: Secret
+            name: accessmyporndownload-default-certificates
+            namespace: core-prod
+
+          - kind: Secret
+            name: ipaddrnetwork-default-certificates
+            namespace: core-prod
+
+          - kind: Secret
+            name: resolvemyhost-default-certificates
+            namespace: core-prod
+
 
     - name: tls
     
