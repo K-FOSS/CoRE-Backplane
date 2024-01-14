@@ -16,94 +16,127 @@ metadata:
 spec:
   gatewayClassName: kuadrant-multi-cluster-gateway-instance-per-cluster
 
-  addresses:
-    - type: IPAddress
-      value: 66.165.222.103
+  infrastructure:
+    annotations:
+      metallb.universe.tf/address-pool: pub-pool
+      metallb.universe.tf/allow-shared-ip: main-gw
 
   listeners:
-    - name: https
-
+    - name: httpsmylogin
+      hostname: '*.mylogin.space'
       port: 443
       protocol: HTTPS
-      
       allowedRoutes:
         namespaces:
           from: All
-      
       tls:
         mode: Terminate
         certificateRefs:
-          - kind: Secret
+          - group: ''
+            kind: Secret
             name: myloginspace-default-certificates
             namespace: core-prod
 
-          - kind: Secret
-            name: myloginspace-int-default-certificates
-            namespace: core-prod
 
-          - kind: Secret
-            name: writemycodes-default-certificates
-            namespace: core-prod
-
-          - kind: Secret
-            name: accessmyporndownload-default-certificates
-            namespace: core-prod
-
-          - kind: Secret
-            name: ipaddrnetwork-default-certificates
-            namespace: core-prod
-
-          - kind: Secret
-            name: resolvemyhost-default-certificates
-            namespace: core-prod
-
-
-    - name: tls
-    
+    - name: httpsargocodes
+      hostname: 'argo.writemy.codes'
       port: 443
-      protocol: TLS
-
+      protocol: HTTPS
       allowedRoutes:
         namespaces:
           from: All
-
       tls:
-        mode: Passthrough # If protocol is `TLS`, `Passthrough` is a possible mode
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: writemycodes-default-certificates
+            namespace: core-prod
+
+
+    - name: httpsgit
+      hostname: 'gitlab.git.writemy.codes'
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: writemycodes-default-certificates
+            namespace: core-prod
+
+
+    - name: tlsgitpods
+      hostname: gitpods.writemy.codes
+      port: 443
+      protocol: TLS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Passthrough
+
+
+    - name: tlsgitpodswild
+      hostname: '*.gitpods.writemy.codes'
+      port: 443
+      protocol: TLS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Passthrough
+
+
+    # 
+    # Int AAA
+    #
+
+    - name: httpsintmylogin
+      hostname: '*.int.mylogin.space'
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: myloginspace-int-default-certificates
+            namespace: core-prod
 
 
     - name: http
-    
       port: 80
       protocol: HTTP
-
       allowedRoutes:
         namespaces:
           from: All
 
 
     - name: minecraftjava
-    
       port: 25565
       protocol: TCP
-
       allowedRoutes:
         namespaces:
           from: All
 
     - name: minecraftbedrocktcp
-    
       port: 19132
       protocol: TCP
-
       allowedRoutes:
         namespaces:
           from: All
 
     - name: minecraftbedrockudp
-    
       port: 19132
       protocol: UDP
-
       allowedRoutes:
         namespaces:
           from: All
