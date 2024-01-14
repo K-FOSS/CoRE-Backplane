@@ -2,22 +2,22 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyPatchPolicy
 metadata:
   name: auth-gw
-  namespace: kuadrant-core-prod
+  namespace: kube-system
 spec:
   targetRef:
     group: gateway.networking.k8s.io
-    kind: Gateway
-    namespace: kuadrant-core-prod
-    name: main-gw
+    kind: GatewayClass
+    namespace: kube-system
+    name: eg
 
   type: JSONPatch
   jsonPatches:
     - type: type.googleapis.com/envoy.config.listener.v3.Listener
       # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
-      name: kuadrant-core-prod/main-gw/httpsintmylogin
+      name: kuadrant-core-prod-main-gw-httpsmylogin
       operation:
         op: add
-        path: "/default_filter_chain/filters/0/typed_config/httpFilters/1"
+        path: "/filterChains/3/filters/0/typed_config/httpFilters/1"
         value:
           name: envoy.filters.http.ext_authz
           typed_config:
