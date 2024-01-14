@@ -17,16 +17,15 @@ spec:
       name: kuadrant-core-prod/main-gw/httpsintmylogin
       operation:
         op: add
-        path: "/default_filter_chain/filters/0/typed_config/local_reply_config"
+        path: "/default_filter_chain/filters/0/typed_config/httpFilters/1"
         value:
-          mappers:
-          - filter:
-              status_code_filter:
-                comparison:
-                 op: EQ
-                 value:
-                   default_value: 404
-                   runtime_key: key_b
-            status_code: 406
-            body:
-              inline_string: "could not find what you are looking for"
+          name: envoy.filters.http.ext_authz
+          typed_config:
+            '@type': >-
+              type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+            grpc_service:
+              google_grpc:
+                statPrefix: listener-insecure
+                target_uri: >-
+                  authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
+            transport_api_version: V3
