@@ -136,6 +136,10 @@ spec:
             - mountPath: /etc/caddy/vhosts
               name: vhosts
 
+            - mountPath: /etc/caddy/Caddyfile
+              name: config
+              subPath: Caddyfile
+
             - mountPath: /etc/caddy/certificates
               name: config-certificates
 
@@ -172,6 +176,10 @@ spec:
         - configMap:
             name: proxy-config
           name: vhosts
+
+        - configMap:
+            name: caddyproxy-config
+          name: config
 
         - name: config-certificates
           secret:
