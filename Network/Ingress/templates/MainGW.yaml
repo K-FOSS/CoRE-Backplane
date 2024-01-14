@@ -53,6 +53,20 @@ spec:
             name: writemycodes-default-certificates
             namespace: core-prod
 
+    - name: httpsregistrycodes
+      hostname: 'registry.writemy.codes'
+      port: 443
+      protocol: HTTPS
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: writemycodes-default-certificates
+            namespace: core-prod
 
     - name: httpsgit
       hostname: 'gitlab.git.writemy.codes'
