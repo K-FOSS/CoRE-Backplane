@@ -3530,15 +3530,11 @@ metallb:
   speaker:
     enabled: false
 
-    # command: /speaker
-
-    # -- Speaker log level. Must be one of: `all`, `debug`, `info`, `warn`, `error` or `none`
-    logLevel: info
-
-    tolerateMaster: true
+    excludeInterfaces:
+      enabled: false
 
     memberlist:
-      enabled: true
+      enabled: false
       mlBindPort: 7946
 
     image:
@@ -3604,16 +3600,9 @@ metallb:
     # frr contains configuration specific to the MetalLB FRR container,
     # for speaker running alongside FRR.
     frr:
-      enabled: true
+      enabled: false
 
-      image:
-        repository: frrouting/frr
-        tag: v7.5.1
-        pullPolicy:
 
-      metricsPort: 7473
-
-      resources: {}
 
       # if set, enables a rbac proxy sidecar container on the speaker to
       # expose the frr metrics via tls.
