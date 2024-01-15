@@ -22,12 +22,42 @@ spec:
           - name: envoy.filters.http.ext_authz
             typed_config:
               '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
-              grpc_service:
-                google_grpc:
-                  statPrefix: listener-insecure
-                  target_uri: >-
-                    authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
               transport_api_version: V3
+              failure_mode_allow: true
+              filter_enabled_metadata:
+                filter: envoy.filters.http.ext_authz
+                invert: false
+                path:
+                  - key: mykey_flow
+                value:
+                  bool_match: true
+              http_service:
+                server_uri:
+                  uri: http://k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
+                  cluster: httproute/core-prod/authentik/rule/0 # A cluster representing the external auth server is needed (see the 'clusters' section bellow)
+                  timeout: 0.250s
+                path_prefix: /outpost.goauthentik.io/auth/envoy
+                authorization_request:
+                  allowed_headers:
+                    patterns:
+                      - exact: accept
+                      - exact: cookie
+                      - exact: proxy-authorization
+                authorization_response:
+                  allowed_upstream_headers:
+                    patterns:
+                      - exact: authorization
+                      - exact: proxy-authorization
+                      - prefix: remote-
+                      - prefix: x-authentik-*
+                      - prefix: authentik
+                  allowed_client_headers:
+                    patterns:
+                      - exact: set-cookie
+                  allowed_client_headers_on_success:
+                    patterns:
+                      - exact: set-cookie
+
 
           - name: envoy.filters.http.router
             typed_config:

@@ -1,25 +1,34 @@
-apiVersion: authorino.kuadrant.io/v1beta2
-kind: AuthConfig
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
 metadata:
-  name: static-test
-
+  name: testing-authlabel
+  namespace: kuadrant-core-prod
 spec:
-  hosts:
-    - 'static.int.mylogin.space'
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: kuadrant-core-prod
+    name: main-gw
 
-  authentication:
-    authentik:
-      jwt:
-        issuerUrl: 'https://idp.mylogin.space/application/o/authstuff/'
+  type: JSONPatch
+  jsonPatches:
+    - type: type.googleapis.com/envoy.config.route.v3.RouteConfiguration
+      # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
+      name: kuadrant-core-prod/main-gw/https
+      operation:
+        op: add
+        path: /virtual_hosts
+        value: 
+          - domains:
+              - static.int.mylogin.space
+            name: testing
+            routes:
+              - match:
+                  prefix: /
+                metadata:
+                  filter_metadata:
+                    envoy.filters.http.ext_authz: {"mykey_flow": true}
+                name: testing
+                route:
+                  cluster: httproute/core-prod/passwords-ingress/rule/0
 
-  response:
-    unauthorized:
-      headers:
-        'content-type':
-          value: application/json
-      body:
-        value: |
-          {
-            "error": "Forbidden",
-            "message": "Access denied by default by the gateway operator. If you are the administrator of the service, create a specific auth policy for the route."
-          }
