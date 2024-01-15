@@ -137,10 +137,10 @@ minecraft-proxy:
     # Options like -X that need to proceed general JVM options
     jvmXXOpts: ""
 
-    serviceType: LoadBalancer
+    serviceType: ClusterIP
     ## Set the port used if the serviceType is NodePort
     # nodePort:
-    loadBalancerIP: 66.165.222.101
+    loadBalancerIP: ''
 
     # loadBalancerSourceRanges: []
 
@@ -243,9 +243,7 @@ minecraft-proxy:
 
   deploymentAnnotations: {}
 
-  serviceAnnotations:
-    metallb.universe.tf/allow-shared-ip: istio
-    io.cilium/lb-ipam-sharing-key: public-gw
+  serviceAnnotations: {}
 
   rconServiceAnnotations: {}
 

@@ -1,0 +1,16 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: {{ .Release.Name }}-bedrock
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: kuadrant-core-prod
+      name: main-gw
+      sectionName: minecraftbedrocktcp
+
+  rules:
+    - backendRefs:
+      - name: {{ .Release.Name }}-minecraft-proxy
+        port: 19132
