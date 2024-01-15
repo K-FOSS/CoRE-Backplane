@@ -22,7 +22,7 @@ spec:
       metallb.universe.tf/allow-shared-ip: main-gw
 
   listeners:
-    - name: httpsmylogin
+    - name: https
       hostname: '*.mylogin.space'
       port: 443
       protocol: HTTPS
@@ -37,20 +37,14 @@ spec:
             name: myloginspace-default-certificates
             namespace: core-prod
 
-
-    - name: httpswritemycodes
-      hostname: '*.writemy.codes'
-      port: 443
-      protocol: HTTPS
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
           - group: ''
             kind: Secret
             name: writemycodes-default-certificates
+            namespace: core-prod
+
+          - group: ''
+            kind: Secret
+            name: myloginspace-int-default-certificates
             namespace: core-prod
 
           #
@@ -61,25 +55,6 @@ spec:
             name: https-certificates
             namespace: core-prod
 
-
-    # 
-    # Int AAA
-    #
-
-    - name: httpsintmylogin
-      hostname: '*.int.mylogin.space'
-      port: 443
-      protocol: HTTPS
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - group: ''
-            kind: Secret
-            name: myloginspace-int-default-certificates
-            namespace: core-prod
 
 
     - name: http
