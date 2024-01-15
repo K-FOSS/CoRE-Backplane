@@ -444,36 +444,10 @@ artifact-hub:
   # Extra objects to deploy (value evaluated as a template)
   extraDeploy: []
 
-
-fullname: gitlab-prod
-
 gitlab:
   enabled: true
 
   nameOverride: 'gitlab-prod'
-
-  ## NOTICE
-  #
-  # Due to the scope and complexity of this chart, all possible values are
-  # not documented in this file. Extensive documentation is available.
-  #
-  # Please read the docs: https://docs.gitlab.com/charts/
-  #
-  # Because properties are regularly added, updated, or relocated, it is
-  # _strongly suggest_ to not "copy and paste" this YAML. Please provide
-  # Helm only those properties you need, and allow the defaults to be
-  # provided by the version of this chart at the time of deployment.
-
-  ## Advanced Configuration
-  ## https://docs.gitlab.com/charts/advanced
-  #
-  # Documentation for advanced configuration, such as
-  # - External PostgreSQL
-  # - External Gitaly
-  # - External Redis
-  # - External NGINX
-  # - External Object Storage providers
-  # - PersistentVolume configuration
 
   ## The global properties are used to configure multiple charts at once.
   ## https://docs.gitlab.com/charts/charts/globals
@@ -483,10 +457,6 @@ gitlab:
     common:
       labels: {}
 
-    image: {}
-      # pullPolicy: IfNotPresent
-      # pullSecrets: []
-
     ## Supplemental Pod labels. Will not be used for selectors.
     pod:
       labels:
@@ -494,9 +464,6 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/installation/deployment#deploy-the-community-edition
     edition: ce
-
-    ## https://docs.gitlab.com/charts/charts/globals#gitlab-version
-    # gitlabVersion: 15.1.0
 
     ## https://docs.gitlab.com/charts/charts/globals#application-resource
     application:
@@ -508,68 +475,11 @@ gitlab:
     hosts:
       domain: git.writemy.codes
 
-      hostSuffix:
-
       https: true
-
-      externalIP:
-
-      ssh: ~
-
-      gitlab: {}
-
-      minio: {}
-
-      registry: {}
-
-      tls: {}
-
-      smartcard: {}
-
-      kas: {}
-
-      pages: {}
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
     ingress:
-      apiVersion: ''
-      configureCertmanager: false
-
-      # class:
-      annotations: {}
-
       enabled: false
-
-    # Override the API version to use for HorizontalPodAutoscaler
-    hpa:
-      apiVersion: ""
-  
-    # Override the API version to use for PodDisruptionBudget
-    pdb:
-      apiVersion: ""
-  
-    # Override the API version to use for CronJob
-    batch:
-      cronJob:
-        apiVersion: ""
-
-    gitlab:
-      ## Enterprise license for this GitLab installation
-      ## Secret created according to https://docs.gitlab.com/charts/installation/secrets#initial-enterprise-license
-      ## If allowing shared-secrets generation, this is OPTIONAL.
-      license: {}
-        # secret: RELEASE-gitlab-license
-        # key: license
-
-    ## Initial root password for this GitLab installation
-    ## Secret created according to https://docs.gitlab.com/charts/installation/secrets#initial-root-password
-    ## If allowing shared-secrets generation, this is OPTIONAL.
-    initialRootPassword: {}
-      # secret: RELEASE-gitlab-initial-root-password
-      # key: password
-
-
-
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
@@ -610,8 +520,8 @@ gitlab:
 
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
-    gitaly:
-      serviceName: gitlab-prod-gitaly
+    #gitaly:
+    #  serviceName: gitlab-prod-gitaly
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-redis-settings
     redis:
@@ -624,12 +534,12 @@ gitlab:
     praefect:
       enabled: true
 
-      serviceName: gitlab-prod-praefect
+      #serviceName: gitlab-prod-praefect
 
       replaceInternalGitaly: true
 
-      gitaly:
-        serviceName: gitlab-prod-gitaly
+      #gitaly:
+      #  serviceName: gitlab-prod-gitaly
 
       authToken: {}
 
@@ -743,9 +653,6 @@ gitlab:
 
       lfs:
         enabled: true
-
-        proxy_download: true
-
         bucket: 623579a1-8adc-0b12-dd3f-f24793c3a00f-imy3gs
 
         connection: {}
@@ -754,7 +661,6 @@ gitlab:
 
       artifacts:
         enabled: true
-        proxy_download: true
         bucket: 56c4bfd0-20f8-93d7-476f-a86435dde7df-w8qn40
         connection: {}
           # secret:
@@ -762,7 +668,6 @@ gitlab:
 
       uploads:
         enabled: true
-        proxy_download: true
         bucket: gitlab-uploads
         connection: {}
           # secret:
@@ -770,14 +675,11 @@ gitlab:
 
       packages:
         enabled: true
-        proxy_download: true
         bucket: gitlab-packages
         connection: {}
 
       externalDiffs:
         enabled: false
-        when:
-        proxy_download: true
         bucket: 4781a816-7416-d012-9a2a-6dbe65624e17-ykv7qk
         connection: {}
 
@@ -793,23 +695,12 @@ gitlab:
 
       dependencyProxy:
         enabled: true
-        proxy_download: false
         bucket: b5085eee-d81c-6a15-4a33-6a32a2c325d0-9ejn31
         connection: {}
 
       backups:
         bucket: gitlab-backups
         tmpBucket: tmp
-
-
-      ## https://docs.gitlab.com/charts/installation/command-line-options.html#incoming-email-configuration
-      ## https://docs.gitlab.com/charts/charts/gitlab/mailroom/index.html#incoming-email
-      incomingEmail:
-        enabled: false
-
-      ## https://docs.gitlab.com/charts/charts/gitlab/mailroom/index.html#service-desk-email
-      serviceDeskEmail:
-        enabled: false
 
       ## https://docs.gitlab.com/charts/charts/globals#ldap
       ldap:
@@ -864,41 +755,10 @@ gitlab:
         providers:
           - secret: gitlab-oidc-prod
 
-
-      ## https://docs.gitlab.com/charts/charts/globals#configure-appconfig-settings
-      sentry:
-        enabled: false
-        dsn:
-        clientside_dsn:
-        environment:
-
       gitlab_docs:
         enabled: false
         host: ""
 
-      smartcard:
-        enabled: false
-        CASecret:
-        clientCertificateRequiredHost:
-        sanExtensions: false
-        requiredForGitAccess: false
-
-
-      sidekiq:
-        routingRules: []
-
-      # Config that only applies to the defaults on initial install
-      initialDefaults: {}
-        # signupEnabled:
-    ## End of global.appConfig
-
-    oauth:
-      gitlab-pages: {}
-        # secret:
-        # appIdKey:
-        # appSecretKey:
-        # redirectUri:
-        # authScope:
 
     ## https://docs.gitlab.com/charts/advanced/geo/
     geo:
@@ -979,16 +839,12 @@ gitlab:
     pages:
       enabled: false
       accessControl: false
-      path:
-      host:
-      port:
       https: # default true
       externalHttp: []
       externalHttps: []
       artifactsServer: true
       localStore:
         enabled: false
-        # path: /srv/gitlab/shared/pages
 
       objectStore:
         enabled: true
@@ -998,14 +854,6 @@ gitlab:
         connection: {}
           # secret:
           # key:
-
-      apiSecret: {}
-        # secret:
-        # key:
-
-      authSecret: {}
-        # secret:
-        # key:
 
 
     ## GitLab Runner
@@ -1056,7 +904,7 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#configure-workhorse-settings
     ## Global settings related to Workhorse
     workhorse:
-      serviceName: webservice-default
+      #serviceName: webservice-default
       # scheme:
       #host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
       #port:
@@ -1099,34 +947,6 @@ gitlab:
       connection:
         string: ""
       urlTemplate: ""
-
-    ## https://docs.gitlab.com/charts/charts/globals
-    extraEnv:
-      GITLAB_TRACING: opentracing://jaeger?http_endpoint=http%3A%2F%2Fcore-tempo-distributor.core-prod.svc.k0s.resolvemy.host%3A14268%2Fapi%2Ftraces&sampler=const&sampler_param=0.5
-    #   SOME_KEY: some_value
-    #   SOME_OTHER_KEY: some_other_value
-
-    ## https://docs.gitlab.com/charts/charts/globals
-    extraEnvFrom:
-      
-    #   MY_NODE_NAME:
-    #     fieldRef:
-    #       fieldPath: spec.nodeName
-    #   MY_CPU_REQUEST:
-    #     resourceFieldRef:
-    #       containerName: test-container
-    #       resource: requests.cpu
-    #   SECRET_THING:
-    #     secretKeyRef:
-    #       name: special-secret
-    #       key: special_token
-    #       # optional: boolean
-    #   CONFIG_STRING:
-    #     configMapKeyRef:
-    #       name: useful-config
-    #       key: some-string
-    #       # optional: boolean
-  ## End of global
 
   upgradeCheck:
     enabled: false
@@ -1198,8 +1018,6 @@ gitlab:
 
     metrics:
       enabled: true
-      ## Optionally define additional custom metrics
-      ## ref: https://github.com/wrouesnel/postgres_exporter#adding-new-metrics-via-a-config-file
 
   ## Installation & configuration charts/registry
   ## https://docs.gitlab.com/charts/architecture/decisions#registry
@@ -1270,6 +1088,9 @@ gitlab:
               Insecure = false
               ServerAddress = "s3.mylogin.space:443"
 
+  gitaly:
+    serviceName: gitlab-prod-gitaly
+
   ## Settings for individual sub-charts under GitLab
   ## Note: Many of these settings are configurable via globals
   gitlab:
@@ -1299,7 +1120,7 @@ gitlab:
     kas:
       workhorse:
         host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
-        serviceName: k0s-cntrl-development-webservice-default
+        #serviceName: k0s-cntrl-development-webservice-default
         port: 8181
 
 
@@ -1327,17 +1148,6 @@ gitlab:
     #   nameOverride: gitlab-prod-shell
     #   global:
     #     nameOverride: gitlab-prod-shell
-      
-
-    gitaly:
-  #    workhorse:
-  #      serviceName: k0s-cntrl-development-webservice-default
-  #      port: 8181
-      
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
 
     toolbox:
       enabled: true
@@ -1367,8 +1177,6 @@ gitlab:
           config:
             secret: gitlab-s3-backups-prod
             key: config
-
-fullnameOverride: harbor-core
 
 harbor:
   fullnameOverride: testing123
