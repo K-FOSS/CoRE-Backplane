@@ -2,30 +2,33 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyPatchPolicy
 metadata:
   name: auth-gw
-  namespace: kube-system
+  namespace: kuadrant-core-prod
 spec:
   targetRef:
     group: gateway.networking.k8s.io
-    kind: GatewayClass
-    namespace: kube-system
-    name: eg
+    kind: Gateway
+    namespace: kuadrant-core-prod
+    name: main-gw
 
   type: JSONPatch
   jsonPatches:
     - type: type.googleapis.com/envoy.config.listener.v3.Listener
       # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
-      name: kuadrant-core-prod-main-gw-httpsmylogin
+      name: kuadrant-core-prod/main-gw/https
       operation:
         op: add
-        path: "/filterChains/3/filters/0/typed_config/httpFilters/1"
+        path: /filterChains/0/filters/0/typed_config/httpFilters
         value:
-          name: envoy.filters.http.ext_authz
-          typed_config:
-            '@type': >-
-              type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
-            grpc_service:
-              google_grpc:
-                statPrefix: listener-insecure
-                target_uri: >-
-                  authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
-            transport_api_version: V3
+          - name: envoy.filters.http.ext_authz
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+              grpc_service:
+                google_grpc:
+                  statPrefix: listener-insecure
+                  target_uri: >-
+                    authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
+              transport_api_version: V3
+
+          - name: envoy.filters.http.router
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
