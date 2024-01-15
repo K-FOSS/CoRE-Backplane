@@ -2,18 +2,18 @@
 apiVersion: v1
 kind: Service
 metadata:
+  name: ide-proxy
+
   labels:
     app: gitpod
     component: ide-proxy
     kind: service
-  name: ide-proxy
-  namespace: core-prod
 spec:
   ports:
     - name: http
       port: 80
-      protocol: TCP
       targetPort: 80
+      protocol: TCP
 
   selector:
     app: gitpod

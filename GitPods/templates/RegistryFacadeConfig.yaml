@@ -1,5 +1,14 @@
 # v1/ConfigMap registry-facade
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: registry-facade
+
+  labels:
+    app: gitpod
+    component: registry-facade
+
+  # TODO: Move the images over to Renovate management
 data:
   config.json: |-
     {
@@ -41,11 +50,3 @@ data:
       "prometheusAddr": "127.0.0.1:9500",
       "readinessProbeAddr": ":8086"
     }
-kind: ConfigMap
-metadata:
-  creationTimestamp: null
-  labels:
-    app: gitpod
-    component: registry-facade
-  name: registry-facade
-  namespace: core-prod

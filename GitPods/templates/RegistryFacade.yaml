@@ -2,11 +2,11 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  name: registry-facade
+
   labels:
     app: gitpod
     component: registry-facade
-  name: registry-facade
-  namespace: core-prod
 spec:
   selector:
     matchLabels:
@@ -35,6 +35,7 @@ spec:
       containers:
         - name: registry-facade
 
+          # TODO: Move this over to Renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/registry-facade:commit-1c8e2ad0b16fbfef87968573eb853c322c8d2513
           imagePullPolicy: IfNotPresent
 

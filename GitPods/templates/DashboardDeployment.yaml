@@ -2,11 +2,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: dashboard
+
   labels:
     app: gitpod
     component: dashboard
-  name: dashboard
-  namespace: core-prod
+
 spec:
   replicas: 1
   selector:
@@ -36,6 +37,7 @@ spec:
       containers:
         - name: dashboard
 
+          # TODO: Move this over to Renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/dashboard:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
           imagePullPolicy: IfNotPresent
 
@@ -64,8 +66,8 @@ spec:
               value: debug
           
           ports:
-            - containerPort: 80
-              name: http
+            - name: http
+              containerPort: 80
 
           readinessProbe:
             failureThreshold: 3
@@ -79,6 +81,7 @@ spec:
             requests:
               cpu: 100m
               memory: 32Mi
+
           securityContext:
             privileged: false
 
