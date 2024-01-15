@@ -2,11 +2,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: content-service
+  namespace: core-prod
+
   labels:
     app: gitpod
     component: content-service
-  name: content-service
-  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -42,6 +43,7 @@ spec:
       containers:
         - name: content-service
 
+          # TODO: Move this over to Renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/content-service:commit-922c9e8fceace4abc3ed37e92baaee6f10e6a4b7
           imagePullPolicy: IfNotPresent
 
@@ -104,12 +106,12 @@ spec:
 
           volumeMounts:
 
-            - mountPath: /config
-              name: config
+            - name: config
+              mountPath: /config
               readOnly: true
 
-            - mountPath: /mnt/secrets/storage
-              name: storage-volume
+            - name: storage-volume
+              mountPath: /mnt/secrets/storage
               readOnly: true
 
       dnsPolicy: ClusterFirst
@@ -118,9 +120,9 @@ spec:
       serviceAccountName: content-service
       terminationGracePeriodSeconds: 30
       volumes:
-        - configMap:
+        - name: config
+          configMap:
             name: content-service
-          name: config
 
         - name: storage-volume
           secret:

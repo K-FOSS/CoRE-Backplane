@@ -1,5 +1,12 @@
 # v1/ConfigMap openvsx-proxy-config
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: openvsx-proxy-config
+
+  labels:
+    app: gitpod
+    component: openvsx-proxy
 data:
   config.json: |-
     {
@@ -10,15 +17,7 @@ data:
       "url_local": "https://open-vsx.gitpods.writemy.codes",
       "max_idle_conns": 1000,
       "max_idle_conns_per_host": 1000,
-      "redis_addr": "10.1.1.68:6379",
+      "redis_addr": "redis.mylogin.space:6379",
       "prometheusAddr": ":9500"
     }
   redis.conf: "\nmaxmemory 100mb\nmaxmemory-policy allkeys-lfu\n\t"
-kind: ConfigMap
-metadata:
-  creationTimestamp: null
-  labels:
-    app: gitpod
-    component: openvsx-proxy
-  name: openvsx-proxy-config
-  namespace: core-prod

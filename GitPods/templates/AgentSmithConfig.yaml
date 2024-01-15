@@ -1,5 +1,13 @@
 # v1/ConfigMap agent-smith
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: agent-smith
+  namespace: core-prod
+
+  labels:
+    app: gitpod
+    component: agent-smith
 data:
   config.json: |-
     {
@@ -28,11 +36,3 @@ data:
       "pprofAddr": "localhost:6060",
       "prometheusAddr": "localhost:9500"
     }
-kind: ConfigMap
-metadata:
-  creationTimestamp: null
-  labels:
-    app: gitpod
-    component: agent-smith
-  name: agent-smith
-  namespace: core-prod

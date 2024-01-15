@@ -2,11 +2,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: server
+  namespace: core-prod
+
   labels:
     app: gitpod
     component: server
-  name: server
-  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -39,6 +40,7 @@ spec:
       containers:
         - name: server
 
+          # TODO: Move this to renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/server:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
           imagePullPolicy: IfNotPresent
 
@@ -184,12 +186,15 @@ spec:
             - mountPath: /config
               name: config
               readOnly: true
+
             - mountPath: /ide-config
               name: ide-config
               readOnly: true
+
             - mountPath: /ws-manager-client-tls-certs
               name: ws-manager-client-tls-certs
               readOnly: true
+
             - mountPath: /gitpod/auth-providers/gitlab-auth
               name: auth-provider-0
               readOnly: true
@@ -273,6 +278,7 @@ spec:
 
         - name: msgbus-waiter
 
+          # TODO: Move this to Renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/service-waiter:commit-df6f9b5ab510202c5719724d67c00bff8ee83000
 
           args:

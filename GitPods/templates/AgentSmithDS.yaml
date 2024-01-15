@@ -2,18 +2,20 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
+  name: agent-smith
+
   annotations:
     gitpod.io/checksum_config: 8844a70ad63dd38c01df5c620461eb34fd52f2104b1da196c8fe504b4ab6f0ba
+
   labels:
     app: gitpod
     component: agent-smith
-  name: agent-smith
-  namespace: core-prod
 spec:
   selector:
     matchLabels:
       app: gitpod
       component: agent-smith
+
   template:
     metadata:
       labels:
@@ -36,6 +38,7 @@ spec:
       containers:
         - name: agent-smith
 
+          # TODO: Move this to Renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/agent-smith:commit-922c9e8fceace4abc3ed37e92baaee6f10e6a4b7
           imagePullPolicy: IfNotPresent
 
@@ -46,26 +49,36 @@ spec:
           env:
             - name: GITPOD_DOMAIN
               value: gitpods.writemy.codes
+
             - name: GITPOD_INSTALLATION_SHORTNAME
               value: default
+
             - name: GITPOD_REGION
               value: us-east-1
+
             - name: HOST_URL
               value: https://gitpods.writemy.codes
+
             - name: KUBE_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+
             - name: KUBE_DOMAIN
               value: svc.k0s.resolvemy.host
+
             - name: LOG_LEVEL
               value: debug
+
             - name: JAEGER_ENDPOINT
               value: http://k0s-dc1-tempo-core-tempo-distributed-distributor-core-prod.service.dc1.kjdev:14268/api/traces
+
             - name: JAEGER_SAMPLER_TYPE
               value: const
+
             - name: JAEGER_SAMPLER_PARAM
               value: "0.025"
+
             - name: NODENAME
               valueFrom:
                 fieldRef:
@@ -75,9 +88,11 @@ spec:
             requests:
               cpu: 10m
               memory: 32Mi
+
           securityContext:
             privileged: true
             procMount: Default
+
           volumeMounts:
             - mountPath: /config
               name: config
@@ -121,8 +136,9 @@ spec:
       serviceAccountName: agent-smith
       terminationGracePeriodSeconds: 30
       volumes:
-        - configMap:
+        - name: config
+          configMap:
             name: agent-smith
-          name: config
+          
 
   updateStrategy: {}

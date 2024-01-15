@@ -1,5 +1,14 @@
 # v1/ConfigMap server-config
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-config
+  namespace: core-prod
+
+  labels:
+    app: gitpod
+    component: server
+
 data:
   config.json: |-
     {
@@ -106,11 +115,3 @@ data:
         "*": 50
       }
     }
-kind: ConfigMap
-metadata:
-  creationTimestamp: null
-  labels:
-    app: gitpod
-    component: server
-  name: server-config
-  namespace: core-prod

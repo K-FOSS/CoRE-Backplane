@@ -2,11 +2,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: blobserve
+
   labels:
     app: gitpod
     component: blobserve
-  name: blobserve
-  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -38,6 +38,7 @@ spec:
       containers:
         - name: blobserve
 
+          # TODO: Move this over to Renovate
           image: registry.writemy.codes/workspaces/gitpod-core-dev/build/blobserve:commit-1c8e2ad0b16fbfef87968573eb853c322c8d2513
           imagePullPolicy: IfNotPresent
 
