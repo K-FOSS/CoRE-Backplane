@@ -1,13 +1,12 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: coredns
+
   labels:
     k0s.k0sproject.io/stack: coredns
     k8s-app: kube-dns
     kubernetes.io/name: CoreDNS
-  name: coredns
-  namespace: kube-system
-
 spec:
   progressDeadlineSeconds: 600
   
@@ -29,6 +28,7 @@ spec:
     metadata:
       labels:
         k8s-app: kube-dns
+
     spec:
       topologySpreadConstraints:
         - maxSkew: 1
@@ -142,18 +142,21 @@ spec:
           operator: Exists
 
       volumes:
-        - configMap:
+        - name: config-volume
+          configMap:
             defaultMode: 420
             items:
               - key: Corefile
                 path: Corefile
             name: coredns
-          name: config-volume
+          
 
-        - secret:
+        - name: k0s-volume
+          secret:
             secretName: k0s-kubeconfig
-          name: k0s-volume
+          
 
-        - secret:
+        - name: infra1-volume
+          secret:
             secretName: infra1-kubeconfig
-          name: infra1-volume
+          
