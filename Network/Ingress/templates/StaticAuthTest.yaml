@@ -1,10 +1,16 @@
-apiVersion: authorino.kuadrant.io/v1beta2
-kind: AuthConfig
+apiVersion: kuadrant.io/v1beta2
+kind: AuthPolicy
 metadata:
-  name: static-test
+  name: gw-noauth
+
 spec:
-  hosts:
-  - test.mylogin.space
-  authentication:
-    "public":
-      anonymous: {}
+ targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: auth-route
+
+  rules:
+    authentication:
+      'authentik':
+        jwt:
+          issuerUrl: 
