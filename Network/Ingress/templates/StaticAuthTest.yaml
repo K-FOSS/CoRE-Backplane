@@ -1,16 +1,25 @@
-apiVersion: kuadrant.io/v1beta2
-kind: AuthPolicy
+apiVersion: authorino.kuadrant.io/v1beta2
+kind: AuthConfig
 metadata:
-  name: auth-lab
+  name: static-test
 
 spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: auth-route
+  hosts:
+    - 'static.int.mylogin.space'
 
-  rules:
-    authentication:
-      authentik:
-        jwt:
-          issuerUrl: 'https://idp.mylogin.space/application/o/authstuff/'
+  authentication:
+    authentik:
+      jwt:
+        issuerUrl: 'https://idp.mylogin.space/application/o/authstuff/'
+
+    response:
+      unauthorized:
+        headers:
+          'content-type':
+            value: application/json
+        body:
+          value: |
+            {
+              "error": "Forbidden",
+              "message": "Access denied by default by the gateway operator. If you are the administrator of the service, create a specific auth policy for the route."
+            }

@@ -1,15 +1,14 @@
-apiVersion: kuadrant.io/v1beta2
-kind: AuthPolicy
+apiVersion: authorino.kuadrant.io/v1beta2
+kind: AuthConfig
 metadata:
-  name: gw-noauth
+  name: defaultallow
 
 spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: main-gw
+  hosts:
+    - '*'
 
-  rules:
-    authentication:
-      "public":
-        anonymous: {}
+  authentication:
+    public:
+      anonymous: {}
+      credentials:
+        authorizationHeader: {}
