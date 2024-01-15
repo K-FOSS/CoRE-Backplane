@@ -1,0 +1,15 @@
+apiVersion: kuadrant.io/v1beta1
+kind: AuthPolicy
+metadata:
+  name: gw-noauth
+
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: main-gw
+
+  rules:
+    authentication:
+      "public":
+        anonymous: {}
