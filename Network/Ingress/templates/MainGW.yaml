@@ -38,8 +38,8 @@ spec:
             namespace: core-prod
 
 
-    - name: httpsargocodes
-      hostname: 'argo.writemy.codes'
+    - name: httpswritemycodes
+      hostname: '*.writemy.codes'
       port: 443
       protocol: HTTPS
       allowedRoutes:
@@ -53,57 +53,13 @@ spec:
             name: writemycodes-default-certificates
             namespace: core-prod
 
-    - name: httpsregistrycodes
-      hostname: 'registry.writemy.codes'
-      port: 443
-      protocol: HTTPS
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
+          #
+          # GitPods Certs
+          #
           - group: ''
             kind: Secret
-            name: writemycodes-default-certificates
+            name: https-certificates
             namespace: core-prod
-
-    - name: httpsgit
-      hostname: 'gitlab.git.writemy.codes'
-      port: 443
-      protocol: HTTPS
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
-          - group: ''
-            kind: Secret
-            name: writemycodes-default-certificates
-            namespace: core-prod
-
-
-    - name: tlsgitpods
-      hostname: gitpods.writemy.codes
-      port: 443
-      protocol: TLS
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Passthrough
-
-
-    - name: tlsgitpodswild
-      hostname: '*.gitpods.writemy.codes'
-      port: 443
-      protocol: TLS
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Passthrough
 
 
     # 
@@ -141,12 +97,14 @@ spec:
         namespaces:
           from: All
 
+
     - name: minecraftbedrocktcp
       port: 19132
       protocol: TCP
       allowedRoutes:
         namespaces:
           from: All
+
 
     - name: minecraftbedrockudp
       port: 19132
