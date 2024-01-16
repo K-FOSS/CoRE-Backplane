@@ -1,3 +1,271 @@
+controllers:
+  main:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    containers:
+      main:
+        image:
+          repository: ghcr.io/hanazuki/s3tftpd
+          tag: latest
+          pullPolicy: IfNotPresent
+
+        # -- Override the args for the default container
+        args: 
+          - --endpoint-url=$(S3_ENDPOINT)
+          - s3://$(S3_BUCKET)
+
+        env:
+          - name: S3_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-s3'
+                key: Endpoint
+
+          - name: S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-s3'
+                key: Bucket
+
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-s3'
+                key: AccessKey
+
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-s3'
+                key: SecretKey
+
+        # -- Override the working directory for the default container
+        workingDir: /etc/pdns
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+
+  idrac:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    containers:
+      main:
+        image:
+          repository: domistyle/idrac6
+          tag: latest
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: IDRAC_HOST
+            value: 172.31.241.234
+
+          - name: IDRAC_USER
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dellbmc'
+                key: SecretKey
+
+          - name: IDRAC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dellbmc'
+                key: SecretKey
+
+
+        # -- Override the working directory for the default container
+        workingDir: /etc/pdns
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+
+service:
+  main:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: main
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: ClusterIP
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    externalTrafficPolicy: Local
+
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: false
+      
+      tftp-udp:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 69
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: UDP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:
+
+  idrac:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: idrac
+
+    # -- Set the service type
+    type: ClusterIP
+
+    ports:      
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 5800
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: http
+
+      vnc:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: false
+
+        # -- The port number
+        port: 5900
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: rfb
+
+# -- Configure the gateway routes for the chart here.
+# Additional routes can be added by adding a dictionary key similar to the 'main' route.
+# [[ref]](https://gateway-api.sigs.k8s.io/references/spec/)
+# @default -- See below
+route:
+  nsadmin:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: UDPRoute
+
+    # -- Provide additional annotations which may be required.
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: static.mylogin.space
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+
+        # Kind of the referent resource.
+        kind: Gateway
+
+        # Name of the referent resource
+        name: main-gw
+
+        sectionName: tftp
+
+        # Namespace of the referent resource
+        namespace: kuadrant-core-prod
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 69
+            name: main
+            weight: 1
+
+
 stack:
   stack:
     enabled: true
