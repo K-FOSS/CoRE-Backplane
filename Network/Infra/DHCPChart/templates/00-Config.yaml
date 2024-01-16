@@ -449,6 +449,16 @@ data:
           // Global bootfile name to be set in the 'file' field.
           "client-classes": [
             {
+              "name": "tinkerbell",
+              "test": "substring(option[77].hex,0,10) == 'Tinkerbell'",
+              "boot-file-name": "http://10.1.1.66/auto.ipxe"
+            },
+            {
+                "name": "default",
+                "test": "not(substring(option[77].hex,0,10) == 'Tinkerbell')",
+                "boot-file-name": "ipxe.efi"
+            },
+            {
               "name": "ubnt",
               "test": "substring(option[60].hex,0,4) == 'ubnt'",
               "option-def": [
@@ -632,6 +642,17 @@ data:
             {
               "library": "/usr/lib/kea/hooks/libdhcp_stat_cmds.so",
               "parameters": {}
+            },
+            {   
+              "library": "/usr/lib/kea/hooks/libdhcp_flex_option.so",
+              "parameters": {
+                "options": [
+                  {
+                    "code": 67,
+                    "add": "ifelse(option[host-name].exists,concat(option[host-name].text,'.boot'),'')"
+                  }
+                ]
+              }
             }
           ],
           // List of access credentials to external sources of IPv4 reservations,
@@ -1224,7 +1245,7 @@ data:
                       "hw-address": "f0:4d:a2:09:60:ba",
                       "hostname": "infra2",
                       "ip-address": "172.16.20.140",
-                      "next-server": "10.1.1.83",
+                      "next-server": "66.165.222.102",
                       "boot-file-name": "ipxe.efi",
                       "option-data": [
                       ]
