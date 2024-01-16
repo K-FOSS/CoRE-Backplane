@@ -23,7 +23,9 @@ spec:
 
     spec:
       containers:
-        - env:
+        - image: ghcr.io/goauthentik/proxy
+          name: proxy
+          env:
           - name: AUTHENTIK_HOST
             valueFrom:
               secretKeyRef:
@@ -39,13 +41,12 @@ spec:
           - name: AUTHENTIK_INSECURE
             value: 'false'
 
-        image: ghcr.io/goauthentik/proxy
-        name: proxy
-        ports:
-          - containerPort: 9000
-            name: http
-            protocol: TCP
 
-          - containerPort: 9443
-            name: https
-            protocol: TCP
+          ports:
+            - containerPort: 9000
+              name: http
+              protocol: TCP
+
+            - containerPort: 9443
+              name: https
+              protocol: TCP
