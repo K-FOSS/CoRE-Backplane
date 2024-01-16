@@ -2,18 +2,16 @@
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    metallb.universe.tf/allow-shared-ip: istio
   name: s3tftp
 
 spec:
-  loadBalancerIP: 66.165.222.101
-
   ports:
     - name: udp-tftp
       port: 69
       protocol: UDP
       targetPort: udp-tftp
+
   selector:
     app: s3tftp
-  type: LoadBalancer
+
+  type: ClusterIP

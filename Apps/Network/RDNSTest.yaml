@@ -10,7 +10,7 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
-            loadBalancerIP: 10.1.1.53
+            loadBalancerIP: 10.1.1.51
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
@@ -21,7 +21,7 @@ spec:
   
   template:
     metadata:
-      name: '{{cluster}}-rdns-lab'
+      name: '{{cluster}}-rdns'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -53,16 +53,19 @@ spec:
                                 - key: app.kubernetes.io/instance
                                   operator: In
                                   values:
-                                    - '{{cluster}}-rdns-lab'
+                                    - '{{cluster}}-rdns'
                             topologyKey: kubernetes.io/hostname
 
                   serviceType: LoadBalancer
                   service:
                     annotations:
-                      purelb.io/service-group: anycast
-                    name: test-dns-rdns-core
+                      metallb.universe.tf/loadBalancerIPs: '10.1.1.53,{{ loadBalancerIP }}'
+                      metallb.universe.tf/allow-shared-ip: rdns
+
+                      io.cilium/lb-ipam-ips: '10.1.1.53,{{ loadBalancerIP }}'
+                      io.cilium/lb-ipam-sharing-key: rdns
+                    name: rdns
                     externalTrafficPolicy: Local
-                    loadBalancerIP: '{{loadBalancerIP}}'
 
 
 
