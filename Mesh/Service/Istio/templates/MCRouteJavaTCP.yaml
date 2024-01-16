@@ -2,6 +2,14 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TCPRoute
 metadata:
   name: {{ .Release.Name }}-javatcp
+
+  labels:
+    wan-mode: public
+    lan-mode: private
+
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: mc.mylogin.space,createmc.mylogin.space
+  
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io

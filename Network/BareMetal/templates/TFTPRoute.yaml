@@ -1,23 +1,24 @@
 apiVersion: gateway.networking.k8s.io/v1alpha2
-kind: TCPRoute
+kind: UDPRoute
 metadata:
-  name: {{ .Release.Name }}-bedrock
+  name: {{ .Release.Name }}-s3tftp
 
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: mcbedrock.mylogin.space
+    external-dns.alpha.kubernetes.io/hostname: tftp.mylogin.space
   
   labels:
     wan-mode: public
     lan-mode: private
+
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
       namespace: kuadrant-core-prod
       name: main-gw
-      sectionName: minecraftbedrocktcp
+      sectionName: minecraftbedrockudp
 
   rules:
     - backendRefs:
-      - name: {{ .Release.Name }}-minecraft-proxy
+      - name: s3tftp
         port: 19132
