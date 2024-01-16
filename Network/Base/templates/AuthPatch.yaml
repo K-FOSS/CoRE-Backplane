@@ -24,21 +24,9 @@ spec:
               '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
               inline_code: |
                 function envoy_on_request(request_handle)
-                  local path = request_handle:headers():get(":path")
-                  local authheader = request_handle:headers():get(":proxy-auth-mode")
                   local md = request_handle:metadata():get("mykey_flow1")
 
-                  if authheader == "required" then
-                    request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
-                  end
-
                   if md == true then
-                    request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
-                  end
-
-
-                  if path == "/echo/v1/sample-with-auth"
-                  or path == "another_one" then
                     request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
                   end
                 end
