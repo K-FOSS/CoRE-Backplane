@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-idrac
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: infra1-dc1
+            url: https://172.18.0.1:443
+            environment: 'prod'
+  template:
+    metadata:
+      name: '{{cluster}}-idrac'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        path: Libraries/iDRACUI
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                iDRACs:
+                  - name: infra2
+                    IP: 172.31.241.234
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod

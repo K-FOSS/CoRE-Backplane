@@ -1,0 +1,117 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+# Set the nameOverride based on the release name if no override has been set
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: "{{ .Release.Name }}"
+{{ end }}
+
+controllers:
+{{ range .Values.iDRACs }}
+  {{ .name }}:
+    containers:
+      main:
+        image:
+          repository: domistyle/idrac6
+          tag: latest
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: IDRAC_HOST
+            value: {{ .IP }}
+
+          - name: IDRAC_USER
+            valueFrom:
+              secretKeyRef:
+                name: 'dellbmc'
+                key: SecretKey
+
+          - name: IDRAC_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: 'dellbmc'
+                key: SecretKey
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+
+service:
+  {{ .name }}:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: idrac
+
+    # -- Set the service type
+    type: ClusterIP
+
+    ports:      
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 5800
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: http
+
+      vnc:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: false
+
+        # -- The port number
+        port: 5900
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: rfb
+
+{{- end -}}
+
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{/* Render the templates */}}
+{{ include "bjw-s.common.loader.generate" . }}
