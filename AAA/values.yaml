@@ -161,40 +161,7 @@ authentik:
                     - authentik
             topologyKey: kubernetes.io/hostname
 
-  # -- nodeSelector applied to the deployments
-  nodeSelector: {}
 
-  resources:
-    server: {}
-    worker: {}
-
-  # WARNING! When initially deploying, authentik has to do a few DB migrations. This may cause it to die from probe
-  # failure, but will continue on reboot. You can disable this during deployment if this is not desired
-  livenessProbe:
-    # -- enables or disables the livenessProbe
-    enabled: true
-    httpGet:
-      # -- liveness probe url path
-      path: /-/health/live/
-      port: http
-    initialDelaySeconds: 50
-    periodSeconds: 30
-    failureThreshold: 5
-    timeoutSeconds: 5
-
-  readinessProbe:
-    enabled: true
-    httpGet:
-      path: /-/health/ready/
-      port: http
-    initialDelaySeconds: 50
-    periodSeconds: 10
-
-  serviceAccount:
-    # -- Service account is needed for managed outposts
-    create: false
-
-    name: ''
 
   prometheus:
     serviceMonitor:
