@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    metallb.universe.tf/allow-shared-ip: tink
+
+  name: server-main
+spec:
+  loadBalancerIP: 10.1.1.66
+  ports:
+    - name: http
+      port: 42113
+      protocol: TCP
+      targetPort: 42113
+
+  selector:
+    app: tink-server
+  sessionAffinity: None
+  type: LoadBalancer
