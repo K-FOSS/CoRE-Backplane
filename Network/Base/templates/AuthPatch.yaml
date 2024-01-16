@@ -24,7 +24,12 @@ spec:
               '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
               inline_code: |
                 function envoy_on_request(request_handle)
+                  local host = request_handle:headers():get(":authority")
                   local md = request_handle:metadata():get("mykey_flow1")
+
+                  if string.find(host, "-private") then 
+                    request_handle:respond({[":status"] = "403"}, "nope")
+                  end
 
                   if md == true then
                     request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
@@ -43,8 +48,8 @@ spec:
                   bool_match: true
               http_service:
                 server_uri:
-                  uri: http://k0s-cntrl-aaa-authentik.core-prod.svc.k0s.resolvemy.host
-                  cluster: httproute/core-prod/authentik/rule/0 # A cluster representing the external auth server is needed (see the 'clusters' section bellow)
+                  uri: http://authentik-outpost.kube-system.svc.cluster.local
+                  cluster: httproute/kube-system/authentik/rule/0
                   timeout: 0.250s
                 path_prefix: /outpost.goauthentik.io/auth/envoy
                 authorization_request:
