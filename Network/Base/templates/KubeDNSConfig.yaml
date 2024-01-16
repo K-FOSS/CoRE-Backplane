@@ -13,7 +13,7 @@ data:
         ready
 
         prometheus :9153
-        fanout . 1.1.1.1:53 1.0.0.1:53 10.1.1.50:53
+        fanout . 10.1.1.53:53 1.1.1.1:53 1.0.0.1:53
         cache 300 {
           prefetch 500 5s
           serve_stale 60s
@@ -56,38 +56,10 @@ data:
         fallthrough in-addr.arpa ip6.arpa cluster.local
       }
 
-      fanout in-addr.arpa 10.1.1.150:53 10.1.1.151:53 1.1.1.1:53 1.0.0.1:53 8.8.8.8:53
+      fanout in-addr.arpa 10.1.1.150:53 10.1.1.53:53 1.1.1.1:53 1.0.0.1:53 8.8.8.8:53
 
       cache 300 {
         prefetch 500 5s
         serve_stale 60s
       }
     }
-
-
-    kristianjones.dev. kjmedia.stream. mylogin.space. trackmy.finance. ksit.services. writemy.codes. ipaddr.network. resolvemy.host. syncmy.date. central.maven.org. {
-      errors
-
-      fanout . 10.1.1.150:53 10.1.1.151:53 10.1.1.50:53 10.1.1.53:53
-    
-      cache 300 {
-        prefetch 500 5s
-        serve_stale 60s
-      }
-    }
-
-    
-
-    kjdev {
-      errors
-
-      fanout . 10.1.1.60:53 10.1.1.61:53 {
-        network TCP
-      }
-    
-      cache 300 {
-        prefetch 500 5s
-        serve_stale 60s
-      }
-    }
-
