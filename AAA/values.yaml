@@ -18,22 +18,8 @@ authentik:
     # -- worker replicas
     replicas: 2
 
-  image:
-  #  repository: ghcr.io/goauthentik/dev-server
-  #  tag: gh-main-1663317257-3e0778fe313b2e175965ae1ae69584837eede6d6
-    pullPolicy: Always
-    pullSecrets: []
-
-  # -- See https://github.com/k8s-at-home/library-charts/tree/main/charts/stable/common#values
-  initContainers: {}
-
-  # -- See https://github.com/k8s-at-home/library-charts/tree/main/charts/stable/common#values
-  additionalContainers: {}
-
   podLabels:
     logs: loki-myloginspace
-
-  podAnnotations: {}
 
   ingress:
     enabled: false
@@ -58,7 +44,7 @@ authentik:
       password: ""
 
       # -- Enable either use_tls or use_ssl, they can't be enabled at the same time.
-      use_tls: false
+      use_tls: true
 
       # -- Enable either use_tls or use_ssl, they can't be enabled at the same time.
       use_ssl: false
@@ -68,14 +54,6 @@ authentik:
 
       # -- Email from address, can either be in the format "foo@bar.baz" or "authentik <foo@bar.baz>"
       from: bots@mylogin.space
-
-    outposts:
-      # -- Template used for managed outposts. The following placeholders can be used
-      # %(type)s - the type of the outpost
-      # %(version)s - version of your authentik install
-      # %(build_hash)s - only for beta versions, the build hash of the image
-      container_image_base: ghcr.io/goauthentik/%(type)s:%(version)s
-
 
     error_reporting:
       # -- This sends anonymous usage-data, stack traces on errors and
@@ -108,9 +86,6 @@ authentik:
     AUTHENTIK_REDIS__MESSAGE_QUEUE_DB: '2'
     AUTHENTIK_REDIS__WS_DB: '3'
     AUTHENTIK_REDIS__OUTPOST_SESSION_DB: '4'
-  # AUTHENTIK_VAR_NAME: VALUE
-
-  envFrom: []
 
   envValueFrom:
     AUTHENTIK_SECRET_KEY:
@@ -142,26 +117,6 @@ authentik:
     port: 80
     name: http
     protocol: TCP
-
-  volumes: []
-
-  volumeMounts: []
-
-  # -- affinity applied to the deployments
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/name
-                  operator: In
-                  values:
-                    - authentik
-            topologyKey: kubernetes.io/hostname
-
-
 
   prometheus:
     serviceMonitor:
