@@ -19,14 +19,36 @@ spec:
         op: add
         path: /filter_chains/0/filters/0/typed_config/http_filters
         value:
+          - name: envoy.filters.http.lua
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+              inline_code: |
+                function envoy_on_request(request_handle)
+                  local path = request_handle:headers():get(":path")
+                  local authheader = request_handle:headers():get(":proxy-auth-mode")
+                  local md = request_handle:metadata():get("mykey_flow1")
+
+                  if authheader == "required" then
+                    request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
+                  end
+
+                  if md == true then
+                    request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
+                  end
+
+
+                  if path == "/echo/v1/sample-with-auth"
+                  or path == "another_one" then
+                    request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
+                  end
+                end
+
           - name: envoy.filters.http.ext_authz
             typed_config:
               '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
               transport_api_version: V3
-              failure_mode_allow: true
               filter_enabled_metadata:
                 filter: envoy.filters.http.ext_authz
-                invert: false
                 path:
                   - key: mykey_flow
                 value:

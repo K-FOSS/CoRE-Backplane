@@ -17,18 +17,14 @@ spec:
       name: kuadrant-core-prod/main-gw/https
       operation:
         op: add
-        path: /virtual_hosts
+        path: /virtual_hosts/0
         value: 
-          - domains:
-              - static.int.mylogin.space
-            name: testing
-            routes:
-              - match:
-                  prefix: /
-                metadata:
-                  filter_metadata:
-                    envoy.filters.http.ext_authz: {"mykey_flow": true}
-                name: testing
-                route:
-                  cluster: httproute/core-prod/passwords-ingress/rule/0
-
+          domains:
+            - '*'
+          name: staticmain
+          routes:
+            - match:
+                prefix: /outpost.goauthentik.io
+              name: aaamain
+              route:
+                cluster: httproute/core-prod/authentik/rule/0
