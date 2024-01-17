@@ -34,7 +34,7 @@ spec:
       containers:
         - name: docker-registry
           
-          image: registry:2.7.1
+          image: registry:2.8
           imagePullPolicy: IfNotPresent
           
           command:
@@ -47,13 +47,13 @@ spec:
 
           livenessProbe:
             httpGet:
-              scheme: HTTPS
+              scheme: HTTP
               path: /
               port: 5000
 
           readinessProbe:
             httpGet:
-              scheme: HTTPS
+              scheme: HTTP
               path: /
               port: 5000
 
@@ -66,12 +66,6 @@ spec:
                 secretKeyRef:
                   name: registry-secret
                   key: haSharedSecret
-
-            - name: REGISTRY_HTTP_TLS_CERTIFICATE
-              value: /etc/ssl/docker/tls.crt
-
-            - name: REGISTRY_HTTP_TLS_KEY
-              value: /etc/ssl/docker/tls.key
 
             - name: REGISTRY_STORAGE_S3_ACCESSKEY
               valueFrom:
@@ -103,15 +97,8 @@ spec:
           volumeMounts:
             - name: "registry-config"
               mountPath: "/etc/docker/registry"
-            - mountPath: /etc/ssl/docker
-              name: tls-cert
-              readOnly: true
 
       volumes:
         - name: registry-config
           configMap:
             name: registry-config
-
-        - name: tls-cert
-          secret:
-            secretName: builtin-registry-certs
