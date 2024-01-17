@@ -1834,10 +1834,9 @@ metadata:
 apiVersion: v1
 data:
   vhost.docker-registry: |-
-    https://registry.gitpods.writemy.codes {
+    http://registry.gitpods.writemy.codes {
         import enable_log
         import remove_server_header
-        import ssl_configuration
 
         basicauth bcrypt "Docker Registry" {
             1PIpa2NafWRrCQXVyFcU JDJhJDEwJDY0SkRWT2F2Tm9ML0czV3ZFdFdXNi5rejE0M1J6dW5OYkZoeEhVVGlWblZhek1ZL1lxUTVp
@@ -1851,41 +1850,11 @@ data:
         }
     }
   vhost.empty: '# Placeholder to avoid errors loading files using a glob pattern'
-  vhost.ide-proxy: |-
-    https://ide.gitpods.writemy.codes {
-        import enable_log_debug
-        import remove_server_header
-        import ssl_configuration
 
-        reverse_proxy  {
-            to ide-proxy.core-prod.svc.k0s.resolvemy.host:80
-        }
-    }
-  vhost.minio: |-
-    https://minio.gitpods.writemy.codes {
-        import enable_log
-        import remove_server_header
-        import ssl_configuration
-
-        reverse_proxy minio.core-prod.svc.k0s.resolvemy.host:9001 {
-            flush_interval -1
-        }
-    }
-  vhost.open-vsx: |-
-    https://open-vsx.gitpods.writemy.codes {
-        import enable_log_debug
-        import remove_server_header
-        import ssl_configuration
-
-        reverse_proxy  {
-            to openvsx-proxy.core-prod.svc.k0s.resolvemy.host:8080
-        }
-    }
   vhost.payment-endpoint: |-
-    https://payment.gitpods.writemy.codes {
+    http://payment.gitpods.writemy.codes {
         import enable_log
         import remove_server_header
-        import ssl_configuration
         import debug_headers
 
         reverse_proxy payment-endpoint.core-prod.svc.k0s.resolvemy.host:3002 {
