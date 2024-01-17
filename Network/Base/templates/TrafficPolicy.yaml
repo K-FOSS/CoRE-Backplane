@@ -1,0 +1,15 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: default-ipv-policy
+  namespace: kuadrant-core-prod
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    namespace: kuadrant-core-prod
+    name: main-gw
+
+  timeout:
+    tcp:
+      connectTimeout: 120s
