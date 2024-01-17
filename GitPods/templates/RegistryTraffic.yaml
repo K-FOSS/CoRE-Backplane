@@ -1,0 +1,16 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: gitpods-registry-timeout
+spec:
+  timeout:
+    tcp:
+      connectTimeout: 0s
+    http:
+      maxConnectionDuration: 0s
+
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: gitpods-registry
+    namespace: core-prod
