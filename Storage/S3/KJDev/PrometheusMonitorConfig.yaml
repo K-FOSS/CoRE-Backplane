@@ -2,7 +2,7 @@ apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: minio-prometheus-sync
-  namespace: 
+
 spec:
   secretStoreRef:
     name: vault-backend
@@ -13,7 +13,6 @@ spec:
     template:
       engineVersion: v2
       data:
-        token: '{{ .Token }}'
         config.env: |
           - job_name: kjdev-core-minio-job
             authorization:
@@ -29,5 +28,5 @@ spec:
   data:
     - secretKey: Token
       remoteRef:
-        key: Minio
-        property: AccessToken
+        key: Minio/Prometheus
+        property: Token

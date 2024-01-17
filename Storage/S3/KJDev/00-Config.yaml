@@ -4,8 +4,9 @@ metadata:
   name: minio-tenant-sync
 spec:
   secretStoreRef:
-    name: vault-backend
     kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
   target:
     creationPolicy: Owner
     name: kjdev-core-env-configuration
@@ -15,7 +16,7 @@ spec:
         config.env: |
           export MINIO_BROWSER="on"
 
-          export MINIO_ROOT_USER="{{ .RootUser }}"
+          export MINIO_ROOT_USER="{{ .RootUsername }}"
 
           export MINIO_PROMETHEUS_URL="https://metrics.mylogin.space/prometheus"
 
@@ -23,7 +24,7 @@ spec:
 
           export MINIO_IDENTITY_OPENID_CONFIG_URL="https://idp.mylogin.space/application/o/S3/.well-known/openid-configuration"
 
-          export MINIO_IDENTITY_OPENID_CLIENT_SECRET="{{ .OpenIDClientSecret }}"
+          export MINIO_IDENTITY_OPENID_CLIENT_SECRET="{{ .OIDCClientSecret }}"
 
           export MINIO_IDENTITY_OPENID_SCOPES="openid,profile,email,minio"
 
@@ -31,39 +32,28 @@ spec:
 
           export MINIO_STORAGE_CLASS_STANDARD="EC:2"
 
-          export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OpenIDClientID }}"
+          export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OIDCClientID }}"
 
           export MINIO_IDENTITY_OPENID_REDIRECT_URI="https://s3.int.mylogin.space/oauth_callback"
   data:
-    - secretKey: OpenIDClientID
+    - secretKey: OIDCClientID
       remoteRef:
-        key: MinioOperator
-        property: OpenIDClientID
+        key: Minio/OIDC
+        property: ClientID
 
-    - secretKey: OpenIDClientSecret
+    - secretKey: OIDCClientSecret
       remoteRef:
-        key: MinioOperator
-        property: OpenIDClientSecret
+        key: Minio/OIDC
+        property: ClientSecret
 
     # Root
   
-    - secretKey: RootUser
+    - secretKey: RootUsername
       remoteRef:
-        key: MinioOperator
-        property: RootUser
+        key: Minio/General
+        property: RootUsername
 
     - secretKey: RootPassword
       remoteRef:
-        key: MinioOperator
+        key: Minio/General
         property: RootPassword
-
-
-    - secretKey: MinioUser
-      remoteRef:
-        key: MinioOperator
-        property: MinioUser
-
-    - secretKey: MinioPassword
-      remoteRef:
-        key: MinioOperator
-        property: MinioPassword
