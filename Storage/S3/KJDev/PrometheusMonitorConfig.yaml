@@ -13,18 +13,7 @@ spec:
     template:
       engineVersion: v2
       data:
-        token: {{ .Token }}
-        config.env: |
-          - job_name: kjdev-core-minio-job
-            authorization:
-              credentials: {{ .Token }}
-            metrics_path: /minio/v2/metrics/cluster
-            scheme: http
-            scrape_interval: 15s
-            scrape_timeout: 30s
-            static_configs:
-              - targets:
-                  - kjdev-core-console.core-prod.svc.k0s.resolvemy.host:9090
+        token: '{{ .Token }}'
 
   data:
     - secretKey: Token
