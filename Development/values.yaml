@@ -520,9 +520,6 @@ gitlab:
 
       replaceInternalGitaly: true
 
-      gitaly:
-        serviceName: gitlab-prod-gitaly
-
       authToken: {}
 
       autoMigrate: true
@@ -661,17 +658,17 @@ gitlab:
         connection: {}
 
       externalDiffs:
-        enabled: false
+        enabled: true
         bucket: 4781a816-7416-d012-9a2a-6dbe65624e17-ykv7qk
         connection: {}
 
       terraformState:
-        enabled: false
+        enabled: true
         bucket: 29f1e5ee-1b9c-14da-cc79-6ebe911caa7b-p3e18b
         connection: {}
 
       ciSecureFiles:
-        enabled: false
+        enabled: true
         bucket: gitlab-ci-secure-files
         connection: {}
 
@@ -1070,9 +1067,6 @@ gitlab:
               Insecure = false
               ServerAddress = "s3.mylogin.space:443"
 
-  gitaly:
-    serviceName: gitlab-prod-gitaly
-
   ## Settings for individual sub-charts under GitLab
   ## Note: Many of these settings are configurable via globals
   gitlab:
@@ -1098,13 +1092,6 @@ gitlab:
         enabled: true
         serviceMonitor:
           enabled: true
-  
-    kas:
-      workhorse:
-        #host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
-        #serviceName: k0s-cntrl-development-webservice-default
-        port: 8181
-
 
     praefect:
       enabled: true
