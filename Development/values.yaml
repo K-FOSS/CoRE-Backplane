@@ -447,15 +447,10 @@ artifact-hub:
 gitlab:
   enabled: true
 
-  nameOverride: 'gitlab-prod'
-  fullnameOverride: 'gitlab-prod'
-
   ## The global properties are used to configure multiple charts at once.
   ## https://docs.gitlab.com/charts/charts/globals
   global:
     priorityClassName: 'system-cluster-critical'
-    nameOverride: 'gitlab-prod'
-    fullnameOverride: 'gitlab-prod'
 
     common:
       labels: {}
@@ -488,12 +483,6 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
-      connectTimeout:
-      keepalives:
-      keepalivesIdle:
-      keepalivesInterval:
-      keepalivesCount:
-      tcpUserTimeout:
       password:
         useSecret: true
         secret: gitlab-database-prod
@@ -507,21 +496,9 @@ gitlab:
       # preparedStatements: false
       # databaseTasks: true
       main: {}
-        # host: postgresql.hostedsomewhere.else
-        # port: 123
-        # username: gitlab
-        # database: gitlabhq_production
-        # applicationName:
-        # preparedStatements: false
-        # databaseTasks: true
+
       ci: {}
-        # host: postgresql.hostedsomewhere.else
-        # port: 123
-        # username: gitlab
-        # database: gitlabhq_production_ci
-        # applicationName:
-        # preparedStatements: false
-        # databaseTasks: false
+
 
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
@@ -1148,11 +1125,6 @@ gitlab:
         enabled: true
         serviceMonitor:
           enabled: true
-
-    gitlab-shell:
-      nameOverride: gitlab-prod-shell
-      global:
-        nameOverride: gitlab-prod-shell
 
     toolbox:
       enabled: true
