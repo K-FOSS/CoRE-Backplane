@@ -455,6 +455,7 @@ gitlab:
   global:
     priorityClassName: 'system-cluster-critical'
     nameOverride: 'gitlab-prod'
+    fullnameOverride: 'gitlab-prod'
 
     common:
       labels: {}
@@ -1123,7 +1124,7 @@ gitlab:
   
     kas:
       workhorse:
-        host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
+        #host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
         #serviceName: k0s-cntrl-development-webservice-default
         port: 8181
 
@@ -1148,10 +1149,10 @@ gitlab:
         serviceMonitor:
           enabled: true
 
-    # gitlab-shell:
-    #   nameOverride: gitlab-prod-shell
-    #   global:
-    #     nameOverride: gitlab-prod-shell
+    gitlab-shell:
+      nameOverride: gitlab-prod-shell
+      global:
+        nameOverride: gitlab-prod-shell
 
     toolbox:
       enabled: true
@@ -1183,8 +1184,6 @@ gitlab:
             key: config
 
 harbor:
-  fullnameOverride: testing123
-
   enabled: true
 
   expose:
