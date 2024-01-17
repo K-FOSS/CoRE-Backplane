@@ -22,19 +22,20 @@ spec:
           - name: envoy.filters.http.lua
             typed_config:
               '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-              inline_code: |
-                function envoy_on_request(request_handle)
-                  local host = request_handle:headers():get(":authority")
-                  local md = request_handle:metadata():get("mykey_flow1")
+              default_source_code: 
+                inline_string: |
+                  function envoy_on_request(request_handle)
+                    local host = request_handle:headers():get(":authority")
+                    local md = request_handle:metadata():get("mykey_flow1")
 
-                  if string.find(host, "-private") then 
-                    request_handle:respond({[":status"] = "403"}, "nope")
-                  end
+                    if string.find(host, "-private") then 
+                      request_handle:respond({[":status"] = "403"}, "nope")
+                    end
 
-                  if md == true then
-                    request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
+                    if md == true then
+                      request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
+                    end
                   end
-                end
 
           - name: envoy.filters.http.ext_authz
             typed_config:
