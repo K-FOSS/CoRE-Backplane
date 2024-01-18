@@ -1,0 +1,31 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyPatchPolicy
+metadata:
+  labels:
+    argocd.argoproj.io/instance: k0s-cntrl-ingress
+  name: gitpods-registry-route
+  namespace: kuadrant-core-prod
+spec:
+  jsonPatches:
+    - name: kuadrant-core-prod/main-gw/https
+      operation:
+        op: add
+        path: /virtual_hosts/0
+        value:
+          domains:
+            - registry.gitpods.writemy.codes
+          name: gitpods-registry-core
+          routes:
+            - match:
+                prefix: /
+              name: gitpods-registry-core
+              route:
+                cluster: httproute/core-prod/gitpods-registry/rule/0
+                timeout: 0s
+      type: type.googleapis.com/envoy.config.route.v3.RouteConfiguration
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: main-gw
+    namespace: kuadrant-core-prod
+  type: JSONPatch
