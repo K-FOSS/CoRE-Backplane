@@ -452,9 +452,6 @@ gitlab:
   global:
     priorityClassName: 'system-cluster-critical'
 
-    common:
-      labels: {}
-
     ## Supplemental Pod labels. Will not be used for selectors.
     pod:
       labels:
@@ -494,6 +491,28 @@ gitlab:
       main: {}
 
       ci: {}
+
+    ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
+    gitaly:
+      enabled: true
+      authToken: {}
+        # secret:
+        # key:
+      # serviceName:
+      internal:
+        names: [default]
+      external: []
+      service:
+        name: gitaly
+        type: ClusterIP
+        externalPort: 8075
+        internalPort: 8075
+        tls:
+          externalPort: 8076
+          internalPort: 8076
+      tls:
+        enabled: false
+        # secretName:
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-redis-settings
     redis:
@@ -554,17 +573,11 @@ gitlab:
 
       enableSeatLink: true
 
-      enableImpersonation:
-
       applicationSettingsCacheSeconds: 60
 
       defaultCanCreateGroup: true
 
       usernameChangingEnabled: true
-
-      issueClosingPattern:
-
-      defaultTheme:
 
       defaultProjectsFeatures:
         issues: true
@@ -588,82 +601,55 @@ gitlab:
         # directives: {}
 
 
-      ## https://docs.gitlab.com/charts/charts/globals#gravatarlibravatar-settings
-      gravatar:
-        plainUrl:
-        sslUrl:
-
-
-      ## https://docs.gitlab.com/charts/charts/globals#hooking-analytics-services-to-the-gitlab-instance
-      extra:
-        googleAnalyticsId:
-        matomoUrl:
-        matomoSiteId:
-        matomoDisableCookies:
-        oneTrustId:
-        googleTagManagerNonceId:
-        bizible:
-
-
       ## https://docs.gitlab.com/charts/charts/globals#lfs-artifacts-uploads-packages-external-mr-diffs-and-dependency-proxy
       object_store:
         enabled: true
 
         proxy_download: false
 
-        storage_options: {}
-          # server_side_encryption:
-          # server_side_encryption_kms_key_id
         connection:
           key: connection
           secret: gitlab-s3-prod
 
       lfs:
         enabled: true
+        proxy_download: false
         bucket: 623579a1-8adc-0b12-dd3f-f24793c3a00f-imy3gs
-
-        connection: {}
-          # secret:
-          # key:
 
       artifacts:
         enabled: true
+        proxy_download: false
         bucket: 56c4bfd0-20f8-93d7-476f-a86435dde7df-w8qn40
-        connection: {}
-          # secret:
-          # key:
 
       uploads:
         enabled: true
+        proxy_download: false
         bucket: gitlab-uploads
-        connection: {}
-          # secret:
-          # key:
 
       packages:
         enabled: true
+        proxy_download: false
         bucket: gitlab-packages
-        connection: {}
 
       externalDiffs:
         enabled: true
+        proxy_download: false
         bucket: 4781a816-7416-d012-9a2a-6dbe65624e17-ykv7qk
-        connection: {}
 
       terraformState:
         enabled: false
+        proxy_download: false
         bucket: 29f1e5ee-1b9c-14da-cc79-6ebe911caa7b-p3e18b
-        connection: {}
 
       ciSecureFiles:
         enabled: false
+        proxy_download: false
         bucket: gitlab-ci-secure-files
-        connection: {}
 
       dependencyProxy:
         enabled: true
+        proxy_download: false
         bucket: b5085eee-d81c-6a15-4a33-6a32a2c325d0-9ejn31
-        connection: {}
 
       backups:
         bucket: gitlab-backups
@@ -700,9 +686,6 @@ gitlab:
         enabled: true
         secret: gitlab-kas-prod
         key: kas_shared_secret
-        # enabled:
-        # externalUrl:
-        # internalUrl:
 
       ## https://docs.gitlab.com/charts/charts/globals#omniauth
       omniauth:
@@ -743,10 +726,6 @@ gitlab:
       service:
         apiExternalPort: 8153 # port for connections from the GitLab backend
 
-    ## https://docs.gitlab.com/charts/charts/gitlab/spamcheck/
-    spamcheck:
-      enabled: false
-
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitlab-shell
     shell:
       authToken:
@@ -765,14 +744,10 @@ gitlab:
     railsSecrets: {}
       # secret:
 
-    ## Rails generic setting, applicable to all Rails-based containers
-    rails:
-      bootsnap: # Enable / disable Shopify/Bootsnap cache
-        enabled: true
-
     ## https://docs.gitlab.com/charts/charts/globals#configure-registry-settings
     registry:
       bucket: registry
+
       certificate: {}
         # secret:
       httpSecret: {}
@@ -781,6 +756,9 @@ gitlab:
       notificationSecret: {}
         # secret:
         # key:
+      tls:
+        enabled: false
+        # secretName:
       redis:
         cache:
           password: {}
@@ -801,7 +779,15 @@ gitlab:
         #         key: password
         # events: {}
 
-
+      # Settings utilized by other services referencing registry:
+      enabled: false
+      host:
+      # port: 443
+      api:
+        protocol: http
+        serviceName: registry
+        port: 5000
+      tokenIssuer: gitlab-issuer
 
     pages:
       enabled: false
@@ -830,18 +816,31 @@ gitlab:
       registrationToken: {}
         # secret:
 
-
-    ## https://docs.gitlab.com/charts/installation/deployment#outgoing-email
+    ## https://docs.gitlab.com/charts/charts/globals#outgoing-email
     ## Outgoing email server settings
     smtp:
-      enabled: false
+      enabled: true
+      address: mail.mylogin.space
+      port: 2525
+      user_name: ""
+      ## https://docs.gitlab.com/charts/installation/secrets#smtp-password
+      password:
+        secret: ""
+        key: password
+      # domain:
+      authentication: 'plain'
+      starttls_auto: false
+      openssl_verify_mode: "peer"
+      open_timeout: 30
+      read_timeout: 60
+      pool: false
 
     ## https://docs.gitlab.com/charts/installation/deployment#outgoing-email
     ## Email persona used in email sent by GitLab
     email:
-      from: ""
+      from: bots@mylogin.space
       display_name: GitLab
-      reply_to: ""
+      reply_to: bots@mylogin.space
       subject_suffix: ""
       smime:
         enabled: false
@@ -853,28 +852,9 @@ gitlab:
     ## Timezone for containers.
     time_zone: UTC
 
-
-    ## Global Service Annotations and Labels
-    service:
-      labels: {}
-      annotations: {}
-
-    ## Global Deployment Annotations
-    deployment:
-      annotations: {}
-
-    antiAffinity: soft
-    affinity:
-      podAntiAffinity:
-        topologyKey: "kubernetes.io/hostname"
-
     ## https://docs.gitlab.com/charts/charts/globals#configure-workhorse-settings
     ## Global settings related to Workhorse
     workhorse:
-      #serviceName: webservice-default
-      # scheme:
-      #host: k0s-cntrl-development-webservice-default.core-prod.svc.k0s.resolvemy.host
-      #port:
       ## https://docs.gitlab.com/charts/installation/secrets#gitlab-workhorse-secret
       secret: gitlab-workhorse-prod
       key: shared_secret
@@ -885,29 +865,28 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#configure-webservice
     webservice:
       workerTimeout: 60
-
+      extraEnv:
+        GITLAB_RAILS_RACK_TIMEOUT: '60'
+        GITLAB_RAILS_WAIT_TIMEOUT: '90'
 
     ## https://docs.gitlab.com/charts/charts/globals#custom-certificate-authorities
     # configuration of certificates container & custom CA injection
     certificates:
       customCAs: []
-      # - secret: custom-CA
-      # - secret: more-custom-CAs
-      #   keys:
-      #     - custom-ca-1.crt
-      # - configMap: custom-CA-cm
-      # - configMap: more-custom-CAs-cm
-      #   keys:
-      #     - custom-ca-2.crt
-      #     - custom-ca-3.crt
+
+    gitlabBase:
+      image:
+        repository: registry.gitlab.com/gitlab-org/build/cng/gitlab-base
+        # Default tag is `global.gitlabVersion` or `master` if the former one is undefined.
+        # Charts using this image as init container support further overrides with `init.image.tag`.
+        # tag: master
+        # pullPolicy: IfNotPresent
+        # pullSecrets: []
 
     ## https://docs.gitlab.com/charts/charts/globals#service-accounts
     serviceAccount:
       enabled: true
       create: true
-      annotations: {}
-      ## Name to be used for serviceAccount, otherwise defaults to chart fullname
-      # name:
 
     ## https://docs.gitlab.com/charts/charts/globals/#tracing
     tracing:
@@ -915,14 +894,14 @@ gitlab:
         string: ""
       urlTemplate: ""
 
-  upgradeCheck:
-    enabled: false
+    zoekt:
+      gateway:
+        basicAuth: {}
+      indexer:
+        internalApi: {}
 
-  ## Settings to for the Let's Encrypt ACME Issuer
-  # certmanager-issuer:
-  #   # The email address to register certificates requested from Let's Encrypt.
-  #   # Required if using Let's Encrypt.
-  #   email: email@example.com
+  upgradeCheck:
+    enabled: true
 
   ## Installation & configuration of jetstack/cert-manager
   ## See requirements.yaml for current version
@@ -996,23 +975,7 @@ gitlab:
   ## https://docs.gitlab.com/charts/installation/secrets
   ## https://docs.gitlab.com/charts/charts/shared-secrets.html
   shared-secrets:
-    enabled: true
-
-    rbac:
-      create: true
-
-    selfsign:
-      keyAlgorithm: "rsa"
-      keySize: "4096"
-      expiry: "3650d"
-      caSubject: "GitLab Helm Chart"
-
     env: production
-
-    serviceAccount:
-      enabled: true
-      create: true
-      name: # Specify a pre-existing ServiceAccount name
 
     resources:
       requests:
@@ -1040,62 +1003,11 @@ gitlab:
       cache:
         secretName: gitlab-s3-runner
 
-      config: |
-        [[runners]]
-          [runners.kubernetes]
-          image = "ubuntu:18.04"
-
-          [runners.cache]
-            Type = "s3"
-            Path = "gitlab-runner"
-            Shared = true
-            [runners.cache.s3]
-              BucketName = "gitlab-runner"
-              BucketLocation = "us-east-1"
-              Insecure = false
-              ServerAddress = "s3.mylogin.space:443"
-
   ## Settings for individual sub-charts under GitLab
   ## Note: Many of these settings are configurable via globals
   gitlab:
     exporter:
       enabled: true
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-
-    unicorn:
-      registry:
-        enabled: false
-
-
-    sidekiq:
-      enabled: true
-      
-      registry:
-        enabled: false
-
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-
-    praefect:
-      enabled: true
-
-      metrics:
-        enabled: true
-        serviceMonitor:
-          enabled: true
-
-    # https://docs.gitlab.com/charts/charts/gitlab/webservice
-    webservice:
-      enabled: true
-
-      registry:
-        enabled: false
-
       metrics:
         enabled: true
         serviceMonitor:
