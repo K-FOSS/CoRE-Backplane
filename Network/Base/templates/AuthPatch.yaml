@@ -30,6 +30,58 @@ spec:
         op: add
         path: /filter_chains/0/filters/0/typed_config/http_filters
         value:
+          - name: localip
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
+              extension_config:
+                name: envoy.filters.http.set_metadata
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.set_metadata.v3.Config
+                  metadata_namespace: curiefense
+                  value:
+                    tags:
+                      mytag0: true
+              xds_matcher:
+                matcher_list:
+                  matchers:
+                    - predicate:
+                        not_matcher:
+                          or_matcher:
+                            predicate:
+                              - single_predicate:
+                                  input:
+                                    name: request-headers
+                                    typed_config:
+                                      "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                      header_name: "x-envoy-external-address"
+                                  custom_match:
+                                    name: envoy.matching.input_matchers.ip
+                                    typed_config:
+                                      "@type": "type.googleapis.com/envoy.extensions.matching.input_matchers.ip.v3.Ip"
+                                      cidr_ranges:
+                                        - address_prefix: '10.0.0.0'
+                                          prefix_len: 8
+
+                                        - address_prefix: '172.16.0.0'
+                                          prefix_len: 12
+
+                                        - address_prefix: '192.168.0.0'
+                                          prefix_len: 16
+                                      stat_prefix: "myprefix"
+                              - single_predicate:
+                                  input:
+                                    name: request-headers
+                                    typed_config:
+                                      "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                      header_name: headertag0
+                                  value_match:
+                                    exact: foo
+                      on_match:
+                        action:
+                          name: skip
+                          typed_config:
+                            "@type": type.googleapis.com/envoy.extensions.filters.common.matcher.action.v3.SkipFilter
+
           - name: envoy.filters.http.lua
             typed_config:
               '@type': type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
@@ -71,13 +123,15 @@ spec:
                       - exact: cookie
                       - exact: proxy-authorization
                 authorization_response:
+                  allowed_upstream_headers_to_append:
+                    patterns:
+                      - prefix: x-authentik
+                      - prefix: authentik
                   allowed_upstream_headers:
                     patterns:
                       - exact: authorization
                       - exact: proxy-authorization
                       - prefix: remote-
-                      - prefix: x-authentik-*
-                      - prefix: authentik
                   allowed_client_headers:
                     patterns:
                       - exact: set-cookie
