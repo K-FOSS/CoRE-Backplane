@@ -1,11 +1,6 @@
 artifact-hub:
   # Artifact Hub Chart default configuration values
 
-  imagePullSecrets: []
-  imageTag: ""
-  nameOverride: ""
-  pullPolicy: IfNotPresent
-
   # Enable dynamic resource name prefix
   #
   # Enabling the dynamic resource name prefix ensures that the resources are named dynamically based on the Helm
@@ -45,16 +40,16 @@ artifact-hub:
     # From name used in emails
     fromName: ""
     # From address used in emails. This field is required if you want to enable email sending in Artifact Hub
-    from: ""
+    from: bots@mylogin.space
     # Reply-to address used in emails
-    replyTo: ""
+    replyTo: bots@mylogin.space
     # SMTP server configuration
     smtp:
       # Authentication mechanism
       # Options: "login", "plain"
       auth: plain
       # SMTP host. This field is required if you want to enable email sending in Artifact Hub
-      host: ""
+      host: mail.mylogin.space
       # SMTP port. This field is required if you want to enable email sending in Artifact Hub
       port: 587
       username: ""
@@ -86,10 +81,7 @@ artifact-hub:
       image:
         # Database migrator image repository (without the tag)
         repository: artifacthub/db-migrator
-      # Optionally specify extra list of additional labels for the dbMigrator job
-      extraJobLabels: {}
-      # Optionally specify extra list of additional labels for the dbMigrator pod
-      extraPodLabels: {}
+
       # Limits the lifetime of the job after it has finished execution
       ttlSecondsAfterFinished: null
       securityContext: {}
@@ -103,7 +95,7 @@ artifact-hub:
       #     cpu: 100m
       #     memory: 128Mi
     # Load demo user and sample repositories
-    loadSampleData: true
+    loadSampleData: false
     # Directory path where the configuration files should be mounted
     configDir: "/home/db-migrator/.cfg"
 
@@ -111,12 +103,6 @@ artifact-hub:
   hub:
     ingress:
       enabled: false
-      annotations:
-        kubernetes.io/ingress.class: nginx
-      extraLabels: {}
-      defaultBackendEnabled: true
-      rules: []
-      tls: []
 
     service:
       type: ClusterIP
@@ -126,8 +112,7 @@ artifact-hub:
     serviceAccount:
       # Enable creation of ServiceAccount for Artifact Hub pod
       create: true
-      # The name of the ServiceAccount to use. If not set and create is true, a name is generated
-      name: ""
+
       # Allows auto mount of ServiceAccountToken on the serviceAccount created
       automountServiceAccountToken: true
 
@@ -185,7 +170,7 @@ artifact-hub:
       extraVolumeMounts: []
     server:
       # Allow adding private repositories to the Hub
-      allowPrivateRepositories: false
+      allowPrivateRepositories: true
 
       # Allow new Users to Sign Up
       allowUserSignUp: true
@@ -237,29 +222,11 @@ artifact-hub:
         github:
           # Enable GitHub OAuth
           enabled: false
-          # GitHub OAuth client id
-          clientID: ""
-          # GitHub OAuth client secret
-          clientSecret: ""
-          # GitHub OAuth redirect url
-          redirectURL: ""
-          # GitHub OAuth scopes
-          scopes:
-            - read:user
-            - user:email
+
         google:
           # Enable Google oauth
           enabled: false
-          # Google oauth client id
-          clientID: ""
-          # Google oauth client secret
-          clientSecret: ""
-          # Google oauth redirect url
-          redirectURL: ""
-          # Google oauth scopes
-          scopes:
-            - https://www.googleapis.com/auth/userinfo.email
-            - https://www.googleapis.com/auth/userinfo.profile
+
         oidc:
           # Enable OIDC
           enabled: true
@@ -292,43 +259,9 @@ artifact-hub:
       # Google Analytics tracking id
       gaTrackingID: ""
 
-    theme:
-      # Colors used in the website
-      colors:
-        # Primary color used in the website. For an optimal experience, it's better to use colors that play well with
-        # white fonts
-        primary: "#417598"
-        # Secondary color used in the website, usually a darker version of the primary color. For an optimal experience,
-        # it's better to use colors that play well with white fonts
-        secondary: "#2D4857"
-
-      # Images used in the website
-      images:
-        # URL of the image used for the Apple touch icon (192x192)
-        appleTouchIcon192: "/static/media/logo192_v2.png"
-        # URL of the image used for the Apple touch icon (512x512)
-        appleTouchIcon512: "/static/media/logo512_v2.png"
-        # URL of the image used in the og:image tag. This image is displayed when an Artifact Hub link is shared in
-        # Twitter or Slack, for example. The URL must use `https`
-        openGraphImage: "/static/media/artifactHub_v2.png"
-        # URL of the image used for the shortcut icon (also known as favicon)
-        shortcutIcon: "/static/media/logo_v2.png"
-        # URL of the logo used in the website header. For an optimal experience, it's better to use a white logo with
-        # transparent background, with no margin around it. It'll be displayed using a maximum height of 20px and a
-        # maximum width of 185px
-        websiteLogo: "/static/media/logo/artifacthub-brand-white.svg"
-      
-      # Sample search queries used in home and no results found pages
-      sampleQueries: []
-      
-      # Name of the site. This name is displayed in some places in the website and email templates. When a different
-      # value than the default one (Artifact Hub) is provided, the site enters `white label` mode. In this mode, some
-      # sections of the website are displayed in a more generic way, omitting certain parts that are unique to Artifact Hub
-      siteName: "Artifact hub"
-
   # Scanner configuration
   scanner:
-    enabled: true
+    enabled: false
     cronjob:
       image:
         # Scanner image repository (without the tag)
@@ -488,9 +421,6 @@ gitlab:
       host: psql.mylogin.space
       username: WNUoZH3HCm
       database: WNUoZH3HCm
-      main: {}
-
-      ci: {}
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
     gitaly:
