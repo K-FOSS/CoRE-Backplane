@@ -37,10 +37,10 @@ spec:
                 name: envoy.filters.http.set_metadata
                 typed_config:
                   "@type": type.googleapis.com/envoy.extensions.filters.http.set_metadata.v3.Config
-                  metadata_namespace: envoy.filters.http.ext_authz
+                  metadata_namespace: envoy.filters.http.lua
                   value:
                     tags:
-                      mykey_flow: false
+                      localnetwork: true
               xds_matcher:
                 matcher_list:
                   matchers:
@@ -68,14 +68,6 @@ spec:
                                         - address_prefix: '192.168.0.0'
                                           prefix_len: 16
                                       stat_prefix: "myprefix"
-                              - single_predicate:
-                                  input:
-                                    name: request-headers
-                                    typed_config:
-                                      "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                      header_name: headertag0
-                                  value_match:
-                                    exact: foo
                       on_match:
                         action:
                           name: skip
@@ -90,24 +82,41 @@ spec:
                   function envoy_on_request(request_handle)
                     local host = request_handle:headers():get(":authority")
                     local md = request_handle:metadata():get("mykey_flow1")
+                    local dmd = request_handle:streamInfo():dynamicMetadata():get("envoy.filters.http.lua")
 
                     if string.find(host, "-private") then 
                       request_handle:respond({[":status"] = "403"}, "nope")
                     end
 
-                    if md == true then
-                      request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "mykey_flow", true)
+                    if (md == true and dmd.localnetwork ~= true) then
+                      request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "ext-auth", true)
                     end
                   end
 
-          - name: envoy.filters.http.ext_authz
+          - name: int-auth
             typed_config:
               '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
               transport_api_version: V3
               filter_enabled_metadata:
                 filter: envoy.filters.http.ext_authz
                 path:
-                  - key: mykey_flow
+                  - key: int-auth
+                value:
+                  bool_match: true
+              grpc_service:
+                google_grpc:
+                  statPrefix: listener-insecure
+                  target_uri: authorino-authorino-authorization.kuadrant-system.svc.k0s.resolvemy.host:50051
+
+
+          - name: aaa-auth
+            typed_config:
+              '@type': type.googleapis.com/envoy.extensions.filters.http.ext_authz.v3.ExtAuthz
+              transport_api_version: V3
+              filter_enabled_metadata:
+                filter: envoy.filters.http.ext_authz
+                path:
+                  - key: ext-auth
                 value:
                   bool_match: true
               http_service:
