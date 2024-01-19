@@ -44,35 +44,36 @@ spec:
               xds_matcher:
                 matcher_list:
                   matchers:
-                    - predicate:
-                        not_matcher:
-                          or_matcher:
-                            predicate:
-                              - single_predicate:
-                                  input:
-                                    name: request-headers
-                                    typed_config:
-                                      "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                      header_name: x-forwarded-for
-                                  custom_match:
-                                    name: envoy.matching.input_matchers.ip
-                                    typed_config:
-                                      "@type": "type.googleapis.com/envoy.extensions.matching.input_matchers.ip.v3.Ip"
-                                      cidr_ranges:
-                                        - address_prefix: '10.0.0.0'
-                                          prefix_len: 8
+                  - predicate:
+                      not_matcher:
+                        single_predicate:
+                          input:
+                            name: request-headers
+                            typed_config:
+                              "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                              header_name: x-forwarded-for
+                          custom_match:
+                            name: envoy.matching.input_matchers.ip
+                            typed_config:
+                              "@type": "type.googleapis.com/envoy.extensions.matching.input_matchers.ip.v3.Ip"
+                              cidr_ranges:
+                                - address_prefix: '10.0.0.0'
+                                  prefix_len: 8
 
-                                        - address_prefix: '172.16.0.0'
-                                          prefix_len: 12
+                                - address_prefix: '172.16.0.0'
+                                  prefix_len: 12
 
-                                        - address_prefix: '192.168.0.0'
-                                          prefix_len: 16
-                                      stat_prefix: "myprefix"
-                      on_match:
-                        action:
-                          name: skip
-                          typed_config:
-                            "@type": type.googleapis.com/envoy.extensions.filters.common.matcher.action.v3.SkipFilter
+                                - address_prefix: '192.168.0.0'
+                                  prefix_len: 16
+                              stat_prefix: "myprefix"        
+
+
+
+                    on_match:
+                      action:
+                        name: skip
+                        typed_config:
+                          "@type": type.googleapis.com/envoy.extensions.filters.common.matcher.action.v3.SkipFilter
 
           - name: envoy.filters.http.lua
             typed_config:
@@ -88,8 +89,14 @@ spec:
                       request_handle:respond({[":status"] = "403"}, "nope")
                     end
 
-                    if (md == true and dmd.localnetwork ~= true) then
-                      request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "ext-auth", true)
+                    if md == true then
+                      if dmd ~= nill then
+                        if dmd.localnetwork then
+                          request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "int-auth", true)
+                        end
+                      else
+                        request_handle:streamInfo():dynamicMetadata():set("envoy.filters.http.ext_authz", "ext-auth", true)
+                      end
                     end
                   end
 
