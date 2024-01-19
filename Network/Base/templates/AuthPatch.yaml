@@ -86,6 +86,10 @@ spec:
                     local dmd = request_handle:streamInfo():dynamicMetadata():get("envoy.filters.http.lua")
 
                     if string.find(host, "-private") then 
+                      if dmd ~= nill then
+                        if dmd.localnetwork then
+                        end
+                      else
                       request_handle:respond({[":status"] = "403"}, "nope")
                     end
 
