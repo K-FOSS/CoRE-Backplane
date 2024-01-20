@@ -1,33 +1,6 @@
 
 velero:
   ##
-  ## Configuration settings related to Velero installation namespace
-  ##
-
-  # Labels settings in namespace
-  namespace:
-    labels: {}
-      # Enforce Pod Security Standards with Namespace Labels
-      # https://kubernetes.io/docs/tasks/configure-pod-container/enforce-standards-namespace-labels/
-      # - key: pod-security.kubernetes.io/enforce
-      #   value: privileged
-      # - key: pod-security.kubernetes.io/enforce-version
-      #   value: latest
-      # - key: pod-security.kubernetes.io/audit
-      #   value: privileged
-      # - key: pod-security.kubernetes.io/audit-version
-      #   value: latest
-      # - key: pod-security.kubernetes.io/warn
-      #   value: privileged
-      # - key: pod-security.kubernetes.io/warn-version
-      #   value: latest
-
-  ##
-  ## End of namespace-related settings.
-  ##
-
-
-  ##
   ## Configuration settings that directly affect the Velero deployment YAML.
   ##
 
@@ -64,37 +37,6 @@ velero:
   # Number of old history to retain to allow rollback (If not set, default Kubernetes value is set to 10)
   # revisionHistoryLimit: 1
 
-  # Resource requests/limits to specify for the Velero deployment.
-  # https://velero.io/docs/v1.6/customize-installation/#customize-resource-requests-and-limits
-  resources:
-    requests:
-      cpu: 500m
-      memory: 128Mi
-    limits:
-      cpu: 1000m
-      memory: 512Mi
-
-  # Resource requests/limits to specify for the upgradeCRDs job pod. Need to be adjusted by user accordingly.
-  upgradeJobResources: {}
-  # requests:
-  #     cpu: 50m
-  #     memory: 128Mi
-  #   limits:
-  #     cpu: 100m
-  #     memory: 256Mi
-  upgradeCRDsJob:
-    # Extra volumes for the Upgrade CRDs Job. Optional.
-    extraVolumes: []
-    # Extra volumeMounts for the Upgrade CRDs Job. Optional.
-    extraVolumeMounts: []
-    # Extra key/value pairs to be used as environment variables. Optional.
-    extraEnvVars: {}
-
-
-  # Configure the dnsPolicy of the Velero deployment
-  # See: https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
-  dnsPolicy: ClusterFirst
-
   # Init containers to add to the Velero deployment's pod spec. At least one plugin provider image is required.
   # If the value is a string then it is evaluated as a template.
   initContainers:
@@ -127,29 +69,12 @@ velero:
   # Pod priority class name to use for the Velero deployment. Optional.
   priorityClassName: ""
 
-  # The number of seconds to allow for graceful termination of the pod. Optional.
-  terminationGracePeriodSeconds: 3600
-
-  # Tolerations to use for the Velero deployment. Optional.
-  tolerations: []
-
-  # Affinity to use for the Velero deployment. Optional.
-  affinity: {}
-
-  # Node selector to use for the Velero deployment. Optional.
-  nodeSelector: {}
-
   # DNS configuration to use for the Velero deployment. Optional.
   dnsConfig: {}
 
-  # Extra volumes for the Velero deployment. Optional.
-  extraVolumes: []
-
-  # Extra volumeMounts for the Velero deployment. Optional.
-  extraVolumeMounts: []
-
   # Extra K8s manifests to deploy
-  extraObjects: []
+  #extraObjects:
+
     # - apiVersion: secrets-store.csi.x-k8s.io/v1
     #   kind: SecretProviderClass
     #   metadata:
@@ -312,18 +237,6 @@ velero:
         config:
           region: us-east-1
           s3Url: https://s3.mylogin.space
-        #  kmsKeyId:
-        #  resourceGroup:
-        #  The ID of the subscription containing the storage account, if different from the cluster’s subscription. (Azure only)
-        #  subscriptionId:
-        #  storageAccount:
-        #  publicUrl:
-        #  Name of the GCP service account to use for this backup storage location. Specify the
-        #  service account here if you want to use workload identity instead of providing the key file.(GCP only)
-        #  serviceAccount:
-        #  Option to skip certificate validation or not if insecureSkipTLSVerify is set to be true, the client side should set the
-        #  flag. For Velero client Command like velero backup describe, velero backup logs needs to add the flag --insecure-skip-tls-verify
-        #  insecureSkipTLSVerify:
 
     # Parameters for the VolumeSnapshotLocation(s). Configure multiple by adding other element(s) to the volumeSnapshotLocation slice.
     # See https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/
@@ -456,7 +369,7 @@ velero:
   # Whether to create backupstoragelocation crd, if false => do not create a default backup location
   backupsEnabled: true
   # Whether to create volumesnapshotlocation crd, if false => disable snapshot feature
-  snapshotsEnabled: true
+  snapshotsEnabled: false
 
   # Whether to deploy the node-agent daemonset.
   deployNodeAgent: false
@@ -542,7 +455,14 @@ velero:
   #       storageLocation: default
   #       includedNamespaces:
   #       - foo
-  schedules: {}
+  schedules:
+    core:
+      disabled: false
+      schedule: '0 0 * * *'
+      useOwnerReferencesInBackup: true
+      template:
+        ttl: '240h'
+        storageLocation: minio-s3
 
   # Velero ConfigMaps.
   # Eg:
