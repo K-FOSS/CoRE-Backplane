@@ -21,7 +21,7 @@ data:
         },
         "blobServer": {
           "scheme": "http",
-          "host": "blobserve.core-prod.svc.k0s.resolvemy.host:4000"
+          "host": "blobserve.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:4000"
         },
         "gitpodInstallation": {
           "scheme": "https",
@@ -32,7 +32,7 @@ data:
         "workspacePodConfig": {
           "theiaPort": 23000,
           "supervisorPort": 22999,
-          "supervisorImage": "eu.gcr.io/gitpod-core-dev/build/supervisor:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca"
+          "supervisorImage": "{{ .Values.supervisor.image.repository }}:{{ .Values.supervisor.image.tag }}"
         },
         "builtinPages": {
           "location": "/app/public"
@@ -41,9 +41,9 @@ data:
       "pprofAddr": ":60060",
       "prometheusAddr": "127.0.0.1:9500",
       "readinessProbeAddr": ":8086",
-      "namespace": "core-prod",
+      "namespace": "{{ .Release.Namespace }}",
       "wsManager": {
-        "addr": "ws-manager.core-prod.svc.k0s.resolvemy.host:8080",
+        "addr": "ws-manager.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:8080",
         "tls": {
           "ca": "/ws-manager-client-tls-certs/ca.crt",
           "crt": "/ws-manager-client-tls-certs/tls.crt",

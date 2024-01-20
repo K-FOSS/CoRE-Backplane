@@ -13,7 +13,7 @@ data:
   config.json: |-
     {
       "version": "release-2022.05.2.5",
-      "hostUrl": "https://gitpods.writemy.codes",
+      "hostUrl": "https://{{ .Values.hostname }}",
       "installationShortname": "default",
       "devBranch": "",
       "insecureNoDomain": false,
@@ -27,9 +27,9 @@ data:
       "makeNewUsersAdmin": false,
       "defaultBaseImageRegistryWhitelist": [],
       "runDbDeleter": true,
-      "contentServiceAddr": "content-service.core-prod.svc.k0s.resolvemy.host:8080",
-      "imageBuilderAddr": "image-builder-mk3.core-prod.svc.k0s.resolvemy.host:8080",
-      "vsxRegistryUrl": "https://open-vsx.gitpods.writemy.codes",
+      "contentServiceAddr": "content-service.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:8080",
+      "imageBuilderAddr": "image-builder-mk3.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:8080",
+      "vsxRegistryUrl": "https://open-vsx.{{ .Values.hostname }}",
       "chargebeeProviderOptionsFile": "/chargebee/providerOptions",
       "enablePayment": false,
       "workspaceHeartbeat": {
