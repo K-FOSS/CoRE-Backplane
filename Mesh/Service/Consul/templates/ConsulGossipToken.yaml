@@ -5,13 +5,15 @@ metadata:
   namespace: core-prod
 spec:
   secretStoreRef:
-    name: vault-backend
     kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
   target:
     name: consul-gossip-encryption-key
+
   data:
     - secretKey: key
       remoteRef:
-        key: Consul
-        property: GossipToken
+        key: Consul/Gossip
+        property: Key
       

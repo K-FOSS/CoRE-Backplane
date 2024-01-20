@@ -5,13 +5,14 @@ metadata:
   namespace: core-prod
 spec:
   secretStoreRef:
-    name: vault-backend
     kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
   target:
     name: consul-acl-replication-acl-token
   data:
     - secretKey: token
       remoteRef:
-        key: Consul
-        property: ReplicationToken
+        key: Consul/Replication
+        property: Token
       
