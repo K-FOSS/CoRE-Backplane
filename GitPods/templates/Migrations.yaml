@@ -1,16 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  creationTimestamp: null
+  name: migrations
+
   labels:
     app: gitpod
     component: migrations
-  name: migrations
-  namespace: core-prod
 spec:
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: gitpod
         component: migrations
@@ -25,82 +23,100 @@ spec:
               - key: gitpod.io/workload_meta
                 operator: Exists
       containers:
-      - command:
-        - sh
-        - -c
-        - cd /app/node_modules/@gitpod/gitpod-db && yarn run wait-for-db && yarn run
-          typeorm migration:show || true && yarn run typeorm migration:run
-        env:
-        - name: DB_HOST
-          valueFrom:
-            secretKeyRef:
-              key: host
-              name: mysql
-        - name: DB_PORT
-          valueFrom:
-            secretKeyRef:
-              key: port
-              name: mysql
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: mysql
-        - name: DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: mysql
-        - name: DB_ENCRYPTION_KEYS
-          valueFrom:
-            secretKeyRef:
-              key: encryptionKeys
-              name: mysql
-        - name: DB_DELETED_ENTRIES_GC_ENABLED
-          value: "false"
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/db-migrations:release-2022.06.1.1
-        imagePullPolicy: IfNotPresent
-        name: migrations
-        resources: {}
+        - name: migrations
+
+          {{- with .Values.migrations.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+
+
+          command:
+            - sh
+            - -c
+            - cd /app/node_modules/@gitpod/gitpod-db && yarn run wait-for-db && yarn run
+              typeorm migration:show || true && yarn run typeorm migration:run
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: host
+                  name: mysql
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: port
+                  name: mysql
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: mysql
+            - name: DB_ENCRYPTION_KEYS
+              valueFrom:
+                secretKeyRef:
+                  key: encryptionKeys
+                  name: mysql
+            - name: DB_DELETED_ENTRIES_GC_ENABLED
+              value: "false"
+
+          
+          resources: {}
       enableServiceLinks: false
       initContainers:
-      - args:
-        - -v
-        - database
-        env:
-        - name: DB_HOST
-          valueFrom:
-            secretKeyRef:
-              key: host
-              name: mysql
-        - name: DB_PORT
-          valueFrom:
-            secretKeyRef:
-              key: port
-              name: mysql
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: password
-              name: mysql
-        - name: DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: username
-              name: mysql
-        - name: DB_ENCRYPTION_KEYS
-          valueFrom:
-            secretKeyRef:
-              key: encryptionKeys
-              name: mysql
-        - name: DB_DELETED_ENTRIES_GC_ENABLED
-          value: "false"
-        image: registry.writemy.codes/workspaces/gitpod-core-dev/build/service-waiter:commit-df6f9b5ab510202c5719724d67c00bff8ee83000
-        name: database-waiter
-        resources: {}
-        securityContext:
-          privileged: false
-          runAsUser: 31001
+        - name: database-waiter
+
+          {{- with .Values.migrations.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+
+          args:
+            - -v
+            - database
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: host
+                  name: mysql
+
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: port
+                  name: mysql
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: mysql
+
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: mysql
+
+            - name: DB_ENCRYPTION_KEYS
+              valueFrom:
+                secretKeyRef:
+                  key: encryptionKeys
+                  name: mysql
+
+            - name: DB_DELETED_ENTRIES_GC_ENABLED
+              value: 'false'
+          
+          resources: {}
+          securityContext:
+            privileged: false
+            runAsUser: 31001
       restartPolicy: Never
       serviceAccountName: migrations
   ttlSecondsAfterFinished: 60

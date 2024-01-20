@@ -45,8 +45,11 @@ spec:
       containers:
         - name: image-builder-mk3
 
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/image-builder-mk3:commit-922c9e8fceace4abc3ed37e92baaee6f10e6a4b7
-          imagePullPolicy: IfNotPresent
+
+          {{- with .Values.imagebuildermk3.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
             - run

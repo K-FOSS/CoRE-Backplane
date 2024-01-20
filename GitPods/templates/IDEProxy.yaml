@@ -40,9 +40,10 @@ spec:
       containers:
         - name: ide-proxy
 
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ide-proxy:commit-490f4f1d7a3e31d8b21d42eb0691f847a5d258a6
-          imagePullPolicy: IfNotPresent
-
+          {{- with .Values.ideproxy.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
           env:
             - name: GITPOD_DOMAIN
               value: gitpods.writemy.codes

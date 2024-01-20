@@ -38,9 +38,10 @@ spec:
       containers:
         - name: agent-smith
 
-          # TODO: Move this to Renovate
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/agent-smith:release-2022.06.1.0
-          imagePullPolicy: IfNotPresent
+          {{- with .Values.agentsmith.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
             - run

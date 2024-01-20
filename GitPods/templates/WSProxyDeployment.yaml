@@ -39,8 +39,10 @@ spec:
       containers:
         - name: ws-proxy
 
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ws-proxy:commit-8b296463e50b0ac971dae9bd3354e5111d6c1702
-          imagePullPolicy: IfNotPresent
+          {{- with .Values.wsproxy.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
             - run
@@ -156,21 +158,24 @@ spec:
         runAsUser: 31002
       serviceAccountName: ws-proxy
       topologySpreadConstraints:
-      - labelSelector:
-          matchLabels:
-            app: gitpod
-            component: ws-proxy
-        maxSkew: 1
-        topologyKey: kubernetes.io/hostname
-        whenUnsatisfiable: DoNotSchedule
+        - labelSelector:
+            matchLabels:
+              app: gitpod
+              component: ws-proxy
+          maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
       volumes:
-      - configMap:
+      - name: config
+        configMap:
           name: ws-proxy
-        name: config
+
+
       - name: ws-manager-client-tls-certs
         secret:
           secretName: ws-manager-client-tls
+
       - name: config-certificates
         secret:
           secretName: https-certificates
-status: {}
+

@@ -38,9 +38,11 @@ spec:
       containers:
         - name: blobserve
 
-          # TODO: Move this over to Renovate
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/blobserve:release-2022.06.1.0
-          imagePullPolicy: IfNotPresent
+
+          {{- with .Values.blobserve.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
             - run
@@ -156,11 +158,13 @@ spec:
       enableServiceLinks: false
       serviceAccountName: blobserve
       volumes:
-      - emptyDir: {}
-        name: cache
-      - configMap:
-          name: blobserve
-        name: config
-      - name: pull-secret
-        secret:
-          secretName: builtin-registry-auth
+        - name: cache
+          emptyDir: {}
+
+        - name: config
+          configMap:
+            name: blobserve
+
+        - name: pull-secret
+          secret:
+            secretName: builtin-registry-auth

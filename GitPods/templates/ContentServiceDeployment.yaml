@@ -43,9 +43,10 @@ spec:
       containers:
         - name: content-service
 
-          # TODO: Move this over to Renovate
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/content-service:commit-922c9e8fceace4abc3ed37e92baaee6f10e6a4b7
-          imagePullPolicy: IfNotPresent
+          {{- with .Values.contentservice.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
           - run

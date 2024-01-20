@@ -2,11 +2,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: ws-manager
+
   labels:
     app: gitpod
     component: ws-manager
-  name: ws-manager
-  namespace: core-prod
 spec:
   replicas: 1
   selector:
@@ -38,8 +38,10 @@ spec:
       containers:
         - name: ws-manager
 
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ws-manager:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca
-          imagePullPolicy: IfNotPresent
+          {{- with .Values.wsmanager.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
             - run

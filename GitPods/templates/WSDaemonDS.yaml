@@ -36,8 +36,11 @@ spec:
       containers:
         - name: ws-daemon
 
-          image: registry.writemy.codes/workspaces/gitpod-core-dev/build/ws-daemon:commit-8b296463e50b0ac971dae9bd3354e5111d6c1702
-          imagePullPolicy: IfNotPresent
+
+          {{- with .Values.wsdaemon.image }}
+          image: '{{ .repository }}{{ if .digest }}@{{ .digest }}{{ else }}:{{ .tag }}{{ end }}'
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
 
           args:
             - run
@@ -276,61 +279,71 @@ spec:
           operator: Exists
 
       volumes:
-        - hostPath:
+        - name: hostfs
+          hostPath:
             path: /
-          name: hostfs
+          
 
-        - hostPath:
+        - name: working-area
+          hostPath:
             path: /var/gitpod/workspaces
             type: DirectoryOrCreate
-          name: working-area
+          
 
         - name: tls-certs
           secret:
             secretName: ws-daemon-tls
 
-        - configMap:
+        - name: config
+          configMap:
             name: ws-daemon
-          name: config
+          
 
-        - hostPath:
+        - name: containerd-socket
+          hostPath:
             path: /run/containerd/containerd.sock
             type: Socket
-          name: containerd-socket
+          
 
-        - hostPath:
+        - name: node-fs0
+          hostPath:
             path: /var/lib/containerd/io.containerd.runtime.v2.task/k8s.io
             type: Directory
-          name: node-fs0
+          
 
-        - hostPath:
+        - name: node-mounts
+          hostPath:
             path: /proc/mounts
             type: File
-          name: node-mounts
+          
 
-        - hostPath:
+        - name: node-cgroups
+          hostPath:
             path: /sys/fs/cgroup
             type: Directory
-          name: node-cgroups
+          
 
-        - hostPath:
+        - name: node-hosts
+          hostPath:
             path: /etc/hosts
             type: File
-          name: node-hosts
+          
 
-        - hostPath:
+        - name: node-linux-src
+          hostPath:
             path: /usr/src
             type: Directory
-          name: node-linux-src
+          
 
-        - hostPath:
+        - name: hostseccomp
+          hostPath:
             path: /var/lib/kubelet/seccomp
-          name: hostseccomp
 
-        - hostPath:
+        - name: gcloud-tmp
+          hostPath:
             path: /var/gitpod/tmp/backup
             type: DirectoryOrCreate
-          name: gcloud-tmp
+          
 
         - name: storage-volume
           secret:
