@@ -22,6 +22,16 @@ spec:
           volumeMounts:
             - mountPath: /custom-tools
               name: custom-tools
+
+        - name: download-tools
+          image: kristianfjones/gitpods-testing:latest
+          command: [sh, -c]
+          args:
+            - >-
+              mv /installer /custom-tools/gitpods-installer
+          volumeMounts:
+            - mountPath: /custom-tools
+              name: custom-tools
       containers:
         - name: lovely-plugin
           # This command is actually already set in the image.

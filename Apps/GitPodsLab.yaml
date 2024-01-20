@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-gitpodslab
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{cluster}}-gitpodslab'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        path: GitPodsNew
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_PLUGINS_YAML
+              value: |-
+                Test:
+                - "gitpods-installer render --config"
+
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
