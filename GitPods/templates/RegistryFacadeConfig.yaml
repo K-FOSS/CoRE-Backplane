@@ -17,20 +17,20 @@ data:
         "prefix": "",
         "staticLayer": [
           {
-            "ref": "eu.gcr.io/gitpod-core-dev/build/supervisor:commit-bdf36db7723f2d5197fe6108bf3bd45609c5c3ca",
+            "ref": "{{ .Values.supervisor.image.repository }}:{{ .Values.supervisor.image.tag }}",
             "type": "image"
           },
           {
-            "ref": "eu.gcr.io/gitpod-core-dev/build/workspacekit:commit-df6f9b5ab510202c5719724d67c00bff8ee83000",
+            "ref": "{{ .Values.workspacekit.image.repository }}:{{ .Values.workspacekit.image.tag }}",
             "type": "image"
           },
           {
-            "ref": "eu.gcr.io/gitpod-core-dev/build/docker-up:commit-59a5657dbd3a4157bb10eafcbfb3ab6b3bb1dbe9",
+            "ref": "{{ .Values.workspacekit.dockerup.repository }}:{{ .Values.workspacekit.dockerup.tag }}",
             "type": "image"
           }
         ],
         "remoteSpecProvider": {
-          "addr": "dns:///ws-manager.core-prod.svc.k0s.resolvemy.host:8080",
+          "addr": "dns:///ws-manager.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}:8080",
           "tls": {
             "ca": "/ws-manager-client-tls-certs/ca.crt",
             "crt": "/ws-manager-client-tls-certs/tls.crt",
