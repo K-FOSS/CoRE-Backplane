@@ -1,0 +1,19 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mysql-auth
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: mysql-auth
+
+  data:
+    - secretKey: ROOT_PASSWORD
+      remoteRef:
+        key: MySQL/Auth
+        property: Password
+
+
