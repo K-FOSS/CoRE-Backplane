@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rdns-pdns-config
+data:
+  pdns.conf: |
+    allow-axfr-ips=172.16.0.0/12,10.0.0.0/8,127.0.0.0/8
+    also-notify=127.0.0.1
+    default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
+    dnsupdate=yes
+    expand-alias=yes
+    forward-dnsupdate=yes
+    forward-notify=127.0.0.1
+    launch=gpgsql
+    primary=yes
+    webserver=yes
+    webserver-address=0.0.0.0
+    webserver-allow-from=0.0.0.0/0
+    local-address=0.0.0.0:1053
