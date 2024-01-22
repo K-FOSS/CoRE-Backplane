@@ -1,19 +1,28 @@
-apiVersion: mysql.presslabs.org/v1alpha1
-kind: MysqlCluster
+apiVersion: apps.kubeblocks.io/v1alpha1
+kind: Cluster
 metadata:
-  name: mysql
+  name: mysql-cluster
+
 spec:
-  replicas: 3
-  secretName: mysql-auth
-
-  mysqlVersion: '8.0'
-
-  # Specify additional volume specification
-  volumeSpec:
-
-    # https://godoc.org/k8s.io/api/core/v1#PersistentVolumeClaimSpec
-    persistentVolumeClaim:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 10Gi
+  clusterDefinitionRef: apecloud-mysql
+  clusterVersionRef: ac-mysql-8.0.30
+  componentSpecs:
+  - componentDefRef: mysql
+    name: mysql
+    replicas: 3
+    resources:
+      limits:
+        cpu: "1"
+        memory: 1Gi
+      requests:
+        cpu: "1"
+        memory: 1Gi
+    volumeClaimTemplates:
+    - name: data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+  terminationPolicy: Delete
