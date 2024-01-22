@@ -5,6 +5,15 @@ coredns:
     name: core-rdns
   extraConfig: {}
 
+  extraVolumes:
+    - configMap:
+        defaultMode: 420
+        name: rdns-pdns-config
+      name: config
+
+  # - name: some-volume-name
+  #   emptyDir: {}
+
   extraSecrets:
     - name: resolvemyhost-default-certificates
       mountPath: /tls
