@@ -134,3 +134,118 @@ authentik:
 openldap:
   tls:
     secretName: myloginspace-default-certificates
+
+openunision:
+  network:
+    openunison_host: k8s-ou.domain.dev
+    dashboard_host: k8s-db.domain.dev
+    api_server_host: k8s-api.domain.dev
+    session_inactivity_timeout_seconds: 900
+    k8s_url: https://10.1.1.40:6443
+    force_redirect_to_tls: false
+    createIngressCertificate: false
+    ingress_type: nginx
+    ingress_annotations: []
+      
+
+  cert_template:
+    ou: 'Kubernetes'
+    o: 'MyOrg'
+    l: 'My Cluster'
+    st: 'State of Cluster'
+    c: 'MyCountry'
+
+
+  
+  myvd_config_path: "WEB-INF/myvd.conf"
+  k8s_cluster_name: my-cluster
+  enable_impersonation: false
+
+  impersonation:
+    use_jetstack: true
+    explicit_certificate_trust: true
+
+  dashboard:
+    namespace: "kubernetes-dashboard"
+    cert_name: "kubernetes-dashboard-certs"
+    label: "k8s-app=kubernetes-dashboard"
+    service_name: kubernetes-dashboard
+    require_session: true
+
+  certs:
+    use_k8s_cm: true
+
+  trusted_certs: []
+
+  monitoring:
+    prometheus_service_account: system:serviceaccount:monitoring:prometheus-k8s
+
+
+
+
+
+  # Uncomment one of the below options for authentication
+  #active_directory:
+  #  base: cn=users,dc=ent2k12,dc=domain,dc=com
+  #  host: "192.168.2.75"
+  #  port: "636"
+  #  bind_dn: "cn=Administrator,cn=users,dc=ent2k12,dc=domain,dc=com"
+  #  con_type: ldaps
+  #  srv_dns: "false"
+
+  #oidc:
+  #  client_id: xxxxxx
+  #  issuer: https://xxxxxx.okta.com/
+  #  user_in_idtoken: false
+  #  domain: ""
+  #  scopes: openid email profile groups
+  #  claims:
+  #    sub: sub
+  #    email: email
+  #    given_name: given_name
+  #    family_name: family_name
+  #    display_name: name
+  #    groups: groups
+
+  #github:
+  #  client_id: d85d77c55a08c9bcbb15
+  #  teams: TremoloSecurity/
+
+  #saml:
+  #  idp_url: "https://portal.apps.tremolo.io/idp-test/metadata/dfbe4040-cd32-470e-a9b6-809c8f857c40"
+
+
+
+    
+
+  network_policies:
+    enabled: false
+    ingress:
+      enabled: false
+      labels:
+        kubernetes.io/metadata.name: ingress-nginx-internet
+    monitoring:
+      enabled: false
+      labels:
+        kubernetes.io/metadata.name: monitoring
+    apiserver:
+      enabled: false
+      labels:
+        kubernetes.io/metadata.name: kube-system
+
+  services:
+    enable_tokenrequest: false
+    token_request_audience: api
+    token_request_expiration_seconds: 600
+    node_selectors: []
+    
+  openunison:
+    replicas: 1
+    non_secret_data:
+      K8S_DB_SSO: oidc
+      PROMETHEUS_SERVICE_ACCOUNT: system:serviceaccount:monitoring:prometheus-k8s
+
+    secrets: []
+    html:
+      prefix: openunison
+    enable_provisioning: false
