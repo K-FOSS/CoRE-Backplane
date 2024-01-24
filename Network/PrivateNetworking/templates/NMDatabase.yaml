@@ -7,8 +7,9 @@ metadata:
 
 spec:
   secretStoreRef:
-    name: vault-backend
     kind: ClusterSecretStore
+    name: mainvault-core
+
 
   target:
     name: {{ $fullName }}-netmaker-db
@@ -16,15 +17,15 @@ spec:
   data:
     - secretKey: Database
       remoteRef:
-        key: NetMaker
+        key: NetMaker/Database
         property: Database
 
     - secretKey: Username
       remoteRef:
-        key: NetMaker
+        key: NetMaker/Database
         property: Username
 
     - secretKey: Password
       remoteRef:
-        key: NetMaker
+        key: NetMaker/Database
         property: Password
