@@ -7,8 +7,8 @@ metadata:
 
 spec:
   secretStoreRef:
-    name: vault-backend
     kind: ClusterSecretStore
+    name: mainvault-core
 
   target:
     name: {{ $fullName }}-netmaker-oidc
@@ -16,11 +16,11 @@ spec:
   data:
     - secretKey: OIDCClientID
       remoteRef:
-        key: NetMaker
-        property: OIDCClientID
+        key: NetMaker/OIDC
+        property: ClientID
 
     - secretKey: OIDCClientSecret
       remoteRef:
-        key: NetMaker
-        property: OIDCClientSecret
+        key: NetMaker/OIDC
+        property: ClientSecret
 
