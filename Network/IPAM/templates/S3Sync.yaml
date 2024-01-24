@@ -7,7 +7,7 @@ metadata:
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
-    name: vault-backend
+    name: corevault-rootsecrets
 
   target:
     name: '{{ include "ipam.fullname" . }}-netbox-s3'
@@ -16,17 +16,17 @@ spec:
       data:
         {{`
         Storage.yaml: |
-          STORAGE_CONFIG: {"AWS_ACCESS_KEY_ID":"{{ .S3AccessKey }}","AWS_S3_ADDRESSING_STYLE":"path","AWS_S3_ENDPOINT_URL":"https://s3.mylogin.space","AWS_S3_REGION_NAME":"us-east-1","AWS_SECRET_ACCESS_KEY":"{{ .S3SecretKey }}","AWS_STORAGE_BUCKET_NAME":"ipam-netbox"}
+          STORAGE_CONFIG: {"AWS_ACCESS_KEY_ID":"{{ .AccessKey }}","AWS_S3_ADDRESSING_STYLE":"path","AWS_S3_ENDPOINT_URL":"https://s3.mylogin.space","AWS_S3_REGION_NAME":"us-east-1","AWS_SECRET_ACCESS_KEY":"{{ .SecretKey }}","AWS_STORAGE_BUCKET_NAME":"ipam-netbox"}
         `}}
   data:
-    - secretKey: S3AccessKey
+    - secretKey: AccessKey
       remoteRef:
-        key: Netbox
-        property: S3AccessKey
+        key: Netbox/S3
+        property: AccessKey
 
-    - secretKey: S3SecretKey
+    - secretKey: SecretKey
       remoteRef:
-        key: Netbox
-        property: S3SecretKey
+        key: Netbox/S3
+        property: SecretKey
       
 
