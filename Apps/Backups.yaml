@@ -36,6 +36,22 @@ spec:
         path: Backups
         repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
         targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+
+                velero:
+                  configuration:
+                      - name: minio-s3
+                        # provider is the name for the backup storage location provider.
+                        provider: aws
+                        # bucket is the name of the bucket to store backups in. Required.
+                        bucket: velero-backup
+                        # prefix is the directory under which all Velero data should be stored within the bucket. Optional.
+                        prefix: {{cluster}}
+
 
       destination:
         server: '{{url}}'
