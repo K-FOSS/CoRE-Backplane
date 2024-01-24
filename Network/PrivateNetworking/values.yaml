@@ -10,14 +10,16 @@ netbird:
 
   secrets:
     secretStoreRef:
-      name: vault-backend
       kind: ClusterSecretStore
+      name: mainvault-core
+
+
 
     oidc:
-      VaultKey: Netbird
+      VaultKey: NetBird/OIDC
 
-      ClientIDPath: OpenIDClientID
-      ClientSecretPath: OpenIDClientSecret
+      ClientIDPath: ClientID
+      ClientSecretPath: ClientSecret
 
 
   signal:
@@ -74,7 +76,7 @@ netbird:
         metallb.universe.tf/loadBalancerIPs: 66.165.222.101
         io.cilium/lb-ipam-ips: 66.165.222.101
 
-      loadBalancerIP: 66.165.222.101
+      loadBalancerIP: ''
 
   management:
     enabled: true
@@ -129,7 +131,7 @@ netbird:
         io.cilium/lb-ipam-ips: 66.165.222.101
 
       externalIPs: []
-      loadBalancerIP: 66.165.222.101
+      loadBalancerIP: ''
   
   dashboard:
     enabled: true
@@ -184,7 +186,7 @@ netmaker:
   clusterDomain: k0s.resolvemy.host
 
   database:
-    host: psql.service.dc1.kjdev
+    host: psql.mylogin.space
     port: 5432
 
   server:
