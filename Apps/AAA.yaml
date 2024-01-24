@@ -40,42 +40,6 @@ spec:
 
         plugin:
           name: argocd-lovely-plugin
-          env:
-            - name: LOVELY_KUSTOMIZE_MERGE
-              value: |-
-                patchesStrategicMerge:
-                  - |-
-                    apiVersion: apps/v1
-                    kind: Deployment
-                    metadata:
-                      name: {{cluster}}-aaa-authentik-server
-
-                      labels:
-                        logs: loki-myloginspace
-
-                    spec:
-                      template:
-                        metadata:
-                          labels:
-                            logs: loki-myloginspace
-
-            - name: ARGOCD_ENV_LOVELY_KUSTOMIZE_MERGE
-              value: |-
-                patchesStrategicMerge:
-                  - |-
-                    apiVersion: apps/v1
-                    kind: Deployment
-                    metadata:
-                      name: {{cluster}}-aaa-authentik-server
-
-                      labels:
-                        logs: loki-myloginspace
-
-                    spec:
-                      template:
-                        metadata:
-                          labels:
-                            logs: loki-myloginspace
 
       destination:
         server: '{{url}}'
