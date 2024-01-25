@@ -10,9 +10,11 @@ spec:
         elements:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
+            clusterDomain: k0s.resolvemy.host
 
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
+            clusterDomain: cluster.local
 
   template:
     metadata:
@@ -34,6 +36,12 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                s3-operator:
+                  kubernetesClusterDomain: {{clusterDomain}}
+
 
       destination:
         server: '{{url}}'
