@@ -69,7 +69,7 @@ operator:
   # -- Minio default config. More config options an info: https://github.com/minio/minio/blob/master/helm/minio/values.yaml
   minio:
     # -- Enable this to use minio as storage backend instead of a cloud bucket provider like AWS S3, Google Cloud Storage, DigitalOcean Spaces etc.
-    enabled: true
+    enabled: false
     tls:
       enabled: false
     defaultBuckets: "securecodebox"
@@ -84,9 +84,9 @@ operator:
   # Config for external s3 systems
   s3:
     # s3.enabled Enable this and disable minio if you want to directly connect against AWS S3, Google Cloud Storage, DigitalOcean Spaces etc.
-    enabled: false
-    endpoint: "fra1.digitaloceanspaces.com"
-    bucket: "my-bucket"
+    enabled: true
+    endpoint: s3.mylogin.space
+    bucket: security-scans
     # Implicit 443. You probably only need to change this when the system uses a non default port
     port: null
     # s3.authType -- Authentication method. Supports access-secret-key (used by most s3 endpoint) and aws-irsa (Used by AWS EKS IAM Role to Kubenetes Service Account Binding. Support for AWS IRSA is considered experimental in the secureCodeBox)
