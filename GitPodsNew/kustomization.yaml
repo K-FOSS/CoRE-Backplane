@@ -3,6 +3,7 @@ kind: Kustomization
 
 resources:
   - ./test.yaml
+  - ./ProxyConfig.yaml
 
 images:
   - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/brancz/kube-rbac-proxy
@@ -29,3 +30,26 @@ patches:
       group: trust.cert-manager.io
       version: v1alpha1
       kind: Bundle
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: proxy
+      spec:
+        template:
+          spec:
+            volumes:
+              - configMap:
+                  defaultMode: 420
+                  name: caddyproxy-config
+                name: caddyfile
+            containers:
+              - name: proxy
+                volumeMounts:
+                  - mountPath: /etc/caddy/Caddyfile
+                    name: caddyfile
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
