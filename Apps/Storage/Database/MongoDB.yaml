@@ -13,8 +13,13 @@ spec:
   template:
     metadata:
       name: '{{cluster}}-database-mongodb-deploy'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
     spec:
       project: core
+
 
       source:
         path: Storage/Databases/MongoDB
