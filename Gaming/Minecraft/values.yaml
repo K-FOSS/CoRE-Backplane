@@ -1034,3 +1034,78 @@ forge:
         enabled: false
         # existingClaim: nil
         Size: 1Gi
+
+palworld:
+  # Default values for palworld.
+  # This is a YAML-formatted file.
+  # Declare variables to be passed into your templates.
+
+  replicaCount: 1
+
+  image:
+    repository: thijsvanloef/palworld-server-docker
+    tag: latest
+    pullPolicy: Always
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  palworld:
+    tty: true
+    stdin: false
+
+    service:
+      type: ClusterIP
+      port: 8211
+      #nodePort:
+      annotations: {}
+
+    env:
+
+    config:
+      maxPlayers: 16
+      port: 8211 # Port the server should listen on
+      #publicPort: # Port exposed to the world. Uncomment to set manually
+      multiThreading: true
+      communityServer: false
+      serverName: "Palworld Server"
+      #adminPassword: ""
+      #serverPassword: ""
+      updateOnBoot: true # Must be true on firstrun
+      puid: 1000
+      pgid: 1000
+
+  steamQuery:
+    # Set to true to open 27015. Port cannot be changed.
+    enabled: false
+    service:
+      type: ClusterIP
+      port: 27015
+      #nodePort:
+      annotations: { }
+
+  rcon:
+    enabled: false
+    port: 25575
+    service:
+      type: ClusterIP
+      port: 25575
+      #nodePort:
+      annotations: { }
+
+  resources: {}
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
+  persistence:
+    game:
+      enabled: true
+      mountPath: /palworld
+      accessMode: ReadWriteOnce
+      size: 10Gi
+
