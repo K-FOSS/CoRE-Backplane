@@ -1,19 +1,19 @@
 apiVersion: authentik.crossplane.io/v1alpha1
 kind: StoreConfig
 metadata:
-  name: vault
+  name: default
 spec:
-  type: Vault
+  #type: Vault
   defaultScope: crossplane-system
-  vault:
-    server: http://infra1-dc1-vault-active.core-prod.svc.cluster.local:8200
-    mountPath: kv2/
-    version: v2
-    auth:
-      method: Token
-      token:
-        source: Secret
-        secretRef:
-          namespace: {{ .Release.Namespace }}
-          name: mainvault-token
-          key: Token
+  # vault:
+  #   server: http://infra1-dc1-vault-active.core-prod.svc.cluster.local:8200
+  #   mountPath: kv2/
+  #   version: v2
+  #   auth:
+  #     method: Token
+  #     token:
+  #       source: Secret
+  #       secretRef:
+  #         namespace: {{ .Release.Namespace }}
+  #         name: mainvault-token
+  #         key: Token
