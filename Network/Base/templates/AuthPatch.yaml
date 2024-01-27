@@ -13,7 +13,21 @@ spec:
   type: JSONPatch
   jsonPatches:
     - type: type.googleapis.com/envoy.config.listener.v3.Listener
-      # The listener name is of the form <GatewayNamespace>/<GatewayName>/<GatewayListenerName>
+      name: kuadrant-core-prod/main-gw/https
+      operation:
+        op: replace
+        path: /filter_chains/0/filters/0/typed_config/normalize_path
+        value: false
+
+    - type: type.googleapis.com/envoy.config.listener.v3.Listener
+      name: kuadrant-core-prod/main-gw/http
+      operation:
+        op: replace
+        path: /default_filter_chain/filters/0/typed_config/normalize_path
+        value: false
+      
+  
+    - type: type.googleapis.com/envoy.config.listener.v3.Listener
       name: kuadrant-core-prod/main-gw/https
       operation:
         op: add
