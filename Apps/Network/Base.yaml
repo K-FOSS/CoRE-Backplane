@@ -89,6 +89,74 @@ spec:
           - RespectIgnoreDifferences=true
 
       sources:
+        - path: charts/gateway-helm
+          repoURL: https://github.com/zhaohuabing/gateway.git
+          targetRevision: ext_auth_api
+          plugin:
+            name: argocd-lovely-plugin
+            env:
+              - name: LOVELY_HELM_MERGE
+                value: |-
+                  enabled: true
+                  deployment:
+                    envoyGateway:
+                      cert:
+                        expiryDays: 365
+                      image:
+                        repository: docker.io/envoyproxy/gateway-dev
+                        tag: latest
+                      imagePullPolicy: Always
+                      resources:
+                        limits:
+                          cpu: 500m
+                          memory: 1024Mi
+                        requests:
+                          cpu: 100m
+                          memory: 256Mi
+                    ports:
+                      - name: grpc
+                        port: 18000
+                        targetPort: 18000
+                      - name: ratelimit
+                        port: 18001
+                        targetPort: 18001
+                    replicas: 1
+                    pod:
+                      annotations: {}
+                      labels: {}
+
+                  config:
+                    envoyGateway:
+                      gateway:
+                        controllerName: gateway.envoyproxy.io/gatewayclass-controller
+                      provider:
+                        type: Kubernetes
+                      extensionApis:
+                        enableEnvoyPatchPolicy: true
+                      logging:
+                        level:
+                          default: warn
+
+                  envoyGatewayMetricsService:
+                    ports:
+                      - name: http
+                        port: 19001
+                        protocol: TCP
+                        targetPort: 19001
+
+                  createNamespace: false
+
+                  kubernetesClusterDomain: cluster.local
+
+                  certgen:
+                    job:
+                      annotations: {}
+                      ttlSecondsAfterFinished: 0
+                    rbac:
+                      annotations: {}
+                      labels: {}
+
+
         - path: Network/Base
           repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
           targetRevision: HEAD
