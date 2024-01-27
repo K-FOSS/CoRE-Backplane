@@ -1056,10 +1056,12 @@ palworld:
     stdin: false
 
     service:
-      type: ClusterIP
+      type: LoadBalancer
       port: 8211
       #nodePort:
-      annotations: {}
+      annotations:
+        metallb.universe.tf/address-pool: pub-pool
+        external-dns.alpha.kubernetes.io/hostname: 'pal1.mylogin.space'
 
     env:
 
