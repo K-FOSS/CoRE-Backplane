@@ -1,0 +1,15 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ .Release.Name }}
+  oidc:
+    provider:
+      issuer: https://idp.mylogin.space/application/o/Netbox/
+    clientID: FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b
+    clientSecret:
+      name: '{{ include "ipam.fullname" . }}-netbox-oidc'

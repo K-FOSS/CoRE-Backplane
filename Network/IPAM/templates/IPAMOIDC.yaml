@@ -1,0 +1,24 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: '{{ include "ipam.fullname" . }}-netbox-oidc'
+  labels:
+    {{ include "ipam.labels" . | nindent 4 }}
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: '{{ include "ipam.fullname" . }}-netbox-oidc'
+
+  data:
+    - secretKey: client-id
+      remoteRef:
+        key: Netbox/OIDC
+        property: ClientID
+
+    - secretKey: client-secret
+      remoteRef:
+        key: Netbox/OIDC
+        property: ClientSecret
