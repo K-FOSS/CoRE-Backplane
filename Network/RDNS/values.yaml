@@ -121,7 +121,7 @@ coredns:
         - name: loadbalance
 
     - zones:
-        - zone: arpa. mylogin.space. trackmy.finance. writemy.codes. ipaddr.network. resolvemy.host. syncmy.date.
+        - zone: .
           scheme: tls://
           #use_tcp: true 
       port: 853
@@ -140,30 +140,7 @@ coredns:
             mylogin.space trackmy.finance writemy.codes
             ipaddr.network resolvemy.host syncmy.date
           configBlock: transfer from 127.0.0.1:1053
-        
-        - name: loop
-        
-        - name: reload
-        
-        - name: loadbalance
-        
-        - name: tls
-          parameters: /tls/tls.crt /tls/tls.key
 
-    - zones:
-        - zone: .
-          scheme: tls://
-          #use_tcp: true 
-      port: 853
-      scheme: 'tls'
-      plugins:
-        - name: errors
-
-        - name: health
-          configBlock: lameduck 5s
-          
-        - name: ready
-        
         - name: dnsredir
           parameters: .
           configBlock: |-
