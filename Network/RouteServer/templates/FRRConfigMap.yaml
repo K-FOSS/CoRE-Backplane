@@ -29,11 +29,14 @@ data:
       bgp router-id 2.2.2.2
       no bgp ebgp-requires-policy
       bgp disable-ebgp-connected-route-check
-      bgp bestpath peer-type multipath-relax 
+      bgp bestpath peer-type multipath-relax
       bgp graceful-restart stalepath-time 300
       neighbor kuberouter peer-group
       neighbor kuberouter ebgp-multihop 4
       neighbor kuberouter remote-as 64512
+      neighbor WAN-GW peer-group
+      neighbor WAN-RT peer-group
+      neighbor WAN-RT remote-as internal
       neighbor pnet peer-group
       neighbor pnet ebgp-multihop 6
       neighbor pnet remote-as 64512
@@ -42,16 +45,23 @@ data:
       bgp listen range 172.16.53.0/24 peer-group kuberouter
       bgp listen range 172.16.54.0/24 peer-group kuberouter
       bgp listen range 10.4.0.0/16 peer-group pnet
-
+      neighbor 172.31.241.70 peer-group kuberouter
+      neighbor 172.16.51.201 remote-as internal
+      neighbor 172.16.51.201 peer-group WAN-GW
+      neighbor 172.16.52.201 remote-as internal
+      neighbor 172.16.52.201 peer-group WAN-GW
       neighbor 172.31.241.69 remote-as 64567
       neighbor 172.31.241.69 ebgp-multihop 16
       !
       address-family ipv4 unicast
         maximum-paths 64
         maximum-paths ibgp 64
+        neighbor WAN-GW route-reflector-client
+        neighbor WAN-GW soft-reconfiguration inbound
         neighbor kuberouter soft-reconfiguration inbound
         neighbor pnet soft-reconfiguration inbound
-        neighbor kuberouter route-server-client
+        neighbor kuberouter neighbor WAN-GW route-reflector-client
+  neighbor WAN-GW soft-reconfiguration inbound
         neighbor 172.31.241.69 soft-reconfiguration inbound
         neighbor 172.31.241.69 route-server-client
       exit-address-family
