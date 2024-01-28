@@ -7,9 +7,31 @@ spec:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
     name: {{ .Release.Name }}
+
+  jwt:
+    providers:
+    - name: authentik
+      issuer: https://idp.mylogin.space/application/o/Netbox/
+      remoteJWKS:
+        uri: https://idp.mylogin.space/application/o/Netbox/jwks/
+      claimToHeaders:
+        - header: x-authentik-username
+          claim: preferred_username
+      extractFrom:
+        headers:
+          - name: Authorization
+            valuePrefix: 'Bearer '
+        cookies:
+          - session_access_token
+        params:
+          - token
+
   oidc:
     provider:
       issuer: https://idp.mylogin.space/application/o/Netbox/
+    scopes:
+      - openid
+      - profile
     clientID: FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b
     clientSecret:
       name: '{{ include "ipam.fullname" . }}-netbox-oidc'
