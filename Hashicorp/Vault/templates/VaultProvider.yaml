@@ -1,12 +1,12 @@
 apiVersion: vault.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
-  name: corevault-provider
+  name: vault-provider
 spec:
   address: http://{{ .Release.Name }}-active.{{ .Release.Namespace }}.svc.cluster.local:8200
   credentials:
     source: Secret
     secretRef:
-      name: central-corevault-token
+      name: mainvault-token
       namespace: core-prod
       key: token

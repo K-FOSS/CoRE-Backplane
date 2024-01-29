@@ -1,0 +1,71 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: authentik-vault
+spec:
+  providerConfigRef:
+    name: authentik
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: authentik-vault
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_scope_mapping" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+        ]
+      }
+
+      data "authentik_user" "akadmin" {
+        username = "kjones"
+      }
+
+      resource "random_password" "client-id" {
+        length  = 40
+        lower   = true
+        numeric = true
+        upper   = false
+        special = false
+      }
+
+      resource "random_password" "client-secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
+      resource "authentik_provider_oauth2" "auth-provider" {
+        name          = "vault"
+        client_id     = random_password.client-id.result
+        client_secret = random_password.client-secret.result
+        redirect_uris = [
+          "*",
+        ]
+        property_mappings  = data.authentik_scope_mapping.scopes.ids
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+      }
+
+      resource "authentik_application" "vault-application" {
+        name              = "vault"
+        slug              = "vault"
+        protocol_provider = authentik_provider_oauth2.auth-provider.id
+      }
+
+      output "vault_client_id" {
+        value     = random_password.client-id.result
+        sensitive = true
+      }
+
+      output "vault_client_secret" {
+        value     = random_password.client-secret.result
+        sensitive = true
+      }
