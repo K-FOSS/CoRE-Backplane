@@ -4,7 +4,14 @@ metadata:
   name: authentik
 spec:
   forProvider:
-    boundIssuer: https://myco.auth0.com/
-    description: Demonstration of the Terraform JWT auth backend
-    oidcDiscoveryUrl: https://myco.auth0.com/
+    oidcDiscoveryUrl: https://idp.mylogin.space/application/o/vault/
+
+    oidcClientId: vault
+    oidcClientSecretSecretRef:
+      name: authentik-vault
+      namespace: {{ .Release.Namespace }}
+      key: test
+
+    description: Authentik main SSO
+
     path: jwt
