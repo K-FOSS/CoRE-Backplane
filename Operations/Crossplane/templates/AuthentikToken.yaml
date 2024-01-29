@@ -1,0 +1,17 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: authentik-credentials
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: authentik-credentials
+
+  data:
+    - secretKey: Token
+      remoteRef:
+        key: Authentik
+        property: APIToken
