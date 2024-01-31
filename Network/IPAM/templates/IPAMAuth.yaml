@@ -13,7 +13,7 @@ spec:
     - name: authentik
       issuer: https://idp.mylogin.space/application/o/Netbox/
       remoteJWKS:
-        uri: https://idp.mylogin.space/application/o/Netbox/jwks/
+        uri: http://k0s-cntrl-aaa-authentik.core-prod.svc.cluster.local/application/o/Netbox/jwks/
       claimToHeaders:
         - header: x-authentik-username
           claim: preferred_username
@@ -25,6 +25,15 @@ spec:
           - session_access_token
         params:
           - token
+
+  extAuth:
+    type: HTTP
+    http:
+      host: authentik-outpost.kube-system.
+      port: 80
+      path: /outpost.goauthentik.io/auth/envoy
+      headersToBackend:
+        - x-authentik
 
   oidc:
     provider:
