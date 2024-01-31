@@ -27,14 +27,6 @@ spec:
         username = "kjones"
       }
 
-      resource "random_password" "client-id" {
-        length  = 40
-        lower   = true
-        numeric = true
-        upper   = false
-        special = false
-      }
-
       resource "random_password" "client-secret" {
         length  = 128
         lower   = true
@@ -61,7 +53,7 @@ spec:
       }
 
       output "vault_client_id" {
-        value     = random_password.client-id.result
+        value     = "vault"
         sensitive = true
       }
 
