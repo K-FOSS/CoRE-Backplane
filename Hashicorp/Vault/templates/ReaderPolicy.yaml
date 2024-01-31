@@ -1,0 +1,14 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: reader
+spec:
+  providerConfigRef:
+    name: vault-provider
+
+  forProvider:
+    name: reader
+    policy: |
+      path "/secret/*" {
+          capabilities = ["read", "list"]
+      }
