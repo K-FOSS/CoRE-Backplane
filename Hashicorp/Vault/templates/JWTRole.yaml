@@ -1,0 +1,17 @@
+apiVersion: jwt.vault.upbound.io/v1alpha1
+kind: AuthBackendRole
+metadata:
+  name: reader
+spec:
+  forProvider:
+    backend: jwt
+    boundAudiences:
+      - https://myco.test
+
+    roleName: test-role
+    roleType: jwt
+    tokenPolicies:
+    - default
+    - dev
+    - prod
+    userClaim: https://vault/user
