@@ -1,13 +1,29 @@
 apiVersion: v1
+kind: Full
+
 authProviders:
   - kind: secret
     name: gitlab-auth
+
 blockNewUsers:
   enabled: false
   passlist: []
+
+components:
+  podConfig:
+    server:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 202M
+        limits:
+          cpu: 62m
+          memory: 1157M
+
 certificate:
   kind: secret
   name: https-certificates
+
 containerRegistry:
   enableAdditionalECRAuth: false
   inCluster: true
@@ -20,14 +36,18 @@ containerRegistry:
     region: us-east-1
   privateBaseImageAllowList: []
   subassemblyBucket: ""
+
 database:
   inCluster: true
+
 disableDefinitelyGp: true
+dropImageRepo: true
 domain: gitpods.writemy.codes
-kind: Full
+
 metadata:
   region: us-east-1
   shortname: default
+
 objectStorage:
   inCluster: false
   s3:
@@ -39,11 +59,15 @@ objectStorage:
   resources:
     requests:
       memory: 2Gi
+
+
 observability:
   logLevel: info
+
 openVSX:
   url: https://open-vsx.org
 repository: registry.writemy.codes/workspaces/gitpod-core-dev/build
+
 workspace:
   maxLifetime: 36h0m0s
   resources:
