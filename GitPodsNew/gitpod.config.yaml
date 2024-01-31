@@ -28,6 +28,9 @@ certificate:
 containerRegistry:
   enableAdditionalECRAuth: false
   inCluster: true
+  privateBaseImageAllowList:
+    - registry.writemy.codes
+    - docker.io
   s3storage:
     bucket: gitpods-registry
     certificate:
@@ -73,6 +76,7 @@ repository: registry.writemy.codes/workspaces/gitpod-core-dev/build
 
 workspace:
   maxLifetime: 36h0m0s
+  workspaceImage: registry.writemy.codes/library/gitpod/workspace-full:latest
   resources:
     requests:
       cpu: "1"
@@ -84,6 +88,9 @@ workspace:
 
 experimental:
   webapp:
+    server:
+      oauthServer:
+        jwtSecret: AxxkhUNMhlcz1KL75Wdb
     spicedb:
       enabled: true
       secretRef: 'spicedb-secret'
