@@ -88,83 +88,83 @@ spec:
           - ServerSideApply=true
           - RespectIgnoreDifferences=true
 
-      sources:
-        - path: Network/Base
-          repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
-          targetRevision: HEAD
-          plugin:
-            name: argocd-lovely-plugin
-            env:
-              - name: LOVELY_HELM_MERGE
-                value: |-
+      source:
+        path: Network/Base
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
 
-                  clusterName: '{{cluster}}' 
+                clusterName: '{{cluster}}' 
 
-                  serviceCidr: '{{ servicesIPPool }}'
+                serviceCidr: '{{ servicesIPPool }}'
 
-                  pubPool: '{{ pubPool }}'
-                  submariner-operator:
-                    submariner:
-                      clusterId: '{{cluster}}'
-                      clusterCidr: '{{podIPPool}}'
-                      serviceCidr: '{{servicesIPPool}}'
+                pubPool: '{{ pubPool }}'
+                submariner-operator:
+                  submariner:
+                    clusterId: '{{cluster}}'
+                    clusterCidr: '{{podIPPool}}'
+                    serviceCidr: '{{servicesIPPool}}'
 
-                  envoy-gw:
-                    kubernetesClusterDomain: '{{ domain }}'
+                envoy-gw:
+                  kubernetesClusterDomain: '{{ domain }}'
 
-                  cilium:
-                    enabled: {{bareMetal}}
-                    k8sServiceHost: '{{ apiHost }}'
-                    k8sServicePort: '{{ apiPort }}'
+                cilium:
+                  enabled: {{bareMetal}}
+                  k8sServiceHost: '{{ apiHost }}'
+                  k8sServicePort: '{{ apiPort }}'
 
-                    # -- Configure N-S k8s service loadbalancing
-                    nodePort:
-                      # -- Enable the Cilium NodePort service implementation.
-                      enabled: true
+                  # -- Configure N-S k8s service loadbalancing
+                  nodePort:
+                    # -- Enable the Cilium NodePort service implementation.
+                    enabled: true
 
-                      # -- Port range to use for NodePort services.
-                      # range: "30000,32767"
+                    # -- Port range to use for NodePort services.
+                    # range: "30000,32767"
 
-                      # -- Set to true to prevent applications binding to service ports.
-                      bindProtection: true
+                    # -- Set to true to prevent applications binding to service ports.
+                    bindProtection: true
 
-                      # -- Append NodePort range to ip_local_reserved_ports if clash with ephemeral
-                      # ports is detected.
-                      autoProtectPortRange: true
+                    # -- Append NodePort range to ip_local_reserved_ports if clash with ephemeral
+                    # ports is detected.
+                    autoProtectPortRange: true
 
-                      # -- Enable healthcheck nodePort server for NodePort services
-                      enableHealthCheck: true
+                    # -- Enable healthcheck nodePort server for NodePort services
+                    enableHealthCheck: true
 
-                  int-dns:
-                    clusterDomain: {{ domain }}
-                    txtOwnerId: '{{ cluster }}'
+                int-dns:
+                  clusterDomain: {{ domain }}
+                  txtOwnerId: '{{ cluster }}'
 
-                  ext-dns:
-                    clusterDomain: {{ domain }}
-                    txtOwnerId: '{{ cluster }}'
+                ext-dns:
+                  clusterDomain: {{ domain }}
+                  txtOwnerId: '{{ cluster }}'
 
-                  konnectivity:
-                    enabled: {{ konnectivity }}
+                konnectivity:
+                  enabled: {{ konnectivity }}
 
-                  kube-router:
-                    enabled: {{bareMetal}}
+                kube-router:
+                  enabled: {{bareMetal}}
 
-                  merbridge:
-                    enabled: {{bareMetal}}
+                merbridge:
+                  enabled: {{bareMetal}}
 
-                  metallb:
-                    enabled: {{bareMetal}}
+                metallb:
+                  enabled: {{bareMetal}}
+              
+                anycastPool: '{{ anycastPool }}'
+
+                lbPool: '{{ lbPool }}'
+
+                vmtools:
+                  enabled: {{vmware}}
                 
-                  anycastPool: '{{ anycastPool }}'
 
-                  lbPool: '{{ lbPool }}'
-
-                  vmtools:
-                    enabled: {{vmware}}
-                  
-
-                  peers:
-                  {{peers}}
+                peers:
+                {{peers}}
 
       destination:
         server: '{{url}}'
