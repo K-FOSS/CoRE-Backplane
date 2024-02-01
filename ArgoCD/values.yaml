@@ -175,6 +175,14 @@ argo-cd:
         - /metadata/annotations/autoscaling.alpha.kubernetes.io~1current-metrics
 
       resource.exclusions: |
+
+        - apiGroups:
+            - cilium.io
+          kinds:
+            - CiliumIdentity
+          clusters:
+            - "*"
+
         - apiGroups:
             - infra.contrib.fluxcd.io
           kinds:
@@ -197,18 +205,10 @@ argo-cd:
           clusters:
             - "*"
 
-
         - apiGroups:
             - monitoring.coreos.com
           kinds:
             - Prometheus
-          clusters:
-            - "*"
-          
-        - apiGroups:
-            - cilium.io
-          kinds:
-            - CiliumIdentity
           clusters:
             - "*"
 
@@ -224,6 +224,13 @@ argo-cd:
             - discovery.k8s.io
           kinds:
             - EndpointSlice
+          clusters:
+            - "*"
+
+        - apiGroups:
+            - pxc.percona.com
+          kinds:
+            - PerconaXtraDBClusterBackup
           clusters:
             - "*"
 
