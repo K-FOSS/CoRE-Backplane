@@ -18,6 +18,7 @@ spec:
         argocd.argoproj.io/manifest-generate-paths: .
 
 
+
     spec:
       project: core
 
@@ -26,6 +27,11 @@ spec:
           kind: CSIDriver
           jqPathExpressions:
             - .spec.seLinuxMount
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
 
       source:
         path: Storage/Block
