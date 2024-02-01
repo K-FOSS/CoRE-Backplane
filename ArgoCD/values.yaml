@@ -135,13 +135,17 @@ argo-cd:
         managedFieldsManagers:
         - kube-controller-manager
 
+      resource.customizations.ignoreDifferences.batch_Job: |
+        jqPathExpressions:
+          - '.spec.podReplacementPolicy'
+
       # Configuration to define customizations ignoring differences between live and desired states for
       # all resources (GK).
       resource.customizations.ignoreDifferences.all: |
         managedFieldsManagers:
-        - kube-controller-manager
+          - kube-controller-manager
         jsonPointers:
-        - /spec/replicas
+          - /spec/replicas
 
       resource.ignoreResourceUpdatesEnabled: 'true'
 
