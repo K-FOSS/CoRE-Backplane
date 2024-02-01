@@ -83,12 +83,12 @@ democratic-csi:
       enabled: false
       #image: registry.k8s.io/sig-storage/csi-attacher:v3.4.0
       args:
-      - --v=5
-      - --leader-election
-      - --leader-election-namespace={{ .Release.Namespace }}
-      - --timeout=90s
-      - --worker-threads=10
-      - --csi-address={{ .csiSocketAddress }}
+        - --v=5
+        - --leader-election
+        - --leader-election-namespace={{ .Release.Namespace }}
+        - --timeout=90s
+        - --worker-threads=10
+        - --csi-address={{ .csiSocketAddress }}
       # if you do not want to completely override the defaults use this
       extraArgs: []
       resources:
@@ -97,13 +97,13 @@ democratic-csi:
     externalProvisioner:
       enabled: true
       args:
-      - --v=8
-      - --leader-election
-      - --leader-election-namespace={{ .Release.Namespace }}
-      - --timeout=900s
-      - --worker-threads=10
-      - --extra-create-metadata
-      - --csi-address={{ .csiSocketAddress }}
+        - --v=8
+        - --leader-election
+        - --leader-election-namespace={{ .Release.Namespace }}
+        - --timeout=900s
+        - --worker-threads=10
+        - --extra-create-metadata
+        - --csi-address={{ .csiSocketAddress }}
       # if you do not want to completely override the defaults use this
       extraArgs: []
       resources:
@@ -113,12 +113,12 @@ democratic-csi:
       enabled: false
       #image: registry.k8s.io/sig-storage/csi-resizer:v1.4.0
       args:
-      - --v=5
-      - --leader-election
-      - --leader-election-namespace={{ .Release.Namespace }}
-      - --timeout=90s
-      - --workers=10
-      - --csi-address={{ .csiSocketAddress }}
+        - --v=5
+        - --leader-election
+        - --leader-election-namespace={{ .Release.Namespace }}
+        - --timeout=90s
+        - --workers=10
+        - --csi-address={{ .csiSocketAddress }}
       # if you do not want to completely override the defaults use this
       extraArgs: []
       resources:
@@ -130,12 +130,12 @@ democratic-csi:
       # READ *before* updating from beta https://github.com/kubernetes-csi/external-snapshotter#usage
      # image: registry.k8s.io/sig-storage/csi-snapshotter:v5.0.1
       args:
-      - --v=5
-      - --leader-election
-      - --leader-election-namespace={{ .Release.Namespace }}
-      - --timeout=90s
-      - --worker-threads=10
-      - --csi-address={{ .csiSocketAddress }}
+        - --v=5
+        - --leader-election
+        - --leader-election-namespace={{ .Release.Namespace }}
+        - --timeout=90s
+        - --worker-threads=10
+        - --csi-address={{ .csiSocketAddress }}
       # if you do not want to completely override the defaults use this
       extraArgs: []
       resources:
@@ -145,12 +145,12 @@ democratic-csi:
       enabled: false
       #image: registry.k8s.io/sig-storage/csi-external-health-monitor-controller:v0.4.0
       args:
-      - --v=5
-      - --leader-election
-      - --leader-election-namespace={{ .Release.Namespace }}
-      - --timeout=90s
-      - --worker-threads=10
-      - --csi-address={{ .csiSocketAddress }}
+        - --v=5
+        - --leader-election
+        - --leader-election-namespace={{ .Release.Namespace }}
+        - --timeout=90s
+        - --worker-threads=10
+        - --csi-address={{ .csiSocketAddress }}
       #- --enable-node-watcher
       #- --list-volumes-interval
       # if you do not want to completely override the defaults use this
@@ -267,9 +267,9 @@ democratic-csi:
       enabled: true
     # image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.5.1
       args:
-      - --v=5
-      - --csi-address={{ .csiSocketAddress }}
-      - --kubelet-registration-path={{ .Values.node.kubeletHostPath }}/plugins/{{ .Values.csiDriver.name }}/csi.sock
+        - --v=5
+        - --csi-address={{ .csiSocketAddress }}
+        - --kubelet-registration-path={{ .Values.node.kubeletHostPath }}/plugins/{{ .Values.csiDriver.name }}/csi.sock
       # if you do not want to completely override the defaults use this
       extraArgs: []
 
