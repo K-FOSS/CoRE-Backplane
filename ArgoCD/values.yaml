@@ -297,7 +297,7 @@ argo-cd:
       # -- Repo server RPC call timeout seconds.
       controller.repo.server.timeout.seconds: '60'
 
-      controller.kubectl.parallelism.limit: '1'
+      controller.kubectl.parallelism.limit: '40'
 
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
@@ -321,8 +321,6 @@ argo-cd:
 
       # Cache expiration default (default 24h0m0s)
       controller.default.cache.expiration: '24h0m0s'
-
-      controller.diff.server.side: 'true'
 
       ## Server properties
 
@@ -362,7 +360,7 @@ argo-cd:
 
       ## Repo-server properties
       # -- Limit on number of concurrent manifests generate requests. Any value less the 1 means no limit.
-      reposerver.parallelism.limit: '2'
+      reposerver.parallelism.limit: '10'
       reposerver.log.level: 'debug'
 
       repo.server: 'argocd-repo-server.argocd.svc.cluster.local:8081'
