@@ -135,9 +135,9 @@ argo-cd:
         managedFieldsManagers:
         - kube-controller-manager
 
-      resource.customizations.ignoreDifferences.batch_Job: |
+      resource.customizations.ignoreDifferences.batch_jobs: |
         jqPathExpressions:
-          - '.spec.podReplacementPolicy'
+          - .spec.podReplacementPolicy
 
       # Configuration to define customizations ignoring differences between live and desired states for
       # all resources (GK).
@@ -174,7 +174,7 @@ argo-cd:
 
       resource.exclusions: |
         - apiGroups:
-            - infra.contrib.fluxcd.io/v1alpha2
+            - infra.contrib.fluxcd.io
           kinds:
             - Terraform
           clusters:
@@ -188,14 +188,22 @@ argo-cd:
             - "*"
 
         - apiGroups:
-            - monitoring.coreos.com/v1
+            - autoscaling.k8s.io
+          kinds:
+            - VerticalPodAutoscaler
+          clusters:
+            - "*"
+
+
+        - apiGroups:
+            - monitoring.coreos.com
           kinds:
             - Prometheus
           clusters:
             - "*"
           
         - apiGroups:
-            - cilium.io/v2
+            - cilium.io
           kinds:
             - CiliumIdentity
           clusters:
