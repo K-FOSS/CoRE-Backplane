@@ -10,30 +10,30 @@ spec:
 
   jwt:
     providers:
-    - name: authentik
-      issuer: https://idp.mylogin.space/application/o/Netbox/
-      remoteJWKS:
-        uri: http://k0s-cntrl-aaa-authentik.core-prod.svc.cluster.local/application/o/Netbox/jwks/
-      claimToHeaders:
-        - header: x-authentik-username
-          claim: preferred_username
-      extractFrom:
-        headers:
-          - name: Authorization
-            valuePrefix: 'Bearer '
-        cookies:
-          - session_access_token
-        params:
-          - token
+      - name: authentik
+        issuer: https://idp.mylogin.space/application/o/Netbox/
+        remoteJWKS:
+          uri: http://k0s-cntrl-aaa-authentik.core-prod.svc.cluster.local/application/o/Netbox/jwks/
+        claimToHeaders:
+          - header: x-authentik-username
+            claim: preferred_username
+        extractFrom:
+          headers:
+            - name: Authorization
+              valuePrefix: 'Bearer '
+          cookies:
+            - session_access_token
+          params:
+            - token
 
-  extAuth:
-    type: HTTP
-    http:
-      host: authentik-outpost.kube-system.
-      port: 80
-      path: /outpost.goauthentik.io/auth/envoy
-      headersToBackend:
-        - x-authentik
+  # extAuth:
+  #   type: HTTP
+  #   http:
+  #     host: authentik-outpost.kube-system.
+  #     port: 80
+  #     path: /outpost.goauthentik.io/auth/envoy
+  #     headersToBackend:
+  #       - x-authentik
 
   oidc:
     provider:
