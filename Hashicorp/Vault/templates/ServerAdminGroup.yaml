@@ -1,12 +1,24 @@
-apiVersion: identity.vault.upbound.io/v1alpha1
-kind: GroupAlias
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
 metadata:
-  name: group-alias
+  name: vault-groups
 spec:
   providerConfigRef:
-    name: vault-provider
+    name: vault-tf
 
   forProvider:
-    canonicalId: ${vault_identity_group.vault-admin.id}
-    mountAccessor: ${vault_jwt_auth_backend.authentik.accessor}
-    name: Server Admins
+    source: Inline
+    module: |
+      data "vault_identity_group" "group" {
+        group_name = "admins"
+      }
+
+      data "vault_auth_backend" "example" {
+        path = "userpass"
+      }
+
+      resource "vault_identity_group_alias" "group-alias" {
+        name           = "Server Admins"
+        mount_accessor = data.vault_auth_backend.example.accessor
+        canonical_id   = data.vault_identity_group.group.id
+      }
