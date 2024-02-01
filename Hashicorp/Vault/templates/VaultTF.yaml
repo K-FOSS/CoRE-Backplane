@@ -1,0 +1,41 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: vault-tf
+spec:
+  credentials:
+    - filename: vault-credentials
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: crossplane-vault
+        key: Token
+  configuration: |
+    provider "vault" {
+      # It is strongly recommended to configure this provider through the
+      # environment variables described above, so that each user can have
+      # separate credentials set in the environment.
+      #
+      # This will default to using $VAULT_ADDR
+      # But can be set explicitly
+      address = "http://{{ .Release.Name }}-active.{{ .Release.Namespace }}.svc.cluster.local:8200"
+      auth_login_token_file {
+        filename = file("${path.module}/vault-credentials")
+      }
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-vault-tf"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        vault = {
+          source = "hashicorp/vault"
+          version = "3.24.0"
+        }
+      }
+    }
