@@ -294,12 +294,16 @@ argo-cd:
 
       # -- Repo server RPC call timeout seconds.
       controller.repo.server.timeout.seconds: '60'
-      controller.kubectl.parallelism.limit: '5'
+
+
+      controller.kubectl.parallelism.limit: '0'
+
+      controller.sharding.algorithm: 'round-robin'
 
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
       # Set the logging level. One of: debug|info|warn|error (default "info")
-      controller.log.level: 'debug'
+      controller.log.level: 'warn'
 
       # Prometheus metrics cache expiration (disabled  by default. e.g. 24h0m0s)
       controller.metrics.cache.expiration: '24h0m0s'
@@ -357,7 +361,7 @@ argo-cd:
 
       ## Repo-server properties
       # -- Limit on number of concurrent manifests generate requests. Any value less the 1 means no limit.
-      reposerver.parallelism.limit: '1'
+      reposerver.parallelism.limit: '0'
       reposerver.log.level: 'debug'
 
       repo.server: 'argocd-repo-server.argocd.svc.cluster.local:8081'
