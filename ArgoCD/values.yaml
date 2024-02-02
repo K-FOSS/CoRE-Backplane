@@ -27,8 +27,6 @@ argo-cd:
       # -- Set the global logging level. One of: `debug`, `info`, `warn` or `error`
       level: warn
 
-    imagePullSecrets: null
-
     networkPolicy:
       create: false
       defaultDenyIngress: false
@@ -296,7 +294,6 @@ argo-cd:
 
       # -- Repo server RPC call timeout seconds.
       controller.repo.server.timeout.seconds: '60'
-
       controller.kubectl.parallelism.limit: '5'
 
       # Set the logging format. One of: text|json (default "text")
@@ -360,7 +357,7 @@ argo-cd:
 
       ## Repo-server properties
       # -- Limit on number of concurrent manifests generate requests. Any value less the 1 means no limit.
-      reposerver.parallelism.limit: '10'
+      reposerver.parallelism.limit: '1'
       reposerver.log.level: 'debug'
 
       repo.server: 'argocd-repo-server.argocd.svc.cluster.local:8081'
