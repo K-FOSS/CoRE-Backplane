@@ -479,6 +479,12 @@ argo-cd:
 
     affinity: {}
 
+    resources:
+      limits:
+        cpu: '1'
+        memory: 4Gi
+
+
     autoscaling:
       enabled: false
       maxReplicas: 2
@@ -571,17 +577,13 @@ argo-cd:
 
     replicas: 1
     
-    image:
-      imagePullPolicy: ''
-      repository: ''
-
-    extraArgs: []
-
-    additionalApplications: null
-
-    additionalProjects: null
-
-    affinity: {}
+    resources:
+      limits:
+        cpu: '0.6'
+        memory: 800Mi
+      requests:
+        cpu: 32m
+        memory: 64Mi
 
     autoscaling:
       enabled: false
