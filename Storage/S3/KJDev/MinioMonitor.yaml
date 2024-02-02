@@ -10,11 +10,12 @@ spec:
       v1.min.io/tenant: kjdev-core
 
   podMetricsEndpoints:
-    - port: 9090
+    - targetPort: 9090
+      path: /minio/v2/metrics/cluster
       interval: 15s
       authorization:
         type: Bearer
         credentials:
           name: minio-prom-additional-scrape-config
           key: token
-      path: /minio/v2/metrics/cluster
+      
