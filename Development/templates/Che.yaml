@@ -19,16 +19,6 @@ spec:
         text: >-
           It's time to get your Dev on!
 
-    # database:
-    #   credentialsSecretName: postgres-credentials
-    #   externalDb: false
-    #   postgresDb: devspaces
-    #   # BUG: can not change postgresHostNamae
-    #   postgresHostName: postgres
-    #   postgresPort: '5432'
-    #   pvc:
-    #     claimSize: 1Gi
-
     devfileRegistry:
       # deployment:
       #   containers:
@@ -36,7 +26,8 @@ spec:
       #       # image: quay.io/eclipse/che-devfile-registry:next
       #       image: registry.redhat.io/devspaces/devfileregistry-rhel8:latest
       externalDevfileRegistries:
-      - url: https://eclipse-che.github.io/che-devfile-registry/main
+        - url: https://eclipse-che.github.io/che-devfile-registry/main
+
     metrics:
       enable: true
 
@@ -47,13 +38,19 @@ spec:
   containerRegistry: {}
 
   devEnvironments:
-    startTimeoutSeconds: 180
+    defaultEditor: che-incubator/che-code/latest
+
+    persistUserHome:
+      enabled: true
+
+
     secondsOfRunBeforeIdling: -1
-    maxNumberOfRunningWorkspacesPerUser: 2
+    maxNumberOfRunningWorkspacesPerUser: 4
     maxNumberOfWorkspacesPerUser: -1
 
-    disableContainerBuildCapabilities: true
-    defaultEditor: che-incubator/che-code/latest
+    disableContainerBuildCapabilities: false
+
+
 
     # defaultComponents:
     #   - container:
