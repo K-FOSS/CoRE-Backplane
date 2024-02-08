@@ -232,7 +232,7 @@ velero:
         # prefix is the directory under which all Velero data should be stored within the bucket. Optional.
         prefix:
         # default indicates this location is the default backup storage location. Optional.
-        default: true
+        default: false
         # validationFrequency defines how frequently Velero should validate the object storage. Optional.
         validationFrequency:
         # accessMode determines if velero can write to this backup storage location. Optional.
@@ -248,6 +248,36 @@ velero:
         config:
           region: us-east-1
           s3Url: https://s3.mylogin.space
+
+        # name is the name of the backup storage location where backups should be stored. If a name is not provided,
+        # a backup storage location will be created with the name "default". Optional.
+      - name: cloudflare-s3
+        # provider is the name for the backup storage location provider.
+        provider: aws
+        # bucket is the name of the bucket to store backups in. Required.
+        bucket: velero-backup
+        # caCert defines a base64 encoded CA bundle to use when verifying TLS connections to the provider. Optional.
+        caCert:
+        # prefix is the directory under which all Velero data should be stored within the bucket. Optional.
+        prefix:
+        # default indicates this location is the default backup storage location. Optional.
+        default: true
+        # validationFrequency defines how frequently Velero should validate the object storage. Optional.
+        validationFrequency:
+        # accessMode determines if velero can write to this backup storage location. Optional.
+        # default to ReadWrite, ReadOnly is used during migrations and restores.
+        accessMode: ReadWrite
+        credential:
+          # name of the secret used by this backupStorageLocation.
+          name: backups-velero-cloudflare-s3
+          # name of key that contains the secret data to be used.
+          key: cloud
+        # Additional provider-specific configuration. See link above
+        # for details of required/optional fields for your provider.
+        config:
+          region: us-east-1
+          s3forcepathstyle: 'true'
+          s3Url: <path:CORE0_SITE1/data/Backups/Velero/CloudFlare#URL>
 
     # Parameters for the VolumeSnapshotLocation(s). Configure multiple by adding other element(s) to the volumeSnapshotLocation slice.
     # See https://velero.io/docs/v1.6/api-types/volumesnapshotlocation/

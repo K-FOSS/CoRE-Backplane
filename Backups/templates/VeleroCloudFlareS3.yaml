@@ -1,0 +1,31 @@
+apiversion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: cloudflare-s3-backups
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: backups-velero-cloudflare-s3
+
+    template:
+      engineVersion: v2
+      data:
+        cloud: |{{`
+          [default]
+          aws_access_key_id={{ .AccessKey }}
+          aws_secret_access_key={{ .SecretKey }}
+          `}}
+
+  data:
+    - secretKey: AccessKey
+      remoteRef:
+        key: Backups/Velero/CloudFlare
+        property: AccessKey
+      
+    - secretKey: SecretKey
+      remoteRef:
+        key: Backups/Velero/CloudFlare
+        property: SecretKey
