@@ -227,7 +227,15 @@ argo-cd:
   controller:
     name: application-controller
 
-    replicas: 1
+    replicas: 2
+
+    resources:
+      requests:
+        cpu: 716m
+        memory: 6769M
+      limits:
+        cpu: 716m
+        memory: 6769M
 
     metrics:
       applicationLabels:
@@ -238,37 +246,7 @@ argo-cd:
 
       rules:
         enabled: false
-
-      service:
-        annotations: {}
-        labels: {}
-        servicePort: 8082
-
-      serviceMonitor:
-        additionalLabels:
-          resolvemy.host/metrics: mimir
-
-        enabled: true
-        interval: 5m
-        metricRelabelings: null
-        namespace: ''
-        relabelings: null
-        selector: {}
-
-
-    clusterAdminAccess:
-      enabled: true
-
-    clusterRoleRules:
-      enabled: false
-      rules: null
-
-    containerPort: 8082
     enableStatefulSet: true
-
-    nodeSelector: {}
-
-  createAggregateRoles: false
 
 
   repoServer:
@@ -288,6 +266,16 @@ argo-cd:
           name: argocd-vault-replacer-credentials
 
   server:
+    replicas: 3
+
+    resources:
+      requests:
+        cpu: 15m
+        memory: 163M
+      limits:
+        cpu: 100m
+        memory: 471M
+
     metrics:
       enabled: true
       service:
