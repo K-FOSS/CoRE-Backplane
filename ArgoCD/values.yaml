@@ -1,24 +1,8 @@
 argo-cd:
-  extraObjects: null
   fullnameOverride: 'argocd'
-
-  kubeVersionOverride: ''
-
   nameOverride: argocd
 
-  ## Custom resource configuration
-  crds:
-    # -- Annotations to be added to all CRDs
-    annotations: {}
-
   global:
-    additionalLabels: {}
-
-    image:
-      imagePullPolicy: IfNotPresent
-      # -- If defined, a repository applied to all Argo CD deployments
-      repository: quay.io/argoproj/argocd
-
     logging:
       # -- Set the global logging format. Either: `text` or `json`
       format: json
@@ -31,6 +15,8 @@ argo-cd:
 
     podLabels:
       logs: loki-myloginspace
+
+    priorityClassName: 'tier2-priority'
 
   configs:
     rbac:
@@ -282,85 +268,16 @@ argo-cd:
 
     nodeSelector: {}
 
-    pdb:
-      annotations: {}
-      enabled: true
-      labels: {}
-
-
-
-    priorityClassName: 'tier2-priority'
-
-
-
-    service:
-      annotations: {}
-      labels: {}
-      port: 8082
-      portName: https-controller
-
-    serviceAccount:
-      annotations: {}
-      automountServiceAccountToken: true
-      create: true
-      name: argocd-application-controller
-
   createAggregateRoles: false
 
 
   repoServer:
-    name: repo-server
-
-    replicas: 1
 
     envFrom:
       - secretRef:
           name: argocd-vault-replacer-credentials
 
-    metrics:
-      enabled: true
-      service:
-        annotations: {}
-        labels: {}
-        servicePort: 8084
-
-      serviceMonitor:
-        additionalLabels:
-          resolvemy.host/metrics: mimir
-
-        enabled: true
-        interval: 5m
-        metricRelabelings: null
-        namespace: ''
-        relabelings: null
-        selector: {}
-
-
-    priorityClassName: 'tier2-priority'
-
   server:
-    name: server
-
-    replicas: 1
-
-    certificate:
-      enabled: false
-
-    clusterAdminAccess:
-      enabled: true
-    
-    configAnnotations: {}
-    
-    configEnabled: true
-
-    containerPort: 8080
-
-    ingress:
-      https: false
-
-    ingressGrpc:
-      enabled: false
-
     metrics:
       enabled: true
       service:
@@ -379,34 +296,8 @@ argo-cd:
         relabelings: null
         selector: {}
 
-
-    priorityClassName: 'tier2-priority'
-
     route:
       enabled: false
-
-    service:
-      annotations: {}
-      externalIPs: []
-      externalTrafficPolicy: ''
-      labels: {}
-      loadBalancerIP: ''
-      loadBalancerSourceRanges: null
-      namedTargetPort: true
-      nodePortHttp: 30080
-      nodePortHttps: 30443
-      servicePortHttp: 80
-      servicePortHttpName: http
-      servicePortHttps: 443
-      servicePortHttpsName: https
-      sessionAffinity: ''
-      type: ClusterIP
-
-    serviceAccount:
-      annotations: {}
-      automountServiceAccountToken: true
-      create: true
-      name: argocd-server
 
     staticAssets:
       enabled: true
@@ -415,32 +306,6 @@ argo-cd:
   applicationSet:
     # -- Enable Application Set controller
     enabled: true
-
-    # -- Application Set controller name string
-    name: applicationset-controller
-
-    # -- The number of controller pods to run
-    replicaCount: 1
-
-    args:
-      # -- The default metric address
-      metricsAddr: :8080
-
-      # -- The default health check port
-      probeBindAddr: :8081
-
-      # -- The default leader election setting
-      enableLeaderElection: false
-
-      # -- How application is synced between the generator and the cluster
-      policy: sync
-
-      # -- Print debug logs
-      debug: false
-
-      # -- Enable dry run mode
-      dryRun: false
-
 
     ## Webhook for the Git Generator
     ## Ref: https://argocd-applicationset.readthedocs.io/en/master/Generators-Git/#webhook-configuration)
@@ -456,15 +321,7 @@ argo-cd:
     metrics:
       # -- Enables prometheus metrics server
       enabled: false
-      # -- Metrics port
-      port: 9001
-      service:
-        # -- Metrics service annotations
-        annotations: {}
-        # -- Metrics service labels
-        labels: {}
-        # -- Metrics service port name
-        portName: http-metrics
+
       serviceMonitor:
         # -- Enable a prometheus ServiceMonitor
         enabled: false
