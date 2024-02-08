@@ -81,12 +81,6 @@ argo-cd:
       ## Ref: https://argo-cd.readthedocs.io/en/latest/faq/#how-to-disable-admin-user
       admin.enabled: true
 
-      # -- Timeout to discover if a new manifests version got published to the repository
-      timeout.reconciliation: 1h
-
-      # -- Timeout to refresh application data as well as target manifests cache
-      timeout.hard.reconciliation: 2h
-
       # Configuration to customize resource behavior (optional) can be configured via splitted sub keys.
       # Keys are in the form: resource.customizations.ignoreDifferences.<group_kind>, resource.customizations.health.<group_kind>
       # resource.customizations.actions.<group_kind>, resource.customizations.knownTypeFields.<group-kind>
@@ -191,15 +185,11 @@ argo-cd:
     # Argo CD configuration parameters
     ## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/argocd-cmd-params-cm.yaml
     params:
-
       ## Redis
       redis.server: 'redis.mylogin.space:6379'
       redis.db: '10'
 
       ## Generic parameters
-
-      # -- Open-Telemetry collector address: (e.g. "otel-collector:4317")
-      otlp.address: 'core-tempo-distributor.core-prod.svc.k0s.resolvemy.host:4317'
 
       ## Controller Properties
 
@@ -209,34 +199,16 @@ argo-cd:
       # -- Number of application operation processors
       controller.operation.processors: '5'
 
-
-      # -- Repo server RPC call timeout seconds.
-      controller.repo.server.timeout.seconds: '60'
-
-      controller.sharding.algorithm: 'round-robin'
-
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
       # Set the logging level. One of: debug|info|warn|error (default "info")
       controller.log.level: 'warn'
-
-      # Prometheus metrics cache expiration (disabled  by default. e.g. 24h0m0s)
-      controller.metrics.cache.expiration: '24h0m0s'
-
-      # Specifies timeout between application self heal attempts (default 5)
-      controller.self.heal.timeout.seconds: '5'
-
-      # Cache expiration for app state (default 1h0m0s)
-      controller.app.state.cache.expiration: '1h'
 
       # Specifies if resource health should be persisted in app CRD (default true)
       # Changing this to `false` significantly reduce number of Application CRD updates and improves controller performance.
       # However, disabling resource health by default might affect applications that communicate with Applications CRD directly
       # so we have to defer switching this to `false` by default till v3.0 release.
       controller.resource.health.persist: 'false'
-
-      # Cache expiration default (default 24h0m0s)
-      controller.default.cache.expiration: '24h'
 
       ## Server properties
 
@@ -261,21 +233,6 @@ argo-cd:
       # -- Set X-Frame-Options header in HTTP responses to value. To disable, set to "".
       server.x.frame.options: sameorigin
 
-      # Cache expiration for failed login attempts (default 24h0m0s)
-      server.login.attempts.expiration: '24h'
-
-      # Cache expiration for app state (default 1h0m0s)
-      server.app.state.cache.expiration: '1h'
-
-      # Cache expiration default (default 24h0m0s)
-      server.default.cache.expiration: '24h'
-
-
-      ## Repo-server properties
-      # -- Limit on number of concurrent manifests generate requests. Any value less the 1 means no limit.
-      reposerver.parallelism.limit: '0'
-      reposerver.log.level: 'debug'
-
       repo.server: 'argocd-repo-server.argocd.svc.cluster.local:8081'
 
 
@@ -285,15 +242,6 @@ argo-cd:
     name: application-controller
 
     replicas: 1
-
-    resources: {}
-
-
-    image:
-      imagePullPolicy: ''
-      repository: ''
-
-    extraArgs: []
 
     metrics:
       applicationLabels:
@@ -400,21 +348,6 @@ argo-cd:
 
     clusterAdminAccess:
       enabled: true
-
-    config:
-      application.instanceLabelKey: argocd.argoproj.io/instance
-      exec.enabled: 'true'
-      url: https://argo.writemy.codes
-      oidc.config: >
-        name: Authentik
-
-        issuer: https://idp.mylogin.space/application/o/argocd/
-
-        clientID: $oidc.clientID
-
-        clientSecret: $oidc.clientSecret
-
-        requestedScopes: ["openid", "profile", "email"]
     
     configAnnotations: {}
     
