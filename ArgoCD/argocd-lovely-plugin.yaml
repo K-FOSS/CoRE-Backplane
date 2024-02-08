@@ -22,27 +22,23 @@ spec:
           volumeMounts:
             - mountPath: /custom-tools
               name: custom-tools
-
-        - name: download-toolsgitpods
-          image: kristianfjones/gitpods-testing:latest
-          command: [sh, -c]
-          args:
-            - >-
-              mv /installer /custom-tools/gitpods-installer
-          volumeMounts:
-            - mountPath: /custom-tools
-              name: custom-tools
       containers:
         - name: lovely-plugin
-          # This command is actually already set in the image.
           image: ghcr.io/crumbhole/lovely-vault-plugin:0.23.0
-          # Here we are configuring default evironment for every app - in this case vault
+
           envFrom:
             - secretRef:
                 name: argocd-vault-config
           securityContext:
             runAsNonRoot: true
             runAsUser: 999
+          resources:
+            requests:
+              cpu: 1388m
+              memory: 8702M
+            limits:
+              cpu: 1388m
+              memory: 8702M
           env:
             - name: LOVELY_PLUGINS
               value: argocd-vault-plugin generate -
