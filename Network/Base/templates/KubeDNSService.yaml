@@ -13,15 +13,13 @@ spec:
   clusterIPs:
     - {{ regexReplaceAll "^((?:[0-9]{1,3}\\.){3})[0-9]{1,3}\\/[0-3][0-9]?$" .Values.serviceCidr "${1}10" }}
 
-  type: LoadBalancer
-  internalTrafficPolicy: Local
+  type: ClusterIP
 
   selector:
     k8s-app: kube-dns
 
-
   ports:
-    - name: dns
+    - name: dns-udp
       port: 53
       protocol: UDP
 
