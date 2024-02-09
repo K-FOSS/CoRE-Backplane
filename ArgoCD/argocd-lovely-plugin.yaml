@@ -5,23 +5,6 @@ metadata:
 spec:
   template:
     spec:
-      # -- init container to download vault plugin
-      initContainers:
-        - name: download-tools
-          image: registry.access.redhat.com/ubi8
-          env:
-            - name: AVP_VERSION
-              # renovate: datasource=github-releases depName=argoproj-labs/argocd-vault-plugin
-              value: 1.17.0
-          command: [sh, -c]
-          args:
-            - >-
-              curl -L https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v$(AVP_VERSION)/argocd-vault-plugin_$(AVP_VERSION)_linux_amd64 -o argocd-vault-plugin &&
-              chmod +x argocd-vault-plugin &&
-              mv argocd-vault-plugin /custom-tools/
-          volumeMounts:
-            - mountPath: /custom-tools
-              name: custom-tools
       containers:
         - name: lovely-plugin
           image: ghcr.io/crumbhole/lovely-vault-plugin:1.0.0
@@ -29,24 +12,17 @@ spec:
           envFrom:
             - secretRef:
                 name: argocd-vault-config
+
+          env:
+            - name: PLUGIN_NAME
+              value: argocd-lovely-plugin
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 999
-          resources:
-            requests:
-              cpu: 10m
-              memory: 64M
 
-            limits:
-              cpu: 2129m
-              memory: 16G
 
-          env:
-            - name: LOVELY_PLUGINS
-              value: argocd-vault-plugin generate -
 
-            - name: PLUGIN_NAME
-              value: argocd-lovely-plugin
           volumeMounts:
             # Import the repo-server's plugin binary
             - name: var-files
@@ -58,17 +34,10 @@ spec:
               # Starting with v2.4, do NOT mount the same tmp volume as the repo-server container. The filesystem separation helps
               # mitigate path traversal attacks.
 
-            - mountPath: /tmp
-              name: lovely-tmp
-
-              # Mount the custom-tools volume, which contains the plugin binary.
-            - name: custom-tools
-              subPath: argocd-vault-plugin
-              mountPath: /usr/local/bin/argocd-vault-plugin
+            - name:%20lovely-tmp
+              mountPath: /tmp
+              
       volumes:
         # A temporary directory for the tool to work in.
         - name: lovely-tmp
-          emptyDir: {}
-
-        - name: custom-tools
           emptyDir: {}
