@@ -1,0 +1,87 @@
+apiversion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./test.yaml
+  - ./ProxyConfig.yaml
+
+images:
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/brancz/kube-rbac-proxy
+    newName: quay.io/brancz/kube-rbac-proxy
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/library/redis
+    newName: redis
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/chainguard/redis
+    newName: cgr.dev/chainguard/redis
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/bitnami/mysql
+    newName: bitnami/mysql
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/bitnami/bitnami-shell
+    newName: bitnami/bitnami-shell
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/library/alpine
+    newName: alpine
+
+  - name: gistry.writemy.codes/workspaces/gitpod-core-dev/build/authzed/spicedb
+    newName: authzed/spicedb
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/kube-rbac-proxy
+    newName: quay.io/brancz/kube-rbac-proxy
+
+  - name: registry.writemy.codes/workspaces/gitpod-core-dev/build/workspace-full
+    newName: registry.writemy.codes/cache/gitpod/workspace-full
+
+patches:
+  - patch: |-
+      - op: remove
+        path: /status
+        value: {}
+    target:
+      group: trust.cert-manager.io
+      version: v1alpha1
+      kind: Bundle
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: proxy
+      spec:
+        template:
+          spec:
+            volumes:
+              - configMap:
+                  defaultMode: 420
+                  name: caddyproxy-config
+                name: caddyfile
+            containers:
+              - name: proxy
+                volumeMounts:
+                  - mountPath: /etc/caddy/Caddyfile
+                    name: caddyfile
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: proxy
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: registry
+      spec:
+        template:
+          spec:
+            containers:
+              - env:
+                  - name: REGISTRY_STORAGE_S3_ENCRYPT
+                    value: 'false'
+
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: registry
