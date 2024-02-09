@@ -11,11 +11,11 @@ spec:
     name: consul-s3
 
     template:
-      engineVersion: v2 {{`
+      engineVersion: v2 
       data: 
-        Bucket: {{ .Bucket }}
-        URL: {{ .URL }}
-        credentials: |
+        Bucket: '{{`{{ .Bucket }}`}}'
+        URL: '{{`{{ .URL }}`}}'
+        credentials: |{{`
           [default]
           access_key = {{ .AccessKey }}
           secret_key = {{ .SecretKey }}
