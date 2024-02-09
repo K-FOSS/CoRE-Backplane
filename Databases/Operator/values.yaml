@@ -227,7 +227,7 @@ postgres-operator:
     etcd_host: ''
 
     # Spilo docker image
-    docker_image: ghcr.io/zalando/spilo-15:3.0-p1
+    docker_image: ghcr.io/zalando/spilo-15:3.1-p1
 
     # key name for annotation to ignore globally configured instance limits
     # ignore_instance_limits_annotation_key: ""
@@ -452,10 +452,10 @@ postgres-operator:
     default_memory_request: 100Mi
 
     # optional upper boundary for CPU request
-    # max_cpu_request: "1"
+    max_cpu_request: "6"
 
     # optional upper boundary for memory request
-    # max_memory_request: 4Gi
+    max_memory_request: 8Gi
 
     # hard CPU minimum required to properly run a Postgres cluster
     min_cpu_limit: 250m
@@ -503,7 +503,7 @@ postgres-operator:
     enable_master_load_balancer: true
 
     # toggles service type load balancer pointing to the master pooler pod of the cluster
-    enable_master_pooler_load_balancer: false
+    enable_master_pooler_load_balancer: true
 
     # toggles service type load balancer pointing to the replica pod of the cluster
     enable_replica_load_balancer: false
@@ -529,7 +529,7 @@ postgres-operator:
   # options to aid debugging of the operator itself
   configDebug:
     # toggles verbose debug logs from the operator
-    debug_logging: true
+    debug_logging: false
 
     # toggles operator functionality that require access to the postgres database
     enable_database_access: true
