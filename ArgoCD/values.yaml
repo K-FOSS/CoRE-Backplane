@@ -204,7 +204,7 @@ argo-cd:
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
       # Set the logging level. One of: debug|info|warn|error (default "info")
-      controller.log.level: 'warn'
+      controller.log.level: 'debug'
 
       # Specifies if resource health should be persisted in app CRD (default true)
       # Changing this to `false` significantly reduce number of Application CRD updates and improves controller performance.
@@ -247,15 +247,8 @@ argo-cd:
 
     replicas: 1
 
-    enableStatefulSet: false
-
-
   repoServer:
     replicas: 1
-
-    envFrom:
-      - secretRef:
-          name: argocd-vault-replacer-credentials
 
   server:
     replicas: 1
