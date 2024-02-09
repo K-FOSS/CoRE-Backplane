@@ -136,12 +136,6 @@ submariner-operator:
 cilium:
   enabled: true
 
-  # upgradeCompatibility helps users upgrading to ensure that the configMap for
-  # Cilium will not change critical values to ensure continued operation
-  # This is flag is not required for new installations.
-  # For example: 1.7, 1.8, 1.9
-  # upgradeCompatibility: '1.8'
-
   securityContext:
     # -- User to run the pod with
     # runAsUser: 0
@@ -225,14 +219,6 @@ cilium:
   rbac:
     # -- Enable creation of Resource-Based Access Control configuration.
     create: true
-
-  # -- Configure image pull secrets for pulling container images
-  imagePullSecrets:
-  # - name: "image-pull-secret"
-
-  # kubeConfigPath: ~/.kube/config
-  # k8sServiceHost:
-  # k8sServicePort:
 
   cluster:
     # -- Name of the cluster. Only required for Cluster Mesh.
@@ -2731,30 +2717,6 @@ int-dns:
 
 
 ext-dns:
-  ## @section Global parameters
-  ## Global Docker image parameters
-  ## Please, note that this will override the image parameters, including dependencies, configured to use the global value
-  ## Current available global Docker image parameters: imageRegistry, imagePullSecrets and storageClass
-  ##
-
-  ## @param global.imageRegistry Global Docker image registry
-  ## @param global.imagePullSecrets Global Docker registry secret names as an array
-  ##
-  global:
-    imageRegistry: ""
-    ## E.g.
-    ## imagePullSecrets:
-    ##   - myRegistryKeySecretName
-    ##
-    imagePullSecrets: []
-
-  ## @section Common parameters
-  ##
-
-  ## @param nameOverride String to partially override external-dns.fullname template (will maintain the release name)
-  ##
-  nameOverride: ''
-
   ## @param fullnameOverride String to fully override external-dns.fullname template
   ##
   fullnameOverride: ext-dns
@@ -3476,14 +3438,6 @@ metallb:
     strategy:
       type: RollingUpdate
 
-    serviceAccount:
-      # Specifies whether a ServiceAccount should be created
-      create: true
-      # The name of the ServiceAccount to use. If not set and create is
-      # true, a name is generated using the fullname template
-      name: ""
-      annotations: {}
-
     securityContext:
       runAsNonRoot: true
       # nobody
@@ -3507,26 +3461,10 @@ metallb:
 
     podAnnotations: {}
 
-    livenessProbe:
-      enabled: true
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
-
-    readinessProbe:
-      enabled: true
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
-
   # speaker contains configuration specific to the MetalLB speaker
   # daemonset.
   speaker:
-    enabled: false
+    enabled: true
 
     excludeInterfaces:
       enabled: false
@@ -3534,11 +3472,6 @@ metallb:
     memberlist:
       enabled: false
       mlBindPort: 7946
-
-    image:
-      repository: quay.io/metallb/speaker
-      tag:
-      pullPolicy:
 
     ## @param speaker.updateStrategy.type Speaker daemonset strategy type
     ## ref: https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/
@@ -3548,14 +3481,6 @@ metallb:
       ## Can be set to RollingUpdate or OnDelete
       ##
       type: RollingUpdate
-
-    serviceAccount:
-      # Specifies whether a ServiceAccount should be created
-      create: true
-      # The name of the ServiceAccount to use. If not set and create is
-      # true, a name is generated using the fullname template
-      name: ""
-      annotations: {}
 
     ## Defines a secret name for the controller to generate a memberlist encryption secret
     ## By default secretName: {{ "metallb.fullname" }}-memberlist
@@ -3579,28 +3504,10 @@ metallb:
 
     podAnnotations: {}
 
-    livenessProbe:
-      enabled: true
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
-
-    readinessProbe:
-      enabled: true
-      failureThreshold: 3
-      initialDelaySeconds: 10
-      periodSeconds: 10
-      successThreshold: 1
-      timeoutSeconds: 1
-
     # frr contains configuration specific to the MetalLB FRR container,
     # for speaker running alongside FRR.
     frr:
       enabled: false
-
-
 
       # if set, enables a rbac proxy sidecar container on the speaker to
       # expose the frr metrics via tls.
