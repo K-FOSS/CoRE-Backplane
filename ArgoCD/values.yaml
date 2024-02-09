@@ -67,6 +67,12 @@ argo-cd:
       ## Ref: https://argo-cd.readthedocs.io/en/latest/faq/#how-to-disable-admin-user
       admin.enabled: true
 
+      # -- Timeout to discover if a new manifests version got published to the repository
+      timeout.reconciliation: 1h
+
+      # -- Timeout to refresh application data as well as target manifests cache
+      timeout.hard.reconciliation: 2h
+
       # Configuration to customize resource behavior (optional) can be configured via splitted sub keys.
       # Keys are in the form: resource.customizations.ignoreDifferences.<group_kind>, resource.customizations.health.<group_kind>
       # resource.customizations.actions.<group_kind>, resource.customizations.knownTypeFields.<group-kind>
@@ -188,6 +194,11 @@ argo-cd:
       # -- Number of application operation processors
       controller.operation.processors: '5'
 
+      # -- Repo server RPC call timeout seconds.
+      controller.repo.server.timeout.seconds: '300'
+
+      controller.kubectl.parallelism.limit: '0'
+
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
       # Set the logging level. One of: debug|info|warn|error (default "info")
@@ -223,8 +234,6 @@ argo-cd:
       server.x.frame.options: sameorigin
 
       repo.server: 'argocd-repo-server.argocd.svc.cluster.local:8081'
-
-
 
 
   controller:
