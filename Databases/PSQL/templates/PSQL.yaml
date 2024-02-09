@@ -32,15 +32,9 @@ spec:
 
   enableMasterLoadBalancer: true
 
-  masterServiceAnnotations:
-    consul.hashicorp.com/service-name: psql
-    metallb.universe.tf/ip-allocated-from-pool: anycast-pool
-    external-dns.alpha.kubernetes.io/hostname: psql.mylogin.space
-    metallb.universe.tf/loadBalancerIPs: 10.1.1.38
-    io.cilium/lb-ipam-sharing-key: psql
-    io.cilium/lb-ipam-ips: 10.1.1.38
+  masterServiceAnnotations: {}
 
-  enableConnectionPooler: false # enable/disable connection pooler deployment
+  enableConnectionPooler: true
 
   allowedSourceRanges:  # load balancers' source ranges for both master and replica services
     - 0.0.0.0/0
@@ -68,39 +62,6 @@ spec:
 
   volume:
     size: 50Gi
-
-#    storageClass: my-sc
-#    iops: 1000  # for EBS gp3
-#    throughput: 250  # in MB/s for EBS gp3
-#    selector:
-#      matchExpressions:
-#        - { key: flavour, operator: In, values: [ "banana", "chocolate" ] }
-#      matchLabels:
-#        environment: dev
-#        service: postgres
-  # additionalVolumes:
-  #   - name: empty
-  #     mountPath: /opt/empty
-  #     targetContainers:
-  #       - all
-  #     volumeSource:
-  #       emptyDir: {}
-#    - name: data
-#      mountPath: /home/postgres/pgdata/partitions
-#      targetContainers:
-#        - postgres
-#      volumeSource:
-#        PersistentVolumeClaim:
-#          claimName: pvc-postgresql-data-partitions
-#          readyOnly: false
-#    - name: conf
-#      mountPath: /etc/telegraf
-#      subPath: telegraf.conf
-#      targetContainers:
-#        - telegraf-sidecar
-#      volumeSource:
-#        configMap:
-#          name: my-config-map
 
 #  spiloRunAsUser: 101
 #  spiloRunAsGroup: 103
@@ -183,19 +144,12 @@ spec:
 #  - Sat:00:00-04:00
 
 # overwrite custom properties for connection pooler deployments
-#  connectionPooler:
-#    numberOfInstances: 2
-#    mode: "transaction"
-#    schema: "pooler"
-#    user: "pooler"
-#    maxDBConnections: 60
-#    resources:
-#      requests:
-#        cpu: 300m
-#        memory: 100Mi
-#      limits:
-#        cpu: "1"
-#        memory: 100Mi
+  connectionPooler:
+    numberOfInstances: 3
+    mode: transaction
+    schema: pooler
+    user: pooler
+    maxDBConnections: 200
 
   # initContainers:
   # - name: date

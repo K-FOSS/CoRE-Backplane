@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: psql-main
+
+  labels:
+    lan-mode: private
+    wan-mode: public
+
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: psql.mylogin.space
+    io.cilium/lb-ipam-ips: 10.1.1.38
+    io.cilium/lb-ipam-sharing-key: psql
+    metallb.universe.tf/ip-allocated-from-pool: anycast-pool
+    metallb.universe.tf/loadBalancerIPs: 10.1.1.38
+spec:
+  type: LoadBalancer
+  ports:
+    - name: postgresql
+      port: 5432
+      protocol: TCP
+      targetPort: 5432
+
