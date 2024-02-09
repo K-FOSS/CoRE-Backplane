@@ -31,10 +31,9 @@ spec:
     ops: opsadmin
 
   enableMasterLoadBalancer: true
+  enableReplicaLoadBalancer: true
 
-  masterServiceAnnotations: {}
-
-  enableConnectionPooler: true
+  enableConnectionPooler: false
 
   allowedSourceRanges:  # load balancers' source ranges for both master and replica services
     - 0.0.0.0/0
@@ -88,18 +87,10 @@ spec:
       locale: 'en_US.UTF-8'
       data-checksums: 'true'
 
-#    pg_hba:
-#      - hostssl all all 0.0.0.0/0 md5
-#      - host    all all 0.0.0.0/0 md5
-
-#    slots:
-#      permanent_physical_1:
-#        type: physical
-
-#      permanent_logical_1:
-#        type: logical
-#        database: foo
-#        plugin: pgoutput
+    pg_hba:
+      - hostssl all all 0.0.0.0/0 md5
+      - host all all 0.0.0.0/0 md5
+      - hostssl all all 0.0.0.0/0 ldap ldapserver=psql.mylogin.space ldapport=636 ldaptls=1 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn"
 
     ttl: 30
 
@@ -115,17 +106,6 @@ spec:
 
     maximum_lag_on_failover: 33554432
 
-  # restore a Postgres DB with point-in-time-recovery
-  # with a non-empty timestamp, clone from an S3 bucket using the latest backup before the timestamp
-  # with an empty/absent timestamp, clone from an existing alive cluster using pg_basebackup
-  # clone:
-  #   cluster: 'core'
-  #   s3_endpoint: <path:CORE0_SITE1/data/PSQL/S3#Endpoint>
-  #   s3_access_key_id: <path:CORE0_SITE1/data/PSQL/S3#AccessKey>
-  #   s3_secret_access_key: <path:CORE0_SITE1/data/PSQL/S3#SecretKey>
-  #   s3_wal_path: s3://psql-backups/spilo/core/wal/14
-  #   timestamp: "2023-12-19T12:40:33+01:00"
-
 # run periodic backups with k8s cron jobs
 #  enableLogicalBackup: true
 #  logicalBackupSchedule: "30 00 * * *"
@@ -134,36 +114,6 @@ spec:
 #  - 01:00-06:00  #UTC
 #  - Sat:00:00-04:00
 
-# overwrite custom properties for connection pooler deployments
-  connectionPooler:
-    numberOfInstances: 3
-    mode: transaction
-    schema: pooler
-    user: pooler
-    maxDBConnections: 200
-
-  # initContainers:
-  # - name: date
-  #   image: busybox
-  #   command: [ "/bin/date" ]
-
-#  sidecars:
-#   - name: "telegraf-sidecar"
-#     image: "telegraf:latest"
-#     ports:
-#     - name: metrics
-#       containerPort: 8094
-#       protocol: TCP
-#     resources:
-#       limits:
-#         cpu: 500m
-#         memory: 500Mi
-#       requests:
-#         cpu: 100m
-#         memory: 100Mi
-#     env:
-#       - name: "USEFUL_VAR"
-#         value: "perhaps-true"
 
   # Custom TLS certificate. Disabled unless tls.secretName has a value.
   tls:
@@ -172,23 +122,6 @@ spec:
     privateKeyFile: 'tls.key'
     caFile: ''  # optionally configure Postgres with a CA certificate
     caSecretName: '' # optionally the ca.crt can come from this secret instead.
-# file names can be also defined with absolute path, and will no longer be relative
-# to the "/tls/" path where the secret is being mounted by default, and "/tlsca/"
-# where the caSecret is mounted by default.
-# When TLS is enabled, also set spiloFSGroup parameter above to the relevant value.
-# if unknown, set it to 103 which is the usual value in the default spilo images.
-# In Openshift, there is no need to set spiloFSGroup/spilo_fsgroup.
-
-# Add node affinity support by allowing postgres pods to schedule only on nodes that
-# have label: "postgres-operator:enabled" set.
-#  nodeAffinity:
-#    requiredDuringSchedulingIgnoredDuringExecution:
-#      nodeSelectorTerms:
-#        - matchExpressions:
-#            - key: postgres-operator
-#              operator: In
-#              values:
-#                - enabled
 
 # Enables change data capture streams for defined database tables
 #  streams:
