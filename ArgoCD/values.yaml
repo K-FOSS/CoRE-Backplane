@@ -244,45 +244,18 @@ argo-cd:
 
     replicas: 1
 
-    resources:
-      requests:
-        cpu: 181m
-        memory: 5806M
-
-      limits:
-        cpu: 1574m
-        memory: 18G
-
     enableStatefulSet: false
 
 
   repoServer:
     replicas: 1
 
-    resources:
-      requests:
-        cpu: 10m
-        memory: 79M
-      limits:
-        cpu: 63m
-        memory: 334M
-
-
     envFrom:
       - secretRef:
           name: argocd-vault-replacer-credentials
 
   server:
-    replicas: 3
-
-    resources:
-      requests:
-        cpu: 15m
-        memory: 163M
-
-      limits:
-        cpu: 100m
-        memory: 500M
+    replicas: 1
 
     metrics:
       enabled: true
