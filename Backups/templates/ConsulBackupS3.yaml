@@ -1,0 +1,43 @@
+apiversion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: consul-s3-backups
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: consul-s3
+
+    template:
+      engineVersion: v2
+      data:{{`
+        Bucket: {{ .Bucket }}
+        URL: {{ .URL }}
+        credentials: |{{`
+          [default]
+          access_key = {{ .AccessKey }}
+          secret_key = {{ .SecretKey }}
+          `}}
+
+  data:
+    - secretKey: AccessKey
+      remoteRef:
+        key: Backups/Consul/S3/CloudFlare
+        property: AccessKey
+      
+    - secretKey: SecretKey
+      remoteRef:
+        key: Backups/Consul/S3/CloudFlare
+        property: SecretKey
+
+    - secretKey: Bucket
+      remoteRef:
+        key: Backups/Consul/S3/CloudFlare
+        property: Bucket
+
+    - secretKey: URL
+      remoteRef:
+        key: Backups/Consul/S3/CloudFlare
+        property: URL

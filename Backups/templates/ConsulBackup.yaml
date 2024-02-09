@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consul-backup
+  labels:
+    app.kubernetes.io/name: consul-backup
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: consul-backup
+
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: consul-backup
+        logs: loki-myloginspace
+
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+
+      volumes:
+        - name: credentials
+          secret:
+            secretName: consul-s3
+            items:
+              - key: credentials
+                path: credentials
+
+      containers:
+        - name: consul-backup
+          image: {{ .Values.consul.image.repository }}:{{ .Values.consul.image.tag | default .Chart.AppVersion }}
+
+          args:
+            - --consul.address={{ .Values.consul.address }}
+            - --s3.bucket=$(S3_BUCKET)
+            - --s3.endpoint=$(S3_ENDPOINT)
+            - --s3.region=us-east-1
+            - --backup.ttl={{ .Values.backup.ttl }}
+          resources:
+            requests:
+              cpu: 32m
+              memory: 16M
+
+              
+          env:
+            - name: S3_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: consul-s3
+                  key: Bucket
+
+            - name: S3_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: consul-s3
+                  key: URL
+
+          volumeMounts:
+            - name: credentials
+              mountPath: /home/.aws/credentials
+              subPath: credentials
