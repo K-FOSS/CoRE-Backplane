@@ -86,10 +86,7 @@ spec:
 
           env:
             - name: AUTHENTIK_HOST
-              valueFrom:
-                secretKeyRef:
-                  key: authentik_host
-                  name: ldap-credentials
+              value: 'http://{{ .Release.Name }}-authentik.{{ .Release.Namespace }}.svc.cluster.local'
 
             - name: AUTHENTIK_TOKEN
               valueFrom:
@@ -98,5 +95,5 @@ spec:
                   name: ldap-credentials
 
             - name: AUTHENTIK_INSECURE
-              value: 'false'
+              value: 'true'
 {{- end }}
