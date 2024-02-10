@@ -10,7 +10,25 @@ global:
 
 controllers:
 {{- range .Values.iDRACs -}}
-  {{- .name -}}:
+  {{ .name }}:
+    # -- enable the controller.
+    enabled: true
+
+    # -- Set the controller type.
+    # Valid options are deployment, daemonset, statefulset, cronjob or job
+    type: deployment
+    # -- Set annotations on the deployment/statefulset/daemonset/cronjob/job
+    annotations: {}
+    # -- Set labels on the deployment/statefulset/daemonset/cronjob/job
+    labels: {}
+    # -- Number of desired pods. When using a HorizontalPodAutoscaler, set this to `null`.
+    replicas: 1
+    # -- Set the controller upgrade strategy
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs/Jobs ignore this.
+    strategy: RollingUpdate
+
     containers:
       main:
         image:
