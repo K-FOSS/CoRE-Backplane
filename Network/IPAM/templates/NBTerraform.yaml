@@ -11,10 +11,38 @@ spec:
         name: authentik-credentials
         key: Token
   configuration: |
-    provider "authentik" {
-      url      = "http://k0s-cntrl-aaa-authentik.core-prod.svc.cluster.local"
-      token    = file("${path.module}/authentik-credentials")
-      insecure = true
+
+    data "http" "example" {
+      url = "http://netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80/api/users/tokens/provision/"
+
+      # Optional request headers
+      request_headers = {
+        Accept = "application/json"
+        Content-Type = "application/json"
+      }
+
+      request_body = jsonencode(
+        {
+          "username"="world"
+        }
+      )
+    }
+
+    provider netbox {
+      # Environment variable NETBOX_URL
+      url = "netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80"
+
+      # Environment variable NETBOX_BASEPATH
+      basepath = "/api"
+
+      # Environment variable NETBOX_TOKEN
+      token = jsondecode(data.http.example.response_body).key
+
+      # Environment variable NETBOX_SCHEME
+      scheme = "http"
+
+      # Environment variable NETBOX_INSECURE
+      insecure = "true"
     }
 
     // Modules _must_ use remote state. The provider does not persist state.
@@ -29,6 +57,11 @@ spec:
         authentik = {
           source  = "goauthentik/authentik"
           version = "2023.10.0"
+        }
+
+        http = {
+          source = "hashicorp/http"
+          version = "3.4.1"
         }
       }
     }
