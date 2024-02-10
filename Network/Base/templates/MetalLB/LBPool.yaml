@@ -7,3 +7,14 @@ spec:
   addresses:
     - {{ .Values.lbPool }} 
 {{- end }}
+---
+apiVersion: purelb.io/v1
+kind: ServiceGroup
+metadata:
+  name: default
+spec:
+  local:
+    v4pools:
+    - subnet: {{ .Values.lbPool }} 
+      pool: {{ .Values.lbPool }}
+      aggregation: default

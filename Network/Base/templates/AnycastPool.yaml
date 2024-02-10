@@ -7,11 +7,10 @@ spec:
   autoAssign: false
   addresses:
     - 10.1.1.0/24
-    - 66.165.222.100/32
+    - 
     - 66.165.222.101/32
     - 66.165.222.104/32	
     - 66.165.222.106/32
-    - 66.165.222.125/32
 ---
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
@@ -23,3 +22,37 @@ spec:
   addresses:
     - {{ .Values.pubPool }}
 {{- end }}
+---
+apiVersion: purelb.io/v1
+kind: ServiceGroup
+metadata:
+  name: main-public
+spec:
+  local:
+    v4pools:
+      - subnet: 66.165.222.96/27
+        pool: {{ .Values.pubPool }}
+        aggregation: default
+---
+apiVersion: purelb.io/v1
+kind: ServiceGroup
+metadata:
+  name: anycast
+spec:
+  local:
+    v4pools:
+      - subnet: 10.1.1.0/24
+        pool: 10.1.1.0/24
+        aggregation: default
+    
+      - subnet: 66.165.222.96/27
+        pool: 66.165.222.100/32
+        aggregation: default
+      - subnet: 66.165.222.96/27
+        pool: 66.165.222.104/32
+        aggregation: default
+      - subnet: 66.165.222.96/27
+        pool: 66.165.222.106/32
+        aggregation: default
+---
+
