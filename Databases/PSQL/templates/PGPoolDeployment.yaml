@@ -2,15 +2,19 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: pgpool
+
+  labels:
+    app.kubernetes.io/name: pgpool
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: pgpool
+      app.kubernetes.io/name: pgpool
+
   template:
     metadata:
       labels:
-        app: pgpool
+        app.kubernetes.io/name: pgpool
     spec:
       containers:
       - name: pgpool

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: psql-main
+  name: psql
 
   labels:
     lan-mode: private
@@ -13,11 +13,22 @@ metadata:
     io.cilium/lb-ipam-sharing-key: psql
     metallb.universe.tf/ip-allocated-from-pool: anycast-pool
     metallb.universe.tf/loadBalancerIPs: 10.1.1.38
+
+    purelb.io/allow-shared-ip: psql.mylogin.space
+    purelb.io/service-group: anycast
+    purelb.io/allow-local: 'true'
 spec:
   type: LoadBalancer
+  loadBalancerClass: purelb.io/purelb
+
   ports:
     - name: postgresql
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
 
+      protocol: TCP
+      appProtocol: postgresql
+
+      port: 5432
+      targetPort: psql
+
+  selector:
+    app.kubernetes.io/name: pgpool
