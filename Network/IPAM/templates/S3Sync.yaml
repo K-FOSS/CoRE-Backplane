@@ -2,8 +2,12 @@ apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
   name: '{{ include "ipam.fullname" . }}-netbox-s3-sync'
+
   labels:
     {{ include "ipam.labels" . | nindent 4 }}
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
 spec:
   secretStoreRef:
     kind: ClusterSecretStore

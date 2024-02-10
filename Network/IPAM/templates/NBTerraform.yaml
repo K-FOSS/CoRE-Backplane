@@ -2,15 +2,33 @@ apiVersion: tf.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: netbox-tf
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
 spec:
   credentials:
-    - filename: authentik-credentials
+    - filename: username
       source: Secret
       secretRef:
         namespace: {{ .Release.Namespace }}
-        name: authentik-credentials
-        key: Token
+        name: {{ .Release.Name }}-credentials
+        key: username
+
+    - filename: password
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: {{ .Release.Name }}-credentials
+        key: password
   configuration: |
+
+    locals {
+      # Common tags to be assigned to all resources
+      credentials = {
+        Service = local.service_name
+        Owner   = local.owner
+      }
+    }
 
     data "http" "example" {
       url = "http://netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80/api/users/tokens/provision/"
@@ -21,11 +39,7 @@ spec:
         Content-Type = "application/json"
       }
 
-      request_body = jsonencode(
-        {
-          "username"="world"
-        }
-      )
+      request_body = jsonencode(local.credentials)
     }
 
     provider netbox {
