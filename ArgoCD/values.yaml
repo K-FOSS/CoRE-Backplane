@@ -83,11 +83,6 @@ argo-cd:
         jqPathExpressions:
           - .spec.podReplacementPolicy
 
-      resource.ignoreResourceUpdatesEnabled: 'true'
-
-      resource.compareoptions: |
-        ignoreDifferencesOnResourceUpdates: true
-
       # Configuration to define customizations ignoring differences during watched resource updates to skip application reconciles.
       resource.customizations.ignoreResourceUpdates.all: |
         jsonPointers:
@@ -117,7 +112,6 @@ argo-cd:
         - /metadata/annotations/autoscaling.alpha.kubernetes.io~1current-metrics
 
       resource.exclusions: |
-
         - apiGroups:
             - cilium.io
           kinds:
@@ -207,24 +201,12 @@ argo-cd:
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
       # Set the logging level. One of: debug|info|warn|error (default "info")
-      controller.log.level: 'debug'
-
-      # Specifies if resource health should be persisted in app CRD (default true)
-      # Changing this to `false` significantly reduce number of Application CRD updates and improves controller performance.
-      # However, disabling resource health by default might affect applications that communicate with Applications CRD directly
-      # so we have to defer switching this to `false` by default till v3.0 release.
-      controller.resource.health.persist: 'false'
+      controller.log.level: 'warn'
 
       ## Server properties
 
       # -- Run server without TLS
       server.insecure: true
-
-      # -- Value for base href in index.html. Used if Argo CD is running behind reverse proxy under subpath different from /
-      server.basehref: /
-
-      # -- Used if Argo CD is running behind reverse proxy under subpath different from /
-      server.rootpath: ''
 
       # -- Directory path that contains additional static assets
       server.staticassets: /shared/app
@@ -234,9 +216,6 @@ argo-cd:
 
       # -- Enable GZIP compression
       server.enable.gzip: true
-
-      # -- Set X-Frame-Options header in HTTP responses to value. To disable, set to "".
-      server.x.frame.options: sameorigin
 
       repo.server: 'argocd-repo-server.argocd.svc.cluster.local:8081'
 
