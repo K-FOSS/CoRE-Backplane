@@ -1,0 +1,18 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: crossplane
+spec:
+  providerConfigRef:
+    name: vault-provider
+
+  forProvider:
+    name: crossplane
+    policy: |
+      path "secret/data/*" {
+        capabilities = ["create", "read", "update", "delete"]
+      }
+
+      path "secret/metadata/*" {
+          capabilities = ["create", "read", "update", "delete"]
+      }
