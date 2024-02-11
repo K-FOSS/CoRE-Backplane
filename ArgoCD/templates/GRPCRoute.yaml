@@ -14,9 +14,9 @@ spec:
   rules:
     - matches:
         - headers:
-            - type: Exact
-              name: env
-              value: canary
+            - type: RegularExpression
+              name: Content-Type
+              value: ^application/grpc.*$
       backendRefs:
-      - name: foo-svc
-        port: 50051
+        - name: argocd-server
+          port: 443

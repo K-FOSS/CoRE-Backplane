@@ -67,6 +67,12 @@ argo-cd:
       ## Ref: https://argo-cd.readthedocs.io/en/latest/faq/#how-to-disable-admin-user
       admin.enabled: true
 
+      # -- Timeout to discover if a new manifests version got published to the repository
+      timeout.reconciliation: 1h
+
+      # -- Timeout to refresh application data as well as target manifests cache
+      timeout.hard.reconciliation: 2h
+
       # Configuration to customize resource behavior (optional) can be configured via splitted sub keys.
       # Keys are in the form: resource.customizations.ignoreDifferences.<group_kind>, resource.customizations.health.<group_kind>
       # resource.customizations.actions.<group_kind>, resource.customizations.knownTypeFields.<group-kind>
@@ -222,7 +228,7 @@ argo-cd:
       #
       # Repo Server
       #
-      #reposerver.parallelism.limit: '10'
+      reposerver.parallelism.limit: '10'
 
   controller:
     name: application-controller
