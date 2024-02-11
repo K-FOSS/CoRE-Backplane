@@ -36,18 +36,18 @@ spec:
 
       resource "authentik_user" "name" {
         name = "PGPool"
-        username = random_password.username.result
+        username = random_string.username.result
         password = random_password.password.result
         groups = [data.authentik_group.LDAPService.id]
       }
 
       output "username" {
-        value     = random_password.username.result
+        value     = random_string.username.result
         sensitive = true
       }
 
       output "binddn" {
-        value = "cn=${random_password.username.result},dc=ldap,dc=mylogin,dc=space"
+        value = "cn=${random_string.username.result},dc=ldap,dc=mylogin,dc=space"
         sensitive = true
       }
 
