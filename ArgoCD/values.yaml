@@ -73,6 +73,37 @@ argo-cd:
       # -- Timeout to refresh application data as well as target manifests cache
       timeout.hard.reconciliation: 2h
 
+      #
+      # Things to Ignore
+      # Thanks to https://github.com/zacheryph/k8s-gitops/blob/bfe0e0cb432858aceb7aa85cda49a7954429a2c1/bootstrap/argocd/values.yaml#L91
+      # And https://github.com/ocf/kubernetes/blob/fcc5c83d1dcf7109662fa9dd7ef027b2be29dfa9/apps/argocd.py#L64
+      # For some examples and inspiration
+      #
+      resource.customizations.ignoreDifferences.apiextensions.k8s.io_CustomResourceDefinition: |
+        jqPathExpressions:
+        - '.spec.conversion.webhook.clientConfig.caBundle'
+
+      # ignore external-secrets modifying spec
+      resource.customizations.ignoreDifferences.external-secrets.io_ExternalSecret: |
+        jqPathExpressions:
+        - '.spec.data[]?.remoteRef.conversionStrategy'
+        - '.spec.data[]?.remoteRef.decodingStrategy'
+        - '.spec.data[]?.remoteRef.metadataPolicy'
+        - '.spec.dataFrom[]?.extract.conversionStrategy'
+        - '.spec.dataFrom[]?.extract.decodingStrategy'
+        - '.spec.dataFrom[]?.extract.metadataPolicy'
+      # ignore kind/version injection in stateful set volume claims
+      resource.customizations.ignoreDifferences.apps_StatefulSet: |
+        jqPathExpressions:
+        - '.spec.volumeClaimTemplates[]?.apiVersion'
+        - '.spec.volumeClaimTemplates[]?.kind'
+
+      # a lot of things produce cluster roles and dynamically set rules
+      # knative, triggermesh, ?
+      resource.customizations.ignoreDifferences.rbac.authorization.k8s.io_ClusterRole: |
+        jqPathExpressions:
+        - '.rules'
+
       # Configuration to customize resource behavior (optional) can be configured via splitted sub keys.
       # Keys are in the form: resource.customizations.ignoreDifferences.<group_kind>, resource.customizations.health.<group_kind>
       # resource.customizations.actions.<group_kind>, resource.customizations.knownTypeFields.<group-kind>
@@ -84,6 +115,7 @@ argo-cd:
       resource.customizations.ignoreDifferences.admissionregistration.k8s.io_ValidatingWebhookConfiguration: |
         jqPathExpressions:
         - '.webhooks[]?.clientConfig.caBundle'
+        - '.webhooks[]?.failurePolicy'
 
       resource.customizations.ignoreDifferences.batch_jobs: |
         jqPathExpressions:
