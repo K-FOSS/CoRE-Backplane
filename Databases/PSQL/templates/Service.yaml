@@ -8,18 +8,16 @@ metadata:
     wan-mode: public
 
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: psql.mylogin.space
-    io.cilium/lb-ipam-ips: 10.1.1.38
-    io.cilium/lb-ipam-sharing-key: psql
-    metallb.universe.tf/ip-allocated-from-pool: anycast-pool
-    metallb.universe.tf/loadBalancerIPs: 10.1.1.38
-
-    purelb.io/allow-shared-ip: psql.mylogin.space
+    external-dns.alpha.kubernetes.io/hostname: psql-main.mylogin.space
+    purelb.io/allow-shared-ip: psql-main.mylogin.space
     purelb.io/service-group: anycast
     purelb.io/allow-local: 'true'
+
 spec:
   type: LoadBalancer
   loadBalancerClass: purelb.io/purelb
+
+  loadBalancerIP: 66.165.222.124
 
   ports:
     - name: postgresql
