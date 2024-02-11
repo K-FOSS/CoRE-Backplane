@@ -9,7 +9,7 @@ spec:
   generators:
     - list:
         elements:
-          - cluster: cntrl-plane
+          - cluster: k0s-cntrl
             url: https://10.1.1.40:443
 
   syncPolicy:
@@ -24,6 +24,10 @@ spec:
 
     spec:
       project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
 
       source:
         path: Workspace

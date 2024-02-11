@@ -10,8 +10,10 @@ spec:
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
             namespace: core-prod
-            dnsLBIP: 10.1.1.61
+            dnsLBIP: 10.1.1.60
             helmName: consul-prod
+            hub: 'false'
+            spoke: 'true'
             name: k0s-dc1
             main: 'true'
             replicas: '3'
@@ -19,6 +21,8 @@ spec:
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
             namespace: core-prod
+            hub: 'true'
+            spoke: 'true'
             dnsLBIP: 10.1.1.60
             helmName: consul
             name: infra1-dc1
@@ -67,10 +71,6 @@ spec:
                     enableRedirection: false
                     enabled: true
                     type: LoadBalancer
-
-                  ui:
-                    ingress:
-                      enabled: {{main}}
 
                   server:
                     replicas: {{ replicas }}
