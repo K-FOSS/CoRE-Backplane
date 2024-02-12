@@ -592,12 +592,6 @@ cilium:
       # If disabled, TLS secrets must be maintained externally.
       sync: false
 
-  # -- Enables the fallback compatibility solution for when the xt_socket kernel
-  # module is missing and it is needed for the datapath L7 redirection to work
-  # properly. See documentation for details on when this can be disabled:
-  # https://docs.cilium.io/en/stable/operations/system_requirements/#linux-kernel.
-  #enableXTSocketFallback: false
-
   encryption:
     # -- Enable transparent network encryption.
     enabled: false
@@ -646,6 +640,11 @@ cilium:
     # This option is only effective when encryption.type is set to ipsec.
     interface: ""
 
+  endpointRoutes:
+    # -- Enable use of per endpoint routes instead of routing via
+    # the cilium_host interface.
+    enabled: true
+
   externalIPs:
     # -- Enable ExternalIPs service support.
     enabled: true
@@ -653,26 +652,14 @@ cilium:
   # fragmentTracking enables IPv4 fragment tracking support in the datapath.
   fragmentTracking: true
 
-
-  #
-  # TODO: Setup host firewall stuff
-  #
   # -- Configure the host firewall.
-  #hostFirewall:
+  hostFirewall:
     # -- Enables the enforcement of host policies in the eBPF datapath.
-  #  enabled: false
+    enabled: false
 
   hostPort:
     # -- Enable hostPort service support.
     enabled: true
-
-  # -- Configure socket LB
-  #socketLB:
-  #  # -- Enable socket LB
-  #  enabled: false
-
-    # -- Disable socket lb for non-root ns. This is used to enable Istio routing rules.
-  #  hostNamespaceOnly: false
 
   # -- Configure certificate generation for Hubble integration.
   # If hubble.tls.auto.method=cronJob, these values are used
