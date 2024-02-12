@@ -30,54 +30,16 @@ spec:
     foo: zalando  
     ops: opsadmin
 
-  enableMasterLoadBalancer: false
+  enableMasterLoadBalancer: true
   enableReplicaLoadBalancer: false
 
   enableConnectionPooler: false
 
-  allowedSourceRanges:  # load balancers' source ranges for both master and replica services
-    - 0.0.0.0/0
-
-  # preparedDatabases:
-  #   bar:
-  #     defaultUsers: true
-
-  #     extensions:
-  #       pg_partman: public
-  #       pgcrypto: public
-
-  #     schemas:
-  #       data: {}
-  #       history:
-  #         defaultRoles: true
-  #         defaultUsers: false
-
   postgresql:
     version: '15'
 
-#  env:
-#  - name: wal_s3_bucket
-#    value: my-custom-bucket
-
   volume:
     size: 50Gi
-
-#  spiloRunAsUser: 101
-#  spiloRunAsGroup: 103
-#  spiloFSGroup: 103
-
-#  podAnnotations:
-#    annotation.key: value
-
-#  serviceAnnotations:
-#    annotation.key: value
-
-#  podPriorityClassName: "spilo-pod-priority"
-
-#  tolerations:
-#  - key: postgres
-#    operator: Exists
-#    effect: NoSchedule
 
   patroni:
     failsafe_mode: false
@@ -88,8 +50,17 @@ spec:
       data-checksums: 'true'
 
     pg_hba:
-      - hostssl all all 0.0.0.0/0 md5
-      - host all all 0.0.0.0/0 md5
+      - local all         all                  trust
+      - local replication standby              md5
+      - host replication  replicator 0.0.0.0/0 md5
+      - host replication  standby    0.0.0.0/0 md5
+      - host all          le6VpU1g8Q 0.0.0.0/0 md5
+      - host all          hRCyPUlFYx 0.0.0.0/0 md5
+      - host all          WNUoZH3HCm 0.0.0.0/0 md5
+      - host all          k0sk8s     0.0.0.0/0 md5
+      - host all          postgres   0.0.0.0/0 md5
+      - host all          opsadmin   0.0.0.0/0 md5
+      - host all          all        0.0.0.0/0 ldap ldapport=636 ldaptls=1 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn"
 
     ttl: 30
 
@@ -104,10 +75,6 @@ spec:
     synchronous_node_count: 1
 
     maximum_lag_on_failover: 33554432
-
-# run periodic backups with k8s cron jobs
-#  enableLogicalBackup: true
-#  logicalBackupSchedule: "30 00 * * *"
 
 #  maintenanceWindows:
 #  - 01:00-06:00  #UTC
