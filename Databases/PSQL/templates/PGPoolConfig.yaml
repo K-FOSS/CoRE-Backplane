@@ -8,7 +8,7 @@ metadata:
 data:
   pgpool.conf: |-
     listen_addresses = '*'
-    port = 9999
+    port = 5432
     socket_dir = '/var/run/postgresql'
     pcp_listen_addresses = '*'
     pcp_port = 9898
@@ -39,7 +39,14 @@ data:
     ssl_key = '/tls/tls.key'
 
   pool_hba.conf: |-
-    local   all         all                               trust
-    host    all         all         127.0.0.1/32          trust
-    host    all         all         ::1/128               trust
-    host    all        ldapport=636 ldaptls=1 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn"
+    local   all    all                     trust
+    host    all    all        127.0.0.1/32 trust
+    host    all    all        ::1/128      trust
+    host    all    le6VpU1g8Q 0.0.0.0/0    md5
+    host    all    hRCyPUlFYx 0.0.0.0/0    md5
+    host    all    WNUoZH3HCm 0.0.0.0/0    md5
+    host    all    k0sk8s     0.0.0.0/0    md5
+    host    all    postgres   0.0.0.0/0    md5
+    host    all    opsadmin   0.0.0.0/0    md5
+    host    all    DlzcnePHKR 0.0.0.0/0    md5
+    host    all    all        0.0.0.0/0    ldap ldapserver=ldap.mylogin.space ldapport=389 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn" backend_use_passwd=1
