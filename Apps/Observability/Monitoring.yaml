@@ -30,6 +30,14 @@ spec:
 
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                headlamp:
+                  config:
+                    oidc:
+                      secret:
+                        name: {{cluster}}-observability-monitoring-headlamp-oidc
 
       destination:
         server: '{{url}}'
