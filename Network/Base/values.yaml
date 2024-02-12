@@ -248,15 +248,6 @@ cilium:
   nodeSelector:
     kubernetes.io/os: linux
 
-  # -- Node tolerations for agent scheduling to nodes with taints
-  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
-  tolerations:
-  - operator: Exists
-    # - key: "key"
-    #   operator: "Equal|Exists"
-    #   value: "value"
-    #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
-
   # -- Annotations to be added to agent pods
   podAnnotations: {}
 
@@ -302,7 +293,7 @@ cilium:
   # -- Configure standalone NAT46/NAT64 gateway
   nat46x64Gateway:
     # -- Enable RFC8215-prefixed translation
-    enabled: true
+    enabled: false
   
   # -- EnableHighScaleIPcache enables the special ipcache mode for high scale
   # clusters. The ipcache content will be reduced to the strict minimum and
