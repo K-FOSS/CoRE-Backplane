@@ -88,14 +88,13 @@ submariner-operator:
     loadBalancerEnabled: false
     natEnabled: false
     colorCodes: blue
-    debug: true
+    debug: false
     serviceDiscovery: true
     cableDriver: "libreswan"
     healthcheckEnabled: true
-    coreDNSCustomConfig: {}
-    images:
-      repository: quay.io/submariner
-      tag: ""
+    coreDNSCustomConfig:
+      configMapName: 'submariner-old'
+      namespace: core-prod
 
   broker:
     ca: '<path:CORE0_SITE1/data/Network/Base/k0s-cntrl/Submariner#CA>'
@@ -107,10 +106,6 @@ submariner-operator:
     insecure: false
     
     globalnet: false
-
-  rbac:
-    create: true
-  images: {}
 
   ipsec:
     psk: <path:CORE0_SITE1/data/Network/Submariner#Token>
@@ -125,10 +120,6 @@ submariner-operator:
     retryPeriod: 2
 
   operator:
-    image:
-      repository: quay.io/submariner/submariner-operator
-      tag: ""
-      pullPolicy: IfNotPresent
     resources: {}
     tolerations: []
     affinity: {}
@@ -165,8 +156,8 @@ cilium:
         # Both PERFMON and BPF requires kernel 5.8, container runtime
         # cri-o >= v1.22.0 or containerd >= v1.5.0.
         # If available, SYS_ADMIN can be removed.
-        #- PERFMON
-        #- BPF
+        - PERFMON
+        - BPF
         # Allow discretionary access control (e.g. required for package installation)
         - DAC_OVERRIDE
         # Allow to set Access Control Lists (ACLs) on arbitrary files (e.g. required for package installation)
@@ -208,8 +199,8 @@ cilium:
         # Both PERFMON and BPF requires kernel 5.8, container runtime
         # cri-o >= v1.22.0 or containerd >= v1.5.0.
         # If available, SYS_ADMIN can be removed.
-        #- PERFMON
-        #- BPF
+        - PERFMON
+        - BPF
 
   debug:
     # -- Enable debug logging
@@ -227,9 +218,6 @@ cilium:
     # clusters and in the range of 1 to 255. Only required for Cluster Mesh,
     # may be 0 if Cluster Mesh is not used.
     id: 0
-
-  # -- Configure termination grace period for cilium-agent DaemonSet.
-  terminationGracePeriodSeconds: 1
 
   # -- Install the cilium agent resources.
   agent: true
@@ -251,10 +239,10 @@ cilium:
 
     podAntiAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
-      - topologyKey: kubernetes.io/hostname
-        labelSelector:
-          matchLabels:
-            k8s-app: cilium
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              k8s-app: cilium
 
   # -- Node selector for cilium-agent.
   nodeSelector:
@@ -294,12 +282,6 @@ cilium:
 
   # Configuration Values for cilium-agent
 
-  aksbyocni:
-    # -- Enable AKS BYOCNI integration.
-    # Note that this is incompatible with AKS clusters not created in BYOCNI mode:
-    # use Azure integration (`azure.enabled`) instead.
-    enabled: false
-
   # -- Enable installation of PodCIDR routes between worker
   # nodes if worker nodes share a common L2 network segment.
   autoDirectNodeRoutes: false
@@ -312,15 +294,15 @@ cilium:
   # Time) through the "kubernetes.io/egress-bandwidth" Pod annotation.
   bandwidthManager:
     # -- Enable bandwidth manager infrastructure (also prerequirement for BBR)
-    enabled: false
+    enabled: true
     # -- Activate BBR TCP congestion control for Pods
-    bbr: false
+    bbr: true
 
 
   # -- Configure standalone NAT46/NAT64 gateway
   nat46x64Gateway:
     # -- Enable RFC8215-prefixed translation
-    enabled: false
+    enabled: true
   
   # -- EnableHighScaleIPcache enables the special ipcache mode for high scale
   # clusters. The ipcache content will be reduced to the strict minimum and
@@ -504,7 +486,7 @@ cilium:
   # devices. When devices change the eBPF datapath is reloaded and services updated.
   # If "devices" is set then only those devices, or devices matching a wildcard will
   # be considered.
-  enableRuntimeDeviceDetection: false
+  enableRuntimeDeviceDetection: true
 
   # -- Chains to ignore when installing feeder rules.
   # disableIptablesFeederRules: ""
@@ -517,7 +499,7 @@ cilium:
   # enableIdentityMark: true
 
   # -- Enable Kubernetes EndpointSlice feature in Cilium if the cluster supports it.
-  #enableK8sEndpointSlice: true
+  enableK8sEndpointSlice: true
 
   # -- Enable CiliumEndpointSlice feature.
   #enableCiliumEndpointSlice: false
@@ -680,6 +662,10 @@ cilium:
   # fragmentTracking enables IPv4 fragment tracking support in the datapath.
   fragmentTracking: true
 
+
+  #
+  # TODO: Setup host firewall stuff
+  #
   # -- Configure the host firewall.
   #hostFirewall:
     # -- Enables the enforcement of host policies in the eBPF datapath.
@@ -772,7 +758,7 @@ cilium:
 
   # -- Configure the eBPF-based ip-masq-agent
   ipMasqAgent:
-    enabled: false
+    enabled: true
 
     # the config of nonMasqueradeCIDRs
     # config:
@@ -812,7 +798,7 @@ cilium:
 
   l2NeighDiscovery:
     # -- Enable L2 neighbor discovery in the agent
-    enabled: false
+    enabled: true
 
     # -- Override the agent's default neighbor resolution refresh period.
     refreshPeriod: '30s'
@@ -1529,10 +1515,10 @@ cilium:
     affinity:
       podAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
-        - topologyKey: kubernetes.io/hostname
-          labelSelector:
-            matchLabels:
-              k8s-app: cilium
+          - topologyKey: kubernetes.io/hostname
+            labelSelector:
+              matchLabels:
+                k8s-app: cilium
 
     # -- Node labels for preflight pod assignment
     # ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -1543,19 +1529,21 @@ cilium:
     # -- Node tolerations for preflight scheduling to nodes with taints
     # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
     tolerations:
-    - key: node.kubernetes.io/not-ready
-      effect: NoSchedule
-    - key: node-role.kubernetes.io/master
-      effect: NoSchedule
-    - key: node.cloudprovider.kubernetes.io/uninitialized
-      effect: NoSchedule
-      value: "true"
-    - key: CriticalAddonsOnly
-      operator: "Exists"
-      # - key: "key"
-      #   operator: "Equal|Exists"
-      #   value: "value"
-      #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
+      - key: node.kubernetes.io/not-ready
+        effect: NoSchedule
+
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+
+      - key: node.cloudprovider.kubernetes.io/uninitialized
+        effect: NoSchedule
+        value: "true"
+      - key: CriticalAddonsOnly
+        operator: "Exists"
+        # - key: "key"
+        #   operator: "Equal|Exists"
+        #   value: "value"
+        #   effect: "NoSchedule|PreferNoSchedule|NoExecute(1.6 only)"
 
     # -- Annotations to be added to preflight pods
     podAnnotations: {}
