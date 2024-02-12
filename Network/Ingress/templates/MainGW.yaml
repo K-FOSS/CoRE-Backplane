@@ -18,8 +18,9 @@ spec:
 
   infrastructure:
     annotations:
-      metallb.universe.tf/address-pool: pub-pool
-      metallb.universe.tf/allow-shared-ip: main-gw
+      purelb.io/allow-shared-ip: main-gw.resolvemy.host
+      purelb.io/service-group: main-public
+      purelb.io/allow-local: 'true'
 
   listeners:
     - name: https
@@ -51,6 +52,15 @@ spec:
             name: accessmyporndownload-default-certificates
             namespace: core-prod
 
+          - group: ''
+            kind: Secret
+            name: resolvemyhost-default-certificates
+            namespace: core-prod
+
+          - group: ''
+            kind: Secret
+            name: ipaddrnetwork-default-certificates
+            namespace: core-prod
 
     - name: http
       port: 80
@@ -127,30 +137,6 @@ spec:
     - name: tls-dnsudp
       port: 853
       protocol: UDP
-      allowedRoutes:
-        namespaces:
-          from: All
-
-    - name: sip-tcp
-      port: 5060
-      protocol: TCP
-      allowedRoutes:
-        namespaces:
-          from: All
-
-    - name: sip-udp
-      port: 5060
-      protocol: UDP
-      allowedRoutes:
-        namespaces:
-          from: All
-
-
-    - name: sip-tls
-      port: 5061
-      protocol: TLS
-      tls:
-        mode: Passthrough
       allowedRoutes:
         namespaces:
           from: All
