@@ -68,10 +68,10 @@ argo-cd:
       admin.enabled: true
 
       # -- Timeout to discover if a new manifests version got published to the repository
-      timeout.reconciliation: 30m
+      timeout.reconciliation: 900s
 
       # -- Timeout to refresh application data as well as target manifests cache
-      #timeout.hard.reconciliation: 2h
+      timeout.hard.reconciliation: 0s
 
       #
       # Things to Ignore
@@ -180,13 +180,6 @@ argo-cd:
             - "*"
 
         - apiGroups:
-            - monitoring.coreos.com
-          kinds:
-            - Prometheus
-          clusters:
-            - "*"
-
-        - apiGroups:
             - velero.io
           kinds:
             - PodVolumeBackup
@@ -219,20 +212,21 @@ argo-cd:
 
       otlp.address: 'core-tempo-distributor.core-prod.svc.k0s.resolvemy.host:4317'
 
-
       ## Controller Properties
-
-      controller.sharding.algorithm: 'round-robin'
-      controller.diff.server.side: 'true'
-
       # -- Number of application status processors
-      controller.status.processors: '100'
+      controller.status.processors: 20
 
       # -- Number of application operation processors
-      controller.operation.processors: '50'
+      controller.operation.processors: 10
+
+      # -- Specifies timeout between application self heal attempts
+      controller.self.heal.timeout.seconds: 5
 
       # -- Repo server RPC call timeout seconds.
-      controller.repo.server.timeout.seconds: '900'
+      controller.repo.server.timeout.seconds: 900
+
+      ## Controller Properties
+      controller.diff.server.side: 'true'
 
       #controller.kubectl.parallelism.limit: '30'
 
@@ -269,8 +263,16 @@ argo-cd:
 
     replicas: 1
 
+    env:
+      - name: ARGO_CD_UPDATE_CLUSTER_INFO_TIMEOUT
+        value: '300'
+
   repoServer:
     replicas: 1
+
+    env:
+      - name: ARGOCD_EXEC_TIMEOUT
+        value: 10m30s
 
   server:
     replicas: 1
