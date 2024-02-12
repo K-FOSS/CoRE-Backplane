@@ -24,3 +24,13 @@ resources:
   - https://raw.githubusercontent.com/apecloud/kubeblocks/v0.8.1-beta.8/deploy/helm/crds/apps.kubeblocks.io_componentdefinitions.yaml
   - https://raw.githubusercontent.com/apecloud/kubeblocks/v0.8.1-beta.8/deploy/helm/crds/apps.kubeblocks.io_components.yaml
   - https://raw.githubusercontent.com/apecloud/kubeblocks/v0.8.1-beta.8/deploy/helm/crds/apps.kubeblocks.io_opsdefinitions.yaml
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/helm/installOptions
+        value: {}
+    target:
+      group: extensions.kubeblocks.io
+      version: v1alpha1
+      kind: Addon
