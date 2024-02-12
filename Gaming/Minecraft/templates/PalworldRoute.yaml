@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: UDPRoute
+metadata:
+  name: {{ .Release.Name }}-palworld
+
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: pals.mylogin.space
+  
+  labels:
+    wan-mode: public
+    lan-mode: private
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: kuadrant-core-prod
+      name: main-gw
+      sectionName: palworld
+
+  rules:
+    - backendRefs:
+        - name: {{ .Release.Name }}-palworld
+          port: 8211

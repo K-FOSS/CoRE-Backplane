@@ -3,11 +3,6 @@ kind: Gateway
 metadata:
   name: main-gw
 
-  annotations:
-    metallb.universe.tf/address-pool: 'pub-pool'
-    metallb.universe.tf/allow-shared-ip: 'main-gw'
-    io.cilium/lb-ipam-sharing-key: main-gw
-
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
@@ -82,6 +77,16 @@ spec:
 
     - name: dns-udp
       port: 53
+      protocol: UDP
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    #
+    # Palworld 
+    #
+    - name: palworld
+      port: 8211
       protocol: UDP
       allowedRoutes:
         namespaces:
