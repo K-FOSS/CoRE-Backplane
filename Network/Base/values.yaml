@@ -477,7 +477,7 @@ cilium:
   # devices. When devices change the eBPF datapath is reloaded and services updated.
   # If "devices" is set then only those devices, or devices matching a wildcard will
   # be considered.
-  enableRuntimeDeviceDetection: true
+  enableRuntimeDeviceDetection: false
 
   # -- Chains to ignore when installing feeder rules.
   # disableIptablesFeederRules: ""
@@ -494,7 +494,6 @@ cilium:
 
   # -- Enable CiliumEndpointSlice feature.
   enableCiliumEndpointSlice: false
-
 
   envoyConfig:
     # -- Enable CiliumEnvoyConfig CRD
@@ -655,7 +654,7 @@ cilium:
   # -- Configure the host firewall.
   hostFirewall:
     # -- Enables the enforcement of host policies in the eBPF datapath.
-    enabled: false
+    enabled: true
 
   hostPort:
     # -- Enable hostPort service support.
@@ -680,7 +679,7 @@ cilium:
 
 
   # -- Method to use for identity allocation (`crd` or `kvstore`).
-  identityAllocationMode: "crd"
+  identityAllocationMode: 'crd'
 
   # -- Time to wait before using new identity on endpoint identity change.
   # identityChangeGracePeriod: "5s"
@@ -695,7 +694,7 @@ cilium:
   # traffic. This option is only effective when Cilium is running in direct
   # routing and full KPR mode. Moreover, this option cannot be enabled when Cilium
   # is running in a managed Kubernetes environment or in a chained CNI setup.
-  #installNoConntrackIptablesRules: true
+  installNoConntrackIptablesRules: true
 
   ipam:
     # -- Configure IP Address Management mode.
@@ -736,7 +735,7 @@ cilium:
 
   # -- Configure the eBPF-based ip-masq-agent
   ipMasqAgent:
-    enabled: true
+    enabled: false
 
     # the config of nonMasqueradeCIDRs
     # config:
@@ -816,7 +815,7 @@ cilium:
   # -- Enables egress gateway to redirect and SNAT the traffic that leaves the
   # cluster.
   egressGateway:
-    enabled: false
+    enabled: true
 
   vtep:
   # -- Enables VXLAN Tunnel Endpoint (VTEP) Integration (beta) to allow
@@ -1170,10 +1169,6 @@ cilium:
         # 15 "clusterwide" Cilium Operator pods for HA
         pods: "15"
 
-  # Need to document default
-  ##################
-  #sessionAffinity: false
-
   # -- Do not run Cilium agent when running with clean mode. Useful to completely
   # uninstall Cilium as it will stop Cilium from starting and create artifacts
   # in the node.
@@ -1186,9 +1181,6 @@ cilium:
 
   # -- Enable check of service source ranges (currently, only for LoadBalancer).
   svcSourceRangeCheck: true
-
-  # -- Synchronize Kubernetes nodes to kvstore and perform CNP GC.
-  synchronizeK8sNodes: true
 
   # -- Configure TLS configuration in the agent.
   tls:
