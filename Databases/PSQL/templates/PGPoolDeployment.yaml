@@ -64,13 +64,25 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: username
-                  name: standby.psql-main.credentials.postgresql.acid.zalan.do
+                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
 
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
-                  name: standby.psql-main.credentials.postgresql.acid.zalan.do
+                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+
+            - name: PGPOOL_PARAMS_SR_CHECK_USER
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+
+            - name: PGPOOL_PARAMS_SR_CHECK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
 
           volumeMounts:
             - name: tls
