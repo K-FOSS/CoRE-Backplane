@@ -17,6 +17,25 @@ spec:
         app.kubernetes.io/name: pgpool
 
     spec:
+      volumes:
+        - name: config-vol
+          configMap:
+            name: pgpool-config
+
+        - name: tls
+          secret:
+            defaultMode: 416
+            secretName: myloginspace-default-certificates
+
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 172.18.0.10
+          - 10.0.8.10
+        options:
+          - name: edns0
+
+
       containers:
         - name: pgpool
           image: kristianfjones/pgpool:latest
@@ -49,13 +68,3 @@ spec:
 
             - name: config-vol
               mountPath: /config
-
-      volumes:
-        - name: config-vol
-          configMap:
-            name: pgpool-config
-
-        - name: tls
-          secret:
-            defaultMode: 416
-            secretName: myloginspace-default-certificates
