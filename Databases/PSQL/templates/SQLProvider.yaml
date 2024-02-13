@@ -1,0 +1,14 @@
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: psql-main
+spec:
+  # defaultDatabase is the default database to be used in DSN.
+  # Similar to PGDATABASE environment variable and defaults to "postgres"
+  # if not set.
+  # defaultDatabase: postgres
+  credentials:
+    source: Secret
+    connectionSecretRef:
+      namespace: {{ .Release.Namespace }}
+      name: psql-main-sqlprovider
