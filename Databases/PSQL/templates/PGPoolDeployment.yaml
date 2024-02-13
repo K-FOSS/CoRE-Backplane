@@ -29,8 +29,8 @@ spec:
 
       volumes:
         - name: config-vol
-          configMap:
-            name: pgpool-config
+          secret:
+            secretName: 'pgpool'
 
         - name: tls
           secret:
@@ -72,21 +72,10 @@ spec:
                   key: password
                   name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
 
-            - name: PGPOOL_PARAMS_SR_CHECK_USER
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-            - name: PGPOOL_PARAMS_SR_CHECK_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
           volumeMounts:
             - name: tls
               mountPath: /tls
 
             - name: config-vol
               mountPath: /config
+
