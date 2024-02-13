@@ -17,12 +17,17 @@ data:
     backend_hostname0 = 'psql-main-0.core-prod.svc.cluster.local'
     backend_port0 = 5432
     backend_weight0 = 1
+
     backend_hostname1 = 'psql-main-1.core-prod.svc.cluster.local'
     backend_port1 = 5432
     backend_weight1 = 1
+
     backend_hostname2 = 'psql-main-2.core-prod.svc.cluster.local'
     backend_port2 = 5432
     backend_weight2 = 1
+
+    backend_clustering_mode = 'streaming_replication'
+
     {{`
     health_check_user = '{{ .Username }}'
     health_check_password = '{{ .Password }}'
@@ -38,6 +43,7 @@ data:
     connection_life_time = 0
     client_idle_limit = 0
     connection_cache = on
+    failover_on_backend_error = on
     load_balance_mode = on
     ssl = on
     ssl_cert = '/tls/tls.crt'
