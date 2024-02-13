@@ -5,8 +5,9 @@ metadata:
 
   labels:
     app.kubernetes.io/name: pgpool
+
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: pgpool
@@ -17,6 +18,15 @@ spec:
         app.kubernetes.io/name: pgpool
 
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: pgpool   
+
+
       volumes:
         - name: config-vol
           configMap:
