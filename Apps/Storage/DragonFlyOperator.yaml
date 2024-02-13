@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-storage-dragonfly-operator
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: k0s-cntrl
+            url: https://10.1.1.40:443
+
+          - cluster: infra1-dc1
+            url: https://172.18.0.1:443
+
+  template:
+    metadata:
+      name: '{{cluster}}-storage-dragonfly-operator'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+
+      source:
+        path: Storage/DragonFly/Operator
+        repoURL: https://gitlab.git.writemy.codes/KJDev/CORE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: dragonfly-operator-system
