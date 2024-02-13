@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: core-backplane-lab-kjmedia
   namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
 spec:
   destination:
     server: https://10.1.1.40:443
@@ -11,10 +14,8 @@ spec:
   project: core
 
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
     syncOptions:
+      - ServerSideApply=true
       - CreateNamespace=true
 
   source:
