@@ -1,0 +1,85 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: 
+  labels:
+    implementation: mixed
+spec:
+  compositeTypeRef:
+    apiVersion: user.mylogin.space/v1alpha1
+    kind: XUser
+
+  resources:
+    - name: user
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: authentik
+
+          forProvider:
+            source: Inline
+            module: |
+              data "authentik_group" "LDAPService" {
+                name = "LDAPService"
+              }
+
+              resource "random_string" "username" {
+                length  = 6
+                special = true
+              }
+
+              resource "random_password" "password" {
+                length  = 16
+                lower   = true
+                numeric = true
+                upper   = true
+                special = true
+              }
+
+              variable "name" {
+                description = "Users friendly name"
+                type        = string
+              }
+
+              resource "authentik_user" "name" {
+                name = var.name
+                username = random_string.username.result
+                password = random_password.password.result
+                groups = [data.authentik_group.LDAPService.id]
+              }
+
+              output "username" {
+                value     = random_string.username.result
+                sensitive = false
+              }
+
+              output "password" {
+                value     = random_password.password.result
+                sensitive = true
+              }
+            vars:
+              - key: name
+      patches:
+        - fromFieldPath: spec.name
+          toFieldPath: spec.forProvider.vars[0].value
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.outputs.username
+          toFieldPath: status.share.username
+          policy:
+            fromFieldPath: Optional
+
+    - name: role
+      base:
+        apiVersion: postgresql.sql.crossplane.io/v1alpha1
+        kind: Role
+        spec:
+          forProvider:
+            region: eu-central-1
+            cidrBlock: 10.0.1.0/24
+      patches:
+        - fromFieldPath: status.share.username
+          toFieldPath: name
+          policy:
+            fromFieldPath: Required
