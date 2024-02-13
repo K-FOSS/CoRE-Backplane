@@ -13,13 +13,13 @@ data:
     pcp_listen_addresses = '*'
     pcp_port = 9898
     pcp_socket_dir = '/var/run/postgresql'
-    backend_hostname0 = 'psql-main-0.psql-main.core-prod.svc.cluster.local'
+    backend_hostname0 = 'psql-main-0.core-prod.svc.cluster.local'
     backend_port0 = 5432
     backend_weight0 = 1
-    backend_hostname1 = 'psql-main-1.psql-main.core-prod.svc.cluster.local'
+    backend_hostname1 = 'psql-main-1.core-prod.svc.cluster.local'
     backend_port1 = 5432
     backend_weight1 = 1
-    backend_hostname2 = 'psql-main-2.psql-main.core-prod.svc.cluster.local'
+    backend_hostname2 = 'psql-main-2.core-prod.svc.cluster.local'
     backend_port2 = 5432
     backend_weight2 = 1
     sr_check_user = 'postgres'
@@ -38,7 +38,7 @@ data:
     ssl_cert = '/tls/tls.crt'
     ssl_key = '/tls/tls.key'
 
-  pool_hba.conf: |-
+  pool_hba.conf: |
     local   all    all                     trust
     host    all    all        127.0.0.1/32 trust
     host    all    all        ::1/128      trust
@@ -49,4 +49,5 @@ data:
     host    all    postgres   0.0.0.0/0    md5
     host    all    opsadmin   0.0.0.0/0    md5
     host    all    DlzcnePHKR 0.0.0.0/0    md5
-    host    all    all        0.0.0.0/0    ldap ldapserver=ldap.mylogin.space ldapport=389 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn" backend_use_passwd=1
+    host    all    N9zANOau1E 0.0.0.0/0    md5
+    host    all    all        0.0.0.0/0    ldap ldapserver=10.1.1.36 ldapport=389 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn" backend_use_passwd=1
