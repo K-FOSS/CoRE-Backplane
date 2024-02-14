@@ -6,15 +6,6 @@ democratic-csi:
   nameOverride: ""
   fullnameOverride: democraticcsi-prod-democratic-csi
 
-  extraCaCerts:
-  #extraCaCerts: |-
-  #  -----BEGIN CERTIFICATE-----
-  #  ...
-  #  -----END CERTIFICATE-----
-  #  -----BEGIN CERTIFICATE-----
-  #  ...
-  #  -----END CERTIFICATE-----
-
   driver:
     # see the driver-config-secret.yaml for syntax
     # NOTE: if setting an existing secret you must still set `driver.config.driver`
@@ -34,8 +25,11 @@ democratic-csi:
     version: 1.5.0
     # create the kubernetes CSIDriver
     enabled: true
+
     attachRequired: false
+
     podInfoOnMount: true
+
     # https://kubernetes-csi.github.io/docs/support-fsgroup.html
     # k8s 1.19+ (ignored otherwise)
     # None|File|ReadWriteOnceWithFSType
@@ -51,7 +45,7 @@ democratic-csi:
     # requiresRepublish: false
 
     # k8s 1.19+
-    # storageCapacity: false
+    storageCapacity: true
 
   controller:
     enabled: true
@@ -172,13 +166,6 @@ democratic-csi:
       image: docker.io/democraticcsi/democratic-csi:v1.8.4
 
       logLevel: debug
-      lifecycle:
-  #      postStart:
-  #        exec:
-  #          command: ["/bin/sh", "-c", "echo Hello from the postStart handler > /usr/share/message"]
-  #      preStop:
-  #        exec:
-  #          command: ["/bin/sh","-c","nginx -s quit; while killall -0 nginx; do sleep 1; done"]
 
       securityContext:
   #      allowPrivilegeEscalation: true
@@ -186,8 +173,6 @@ democratic-csi:
   #        add:
   #        - SYS_ADMIN
   #      privileged: true
-
-      resources:
 
       extraEnv:
         - name: KUBERNETES_SERVICE_HOST
@@ -221,10 +206,6 @@ democratic-csi:
 
     rbac:
       enabled: true
-      openshift:
-        # set to true if running on openshift
-        privileged: false
-
 
     hostNetwork: true
     hostAliases: []
@@ -240,9 +221,6 @@ democratic-csi:
     livenessProbe:
       enabled: true
 
-    #cleanup:
-    #  image: docker.io/busybox:1.32.0
-
     # democratic-csi node
     driver:
       enabled: true
@@ -253,8 +231,6 @@ democratic-csi:
       # set path to null if your OS has no localtime file
       # RancherOS, openshift, etc 
       localtimeHostPath: /etc/localtime
-      lifecycle:
-
 
       extraEnv: []
       extraVolumeMounts: []
@@ -262,6 +238,7 @@ democratic-csi:
     
       iscsiDirHostPath: /etc/iscsi
       iscsiDirHostPathType: Directory
+
     # https://kubernetes-csi.github.io/docs/node-driver-registrar.html
     driverRegistrar:
       enabled: true
@@ -275,10 +252,6 @@ democratic-csi:
 
 
     extraVolumes: []
-  #  - name: foo
-  #    hostPath:
-  #      path: /dev
-  #      type: Directory
 
     nodeSelector: {}
 
@@ -296,33 +269,6 @@ democratic-csi:
       volumeBindingMode: Immediate
       allowVolumeExpansion: true
       mountOptions: []
-  #- name:
-  #  annotations: {}
-  #  labels: {}
-  #  defaultClass: false
-  #  reclaimPolicy: Delete
-  #  volumeBindingMode: Immediate
-  #  allowVolumeExpansion: true
-  #  parameters:
-  #    # for block-based storage can be ext3, ext4, xfs
-  #    # for nfs should be nfs
-  #    fsType:
-  #  mountOptions: []
-  #  secrets:
-  #    provisioner-secret:
-  #    controller-publish-secret:
-  #    node-stage-secret:
-  #      # any arbitrary iscsiadm entries can be add by creating keys starting with node-db.<entry.name>
-  #      # if doing CHAP
-  #      node-db.node.session.auth.authmethod: CHAP
-  #      node-db.node.session.auth.username: foo
-  #      node-db.node.session.auth.password: bar
-  #
-  #      # if doing mutual CHAP
-  #      node-db.node.session.auth.username_in: baz
-  #      node-db.node.session.auth.password_in: bar
-  #    node-publish-secret:
-  #    controller-expand-secret:
 
   volumeSnapshotClasses: []
   #- name:
