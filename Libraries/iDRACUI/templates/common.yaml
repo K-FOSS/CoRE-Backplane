@@ -4,6 +4,10 @@
 {{- define "app-template.hardcodedValues" -}}
 controllers:
   main:
+    enabled: false
+
+{{ range .Values.iDRACs }}
+  {{ .name }}:
     # -- enable the controller.
     enabled: true
 
@@ -63,6 +67,8 @@ controllers:
           startup:
             # -- Enable the startup probe
             enabled: false
+{{ end }}
+
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
