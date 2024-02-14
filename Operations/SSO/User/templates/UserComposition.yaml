@@ -69,6 +69,12 @@ spec:
                 type        = set(string)
               }
 
+              variable "buckets" {
+                description = "The S3 Buckets the account should have access to"
+                type        = set(string)
+                default = [var.bucket]
+              }
+
               variable "serviceAccount" {
                 description = "If the account is a service account or not"
                 type        = bool
@@ -110,6 +116,25 @@ spec:
                 sensitive = false
               }
 
+              output "bucketPolicy" {
+                value = jsonencode({
+                  Version = "2012-10-17"
+                  Statement = [
+                    {
+                      Effect = "Allow"
+                      Action = [
+                        "s3:*"
+                      ],
+                      Resource = [
+                        flatten([
+                          for bucket in var.buckets : [“arn:aws:s3:::${bucket}”, “arn:aws:s3:::${}”]
+                        ])
+                      ]
+                    }
+                  ]
+                })
+              }
+
               output "password" {
                 value     = random_password.password.result
                 sensitive = true
@@ -134,6 +159,9 @@ spec:
 
         - fromFieldPath: spec.serviceAccount
           toFieldPath: spec.forProvider.varmap.serviceAccount
+
+        - fromFieldPath: spec.buckets
+          toFieldPath: spec.forProvider.varmap.buckets
 
         - fromFieldPath: spec.groups
           toFieldPath: spec.forProvider.varmap.groups
@@ -167,6 +195,12 @@ spec:
           policy:
             fromFieldPath: Required
           toFieldPath: status.share.bucket
+          type: ToCompositeFieldPath
+
+        - fromFieldPath: status.atProvider.outputs.bucketPolicy
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.bucketPolicy
           type: ToCompositeFieldPath
 
       connectionDetails:
@@ -229,3 +263,34 @@ spec:
 
           forProvider:
             connectionLimit: -1
+
+
+    - name: bucket
+      patches:
+        - fromFieldPath: status.share.bucket
+          toFieldPath: spec.name
+          policy:
+            fromFieldPath: Required
+
+      base:
+        apiVersion: s3.onyxia.sh/v1alpha1
+        kind: Bucket
+        spec:
+          name: test-bucket
+
+    - name: bucket-policy
+      patches:
+        - fromFieldPath: status.share.username
+          toFieldPath: spec.name
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.bucketPolicy
+          toFieldPath: spec.policyContent
+          policy:
+            fromFieldPath: Required
+      base:
+        apiVersion: s3.onyxia.sh/v1alpha1
+        kind: Policy
+        spec:
+          name: test-bucket
