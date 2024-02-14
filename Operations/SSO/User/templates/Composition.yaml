@@ -6,7 +6,7 @@ metadata:
     implementation: mixed
 spec:
   compositeTypeRef:
-    apiVersion: user.mylogin.space/v1alpha1
+    apiVersion: mylogin.space/v1alpha1
     kind: XUser
 
   resources:
@@ -75,11 +75,15 @@ spec:
         apiVersion: postgresql.sql.crossplane.io/v1alpha1
         kind: Role
         spec:
+          providerConfigRef:
+            name: psql-main
+
           forProvider:
-            region: eu-central-1
-            cidrBlock: 10.0.1.0/24
+            privileges:
+              login: true
+
       patches:
         - fromFieldPath: status.share.username
-          toFieldPath: name
+          toFieldPath: spec.forProvider.name
           policy:
             fromFieldPath: Required
