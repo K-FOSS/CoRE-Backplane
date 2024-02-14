@@ -72,6 +72,18 @@ authentik:
       host: 10.1.1.68
       password: ""
 
+  volumes:
+    - name: tls-certs
+      secret:
+        secretName: myloginspace-default-certificates
+
+  volumeMounts:
+    #
+    # Secrets and Certificates
+    #
+    - name: tls-certs
+      mountPath: /certs
+
   # -- see configuration options at https://goauthentik.io/docs/installation/configuration/
   env:
     AUTHENTIK_REDIS__CACHE_DB: '1'
@@ -172,30 +184,6 @@ orchestra-login-portal-argocd:
     use_k8s_cm: false
 
   trusted_certs: []
-
-
-  #active_directory:
-  #  base: cn=users,dc=ent2k12,dc=domain,dc=com
-  #  host: "192.168.2.75"
-  #  port: "636"
-  #  bind_dn: "cn=Administrator,cn=users,dc=ent2k12,dc=domain,dc=com"
-  #  con_type: ldaps
-  #  srv_dns: "false"
-
-  # database:
-  #   hibernate_dialect: org.hibernate.dialect.MySQL5InnoDBDialect
-  #   quartz_dialect: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
-  #   driver: com.mysql.jdbc.Driver
-  #   url: jdbc:mysql://dbs.tremolo.lan:3308/unison
-  #   user: root
-  #   validation: SELECT 1
-
-  # smtp:
-  #   host: smtp.gmail.com
-  #   port: 587
-  #   user: donotreply@domain.com
-  #   from: donotreply@domain.com
-  #   tls: true
 
   monitoring:
     prometheus_service_account: system:serviceaccount:monitoring:prometheus-k8s
