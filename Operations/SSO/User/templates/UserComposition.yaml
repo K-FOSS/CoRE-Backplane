@@ -49,30 +49,35 @@ spec:
               variable "username" {
                 description = "Accounts username"
                 type        = string
-                default     = random_string.username.result
+                default = null
+                nullable = true
               }
 
               variable "databaseName" {
                 description = "Accounts Database"
                 type        = string
-                default     = random_string.username.result
+                default = null
+                nullable = true
               }
 
               variable "bucket" {
                 description = "Accounts S3 Bucket"
                 type        = string
-                default     = random_string.username.result
+                nullable = true
+                default = null
               }
 
               variable "groups" {
                 description = "The groups the account should be apart of"
                 type        = set(string)
+                default = []
               }
 
               variable "buckets" {
                 description = "The S3 Buckets the account should have access to"
                 type        = set(string)
-                default = [var.bucket]
+                nullable = true
+                default = []
               }
 
               variable "serviceAccount" {
@@ -87,12 +92,16 @@ spec:
               }
 
               locals {
+                username = try(toString(var.username), random_string.username.result)
+                databaseName = try(toString(var.databaseName), local.username)
                 groups = [for group in data.authentik_group.groups : group.id]
+                bucket = try(toString(var.bucket), local.username)
+                buckets = concat([local.bucket], tolist(var.buckets))
               }
 
               resource "authentik_user" "name" {
                 name = var.name
-                username = var.username
+                username = local.username
 
                 password = random_password.password.result
 
@@ -102,17 +111,17 @@ spec:
               }
 
               output "username" {
-                value     = var.username
+                value     = local.username
                 sensitive = false
               }
 
               output "database" {
-                value     = var.databaseName
+                value     = local.databaseName
                 sensitive = false
               }
 
               output "bucket" {
-                value     = var.bucket
+                value     = local.bucket
                 sensitive = false
               }
 
@@ -127,7 +136,7 @@ spec:
                       ],
                       Resource = [
                         flatten([
-                          for bucket in var.buckets : [“arn:aws:s3:::${bucket}”, “arn:aws:s3:::${}”]
+                          for bucket in local.buckets : ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
                         ])
                       ]
                     }
@@ -275,6 +284,8 @@ spec:
       base:
         apiVersion: s3.onyxia.sh/v1alpha1
         kind: Bucket
+        metadata:
+          namespace: core-prod
         spec:
           name: test-bucket
 
@@ -292,5 +303,7 @@ spec:
       base:
         apiVersion: s3.onyxia.sh/v1alpha1
         kind: Policy
+        metadata:
+          namespace: core-prod
         spec:
           name: test-bucket
