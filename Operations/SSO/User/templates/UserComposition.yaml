@@ -52,6 +52,18 @@ spec:
                 default     = random_string.username.result
               }
 
+              variable "databaseName" {
+                description = "Accounts Database"
+                type        = string
+                default     = random_string.username.result
+              }
+
+              variable "bucket" {
+                description = "Accounts S3 Bucket"
+                type        = string
+                default     = random_string.username.result
+              }
+
               variable "groups" {
                 description = "The groups the account should be apart of"
                 type        = set(string)
@@ -88,6 +100,16 @@ spec:
                 sensitive = false
               }
 
+              output "database" {
+                value     = var.databaseName
+                sensitive = false
+              }
+
+              output "bucket" {
+                value     = var.bucket
+                sensitive = false
+              }
+
               output "password" {
                 value     = random_password.password.result
                 sensitive = true
@@ -103,6 +125,12 @@ spec:
 
         - fromFieldPath: spec.username
           toFieldPath: spec.forProvider.varmap.username
+
+        - fromFieldPath: spec.database.name
+          toFieldPath: spec.forProvider.varmap.databaseName
+
+        - fromFieldPath: spec.bucket.name
+          toFieldPath: spec.forProvider.varmap.bucket
 
         - fromFieldPath: spec.serviceAccount
           toFieldPath: spec.forProvider.varmap.serviceAccount
@@ -129,6 +157,18 @@ spec:
           toFieldPath: status.share.username
           type: ToCompositeFieldPath
 
+        - fromFieldPath: status.atProvider.outputs.database
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.database
+          type: ToCompositeFieldPath
+
+        - fromFieldPath: status.atProvider.outputs.bucket
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.bucket
+          type: ToCompositeFieldPath
+
       connectionDetails:
         - name: username
           fromConnectionSecretKey: username
@@ -136,7 +176,23 @@ spec:
         - name: password
           fromConnectionSecretKey: password
 
+        - name: database
+          fromConnectionSecretKey: database
+
+        - name: bucket
+          fromConnectionSecretKey: bucket
+
     - name: role
+      patches:
+        - fromFieldPath: status.share.userSecret
+          toFieldPath: spec.forProvider.passwordSecretRef.name
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.username
+          toFieldPath: metadata.name
+          policy:
+            fromFieldPath: Required
       base:
         apiVersion: postgresql.sql.crossplane.io/v1alpha1
         kind: Role
@@ -153,13 +209,23 @@ spec:
             privileges:
               login: true
 
+    - name: database
       patches:
-        - fromFieldPath: status.share.userSecret
-          toFieldPath: spec.forProvider.passwordSecretRef.name
+        - fromFieldPath: status.share.database
+          toFieldPath: metadata.name
           policy:
             fromFieldPath: Required
 
         - fromFieldPath: status.share.username
-          toFieldPath: metadata.name
+          toFieldPath: spec.forProvider.owner
           policy:
             fromFieldPath: Required
+      base:
+        apiVersion: postgresql.sql.crossplane.io/v1alpha1
+        kind: Database
+        spec:
+          providerConfigRef:
+            name: psql-main
+
+          forProvider:
+            connectionLimit: -1
