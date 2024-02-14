@@ -2,15 +2,8 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
-{{ if not .Values.global.nameOverride }}
-global:
-  nameOverride: "{{ .Release.Name }}"
-{{ end }}
-
 controllers:
-{{- range .Values.iDRACs -}}
-  test:
+  main:
     # -- enable the controller.
     enabled: true
 
@@ -70,7 +63,6 @@ controllers:
           startup:
             # -- Enable the startup probe
             enabled: false
-{{- end -}}
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
