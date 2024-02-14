@@ -27,10 +27,6 @@ spec:
           forProvider:
             source: Inline
             module: |
-              data "authentik_group" "LDAPService" {
-                name = "LDAPService"
-              }
-
               resource "random_string" "username" {
                 length  = 6
                 special = true
@@ -49,11 +45,35 @@ spec:
                 type        = string
               }
 
+              variable "groups" {
+                description = "The groups the account should be apart of"
+                type        = set(string)
+              }
+
+              variable "serviceAccount" {
+                description = "If the account is a service account or not"
+                type        = string
+                default     = true
+              }
+
+              data "authentik_group" "groups" {
+                for_each = var.groups
+                name     = each.key
+              }
+
+              locals {
+                groups = {
+                  for group in data.authentik_group.groups : group.id
+                }
+              }
+
               resource "authentik_user" "name" {
                 name = var.name
                 username = random_string.username.result
                 password = random_password.password.result
-                groups = [data.authentik_group.LDAPService.id]
+                groups = local.groups
+
+                type = var.serviceAccount == true ? 'service_account' : 'internal'
               }
 
               output "username" {
@@ -65,11 +85,20 @@ spec:
                 value     = random_password.password.result
                 sensitive = true
               }
-            vars:
-              - key: name
+            varmap:
+              name: ''
+              serviceAccount: true
+              groups:
+                - LDAPService
       patches:
         - fromFieldPath: spec.name
-          toFieldPath: spec.forProvider.vars[0].value
+          toFieldPath: spec.forProvider.varmap.name
+
+        - fromFieldPath: spec.serviceAccount
+          toFieldPath: spec.forProvider.varmap.serviceAccount
+
+        - fromFieldPath: spec.groups
+          toFieldPath: spec.forProvider.varmap.groups
 
         - fromFieldPath: metadata.uid
           toFieldPath: "spec.writeConnectionSecretToRef.name"
@@ -82,7 +111,7 @@ spec:
           fromFieldPath: spec.writeConnectionSecretToRef.name
           toFieldPath: status.share.userSecret
           policy:
-            fromFieldPath: Optional
+            fromFieldPath: Required
 
       connectionDetails:
         - name: username
