@@ -42,8 +42,14 @@ spec:
               }
 
               variable "name" {
-                description = "Users friendly name"
+                description = "Accounts friendly name"
                 type        = string
+              }
+
+              variable "username" {
+                description = "Accounts username"
+                type        = string
+                default     = random_string.username.result
               }
 
               variable "groups" {
@@ -68,15 +74,17 @@ spec:
 
               resource "authentik_user" "name" {
                 name = var.name
-                username = random_string.username.result
+                username = var.username
+
                 password = random_password.password.result
+
                 groups = local.groups
 
                 type = var.serviceAccount == true ? "service_account" : "internal"
               }
 
               output "username" {
-                value     = random_string.username.result
+                value     = var.username
                 sensitive = false
               }
 
@@ -92,6 +100,9 @@ spec:
       patches:
         - fromFieldPath: spec.name
           toFieldPath: spec.forProvider.varmap.name
+
+        - fromFieldPath: spec.username
+          toFieldPath: spec.forProvider.varmap.username
 
         - fromFieldPath: spec.serviceAccount
           toFieldPath: spec.forProvider.varmap.serviceAccount
