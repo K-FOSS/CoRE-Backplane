@@ -9,6 +9,8 @@ spec:
     apiVersion: mylogin.space/v1alpha1
     kind: XUser
 
+  writeConnectionSecretsToNamespace: core-prod
+
   resources:
     - name: user
       base:
@@ -17,6 +19,10 @@ spec:
         spec:
           providerConfigRef:
             name: authentik
+
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
 
           forProvider:
             source: Inline
@@ -64,14 +70,26 @@ spec:
       patches:
         - fromFieldPath: spec.name
           toFieldPath: spec.forProvider.vars[0].value
+
+        - fromFieldPath: metadata.uid
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: '%s-secret'
+
         - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.outputs.username
-          toFieldPath: status.share.username
+          fromFieldPath: spec.writeConnectionSecretToRef.name
+          toFieldPath: status.share.userSecret
           policy:
             fromFieldPath: Optional
+
       connectionDetails:
-        - fromConnectionSecretKey: username
-        - fromConnectionSecretKey: password
+        - name: username
+          fromConnectionSecretKey: username
+
+        - name: password
+          fromConnectionSecretKey: password
 
     - name: role
       base:
@@ -82,11 +100,21 @@ spec:
             name: psql-main
 
           forProvider:
+            passwordSecretRef:
+              name: password
+              namespace: core-prod
+              key: password
+
             privileges:
               login: true
 
       patches:
+        - fromFieldPath: status.share.userSecret
+          toFieldPath: spec.forProvider.passwordSecretRef.name
+          policy:
+            fromFieldPath: Required
+
         - fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.name
+          toFieldPath: metadata.name
           policy:
             fromFieldPath: Required
