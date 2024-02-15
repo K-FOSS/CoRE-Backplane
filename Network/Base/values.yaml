@@ -735,12 +735,15 @@ cilium:
 
   # -- Configure the eBPF-based ip-masq-agent
   ipMasqAgent:
-    enabled: false
+    enabled: true
 
     # the config of nonMasqueradeCIDRs
-    # config:
-      # nonMasqueradeCIDRs: []
-      # masqLinkLocal: false
+    config:
+      nonMasqueradeCIDRs:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+      masqLinkLocal: false
 
   # iptablesLockTimeout defines the iptables "--wait" option when invoked from Cilium.
   # iptablesLockTimeout: "5s"
