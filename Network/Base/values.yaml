@@ -127,6 +127,21 @@ submariner-operator:
 cilium:
   enabled: true
 
+  # -- Configure the client side rate limit for the agent and operator
+  #
+  # If the amount of requests to the Kubernetes API server exceeds the configured
+  # rate limit, the agent and operator will start to throttle requests by delaying
+  # them until there is budget or the request times out.
+  k8sClientRateLimit:
+    # -- (int) The sustained request rate in requests per second.
+    # @default -- 5 for k8s up to 1.26. 10 for k8s version 1.27+
+    qps: 20
+    # -- (int) The burst request rate in requests per second.
+    # The rate limiter will allow short bursts with a higher rate.
+    # @default -- 10 for k8s up to 1.26. 20 for k8s version 1.27+
+    burst: 40
+
+
   securityContext:
     # -- User to run the pod with
     # runAsUser: 0
@@ -306,19 +321,11 @@ cilium:
   l2announcements:
     # -- Enable L2 announcements
     enabled: false
-    # -- If a lease is not renewed for X duration, the current leader is considered dead, a new leader is picked
-    # leaseDuration: 15s
-    # -- The interval at which the leader will renew the lease
-    # leaseRenewDeadline: 5s
-    # -- The timeout between retries if renewal fails
-    # leaseRetryPeriod: 2s
-  
+
   # -- Configure L2 pod announcements
   l2podAnnouncements:
     # -- Enable L2 pod announcements
     enabled: false
-    # -- Interface used for sending Gratuitous ARP pod announcements
-    interface: "eth0"
 
   # -- This feature set enables virtual BGP routers to be created via
   # CiliumBGPPeeringPolicy CRDs.
@@ -332,25 +339,79 @@ cilium:
     enabled: true
 
   bpf:
-    autoMount:
-      # -- Enable automatic mount of BPF filesystem
-      # When `autoMount` is enabled, the BPF filesystem is mounted at
-      # `bpf.root` path on the underlying host and inside the cilium agent pod.
-      # If users disable `autoMount`, it's expected that users have mounted
-      # bpffs filesystem at the specified `bpf.root` volume, and then the
-      # volume will be mounted inside the cilium agent pod at the same path.
-      enabled: true
-
-    lbExternalClusterIP: true
-
-    hostLegacyRouting: false
-
-    masquerade: true
-    tproxy: false
-
+    # -- Configure the mount point for the BPF filesystem
+    root: /sys/fs/bpf
     # -- Enables pre-allocation of eBPF map values. This increases
     # memory usage but can reduce latency.
     preallocateMaps: false
+
+    # -- (int) Configure the maximum number of entries in auth map.
+    # @default -- `524288`
+    authMapMax: ~
+
+    # -- (int) Configure the maximum number of entries in the TCP connection tracking
+    # table.
+    # @default -- `524288`
+    ctTcpMax: 1048576
+
+    # -- (int) Configure the maximum number of entries for the non-TCP connection
+    # tracking table.
+    # @default -- `262144`
+    ctAnyMax: 524288
+
+    # -- Configure the maximum number of service entries in the
+    # load balancer maps.
+    lbMapMax: 65536
+
+    # -- (int) Configure the maximum number of entries for the NAT table.
+    # @default -- `524288`
+    natMax: 1048576
+
+    # -- (int) Configure the maximum number of entries for the neighbor table.
+    # @default -- `524288`
+    neighMax: ~
+
+    # -- Configure the maximum number of entries in endpoint policy map (per endpoint).
+    policyMapMax: 32768
+
+    # -- (float64) Configure auto-sizing for all BPF maps based on available memory.
+    # ref: https://docs.cilium.io/en/stable/network/ebpf/maps/
+    # @default -- `0.0025`
+    mapDynamicSizeRatio: ~
+
+    # -- Configure the level of aggregation for monitor notifications.
+    # Valid options are none, low, medium, maximum.
+    monitorAggregation: medium
+
+    # -- Configure the typical time between monitor notifications for
+    # active connections.
+    monitorInterval: "5s"
+
+    # -- Configure which TCP flags trigger notifications when seen for the
+    # first time in a connection.
+    monitorFlags: "all"
+
+    # -- Allow cluster external access to ClusterIP services.
+    lbExternalClusterIP: true
+
+    # -- (bool) Enable native IP masquerade support in eBPF
+    # @default -- `false`
+    masquerade: true
+
+    # -- (bool) Configure whether direct routing mode should route traffic via
+    # host stack (true) or directly and more efficiently out of BPF (false) if
+    # the kernel supports it. The latter has the implication that it will also
+    # bypass netfilter in the host namespace.
+    # @default -- `false`
+    hostLegacyRouting: false
+    # -- (bool) Configure the eBPF-based TPROXY to reduce reliance on iptables rules
+    # for implementing Layer 7 policy.
+    # @default -- `false`
+    tproxy: true
+    # -- (list) Configure explicitly allowed VLAN id's for bpf logic bypass.
+    # [0] will allow all VLAN id's without any filtering.
+    # @default -- `[]`
+    vlanBypass: ~
 
 
   # -- Clean all eBPF datapath state from the initContainer of the cilium-agent
@@ -660,6 +721,13 @@ cilium:
     # -- Enable hostPort service support.
     enabled: true
 
+  # -- Configure socket LB
+  socketLB:
+    # -- Enable socket LB
+    enabled: true
+    # -- Disable socket lb for non-root ns. This is used to enable Istio routing rules.
+    # hostNamespaceOnly: false
+
   # -- Configure certificate generation for Hubble integration.
   # If hubble.tls.auto.method=cronJob, these values are used
   # for the Kubernetes CronJob which will be scheduled regularly to
@@ -675,7 +743,7 @@ cilium:
 
   hubble:
     # -- Enable Hubble (true by default).
-    enabled: false
+    enabled: true
 
 
   # -- Method to use for identity allocation (`crd` or `kvstore`).
@@ -875,7 +943,7 @@ cilium:
 
     # -- mode is the operation mode of load balancing for remote backends
     # e.g. snat, dsr, hybrid
-    mode: dsr
+    mode: snat
 
     # -- acceleration is the option to accelerate service handling via XDP
     # Applicable values can be: disabled (do not use XDP), native (XDP BPF
@@ -890,7 +958,7 @@ cilium:
 
     # -- serviceTopology enables K8s Topology Aware Hints -based service
     # endpoints filtering
-    # serviceTopology: false
+    serviceTopology: true
 
     # -- L7 LoadBalancer
     l7:
