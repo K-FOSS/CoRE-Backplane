@@ -1,0 +1,22 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: minio-credentials
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    name: minio-credentials
+
+  data:
+    - secretKey: AWS_ACCESS_KEY_ID
+      remoteRef:
+        key: Minio/General
+        property: RootUsername
+
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      remoteRef:
+        key: Minio/General
+        property: RootPassword
