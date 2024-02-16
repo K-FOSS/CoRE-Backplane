@@ -53,6 +53,22 @@ spec:
                 nullable = true
               }
 
+              variable "ldaps" {
+                description = "LDAPs Configuration"
+                type        = object({
+                  hostname = string
+                  port = string
+                })
+              }
+
+              variable "sips" {
+                description = "SIPs Configuration"
+                type        = object({
+                  hostname = string
+                  port = string
+                })
+              }
+
               variable "psql" {
                 description = "PSQL Configuration"
                 type        = object({
@@ -159,6 +175,49 @@ spec:
               }
 
               #
+              # LDAP
+              #
+
+              output "ldapsHostname" {
+                value = var.ldaps.hostname
+                sensitive = false
+              }
+
+              output "ldapsBIND" {
+                value = "cn=${local.username},dc=ldap,dc=mylogin,dc=space"
+                sensitive = false
+              }
+
+              output "ldapsPort" {
+                value = var.ldaps.port
+                sensitive = false
+              }
+
+              output "ldapsURI" {
+                value = "ldaps://${var.ldaps.hostname}:${var.ldaps.port}"
+                sensitive = true
+              }
+
+              #
+              # SIPs
+              #
+
+              output "sipsHostname" {
+                value = var.sips.hostname
+                sensitive = false
+              }
+
+              output "sipsPort" {
+                value = var.sips.port
+                sensitive = false
+              }
+
+              output "sipsURI" {
+                value = "TODO"
+                sensitive = true
+              }
+
+              #
               # PSQL
               #
 
@@ -241,6 +300,14 @@ spec:
 
 
             varmap:
+              ldaps:
+                hostname: ldap.mylogin.space
+                port: 636
+
+              sips:
+                hostname: sip.resolvemy.host
+                port: 5061
+
               psql:
                 hostname: psql.mylogin.space
                 port: 5432
@@ -325,6 +392,38 @@ spec:
 
         - name: database
           fromConnectionSecretKey: database
+
+        #
+        # LDAP
+        #
+
+        - name: ldapsHostname
+          fromConnectionSecretKey: ldapsHostname
+
+        - name: ldapsBIND
+          fromConnectionSecretKey: ldapsBIND
+
+        - name: ldapsPort
+          fromConnectionSecretKey: ldapsPort
+
+        - name: ldapsURI
+          fromConnectionSecretKey: ldapsURI
+
+        #
+        # SIPs
+        #
+        - name: sipsHostname
+          fromConnectionSecretKey: sipsHostname
+
+        - name: sipsPort
+          fromConnectionSecretKey: sipsPort
+
+        - name: sipsURI
+          fromConnectionSecretKey: sipsURI
+
+        #
+        # SIP
+        #
 
         #
         # PSQL
