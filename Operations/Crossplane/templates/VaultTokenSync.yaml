@@ -1,0 +1,20 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: vault-token
+
+spec:
+  refreshInterval: '1m'
+
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    name: crossplane-vault
+
+  data:
+    - secretKey: Token
+      remoteRef:
+        key: VAULT
+        property: Token
