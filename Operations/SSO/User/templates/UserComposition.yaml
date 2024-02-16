@@ -28,9 +28,10 @@ spec:
             source: Inline
             module: |
               resource "random_string" "username" {
-                length  = 6
+                length  = 10
                 special = false
                 upper = false
+                numeric = false
               }
 
               resource "random_password" "password" {
@@ -288,11 +289,10 @@ spec:
                       Action = [
                         "s3:*"
                       ],
-                      Resource = [
-                        flatten([
+                      Resource = getflatten([
                           for bucket in local.buckets : ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
                         ])
-                      ]
+                      
                     }
                   ]
                 })
@@ -546,6 +546,11 @@ spec:
 
         - fromFieldPath: status.share.bucketPolicy
           toFieldPath: spec.forProvider.rawPolicy
+          transforms:
+            - type: string
+              string:
+                fmt: |
+                  %s
           policy:
             fromFieldPath: Required
       base:
