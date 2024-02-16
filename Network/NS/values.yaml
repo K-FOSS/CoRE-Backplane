@@ -162,30 +162,6 @@ controllers:
         # -- Override the working directory for the default container
         workingDir:
 
-        # -- Environment variables. Template enabled.
-        # Syntax options:
-        # A) TZ: UTC
-        # B) PASSWD: '{{ .Release.Name }}'
-        # B) TZ:
-        #      value: UTC
-        #      dependsOn: otherVar
-        # D) PASSWD:
-        #      configMapKeyRef:
-        #        name: config-map-name
-        #        key: key-name
-        # E) PASSWD:
-        #      dependsOn:
-        #        - otherVar1
-        #        - otherVar2
-        #      valueFrom:
-        #        secretKeyRef:
-        #          name: secret-name
-        #          key: key-name
-        #      ...
-        # F) - name: TZ
-        #      value: UTC
-        # G) - name: TZ
-        #      value: '{{ .Release.Name }}'
         env:
           - name: PDNS_HOST
             value: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice.core-prod.svc.cluster.local'
