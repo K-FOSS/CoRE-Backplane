@@ -422,33 +422,40 @@ spec:
     - name: bucket
       patches:
         - fromFieldPath: status.share.bucket
-          toFieldPath: spec.name
+          toFieldPath: spec.forProvider.bucketName
           policy:
             fromFieldPath: Required
 
       base:
-        apiVersion: s3.onyxia.sh/v1alpha1
+        apiVersion: minio.crossplane.io/v1
         kind: Bucket
-        metadata:
-          namespace: core-prod
         spec:
-          name: test-bucket
+          providerConfigRef:
+            name: s3-prod
+
+          forProvider:
+            region: us-east-1
+            bucketName: 'test'
+
 
     - name: bucket-policy
       patches:
         - fromFieldPath: status.share.username
-          toFieldPath: spec.name
+          toFieldPath: metadata.name
           policy:
             fromFieldPath: Required
 
         - fromFieldPath: status.share.bucketPolicy
-          toFieldPath: spec.policyContent
+          toFieldPath: spec.forProvider.rawPolicy
           policy:
             fromFieldPath: Required
       base:
-        apiVersion: s3.onyxia.sh/v1alpha1
+        apiVersion: minio.crossplane.io/v1
         kind: Policy
-        metadata:
-          namespace: core-prod
         spec:
-          name: test-bucket
+          providerConfigRef:
+            name: s3-prod
+
+          forProvider:
+            region: us-east-1
+            bucketName: 'test'
