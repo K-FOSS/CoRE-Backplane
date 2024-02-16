@@ -17,6 +17,24 @@ spec:
     - username
     - password
     - database
+
+    
+    # PSQL
+    - psqlHostname
+    - psqlPort
+    - psqlURI
+
+    #
+    # MySQL
+    #
+    - mysqlHostname
+    - mysqlPort
+    - mysqlURI
+
+    # S3
+    - S3Hostname
+    - S3Port
+    - S3URI
     - bucket
 
   versions:
@@ -34,6 +52,9 @@ spec:
                   type: string
 
                 username:
+                  type: string
+
+                email:
                   type: string
 
                 serviceAccount:
@@ -63,6 +84,19 @@ spec:
 
                   items:
                     type: string
+
+                #
+                # AVoIP
+                #
+                AVoIP:
+                  type: object
+                  properties:
+                    voicemail:
+                      type: object
+                      properties:
+                        password:
+                          type: string
+                    
 
               required:
                 - name

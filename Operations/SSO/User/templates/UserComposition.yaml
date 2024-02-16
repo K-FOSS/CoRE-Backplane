@@ -53,6 +53,32 @@ spec:
                 nullable = true
               }
 
+              variable "psql" {
+                description = "PSQL Configuration"
+                type        = object({
+                  hostname = string
+                  port = string
+                })
+              }
+
+              variable "mysql" {
+                description = "MySQL Configuration"
+
+                type = object({
+                  hostname = string
+                  port = string
+                })
+              }
+
+              variable "s3" {
+                description = "S3 Configuration"
+
+                type = object({
+                  hostname = string
+                  port = string
+                })
+              }
+
               variable "databaseName" {
                 description = "Accounts Database"
                 type        = string
@@ -69,26 +95,32 @@ spec:
 
               variable "groups" {
                 description = "The groups the account should be apart of"
-                type        = set(string)
+
+                type = set(string)
                 default = []
               }
 
               variable "buckets" {
                 description = "The S3 Buckets the account should have access to"
-                type        = set(string)
+
+                type = set(string)
+
                 nullable = true
                 default = []
+
               }
 
               variable "serviceAccount" {
                 description = "If the account is a service account or not"
-                type        = bool
-                default     = true
+                
+                type = bool
+                
+                default = true
               }
 
               data "authentik_group" "groups" {
                 for_each = var.groups
-                name     = each.key
+                name = each.key
               }
 
               locals {
@@ -97,13 +129,14 @@ spec:
                 groups = [for group in data.authentik_group.groups : group.id]
                 bucket = try(toString(var.bucket), local.username)
                 buckets = concat([local.bucket], tolist(var.buckets))
+                password = random_password.password.result
               }
 
               resource "authentik_user" "name" {
                 name = var.name
                 username = local.username
 
-                password = random_password.password.result
+                password = local.password
 
                 groups = local.groups
 
@@ -111,18 +144,80 @@ spec:
               }
 
               output "username" {
-                value     = local.username
+                value = local.username
                 sensitive = false
+              }
+
+              output "password" {
+                value = local.password
+                sensitive = true
               }
 
               output "database" {
-                value     = local.databaseName
+                value = local.databaseName
                 sensitive = false
               }
 
-              output "bucket" {
-                value     = local.bucket
+              #
+              # PSQL
+              #
+
+              output "psqlHostname" {
+                value = var.psql.hostname
                 sensitive = false
+              }
+
+              output "psqlPort" {
+                value = var.psql.port
+                sensitive = false
+              }
+
+              output "psqlURI" {
+                value = "postgresql://${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
+                sensitive = true
+              }
+
+              #
+              # MySQL
+              #
+
+              output "mysqlHostname" {
+                value = var.mysql.hostname
+                sensitive = false
+              }
+
+              output "mysqlPort" {
+                value = var.mysql.port
+                sensitive = false
+              }
+
+              output "mysqlURI" {
+                value = "mysql://${local.username}:${local.password}@${var.mysql.hostname}:${var.mysql.port}/${local.databaseName}"
+                sensitive = true
+              }
+
+              #
+              # S3
+              #
+
+              output "bucket" {
+                value = local.bucket
+                sensitive = false
+              }
+
+              output "S3Hostname" {
+                value = var.s3.hostname
+                sensitive = false
+              }
+
+              output "S3Port" {
+                value = var.s3.port
+                sensitive = false
+              }
+
+              output "S3URI" {
+                value = "https://${var.s3.hostname}:${var.s3.port}"
+                sensitive = true
               }
 
               output "bucketPolicy" {
@@ -144,11 +239,20 @@ spec:
                 })
               }
 
-              output "password" {
-                value     = random_password.password.result
-                sensitive = true
-              }
+
             varmap:
+              psql:
+                hostname: psql.mylogin.space
+                port: 5432
+              
+              mysql:
+                hostname: mysql.mylogin.space
+                port: 3306
+
+              s3:
+                hostname: s3.mylogin.space
+                port: 443
+
               name: ''
               serviceAccount: true
               groups:
@@ -222,8 +326,49 @@ spec:
         - name: database
           fromConnectionSecretKey: database
 
+        #
+        # PSQL
+        #
+
+        - name: psqlHostname
+          fromConnectionSecretKey: psqlHostname
+
+        - name: psqlPort
+          fromConnectionSecretKey: psqlPort
+
+        - name: psqlURI
+          fromConnectionSecretKey: psqlURI
+
+        #
+        # MySQL
+        #
+
+        - name: mysqlHostname
+          fromConnectionSecretKey: mysqlHostname
+
+        - name: mysqlPort
+          fromConnectionSecretKey: mysqlPort
+
+        - name: mysqlURI
+          fromConnectionSecretKey: mysqlURI
+
+        #
+        # S3
+        #
+
         - name: bucket
           fromConnectionSecretKey: bucket
+
+        - name: S3Hostname
+          fromConnectionSecretKey: S3Hostname
+
+        - name: S3Port
+          fromConnectionSecretKey: S3Port
+
+        - name: S3URI
+          fromConnectionSecretKey: S3URI
+
+
 
     - name: role
       patches:
