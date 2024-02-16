@@ -68,10 +68,10 @@ argo-cd:
       admin.enabled: true
 
       # -- Timeout to discover if a new manifests version got published to the repository
-      timeout.reconciliation: 900s
+      timeout.reconciliation: 180s
 
       # -- Timeout to refresh application data as well as target manifests cache
-      timeout.hard.reconciliation: 0s
+      #timeout.hard.reconciliation: 0s
 
       #
       # Things to Ignore
@@ -92,6 +92,7 @@ argo-cd:
         - '.spec.dataFrom[]?.extract.conversionStrategy'
         - '.spec.dataFrom[]?.extract.decodingStrategy'
         - '.spec.dataFrom[]?.extract.metadataPolicy'
+
       # ignore kind/version injection in stateful set volume claims
       resource.customizations.ignoreDifferences.apps_StatefulSet: |
         jqPathExpressions:
@@ -156,13 +157,6 @@ argo-cd:
             - cilium.io
           kinds:
             - CiliumIdentity
-          clusters:
-            - "*"
-
-        - apiGroups:
-            - infra.contrib.fluxcd.io
-          kinds:
-            - Terraform
           clusters:
             - "*"
 
@@ -235,7 +229,7 @@ argo-cd:
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
       # Set the logging level. One of: debug|info|warn|error (default "info")
-      controller.log.level: 'warn'
+      controller.log.level: 'debug'
 
       ## Server properties
 
