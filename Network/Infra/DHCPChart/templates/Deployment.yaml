@@ -63,6 +63,10 @@ spec:
             - name: dhcp-socket
               mountPath: /var/run/DHCP
 
+            - name: dhcp-credentials
+              readOnly: true
+              mountPath: /etc/secrets
+
             - name: script-vol
               mountPath: /usr/local/bin/entry.sh
               subPath: entry.sh
@@ -89,6 +93,22 @@ spec:
             items:
               - key: entry.sh
                 path: entry.sh
+
+        - name: dhcp-credentials
+          secret:
+            secretName: '{{ template "dhcp.fullname" . }}-creds'
+            items:
+              - key: psqlHostname
+                path: DB_HOSTNAME
+
+              - key: psqlPort
+                path: DB_PORT
+
+              - key: username
+                path: USERNAME
+
+              - key: password
+                path: PASSWORD
 
         - name: dhcp-config
           secret:

@@ -304,11 +304,12 @@ data:
           // We will use memfile  because it doesn't require any prior set up.
           "lease-database": {
             "type": "postgresql",
-            "name": "{{ .DatabaseDatabase }}",
-            "host": "psql.mylogin.space",
-            "user": "{{ .Username }}",
-            "port": 5432,
-            "password": "{{ .Password }}",
+            "name": "hRCyPUlFYx",
+            "host": "<?include "/etc/secrets/DB_HOSTNAME"?>",
+            "port": <?include "/etc/secrets/DB_PORT"?>,
+            "user": "<?include "/etc/secrets/USERNAME"?>",
+
+            "password": "<?include "/etc/secrets/PASSWORD"?>",
             "reconnect-wait-time": 3000, // expressed in ms
             "max-reconnect-tries": 3,
             "on-fail": "stop-retry-exit",
@@ -700,11 +701,12 @@ data:
 
           "lease-database": {
             "type": "postgresql",
-            "name": "{{ .DatabaseDatabase }}",
-            "host": "psql.mylogin.space",
-            "user": "{{ .Username }}",
-            "port": 5432,
-            "password": "{{ .Password }}",
+            "name": "hRCyPUlFYx",
+            "host": "<?include "/etc/secrets/DB_HOSTNAME"?>",
+            "port": <?include "/etc/secrets/DB_PORT"?>,
+            "user": "<?include "/etc/secrets/USERNAME"?>",
+
+            "password": "<?include "/etc/secrets/PASSWORD"?>",
             "reconnect-wait-time": 3000, // expressed in ms
             "max-reconnect-tries": 3,
             "on-fail": "stop-retry-exit",
