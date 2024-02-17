@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: netbox-ipam
+  name: netbox-ipam-worker
 spec:
   template:
     spec:
@@ -20,27 +20,27 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: postgres_host
-                  name: ns-core-powerdns
+                  name: ns-database
             - name: PGSQL_PORT
               valueFrom:
                 secretKeyRef:
                   key: postgres_port
-                  name: ns-core-powerdns
+                  name: ns-database
             - name: PGSQL_USER
               valueFrom:
                 secretKeyRef:
                   key: postgres_username
-                  name: ns-core-powerdns
+                  name: ns-database
             - name: PGSQL_PASS
               valueFrom:
                 secretKeyRef:
                   key: postgres_password
-                  name: ns-core-powerdns
+                  name: ns-database
             - name: PGSQL_DB
               valueFrom:
                 secretKeyRef:
                   key: postgres_database
-                  name: ns-core-powerdns
+                  name: ns-database
             - name: PGSQL_DNSSEC
               value: 'no'
           image: 'cybiox9/powerdns:dev'
