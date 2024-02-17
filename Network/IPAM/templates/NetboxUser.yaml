@@ -1,0 +1,17 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+  name: {{ .Release.Name }}-netbox
+
+spec:
+  name: Netbox
+  groups:
+    - LDAPService
+
+  database:
+    name: 3dzxoCeJ1f
+
+  buckets:
+    - ipam-netbox
+
+  writeConnectionSecretToRef:
+    name: {{ .Release.Name }}-netbox
