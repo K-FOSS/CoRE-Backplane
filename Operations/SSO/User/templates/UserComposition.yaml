@@ -141,10 +141,10 @@ spec:
               }
 
               locals {
-                username = try(toString(var.username), random_string.username.result)
-                databaseName = try(toString(var.databaseName), local.username)
+                username = try(length(var.username), 0) > 0 ? var.username : random_string.username.result
+                databaseName = try(length(var.databaseName), 0) > 0 ? var.databaseName : local.username
                 groups = [for group in data.authentik_group.groups : group.id]
-                bucket = try(toString(var.bucket), local.username)
+                bucket = try(length(var.bucket), 0) > 0 ? var.bucket : local.username
                 buckets = concat([local.bucket], tolist(var.buckets))
                 password = random_password.password.result
               }
@@ -478,6 +478,16 @@ spec:
 
         - fromFieldPath: status.share.username
           toFieldPath: metadata.name
+          transforms:
+            - string:
+                convert: ToLower
+                type: Convert
+              type: string
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.username
+          toFieldPath: metadata.annotations[crossplane.io/external-name]
           policy:
             fromFieldPath: Required
       base:
@@ -500,6 +510,16 @@ spec:
       patches:
         - fromFieldPath: status.share.database
           toFieldPath: metadata.name
+          transforms:
+            - string:
+                convert: ToLower
+                type: Convert
+              type: string
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.database
+          toFieldPath: metadata.annotations[crossplane.io/external-name]
           policy:
             fromFieldPath: Required
 
@@ -517,6 +537,28 @@ spec:
           forProvider:
             connectionLimit: -1
 
+
+    - name: db-grant
+      patches:
+        - fromFieldPath: status.share.database
+          toFieldPath: spec.forProvider.database
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.username
+          toFieldPath: spec.forProvider.role
+          policy:
+            fromFieldPath: Required
+      base:
+        apiVersion: postgresql.sql.crossplane.io/v1alpha1
+        kind: Grant
+        spec:
+          providerConfigRef:
+            name: psql-main
+
+          forProvider:
+            privileges:
+              - ALL
 
     - name: bucket
       patches:
@@ -541,6 +583,16 @@ spec:
       patches:
         - fromFieldPath: status.share.username
           toFieldPath: metadata.name
+          transforms:
+            - string:
+                convert: ToLower
+                type: Convert
+              type: string
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.username
+          toFieldPath: metadata.annotations[crossplane.io/external-name]
           policy:
             fromFieldPath: Required
 
