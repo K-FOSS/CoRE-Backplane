@@ -2820,6 +2820,7 @@ ext-dns:
   ## @param sources [array] K8s resources type to be observed for new DNS entries by ExternalDNS
   ##
   sources:
+    - crd
     - service
     - ingress
     - gateway-httproute
@@ -3048,13 +3049,13 @@ ext-dns:
   crd:
     ## @param crd.create Install and use the integrated DNSEndpoint CRD
     ##
-    create: false
+    create: true
     ## @param crd.apiversion Sets the API version for the CRD to watch
     ##
-    apiversion: ""
+    apiversion: externaldns.k8s.io/v1alpha1
     ## @param crd.kind Sets the kind for the CRD to watch
     ##
-    kind: ""
+    kind: DNSEndpoint
 
   ## Kubernetes svc configutarion
   ##
