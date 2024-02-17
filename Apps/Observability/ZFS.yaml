@@ -19,6 +19,13 @@ spec:
 
     spec:
       project: core
+
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jqPathExpressions:
+            - .metadata.annotations.rollme
+
       syncPolicy:
         syncOptions:
           - ServerSideApply=true
