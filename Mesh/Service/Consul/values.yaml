@@ -12,8 +12,8 @@ consul:
       service:
         annotations: null
     enabled: false
-    image: null
     logLevel: info
+
     managedGatewayClass:
       copyAnnotations:
         service: null
@@ -153,12 +153,13 @@ consul:
     aclToken:
       secretKey: null
       secretName: null
-    affinity: null
+
     enabled: true
-    logLevel: ''
-    nodeSelector: null
-    priorityClassName: 'system-cluster-critical'
     replicas: 1
+
+    logLevel: ''
+    priorityClassName: 'system-cluster-critical'
+
     resources:
       limits:
         cpu: 256m
@@ -166,22 +167,21 @@ consul:
       requests:
         cpu: 16m
         memory: 16Mi
-    serviceAccount:
-      annotations: null
-    tolerations: null
-  
 
-  
   externalServers:
     enabled: false
     hosts:
-      - 172.20.57.22
+      - infra1-dc1-server.core-prod.svc.cluster.local
     httpsPort: 8500
     k8sAuthMethodHost: null
     tlsServerName: null
     useSystemRoots: false
-  
+
   global:
+    enabled: true
+
+
+
     acls:
       createReplicationToken: false
       manageSystemACLs: true
@@ -190,6 +190,11 @@ consul:
         secretName: consul-acl-bootstrap-token
         # The key of the Kubernetes secret.
         secretKey: token
+
+    gossipEncryption:
+      autoGenerate: false
+      secretKey: key
+      secretName: consul-gossip-encryption-key
 
     adminPartitions:
       enabled: false
@@ -201,6 +206,7 @@ consul:
           rpc: null
           serf: null
         type: LoadBalancer
+
     consulSidecarContainer:
       resources:
         limits:
@@ -210,28 +216,19 @@ consul:
           cpu: 20m
           memory: 25Mi
 
-    image: hashicorp/consul:1.11.3
-    imageEnvoy: envoyproxy/envoy-alpine:v1.20.2
-    imageK8S: hashicorp/consul-k8s-control-plane:0.41.1
     datacenter: dc1
     domain: kjdev
+
     enableConsulNamespaces: false
+
     enablePodSecurityPolicies: false
-    enabled: true
-    enterpriseLicense:
-      enableLicenseAutoload: true
-      secretKey: null
-      secretName: null
+
     federation:
       createFederationSecret: false
       enabled: false
       primaryDatacenter: ''
       primaryGateways: null
-    gossipEncryption:
-      autoGenerate: false
-      secretKey: key
-      secretName: consul-gossip-encryption-key
-    imagePullSecrets: null
+
     logJSON: true
     logLevel: debug
     metrics:
@@ -240,8 +237,6 @@ consul:
       enableGatewayMetrics: true
       enabled: true
 
-    openshift:
-      enabled: false
     recursors: null
     secretsBackend:
       vault:
@@ -274,13 +269,7 @@ consul:
       serverAdditionalDNSSANs: null
       serverAdditionalIPSANs: null
       verify: true
-    cattle:
-      clusterId: c-m-544rwlrk
-      clusterName: dc1
-      rkePathPrefix: ''
-      rkeWindowsPathPrefix: ''
-      systemDefaultRegistry: ''
-      url: https://rancher.int.mylogin.space
+
     systemDefaultRegistry: ''
   
   ingressGateways:
@@ -413,13 +402,14 @@ consul:
         port: 8301
     priorityClassName: 'system-cluster-critical'
 
-    resources:
-      limits:
-        cpu: 256m
-        memory: 2048Mi
-      requests:
-        cpu: 32m
-        memory: 128Mi
+  resources:
+    requests:
+      memory: "100Mi"
+      cpu: "100m"
+    limits:
+      memory: '1'
+      cpu: '8G'
+
     securityContext:
       fsGroup: 1000
       runAsGroup: 1000
@@ -505,35 +495,20 @@ consul:
       - name: terminating-gateway
   
   ui:
-    dashboardURLTemplates:
-      service: ''
-    enabled: true
+    enabled: false
+
     ingress:
       enabled: false
-      annotations: |
-        cert-manager.io/cluster-issuer: kjdev-cluster
-        external-dns.alpha.kubernetes.io/target: k0s-dc1.resolvemy.host.
-        ingress.pomerium.io/allowed_idp_claims: '{"groups": ["Server Admins"]}'
 
-      hosts:
-        - host: consul.int.mylogin.space
-          paths: ['/']
-      labels:
-        wan-mode: 'public'
-        lan-mode: 'private'
-      ingressClassName: pomerium
-      pathType: Prefix
-      tls:
-        - hosts:
-            - '*.int.mylogin.space'
-          secretName: myloginspace-int-default-certificates
+    dashboardURLTemplates:
+      service: ''
+
     metrics:
       baseURL: https://metrics.mylogin.space
       enabled: true
       provider: prometheus
+
     service:
-      additionalSpec: null
-      annotations: null
       enabled: true
       nodePort:
         http: null
