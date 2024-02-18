@@ -539,27 +539,100 @@ spec:
             connectionLimit: -1
 
 
-    - name: db-grant
+    - name: db-tf
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: psql
+
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
+
+          forProvider:
+            source: Inline
+            module: |
+              variable "database" {
+                description = "Database Configuration"
+                type        = object({
+                  name = string
+                })
+              }
+
+              variable "role" {
+                description = "Database Configuration"
+                type        = object({
+                  name = string
+                })
+              }
+
+              resource "postgresql_grant" "database" {
+                database    = var.database.name
+                role        = var.role.name
+                object_type = "database"
+                privileges  = [
+                  "CREATE",
+                  "CONNECT",
+                  "TEMPORARY"
+                ]
+              }
+
+              resource "postgresql_grant" "tables" {
+                database    = var.database.name
+                role        = var.role.name
+                schema      = "public"
+                object_type = "table"
+                privileges  = [
+                  "ALL"
+                ]
+              }
+
+              resource "postgresql_grant" "sequences" {
+                database    = var.database.name
+                role        = var.role.name
+                schema      = "public"
+                object_type = "sequence"
+                privileges  = [
+                  "ALL"
+                ]
+              }
+
+              resource "postgresql_grant" "schema" {
+                database    = var.database.name
+                role        = var.role.name
+                schema      = "public"
+                object_type = "schema"
+                privileges  = [
+                  "USAGE"
+                ]
+              }
+ 
+            varmap:
+              database:
+                name: 'test'
+              
+              role:
+                name: 'test'
       patches:
         - fromFieldPath: status.share.database
-          toFieldPath: spec.forProvider.database
+          toFieldPath: spec.forProvider.varmap.database.name
           policy:
             fromFieldPath: Required
 
         - fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.role
+          toFieldPath: spec.forProvider.varmap.role.name
           policy:
             fromFieldPath: Required
-      base:
-        apiVersion: postgresql.sql.crossplane.io/v1alpha1
-        kind: Grant
-        spec:
-          providerConfigRef:
-            name: psql-main
 
-          forProvider:
-            privileges:
-              - ALL
+
+        - fromFieldPath: metadata.uid
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: '%s-secret'
 
     - name: bucket
       patches:
