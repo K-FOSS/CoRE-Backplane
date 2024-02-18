@@ -233,7 +233,7 @@ spec:
               }
 
               output "psqlURI" {
-                value = "postgresql://${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
+                value = "postgres://${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
                 sensitive = true
               }
 
@@ -309,7 +309,7 @@ spec:
                 port: 5061
 
               psql:
-                hostname: psql.mylogin.space
+                hostname: psql-core.mylogin.space
                 port: 5432
               
               mysql:
@@ -632,7 +632,7 @@ spec:
           transforms:
             - type: string
               string:
-                fmt: '%s-secret'
+                fmt: '%s-psql-secret'
 
     - name: bucket
       patches:
