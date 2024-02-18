@@ -183,38 +183,38 @@ pgadmin4:
       - name: PGADMIN_LISTEN_PORT
         value: '8080'
 
-      - name: CONFIG_DATABASE_URI
+      - name: PGADMIN_CONFIG_CONFIG_DATABASE_URI
         valueFrom:
           secretKeyRef:
             name: pgadmin-core
             key: psqlURI
 
-      - name: AUTHENTICATION_SOURCES
+      - name: PGADMIN_CONFIG_AUTHENTICATION_SOURCES
         value: |
           ['ldap']
       
-      - name: LDAP_SERVER_URI
+      - name: PGADMIN_CONFIG_LDAP_SERVER_URI
         valueFrom:
           secretKeyRef:
             name: pgadmin-core
             key: ldapsURI
 
-      - name: LDAP_USERNAME_ATTRIBUTE
+      - name: PGADMIN_CONFIG_LDAP_USERNAME_ATTRIBUTE
         value: 'cn'
 
-      - name: LDAP_SEARCH_BASE_DN
+      - name: PGADMIN_CONFIG_LDAP_SEARCH_BASE_DN
         value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
 
-      - name: LDAP_BASE_DN
+      - name: PGADMIN_CONFIG_LDAP_BASE_DN
         value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
 
-      - name: LDAP_BIND_USER
+      - name: PGADMIN_CONFIG_LDAP_BIND_USER
         valueFrom:
           secretKeyRef:
             name: pgadmin-core
             key: ldapsBIND
 
-      - name: LDAP_BIND_PASSWORD
+      - name: PGADMIN_CONFIG_LDAP_BIND_PASSWORD
         valueFrom:
           secretKeyRef:
             name: pgadmin-core
