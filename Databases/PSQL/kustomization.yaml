@@ -1,0 +1,70 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configMapGenerator:
+  - name: gateway-params
+    literals:
+      - params=|
+          {
+            "downstreamClass": "eg"
+          }
+
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: .*pgadmin4
+
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: infra1-dc1-db-psql-pgadmin4
+      spec:
+        template:
+          spec:
+            containers:
+              - env:
+                  - name: PGADMIN_LISTEN_ADDRESS
+                    value: '0.0.0.0'
+
+                  - name: PGADMIN_LISTEN_PORT
+                    value: '8080'
+
+                  - name: PGADMIN_CONFIG_CONFIG_DATABASE_URI
+                    valueFrom:
+                      secretKeyRef:
+                        name: pgadmin-core
+                        key: psqlURI
+
+                  - name: PGADMIN_CONFIG_AUTHENTICATION_SOURCES
+                    value: |
+                      ['ldap']
+                  
+                  - name: PGADMIN_CONFIG_LDAP_SERVER_URI
+                    valueFrom:
+                      secretKeyRef:
+                        name: pgadmin-core
+                        key: ldapsURI
+
+                  - name: PGADMIN_CONFIG_LDAP_USERNAME_ATTRIBUTE
+                    value: 'cn'
+
+                  - name: PGADMIN_CONFIG_LDAP_SEARCH_BASE_DN
+                    value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+
+                  - name: PGADMIN_CONFIG_LDAP_BASE_DN
+                    value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+
+                  - name: PGADMIN_CONFIG_LDAP_BIND_USER
+                    valueFrom:
+                      secretKeyRef:
+                        name: pgadmin-core
+                        key: ldapsBIND
+
+                  - name: PGADMIN_CONFIG_LDAP_BIND_PASSWORD
+                    valueFrom:
+                      secretKeyRef:
+                        name: pgadmin-core
+                        key: password
