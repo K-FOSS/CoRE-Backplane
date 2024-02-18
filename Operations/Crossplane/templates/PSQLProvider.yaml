@@ -1,0 +1,45 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: psql
+spec:
+  credentials:
+    - filename: psql-username
+      source: Secret
+      secretRef:
+        namespace: core-prod
+        name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+        key: username
+
+    - filename: psql-password
+      source: Secret
+      secretRef:
+        namespace: core-prod
+        name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+        key: password
+  configuration: |
+    provider "postgresql" {
+      host            = "psql-main.mylogin.space"
+      port            = 5432
+      database        = "postgres"
+      username        = file("${path.module}/psql-username")
+      password        = file("${path.module}/psql-password")
+      sslmode         = "require"
+      connect_timeout = 15
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-psql"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        postgresql = {
+          source = "cyrilgdn/postgresql"
+          version = "1.21.1-beta.1"
+        }
+      }
+    }
