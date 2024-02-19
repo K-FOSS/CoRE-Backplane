@@ -56,6 +56,40 @@ spec:
     - name: MINIO_DOMAIN
       value: 's3.mylogin.space,core-prod.svc.cluster.local,core-prod.svc.k0s.resolvemy.host'
 
+    - name: MINIO_IDENTITY_LDAP_SERVER_ADDR
+      value: 'ldap.mylogin.space:636'
+
+    - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN
+      valueFrom:
+        secretKeyRef:
+          name: minio-auth
+          key: ldapsBIND
+
+    - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: minio-auth
+          key: password
+
+    - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: minio-auth
+          key: password
+
+    - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN
+      value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+
+    - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER
+      value: '(cn=%s)'
+
+    - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER
+      value: '(&(objectclass=group)(memberUid=%s))'
+
+    - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN
+      value: ou=groups,dc=ldap,dc=mylogin,dc=space
+
+
   prometheusOperator: false
   # prometheus:
   #   diskCapacityGB: 20
