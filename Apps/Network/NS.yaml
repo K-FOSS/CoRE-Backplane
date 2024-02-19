@@ -10,10 +10,14 @@ spec:
           - cluster: infra1-dc1
             url: https://172.18.0.1:443
             environment: 'prod'
+            ipAddress: '66.165.222.105'
+            ns: ns1.resolvemy.host
 
           - cluster: k0s-cntrl
             url: https://10.1.1.40:443
             environment: 'prod'
+            ipAddress: '66.165.222.106'
+            ns: 'ns2.resolvemy.host'
   template:
     metadata:
       name: '{{cluster}}-network-ns'
@@ -30,6 +34,18 @@ spec:
         targetRevision: main
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                service:
+                  main:
+                    annotations:
+                      consul.hashicorp.com/service-name: ns-core
+                      metallb.universe.tf/ip-allocated-from-pool: anycast-pool
+                      metallb.universe.tf/loadBalancerIPs: '{{ ipAddress }}'
+                      io.cilium/lb-ipam-sharing-key: ns-core
+                      io.cilium/lb-ipam-ips: '{{ ipAddress }}'
+                      external-dns.alpha.kubernetes.io/hostname: '{{ ns }}'
 
       destination:
         server: '{{url}}'

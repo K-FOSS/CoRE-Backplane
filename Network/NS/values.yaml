@@ -397,20 +397,19 @@ service:
     # -- The ip families that should be used. Options: IPv4, IPv6
     ipFamilies: []
 
-    externalIPs:
-      - 66.165.222.105
-
     # -- Provide additional annotations which may be required.
     annotations:
       consul.hashicorp.com/service-name: ns-core
       metallb.universe.tf/ip-allocated-from-pool: anycast-pool
-      metallb.universe.tf/loadBalancerIPs: 66.165.222.100
+      metallb.universe.tf/loadBalancerIPs: 66.165.222.105
       io.cilium/lb-ipam-sharing-key: ns-core
-      io.cilium/lb-ipam-ips: 66.165.222.100
+      io.cilium/lb-ipam-ips: 66.165.222.105
       external-dns.alpha.kubernetes.io/hostname: ns1.mylogin.space
 
     # -- Provide additional labels which may be required.
-    labels: {}
+    labels:
+      wan-mode: public
+      lan-mode: private
 
     # -- Allow adding additional match labels
     extraSelectorLabels: {}
