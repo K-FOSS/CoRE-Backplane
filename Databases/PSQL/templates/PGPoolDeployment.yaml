@@ -8,6 +8,9 @@ metadata:
 
 spec:
   replicas: 3
+
+  minReadySeconds: 60
+
   selector:
     matchLabels:
       app.kubernetes.io/name: pgpool
@@ -75,6 +78,20 @@ spec:
                 secretKeyRef:
                   key: password
                   name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+
+          readinessProbe:
+            tcpSocket:
+              port: psql
+
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          livenessProbe:
+            tcpSocket:
+              port: psql
+
+            initialDelaySeconds: 15
+            periodSeconds: 10
 
           volumeMounts:
             - name: tls

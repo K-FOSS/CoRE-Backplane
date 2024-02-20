@@ -30,20 +30,22 @@ data:
 
     {{`
     health_check_user = '{{ .Username }}'
-    health_check_password = '{{ .Password }}'
+    health_check_password = 'TEXT{{ .Password }}'
+    health_check_period = 5
+
     sr_check_user = '{{ .Username }}'
-    sr_check_password = '{{ .Password }}'
-    sr_check_period = 10
+    sr_check_password = 'TEXT{{ .Password }}'
+    sr_check_period = 5
     `}}
     enable_pool_hba = on
-    num_init_children = 32
-    max_pool = 4
+    num_init_children = 64
+    max_pool = 6
     child_life_time = 300
     child_max_connections = 0
     connection_life_time = 0
     client_idle_limit = 0
     connection_cache = on
-    failover_on_backend_error = on
+    failover_on_backend_error = off
     load_balance_mode = on
     ssl = on
     ssl_cert = '/tls/tls.crt'
