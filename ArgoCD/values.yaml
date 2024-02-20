@@ -277,9 +277,17 @@ argo-cd:
   repoServer:
     replicas: 1
 
+    resources:
+      limits:
+        cpu: '8'
+        memory: 16Gi
+      requests:
+        cpu: '1'
+        memory: 2Gi
+
     env:
       - name: ARGOCD_EXEC_TIMEOUT
-        value: 180s
+        value: 360s
 
   server:
     replicas: 3

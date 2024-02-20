@@ -18,12 +18,19 @@ spec:
               value: argocd-lovely-plugin
 
             - name: ARGOCD_EXEC_TIMEOUT
-              value: 180s
+              value: 360s
 
           securityContext:
             runAsNonRoot: true
             runAsUser: 999
 
+          resources:
+            limits:
+              cpu: '8'
+              memory: 16Gi
+            requests:
+              cpu: '1'
+              memory: 2Gi
 
 
           volumeMounts:
