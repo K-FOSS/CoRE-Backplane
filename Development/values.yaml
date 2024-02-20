@@ -28,7 +28,7 @@ artifact-hub:
 
   # Database configuration
   db:
-    host: 'psql.mylogin.space'
+    host: 'psql-core.mylogin.space'
     port: '5432'
     database: <path:CORE0_SITE1/data/ArtifactHub/Database#Database>
     user: <path:CORE0_SITE1/data/ArtifactHub/Database#Username>
@@ -413,14 +413,16 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
+      host: psql-core.mylogin.space
+      database: WNUoZH3HCm
+
+      username: gl-core
+
       password:
         useSecret: true
-        secret: gitlab-database-prod
-        key: DatabasePassword
+        secret: gitlab-user
+        key: password
 
-      host: psql.mylogin.space
-      username: WNUoZH3HCm
-      database: WNUoZH3HCm
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
     gitaly:
@@ -449,7 +451,7 @@ gitlab:
       auth:
         enabled: false
 
-      host: 10.1.1.68
+      host: redis.mylogin.space
       port: 6379
 
     praefect:
@@ -461,20 +463,24 @@ gitlab:
 
       autoMigrate: true
 
+      psql:
+        host: psql-core.mylogin.space
+        port: 5432
+
+        dbName: uwneOPXzji
+
+        user: gl-praefect
+
       dbSecret:
-        key: DatabasePassword
-        secret: gitlab-praefect-database-prod
+        secret: gl-praefect-creds
+        key: password
 
       virtualStorages:
         - name: default
           gitalyReplicas: 3
           maxUnavailable: 1
 
-      psql:
-        dbName: uwneOPXzji
-        host: psql.mylogin.space
-        port: 5432
-        user: uwneOPXzji
+
 
       service:
         type: ClusterIP
