@@ -59,6 +59,7 @@ spec:
                 type        = object({
                   hostname = string
                   port = string
+                  uri = string
                 })
               }
 
@@ -67,6 +68,7 @@ spec:
                 type        = object({
                   hostname = string
                   port = string
+                  uri = string
                 })
               }
 
@@ -75,6 +77,7 @@ spec:
                 type        = object({
                   hostname = string
                   port = string
+                  uri = string
                 })
               }
 
@@ -84,6 +87,7 @@ spec:
                 type = object({
                   hostname = string
                   port = string
+                  uri = string
                 })
               }
 
@@ -195,7 +199,7 @@ spec:
               }
 
               output "ldapsURI" {
-                value = "ldaps://${var.ldaps.hostname}:${var.ldaps.port}"
+                value = "${var.ldaps.uri}${var.ldaps.hostname}:${var.ldaps.port}"
                 sensitive = true
               }
 
@@ -233,7 +237,7 @@ spec:
               }
 
               output "psqlURI" {
-                value = "postgres://${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
+                value = "${var.psql.uri}${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
                 sensitive = true
               }
 
@@ -252,7 +256,7 @@ spec:
               }
 
               output "mysqlURI" {
-                value = "mysql://${local.username}:${local.password}@${var.mysql.hostname}:${var.mysql.port}/${local.databaseName}"
+                value = "${var.mysql.uri}${local.username}:${local.password}@${var.mysql.hostname}:${var.mysql.port}/${local.databaseName}"
                 sensitive = true
               }
 
@@ -303,18 +307,22 @@ spec:
               ldaps:
                 hostname: ldap.mylogin.space
                 port: 636
+                uri: ldaps://
 
               sips:
                 hostname: sip.resolvemy.host
                 port: 5061
+                uri: sips://
 
               psql:
                 hostname: psql-core.mylogin.space
                 port: 5432
+                uri: postgres://
               
               mysql:
                 hostname: mysql.mylogin.space
                 port: 3306
+                uri: mysql
 
               s3:
                 hostname: s3.mylogin.space
@@ -333,6 +341,12 @@ spec:
 
         - fromFieldPath: spec.database.name
           toFieldPath: spec.forProvider.varmap.databaseName
+
+        - fromFieldPath: spec.psql.uri
+          toFieldPath: spec.forProvider.varmap.psql.uri
+
+        - fromFieldPath: spec.mysql.uri
+          toFieldPath: spec.forProvider.varmap.mysql.uri
 
         - fromFieldPath: spec.bucket.name
           toFieldPath: spec.forProvider.varmap.bucket
