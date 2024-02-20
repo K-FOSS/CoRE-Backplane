@@ -1,0 +1,16 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+  name: {{ .Release.Name }}-ah-creds
+
+spec:
+  name: ArtifactHub
+
+  database:
+    name: artifacthub
+
+  groups:
+    - LDAPService
+
+
+  writeConnectionSecretToRef:
+    name: ah-creds
