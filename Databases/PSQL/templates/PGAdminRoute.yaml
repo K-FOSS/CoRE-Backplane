@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: pgadmin-ingress
+
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: kuadrant-core-prod
+      name: main-gw
+      sectionName: https
+
+  hostnames:
+    - 'pgadmin.mylogin.space'
+  rules:
+    - backendRefs:
+        - name: {{ .Release.Name }}-pgadmin4
+          port: 80
