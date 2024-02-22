@@ -67,9 +67,7 @@ authentik:
       port: 5432
 
     redis:
-      # -- set the redis hostname to talk to
-      # @default -- `{{ .Release.Name }}-redis-master`
-      host: 10.1.1.68
+      host: redis.mylogin.space
       password: ""
 
   volumes:
@@ -94,23 +92,25 @@ authentik:
   envValueFrom:
     AUTHENTIK_SECRET_KEY:
       secretKeyRef:
-        key: SecretKey
         name: authentik-database-prod
+        key: SecretKey
+
 
     AUTHENTIK_POSTGRESQL__NAME:
       secretKeyRef:
+        name: {{ .Release.Name }}
         key: Database
-        name: authentik-database-prod
+
 
     AUTHENTIK_POSTGRESQL__USER:
       secretKeyRef:
-        key: Username
-        name: authentik-database-prod
+        name: {{ .Release.Name }}
+        key: username
 
     AUTHENTIK_POSTGRESQL__PASSWORD:
       secretKeyRef:
+        name: {{ .Release.Name }}
         key: Password
-        name: authentik-database-prod
 
 
   service:
