@@ -420,6 +420,7 @@ gitlab:
 
       password:
         useSecret: true
+
         secret: gitlab-user
         key: password
 
@@ -597,25 +598,36 @@ gitlab:
         preventSignin: false
         servers:
           main:
+            label: Authentik LDAP
+
+            host: ldap.mylogin.space
+            port: 636
+
+            bind_dn: cn=gl-core,ou=users,dc=ldap,dc=mylogin,dc=space
+
+            password:
+              secret: gitlab-user
+              key: password
+
+            uid: uid
+
+            base: ou=users,dc=ldap,dc=mylogin,dc=space
+
+            group_base: ou=groups,dc=ldap,dc=mylogin,dc=space
+
             active_directory: false
             attributes:
-              email: mail
-              first_name: cn
-              last_name: sn
-              name: cn
               username: cn
-            base: ou=users,dc=ldap,dc=mylogin,dc=space
-            bind_dn: cn=GitLab,ou=users,dc=ldap,dc=mylogin,dc=space
+
+              first_name: name
+              last_name: lastname
+
+              name: displayName
+
+              email: mail
+
             encryption: simple_tls
-            group_base: ou=groups,dc=ldap,dc=mylogin,dc=space
-            host: ldap.mylogin.space
-            label: Authentik LDAP
-            password:
-              key: LDAPPassword
-              secret: gitlab-ldap-prod
-            port: 636
-            uid: cn
-        ## See documentation for complete example of a configured LDAP server
+
 
       ## https://docs.gitlab.com/charts/charts/globals#kas-settings
       gitlab_kas:
@@ -627,7 +639,7 @@ gitlab:
       omniauth:
         enabled: true
         autoSignInWithProvider:
-        syncProfileAttributes: [email]
+        syncProfileAttributes: [uid]
         blockAutoCreatedUsers: true
         autoLinkLdapUser: true
         autoLinkSamlUser: false
