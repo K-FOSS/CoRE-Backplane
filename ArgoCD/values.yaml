@@ -233,7 +233,7 @@ argo-cd:
       ## Controller Properties
       controller.diff.server.side: 'true'
 
-      controller.kubectl.parallelism.limit: '35'
+      controller.kubectl.parallelism.limit: '45'
 
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
@@ -261,22 +261,22 @@ argo-cd:
       #
       # Repo Server
       #
-      reposerver.parallelism.limit: '50'
+      reposerver.parallelism.limit: '25'
 
   controller:
     name: application-controller
 
-    replicas: 3
+    replicas: 1
 
     env:
       - name: ARGO_CD_UPDATE_CLUSTER_INFO_TIMEOUT
         value: '10'
 
-      - name: "ARGOCD_K8S_CLIENT_BURST"
-        value: '500'
+      - name: ARGOCD_K8S_CLIENT_BURST
+        value: '300'
 
-      - name: "ARGOCD_K8S_CLIENT_QPS"
-        value: '500'
+      - name: ARGOCD_K8S_CLIENT_QPS
+        value: '300'
 
   repoServer:
     replicas: 1
@@ -294,7 +294,7 @@ argo-cd:
         value: 360s
 
   server:
-    replicas: 3
+    replicas: 1
 
     metrics:
       enabled: true
