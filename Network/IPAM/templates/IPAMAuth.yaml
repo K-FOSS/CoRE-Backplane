@@ -2,6 +2,10 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
   name: {{ .Release.Name }}
+
+  labels:
+    {{ include "ipam.labels" . | nindent 4 }}
+
 spec:
   targetRef:
     group: gateway.networking.k8s.io
@@ -15,8 +19,14 @@ spec:
         remoteJWKS:
           uri: http://k0s-cntrl-aaa-authentik.core-prod.svc.cluster.local/application/o/Netbox/jwks/
         claimToHeaders:
-          - header: x-authentik-username
+          - header: x-username
             claim: preferred_username
+
+          - header: x-email
+            claim: email
+
+          - header: x-groups
+            claim: groups
         extractFrom:
           headers:
             - name: Authorization

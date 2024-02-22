@@ -1,0 +1,46 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: {{ .Release.Name }}-netbox
+
+spec:
+  refreshInterval: 5m
+  secretStoreRefs:
+    - kind: ClusterSecretStore
+      name: mainvault-core
+      
+
+  selector:
+    secret:
+      name: {{ .Release.Name }}-netbox
+
+  data:
+    - match:
+        secretKey: psqlHostname
+        remoteRef:
+          remoteKey: IPAM/Database
+          property: Hostname
+
+    - match:
+        secretKey: psqlPort
+        remoteRef:
+          remoteKey: IPAM/Database
+          property: Port
+
+    - match:
+        secretKey: database
+        remoteRef:
+          remoteKey: IPAM/Database
+          property: Database
+
+    - match:
+        secretKey: username
+        remoteRef:
+          remoteKey: IPAM/Credentials
+          property: Username
+
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: IPAM/Credentials
+          property: Password

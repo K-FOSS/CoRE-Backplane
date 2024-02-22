@@ -21,9 +21,7 @@ netbox:
   # See `existingSecret` for details
   superuser:
     name: kjones
-    email: k@kristianjones.dev
-    password: admin
-    apiToken: 0123456789abcdef0123456789abcdef01234567
+    email: august@mylogin.space
 
   # Skip the netbox-docker startup scripts which can pre-populate objects into a
   # fresh NetBox installation. By default these do nothing, but they take a while
@@ -274,13 +272,13 @@ netbox:
   remoteAuth:
     enabled: true
     backend: netbox.authentication.RemoteUserBackend
-    header: HTTP_X_AUTHENTIK_USERNAME
+    header: HTTP_X_USERNAME
 
     autoCreateUser: true
     defaultGroups: []
     defaultPermissions: {}
     groupSyncEnabled: true
-    groupHeader: HTTP_X_AUTHENTIK_GROUPS
+    groupHeader: HTTP_X_GROUPS
     superuserGroups: ['Network Admins', 'Server Admins']
     superusers: ['kjones']
     staffGroups: ['Network', 'Servers', 'Developers']
@@ -294,28 +292,28 @@ netbox:
     # When enabling LDAP support please see "Using LDAP Authentication" in README.md and
     # uncomment ALL of the configuration settings below, or your configuration will be invalid.
     #
-    # ldap:
-    #   serverUri: 'ldap://domain.com'
-    #   startTls: true
-    #   ignoreCertErrors: false
-    #   bindDn: 'CN=Netbox,OU=EmbeddedDevices,OU=MyCompany,DC=domain,dc=com'
-    #   bindPassword: 'TopSecretPassword'
-    #   userDnTemplate: null
-    #   userSearchBaseDn: 'OU=Users,OU=MyCompany,DC=domain,dc=com'
-    #   userSearchAttr: 'sAMAccountName'
-    #   groupSearchBaseDn: 'OU=Groups,OU=MyCompany,DC=domain,dc=com'
-    #   groupSearchClass: 'group'
-    #   groupType: 'GroupOfNamesType'
-    #   requireGroupDn: ''
-    #   findGroupPerms: true
-    #   mirrorGroups: true
-    #   mirrorGroupsExcept: null
-    #   cacheTimeout: 3600
-    #   isAdminDn: 'CN=Network Configuration Operators,CN=Builtin,DC=domain,dc=com'
-    #   isSuperUserDn: 'CN=Domain Admins,CN=Users,DC=domain,dc=com'
-    #   attrFirstName: 'givenName'
-    #   attrLastName: 'sn'
-    #   attrMail: 'mail'
+    ldap:
+      serverUri: 'ldap://ldap.mylogin.space'
+      startTls: true
+      ignoreCertErrors: false
+      bindDn: 'cn=netbox-core,ou=users,dc=ldap,dc=mylogin,dc=space'
+
+      userDnTemplate: null
+      userSearchBaseDn: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+      userSearchAttr: 'cn'
+      groupSearchBaseDn: 'ou=groups,dc=ldap,dc=mylogin,dc=space'
+      groupSearchClass: 'group'
+      groupType: 'groupOfNames'
+      requireGroupDn: ''
+      findGroupPerms: true
+      mirrorGroups: true
+      mirrorGroupsExcept: null
+      cacheTimeout: 3600
+      isAdminDn: 'cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space'
+      isSuperUserDn: 'cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space'
+      attrFirstName: 'name'
+      attrLastName: 'lastname'
+      attrMail: 'mail'
 
   releaseCheck:
     # This repository is used to check whether there is a new release of NetBox
@@ -363,7 +361,7 @@ netbox:
   # will be randomly generated if left blank.
   # You can also use an existing secret with "secret_key" instead of "secretKey"
   # See `existingSecret` for details
-  secretKey: <path:CORE0_SITE1/data/Netbox/General#SecretKey>
+  secretKey: ''
 
   ## Provide passwords using existing secret
   # If set, this Secret must contain the following keys:
@@ -390,12 +388,13 @@ netbox:
   ## External database settings
   # These are used if postgresql.enabled is false, and are ignored otherwise
   externalDatabase:
-    host: psql.mylogin.space
+    host: psql-core.mylogin.space
     port: 5432
-    database: <path:CORE0_SITE1/data/Netbox/Database#Database>
-    username: <path:CORE0_SITE1/data/Netbox/Database#Username>
-    existingSecretName: k0s-cntrl-network-ipam-netbox-db
-    existingSecretKey: Password
+    database: 3dzxoCeJ1f
+    username: netbox-core
+
+    existingSecretName: {{ .Release.Name }}-netbox
+    existingSecretKey: password
 
     # The following settings apply when using the bundled PostgreSQL chart, too:
     sslMode: prefer
