@@ -31,25 +31,134 @@ data:
     {{`
     health_check_user = '{{ .Username }}'
     health_check_password = 'TEXT{{ .Password }}'
-    health_check_period = 5
+    health_check_period = 30
+    health_check_timeout = 60
+    health_check_max_retries = 3
+
 
     sr_check_user = '{{ .Username }}'
     sr_check_password = 'TEXT{{ .Password }}'
     sr_check_period = 5
     `}}
     enable_pool_hba = on
-    num_init_children = 64
-    max_pool = 6
-    child_life_time = 300
-    child_max_connections = 0
-    connection_life_time = 0
-    client_idle_limit = 0
-    connection_cache = on
-    failover_on_backend_error = off
+    num_init_children = 600
+    reserved_connections = 20
+    max_pool = 2
+    client_idle_limit = 30min
     load_balance_mode = on
+
+    # Ignore leading white spaces of each query
+    ignore_leading_white_space = on
+
+
+    read_only_function_list = ''
+
+    # Comma separated list of function names
+    # that don't write to database
+    # Regexp are accepted
+    write_function_list = 'nextval,setval,.*\.func_insert_.*,.*\.func_delete_.*,.*\.func_update_.*,.*\.func_nlb_.*,(scc|report|report_query)\..*'
+                                      # Comma separated list of function names
+                                      # that write to database
+                                      # Regexp are accepted
+                                      # If both read_only_function_list and write_function_list
+                                      # is empty, function's volatile property is checked.
+                                      # If it's volatile, the function is regarded as a
+                                      # writing function.
+
+    primary_routing_query_pattern_list = ''
+                                      # Semicolon separated list of query patterns
+                                      # that should be sent to primary node
+                                      # Regexp are accepted
+                                      # valid for streaming replicaton mode only.
+
+    database_redirect_preference_list = ''
+                                      # comma separated list of pairs of database and node id.
+                                      # example: postgres:primary,mydb[0-4]:1,mydb[5-9]:2'
+                                      # valid for streaming replicaton mode only.
+
+    app_name_redirect_preference_list = ''
+                                      # comma separated list of pairs of app name and node id.
+                                      # example: 'psql:primary,myapp[0-4]:1,myapp[5-9]:standby'
+                                      # valid for streaming replicaton mode only.
+    allow_sql_comments = off
+                                      # if on, ignore SQL comments when judging if load balance or
+                                      # query cache is possible.
+                                      # If off, SQL comments effectively prevent the judgment
+                                      # (pre 3.4 behavior).
+
+    disable_load_balance_on_write = 'dml_adaptive'
+                                      # Load balance behavior when write query is issued
+                                      # in an explicit transaction.
+                                      #
+                                      # Valid values:
+                                      #
+                                      # 'transaction' (default):
+                                      #     if a write query is issued, subsequent
+                                      #     read queries will not be load balanced
+                                      #     until the transaction ends.
+                                      #
+                                      # 'trans_transaction':
+                                      #     if a write query is issued, subsequent
+                                      #     read queries in an explicit transaction
+                                      #     will not be load balanced until the session ends.
+                                      #
+                                      # 'dml_adaptive':
+                                      #     Queries on the tables that have already been
+                                      #     modified within the current explicit transaction will
+                                      #     not be load balanced until the end of the transaction.
+                                      #
+                                      # 'always':
+                                      #     if a write query is issued, read queries will
+                                      #     not be load balanced until the session ends.
+                                      #
+                                      # Note that any query not in an explicit transaction
+                                      # is not affected by the parameter except 'always'.
+
+    dml_adaptive_object_relationship_list= ''
+                                      # comma separated list of object pairs
+                                      # [object]:[dependent-object], to disable load balancing
+                                      # of dependent objects within the explicit transaction
+                                      # after WRITE statement is issued on (depending-on) object.
+                                      #
+                                      # example: 'tb_t1:tb_t2,insert_tb_f_func():tb_f,tb_v:my_view'
+                                      # Note: function name in this list must also be present in
+                                      # the write_function_list
+                                      # only valid for disable_load_balance_on_write = 'dml_adaptive'.
+
+    statement_level_load_balance = on
+                                      # Enables statement level load balancing
+    failover_on_backend_error = on
+    auto_failback = on
+    auto_failback_interval = 1min
+    relcache_expire = 3600
+    relcache_size = 1024
+                                  # Number of relation cache
+                                  # entry. If you see frequently:
+                                  # "pool_search_relcache: cache replacement happend"
+                                  # in the pgpool log, you might want to increate this number.
+
+    check_temp_table = trace
+                                      # Temporary table check method. catalog, trace or none.
+                                      # Default is catalog.
+
+    check_unlogged_table = off
+                                      # If on, enable unlogged table check in SELECT statements.
+                                      # This initiates queries against system catalog of primary/main
+                                      # thus increases load of primary.
+                                      # If you are absolutely sure that your system never uses unlogged tables
+                                      # and you want to save access to primary/main, you could turn this off.
+                                      # Default is on.
+    enable_shared_relcache = on
+                                      # If on, relation cache stored in memory cache,
+                                      # the cache is shared among child process.
+                                      # Default is on.
+                                      # (change requires restart)
+
+    relcache_query_target = primary
     ssl = on
     ssl_cert = '/tls/tls.crt'
     ssl_key = '/tls/tls.key'
+
 
   pool_hba.conf: |
     local   all    all                     trust
