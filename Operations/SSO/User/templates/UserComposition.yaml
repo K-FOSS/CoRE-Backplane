@@ -368,6 +368,17 @@ spec:
               string:
                 fmt: '%s-secret'
 
+
+        #
+        # LDAP
+        #
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.outputs.ldapsBIND
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.ldap.user
+          
+
         - type: ToCompositeFieldPath
           fromFieldPath: spec.writeConnectionSecretToRef.name
           toFieldPath: status.share.userSecret
@@ -704,3 +715,65 @@ spec:
           forProvider:
             region: us-east-1
             bucketName: 'test'
+
+    - name: minio-tf
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: minio-s3
+
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
+
+          forProvider:
+            source: Inline
+            module: |
+              variable "ldap" {
+                description = "Database Configuration"
+                type = object(
+                  {
+                    user = string
+                  }
+                )
+              }
+
+              variable "role" {
+                description = "Database Configuration"
+                type = object(
+                  {
+                    name = string
+                  }
+                )
+              }
+
+              resource "minio_iam_user_policy_attachment" "user" {
+                user_name   = var.ldap.user
+                policy_name = var.role.name
+              }
+ 
+            varmap:
+              ldap:
+                user: 'test'
+
+              role:
+                name: 'test'
+      patches:
+        - fromFieldPath: status.share.ldap.user
+          toFieldPath: spec.forProvider.varmap.ldap.user
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: status.share.username
+          toFieldPath: spec.forProvider.varmap.role.name
+          policy:
+            fromFieldPath: Required
+
+        - fromFieldPath: metadata.uid
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: '%s-s3-secret'
