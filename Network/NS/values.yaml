@@ -528,6 +528,42 @@ route:
             name: nsadmin
             weight: 1
 
+persistence:
+  config:
+    enabled: true
+    mountPath: /etc/pdns/pdns.conf
+    subPath: pnds.conf
+    type: custom
+    volumeSpec:
+      configMap:
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
+
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /etc/pdns/pdns.conf
+            readOnly: true
+            subPath: pdns.conf
+
+
+  configs:
+    enabled: true
+    mountPath: /etc/pdns/conf.d
+    type: custom
+    volumeSpec:
+      secret:
+        secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-secrets'
+        items:
+          - key: web.conf
+            path: web.conf
+
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /etc/pdns/conf.d/web.conf
+            subPath: web.conf
+
+
 configMaps:
   config:
     # -- Enables or disables the configMap
