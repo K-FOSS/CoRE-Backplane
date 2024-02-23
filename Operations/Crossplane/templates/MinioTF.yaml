@@ -1,0 +1,42 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: minio-s3
+spec:
+  credentials:
+    - filename: AWS_ACCESS_KEY_ID
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: minio-credentials
+        key: AWS_ACCESS_KEY_ID
+
+    - filename: AWS_SECRET_ACCESS_KEY
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: minio-credentials
+        key: AWS_SECRET_ACCESS_KEY
+  configuration: |
+    provider "minio" {
+      minio_server = "https://s3.mylogin.space"
+      minio_user = file("${path.module}/AWS_ACCESS_KEY_ID")
+      minio_password   = file("${path.module}/AWS_SECRET_ACCESS_KEY")
+      minio_ssl = true
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-minio"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        minio = {
+          source = "aminueza/minio"
+          version = "2.0.1"
+        }
+      }
+    }
