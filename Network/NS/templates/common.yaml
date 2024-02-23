@@ -52,22 +52,6 @@ persistence:
         main: # the container with the "main" identifier
           - path: /etc/pdns/conf.d/web.conf
             subPath: web.conf
-
-  database:
-    enabled: true
-    mountPath: /etc/pdns/conf.d/database.conf
-    subPath: database.conf
-    type: custom
-    volumeSpec:
-      secret:
-        secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-database'
-
-    advancedMounts:
-      main: # the controller with the "main" identifier
-        main: # the container with the "main" identifier
-          - path: /etc/pdns/conf.d/database.conf
-            subPath: database.conf
-
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
