@@ -14,31 +14,34 @@ spec:
         - env:
             - name: AUTOCONF
               value: postgres
+
             - name: PGSQL_HOST
               valueFrom:
                 secretKeyRef:
-                  key: Hostname
-                  name: ns-database
+                  name: ns-core-creds
+                  key: psqlHostname
+
             - name: PGSQL_PORT
               valueFrom:
                 secretKeyRef:
-                  key: Port
-                  name: ns-database
+                  name: ns-core-creds
+                  key: psqlPort
+
             - name: PGSQL_USER
               valueFrom:
                 secretKeyRef:
-                  key: Username
-                  name: ns-database
+                  name: ns-core-creds
+                  key: username
+
             - name: PGSQL_PASS
               valueFrom:
                 secretKeyRef:
-                  key: Password
-                  name: ns-database
+                  name: ns-core-creds
+                  key: password
+
             - name: PGSQL_DB
-              valueFrom:
-                secretKeyRef:
-                  key: Database
-                  name: ns-database
+              value: DlzcnePHKR
+
             - name: PGSQL_DNSSEC
               value: 'no'
           image: 'cybiox9/powerdns:dev'
