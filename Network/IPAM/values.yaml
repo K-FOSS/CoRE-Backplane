@@ -38,8 +38,8 @@ netbox:
   # Specify one or more name and email address tuples representing NetBox
   # administrators. These people will be notified of application errors (assuming
   # correct email settings are provided).
-  admins: ['kjones']
-    # - ['John Doe', 'jdoe@example.com']
+  admins:
+    - 'kjones'
 
   # This parameter acts as a pass-through for configuring Django's built-in
   # password validators for local user accounts. If configured, these will be
@@ -119,16 +119,16 @@ netbox:
 
   # Email settings
   email:
-    server: localhost
+    server: mail.mylogin.space
     port: 25
-    username: ''
+    username: bots@mylogin.space
     password: ''
     useSSL: false
     useTLS: false
     sslCertFile: ''
     sslKeyFile: ''
     timeout: 10  # seconds
-    from: ''
+    from: 'bots@mylogin.space'
 
   # Enforcement of unique IP space can be toggled on a per-VRF basis. To enforce
   # unique IP space within the global table (all prefixes and IP addresses not
@@ -345,23 +345,8 @@ netbox:
   # These can be passed as arbitrary configuration values set in the chart, or
   # you can load arbitrary *.yaml keys from ConfigMaps and Secrets.
   extraConfig:
-    # - values:
-    #     EXTRA_SETTING_ONE: example
-    #     ANOTHER_SETTING: foobar
-    # - configMap: # pod.spec.volumes.configMap
-    #     name: netbox-extra
-    #     items: []
-    #     optional: false
     - secret: # same as pod.spec.volumes.secret
         secretName: k0s-cntrl-network-ipam-netbox-s3
-    #     items: []
-    #     optional: false
-
-  # If provided, this should be a 50+ character string of random characters. It
-  # will be randomly generated if left blank.
-  # You can also use an existing secret with "secret_key" instead of "secretKey"
-  # See `existingSecret` for details
-  secretKey: ''
 
   ## Provide passwords using existing secret
   # If set, this Secret must contain the following keys:
@@ -377,7 +362,7 @@ netbox:
   # - secret_key: session encryption token (50+ random characters)
   # - superuser_password: Password for the initial super-user account
   # - superuser_api_token: API token created for the initial super-user account
-  existingSecret: ""
+  existingSecret: 'netbox-creds'
 
   postgresql:
     ## Deploy PostgreSQL using bundled chart
