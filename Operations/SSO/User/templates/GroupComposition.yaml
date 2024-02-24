@@ -1,0 +1,104 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: sso-group
+  labels:
+    implementation: mixed
+spec:
+  compositeTypeRef:
+    apiVersion: mylogin.space/v1alpha1
+    kind: XGroup
+
+  writeConnectionSecretsToNamespace: core-prod
+
+  resources:
+    - name: group
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: authentik
+
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
+
+          forProvider:
+            source: Inline
+            module: |
+              variable "email" {
+                description = "Groups email Configuration"
+                
+                type = object(
+                  {
+                    domain = string
+                  }
+                )
+              }
+
+              variable "group" {
+                description = "Group Configuration"
+                
+                type = object(
+                  {
+                    name = string
+                    isAdmin = bool
+                    email = string
+                  }
+                )
+              }
+
+              locals {
+                email = try(length(var.group.email), 0) > 0 ? var.group.email : "${var.group.name}@${var.email.domain}"
+              }
+
+              resource "authentik_group" "group" {
+                name = var.group.name
+                is_superuser = var.group.isAdmin
+
+                users = []
+
+                attributes = jsonencode(
+                  {
+                    mail = local.email
+                  }
+                )
+              }
+            varmap:
+              group:
+                name: 'test'
+                isAdmin: false
+                email: ''
+
+              email:
+                domain: mylogin.space
+
+      patches:
+        - fromFieldPath: spec.name
+          toFieldPath: spec.forProvider.varmap.group.name
+
+        - fromFieldPath: spec.isAdmin
+          toFieldPath: spec.forProvider.varmap.group.isAdmin
+
+        - fromFieldPath: spec.email
+          toFieldPath: spec.forProvider.varmap.group.email
+
+        - fromFieldPath: metadata.uid
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                fmt: '%s-secret'
+
+        - type: ToCompositeFieldPath
+          fromFieldPath: spec.writeConnectionSecretToRef.name
+          toFieldPath: status.share.groupSecret
+          policy:
+            fromFieldPath: Required
+      connectionDetails:
+        - name: username
+          fromConnectionSecretKey: username
+
+        - name: password
+          fromConnectionSecretKey: password
