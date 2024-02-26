@@ -536,21 +536,7 @@ pxc-db:
     #   - 10.0.0.0/8
     #   annotations:
     #     networking.gke.io/load-balancer-type: "Internal"
-    # replicationChannels:
-    # - name: pxc1_to_pxc2
-    #   isSource: true
-    # - name: pxc2_to_pxc1
-    #   isSource: false
-    #   configuration:
-    #     sourceRetryCount: 3
-    #     sourceConnectRetry: 60
-    #     ssl: false
-    #     sslSkipVerify: true
-    #     ca: '/etc/mysql/ssl/ca.crt'
-    #   sourcesList:
-    #   - host: 10.95.251.101
-    #     port: 3306
-    #     weight: 100
+
     # schedulerName: mycustom-scheduler
     imagePullSecrets: []
     # - name: private-registry-credentials
@@ -562,10 +548,16 @@ pxc-db:
     readinessDelaySec: 15
     livenessDelaySec: 300
     ## Uncomment to pass in a mysql config file
-    # configuration: |
-    #   [mysqld]
-    #   wsrep_debug=ON
-    #   wsrep_provider_options="gcache.size=1G; gcache.recover=yes"
+    configuration: |
+      [mysqld]
+      plugin-load-add=authentication_ldap_simple.so
+      authentication_ldap_simple_auth_method_name=SIMPLE
+      authentication_ldap_simple_server_host='ldap.mylogin.space'
+      authentication_ldap_simple_bind_root_dn='cn=mysql,ou=users,dc=ldap,dc=mylogin,dc=space'
+      authentication_ldap_simple_bind_root_pwd='<path:CORE0_SITE1/data/MySQL/Credentials#Password>'
+      authentication_ldap_simple_bind_base_dn='dc=ldap,dc=mylogin,dc=space'
+      authentication_ldap_simple_tls=1
+      authentication_ldap_simple_user_search_attr='cn'
     # envVarsSecret: my-env-var-secrets
     resources:
       requests:
@@ -574,15 +566,7 @@ pxc-db:
       limits: {}
         # memory: 1G
         # cpu: 600m
-    # runtimeClassName: image-rc
-    sidecars: []
-    sidecarVolumes: []
-    sidecarPVCs: []
-    sidecarResources:
-      requests: {}
-      limits: {}
-    nodeSelector: {}
-    #  disktype: ssd
+
     affinity:
       antiAffinityTopologyKey: "kubernetes.io/hostname"
       # advanced:
@@ -616,14 +600,14 @@ pxc-db:
       ##
       # storageClass: "-"
       accessMode: ReadWriteOnce
-      size: 8Gi
+      size: 20Gi
 
     # If you set this to true the cluster will be created without TLS
     disableTLS: false
 
     # disable Helm creating TLS certificates if you want to let the operator
     # request certificates from cert-manager
-    certManager: false
+    certManager: true
 
     # If this is set will not create secrets from values and will instead try to use
     # a pre-existing secret of the same name.
@@ -651,7 +635,7 @@ pxc-db:
     # serviceAccountName: percona-xtradb-cluster-operator-workload
 
   haproxy:
-    enabled: true
+    enabled: false
     size: 3
     image: ""
     # imagePullPolicy: Always
@@ -967,7 +951,7 @@ pxc-db:
       limits: {}
 
   backup:
-    enabled: true
+    enabled: false
     # allowParallel: true
     image:
       repository: percona/percona-xtradb-cluster-operator
