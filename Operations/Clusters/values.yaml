@@ -10,8 +10,6 @@ kamaji:
     # -- The container image of the Kamaji controller.
     repository: clastix/kamaji
     pullPolicy: Always
-    # -- Overrides the image tag whose default is the chart appVersion.
-    tag:
 
   # -- A list of extra arguments to add to the kamaji controller default ones
   extraArgs: []
@@ -103,8 +101,7 @@ kamaji:
   datastore:
     # -- (bool) Enable the Kamaji Datastore creation (default=true)
     enabled: true
-    # -- (string) The Datastore name override, if empty and enabled=true defaults to `default`, if enabled=false, this is the name of the Datastore to connect to. 
-    nameOverride:
+
     # -- (string) The Kamaji Datastore driver, supported: etcd, MySQL, PostgreSQL (defaults=etcd).
     driver: PostgreSQL
     # -- (array) List of endpoints of the selected Datastore. When letting the Chart install the etcd datastore, this field is populated automatically.
@@ -136,6 +133,7 @@ kamaji:
           namespace: core-prod
           # -- Key of the Secret which contains the content of the certificate.
           keyPath: tls.crt
+
         privateKey:
           # -- Name of the Secret containing the CA private key required to establish the mandatory SSL/TLS connection to the datastore.
           name: myloginspace-default-certificates
@@ -152,6 +150,7 @@ kamaji:
           namespace: core-prod
           # -- Key of the Secret which contains the content of the certificate.
           keyPath: tls.crt
+
         privateKey:
           # -- Name of the Secret containing the client certificate private key required to establish the mandatory SSL/TLS connection to the datastore.
           name: myloginspace-default-certificates
