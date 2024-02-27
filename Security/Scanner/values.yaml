@@ -70,16 +70,6 @@ operator:
   minio:
     # -- Enable this to use minio as storage backend instead of a cloud bucket provider like AWS S3, Google Cloud Storage, DigitalOcean Spaces etc.
     enabled: false
-    tls:
-      enabled: false
-    defaultBuckets: "securecodebox"
-    # Overwrite Minio's default 4Gi memory request
-    resources:
-      requests:
-        memory: "256Mi"
-    auth:
-      rootUser: "admin" # placeholder user
-      rootPassword: "password" # placeholder password
 
   # Config for external s3 systems
   s3:
@@ -87,10 +77,7 @@ operator:
     enabled: true
     endpoint: s3.mylogin.space
     bucket: security-scans
-    # Implicit 443. You probably only need to change this when the system uses a non default port
-    port: null
-    # s3.authType -- Authentication method. Supports access-secret-key (used by most s3 endpoint) and aws-irsa (Used by AWS EKS IAM Role to Kubenetes Service Account Binding. Support for AWS IRSA is considered experimental in the secureCodeBox)
-    authType: access-secret-key
+
     # Name to a k8s secret in the same namespace as this release with credentials to the s3 bucket. Only used when s3.authType is set to "access-secret-key"
     # By default this assumes to have 'accesskey' and 'secretkey' as attributes
     # Example creation via kubectl:

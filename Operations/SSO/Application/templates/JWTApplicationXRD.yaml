@@ -1,21 +1,22 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: xforwardroute.mylogin.space
+  name: xjwtroute.mylogin.space
 spec:
   group: mylogin.space
 
   names:
-    kind: XForwardRoute
-    plural: xforwardroute
+    kind: XJWTRoute
+    plural: xjwtroutes
 
   claimNames:
-    kind: ForwardRoute
-    plural: forwardroutes
+    kind: JWTRoute
+    plural: jwtroutes
 
   connectionSecretKeys:
-    - oidcClientID
-    - oidcClientSecret
+    - OIDCClientID
+    - OIDCClientSecret
+    - OIDCIssuer
 
   versions:
     - name: v1alpha1
@@ -31,7 +32,6 @@ spec:
                 name:
                   type: string
 
-                
 
                 serviceRef:
                   type: object
@@ -48,7 +48,6 @@ spec:
 
               required:
                 - name
-                - serviceRef
             status:
               description: A Status represents the observed state
               properties:

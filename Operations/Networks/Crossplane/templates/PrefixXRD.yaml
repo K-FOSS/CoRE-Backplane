@@ -1,21 +1,21 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: xforwardroute.mylogin.space
+  name: xprefixes.ipaddr.network
 spec:
-  group: mylogin.space
+  group: ipaddr.network
 
   names:
-    kind: XForwardRoute
-    plural: xforwardroute
+    kind: XPrefix
+    plural: xprefixs
 
   claimNames:
-    kind: ForwardRoute
-    plural: forwardroutes
+    kind: Prefix
+    plural: prefixes
 
   connectionSecretKeys:
-    - oidcClientID
-    - oidcClientSecret
+    - username
+    - password
 
   versions:
     - name: v1alpha1
@@ -31,24 +31,12 @@ spec:
                 name:
                   type: string
 
-                
-
-                serviceRef:
-                  type: object
-
-                  properties:
-                    namespace:
-                      type: string
-
-                    name:
-                      type: string
-
-                  required:
-                    - name
-
+                prefix:
+                  type: string
+                  
               required:
                 - name
-                - serviceRef
+                - prefix
             status:
               description: A Status represents the observed state
               properties:
