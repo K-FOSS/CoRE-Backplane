@@ -1,0 +1,21 @@
+apiVersion: frrk8s.metallb.io/v1beta1
+kind: FRRConfiguration
+metadata:
+  name: main
+spec:
+  bgp:
+    routers:
+      - asn: 64512
+        neighbors:
+        {{ range .Values.peers }}
+          - address: {{ .ip }}
+            asn: {{ .asn }}
+            port: {{ .port }}
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
+        {{- end }}
+
