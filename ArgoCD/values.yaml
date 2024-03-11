@@ -72,7 +72,7 @@ argo-cd:
       admin.enabled: true
 
       # -- Timeout to discover if a new manifests version got published to the repository
-      timeout.reconciliation: 1800s
+      timeout.reconciliation: 300s
 
       # -- Timeout to refresh application data as well as target manifests cache
       timeout.hard.reconciliation: 0s
@@ -219,21 +219,20 @@ argo-cd:
 
       ## Controller Properties
       # -- Number of application status processors
-      controller.status.processors: 50
+      controller.status.processors: 60
 
       # -- Number of application operation processors
-      controller.operation.processors: 25
+      controller.operation.processors: 60
 
       # -- Specifies timeout between application self heal attempts
       controller.self.heal.timeout.seconds: 5
 
       # -- Repo server RPC call timeout seconds.
-      controller.repo.server.timeout.seconds: 600
+      controller.repo.server.timeout.seconds: 360
 
       ## Controller Properties
       controller.diff.server.side: 'true'
 
-      controller.kubectl.parallelism.limit: '100'
 
       # Set the logging format. One of: text|json (default "text")
       controller.log.format: 'json'
@@ -251,7 +250,7 @@ argo-cd:
       # -- Disable Argo CD RBAC for user authentication
       server.disable.auth: false
 
-      server.repo.server.timeout.seconds: 600
+      server.repo.server.timeout.seconds: 360
 
       # -- Enable GZIP compression
       server.enable.gzip: true
