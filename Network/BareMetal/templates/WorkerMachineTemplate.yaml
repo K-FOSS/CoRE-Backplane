@@ -1,0 +1,45 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: TinkerbellMachineTemplate
+metadata:
+  name: kub-poc-worker-a
+
+spec:
+  template:
+    spec:
+      templateOverride: |
+        version: "0.1"
+        name: kub-poc-worker-flatcar
+        global_timeout: 6000
+        tasks:
+          - name: "kub-poc-worker-flatcar"
+            worker: "{{.device_1}}"
+            volumes:
+              - /dev:/dev
+              - /dev/console:/dev/console
+              - /lib/firmware:/lib/firmware:ro
+              - /run:/run
+            actions:
+              - name: "stream-image"
+                image: tinkerbell.azurecr.io/oci2disk:v1.0.0
+                timeout: 600
+                environment:
+                  IMG_URL: tinkerbell.azurecr.io/cluster-api-provider-tinkerbell-flatcar/flatcar-stable337424av:v1.24.10.gz
+                  DEST_DISK: /dev/sda
+                  COMPRESSED: true
+              - name: "change-kernel-configuration"
+                image: tinkerbell.azurecr.io/writefile:v1.0.0
+                timeout: 90
+                environment:
+                  DEST_DISK: /dev/sda6
+                  FS_TYPE: btrfs
+                  DEST_PATH: /grub.cfg
+                  UID: 0
+                  GID: 0
+                  MODE: 0777
+                  DIRMODE: 0755
+                  CONTENTS: |
+                    set linux_append="$linux_append flatcar.autologin=tty1 ignition.config.url=http://10.100.3.130:50061/2009-04-04/user-data"
+              - name: "reboot"
+                image: tinkerbell.azurecr.io/reboot:v1.0.0
+                timeout: 3000
+                pid: host
