@@ -7,6 +7,30 @@ spec:
     routers:
       - asn: 64512
         neighbors:
+          - address: 127.0.0.1
+            asn: 64512
+            port: 180
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
+
+          #
+          # KubeRouter
+          #
+          - address: 127.0.0.1
+            asn: 64512
+            port: 5555
+            toAdvertise:
+              allowed:
+                mode: all
+            toReceive:
+              allowed:
+                mode: all
+
+            
         {{ range .Values.peers }}
           - address: {{ .ip }}
             asn: {{ .asn }}
