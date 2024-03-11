@@ -2,13 +2,20 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: TinkerbellMachineTemplate
 metadata:
   name: kub-poc-control-plane
-
+  namespace: tink-system
 spec:
   template:
     spec:
+      hardwareAffinity:
+        preferred:
+          - weight: 100
+            hardwareAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  resolvemy.host/nodetype: infra
       templateOverride: |
         version: "0.1"
-        name: kub-poc-control-plane-flatcar
+        name: kub-poc-control-plane-flatcar-arm64
         global_timeout: 6000
         tasks:
           - name: "kub-poc-control-plane-flatcar"
@@ -20,17 +27,17 @@ spec:
               - /run:/run
             actions:
               - name: "stream-image"
-                image: tinkerbell.azurecr.io/oci2disk:v1.0.0
+                image: quay.io/tinkerbell-actions/image2disk:v1.0.0
                 timeout: 600
                 environment:
-                  IMG_URL: tinkerbell.azurecr.io/cluster-api-provider-tinkerbell-flatcar/flatcar-stable337424av:v1.24.10.gz
-                  DEST_DISK: /dev/sda
+                  IMG_URL: https://alpha.release.flatcar-linux.net/amd64-usr/3874.0.0/flatcar_production_image.bin.bz2
+                  DEST_DISK: /dev/nvme0n1
                   COMPRESSED: true
               - name: "change-kernel-configuration"
-                image: tinkerbell.azurecr.io/writefile:v1.0.0
+                image: quay.io/tinkerbell-actions/writefile:v1.0.0
                 timeout: 90
                 environment:
-                  DEST_DISK: /dev/sda6
+                  DEST_DISK: /dev/nvme0n1p6
                   FS_TYPE: btrfs
                   DEST_PATH: /grub.cfg
                   UID: 0
@@ -38,8 +45,9 @@ spec:
                   MODE: 0777
                   DIRMODE: 0755
                   CONTENTS: |
-                    set linux_append="$linux_append flatcar.autologin=tty1 ignition.config.url=http://10.100.3.130:50061/2009-04-04/user-data"
+                    set linux_append="$linux_append flatcar.autologin=tty1 flatcar.config.url=http://10.1.1.66:50061/2009-04-04/user-data"
               - name: "reboot"
-                image: tinkerbell.azurecr.io/reboot:v1.0.0
-                timeout: 3000
-                pid: host
+                image: tinkerbell.azurecr.io/tinkerbell/reboot:1.0
+                timeout: 90
+                volumes:
+                  - /worker:/worker
