@@ -42,8 +42,8 @@ spec:
             #
             # Peers
             #
-            - --peer-router-ips=127.0.0.1
-            - --peer-router-asns=64512
+            - '--peer-router-ips=127.0.0.1,$(NODE_IP),10.0.1.65'
+            - '--peer-router-asns=64567,64567,64567'
 
 
             #
@@ -89,6 +89,12 @@ spec:
             - --enable-pod-egress=false
             - --enable-overlay=false
           env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.hostIP
+
             - name: NODE_NAME
               valueFrom:
                 fieldRef:
