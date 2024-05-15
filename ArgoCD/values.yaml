@@ -228,7 +228,7 @@ argo-cd:
       controller.self.heal.timeout.seconds: 5
 
       # -- Repo server RPC call timeout seconds.
-      controller.repo.server.timeout.seconds: 360
+      controller.repo.server.timeout.seconds: 900
 
       ## Controller Properties
       controller.diff.server.side: 'true'
@@ -250,7 +250,7 @@ argo-cd:
       # -- Disable Argo CD RBAC for user authentication
       server.disable.auth: false
 
-      server.repo.server.timeout.seconds: 360
+      server.repo.server.timeout.seconds: 900
 
       # -- Enable GZIP compression
       server.enable.gzip: true
@@ -266,6 +266,15 @@ argo-cd:
     name: application-controller
 
     replicas: 1
+
+    resources:
+      limits:
+        cpu: '4'
+        memory: 10Gi
+      requests:
+        cpu: '1'
+        memory: 10Gi
+
 
     env:
       - name: ARGO_CD_UPDATE_CLUSTER_INFO_TIMEOUT
@@ -297,14 +306,14 @@ argo-cd:
     resources:
       limits:
         cpu: '8'
-        memory: 8Gi
+        memory: 10Gi
       requests:
         cpu: '1'
-        memory: 8Gi
+        memory: 10Gi
 
     env:
       - name: ARGOCD_EXEC_TIMEOUT
-        value: 360s
+        value: 900s
 
     metrics:
       enabled: true
