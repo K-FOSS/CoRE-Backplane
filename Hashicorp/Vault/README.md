@@ -16,5 +16,5 @@ vault unwrap
 
 Now within the cluster create the token 
 ```
-kubectl create secret generic central-corevault-token --from-literal=token=TOKEN_HERE -n core-prod
+kubectl create secret generic maincore-vault-token --from-literal=token=TOKEN_HERE -n core-prod
 ```
