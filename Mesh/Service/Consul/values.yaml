@@ -1,38 +1,6 @@
 consul:
-  apiGateway:
-    consulNamespaces:
-      consulDestinationNamespace: default
-      mirroringK8S: false
-      mirroringK8SPrefix: ''
-    controller:
-      annotations: null
-      nodeSelector: null
-      priorityClassName: ''
-      replicas: 1
-      service:
-        annotations: null
-    enabled: false
-    logLevel: info
-
-    managedGatewayClass:
-      copyAnnotations:
-        service: null
-      enabled: true
-      nodeSelector: null
-      serviceType: LoadBalancer
-      useHostPorts: false
-    serviceAccount:
-      annotations: null
   
   client:
-    affinity: null
-    annotations: null
-    containerSecurityContext:
-      aclInit: null
-      client: null
-      tlsInit: null
-    dataDirectoryHostPath: null
-    dnsPolicy: null
     enabled: false
     exposeGossipPorts: false
     extraConfig: |
@@ -51,13 +19,7 @@ consul:
       pod-name: ${HOSTNAME}
     nodeSelector: null
     priorityClassName: ''
-    resources:
-      limits:
-        cpu: 100m
-        memory: 100Mi
-      requests:
-        cpu: 100m
-        memory: 100Mi
+
     securityContext:
       fsGroup: 1000
       runAsGroup: 1000
@@ -98,16 +60,7 @@ consul:
     enabled: false
     envoyExtraArgs: null
     failurePolicy: Fail
-    image: null
-    imageConsul: null
-    initContainer:
-      resources:
-        limits:
-          cpu: 50m
-          memory: 150Mi
-        requests:
-          cpu: 50m
-          memory: 25Mi
+
     k8sAllowNamespaces:
       - '*'
     k8sDenyNamespaces: null
@@ -160,14 +113,6 @@ consul:
     logLevel: ''
     priorityClassName: 'system-cluster-critical'
 
-    resources:
-      limits:
-        cpu: 256m
-        memory: 256Mi
-      requests:
-        cpu: 16m
-        memory: 16Mi
-
   externalServers:
     enabled: false
     hosts:
@@ -180,8 +125,6 @@ consul:
   global:
     enabled: true
 
-
-
     acls:
       createReplicationToken: true
       manageSystemACLs: true
@@ -191,14 +134,7 @@ consul:
 
     adminPartitions:
       enabled: false
-      name: default
-      service:
-        annotations: null
-        nodePort:
-          https: null
-          rpc: null
-          serf: null
-        type: LoadBalancer
+
 
     consulSidecarContainer:
       resources:
@@ -223,7 +159,7 @@ consul:
       primaryGateways: null
 
     logJSON: true
-    logLevel: debug
+    logLevel: error
     metrics:
       agentMetricsRetentionTime: 1m
       enableAgentMetrics: false
@@ -249,68 +185,16 @@ consul:
         consulServerRole: ''
         enabled: false
         manageSystemACLsRole: ''
-    tls:
-      caCert:
-        secretKey: null
-        secretName: null
-      caKey:
-        secretKey: null
-        secretName: null
-      enableAutoEncrypt: false
-      enabled: false
-      httpsOnly: true
-      serverAdditionalDNSSANs: null
-      serverAdditionalIPSANs: null
-      verify: true
+
 
     systemDefaultRegistry: ''
   
   ingressGateways:
-    defaults:
-      affinity: null
-      annotations: null
-      consulNamespace: default
-      initCopyConsulContainer:
-        resources:
-          limits:
-            cpu: 50m
-            memory: 150Mi
-          requests:
-            cpu: 50m
-            memory: 25Mi
-      nodeSelector: null
-      priorityClassName: ''
-      replicas: 2
-      resources:
-        limits:
-          cpu: 100m
-          memory: 100Mi
-        requests:
-          cpu: 100m
-          memory: 100Mi
-      service:
-        additionalSpec: null
-        annotations: null
-        ports:
-          - nodePort: null
-            port: 8080
-          - nodePort: null
-            port: 8443
-        type: ClusterIP
-      serviceAccount:
-        annotations: null
-      terminationGracePeriodSeconds: 10
-      tolerations: null
     enabled: false
     gateways:
       - name: ingress-gateway
   
   meshGateway:
-    affinity: null
-    annotations: null
-    consulServiceName: mesh-gateway
-    containerPort: 8443
-    dnsPolicy: null
     enabled: false
     hostNetwork: false
     hostPort: null
@@ -375,21 +259,14 @@ consul:
     annotations: null
     bootstrapExpect: 1
     connect: true
-    containerSecurityContext:
-      server: null
+
     disruptionBudget:
       enabled: true
       maxUnavailable: null
     enabled: true
     exposeGossipAndRPCPorts: false
-    extraConfig: |
-      {}
-    extraContainers: null
-    extraEnvironmentVars: {}
     extraLabels: null
     extraVolumes: null
-    image: null
-    nodeSelector: null
     ports:
       serflan:
         port: 8301
@@ -429,8 +306,8 @@ consul:
       mirroringK8SPrefix: ''
 
     consulWriteInterval: null
-    default: true
-    enabled: true
+    default: false
+    enabled: false
     extraLabels: null
     image: null
     k8sAllowNamespaces:
@@ -457,35 +334,7 @@ consul:
     tolerations: null
   
   terminatingGateways:
-    defaults:
-      affinity: null
-      annotations: null
-      consulNamespace: default
-      extraVolumes: null
-      initCopyConsulContainer:
-        resources:
-          limits:
-            cpu: 50m
-            memory: 150Mi
-          requests:
-            cpu: 50m
-            memory: 25Mi
-      nodeSelector: null
-      priorityClassName: ''
-      replicas: 2
-      resources:
-        limits:
-          cpu: 100m
-          memory: 100Mi
-        requests:
-          cpu: 100m
-          memory: 100Mi
-      serviceAccount:
-        annotations: null
-      tolerations: null
     enabled: false
-    gateways:
-      - name: terminating-gateway
   
   ui:
     enabled: true
@@ -503,12 +352,10 @@ consul:
 
     service:
       enabled: true
-      nodePort:
-        http: null
-        https: null
       port:
         http: 80
         https: 443
       type: ClusterIP
+  
   webhookCertManager:
     tolerations: null
