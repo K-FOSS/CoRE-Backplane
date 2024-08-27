@@ -127,20 +127,20 @@ authentik:
       - name: AUTHENTIK_POSTGRESQL__NAME
         valueFrom:
           secretKeyRef:
-            name: aaa-authentik-creds
-            key: database
+            name: authentik-database-prod
+            key: Database
 
       - name: AUTHENTIK_POSTGRESQL__USER
         valueFrom:
           secretKeyRef:
-            name: aaa-authentik-creds
-            key: username
+            name: authentik-database-prod
+            key: Username
 
       - name: AUTHENTIK_POSTGRESQL__PASSWORD
         valueFrom:
           secretKeyRef:
-            name: aaa-authentik-creds
-            key: password
+            name: authentik-database-prod
+            key: Password
 
     # -- envFrom to pass to all deployed Deployments. Does not apply to GeoIP
     # @default -- `[]` (See [values.yaml])
@@ -216,7 +216,7 @@ authentik:
       # -- set the postgresql hostname to talk to
       # if unset and .Values.postgresql.enabled == true, will generate the default
       # @default -- `{{ .Release.Name }}-postgresql`
-      host: psql-core.mylogin.space
+      host: psql.mylogin.space
 
       # -- postgresql Database name
       # @default -- `authentik`
