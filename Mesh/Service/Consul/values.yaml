@@ -1,24 +1,10 @@
 consul:
-  
   client:
     enabled: false
-    exposeGossipPorts: false
-    extraConfig: |
-      {}
-    extraContainers: null
-    extraEnvironmentVars: {}
-    extraLabels: null
-    extraVolumes: null
-    grpc: false
+
     hostNetwork: false
-    image: null
     join:
       - 172.20.57.36
-    nodeMeta:
-      host-ip: ${HOST_IP}
-      pod-name: ${HOSTNAME}
-    nodeSelector: null
-    priorityClassName: ''
 
     securityContext:
       fsGroup: 1000
@@ -43,64 +29,9 @@ consul:
           memory: 50Mi
       serviceAccount:
         annotations: null
-    tolerations: ''
-    updateStrategy: null
   
   connectInject:
-    aclBindingRuleSelector: serviceaccount.name!=default
-    aclInjectToken:
-      secretKey: null
-      secretName: null
-    affinity: null
-    consulNamespaces:
-      consulDestinationNamespace: default
-      mirroringK8S: false
-      mirroringK8SPrefix: ''
-    default: false
     enabled: false
-    envoyExtraArgs: null
-    failurePolicy: Fail
-
-    k8sAllowNamespaces:
-      - '*'
-    k8sDenyNamespaces: null
-    logLevel: ''
-    metrics:
-      defaultEnableMerging: false
-      defaultEnabled: '-'
-      defaultMergedMetricsPort: 20100
-      defaultPrometheusScrapePath: /metrics
-      defaultPrometheusScrapePort: 20200
-    namespaceSelector: |
-      matchExpressions:
-        - key: "kubernetes.io/metadata.name"
-          operator: "NotIn"
-          values: ["kube-system","local-path-storage"]
-    nodeSelector: null
-    overrideAuthMethodName: ''
-    priorityClassName: ''
-    replicas: 2
-    resources:
-      limits:
-        cpu: 50m
-        memory: 50Mi
-      requests:
-        cpu: 50m
-        memory: 50Mi
-    serviceAccount:
-      annotations: null
-    sidecarProxy:
-      resources:
-        limits:
-          cpu: null
-          memory: null
-        requests:
-          cpu: null
-          memory: null
-    tolerations: null
-    transparentProxy:
-      defaultEnabled: true
-      defaultOverwriteProbes: true
   
   controller:
     aclToken:
@@ -196,48 +127,6 @@ consul:
   
   meshGateway:
     enabled: false
-    hostNetwork: false
-    hostPort: null
-    initCopyConsulContainer:
-      resources:
-        limits:
-          cpu: 50m
-          memory: 150Mi
-        requests:
-          cpu: 50m
-          memory: 25Mi
-    initServiceInitContainer:
-      resources:
-        limits:
-          cpu: 50m
-          memory: 50Mi
-        requests:
-          cpu: 50m
-          memory: 50Mi
-    nodeSelector: null
-    priorityClassName: ''
-    replicas: 2
-    resources:
-      limits:
-        cpu: 100m
-        memory: 100Mi
-      requests:
-        cpu: 100m
-        memory: 100Mi
-    service:
-      additionalSpec: null
-      annotations: null
-      enabled: false
-      nodePort: null
-      port: 443
-      type: ClusterIP
-    serviceAccount:
-      annotations: null
-    tolerations: null
-    wanAddress:
-      port: 443
-      source: ClusterIP
-      static: ''
   
   prometheus:
     enabled: false
@@ -274,23 +163,18 @@ consul:
 
   resources:
     requests:
-      memory: "100Mi"
-      cpu: "100m"
+      memory: '100Mi'
+      cpu: '100m'
     limits:
-      memory: '1'
-      cpu: '8G'
+      memory: '1G'
+      cpu: '1'
 
     securityContext:
       fsGroup: 1000
       runAsGroup: 1000
       runAsNonRoot: true
       runAsUser: 100
-    serverCert:
-      secretName: null
-    service:
-      annotations: null
-    serviceAccount:
-      annotations: null
+
     storage: 10Gi
     storageClass: null
     tolerations: ''
@@ -298,15 +182,6 @@ consul:
     updatePartition: 0
   
   syncCatalog:
-    addK8SNamespaceSuffix: true
-    affinity: null
-    consulNamespaces:
-      consulDestinationNamespace: default
-      mirroringK8S: false
-      mirroringK8SPrefix: ''
-
-    consulWriteInterval: null
-    default: false
     enabled: false
     extraLabels: null
     image: null
@@ -319,18 +194,9 @@ consul:
     nodePortSyncType: InternalOnly
     nodeSelector: null
     priorityClassName: 'system-cluster-critical'
-    resources:
-      limits:
-        cpu: 128m
-        memory: 256Mi
-      requests:
-        cpu: 32m
-        memory: 16Mi
-    serviceAccount:
-      annotations: null
     syncClusterIPServices: true
-    toConsul: true
-    toK8S: true
+    toConsul: false
+    toK8S: false
     tolerations: null
   
   terminatingGateways:
