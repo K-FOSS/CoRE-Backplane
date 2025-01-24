@@ -1,95 +1,95 @@
-apiVersion: apiextensions.crossplane.io/v1
-kind: CompositeResourceDefinition
-metadata:
-  name: xtenant.mylogin.space
-spec:
-  group: mylogin.space
+# apiVersion: apiextensions.crossplane.io/v1
+# kind: CompositeResourceDefinition
+# metadata:
+#   name: xtenant.mylogin.space
+# spec:
+#   group: mylogin.space
 
-  names:
-    kind: XTenant
-    plural: xtenantss
+#   names:
+#     kind: XTenant
+#     plural: xtenantss
 
-  claimNames:
-    kind: Tenant
-    plural: tenants
+#   claimNames:
+#     kind: Tenant
+#     plural: tenants
 
-  connectionSecretKeys:
-    - name
+#   connectionSecretKeys:
+#     - name
 
-  versions:
-    - name: v1alpha1
-      served: true
-      referenceable: true
-      schema:
-        openAPIV3Schema:
-          type: object
-          properties:
-            spec:
-              type: object
-              properties:
-                domain:
-                  type: string
+#   versions:
+#     - name: v1alpha1
+#       served: true
+#       referenceable: true
+#       schema:
+#         openAPIV3Schema:
+#           type: object
+#           properties:
+#             spec:
+#               type: object
+#               properties:
+#                 domain:
+#                   type: string
 
-                default:
-                  description: If this is the default tenant
-                  type: boolean
-                  default: true
+#                 default:
+#                   description: If this is the default tenant
+#                   type: boolean
+#                   default: true
 
-                managedDNS:
-                  description: If we manage the DNS server for this tenant
-                  type: boolean
-                  default: true
+#                 managedDNS:
+#                   description: If we manage the DNS server for this tenant
+#                   type: boolean
+#                   default: true
 
-                tls:
-                  type: object
-                  properties:
-                    managed:
-                      description: If we manage the DNS server for this tenant
-                      type: boolean
-                      default: true
+#                 tls:
+#                   type: object
+#                   properties:
+#                     managed:
+#                       description: If we manage the DNS server for this tenant
+#                       type: boolean
+#                       default: true
 
-                    writeSecretRef:
-                      type: object
-                      properties:
-                        namespace:
-                          type: string
+#                     writeSecretRef:
+#                       type: object
+#                       properties:
+#                         namespace:
+#                           type: string
                         
-                        name:
-                          type: string
+#                         name:
+#                           type: string
 
-                admin:
-                  type: object
+#                 admin:
+#                   type: object
 
-                  required:
-                    - firstName
-                    - lastName
-                    - email
-                    - phoneNumber                  
+#                   required:
+#                     - firstName
+#                     - lastName
+#                     - email
+#                     - phoneNumber                  
 
-                  properties:
-                    firstName:
-                      type: string
+#                   properties:
+#                     firstName:
+#                       type: string
 
-                    lastName:
-                      type: string
+#                     lastName:
+#                       type: string
 
-                    email:
-                      type: string
+#                     email:
+#                       type: string
 
-                    phoneNumber:
-                      type: string  
+#                     phoneNumber:
+#                       type: string  
 
-                domains:
-                  type: string
+#                 domains:
+#                   type: string
 
-              required:
-                - defaultDomain
-                - admin
-            status:
-              description: A Status represents the observed state
-              properties:
-                share:
-                  description: Freeform field containing status information
-                  type: object
-                  x-kubernetes-preserve-unknown-fields: true
-              type: object
+#               required:
+#                 - defaultDomain
+#                 - admin
+#             status:
+#               description: A Status represents the observed state
+#               properties:
+#                 share:
+#                   description: Freeform field containing status information
+#                   type: object
+#                   x-kubernetes-preserve-unknown-fields: true
+#               type: object
