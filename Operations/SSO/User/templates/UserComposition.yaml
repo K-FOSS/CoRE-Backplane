@@ -637,10 +637,10 @@ spec:
  
             varmap:
               database:
-                name: 'test'
+                name: ''
               
               role:
-                name: 'test'
+                name: ''
       patches:
         - fromFieldPath: status.share.database
           toFieldPath: spec.forProvider.varmap.database.name
@@ -760,20 +760,20 @@ spec:
 
     #           role:
     #             name: 'test'
-      patches:
-        - fromFieldPath: status.share.ldap.user
-          toFieldPath: spec.forProvider.varmap.ldap.user
-          policy:
-            fromFieldPath: Required
+    #   patches:
+    #     - fromFieldPath: status.share.ldap.user
+    #       toFieldPath: spec.forProvider.varmap.ldap.user
+    #       policy:
+    #         fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.varmap.role.name
-          policy:
-            fromFieldPath: Required
+    #     - fromFieldPath: status.share.username
+    #       toFieldPath: spec.forProvider.varmap.role.name
+    #       policy:
+    #         fromFieldPath: Required
 
-        - fromFieldPath: metadata.uid
-          toFieldPath: "spec.writeConnectionSecretToRef.name"
-          transforms:
-            - type: string
+    #     - fromFieldPath: metadata.uid
+    #       toFieldPath: "spec.writeConnectionSecretToRef.name"
+    #       transforms:
+    #         - type: string
               string:
                 fmt: '%s-s3-secret'
