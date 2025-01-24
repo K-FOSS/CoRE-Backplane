@@ -397,17 +397,17 @@ spec:
           toFieldPath: status.share.database
           type: ToCompositeFieldPath
 
-        - fromFieldPath: status.atProvider.outputs.bucket
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.bucket
-          type: ToCompositeFieldPath
+        # - fromFieldPath: status.atProvider.outputs.bucket
+        #   policy:
+        #     fromFieldPath: Required
+        #   toFieldPath: status.share.bucket
+        #   type: ToCompositeFieldPath
 
-        - fromFieldPath: status.atProvider.outputs.bucketPolicy
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.bucketPolicy
-          type: ToCompositeFieldPath
+        # - fromFieldPath: status.atProvider.outputs.bucketPolicy
+        #   policy:
+        #     fromFieldPath: Required
+        #   toFieldPath: status.share.bucketPolicy
+        #   type: ToCompositeFieldPath
 
       connectionDetails:
         - name: username
@@ -660,106 +660,106 @@ spec:
               string:
                 fmt: '%s-psql-secret'
 
-    - name: bucket
-      patches:
-        - fromFieldPath: status.share.bucket
-          toFieldPath: spec.forProvider.bucketName
-          policy:
-            fromFieldPath: Required
+    # - name: bucket
+    #   patches:
+    #     - fromFieldPath: status.share.bucket
+    #       toFieldPath: spec.forProvider.bucketName
+    #       policy:
+    #         fromFieldPath: Required
 
-      base:
-        apiVersion: minio.crossplane.io/v1
-        kind: Bucket
-        spec:
-          providerConfigRef:
-            name: s3-prod
+    #   base:
+    #     apiVersion: minio.crossplane.io/v1
+    #     kind: Bucket
+    #     spec:
+    #       providerConfigRef:
+    #         name: s3-prod
 
-          forProvider:
-            region: us-east-1
-            bucketName: 'test'
+    #       forProvider:
+    #         region: us-east-1
+    #         bucketName: 'test'
 
 
-    - name: bucket-policy
-      patches:
-        - fromFieldPath: status.share.username
-          toFieldPath: metadata.name
-          transforms:
-            - string:
-                convert: ToLower
-                type: Convert
-              type: string
-          policy:
-            fromFieldPath: Required
+    # - name: bucket-policy
+    #   patches:
+    #     - fromFieldPath: status.share.username
+    #       toFieldPath: metadata.name
+    #       transforms:
+    #         - string:
+    #             convert: ToLower
+    #             type: Convert
+    #           type: string
+    #       policy:
+    #         fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
-          toFieldPath: metadata.annotations[crossplane.io/external-name]
-          policy:
-            fromFieldPath: Required
+    #     - fromFieldPath: status.share.username
+    #       toFieldPath: metadata.annotations[crossplane.io/external-name]
+    #       policy:
+    #         fromFieldPath: Required
 
-        - fromFieldPath: status.share.bucketPolicy
-          toFieldPath: spec.forProvider.rawPolicy
-          transforms:
-            - type: string
-              string:
-                fmt: |
-                  %s
-          policy:
-            fromFieldPath: Required
-      base:
-        apiVersion: minio.crossplane.io/v1
-        kind: Policy
-        spec:
-          providerConfigRef:
-            name: s3-prod
+    #     - fromFieldPath: status.share.bucketPolicy
+    #       toFieldPath: spec.forProvider.rawPolicy
+    #       transforms:
+    #         - type: string
+    #           string:
+    #             fmt: |
+    #               %s
+    #       policy:
+    #         fromFieldPath: Required
+    #   base:
+    #     apiVersion: minio.crossplane.io/v1
+    #     kind: Policy
+    #     spec:
+    #       providerConfigRef:
+    #         name: s3-prod
 
-          forProvider:
-            region: us-east-1
-            bucketName: 'test'
+    #       forProvider:
+    #         region: us-east-1
+    #         bucketName: 'test'
 
-    - name: minio-tf
-      base:
-        apiVersion: tf.upbound.io/v1beta1
-        kind: Workspace
-        spec:
-          providerConfigRef:
-            name: minio-s3
+    # - name: minio-tf
+    #   base:
+    #     apiVersion: tf.upbound.io/v1beta1
+    #     kind: Workspace
+    #     spec:
+    #       providerConfigRef:
+    #         name: minio-s3
 
-          writeConnectionSecretToRef:
-            namespace: core-prod
-            name: key1
+    #       writeConnectionSecretToRef:
+    #         namespace: core-prod
+    #         name: key1
 
-          forProvider:
-            source: Inline
-            module: |
-              variable "ldap" {
-                description = "Database Configuration"
-                type = object(
-                  {
-                    user = string
-                  }
-                )
-              }
+    #       forProvider:
+    #         source: Inline
+    #         module: |
+    #           variable "ldap" {
+    #             description = "Database Configuration"
+    #             type = object(
+    #               {
+    #                 user = string
+    #               }
+    #             )
+    #           }
 
-              variable "role" {
-                description = "Database Configuration"
-                type = object(
-                  {
-                    name = string
-                  }
-                )
-              }
+    #           variable "role" {
+    #             description = "Database Configuration"
+    #             type = object(
+    #               {
+    #                 name = string
+    #               }
+    #             )
+    #           }
 
-              resource "minio_iam_user_policy_attachment" "user" {
-                user_name   = var.ldap.user
-                policy_name = var.role.name
-              }
+    #           resource "minio_iam_user_policy_attachment" "user" {
+    #             user_name   = var.ldap.user
+    #             policy_name = var.role.name
+    #           }
  
-            varmap:
-              ldap:
-                user: 'test'
+    #         varmap:
+    #           ldap:
+    #             user: 'test'
 
-              role:
-                name: 'test'
+    #           role:
+    #             name: 'test'
       patches:
         - fromFieldPath: status.share.ldap.user
           toFieldPath: spec.forProvider.varmap.ldap.user
