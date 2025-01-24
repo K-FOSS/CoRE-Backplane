@@ -5,4 +5,8 @@ This serves as the base defintion for everything CoRE runs, this single repo, al
 
 ## Initial Bootstrap
 
-TODO: Document and finish building the scripted deploy of ArgoCD to the first bootstrap manual Infra cluster, which then netboots the other hosts, then migrates itself and fully automates itself
+
+# UPDATE 2025
+
+As of January 23, 2025 I've started to rebuild my infra using my Dell R620 located within dc1.resolvemy.host see [node1-k3s.dc1.resolvemy.host](https://github.com/K-FOSS/node1-k3s.dc1.resolvemy.host) for more details about the bootstrapping of that system.
+
