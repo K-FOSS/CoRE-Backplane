@@ -533,7 +533,7 @@ persistence:
     type: custom
     volumeSpec:
       configMap:
-        name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
 
     advancedMounts:
       main: # the controller with the "main" identifier
@@ -549,7 +549,8 @@ persistence:
     type: custom
     volumeSpec:
       secret:
-        secretName: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-secrets
+        secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-secrets'
+
         items:
           - key: web.conf
             path: web.conf
