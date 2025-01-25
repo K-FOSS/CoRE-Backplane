@@ -401,9 +401,9 @@ service:
     annotations:
       consul.hashicorp.com/service-name: ns-core
       metallb.universe.tf/ip-allocated-from-pool: anycast-pool
-      metallb.universe.tf/loadBalancerIPs: 66.165.222.105
+      metallb.universe.tf/loadBalancerIPs: '66.165.222.105'
       io.cilium/lb-ipam-sharing-key: ns-core
-      io.cilium/lb-ipam-ips: 66.165.222.105
+      io.cilium/lb-ipam-ips: '66.165.222.105'
       external-dns.alpha.kubernetes.io/hostname: ns1.mylogin.space
 
     # -- Provide additional labels which may be required.
@@ -488,9 +488,6 @@ route:
     # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
     kind: HTTPRoute
 
-    # -- Override the name suffix that is used for this route.
-    nameOverride:
-
     # -- Provide additional annotations which may be required.
     annotations: {}
 
@@ -536,7 +533,7 @@ persistence:
     type: custom
     volumeSpec:
       configMap:
-        name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
+        name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config
 
     advancedMounts:
       main: # the controller with the "main" identifier
@@ -552,7 +549,7 @@ persistence:
     type: custom
     volumeSpec:
       secret:
-        secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-secrets'
+        secretName: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-secrets
         items:
           - key: web.conf
             path: web.conf
