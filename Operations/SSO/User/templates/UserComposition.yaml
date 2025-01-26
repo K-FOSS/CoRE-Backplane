@@ -660,23 +660,23 @@ spec:
               string:
                 fmt: '%s-psql-secret'
 
-    # - name: bucket
-    #   patches:
-    #     - fromFieldPath: status.share.bucket
-    #       toFieldPath: spec.forProvider.bucketName
-    #       policy:
-    #         fromFieldPath: Required
+    - name: bucket
+      patches:
+        - fromFieldPath: status.share.bucket
+          toFieldPath: spec.forProvider.bucketName
+          policy:
+            fromFieldPath: Required
 
-    #   base:
-    #     apiVersion: minio.crossplane.io/v1
-    #     kind: Bucket
-    #     spec:
-    #       providerConfigRef:
-    #         name: s3-prod
+      base:
+        apiVersion: minio.crossplane.io/v1
+        kind: Bucket
+        spec:
+          providerConfigRef:
+            name: s3-prod
 
-    #       forProvider:
-    #         region: us-east-1
-    #         bucketName: 'test'
+          forProvider:
+            region: us-east-1
+            bucketName: 'test'
 
 
     # - name: bucket-policy
@@ -775,5 +775,5 @@ spec:
     #       toFieldPath: "spec.writeConnectionSecretToRef.name"
     #       transforms:
     #         - type: string
-              string:
-                fmt: '%s-s3-secret'
+              # string:
+              #   fmt: '%s-s3-secret'
