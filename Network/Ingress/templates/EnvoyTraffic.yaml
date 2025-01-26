@@ -1,0 +1,19 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: maingw-traffic
+  namespace: core-prod
+
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: main-gw
+
+  http3: {}
+  path:
+    disableMergeSlashes: true
+    escapedSlashesAction: KeepUnchanged
+
+  
+
