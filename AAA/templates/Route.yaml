@@ -18,5 +18,8 @@ spec:
     - idp.mylogin.space
   rules:
     - backendRefs:
-        - name: {{ .Release.Name }}-authentik-server
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-authentik-server
           port: 80
+          weight: 1
