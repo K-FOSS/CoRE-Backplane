@@ -18,9 +18,17 @@ spec:
     - 'artifacthub.int.mylogin.space'
   rules:
     - backendRefs:
-        - name: hub
+        - group: ''
+          kind: Service
+          name: hub
           port: 80
-        
+          weight: 1
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
       timeouts:
         backendRequest: 600s
         request: 600s

@@ -21,8 +21,16 @@ spec:
 
   rules:
     - backendRefs:
-        - name: che-gateway
+        - group: ''
+          kind: Service
+          name: che-gateway
           port: 8080
+          weight: 1
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 
       timeouts:
         backendRequest: 600s
