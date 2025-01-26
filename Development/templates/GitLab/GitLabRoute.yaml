@@ -19,8 +19,15 @@ spec:
 
   rules:
     - backendRefs:
-        - name: {{ .Release.Name }}-webservice-default
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-webservice-default
           port: 8080
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 
       timeouts:
         backendRequest: 600s
