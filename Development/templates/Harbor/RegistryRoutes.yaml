@@ -44,5 +44,13 @@ spec:
           port: 80
 
     - backendRefs:
-        - name: {{ .Release.Name }}-harbor-helm-portal
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-harbor-helm-portal
           port: 80
+          weight: 1
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
