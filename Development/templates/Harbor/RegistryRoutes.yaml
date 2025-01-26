@@ -40,8 +40,11 @@ spec:
           value: /c
       
       backendRefs:
-        - name: {{ .Release.Name }}-harbor-helm-core
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-harbor-helm-core
           port: 80
+          weight: 1
 
     - backendRefs:
         - group: ''
