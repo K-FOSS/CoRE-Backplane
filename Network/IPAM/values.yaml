@@ -392,32 +392,30 @@ netbox:
     # you can use an existing netbox secret with "ldap_bind_password" instead of "bindPassword"
     # see https://django-auth-ldap.readthedocs.io
     ldap:
-      serverUri: ldap://example.com
+      serverUri: ldap://ldap.mylogin.space
       startTls: true
       ignoreCertErrors: false
       caCertDir: ""
       caCertData: ""
-      bindDn: CN=Netbox,OU=EmbeddedDevices,OU=MyCompany,DC=example,dc=com
-      bindPassword: ""
-      userDnTemplate: ""
-      userSearchBaseDn: OU=Users,OU=MyCompany,DC=example,dc=com
-      userSearchAttr: sAMAccountName
-      groupSearchBaseDn: OU=Groups,OU=MyCompany,DC=example,dc=com
+      bindDn: cn=netbox-core,ou=users,dc=ldap,dc=mylogin,dc=space
+      userDnTemplate: ''
+      userSearchBaseDn: ou=users,dc=ldap,dc=mylogin,dc=space
+      userSearchAttr: cn
+      groupSearchBaseDn: 'ou=groups,dc=ldap,dc=mylogin,dc=space'
       groupSearchClass: group
       groupType: GroupOfNamesType
       requireGroupDn:
-        - CN=Network Configuration Operators,CN=Builtin,DC=example,dc=com
-        - CN=Domain Admins,CN=Users,DC=example,dc=com
+        - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
       isAdminDn:
-        - CN=Domain Admins,CN=Users,DC=example,dc=com
+        - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
       isSuperUserDn:
-        - CN=Domain Admins,CN=Users,DC=example,dc=com
+        - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
       findGroupPerms: true
       mirrorGroups: true
       mirrorGroupsExcept: []
       cacheTimeout: 3600
-      attrFirstName: givenName
-      attrLastName: sn
+      attrFirstName: name
+      attrLastName: lastname
       attrMail: mail
 
   releaseCheck:
@@ -1732,121 +1730,3 @@ netbox-old:
       attrFirstName: 'name'
       attrLastName: 'lastname'
       attrMail: 'mail'
-
-  releaseCheck:
-    # This repository is used to check whether there is a new release of NetBox
-    # available. Set to null to disable the version check or use the URL below to
-    # check for release in the official NetBox repository.
-    url: null
-    # url: https://api.github.com/repos/netbox-community/netbox/releases
-
-  # Maximum execution time for background tasks, in seconds.
-  rqDefaultTimeout: 300  # 5 mins
-
-  # The name to use for the session cookie.
-  sessionCookieName: sessionid
-
-  # Time zone (default: UTC)
-  timeZone: UTC
-
-  # Date/time formatting. See the following link for supported formats:
-  # https://docs.djangoproject.com/en/dev/ref/templates/builtins/#date
-  dateFormat: 'N j, Y'
-  shortDateFormat: 'Y-m-d'
-  timeFormat: 'g:i a'
-  shortTimeFormat: 'H:i:s'
-  dateTimeFormat: 'N j, Y g:i a'
-  shortDateTimeFormat: 'Y-m-d H:i'
-
-  ## Extra configuration settings
-  # You can pass additional YAML files to be loaded into NetBox's configuration.
-  # These can be passed as arbitrary configuration values set in the chart, or
-  # you can load arbitrary *.yaml keys from ConfigMaps and Secrets.
-  # extraConfig:
-  #   - secret: # same as pod.spec.volumes.secret
-  #       secretName: dc1-k3s-node1-network-ipam-netbox-s3
-
-  ## Provide passwords using existing secret
-  # If set, this Secret must contain the following keys:
-  # - db_password: database password (if postgresql.enabled is false and
-  #     externalDatabase.existingSecretName is blank)
-  # - email_password: SMTP user password
-  # - ldap_bind_password: Password for LDAP bind DN
-  # - napalm_password: NAPALM user password
-  # - redis_tasks_password: Redis password for tasks Redis instance (if
-  #     redis.enabled is false and tasksRedis.existingSecretName is blank)
-  # - redis_cache_password: Redis password for caching Redis instance (if
-  #     redis.enabled is false and cachingRedis.existingSecretName is blank)
-  # - secret_key: session encryption token (50+ random characters)
-  # - superuser_password: Password for the initial super-user account
-  # - superuser_api_token: API token created for the initial super-user account
-  existingSecret: 'netbox-secret'
-
-  postgresql:
-    ## Deploy PostgreSQL using bundled chart
-    # To use an external database, set this to false and configure the settings
-    # under externalDatabase
-    enabled: false
-
-  ## External database settings
-  # These are used if postgresql.enabled is false, and are ignored otherwise
-  externalDatabase:
-    host: psql-int.mylogin.space
-    port: 5432
-    database: 3dzxoCeJ1f
-    username: netbox-core
-
-    existingSecretName: netbox-creds
-    existingSecretKey: password
-
-    # The following settings apply when using the bundled PostgreSQL chart, too:
-    sslMode: prefer
-    connMaxAge: 300
-    disableServerSideCursors: false
-
-
-  imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: netbox-ipam
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: ""
-
-  ## Storage configuration for media
-  persistence:
-    enabled: false
-
-  ## Storage configuration for reports
-  reportsPersistence:
-    enabled: false
-
-  commonLabels: {}
-
-  commonAnnotations: {}
-
-  podAnnotations: {}
-
-  podLabels:
-    logs: loki-myloginspace
-
-  podSecurityContext:
-    fsGroup: 1000
-    runAsNonRoot: true
-    # runAsUser: 1000
-    # runAsGroup: 1000
-
-  securityContext:
-    capabilities:
-      drop:
-        - ALL
-    readOnlyRootFilesystem: false
-    runAsNonRoot: true
-    runAsUser: 1000
-    runAsGroup: 1000
-
