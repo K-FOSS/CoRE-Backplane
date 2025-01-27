@@ -99,7 +99,7 @@ netbox:
     email: august@mylogin.space
     password: ""
     apiToken: ""
-    existingSecret: ""
+    existingSecret: 
 
   # This is a list of valid fully-qualified domain names (FQDNs) for the NetBox
   # server. NetBox will not permit write access to the server via any other
@@ -233,8 +233,8 @@ netbox:
     # Timeout in seconds
     timeout: 10
     from: ""
-    existingSecretName: ""
-    existingSecretKey: email-password
+    existingSecretName: 'netbox-secret'
+    existingSecretKey: password
 
   # Enforcement of unique IP space can be toggled on a per-VRF basis. To enforce
   # unique IP space within the global table (all prefixes and IP addresses not
@@ -476,7 +476,7 @@ netbox:
   ## Provide passwords using existing secret
   # If set, this Secret must contain the following keys:
   # - secret_key: session encryption token (50+ random characters)
-  existingSecret: ""
+  existingSecret: netbox-secret
 
   # Override the NGINX Unit configuration inside the container. When enabled, this
   # overrides the default configuration loaded into Unit. The upstream config is:
@@ -1010,10 +1010,8 @@ netbox:
     # sentinels are given.
     host: redis.mylogin.space
     port: 6379
-    username: ""
-    password: ""
-    existingSecretName: ""
-    existingSecretKey: redis-password
+    existingSecretName: netbox-secret
+    existingSecretKey: redis_tasks_password
 
   cachingRedis:
     database: 81
@@ -1026,10 +1024,9 @@ netbox:
     # sentinels are given.
     host: redis.mylogin.space
     port: 6379
-    username: ""
-    password: ""
-    existingSecretName: ""
-    existingSecretKey: redis-password
+    
+    existingSecretName: netbox-secret
+    existingSecretKey: redis_cache_password
 
   ## @section Autoscaling parameters
 
