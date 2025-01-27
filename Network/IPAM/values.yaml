@@ -400,22 +400,20 @@ netbox:
       caCertData: ""
       bindDn: cn=netbox-core,ou=users,dc=ldap,dc=mylogin,dc=space
       userDnTemplate: 'cn=%(user)s,ou=users,dc=ldap,dc=mylogin,dc=space'
-      userSearchBaseDn: ou=users,dc=ldap,dc=mylogin,dc=space
+      userSearchBaseDn: dc=ldap,dc=mylogin,dc=space
       userSearchAttr: cn
-      groupSearchBaseDn: 'ou=groups,dc=ldap,dc=mylogin,dc=space'
+      groupSearchBaseDn: 'dc=ldap,dc=mylogin,dc=space'
       groupSearchClass: group
-      groupType: GroupOfNamesType
+      groupType: GroupOfNestedNamesType
       requireGroupDn:
         - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
-      isAdminDn:
-        - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
-      isSuperUserDn:
-        - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
+      isAdminDn: []
+      isSuperUserDn: []
       findGroupPerms: true
       mirrorGroups: true
       mirrorGroupsExcept: []
       cacheTimeout: 3600
-      attrFirstName: name
+      attrFirstName: cn
       attrLastName: lastname
       attrMail: mail
 
