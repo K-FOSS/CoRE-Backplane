@@ -44,19 +44,10 @@ spec:
 
     provider netbox {
       # Environment variable NETBOX_URL
-      url = "netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80"
-
-      # Environment variable NETBOX_BASEPATH
-      basepath = "/api"
+      server_url = "http://netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80"
 
       # Environment variable NETBOX_TOKEN
-      token = jsondecode(data.http.example.response_body).key
-
-      # Environment variable NETBOX_SCHEME
-      scheme = "http"
-
-      # Environment variable NETBOX_INSECURE
-      insecure = "true"
+      api_token = jsondecode(data.http.example.response_body).key
     }
 
     // Modules _must_ use remote state. The provider does not persist state.
