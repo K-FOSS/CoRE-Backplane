@@ -1,0 +1,22 @@
+
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: testing-nb
+spec:
+  providerConfigRef:
+    name: netbox-tf
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "netbox_rir" "test" {
+        name = "testrir"
+      }
+
+      resource "netbox_asn" "test" {
+        asn         = 1337
+        rir_id      = netbox_rir.test.id
+        description = "test"
+        comments    = "test"
+      }
