@@ -404,11 +404,13 @@ netbox:
       userSearchAttr: cn
       groupSearchBaseDn: 'dc=ldap,dc=mylogin,dc=space'
       groupSearchClass: group
-      groupType: GroupOfNestedNamesType
+      groupType: NestedGroupOfNamesType
       requireGroupDn:
+        - cn=Network,ou=groups,dc=ldap,dc=mylogin,dc=space
+      isAdminDn:
         - cn=Network Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
-      isAdminDn: []
-      isSuperUserDn: []
+      isSuperUserDn:
+        - cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space
       findGroupPerms: true
       mirrorGroups: true
       mirrorGroupsExcept: []
