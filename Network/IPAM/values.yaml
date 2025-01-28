@@ -73,12 +73,12 @@ netbox:
   ## @param image.pullSecrets Specify docker-registry secret names as an array
   ##
   image:
-    registry: ghcr.io
-    repository: netbox-community/netbox
+    registry: ''
+    repository: kristianfoss/netbox
     pullPolicy: IfNotPresent
     ## Defaults to '{{ .Chart.AppVersion }}'
     ##
-    tag: ""
+    tag: core
     ## If set, override the tag
     ##
     digest: ""
@@ -1579,41 +1579,6 @@ netbox:
 
 
 netbox-old:
-  # Default values for netbox.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
-
-  replicaCount: 1
-
-  image:
-    repository: netboxcommunity/netbox
-    pullPolicy: Always
-    tag: v4.2
-
-  # You can also use an existing secret for the superuser password and API token
-  # See `existingSecret` for details
-  superuser:
-    name: kjones
-    email: august@mylogin.space
-
-  # Skip the netbox-docker startup scripts which can pre-populate objects into a
-  # fresh NetBox installation. By default these do nothing, but they take a while
-  # to run, so we skip them. See:
-  # https://github.com/netbox-community/netbox-docker/tree/master/startup_scripts
-  skipStartupScripts: false
-
-  # This is a list of valid fully-qualified domain names (FQDNs) for the NetBox
-  # server. NetBox will not permit write access to the server via any other
-  # hostnames. The first FQDN in the list will be treated as the preferred name.
-  allowedHosts:
-    - '*'
-
-  # Specify one or more name and email address tuples representing NetBox
-  # administrators. These people will be notified of application errors (assuming
-  # correct email settings are provided).
-  admins:
-    - 'kjones'
-
   # Note: this is where the CUSTOM_VALIDATORS setting naturally fits in relation
   # to the upstream NetBox configuration, but the setting cannot be reflected in
   # YAML/JSON as it depends on creating instances of Python classes.
