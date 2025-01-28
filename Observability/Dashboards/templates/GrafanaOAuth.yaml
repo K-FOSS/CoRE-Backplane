@@ -1,0 +1,17 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: {{ .Release.Name }}-grafana
+
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ .Release.Name }}
+
+  extAuth:
+    http:
+      backendRefs:
+        - name: dc1-k3s-node1-aaa-authentik-server
+          port: 80
+      headersToBackend: ["x-current-user"]

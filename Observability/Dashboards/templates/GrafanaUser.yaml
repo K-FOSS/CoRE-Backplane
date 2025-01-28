@@ -1,0 +1,19 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ .Release.Name }}-grafana
+
+spec:
+  name: Grafana
+
+
+  serviceAccount: true
+
+  groups:
+    - LDAPService
+
+  database:
+    name: GR7Ctx7FGh
+
+  writeConnectionSecretToRef:
+    name: {{ .Release.Name }}-grafana-creds
