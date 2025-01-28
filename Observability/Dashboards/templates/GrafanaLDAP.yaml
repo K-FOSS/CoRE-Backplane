@@ -66,7 +66,14 @@ spec:
           # Specify names of the LDAP attributes your LDAP uses
           [servers.attributes]
           member_of = "memberOf"
-          email =  "email"`}}
+          email =  "email"
+          
+          [[servers.group_mappings]]
+          group_dn = "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"
+          org_role = "Admin"
+          grafana_admin = true
+          
+          `}}
   data:
     - secretKey: Username
       remoteRef:
