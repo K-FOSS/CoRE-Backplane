@@ -506,9 +506,9 @@ grafana:
   ##       valueFrom:
   ##         <value rendered as YAML>
   envValueFrom:
-     GF_DATABASE_URI:
+    GF_DATABASE_URL:
       secretKeyRef:
-        name: {{ .Release.Name }}-grafana-creds
+        name: '{{ .Release.Name }}-grafana-creds'
         key: psqlURI
 
   ## The name of a secret in the same kubernetes namespace which contain values to be added to the environment
@@ -838,8 +838,6 @@ grafana:
     
     database:
       type: 'postgres'
-      host: psql-int.mylogin.space:5432
-      url: '$__file{/etc/secrets/}'
 
     server:
       domain: "{{ if (and .Values.ingress.enabled .Values.ingress.hosts) }}{{ tpl (.Values.ingress.hosts | first) . }}{{ else }}''{{ end }}"
