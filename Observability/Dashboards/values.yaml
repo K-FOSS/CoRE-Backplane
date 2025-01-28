@@ -857,16 +857,18 @@ grafana:
     auth:
       oauth_auto_login: true # turning on auto login
       signout_redirect_url: "https://oauth-proxy.your-host.com/oauth2/sign_out" # the oauth2-proxy logout URL
-    # auth.proxy:
-    #   enabled: true # enable receiving login info via headers
-    #   header_name: X-Email # The header name for the email of the user, must match the proxy_set_header in the ingress snippet
-    #   header_property: email # Which user value is included in this header
-    #   headers: Name:X-User # a map of additional user headers to pull from the request. Again, must match proxy_set_header above.
-    #   enable_login_token: false # This runs the authentication check for all routes, instead of just the login route.
-    # users:
-    #   allow_sign_up: false # Turn off the ability to sign up once logged in.
-    #   auto_assign_org: true # auto assign to an org (we only use one org)
-    #   auto_assign_org_role: Editor # The role to grant new users by default
+
+    auth.proxy:
+      enabled: true # enable receiving login info via headers
+      header_name: X-authentik-username # The header name for the email of the user, must match the proxy_set_header in the ingress snippet
+      header_property: username # Which user value is included in this header
+      headers: Name:X-authentik-name # a map of additional user headers to pull from the request. Again, must match proxy_set_header above.
+      enable_login_token: false # This runs the authentication check for all routes, instead of just the login route.
+
+    users:
+      allow_sign_up: false # Turn off the ability to sign up once logged in.
+      auto_assign_org: true # auto assign to an org (we only use one org)
+      auto_assign_org_role: Editor # The role to grant new users by default
 
 
 
