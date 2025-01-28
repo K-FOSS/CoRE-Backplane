@@ -1,14 +1,14 @@
 apiVersion: external-secrets.io/v1beta1
 kind: ExternalSecret
 metadata:
-  name: {{ .Release.Name }}-grafana-ldap
+  name: {{ include "grafana.fullname" . }}-ldap
 spec:
   secretStoreRef:
     kind: ClusterSecretStore
     name: mainvault-core
 
   target:
-    name: {{ .Release.Name }}-grafana-ldap
+    name: {{ include "grafana.fullname" . }}-ldap
     template:
       engineVersion: v2
       data:
