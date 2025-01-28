@@ -64,11 +64,6 @@ spec:
           name: minio-auth
           key: ldapsBIND
 
-    - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: minio-auth
-          key: password
 
     - name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
       valueFrom:
@@ -80,10 +75,10 @@ spec:
       value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
 
     - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER
-      value: '(cn=%s)'
+      value: '(&(objectclass=user)(cn=%s))'
 
     - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER
-      value: '(&(objectclass=group)(memberUid=%s))'
+      value: '(&(objectclass=group)(member=%s))'
 
     - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN
       value: ou=groups,dc=ldap,dc=mylogin,dc=space
