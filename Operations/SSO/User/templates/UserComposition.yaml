@@ -736,55 +736,7 @@ spec:
             bucketName: 'test'
 
 
-    - name: bucket-policy
-
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: metadata.name
-          transforms:
-            - string:
-                convert: ToLower
-                type: Convert
-              type: string
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: metadata.annotations[crossplane.io/external-name]
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.bucketPolicy
-          toFieldPath: spec.forProvider.rawPolicy
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: |
-                  %s
-          policy:
-            fromFieldPath: Required
-      base:
-        apiVersion: minio.crossplane.io/v1
-        kind: Policy
-        spec:
-          providerConfigRef:
-            name: s3-prod
-
-          forProvider:
-            region: us-east-1
-            bucketName: 'test'
-    
-    # - name: minio-tf
+    # - name: bucket-policy
 
     #   readinessChecks:
     #     - type: MatchCondition
@@ -792,67 +744,130 @@ spec:
     #         type: Ready
     #         status: 'True'
 
-    #   base:
-    #     apiVersion: tf.upbound.io/v1beta1
-    #     kind: Workspace
-    #     spec:
-    #       providerConfigRef:
-    #         name: minio-s3
-
-    #       writeConnectionSecretToRef:
-    #         namespace: core-prod
-    #         name: key1
-
-    #       forProvider:
-    #         source: Inline
-    #         module: |
-    #           variable "ldap" {
-    #             description = "Database Configuration"
-    #             type = object(
-    #               {
-    #                 user = string
-    #               }
-    #             )
-    #           }
-
-    #           variable "role" {
-    #             description = "Database Configuration"
-    #             type = object(
-    #               {
-    #                 name = string
-    #               }
-    #             )
-    #           }
-
-    #           resource "minio_iam_user_policy_attachment" "user" {
-    #             user_name   = var.ldap.user
-    #             policy_name = var.role.name
-    #           }
- 
-    #         varmap:
-    #           ldap:
-    #             user: 'test'
-
-    #           role:
-    #             name: 'test'
     #   patches:
     #     - type: FromCompositeFieldPath
-    #       fromFieldPath: status.share.ldap.user
-    #       toFieldPath: spec.forProvider.varmap.ldap.user
+    #       fromFieldPath: status.share.username
+    #       toFieldPath: metadata.name
+    #       transforms:
+    #         - string:
+    #             convert: ToLower
+    #             type: Convert
+    #           type: string
     #       policy:
     #         fromFieldPath: Required
 
     #     - type: FromCompositeFieldPath
     #       fromFieldPath: status.share.username
-    #       toFieldPath: spec.forProvider.varmap.role.name
+    #       toFieldPath: metadata.annotations[crossplane.io/external-name]
     #       policy:
     #         fromFieldPath: Required
 
     #     - type: FromCompositeFieldPath
-    #       fromFieldPath: metadata.uid
-    #       toFieldPath: "spec.writeConnectionSecretToRef.name"
+    #       fromFieldPath: status.share.bucketPolicy
+    #       toFieldPath: spec.forProvider.rawPolicy
     #       transforms:
     #         - type: string
     #           string:
     #             type: Format
-    #             fmt: '%s-s3-secret'
+    #             fmt: |
+    #               %s
+    #       policy:
+    #         fromFieldPath: Required
+    #   base:
+    #     apiVersion: minio.crossplane.io/v1
+    #     kind: Policy
+    #     spec:
+    #       providerConfigRef:
+    #         name: s3-prod
+
+    #       forProvider:
+    #         region: us-east-1
+    #         bucketName: 'test'
+    
+    - name: minio-tf
+
+      readinessChecks:
+        - type: MatchCondition
+          matchCondition:
+            type: Ready
+            status: 'True'
+
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: minio-s3
+
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
+
+          forProvider:
+            source: Inline
+            module: |
+              variable "ldap" {
+                description = "Database Configuration"
+                type = object(
+                  {
+                    user = string
+                  }
+                )
+              }
+
+              variable "username" {
+                description = "LDAP/SSO Username Policy"
+                type = string
+              }
+
+              variable "bucketPolicy" {
+                description = "S3 Bucket Policy"
+                type = string
+              }
+
+              resource "minio_iam_policy" "policy" {
+                name = var.username
+                
+                policy = var.bucketPolicy
+              }
+
+              resource "minio_iam_ldap_user_policy_attachment" "user" {
+                user_dn = var.ldap.user
+                policy_name = minio_iam_policy.policy.id
+              }
+
+ 
+            varmap:
+              ldap:
+                user: 'test'
+
+              username: ''
+
+              bucketPolicy: ''
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.ldap.user
+          toFieldPath: spec.forProvider.varmap.ldap.user
+          policy:
+            fromFieldPath: Required
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.bucketPolicy
+          toFieldPath: spec.forProvider.varmap.ldap.user
+          policy:
+            fromFieldPath: Required
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
+          toFieldPath: spec.forProvider.varmap.username
+          policy:
+            fromFieldPath: Required
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                type: Format
+                fmt: '%s-s3-secret'
