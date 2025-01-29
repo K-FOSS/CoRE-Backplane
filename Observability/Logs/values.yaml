@@ -873,10 +873,14 @@ loki:
     # -- Number of replicas for the distributor
     replicas: 3
 
+    maxUnavailable: 2
+
   # --  Configuration for the querier
   querier:
     # -- Number of replicas for the querier
     replicas: 3
+
+    maxUnavailable: 2
 
     persistence:
       # -- Enable creating PVCs for the querier cache
@@ -911,6 +915,8 @@ loki:
     replicas: 2
     # -- Whether the index gateway should join the memberlist hashring
     joinMemberlist: true
+
+    maxUnavailable: 1
     
     persistence:
       # -- Enable creating PVCs which is required when using boltdb-shipper
