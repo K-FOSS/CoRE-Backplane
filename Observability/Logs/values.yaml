@@ -723,7 +723,8 @@ loki:
     serviceAnnotations: {}
 
     # -- Additional CLI args for the ingester
-    extraArgs: []
+    extraArgs:
+      - -config.expand-env=true
 
     # -- Environment variables to add to the ingester pods
     extraEnv: []
@@ -878,6 +879,10 @@ loki:
 
     maxUnavailable: 2
 
+    # -- Additional CLI args for the ingester
+    extraArgs:
+      - -config.expand-env=true
+
     extraEnv:
       - name: S3_ENDPOINT
         valueFrom:
@@ -897,6 +902,10 @@ loki:
     replicas: 3
 
     maxUnavailable: 2
+
+    # -- Additional CLI args for the ingester
+    extraArgs:
+      - -config.expand-env=true
 
     extraEnv:
       - name: S3_ENDPOINT
@@ -930,6 +939,10 @@ loki:
     replicas: 2
     maxUnavailable: 1
 
+    # -- Additional CLI args for the ingester
+    extraArgs:
+      - -config.expand-env=true
+
     extraEnv:
       - name: S3_ENDPOINT
         valueFrom:
@@ -948,6 +961,10 @@ loki:
     # It should be lower than `-querier.max-concurrent` to avoid generating back-pressure in queriers;
     # it's also recommended that this value evenly divides the latter
     replicas: 2
+
+    # -- Additional CLI args for the ingester
+    extraArgs:
+      - -config.expand-env=true
 
     extraEnv:
       - name: S3_ENDPOINT
@@ -969,6 +986,10 @@ loki:
     joinMemberlist: true
 
     maxUnavailable: 1
+
+    # -- Additional CLI args for the ingester
+    extraArgs:
+      - -config.expand-env=true
 
     extraEnv:
       - name: S3_ENDPOINT
@@ -1007,6 +1028,9 @@ loki:
     # -- Number of replicas for the compactor
     replicas: 1
 
+    # -- Additional CLI args for the ingester
+    extraArgs:
+      - -config.expand-env=true
 
     extraEnv:
       - name: S3_ENDPOINT
