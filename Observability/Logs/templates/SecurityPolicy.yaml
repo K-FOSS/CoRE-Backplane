@@ -9,32 +9,34 @@ spec:
     kind: HTTPRoute
     name: {{ include "loki.fullname" $.Subcharts.loki }}
 
-  # jwt:
-  #   providers:
-  #     - name: authentik
-  #       issuer: https://idp.mylogin.space/application/o/loki-test
-  #       remoteJWKS:
-  #         uri: https://idp.mylogin.space/application/o/loki-test/jwks/
-  #       claimToHeaders:
-  #         - header: x-scope-orgid
-  #           claim: orgID
+  jwt:
+    providers:
+      - name: authentik
+        issuer: https://idp.mylogin.space/application/o/loki-test
+        remoteJWKS:
+          uri: https://idp.mylogin.space/application/o/loki-test/jwks/
+        claimToHeaders:
+          - header: x-scope-orgid
+            claim: orgID
 
-  #       extractFrom:
-  #         headers:
-  #           - name: Authorization
-  #             valuePrefix: 'Bearer '
-  #         cookies:
-  #           - session_access_token
-  #         params:
-  #           - token
+        extractFrom:
+          headers:
+            - name: Authorization
+              valuePrefix: 'Bearer '
+          cookies:
+            - session_access_token
+          params:
+            - token
 
-  extAuth:
-    http:
-      backendRefs:
-        - name: authorino-authorino-authorization
-          namespace: authorino-operator
-          port: 5001
-      headersToBackend: ["x-current-user"]
+
+
+  # extAuth:
+  #   http:
+  #     backendRefs:
+  #       - name: authorino-authorino-authorization
+  #         namespace: authorino-operator
+  #         port: 5001
+  #     headersToBackend: ["x-current-user"]
 
   # extAuth:
   #   type: HTTP
@@ -56,3 +58,17 @@ spec:
     forwardAccessToken: true
     clientSecret:
       name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
+
+
+  authorization:
+    defaultAction: Deny
+    rules:
+      - name: "allow"
+        action: Allow
+        principal:
+          jwt:
+            provider: authentik
+            claims:
+              - name: user.groups
+                valueType: StringArray
+                values: ["Network Admin"]
