@@ -1,0 +1,49 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: {{ include "loki.fullname" $.Subcharts.loki }}
+
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ include "loki.fullname" $.Subcharts.loki }}
+
+  jwt:
+    providers:
+      - name: authentik
+        issuer: https://idp.mylogin.space/application/o/Netbox/
+        remoteJWKS:
+          uri: https://idp.mylogin.space/application/o/Netbox/jwks/
+        claimToHeaders:
+          - header: x-scope-orgid
+            claim: preferred_username
+
+        extractFrom:
+          headers:
+            - name: Authorization
+              valuePrefix: 'Bearer '
+          cookies:
+            - session_access_token
+          params:
+            - token
+
+  # extAuth:
+  #   type: HTTP
+  #   http:
+  #     host: authentik-outpost.kube-system.
+  #     port: 80
+  #     path: /outpost.goauthentik.io/auth/envoy
+  #     headersToBackend:
+  #       - x-authentik
+
+  oidc:
+    provider:
+      issuer: https://idp.mylogin.space/application/o/Netbox/
+    scopes:
+      - openid
+      - profile
+    clientID: FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b
+    forwardAccessToken: true
+    clientSecret:
+      name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
