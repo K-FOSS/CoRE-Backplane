@@ -12,12 +12,12 @@ spec:
   jwt:
     providers:
       - name: authentik
-        issuer: https://idp.mylogin.space/application/o/Netbox/
+        issuer: https://idp.mylogin.space/application/o/loki-test
         remoteJWKS:
-          uri: https://idp.mylogin.space/application/o/Netbox/jwks/
+          uri: https://idp.mylogin.space/application/o/loki-test/jwks/
         claimToHeaders:
           - header: x-scope-orgid
-            claim: preferred_username
+            claim: orgID
 
         extractFrom:
           headers:
@@ -39,11 +39,12 @@ spec:
 
   oidc:
     provider:
-      issuer: https://idp.mylogin.space/application/o/Netbox/
+      issuer: https://idp.mylogin.space/application/o/loki-test
     scopes:
       - openid
       - profile
-    clientID: FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b
+      - logs
+    clientID: loki-test
     forwardAccessToken: true
     clientSecret:
       name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
