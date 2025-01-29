@@ -196,6 +196,42 @@ controllers:
           - name: PDNS_API_URL
             value: 'http://{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice.core-prod.svc.cluster.local:8081'
 
+          - name: PDNS_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-pdns'
+                key: SecretKey
+
+          - name: LDAP_ENABLED
+            value: 'True'
+
+          - name: LDAP_BASE_DN
+            value: 'dc=ldap,dc=mylogin,dc=space'
+
+          # - name: AUTOPROVISIONING
+          #   value: 'True'
+
+          - name: LDAP_FILTER_USERNAME
+            value: 'cn'
+
+          - name: LDAP_URI
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: ldapsURI
+
+          - name: LDAP_ADMIN_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: ldapsBIND
+
+          - name: LDAP_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: password
+
           - name: GUNICORN_LOGLEVEL
             value: 'DEBUG'
 
