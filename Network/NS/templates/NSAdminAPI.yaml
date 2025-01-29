@@ -1,0 +1,21 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-api
+
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-api
+
+  data:
+    - secretKey: APIKey
+      remoteRef:
+        key: NS/General
+        property: APIKey

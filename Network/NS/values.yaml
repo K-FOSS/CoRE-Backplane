@@ -55,6 +55,12 @@ controllers:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
                 key: password
 
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: password
+
         # -- Override the working directory for the default container
         workingDir: /etc/pdns
 
@@ -199,8 +205,8 @@ controllers:
           - name: PDNS_API_KEY
             valueFrom:
               secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-pdns'
-                key: SecretKey
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-api'
+                key: APIKey
 
           - name: LDAP_ENABLED
             value: 'True'
@@ -213,6 +219,12 @@ controllers:
 
           - name: LDAP_FILTER_USERNAME
             value: 'cn'
+
+          - name: LDAP_USER_GROUP
+            value: 'cn=Network,ou=groups,dc=ldap,dc=mylogin,dc=space'
+
+          - name: LDAP_ADMIN_GROUP
+            value: 'cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space'
 
           - name: LDAP_URI
             valueFrom:
