@@ -35,6 +35,21 @@ spec:
           export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OIDCClientID }}"
 
           export MINIO_IDENTITY_OPENID_REDIRECT_URI="https://s3.int.mylogin.space/oauth_callback"
+  
+          #
+          # LDAP
+          #
+          export MINIO_IDENTITY_LDAP_SERVER_ADDR="{{ .LDAPHostname }}:{{ .LDAPPort }}" 
+
+          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .Username }},ou=users,dc=ldap,dc=mylogin,dc=space"
+
+          export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(&(objectclass=user)(cn=%s))"
+
+          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=group)(member=%s))"
+
+          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,dc=ldap,dc=mylogin,dc=space"
+
+          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="{{ .Password }}"
   data:
     - secretKey: OIDCClientID
       remoteRef:
@@ -57,3 +72,29 @@ spec:
       remoteRef:
         key: Minio/General
         property: RootPassword
+
+    #
+    # SSO Credentials
+    #
+
+    - secretKey: Username
+      remoteRef:
+        key: Minio/User
+        property: Username
+        
+
+    - secretKey: Password
+      remoteRef:
+        key: Minio/User
+        property: Password
+
+    - secretKey: LDAPHostname
+      remoteRef:
+        key: Minio/LDAP
+        property: Hostname
+
+    - secretKey: LDAPPort
+      remoteRef:
+        key: Minio/LDAP
+        property: Hostname
+        
