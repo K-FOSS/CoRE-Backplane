@@ -784,75 +784,75 @@ spec:
             region: us-east-1
             bucketName: 'test'
     
-    - name: minio-tf
+    # - name: minio-tf
 
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
+    #   readinessChecks:
+    #     - type: MatchCondition
+    #       matchCondition:
+    #         type: Ready
+    #         status: 'True'
 
-      base:
-        apiVersion: tf.upbound.io/v1beta1
-        kind: Workspace
-        spec:
-          providerConfigRef:
-            name: minio-s3
+    #   base:
+    #     apiVersion: tf.upbound.io/v1beta1
+    #     kind: Workspace
+    #     spec:
+    #       providerConfigRef:
+    #         name: minio-s3
 
-          writeConnectionSecretToRef:
-            namespace: core-prod
-            name: key1
+    #       writeConnectionSecretToRef:
+    #         namespace: core-prod
+    #         name: key1
 
-          forProvider:
-            source: Inline
-            module: |
-              variable "ldap" {
-                description = "Database Configuration"
-                type = object(
-                  {
-                    user = string
-                  }
-                )
-              }
+    #       forProvider:
+    #         source: Inline
+    #         module: |
+    #           variable "ldap" {
+    #             description = "Database Configuration"
+    #             type = object(
+    #               {
+    #                 user = string
+    #               }
+    #             )
+    #           }
 
-              variable "role" {
-                description = "Database Configuration"
-                type = object(
-                  {
-                    name = string
-                  }
-                )
-              }
+    #           variable "role" {
+    #             description = "Database Configuration"
+    #             type = object(
+    #               {
+    #                 name = string
+    #               }
+    #             )
+    #           }
 
-              resource "minio_iam_user_policy_attachment" "user" {
-                user_name   = var.ldap.user
-                policy_name = var.role.name
-              }
+    #           resource "minio_iam_user_policy_attachment" "user" {
+    #             user_name   = var.ldap.user
+    #             policy_name = var.role.name
+    #           }
  
-            varmap:
-              ldap:
-                user: 'test'
+    #         varmap:
+    #           ldap:
+    #             user: 'test'
 
-              role:
-                name: 'test'
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.ldap.user
-          toFieldPath: spec.forProvider.varmap.ldap.user
-          policy:
-            fromFieldPath: Required
+    #           role:
+    #             name: 'test'
+    #   patches:
+    #     - type: FromCompositeFieldPath
+    #       fromFieldPath: status.share.ldap.user
+    #       toFieldPath: spec.forProvider.varmap.ldap.user
+    #       policy:
+    #         fromFieldPath: Required
 
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.varmap.role.name
-          policy:
-            fromFieldPath: Required
+    #     - type: FromCompositeFieldPath
+    #       fromFieldPath: status.share.username
+    #       toFieldPath: spec.forProvider.varmap.role.name
+    #       policy:
+    #         fromFieldPath: Required
 
-        - type: FromCompositeFieldPath
-          fromFieldPath: metadata.uid
-          toFieldPath: "spec.writeConnectionSecretToRef.name"
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: '%s-s3-secret'
+    #     - type: FromCompositeFieldPath
+    #       fromFieldPath: metadata.uid
+    #       toFieldPath: "spec.writeConnectionSecretToRef.name"
+    #       transforms:
+    #         - type: string
+    #           string:
+    #             type: Format
+    #             fmt: '%s-s3-secret'
