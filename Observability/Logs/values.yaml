@@ -232,14 +232,14 @@ loki:
         default_validity: "12h"
     # -- Check https://grafana.com/docs/loki/latest/configuration/#schema_config for more info on how to configure schemas
     schemaConfig:
-      - from: "2024-04-01"
-        store: tsdb
-        object_store: s3
-        schema: v13
-        index:
-          prefix: loki_index_
-          period: 24h
-
+      configs:
+        - from: 2024-04-01
+          store: tsdb
+          object_store: s3
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
     # -- a real Loki install requires a proper schemaConfig defined above this, however for testing or playing around
     # you can enable useTestSchema
     useTestSchema: false
