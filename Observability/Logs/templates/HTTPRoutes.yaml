@@ -1,0 +1,34 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name:  {{ include "loki.fullname" $.Subcharts.loki }}
+
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: core-prod
+      name: main-gw
+
+  hostnames:
+    - logs.mylogin.space
+  rules:
+    {{ range $v, $t := .Values.loki.ingress.paths }}
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ include "loki.fullname" $.Subcharts.loki }}-{{ regexReplaceAll "([[:upper:]])" $v  "-${1}" | lower }}
+          port: {{ $.Values.loki.loki.server.http_listen_port }}
+          weight: 1
+
+      matches:
+        {{ range $path := $t }}
+        - path:
+            type: PathPrefix
+            value: {{ $path }}
+        {{- end -}}
+    {{- end -}}
