@@ -729,7 +729,10 @@ loki:
     extraEnv: []
 
     # -- Environment variables from secrets or configmaps to add to the ingester pods
-    extraEnvFrom: []
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
+
 
     # -- Volume mounts to add to the ingester pods
     extraVolumeMounts: []
@@ -874,6 +877,11 @@ loki:
     replicas: 3
 
     maxUnavailable: 2
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
+
+
 
   # --  Configuration for the querier
   querier:
@@ -881,6 +889,11 @@ loki:
     replicas: 3
 
     maxUnavailable: 2
+
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
+
 
     persistence:
       # -- Enable creating PVCs for the querier cache
@@ -902,12 +915,22 @@ loki:
     replicas: 2
     maxUnavailable: 1
 
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
+
+
   # -- Configuration for the query-scheduler
   queryScheduler:
     # -- Number of replicas for the query-scheduler.
     # It should be lower than `-querier.max-concurrent` to avoid generating back-pressure in queriers;
     # it's also recommended that this value evenly divides the latter
     replicas: 2
+
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
+
 
   # -- Configuration for the index-gateway
   indexGateway:
@@ -917,6 +940,11 @@ loki:
     joinMemberlist: true
 
     maxUnavailable: 1
+
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
+
     
     persistence:
       # -- Enable creating PVCs which is required when using boltdb-shipper
@@ -942,6 +970,9 @@ loki:
   compactor:
     # -- Number of replicas for the compactor
     replicas: 1
+    extraEnvFrom:
+      - secretRef:
+            name: '{{ include "loki.fullname" . }}'
 
   
   # -- Configuration for the bloom-gateway
