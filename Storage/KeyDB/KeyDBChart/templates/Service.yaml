@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: {{ include "keydb.fullname" . }}
   labels:
+    wan-mode: 'public'
     {{ include "keydb.labels" . | nindent 4 }}
   annotations:
     {{ toYaml .Values.service.annotations | nindent 4 }}
