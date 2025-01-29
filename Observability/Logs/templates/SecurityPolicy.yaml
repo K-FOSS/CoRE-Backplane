@@ -9,24 +9,32 @@ spec:
     kind: HTTPRoute
     name: {{ include "loki.fullname" $.Subcharts.loki }}
 
-  jwt:
-    providers:
-      - name: authentik
-        issuer: https://idp.mylogin.space/application/o/loki-test
-        remoteJWKS:
-          uri: https://idp.mylogin.space/application/o/loki-test/jwks/
-        claimToHeaders:
-          - header: x-scope-orgid
-            claim: orgID
+  # jwt:
+  #   providers:
+  #     - name: authentik
+  #       issuer: https://idp.mylogin.space/application/o/loki-test
+  #       remoteJWKS:
+  #         uri: https://idp.mylogin.space/application/o/loki-test/jwks/
+  #       claimToHeaders:
+  #         - header: x-scope-orgid
+  #           claim: orgID
 
-        extractFrom:
-          headers:
-            - name: Authorization
-              valuePrefix: 'Bearer '
-          cookies:
-            - session_access_token
-          params:
-            - token
+  #       extractFrom:
+  #         headers:
+  #           - name: Authorization
+  #             valuePrefix: 'Bearer '
+  #         cookies:
+  #           - session_access_token
+  #         params:
+  #           - token
+
+  extAuth:
+    http:
+      backendRefs:
+        - name: authorino-authorino-authorization
+          namespace: authorino-operator
+          port: 5001
+      headersToBackend: ["x-current-user"]
 
   # extAuth:
   #   type: HTTP
@@ -37,14 +45,14 @@ spec:
   #     headersToBackend:
   #       - x-authentik
 
-  oidc:
-    provider:
-      issuer: https://idp.mylogin.space/application/o/loki-test
-    scopes:
-      - openid
-      - profile
-      - logs
-    clientID: loki-test
-    forwardAccessToken: true
-    clientSecret:
-      name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
+  # oidc:
+  #   provider:
+  #     issuer: https://idp.mylogin.space/application/o/loki-test
+  #   scopes:
+  #     - openid
+  #     - profile
+  #     - logs
+  #   clientID: loki-test
+  #   forwardAccessToken: true
+  #   clientSecret:
+  #     name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
