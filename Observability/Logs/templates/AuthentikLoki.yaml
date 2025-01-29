@@ -52,13 +52,13 @@ spec:
 
       resource "authentik_provider_oauth2" "auth-provider" {
         name          = "Loki Testing"
-        client_id     = "LokiTest"
+        client_id     = "loki-test"
         client_secret = random_password.client-secret.result
         signing_key = data.authentik_certificate_key_pair.cert.id
         allowed_redirect_uris = [
           {
             matching_mode = "strict",
-            url           = "https://vault.int.mylogin.space",
+            url           = "http://logs.mylogin.space/oauth2/callback",
           },
         ]
 
