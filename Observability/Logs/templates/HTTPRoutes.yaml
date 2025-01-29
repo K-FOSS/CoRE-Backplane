@@ -17,6 +17,17 @@ spec:
   hostnames:
     - logs.mylogin.space
   rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ include "loki.fullname" $.Subcharts.loki }}-distributor
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+  
     {{ range $v, $t := .Values.loki.ingress.paths }}
     - backendRefs:
         - group: ''
