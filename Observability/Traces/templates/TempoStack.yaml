@@ -1,17 +1,24 @@
 apiVersion: tempo.grafana.com/v1alpha1
-kind: TempoStack
+kind: TempoMonolithic
 metadata:
   name: core-tempo
 
 spec:
+  jaegerui:
+    enabled: true
+    ingress:
+      enabled: true
+    resources:
+      limits:
+        cpu: '2'
+        memory: 2Gi
+
+  resources:
+    limits:
+      cpu: '2'
+      memory: 2Gi
+
   storage:
-    secret:
-      name: core-tempo-s3
-      type: s3
-
-  storageSize: 1Gi
-
-  template:
-    queryFrontend:
-      jaegerQuery:
-        enabled: true
+    traces:
+      s3:
+        secret: core-tempo-s3
