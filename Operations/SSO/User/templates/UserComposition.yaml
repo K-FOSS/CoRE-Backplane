@@ -706,6 +706,7 @@ spec:
           transforms:
             - type: string
               string:
+                type: Format
                 fmt: '%s-psql-secret'
 
     - name: bucket
@@ -783,6 +784,13 @@ spec:
             bucketName: 'test'
     
     - name: minio-tf
+
+      readinessChecks:
+        - type: MatchCondition
+          matchCondition:
+            type: Ready
+            status: 'True'
+
       base:
         apiVersion: tf.upbound.io/v1beta1
         kind: Workspace
@@ -827,19 +835,23 @@ spec:
               role:
                 name: 'test'
       patches:
-        - fromFieldPath: status.share.ldap.user
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.ldap.user
           toFieldPath: spec.forProvider.varmap.ldap.user
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
           toFieldPath: spec.forProvider.varmap.role.name
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: metadata.uid
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
           toFieldPath: "spec.writeConnectionSecretToRef.name"
           transforms:
             - type: string
               string:
+                type: Format
                 fmt: '%s-s3-secret'
