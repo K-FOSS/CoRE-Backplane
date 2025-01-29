@@ -197,8 +197,8 @@ loki:
       # Loki requires a bucket for chunks and the ruler. GEL requires a third bucket for the admin API.
       # Please provide these values if you are using object storage.
       bucketNames:
-        chunks: 59c3f49a-43d4-4d95-80b1-5155f99f2094
-        ruler: 403e9f61-6d18-45b0-827d-cec519b5c581
+        chunks: ${S3_BUCKET}
+        ruler: loki-rules-tmp
         admin: da6355e0-7148-42bc-8628-18a5eca97e04
       type: s3
       s3:
@@ -890,6 +890,12 @@ loki:
             name: loki-core
             key: S3URI
 
+      - name: S3_BUCKET
+        valueFrom:
+          secretKeyRef:
+            name: loki-core
+            key: username
+
     extraEnvFrom:
       - secretRef:
             name: loki-core-s3
@@ -913,6 +919,12 @@ loki:
           secretKeyRef:
             name: loki-core
             key: S3URI
+
+      - name: S3_BUCKET
+        valueFrom:
+          secretKeyRef:
+            name: loki-core
+            key: username
 
     extraEnvFrom:
       - secretRef:
@@ -950,6 +962,12 @@ loki:
             name: loki-core
             key: S3URI
 
+      - name: S3_BUCKET
+        valueFrom:
+          secretKeyRef:
+            name: loki-core
+            key: username
+
     extraEnvFrom:
       - secretRef:
             name: loki-core-s3
@@ -973,6 +991,12 @@ loki:
             name: loki-core
             key: S3URI
 
+      - name: S3_BUCKET
+        valueFrom:
+          secretKeyRef:
+            name: loki-core
+            key: username
+
     extraEnvFrom:
       - secretRef:
             name: loki-core-s3
@@ -981,7 +1005,7 @@ loki:
   # -- Configuration for the index-gateway
   indexGateway:
     # -- Number of replicas for the index-gateway
-    replicas: 2
+    replicas: 1
     # -- Whether the index gateway should join the memberlist hashring
     joinMemberlist: true
 
