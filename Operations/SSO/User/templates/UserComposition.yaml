@@ -334,34 +334,44 @@ spec:
               groups:
                 - LDAPService
       patches:
-        - fromFieldPath: spec.name
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.name
           toFieldPath: spec.forProvider.varmap.name
 
-        - fromFieldPath: spec.username
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.username
           toFieldPath: spec.forProvider.varmap.username
 
-        - fromFieldPath: spec.database.name
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.database.name
           toFieldPath: spec.forProvider.varmap.databaseName
 
-        - fromFieldPath: spec.psql.uri
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.psql.uri
           toFieldPath: spec.forProvider.varmap.psql.uri
 
-        - fromFieldPath: spec.mysql.uri
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.mysql.uri
           toFieldPath: spec.forProvider.varmap.mysql.uri
 
-        - fromFieldPath: spec.bucket.name
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.bucket.name
           toFieldPath: spec.forProvider.varmap.bucket
 
-        - fromFieldPath: spec.serviceAccount
-          toFieldPath: spec.forProvider.varmap.serviceAccount
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.serviceAccount
+          toFieldPath: spec.forProvider.varmap.serviceAccounth
 
-        - fromFieldPath: spec.buckets
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.buckets
           toFieldPath: spec.forProvider.varmap.buckets
 
-        - fromFieldPath: spec.groups
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.groups
           toFieldPath: spec.forProvider.varmap.groups
 
-        - fromFieldPath: metadata.uid
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
           toFieldPath: "spec.writeConnectionSecretToRef.name"
           transforms:
             - type: string
@@ -497,12 +507,14 @@ spec:
 
     - name: role
       patches:
-        - fromFieldPath: status.share.userSecret
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.userSecret
           toFieldPath: spec.forProvider.passwordSecretRef.name
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
           toFieldPath: metadata.name
           transforms:
             - string:
@@ -512,7 +524,8 @@ spec:
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
           toFieldPath: metadata.annotations[crossplane.io/external-name]
           policy:
             fromFieldPath: Required
@@ -534,7 +547,8 @@ spec:
 
     - name: database
       patches:
-        - fromFieldPath: status.share.database
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.database
           toFieldPath: metadata.name
           transforms:
             - string:
@@ -544,12 +558,14 @@ spec:
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: status.share.database
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.database
           toFieldPath: metadata.annotations[crossplane.io/external-name]
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
           toFieldPath: spec.forProvider.owner
           policy:
             fromFieldPath: Required
@@ -642,18 +658,21 @@ spec:
               role:
                 name: ''
       patches:
-        - fromFieldPath: status.share.database
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.database
           toFieldPath: spec.forProvider.varmap.database.name
           policy:
             fromFieldPath: Required
 
-        - fromFieldPath: status.share.username
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
           toFieldPath: spec.forProvider.varmap.role.name
           policy:
             fromFieldPath: Required
 
 
-        - fromFieldPath: metadata.uid
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
           toFieldPath: "spec.writeConnectionSecretToRef.name"
           transforms:
             - type: string
@@ -662,7 +681,8 @@ spec:
 
     - name: bucket
       patches:
-        - fromFieldPath: status.share.bucket
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.bucket
           toFieldPath: spec.forProvider.bucketName
           policy:
             fromFieldPath: Required
@@ -679,42 +699,45 @@ spec:
             bucketName: 'test'
 
 
-    # - name: bucket-policy
-    #   patches:
-    #     - fromFieldPath: status.share.username
-    #       toFieldPath: metadata.name
-    #       transforms:
-    #         - string:
-    #             convert: ToLower
-    #             type: Convert
-    #           type: string
-    #       policy:
-    #         fromFieldPath: Required
+    - name: bucket-policy
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
+          toFieldPath: metadata.name
+          transforms:
+            - string:
+                convert: ToLower
+                type: Convert
+              type: string
+          policy:
+            fromFieldPath: Required
 
-    #     - fromFieldPath: status.share.username
-    #       toFieldPath: metadata.annotations[crossplane.io/external-name]
-    #       policy:
-    #         fromFieldPath: Required
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
+          toFieldPath: metadata.annotations[crossplane.io/external-name]
+          policy:
+            fromFieldPath: Required
 
-    #     - fromFieldPath: status.share.bucketPolicy
-    #       toFieldPath: spec.forProvider.rawPolicy
-    #       transforms:
-    #         - type: string
-    #           string:
-    #             fmt: |
-    #               %s
-    #       policy:
-    #         fromFieldPath: Required
-    #   base:
-    #     apiVersion: minio.crossplane.io/v1
-    #     kind: Policy
-    #     spec:
-    #       providerConfigRef:
-    #         name: s3-prod
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.bucketPolicy
+          toFieldPath: spec.forProvider.rawPolicy
+          transforms:
+            - type: string
+              string:
+                fmt: |
+                  %s
+          policy:
+            fromFieldPath: Required
+      base:
+        apiVersion: minio.crossplane.io/v1
+        kind: Policy
+        spec:
+          providerConfigRef:
+            name: s3-prod
 
-    #       forProvider:
-    #         region: us-east-1
-    #         bucketName: 'test'
+          forProvider:
+            region: us-east-1
+            bucketName: 'test'
 
     # - name: minio-tf
     #   base:
