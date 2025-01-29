@@ -193,14 +193,8 @@ controllers:
         workingDir:
 
         env:
-          - name: PDNS_HOST
-            value: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice.core-prod.svc.cluster.local'
-
-          - name: PDNS_PORT
-            value: '8081'
-
-          - name: PDNS_PROTO
-            value: 'http'
+          - name: PDNS_API_URL
+            value: 'http://{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice.core-prod.svc.cluster.local:8081'
 
           - name: GUNICORN_LOGLEVEL
             value: 'DEBUG'
