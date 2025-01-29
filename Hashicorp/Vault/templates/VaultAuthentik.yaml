@@ -15,6 +15,10 @@ spec:
         slug = "default-provider-authorization-explicit-consent"
       }
 
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
       data "authentik_property_mapping_provider_scope" "scopes" {
         managed_list = [
           "goauthentik.io/providers/oauth2/scope-email",
@@ -28,7 +32,7 @@ spec:
       }
 
       data "authentik_certificate_key_pair" "cert" {
-        name = "MyLogin.Space Wildcard"
+        name = "tls"
       }
 
       resource "random_password" "client-secret" {
@@ -61,6 +65,7 @@ spec:
 
         property_mappings  = data.authentik_property_mapping_provider_scope.scopes.ids
         authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
       }
 
       resource "authentik_application" "vault-application" {
