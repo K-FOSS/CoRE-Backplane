@@ -21,12 +21,12 @@ spec:
         name: testing-netbox
         key: Password
   configuration: |
-
     locals {
       # Common tags to be assigned to all resources
       credentials = {
+        description = "tf-deploy.resolvemy.host"
         username = file("${path.module}/username")
-        password   = file("${path.module}/password")
+        password = file("${path.module}/password")
       }
     }
 
@@ -42,6 +42,14 @@ spec:
       }
 
       request_body = jsonencode(local.credentials)
+
+      lifecycle {
+        ignore_changes = [
+          # Ignore changes to tags, e.g. because a management agent
+          # updates these based on some ruleset managed elsewhere.
+          all,
+        ]
+      }
     }
 
     provider netbox {
@@ -68,7 +76,7 @@ spec:
 
         http = {
           source = "hashicorp/http"
-          version = "3.4.1"
+          version = "3.4.5"
         }
       }
     }
