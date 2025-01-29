@@ -877,9 +877,17 @@ loki:
     replicas: 3
 
     maxUnavailable: 2
+
+    extraEnv:
+      - name: S3_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: S3URI
+            key: loki-core
+
     extraEnvFrom:
       - secretRef:
-            name: loki-core
+            name: loki-core-s3
 
 
 
@@ -890,9 +898,16 @@ loki:
 
     maxUnavailable: 2
 
+    extraEnv:
+      - name: S3_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: S3URI
+            key: loki-core
+
     extraEnvFrom:
       - secretRef:
-            name: loki-core
+            name: loki-core-s3
 
 
     persistence:
@@ -915,9 +930,16 @@ loki:
     replicas: 2
     maxUnavailable: 1
 
+    extraEnv:
+      - name: S3_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: S3URI
+            key: loki-core
+
     extraEnvFrom:
       - secretRef:
-            name: loki-core
+            name: loki-core-s3
 
 
   # -- Configuration for the query-scheduler
@@ -927,9 +949,16 @@ loki:
     # it's also recommended that this value evenly divides the latter
     replicas: 2
 
+    extraEnv:
+      - name: S3_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: S3URI
+            key: loki-core
+
     extraEnvFrom:
       - secretRef:
-            name: loki-core
+            name: loki-core-s3
 
 
   # -- Configuration for the index-gateway
@@ -941,9 +970,16 @@ loki:
 
     maxUnavailable: 1
 
+    extraEnv:
+      - name: S3_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: S3URI
+            key: loki-core
+
     extraEnvFrom:
       - secretRef:
-            name: loki-core
+          name: loki-core-s3
 
     
     persistence:
@@ -970,9 +1006,18 @@ loki:
   compactor:
     # -- Number of replicas for the compactor
     replicas: 1
+
+
+    extraEnv:
+      - name: S3_ENDPOINT
+        valueFrom:
+          secretKeyRef:
+            name: S3URI
+            key: loki-core
+
     extraEnvFrom:
       - secretRef:
-            name: loki-core
+            name: loki-core-s3
 
   
   # -- Configuration for the bloom-gateway
