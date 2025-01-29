@@ -1,10 +1,29 @@
 apiVersion: authorino.kuadrant.io/v1beta3
 kind: AuthConfig
 metadata:
-  name: logs-lab
+  name: talker-api-protection
 spec:
   hosts:
     - logs.mylogin.space
+
   authentication:
-    "cluster-users":
-      kubernetesTokenReview: {}
+    loki-test:
+      jwt:
+        issuerUrl: https://idp.mylogin.space/application/o/loki-test
+
+  patterns:
+    write-role:
+      - selector: auth.identity.groups
+        operator: incl
+        value: 'Network Admins'
+
+  authorization:
+    # RBAC rule: 'member' role required for requests to /resources[/*]
+    "rbac-resources-api":
+      when:
+        - selector: context.request.http.path
+          operator: matches
+          value: /loki/api/v1/push
+      patternMatching:
+        patterns:
+          - patternRef: member-role
