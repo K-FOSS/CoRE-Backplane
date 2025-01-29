@@ -72,35 +72,42 @@ loki:
         port: http-metrics
       initialDelaySeconds: 30
       timeoutSeconds: 1
+
     image:
       # -- The Docker registry
       registry: docker.io
+
       # -- Docker image repository
       repository: grafana/loki
-      # -- Overrides the image tag whose default is the chart's appVersion
-      tag: 3.3.2
-      # -- Overrides the image tag with an image digest
-      digest: null
+
       # -- Docker image pull policy
       pullPolicy: IfNotPresent
+
     # -- Common annotations for all deployments/StatefulSets
     annotations: {}
+
     # -- Common annotations for all pods
     podAnnotations: {}
+
     # -- Common labels for all pods
     podLabels: {}
+
     # -- Common annotations for all services
     serviceAnnotations: {}
+
     # -- Common labels for all services
     serviceLabels: {}
+
     # -- The number of old ReplicaSets to retain to allow rollback
     revisionHistoryLimit: 10
+
     # -- The SecurityContext for Loki pods
     podSecurityContext:
       fsGroup: 10001
       runAsGroup: 10001
       runAsNonRoot: true
       runAsUser: 10001
+
     # -- The SecurityContext for Loki containers
     containerSecurityContext:
       readOnlyRootFilesystem: true
@@ -108,6 +115,7 @@ loki:
         drop:
           - ALL
       allowPrivilegeEscalation: false
+
     # -- Should enableServiceLinks be enabled. Default to enable
     enableServiceLinks: true
     ######################################################################################################################
@@ -188,19 +196,19 @@ loki:
     storage:
       # Loki requires a bucket for chunks and the ruler. GEL requires a third bucket for the admin API.
       # Please provide these values if you are using object storage.
-      # bucketNames:
-      #   chunks: FIXME
-      #   ruler: FIXME
-      #   admin: FIXME
+      bucketNames:
+        chunks: 59c3f49a-43d4-4d95-80b1-5155f99f2094
+        ruler: 403e9f61-6d18-45b0-827d-cec519b5c581
+        admin: da6355e0-7148-42bc-8628-18a5eca97e04
       type: s3
       s3:
-        s3: null
-        endpoint: null
-        region: null
-        secretAccessKey: null
-        accessKeyId: null
+        s3: ${S3_URI}
+        endpoint: ${S3_ENDPOINT}
+        region: 'us-east-1'
+        secretAccessKey: ${S3_SECRET_ACCESS_KEY}
+        accessKeyId: ${S3_ACCESS_KEY}
         signatureVersion: null
-        s3ForcePathStyle: false
+        s3ForcePathStyle: true
         insecure: false
         http_config: {}
         # -- Check https://grafana.com/docs/loki/latest/configure/#s3_storage_config for more info on how to provide a backoff_config
