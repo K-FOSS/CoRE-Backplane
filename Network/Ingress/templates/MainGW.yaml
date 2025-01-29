@@ -6,18 +6,16 @@ metadata:
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
-    cluster.open-cluster-management.io/placement: 'main-gw'
 
 spec:
   gatewayClassName: eg
 
   infrastructure:
     annotations:
-      metallb.universe.tf/address-pool: pub-pool
-      metallb.universe.tf/allow-shared-ip: main-gw
       purelb.io/allow-shared-ip: main-gw.resolvemy.host
       purelb.io/service-group: main-public
       purelb.io/allow-local: 'true'
+      purelb.io/addresses: '66.165.222.102'
 
   listeners:
     - name: https
