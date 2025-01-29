@@ -15,11 +15,11 @@ spec:
         slug = "default-provider-authorization-explicit-consent"
       }
 
-      data "authentik_scope_mapping" "scopes" {
+      data "authentik_property_mapping_provider_scope" "scopes" {
         managed_list = [
           "goauthentik.io/providers/oauth2/scope-email",
           "goauthentik.io/providers/oauth2/scope-openid",
-          "goauthentik.io/providers/oauth2/scope-profile",
+          "goauthentik.io/providers/oauth2/scope-profile"
         ]
       }
 
@@ -59,7 +59,7 @@ spec:
           }
         ]
 
-        property_mappings  = data.authentik_scope_mapping.scopes.ids
+        property_mappings  = data.authentik_property_mapping_provider_scope.scopes.ids
         authorization_flow = data.authentik_flow.default-authorization-flow.id
       }
 
