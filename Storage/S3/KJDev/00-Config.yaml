@@ -43,9 +43,11 @@ spec:
 
           export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .Username }},ou=users,dc=ldap,dc=mylogin,dc=space"
 
+          export MINIO_IDENTITY_LDAP_USER_DN_ATTRIBUTES="cn,uid,mail,lastname,name"
+
           export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(&(objectclass=user)(cn=%s))"
 
-          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=group)(member=cn=%s,ou=users,dc=ldap,dc=mylogin,dc=space))"
+          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=group)(member=%d))"
 
           export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,dc=ldap,dc=mylogin,dc=space"
 
