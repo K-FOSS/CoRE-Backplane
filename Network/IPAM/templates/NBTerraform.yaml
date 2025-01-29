@@ -20,6 +20,13 @@ spec:
         namespace: {{ .Release.Namespace }}
         name: testing-netbox
         key: Password
+
+    - filename: token
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: netbox-secret
+        key: api_token
   configuration: |
     locals {
       # Common tags to be assigned to all resources
@@ -57,7 +64,7 @@ spec:
       server_url = "http://netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80"
 
       # Environment variable NETBOX_TOKEN
-      api_token = jsondecode(data.http.example.response_body).key
+      api_token = file("${path.module}/token")
     }
 
     // Modules _must_ use remote state. The provider does not persist state.
