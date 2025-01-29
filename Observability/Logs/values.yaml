@@ -782,12 +782,7 @@ loki:
     # -- Affinity for ingester pods. Ignored if zoneAwareReplication is enabled.
     # @default -- Hard node anti-affinity
     affinity:
-      podAntiAffinity:
-        requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchLabels:
-                app.kubernetes.io/component: ingester
-            topologyKey: kubernetes.io/hostname
+      podAntiAffinity: {}
     # -- Pod Disruption Budget maxUnavailable
     maxUnavailable: 1
     # -- Node selector for ingester pods
@@ -911,6 +906,8 @@ loki:
       - secretRef:
             name: loki-core-s3
 
+    affinity:
+      podAntiAffinity: {}
 
 
   # --  Configuration for the querier
