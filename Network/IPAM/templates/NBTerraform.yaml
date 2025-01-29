@@ -37,28 +37,6 @@ spec:
       }
     }
 
-    data "http" "example" {
-      url = "http://netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80/api/users/tokens/provision/"
-
-      method = "POST"
-
-      # Optional request headers
-      request_headers = {
-        Accept = "application/json"
-        Content-Type = "application/json"
-      }
-
-      request_body = jsonencode(local.credentials)
-
-      lifecycle {
-        ignore_changes = [
-          # Ignore changes to tags, e.g. because a management agent
-          # updates these based on some ruleset managed elsewhere.
-          all,
-        ]
-      }
-    }
-
     provider netbox {
       # Environment variable NETBOX_URL
       server_url = "http://netbox-ipam.{{ .Release.Namespace }}.svc.cluster.local:80"
