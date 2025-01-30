@@ -45,92 +45,88 @@ alloy:
           name = "core-backplane-observeability-collectors-oauth-creds"
         }
 
-        discovery.kubernetes "pods" {
+        // discovery.kubernetes allows you to find scrape targets from Kubernetes resources.
+        // It watches cluster state and ensures targets are continually synced with what is currently running in your cluster.
+        discovery.kubernetes "pod" {
           role = "pod"
-          // limit to pods on this node to reduce the amount you need to filter
-          selectors {
-            role  = "pod"
-            field = "spec.nodeName=" + sys.env("<HOSTNAME>")
-          }
         }
 
+        // discovery.relabel rewrites the label set of the input targets by applying one or more relabeling rules.
+        // If no rules are defined, then the input targets are exported as-is.
         discovery.relabel "pod_logs" {
-          targets = discovery.kubernetes.pods.targets
+          targets = discovery.kubernetes.pod.targets
+
+          // Label creation - "namespace" field from "__meta_kubernetes_namespace"
           rule {
             source_labels = ["__meta_kubernetes_namespace"]
-            target_label  = "namespace"
+            action = "replace"
+            target_label = "namespace"
           }
+
+          // Label creation - "pod" field from "__meta_kubernetes_pod_name"
           rule {
             source_labels = ["__meta_kubernetes_pod_name"]
-            target_label  = "pod"
+            action = "replace"
+            target_label = "pod"
           }
+
+          // Label creation - "container" field from "__meta_kubernetes_pod_container_name"
           rule {
             source_labels = ["__meta_kubernetes_pod_container_name"]
-            target_label  = "container"
+            action = "replace"
+            target_label = "container"
           }
+
+          // Label creation -  "app" field from "__meta_kubernetes_pod_label_app_kubernetes_io_name"
           rule {
-            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name"]
-            separator     = "/"
-            target_label  = "job"
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            action = "replace"
+            target_label = "app"
           }
+
+          // Label creation -  "job" field from "__meta_kubernetes_namespace" and "__meta_kubernetes_pod_container_name"
+          // Concatenate values __meta_kubernetes_namespace/__meta_kubernetes_pod_container_name
+          rule {
+            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
+            action = "replace"
+            target_label = "job"
+            separator = "/"
+            replacement = "$1"
+          }
+
+          // Label creation - "container" field from "__meta_kubernetes_pod_uid" and "__meta_kubernetes_pod_container_name"
+          // Concatenate values __meta_kubernetes_pod_uid/__meta_kubernetes_pod_container_name.log
           rule {
             source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
-            separator     = "/"
-            action        = "replace"
-            replacement   = "/var/log/pods/*$1/*.log"
-            target_label  = "__path__"
-          }
-          rule {
             action = "replace"
+            target_label = "__path__"
+            separator = "/"
+            replacement = "/var/log/pods/*$1/*.log"
+          }
+
+          // Label creation -  "container_runtime" field from "__meta_kubernetes_pod_container_id"
+          rule {
             source_labels = ["__meta_kubernetes_pod_container_id"]
-            regex = "^(\\w+):\\/\\/.+$"
+            action = "replace"
+            target_label = "container_runtime"
+            regex = "^(\\S+):\\/\\/.+$"
             replacement = "$1"
-            target_label = "tmp_container_runtime"
           }
         }
 
-        local.file_match "pod_logs" {
-          path_targets = discovery.relabel.pod_logs.output
-        }
-
-        loki.source.file "pod_logs" {
-          targets    = local.file_match.pod_logs.targets
+        // loki.source.kubernetes tails logs from Kubernetes containers using the Kubernetes API.
+        loki.source.kubernetes "pod_logs" {
+          targets    = discovery.relabel.pod_logs.output
           forward_to = [loki.process.pod_logs.receiver]
         }
 
-        // basic processing to parse the container format. You can add additional processing stages
-        // to match your application logs.
+        // loki.process receives log entries from other Loki components, applies one or more processing stages,
+        // and forwards the results to the list of receivers in the component's arguments.
         loki.process "pod_logs" {
-          stage.match {
-            selector = "{tmp_container_runtime=\"containerd\"}"
-            // the cri processing stage extracts the following k/v pairs: log, stream, time, flags
-            stage.cri {}
-            // Set the extract flags and stream values as labels
-            stage.labels {
+          stage.static_labels {
               values = {
-                flags   = "",
-                stream  = "",
+                cluster = "k3s",
               }
-            }
-          }
-
-          // if the label tmp_container_runtime from above is docker parse using docker
-          stage.match {
-            selector = "{tmp_container_runtime=\"docker\"}"
-            // the docker processing stage extracts the following k/v pairs: log, stream, time
-            stage.docker {}
-
-            // Set the extract stream value as a label
-            stage.labels {
-              values = {
-                stream  = "",
-              }
-            }
-          }
-
-          // drop the temporary container runtime label as it is no longer needed
-          stage.label_drop {
-            values = ["tmp_container_runtime"]
           }
 
           forward_to = [loki.write.loki.receiver]
