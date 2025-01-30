@@ -514,6 +514,16 @@ grafana:
         name: 'core-grafana-creds'
         key: psqlURI
 
+    OIDC_CLIENT_ID:
+      secretKeyRef:
+        name: 'grafana-core-authentik'
+        key: client_id
+
+    OIDC_CLIENT_SECRET:
+      secretKeyRef:
+        name: 'grafana-core-authentik'
+        key: client-secret
+
   ## The name of a secret in the same kubernetes namespace which contain values to be added to the environment
   ## This can be useful for auth tokens, etc. Value is templated.
   envFromSecret: ""
@@ -864,6 +874,18 @@ grafana:
       header_property: username # Which user value is included in this header
       headers: Name:X-authentik-name # a map of additional user headers to pull from the request. Again, must match proxy_set_header above.
       enable_login_token: false # This runs the authentication check for all routes, instead of just the login route.
+
+    auth.generic_oauth:
+      enabled: true
+      name: authentik
+      client_id: $__env{OIDC_CLIENT_ID}
+      client_secret: $__env{OIDC_CLIENT_ID}
+      scopes: 'openid profile email logs'
+      auth_url: 'https://idp.mylogin.space/application/o/authorize/'
+      token_url: 'https://idp.mylogin.space/application/o/token/'
+      api_url: 'https://idp.mylogin.space/application/o/userinfo/'
+      # Optionally map user groups to Grafana roles
+      role_attribute_path: contains(groups, 'Network Admins') && 'Admin' || contains(groups, 'Grafana Editors') && 'Editor' || 'Viewer'
 
     users:
       allow_sign_up: false # Turn off the ability to sign up once logged in.
