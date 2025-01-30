@@ -17,29 +17,19 @@ spec:
   hostnames:
     - metrics.mylogin.space
   rules:
+    {{ $chart := index $.Subcharts "mimir-distributed" }}
+    {{ $values := index .Values "mimir-distributed" }}
+    {{ range $v, $t := $values.ingress.paths }}
     - backendRefs:
         - group: ''
           kind: Service
-          name: {{ include "mimir.fullname" $.Subcharts.mimir-distributed }}-distributor
-          port: 80
+          name: {{ include "mimir.fullname" $chart }}-{{ regexReplaceAll "([[:upper:]])" $v  "-${1}" | lower }}
+          port: {{ include "mimir.serverHttpListenPort" $chart }}
           weight: 1
       matches:
+        {{- range $path := $t }}
         - path:
             type: PathPrefix
-            value: /
-
-    {{ range $v, $t := .Values.mimir-distributed.ingress.paths }}
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ include "mimir.fullname" $.Subcharts.mimir-distributed }}-{{ regexReplaceAll "([[:upper:]])" $v  "-${1}" | lower }}
-          port: 8080
-          weight: 1
-
-      matches:
-        {{ range $path := $t }}
-        - path:
-            type: PathPrefix
-            value: {{ $path }}
-        {{- end -}}
+            value: {{ $path.path }}
+        {{ end }}
     {{- end -}}
