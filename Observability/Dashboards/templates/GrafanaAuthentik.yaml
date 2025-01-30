@@ -1,0 +1,84 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: grafana-core-authentik
+
+spec:
+  providerConfigRef:
+    name: authentik
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: grafana-core-authentik
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_property_mapping_provider_scope" "logscope" {
+        name = "Logs"
+      }      
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile"
+        ]
+      }
+
+      data "authentik_user" "akadmin" {
+        username = "kjones"
+      }
+
+      data "authentik_certificate_key_pair" "cert" {
+        name = "tls"
+      }
+
+      resource "random_password" "client-secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
+      resource "authentik_provider_oauth2" "auth-provider" {
+        name          = "Grafana"
+        client_id     = "grafana-test"
+        client_secret = random_password.client-secret.result
+        signing_key = data.authentik_certificate_key_pair.cert.id
+        allowed_redirect_uris = [
+          {
+            matching_mode = "regex",
+            url           = "https://grafana.int.mylogin.space/.*",
+          },
+        ]
+
+        property_mappings  = concat([data.authentik_property_mapping_provider_scope.logscope.id], tolist(data.authentik_property_mapping_provider_scope.scopes.ids))
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+      }
+
+      resource "authentik_application" "application" {
+        name              = "grafana-test"
+        slug              = "grafana-test"
+        protocol_provider = authentik_provider_oauth2.auth-provider.id
+      }
+
+      output "client_id" {
+        value     = "grafana-test"
+        sensitive = true
+      }
+
+      output "client-secret" {
+        value     = random_password.client-secret.result
+        sensitive = true
+      }
