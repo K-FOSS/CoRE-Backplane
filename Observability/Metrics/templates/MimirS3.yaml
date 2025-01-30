@@ -1,0 +1,24 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: core-mimir-s3
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    creationPolicy: Owner
+    name: core-mimir-s3-creds
+
+  data:
+    # Root  
+    - secretKey: AWS_ACCESS_KEY_ID
+      remoteRef:
+        key: Mimir/S3
+        property: AccessKey
+
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      remoteRef:
+        key: Mimir/S3
+        property: SecretKey

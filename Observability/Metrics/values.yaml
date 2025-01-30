@@ -56,7 +56,7 @@ mimir-distributed:
       - name: S3_BUCKET
         valueFrom:
           secretKeyRef:
-            name: loki-core
+            name: mimir-s3
             key: username
 
     # -- Common source of environment injections to add to all pods directly managed by this chart.
@@ -67,7 +67,7 @@ mimir-distributed:
     #       name: mysecret
     extraEnvFrom:
       - secretRef:
-          name: mimir-s3
+          name: core-mimir-s3-creds
 
 
     # -- Common volumes to add to all pods directly managed by this chart.
@@ -149,17 +149,18 @@ mimir-distributed:
           backend: s3
           s3:
             endpoint: s3.mylogin.space
-            region: us-east
+            region: us-east-1
             secret_access_key: "${AWS_SECRET_ACCESS_KEY}" # This is a secret injected via an environment variable
             access_key_id: "${AWS_ACCESS_KEY_ID}" # This is a secret injected via an environment variable
 
       blocks_storage:
         s3:
-          bucket_name: mimir-blocks
+          bucket_name: ${S3_BUCKET}
 
       alertmanager_storage:
         s3:
           bucket_name: mimir-alertmanager
+      
       ruler_storage:
         s3:
           bucket_name: mimir-ruler
