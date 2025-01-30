@@ -32,11 +32,10 @@ alloy:
       create: true
       # -- Content to assign to the new ConfigMap.  This is passed into `tpl` allowing for templating from values.
       content: |
-        {{ toJson $ }}
         // read the credentials secret for remote_write authorization
         remote.kubernetes.secret "credentials" {
           namespace = "core-prod"
-          name = "{{ $.Chart.Name }}-oauth-creds"
+          name = "{{ $.Release.Name }}-oauth-creds"
         }
 
         discovery.kubernetes "pods" {
