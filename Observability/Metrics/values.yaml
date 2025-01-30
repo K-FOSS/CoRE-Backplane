@@ -2633,34 +2633,7 @@ mimir-distributed:
       allowPrivilegeEscalation: false
 
   minio:
-    enabled: true
-    mode: standalone
-    rootUser: grafana-mimir
-    buckets:
-      - name: mimir-tsdb
-        policy: none
-        purge: false
-      - name: mimir-ruler
-        policy: none
-        purge: false
-      - name: enterprise-metrics-tsdb
-        policy: none
-        purge: false
-      - name: enterprise-metrics-admin
-        policy: none
-        purge: false
-      - name: enterprise-metrics-ruler
-        policy: none
-        purge: false
-    persistence:
-      size: 5Gi
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-    rootPassword: supersecret
-    # Changed the mc config path to '/tmp' from '/etc' as '/etc' is only writable by root and OpenShift will not permit this.
-    configPathmc: "/tmp/minio/mc/"
+    enabled: false
 
   # -- DEPRECATED: use the 'gateway' section instead. For a migration guide refer to
   # https://grafana.com/docs/helm-charts/mimir-distributed/latest/migration-guides/migrate-to-unified-proxy-deployment/
@@ -2669,7 +2642,7 @@ mimir-distributed:
   # Can only be enabled when 'enterprise.enabled' is false.
   nginx:
     # -- Specifies whether nginx should be enabled
-    enabled: true
+    enabled: false
     # -- Number of replicas for nginx
     replicas: 1
     # -- Enable logging of 2xx and 3xx HTTP requests
