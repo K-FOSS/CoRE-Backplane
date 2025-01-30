@@ -9,6 +9,36 @@ spec:
       kind: HTTPRoute
       name: grafana-core
 
+  jwt:
+    providers:
+      - name: authentik
+        issuer: https://idp.mylogin.space/application/o/grafana-test/
+        remoteJWKS:
+          uri: https://idp.mylogin.space/application/o/grafana-test//jwks/
+        claimToHeaders:
+          - header: x-username
+            claim: preferred_username
+
+          - header: x-name
+            claim: name
+
+          - header: x-lastname
+            claim: last_name
+
+          - header: x-email
+            claim: email
+
+          - header: x-groups
+            claim: groups
+        extractFrom:
+          headers:
+            - name: Authorization
+              valuePrefix: 'Bearer '
+          cookies:
+            - session_access_token
+          params:
+            - token
+
   oidc:
     provider:
       issuer: https://idp.mylogin.space/application/o/grafana-test/

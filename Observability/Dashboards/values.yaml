@@ -870,14 +870,14 @@ grafana:
       signout_redirect_url: 'https://idp.mylogin.space/flows/-/default/invalidation/' # the oauth2-proxy logout URL
 
     auth.proxy:
-      enabled: false # enable receiving login info via headers
-      header_name: X-authentik-username # The header name for the email of the user, must match the proxy_set_header in the ingress snippet
+      enabled: true # enable receiving login info via headers
+      header_name: X-username # The header name for the email of the user, must match the proxy_set_header in the ingress snippet
       header_property: username # Which user value is included in this header
-      headers: Name:X-authentik-name # a map of additional user headers to pull from the request. Again, must match proxy_set_header above.
+      headers: Name:X-name # a map of additional user headers to pull from the request. Again, must match proxy_set_header above.
       enable_login_token: false # This runs the authentication check for all routes, instead of just the login route.
 
     auth.generic_oauth:
-      enabled: true
+      enabled: false
       name: authentik
       client_id: $__env{OIDC_CLIENT_ID}
       client_secret: $__env{OIDC_CLIENT_SECRET}
