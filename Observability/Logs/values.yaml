@@ -972,6 +972,8 @@ loki:
       - secretRef:
           name: loki-core-s3
 
+    affinity:
+      podAntiAffinity: null
 
   # -- Configuration for the query-scheduler
   queryScheduler:
@@ -979,6 +981,9 @@ loki:
     # It should be lower than `-querier.max-concurrent` to avoid generating back-pressure in queriers;
     # it's also recommended that this value evenly divides the latter
     replicas: 1
+
+    affinity:
+      podAntiAffinity: null
 
     # -- Additional CLI args for the ingester
     extraArgs:
