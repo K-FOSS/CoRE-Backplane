@@ -133,8 +133,8 @@ alloy:
           endpoint {
             url = "https://logs.mylogin.space/loki/api/v1/push"
             oauth2 {
-              client_id = remote.kubernetes.secret.credentials.data["ClientID"] 
-              client_secret	 = remote.kubernetes.secret.credentials.data["ClientSecret"]
+              client_id = nonsensitive(remote.kubernetes.secret.credentials.data["ClientID"]) 
+              client_secret = remote.kubernetes.secret.credentials.data["ClientSecret"]
 
               scopes = "openid profile email logs"
             }
