@@ -743,8 +743,7 @@ loki:
     # -- Environment variables from secrets or configmaps to add to the ingester pods
     extraEnvFrom:
       - secretRef:
-            name: loki-core-s3
-
+          name: loki-core-s3
 
     # -- Volume mounts to add to the ingester pods
     extraVolumeMounts: []
@@ -879,6 +878,7 @@ loki:
     # optionally allow adding 'loki-' prefix to ingester name label
     addIngesterNamePrefix: false
 
+
   # --  Configuration for the distributor
   distributor:
     # -- Number of replicas for the distributor
@@ -905,7 +905,7 @@ loki:
 
     extraEnvFrom:
       - secretRef:
-            name: loki-core-s3
+          name: loki-core-s3
 
     affinity:
       podAntiAffinity: null
@@ -937,23 +937,14 @@ loki:
 
     extraEnvFrom:
       - secretRef:
-            name: loki-core-s3
+          name: loki-core-s3
 
 
     persistence:
       # -- Enable creating PVCs for the querier cache
       enabled: false
-      # -- Size of persistent disk
-      size: 10Gi
-      # -- Storage class to be used.
-      # If defined, storageClassName: <storageClass>.
-      # If set to "-", storageClassName: "", which disables dynamic provisioning.
-      # If empty or set to null, no storageClassName spec is
-      # set, choosing the default provisioner (gp2 on AWS, standard on GKE, AWS, and OpenStack).
-      storageClass: null
-      # -- Annotations for querier PVCs
-      annotations: {}
-  
+
+
   # -- Configuration for the query-frontend
   queryFrontend:
     # -- Number of replicas for the query-frontend
@@ -979,7 +970,7 @@ loki:
 
     extraEnvFrom:
       - secretRef:
-            name: loki-core-s3
+          name: loki-core-s3
 
 
   # -- Configuration for the query-scheduler
@@ -1008,7 +999,7 @@ loki:
 
     extraEnvFrom:
       - secretRef:
-            name: loki-core-s3
+          name: loki-core-s3
 
 
   # -- Configuration for the index-gateway
@@ -1086,7 +1077,7 @@ loki:
 
     extraEnvFrom:
       - secretRef:
-            name: loki-core-s3
+          name: loki-core-s3
 
   
   # -- Configuration for the bloom-gateway
