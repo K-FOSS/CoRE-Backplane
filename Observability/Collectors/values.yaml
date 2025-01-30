@@ -32,6 +32,11 @@ alloy:
       create: true
       # -- Content to assign to the new ConfigMap.  This is passed into `tpl` allowing for templating from values.
       content: |
+        logging {
+          level = "debug"
+          format = "json"
+        }
+
         // read the credentials secret for remote_write authorization
         remote.kubernetes.secret "credentials" {
           namespace = "core-prod"
