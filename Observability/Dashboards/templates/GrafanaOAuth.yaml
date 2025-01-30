@@ -9,29 +9,14 @@ spec:
       kind: HTTPRoute
       name: grafana-core
 
-  extAuth:
-    failOpen: true
-
-    headersToExtAuth:
-      - cookie
-
-    http:
-      backendRefs:
-        - group: ''
-          kind: Service
-          name: dc1-k3s-node1-aaa-authentik-server
-          port: 80
-
-      path: /outpost.goauthentik.io/auth/envoy
-      headersToBackend:
-        - X-authentik-username
-        - X-authentik-groups
-        - X-authentik-email
-        - X-authentik-name
-        - X-authentik-uid
-        - X-authentik-jwt
-        - X-authentik-meta-jwks
-        - X-authentik-meta-outpost
-        - X-authentik-meta-provider
-        - X-authentik-meta-app
-        - X-authentik-meta-version
+  oidc:
+    provider:
+      issuer: https://idp.mylogin.space/application/o/loki-test/
+    scopes:
+      - openid
+      - profile
+      - logs
+    clientID: loki-test
+    forwardAccessToken: true
+    clientSecret:
+      name: loki-core-sso
