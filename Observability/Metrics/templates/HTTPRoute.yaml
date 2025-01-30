@@ -1,0 +1,45 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name:  core-mimir
+
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: core-prod
+      name: main-gw
+
+  hostnames:
+    - metrics.mylogin.space
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ include "mimir.fullname" $.Subcharts.mimir-distributed }}-distributor
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+    {{ range $v, $t := .Values.mimir-distributed.ingress.paths }}
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ include "mimir.fullname" $.Subcharts.mimir-distributed }}-{{ regexReplaceAll "([[:upper:]])" $v  "-${1}" | lower }}
+          port: 8080
+          weight: 1
+
+      matches:
+        {{ range $path := $t }}
+        - path:
+            type: PathPrefix
+            value: {{ $path }}
+        {{- end -}}
+    {{- end -}}
