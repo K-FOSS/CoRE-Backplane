@@ -202,24 +202,59 @@ alloy:
           namespace = "core-prod"
           name = "core-backplane-observeability-collectors-metrics-oauth-creds"
         }
-
+        
+        // Monitor Self https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.self/
         prometheus.exporter.self "self_metrics" {
         }
 
-        prometheus.scrape "self_scrape" {
-          targets    = prometheus.exporter.self.self_metrics.targets
-          forward_to = [prometheus.remote_write.mimir.receiver]
-        }
+       
+
 
         prometheus.operator.podmonitors "pods" {
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
+        // Monitor Services
         prometheus.operator.servicemonitors "services" {
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
         prometheus.operator.probes "probes" {
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // PSQL monitoring
+        // read the credentials secret for remote_write authorization
+        remote.kubernetes.secret "psqlcreds" {
+          namespace = "core-prod"
+          name = "opsadmin.psql-main.credentials.postgresql.acid.zalan.do"
+        }
+
+
+        prometheus.exporter.postgres "example" {
+          data_source_names = [
+            "postgresql://" + remote.kubernetes.secret.psqlcreds.data["username"] + ":" + remote.kubernetes.secret.psqlcreds.data["password"] + "@psql-int.mylogin.space:5432/postgres?sslmode=disable",
+          ]
+
+          // The database_denylist field will filter out those databases from the list of databases to scrape,
+          // meaning that all databases *except* these will be scraped.
+          //
+          // In this example it will scrape all databases except for the one named 'secrets'.
+          autodiscovery {
+            enabled           = true
+          }
+        }
+
+        prometheus.scrape "exporters" {
+          targets = concat(
+            prometheus.exporter.self.self_metrics.targets,
+            prometheus.exporter.postgres.default.targets,
+          )
+
+          job_name = "integrations"
+          scrape_interval = "10s"
+          scrape_timeout  = "10s"
+
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
