@@ -39,8 +39,12 @@ alloy:
           write_to = [loki.write.loki.receiver]
         }
 
+        #
+        # Logs
+        #
+
         // read the credentials secret for remote_write authorization
-        remote.kubernetes.secret "credentials" {
+        remote.kubernetes.secret "logscredentials" {
           namespace = "core-prod"
           name = "core-backplane-observeability-collectors-oauth-creds"
         }
@@ -54,7 +58,6 @@ alloy:
             role = "pod"
             label = "logs=loki-myloginspace"
           }
-
         }
 
         // discovery.relabel rewrites the label set of the input targets by applying one or more relabeling rules.
@@ -143,8 +146,40 @@ alloy:
           endpoint {
             url = "https://logs.mylogin.space/loki/api/v1/push"
             oauth2 {
-              client_id = nonsensitive(remote.kubernetes.secret.credentials.data["ClientID"]) 
-              client_secret = remote.kubernetes.secret.credentials.data["ClientSecret"]
+              client_id = nonsensitive(remote.kubernetes.secret.logscredentials.data["ClientID"]) 
+              client_secret = remote.kubernetes.secret.logscredentials.data["ClientSecret"]
+
+              scopes = ["openid", "profile", "email", "logs"]
+
+              token_url = "https://idp.mylogin.space/application/o/token/"
+            }
+          }
+        }
+
+        #
+        # Metrics
+        #
+
+        remote.kubernetes.secret "metricscredentials" {
+          namespace = "core-prod"
+          name = "core-backplane-observeability-collectors-metrics-oauth-creds"
+        }
+
+        prometheus.exporter.self "self_metrics" {
+        }
+
+        prometheus.scrape "self_scrape" {
+          targets    = prometheus.exporter.self.self_metrics.targets
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        prometheus.remote_write "mimir" {
+          endpoint {
+            url = "https://metrics.mylogin.space/api/v1/push"
+
+            oauth2 {
+              client_id = nonsensitive(remote.kubernetes.secret.metricscredentials.data["ClientID"]) 
+              client_secret = remote.kubernetes.secret.metricscredentials.data["ClientSecret"]
 
               scopes = ["openid", "profile", "email", "logs"]
 

@@ -1,0 +1,27 @@
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
+
+spec:
+  refreshInterval: 5m
+  secretStoreRefs:
+    - kind: ClusterSecretStore
+      name: mainvault-core
+
+  selector:
+    secret:
+      name: core-mimir-sso
+
+  data:
+    - match:
+        secretKey: client_id
+        remoteRef:
+          remoteKey: Mimir/OAuth
+          property: ClientID
+
+    - match:
+        secretKey: client-secret
+        remoteRef:
+          remoteKey: Mimir/OAuth
+          property: ClientSecret
