@@ -231,9 +231,9 @@ alloy:
         }
 
 
-        prometheus.exporter.postgres "example" {
+        prometheus.exporter.postgres "default" {
           data_source_names = [
-            "postgresql://" + remote.kubernetes.secret.psqlcreds.data["username"] + ":" + remote.kubernetes.secret.psqlcreds.data["password"] + "@psql-int.mylogin.space:5432/postgres?sslmode=disable",
+            "postgresql://" + remote.kubernetes.secret.psqlcreds.data["username"] + ":" + remote.kubernetes.secret.psqlcreds.data["password"] + "@psql-int.mylogin.space:5432/postgres",
           ]
 
           // The database_denylist field will filter out those databases from the list of databases to scrape,
