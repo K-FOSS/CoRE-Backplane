@@ -43,6 +43,44 @@ alloy:
         // Logs
         //
 
+        //
+        // SysLog Collector
+        // 
+        loki.source.syslog "syslog" {
+          listener {
+            address               = "0.0.0.0:1514"
+            idle_timeout          = "1m0s"
+            label_structured_data = true
+            labels                = {
+              job = "syslog",
+            }
+            max_message_length = 0
+          }
+          forward_to    = [loki.write.loki.receiver]
+          relabel_rules = discovery.relabel.syslog.rules
+        }
+
+        discovery.relabel "syslog" {
+          targets = []
+
+          rule {
+                  source_labels = ["__syslog_message_hostname"]
+                  target_label  = "host"
+          }
+
+          rule {
+                  source_labels = ["__syslog_message_severity"]
+                  target_label  = "severity"
+          }
+
+          rule {
+                  source_labels = ["__syslog_message_app_name"]
+                  target_label  = "app"
+          }
+        }
+
+
+
         // read the credentials secret for remote_write authorization
         remote.kubernetes.secret "logscredentials" {
           namespace = "core-prod"
@@ -173,6 +211,18 @@ alloy:
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
+        prometheus.operator.podmonitors "pods" {
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        prometheus.operator.servicemonitors "services" {
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        prometheus.operator.probes "probes" {
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
         prometheus.remote_write "mimir" {
           endpoint {
             url = "https://metrics.mylogin.space/api/v1/push"
@@ -238,12 +288,12 @@ alloy:
     extraArgs: []
 
     # -- Extra ports to expose on the Alloy container.
-    extraPorts: []
-    # - name: "faro"
-    #   port: 12347
-    #   targetPort: 12347
-    #   protocol: "TCP"
-    #   appProtocol: "h2c"
+    extraPorts:
+      - name: 'syslog'
+        port: 514
+        targetPort: 1514
+        protocol: 'UDP'
+        appProtocol: 'syslog'
 
     # -- Host aliases to add to the Alloy container.
     hostAliases: []
