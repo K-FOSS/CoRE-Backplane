@@ -1,0 +1,266 @@
+---
+global:
+  # -- Set the entire name definition
+  fullnameOverride: ns-core
+
+controllers:
+  main:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    containers:
+      main:
+        image:
+          repository: ghcr.io/librespeed/speedtest
+          tag: latest
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: DB_HOSTNAME 
+            value: 'postgresql'
+
+          - name: DB_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: psqlHostname
+
+          - name: DB_NAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: username
+
+          - name: DB_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: username
+
+          - name: DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: password
+
+
+        # -- Override the working directory for the default container
+        workingDir: /etc/pdns
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own livenessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default livenessProbe.
+            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own startupProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default startupProbe.
+            # If you selected `custom: true`, this field holds the definition of the startupProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              timeoutSeconds: 1
+              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
+              periodSeconds: 5
+              failureThreshold: 30
+
+service:
+  main:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: main
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: ClusterIP
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    externalTrafficPolicy:
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    # -- Provide additional labels which may be required.
+    # labels:
+    #   wan-mode: public
+    #   lan-mode: private
+
+    # -- Allow adding additional match labels
+    extraSelectorLabels: {}
+
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 8080
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:
+      
+
+# -- Configure the gateway routes for the chart here.
+# Additional routes can be added by adding a dictionary key similar to the 'main' route.
+# [[ref]](https://gateway-api.sigs.k8s.io/references/spec/)
+# @default -- See below
+route:
+  default:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    # -- Provide additional annotations which may be required.
+    annotations: {}
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+        # Kind of the referent resource.
+        kind: Gateway
+        # Name of the referent resource
+        name: main-gw
+        # Namespace of the referent resource
+        namespace: core-prod
+
+
+    # -- Host addresses. Helm template can be passed.
+    hostnames:
+      - speed.mylogin.space
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - kind: Service
+            port: 8080
+            name: main
+            weight: 1
+
+# persistence:
+#   config:
+#     enabled: true
+#     mountPath: /etc/pdns/pdns.conf
+#     subPath: pnds.conf
+#     type: custom
+#     volumeSpec:
+#       configMap:
+#         name: 'ns-core-config'
+
+#     advancedMounts:
+#       main: # the controller with the "main" identifier
+#         main: # the container with the "main" identifier
+#           - path: /etc/pdns/pdns.conf
+#             readOnly: true
+#             subPath: pdns.conf
+
+
+#   configs:
+#     enabled: true
+#     mountPath: /etc/pdns/conf.d
+#     type: custom
+#     volumeSpec:
+#       secret:
+#         secretName: 'ns-core-secrets'
+
+#         items:
+#           - key: web.conf
+#             path: web.conf
+
+#     advancedMounts:
+#       main: # the controller with the "main" identifier
+#         main: # the container with the "main" identifier
+#           - path: /etc/pdns/conf.d/web.conf
+#             subPath: web.conf
+
+
+# configMaps:
+#   config:
+#     # -- Enables or disables the configMap
+#     enabled: true
+#     # -- Labels to add to the configMap
+#     labels: {}
+#     # -- Annotations to add to the configMap
+#     annotations: {}
+#     # -- configMap data content. Helm template enabled.
+#     data:
+#       pdns.conf: |

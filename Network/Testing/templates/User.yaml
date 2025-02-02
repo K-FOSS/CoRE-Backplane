@@ -1,0 +1,17 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-db
+
+  namespace: {{ .Release.Namespace | quote }}
+
+  labels:
+    {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
+
+spec:
+  name: SpeedTest
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-creds
