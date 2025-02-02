@@ -48,6 +48,12 @@ controllers:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
                 key: password
 
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: password
+
 
         # -- Override the working directory for the default container
         workingDir: /etc/pdns
