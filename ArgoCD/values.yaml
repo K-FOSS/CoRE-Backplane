@@ -347,7 +347,7 @@ argo-cd:
 
 
   repoServer:
-    replicas: 2
+    replicas: 1
 
     resources:
       limits:
@@ -370,7 +370,12 @@ argo-cd:
           resolvemy.host/metrics: mimir
 
   server:
-    replicas: 1
+    replicas: 2
+
+    env:
+      - name: ARGOCD_API_SERVER_REPLICAS
+        value: '2'
+
 
     metrics:
       enabled: true
