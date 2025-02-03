@@ -1,3 +1,5 @@
+{{ $values := index .Values "artifact-hub" }}
+{{ if $values.enabled }}
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
@@ -12,6 +14,6 @@ spec:
   groups:
     - LDAPService
 
-
   writeConnectionSecretToRef:
     name: ah-creds
+{{- end }}

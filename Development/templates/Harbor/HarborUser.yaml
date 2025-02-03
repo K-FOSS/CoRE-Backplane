@@ -1,0 +1,16 @@
+{{ if .Values.harbor.enabled }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: harbor-user
+  namespace: core-prod
+
+spec:
+  name: Harbor
+
+  database:
+    name: pzyQC6iToI
+
+  writeConnectionSecretToRef:
+    name: harbor-user
+{{- end }}
