@@ -1,0 +1,23 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: core-tempo-groups
+
+spec:
+  providerConfigRef:
+    name: authentik
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: core-tempo-groups
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "authentik_group" "traces" {
+        name = "Traces"
+      }
+
+      resource "authentik_group" "traceshipper" {
+        name = "Trace Shipper"
+      }
