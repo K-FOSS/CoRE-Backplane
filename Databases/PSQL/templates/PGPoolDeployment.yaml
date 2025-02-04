@@ -86,11 +86,11 @@ spec:
             periodSeconds: 10
 
           livenessProbe:
-            tcpSocket:
-              port: psql
-
+            exec:
+              command:
+                - /opt/pgpool-II/bin/Healthcheck.sh 
             initialDelaySeconds: 15
-            periodSeconds: 10
+            periodSeconds: 5
 
           volumeMounts:
             - name: tls
