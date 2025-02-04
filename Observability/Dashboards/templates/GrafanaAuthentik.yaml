@@ -30,7 +30,8 @@ spec:
         managed_list = [
           "goauthentik.io/providers/oauth2/scope-email",
           "goauthentik.io/providers/oauth2/scope-openid",
-          "goauthentik.io/providers/oauth2/scope-profile"
+          "goauthentik.io/providers/oauth2/scope-profile",
+          "goauthentik.io/providers/oauth2/scope-offline_access"
         ]
       }
 
@@ -51,7 +52,7 @@ spec:
       }
 
       resource "authentik_provider_oauth2" "auth-provider" {
-        name          = "Grafana-Test"
+        name          = "Grafana"
         client_id     = "grafana-test"
         client_secret = random_password.client-secret.result
         signing_key = data.authentik_certificate_key_pair.cert.id
@@ -68,7 +69,7 @@ spec:
       }
 
       resource "authentik_application" "application" {
-        name              = "grafana-test"
+        name              = "Grafana"
         slug              = "grafana-test"
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
