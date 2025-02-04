@@ -769,16 +769,18 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#outgoing-email
     ## Outgoing email server settings
     smtp:
-      enabled: false
+      enabled: true
       address: mail.mylogin.space
-      port: 2525
-      user_name: ""
+      port: 587
+      tls: true
+      from: gl-core@mail.mylogin.space
+      user_name: gl-core
       ## https://docs.gitlab.com/charts/installation/secrets#smtp-password
       password:
-        secret: ""
+        secret: gitlab-user
         key: password
-      # domain:
-      authentication: 'plain'
+      domain: mail.mylogin.space
+      authentication: 'login'
       starttls_auto: false
       openssl_verify_mode: "peer"
       open_timeout: 30
