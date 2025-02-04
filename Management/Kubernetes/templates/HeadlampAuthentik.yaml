@@ -69,12 +69,22 @@ spec:
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
-      output "client_id" {
+      output "OIDC_CLIENT_ID" {
         value = "headlamp"
         sensitive = true
       }
 
-      output "client_secret" {
+      output "OIDC_CLIENT_SECRET" {
         value     = random_password.client-secret.result
+        sensitive = true
+      }
+
+      output "OIDC_ISSUER_URL" {
+        value     = "https://idp.mylogin.space"
+        sensitive = true
+      }
+
+      output "OIDC_SCOPES" {
+        value     = "openid profile email"
         sensitive = true
       }
