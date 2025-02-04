@@ -1,0 +1,25 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: homeassistant
+
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: homeassistant
+
+  extAuth:
+    failOpen: false
+
+    headersToExtAuth:
+      - cookie
+
+    http:
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: dc1-k3s-node1-aaa-authentik-server
+          port: 80
+
+      path: /outpost.goauthentik.io/auth/envoy
