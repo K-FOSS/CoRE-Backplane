@@ -106,6 +106,21 @@ authentik:
       - name: AUTHENTIK_REDIS__DB
         value: '1'
 
+      #
+      # Email
+      # 
+      - name: AUTHENTIK_EMAIL__USERNAME
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Username
+
+      - name: AUTHENTIK_EMAIL__PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Password
+
       - name: AUTHENTIK_POSTGRESQL__USE_PGPOOL
         value: 'false'
 
@@ -453,7 +468,7 @@ authentik:
     ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
     livenessProbe:
       # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
-      failureThreshold: 3
+      failureThreshold: 5
       # -- Number of seconds after the container has started before [probe] is initiated
       initialDelaySeconds: 5
       # -- How often (in seconds) to perform the [probe]
