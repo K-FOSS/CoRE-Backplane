@@ -42,6 +42,15 @@ spec:
   volume:
     size: 50Gi
 
+  resources:
+    requests:
+      cpu: '1'
+      memory: 1G
+
+    limits:
+      cpu: '4'
+      memory: 16G
+
   patroni:
     initdb:
       encoding: 'UTF8'
@@ -53,7 +62,6 @@ spec:
       - local replication standby              md5
       - host replication  replicator 0.0.0.0/0 md5
       - host replication  standby    0.0.0.0/0 md5
-      - host all          artifacthub 0.0.0.0/0 md5
       - host all          3dzxoCeJ1f 0.0.0.0/0 md5
       - host all          GR7Ctx7FGh 0.0.0.0/0 md5
       - host all          5dBrWBAYgF 0.0.0.0/0 md5
