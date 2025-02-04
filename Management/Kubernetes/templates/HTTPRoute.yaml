@@ -1,0 +1,34 @@
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: headlamp
+
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: core-prod
+      name: main-gw
+
+  hostnames:
+    - headlamp.int.mylogin.space
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-headlamp
+          port: 80
+          weight: 1
+
+      timeouts:
+        backendRequest: 10s
+        request: 20s
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
