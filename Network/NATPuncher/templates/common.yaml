@@ -95,7 +95,7 @@ service:
         appProtocol:
 
 
-  {{- range untilStep (.Values.portRange.min) (.Values.portRange.max) 1 }}
+  {{- range untilStep (int .Values.portRange.min) (int .Values.portRange.max) 1 }}
       turn-{{ . }}:
         # -- Enables or disables the port
         enabled: true
