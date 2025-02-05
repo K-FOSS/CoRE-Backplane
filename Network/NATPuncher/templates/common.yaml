@@ -24,7 +24,7 @@ service:
     primary: true
 
     # -- Set the service type
-    type: ClusterIP
+    type: LoadBalancer
 
     # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
     # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
@@ -36,14 +36,12 @@ service:
     ipFamilies: []
 
     # # -- Provide additional annotations which may be required.
-    # annotations:
-    #   consul.hashicorp.com/service-name: ns-core
-    #   metallb.universe.tf/ip-allocated-from-pool: anycast-pool
-    #   metallb.universe.tf/loadBalancerIPs: '66.165.222.105'
-    #   io.cilium/lb-ipam-sharing-key: ns-core
-    #   io.cilium/lb-ipam-ips: '66.165.222.105'
-    #   external-dns.alpha.kubernetes.io/hostname: ns1.mylogin.space
-    #   purelb.io/addresses: '66.165.222.105' 
+    annotations:
+      purelb.io/allow-shared-ip: main-gw.resolvemy.host
+      purelb.io/service-group: main-public
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '66.165.222.102'
+      external-dns.alpha.kubernetes.io/hostname: 'nat.mylogin.space'
 
     # -- Provide additional labels which may be required.
     labels:
@@ -84,6 +82,46 @@ service:
 
         # -- The port number
         port: 3478
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: UDP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:
+
+      turn-tls-tcp:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: false
+
+        # -- The port number
+        port: 5349
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:
+
+      turn-tls-udp:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: false
+
+        # -- The port number
+        port: 5349
 
         # -- Port protocol.
         # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
