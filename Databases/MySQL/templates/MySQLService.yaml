@@ -1,33 +1,33 @@
-apiVersion: v1
-kind: Service
-metadata:
-  annotations:
-    consul.hashicorp.com/service-name: mysql
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   annotations:
+#     consul.hashicorp.com/service-name: mysql
 
-  labels:
-    app.kubernetes.io/component: database
-    app.kubernetes.io/instance: mysql
-    mysql.presslabs.org/cluster: mysql
-    mysql.presslabs.org/service-type: master
-  name: mysql
+#   labels:
+#     app.kubernetes.io/component: database
+#     app.kubernetes.io/instance: mysql
+#     mysql.presslabs.org/cluster: mysql
+#     mysql.presslabs.org/service-type: master
+#   name: mysql
 
-spec:
-  ipFamilies:
-    - IPv4
-  ipFamilyPolicy: SingleStack
-  loadBalancerIP: 10.1.1.37
+# spec:
+#   ipFamilies:
+#     - IPv4
+#   ipFamilyPolicy: SingleStack
+#   loadBalancerIP: 10.1.1.37
 
-  ports:
-    - name: mysql
-      port: 3306
-      protocol: TCP
-      targetPort: 3306
+#   ports:
+#     - name: mysql
+#       port: 3306
+#       protocol: TCP
+#       targetPort: 3306
 
-  selector:
-    app.kubernetes.io/managed-by: mysql.presslabs.org
-    app.kubernetes.io/name: mysql
-    mysql.presslabs.org/cluster: mysql
-    role: master
+#   selector:
+#     app.kubernetes.io/managed-by: mysql.presslabs.org
+#     app.kubernetes.io/name: mysql
+#     mysql.presslabs.org/cluster: mysql
+#     role: master
 
-  sessionAffinity: ClientIP
-  type: LoadBalancer
+#   sessionAffinity: ClientIP
+#   type: LoadBalancer

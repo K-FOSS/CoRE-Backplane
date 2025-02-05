@@ -1,65 +1,65 @@
-apiVersion: mariadb.mmontes.io/v1alpha1
-kind: MariaDB
-metadata:
-  name: mariadb
+# apiVersion: mariadb.mmontes.io/v1alpha1
+# kind: MariaDB
+# metadata:
+#   name: mariadb
 
-spec:
-  rootPasswordSecretKeyRef:
-    name: mariadb
-    key: root-password
+# spec:
+#   rootPasswordSecretKeyRef:
+#     name: mariadb
+#     key: root-password
 
-  database: mariadb
+#   database: mariadb
 
-  username: mariadb
+#   username: mariadb
 
-  passwordSecretKeyRef:
-    name: mariadb
-    key: password
+#   passwordSecretKeyRef:
+#     name: mariadb
+#     key: password
 
-  image:
-    repository: mariadb
-    tag: "10.7.4"
-    pullPolicy: IfNotPresent
+#   image:
+#     repository: mariadb
+#     tag: "10.7.4"
+#     pullPolicy: IfNotPresent
 
-  port: 3306
+#   port: 3306
 
-  volumeClaimTemplate:
-    resources:
-      requests:
-        storage: 500Mi
+#   volumeClaimTemplate:
+#     resources:
+#       requests:
+#         storage: 500Mi
 
-    accessModes:
-      - ReadWriteOnce
+#     accessModes:
+#       - ReadWriteOnce
 
-  myCnf: |
-    [mysqld]
-    bind-address=0.0.0.0
-    default_storage_engine=InnoDB
-    binlog_format=row
-    innodb_autoinc_lock_mode=2
-    max_allowed_packet=256M
+#   myCnf: |
+#     [mysqld]
+#     bind-address=0.0.0.0
+#     default_storage_engine=InnoDB
+#     binlog_format=row
+#     innodb_autoinc_lock_mode=2
+#     max_allowed_packet=256M
 
-  resources:
-    requests:
-      cpu: 400m
-      memory: 256Mi
+#   resources:
+#     requests:
+#       cpu: 400m
+#       memory: 256Mi
   
-    limits:
-      cpu: 4000m
-      memory: 4096Mi
+#     limits:
+#       cpu: 4000m
+#       memory: 4096Mi
 
-  env:
-    - name: TZ
-      value: SYSTEM
+#   env:
+#     - name: TZ
+#       value: SYSTEM
 
-  envFrom:
-    - configMapRef:
-        name: mariadb
+#   envFrom:
+#     - configMapRef:
+#         name: mariadb
 
-  podSecurityContext:
-    runAsUser: 0
+#   podSecurityContext:
+#     runAsUser: 0
 
-  securityContext:
-    allowPrivilegeEscalation: false
+#   securityContext:
+#     allowPrivilegeEscalation: false
 
 
