@@ -3,15 +3,15 @@ kind: RabbitmqCluster
 metadata:
   name: {{ .Release.Name }}
 spec:
-  replicas: 3
+  replicas: 2
 
   service:
     type: ClusterIP
 
   resources:
     requests:
-      cpu: 4000m
-      memory: 10Gi
+      cpu: '1'
+      memory: 2Gi
     limits:
       cpu: 4000m
       memory: 10Gi
@@ -49,10 +49,11 @@ spec:
       collect_statistics_interval = 10000
       auth_backends.1 = ldap
       auth_ldap.servers.1 = ldap.mylogin.space
+      auth_ldap.use_ssl    = true
+      auth_ldap.port       = 636
+      auth_ldap.log        = true
+
       auth_ldap.other_bind.user_dn = $(USERNAME)
       auth_ldap.other_bind.password = $(PASSWORD)
 
       auth_ldap.user_dn_pattern = cn=${USERNAME},ou=users,dc=ldap,dc=mylogin,dc=space
-      auth_ldap.use_ssl    = true
-      auth_ldap.port       = 636
-      auth_ldap.log        = true
