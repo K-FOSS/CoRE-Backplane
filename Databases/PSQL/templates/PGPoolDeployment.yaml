@@ -67,7 +67,7 @@ spec:
               value: /opt/pgpool-II
 
             - name: CHECK_PGCONNECT_TIMEOUT
-              value: '60'
+              value: '2'
 
             - name: POSTGRES_USERNAME
               valueFrom:
@@ -104,9 +104,11 @@ spec:
           livenessProbe:
             exec:
               command:
+                - /bin/sh
                 - /opt/pgpool-II/bin/Healthcheck.sh 
             initialDelaySeconds: 15
             periodSeconds: 5
+            timeoutSeconds: 3
 
           volumeMounts:
             - name: tls
