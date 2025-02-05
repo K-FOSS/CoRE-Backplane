@@ -456,57 +456,6 @@ authentik:
       #   maxSurge: 25%
       #   maxUnavailable: 25%
 
-    ## Liveness, readiness and startup probes for authentik server
-    ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
-    livenessProbe:
-      # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
-      failureThreshold: 5
-      # -- Number of seconds after the container has started before [probe] is initiated
-      initialDelaySeconds: 5
-      # -- How often (in seconds) to perform the [probe]
-      periodSeconds: 30
-      # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
-      successThreshold: 1
-      # -- Number of seconds after which the [probe] times out
-      timeoutSeconds: 1
-      ## Probe configuration
-      httpGet:
-        path: "/-/health/live/"
-        port: http
-
-    readinessProbe:
-      # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
-      failureThreshold: 2
-
-      # -- Number of seconds after the container has started before [probe] is initiated
-      initialDelaySeconds: 5
-
-      # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
-      successThreshold: 3
-
-      # -- Number of seconds after which the [probe] times out
-      timeoutSeconds: 2
-      ## Probe configuration
-      httpGet:
-        path: '/-/health/ready/'
-        port: http
-
-    startupProbe:
-      # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
-      failureThreshold: 60
-      # -- Number of seconds after the container has started before [probe] is initiated
-      initialDelaySeconds: 5
-      # -- How often (in seconds) to perform the [probe]
-      periodSeconds: 10
-      # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
-      successThreshold: 1
-      # -- Number of seconds after which the [probe] times out
-      timeoutSeconds: 1
-      ## Probe configuration
-      httpGet:
-        path: '/-/health/live/'
-        port: http
-
     ## authentik server service configuration
     service:
       # -- authentik server service annotations
@@ -515,10 +464,7 @@ authentik:
       labels: {}
       # -- authentik server service type
       type: ClusterIP
-      # -- authentik server service http port for NodePort service type (only if `server.service.type` is set to `NodePort`)
-      nodePortHttp: 30080
-      # -- authentik server service https port for NodePort service type (only if `server.service.type` is set to `NodePort`)
-      nodePortHttps: 30443
+
       # -- authentik server service http port
       servicePortHttp: 80
       # -- authentik server service https port
