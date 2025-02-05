@@ -50,11 +50,11 @@ spec:
       collect_statistics_interval = 10000
       auth_backends.1 = ldap
       auth_ldap.servers.1 = ldap.mylogin.space
-      auth_ldap.use_ssl    = true
-      auth_ldap.port       = 636
+      auth_ldap.use_ssl    = false
+      auth_ldap.port       = 389
       auth_ldap.log        = true
 
-      auth_ldap.other_bind.user_dn = $(USERNAME)
+      auth_ldap.other_bind.user_dn = $(USERNAME),ou=users,dc=ldap,dc=mylogin,dc=space
       auth_ldap.other_bind.password = $(PASSWORD)
 
       auth_ldap.dn_lookup_attribute = cn
