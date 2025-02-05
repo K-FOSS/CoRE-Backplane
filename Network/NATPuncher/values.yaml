@@ -280,8 +280,8 @@ configMaps:
         # Lower and upper bounds of the UDP relay endpoints:
         # (default values are 49152 and 65535)
         #
-        #min-port=49152
-        #max-port=65535
+        min-port={{ .Values.portRange.min }}
+        max-port={{ .Values.portRange.max }}
 
         # Uncomment to run TURN server in 'normal' 'moderate' verbose mode.
         # By default the verbose mode is off.
@@ -482,7 +482,7 @@ configMaps:
         # The connection string has the same parameters as redis-userdb connection string.
         # Use the string format below (space separated parameters, all optional):
         #
-        #redis-statsdb="ip=<ip-address> dbname=<database-number> password=<database-user-password> port=<port> connect_timeout=<seconds>"
+        redis-statsdb="ip=redis.mylogin.space dbname=<database-number> password=<database-user-password> port=<port> connect_timeout=<seconds>"
 
         # The default realm to be used for the users when no explicit
         # origin/realm relationship is found in the database, or if the TURN
