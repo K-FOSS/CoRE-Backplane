@@ -110,11 +110,29 @@ authentik:
         value: 'false'
 
       - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
-        value: 'true'
+        value: 'false'
 
-      - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-        value: 'null'
 
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
+        value: 'psql-int-rep.mylogin.space'
+
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Database
+
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Username
+
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Password
 
       #
       # Email
@@ -130,9 +148,6 @@ authentik:
           secretKeyRef:
             name: authentik-core
             key: password
-
-      - name: AUTHENTIK_POSTGRESQL__USE_PGPOOL
-        value: 'false'
 
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
