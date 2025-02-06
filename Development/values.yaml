@@ -957,12 +957,24 @@ gitlab:
   ## Settings for individual sub-charts under GitLab
   ## Note: Many of these settings are configurable via globals
   gitlab:
+    migrations:
+      annotations:
+        "helm.sh/hook": "pre-install"
+        "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+
     exporter:
       enabled: false
       metrics:
         enabled: true
         serviceMonitor:
           enabled: true
+
+    sidekiq:
+      resources:
+        limits:
+          memory: 5G
+        requests:
+          cpu: 500m
 
     toolbox:
       enabled: true
