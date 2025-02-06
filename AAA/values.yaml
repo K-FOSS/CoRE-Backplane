@@ -119,6 +119,12 @@ authentik:
       - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
         value: 'psql-int-rep.mylogin.space'
 
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
+        value: '5432'
+
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_HEALTH_CHECK
+        value: 'true'
+
       - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
         valueFrom:
           secretKeyRef:
@@ -269,7 +275,7 @@ authentik:
     name: server
 
     # -- The number of server pods to run
-    replicas: 2
+    replicas: 3
 
     ## authentik server Horizontal Pod Autoscaler
     autoscaling:
@@ -402,10 +408,10 @@ authentik:
     resources:
       requests:
         cpu: 548m
-        memory: 1039M
+        memory: 2Gi
       limits:
         cpu: 548m
-        memory: 1039M
+        memory: 2Gi
 
     # authentik server container ports
     containerPorts:
