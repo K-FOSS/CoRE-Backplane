@@ -24,7 +24,7 @@ controllers:
           - --config-dir=/etc/pdns
           - --disable-syslog=yes
           - --socket-dir=/tmp
-          - --gpgsql-host=$(PSQL_HOSTNAME)
+          - --gpgsql-host=psql.mylogin.space
           - --gpgsql-port=$(PSQL_PORT)
           - --gpgsql-dbname=DlzcnePHKR
           - --gpgsql-user=$(USERNAME)
@@ -48,12 +48,6 @@ controllers:
               secretKeyRef:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
                 key: username
-
-          - name: PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
-                key: password
 
           - name: PASSWORD
             valueFrom:
