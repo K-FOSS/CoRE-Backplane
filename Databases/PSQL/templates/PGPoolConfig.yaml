@@ -19,6 +19,7 @@ spec:
             items:
               - key: pgpool.conf
               - key: pool_hba.conf
+              - key: pool_passwd
 
   data:
     - secretKey: Username
@@ -30,3 +31,18 @@ spec:
       remoteRef:
         key: PSQL/Operator
         property: password
+
+    #
+    # Authentik
+    #
+    - secretKey: AAAUsername
+      remoteRef:
+        key: AAA/Authentik/Database
+        property: Username
+
+
+    - secretKey: AAAPassword
+      remoteRef:
+        key: AAA/Authentik/Database
+        property: Password
+
