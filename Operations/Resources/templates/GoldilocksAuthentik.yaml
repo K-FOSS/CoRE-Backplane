@@ -17,11 +17,17 @@ spec:
         slug = "default-provider-authorization-implicit-consent"
       }
 
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+
       resource "authentik_provider_proxy" "golidlocks" {
         name               = "goldilocks"
         mode               = "forward_single"
         external_host      = "https://resources.int.mylogin.space"
         authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
       }
 
       resource "authentik_application" "name" {
