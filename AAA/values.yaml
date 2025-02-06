@@ -566,45 +566,12 @@ authentik:
     ingress:
       # -- enable an ingress resource for the authentik server
       enabled: false
-      # -- additional ingress annotations
-      annotations: {}
-      # -- additional ingress labels
-      labels: {}
-      # -- defines which ingress controller will implement the resource
-      ingressClassName: ""
-      # -- List of ingress hosts
-      hosts: []
-        # - authentik.domain.tld
-
-      # -- List of ingress paths
-      paths:
-        - /
-      # -- Ingress path type. One of `Exact`, `Prefix` or `ImplementationSpecific`
-      pathType: Prefix
-      # -- additional ingress paths
-      extraPaths: []
-        # - path: /*
-        #   pathType: Prefix
-        #   backend:
-        #     service:
-        #       name: ssl-redirect
-        #       port:
-        #         name: use-annotation
-
-      # -- ingress TLS configuration
-      tls: []
-        # - secretName: authentik-tls
-        #   hosts:
-        #     - authentik.domain.tld
-
-      # -- uses `server.service.servicePortHttps` instead of `server.service.servicePortHttp`
-      https: false
 
     ## Liveness, readiness and startup probes for authentik server
     ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/
     livenessProbe:
       # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
-      failureThreshold: 5
+      failureThreshold: 10
       # -- Number of seconds after the container has started before [probe] is initiated
       initialDelaySeconds: 5
       # -- How often (in seconds) to perform the [probe]
@@ -613,14 +580,10 @@ authentik:
       successThreshold: 1
       # -- Number of seconds after which the [probe] times out
       timeoutSeconds: 10
-      ## Probe configuration
-      httpGet:
-        path: "/-/health/live/"
-        port: http
 
     readinessProbe:
       # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
-      failureThreshold: 2
+      failureThreshold: 10
 
       # -- Number of seconds after the container has started before [probe] is initiated
       initialDelaySeconds: 5
@@ -632,10 +595,12 @@ authentik:
 
       # -- Number of seconds after which the [probe] times out
       timeoutSeconds: 10
-      ## Probe configuration
-      httpGet:
-        path: '/-/health/ready/'
-        port: http
+
+
+    startupProbe:
+      failureThreshold: 100
+      initialDelaySeconds: 60
+      periodSeconds: 30
 
 
   ## authentik worker
