@@ -58,35 +58,8 @@ spec:
           rabbitmq_auth_backend_ldap,
             [
               {group_lookup_base, "ou=groups,dc=ldap,dc=mylogin,dc=space"},
-              {
-                resource_access_query, {
-                  for, [
-                    {permission, configure, 
-                      {in_group, "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"}
-                    },
-                    {permission, write,
-                      {for, [
-                        {resource, queue,
-                          {in_group, "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"}
-                        },
-                        {resource, exchange, 
-                          {constant, true}
-                        }
-                      ]}
-                    },
-                    {permission, read,
-                      {for, [
-                        {resource, exchange,
-                          {in_group, "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"}
-                        },
-                        {resource, queue, 
-                          {constant, true}
-                        }
-                      ]}
-                    }
-                  ]
-                }
-              },
+              {resource_access_query, {in_group, "cn=MQTT Users,ou=groups,dc=ldap,dc=mylogin,dc=space"}},
+              {vhost_access_query, {in_group, "cn=MQTT Users,ou=groups,dc=ldap,dc=mylogin,dc=space"}},
               {tag_queries, 
                 [
                   {administrator, 
