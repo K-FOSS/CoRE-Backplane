@@ -1,0 +1,26 @@
+
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Release.Name }}-aaa-groups
+
+spec:
+  providerConfigRef:
+    name: authentik
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Release.Name }}-aaa-groups
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "authentik_group" "mqttusers" {
+        name         = "MQTT Users"
+        is_superuser = false
+      }
+
+      resource "authentik_group" "mqttadmins" {
+        name         = "MQTT Admins"
+        is_superuser = false
+      }
