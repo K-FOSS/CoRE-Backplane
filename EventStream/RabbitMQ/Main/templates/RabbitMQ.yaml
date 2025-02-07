@@ -7,6 +7,8 @@ spec:
 
   service:
     type: ClusterIP
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: 'mqtt.mylogin.space'
 
   resources:
     requests:
@@ -17,6 +19,10 @@ spec:
       memory: 10Gi
 
   override:
+    service:
+      metadata:
+        labels:
+          wan-mode: 'public'
     statefulSet:
       spec:
         template:
