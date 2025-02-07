@@ -564,7 +564,7 @@ postgres-operator:
     # If create is false with no name set, no podPriorityClassName is specified.
     # Hence, the pod priorityClass is the one with globalDefault set.
     # If there is no PriorityClass with globalDefault set, the priority of Pods with no priorityClassName is zero.
-    create: true
+    create: false
     # If not set a name is generated using the fullname template and "-pod" suffix
     name: ''
     priority: 1000000
@@ -587,7 +587,7 @@ postgres-operator:
   # Allow to setup operator Deployment readiness probe
   readinessProbe:
     initialDelaySeconds: 5
-    periodSeconds: 10
+    periodSeconds: 30
 
   # configure extra environment variables
   # Extra environment variables are writen in kubernetes format and added "as is" to the pod's env variables
