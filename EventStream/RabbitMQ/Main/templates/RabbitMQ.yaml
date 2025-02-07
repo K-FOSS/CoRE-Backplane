@@ -49,6 +49,29 @@ spec:
       - rabbitmq_mqtt
     #   - rabbitmq_federation
     #   - rabbitmq_federation_management
+    advancedConfig: |
+      [{rabbitmq_auth_backend_ldap,[
+          {vhost_access_query,    {in_group,
+                                    "ou=${vhost}-users,ou=vhosts,dc=example,dc=com"}},
+          {resource_access_query,
+            {for, [{permission, configure, {in_group, "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"}},
+                  {permission, write,
+                    {for, [{resource, queue,    {in_group, "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"}},
+                          {resource, exchange, {constant, true}}]}},
+                  {permission, read,
+                    {for, [{resource, exchange, {in_group, "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"}},
+                          {resource, queue,    {constant, true}}]}}
+                  ]
+            }},
+          {topic_access_query,
+            {for, [{permission, write, {match, {string, "${routing_key}"}, {string, "^a"}}},
+                  {permission, read,  {constant, true}}
+                  ]
+            }},
+          {tag_queries,           [{administrator, {constant, false}},
+                                    {management,    {constant, true}}]}
+      ]}].
+
 
     additionalConfig: |
       cluster_partition_handling = pause_minority
