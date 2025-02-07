@@ -1,0 +1,38 @@
+
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: homeassistant-authentik
+
+spec:
+  providerConfigRef:
+    name: authentik
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Release.Name }}-hassio-sso
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+
+      resource "authentik_provider_proxy" "application" {
+        name               = "HomeAssistant Proxy"
+        mode               = "forward_single"
+        external_host      = "home.mylogin.space"
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+      }
+
+      resource "authentik_application" "name" {
+        name              = "Home Assistant"
+        slug              = "hassio"
+        protocol_provider = authentik_provider_proxy.application.id
+      }
