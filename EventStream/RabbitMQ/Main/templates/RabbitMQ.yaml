@@ -18,6 +18,9 @@ spec:
       cpu: '4'
       memory: 10Gi
 
+  tls:
+    secretName: myloginspace-default-certificates
+
   override:
     service:
       metadata:
@@ -94,4 +97,17 @@ spec:
       auth_ldap.user_dn_pattern = cn=${username},ou=users,dc=ldap,dc=mylogin,dc=space
 
       mqtt.listeners.tcp.default = 1883
+      mqtt.listeners.ssl.default = 8883
+      mqtt.vhost            = /
       mqtt.allow_anonymous = false
+
+      mqtt.tcp_listen_options.backlog = 4096
+      mqtt.tcp_listen_options.buffer  = 131072
+      mqtt.tcp_listen_options.recbuf  = 131072
+      mqtt.tcp_listen_options.sndbuf  = 131072
+
+      mqtt.tcp_listen_options.keepalive = true
+      mqtt.tcp_listen_options.nodelay   = true
+
+      mqtt.tcp_listen_options.exit_on_close = true
+      mqtt.tcp_listen_options.send_timeout  = 120
