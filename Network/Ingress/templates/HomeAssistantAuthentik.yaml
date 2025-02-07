@@ -26,13 +26,14 @@ spec:
       resource "authentik_provider_proxy" "application" {
         name               = "HomeAssistant Proxy"
         mode               = "forward_single"
-        external_host      = "home.mylogin.space"
+        external_host      = "https://home.mylogin.space"
         authorization_flow = data.authentik_flow.default-authorization-flow.id
         invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
       }
 
       resource "authentik_application" "name" {
         name              = "Home Assistant"
-        slug              = "hassio"
+        slug              = "hassio-proxy"
         protocol_provider = authentik_provider_proxy.application.id
+        meta_launch_url   = "blank://blank"
       }
