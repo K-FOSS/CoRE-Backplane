@@ -65,8 +65,9 @@ pxc-db:
     # - name: private-registry-credentials
     annotations: {}
     #  iam.amazonaws.com/role: role-arn
-    labels: {}
-    #  rack: rack-22
+    labels:
+      wan-mode: 'public'
+
     priorityClassName: tier2-priority
     readinessDelaySec: 15
     livenessDelaySec: 300
@@ -465,7 +466,7 @@ pxc-db:
       limits: {}
 
   backup:
-    enabled: false
+    enabled: true
     # allowParallel: true
     image:
       repository: percona/percona-xtradb-cluster-operator
@@ -482,66 +483,57 @@ pxc-db:
       resources:
         requests: {}
         limits: {}
-    storages: {}
-      # fs-pvc:
-      #   type: filesystem
-      #   volume:
-      #     persistentVolumeClaim:
-      #       storageClassName: standard
-      #       accessModes: ["ReadWriteOnce"]
-      #       resources:
-      #         requests:
-      #           storage: 6Gi
-      # s3-us-west:
-      #   type: s3
-      #   verifyTLS: true
-      #   nodeSelector:
-      #     storage: tape
-      #     backupWorker: 'True'
-      #   resources:
-      #     requests:
-      #       memory: 1G
-      #       cpu: 600m
-      #   affinity:
-      #     nodeAffinity:
-      #       requiredDuringSchedulingIgnoredDuringExecution:
-      #         nodeSelectorTerms:
-      #         - matchExpressions:
-      #           - key: backupWorker
-      #             operator: In
-      #             values:
-      #             - 'True'
-      #   tolerations:
-      #     - key: "backupWorker"
-      #       operator: "Equal"
-      #       value: "True"
-      #       effect: "NoSchedule"
-      #   annotations:
-      #     testName: scheduled-backup
-      #   labels:
-      #     backupWorker: 'True'
-      #   schedulerName: 'default-scheduler'
-      #   priorityClassName: 'high-priority'
-      #   containerSecurityContext:
-      #     privileged: true
-      #   podSecurityContext:
-      #     fsGroup: 1001
-      #     supplementalGroups: [1001, 1002, 1003]
-      #   s3:
-      #     bucket: S3-BACKUP-BUCKET-NAME-HERE
-      #     # Use credentialsSecret OR credentialsAccessKey/credentialsSecretKey
-      #     credentialsSecret: my-cluster-name-backup-s3
-      #     #credentialsAccessKey: REPLACE-WITH-AWS-ACCESS-KEY
-      #     #credentialsSecretKey: REPLACE-WITH-AWS-SECRET-KEY
-      #     region: us-west-2
-      #     endpointUrl: https://sfo2.digitaloceanspaces.com
-      # s3-us-west-binlogs:
-      #   type: s3
-      #   s3:
-      #     bucket: S3-BACKUP-BUCKET-NAME-HERE/DIRECTORY
-      #     credentialsSecret: my-cluster-name-backup-s3
-      #     region: us-west-2
-      #     endpointUrl: https://sfo2.digitaloceanspaces.com
+    storages:
+      s3-us-west:
+        type: s3
+        verifyTLS: true
+        nodeSelector:
+          storage: tape
+          backupWorker: 'True'
+        resources:
+          requests:
+            memory: 1G
+            cpu: 600m
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+              - matchExpressions:
+                - key: backupWorker
+                  operator: In
+                  values:
+                  - 'True'
+        tolerations:
+          - key: "backupWorker"
+            operator: "Equal"
+            value: "True"
+            effect: "NoSchedule"
+        annotations:
+          testName: scheduled-backup
+        labels:
+          backupWorker: 'True'
+        schedulerName: 'default-scheduler'
+        priorityClassName: 'high-priority'
+        containerSecurityContext:
+          privileged: true
+        podSecurityContext:
+          fsGroup: 1001
+          supplementalGroups: [1001, 1002, 1003]
+        s3:
+          bucket: S3-BACKUP-BUCKET-NAME-HERE
+          # Use credentialsSecret OR credentialsAccessKey/credentialsSecretKey
+          credentialsSecret: my-cluster-name-backup-s3
+          #credentialsAccessKey: REPLACE-WITH-AWS-ACCESS-KEY
+          #credentialsSecretKey: REPLACE-WITH-AWS-SECRET-KEY
+          region: us-west-2
+          endpointUrl: https://sfo2.digitaloceanspaces.com
+      s3-us-west-binlogs:
+        type: s3
+        s3:
+          bucket: mysql
+          credentialsSecret: 'test'
+          region: us-west-2
+          endpointUrl: https://s3.mylogin.space
 
     schedule: []
       # - name: "daily-backup"
