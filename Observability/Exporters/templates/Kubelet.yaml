@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubelet
+  namespace: kube-system
+
+  labels:
+    k8s-app: kubelet
+spec:
+  ports:
+    - name: cadvisor
+      port: 4194
+      protocol: TCP
+      targetPort: 4194
+
+    - name: http-metrics
+      port: 10255
+      protocol: TCP
+      targetPort: 10255
+
+    - name: https-metrics
+      port: 10250
+      protocol: TCP
+      targetPort: 10250
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+
+  name: kubelet
+  namespace: kube-system
+
+  labels:
+    k8s-app: kubelet
+subsets:
+  - addresses:
+      - ip: 172.31.241.238
+        targetRef:
+          kind: Node
+          name: node1.dc1.resolvemy.host
+
+    ports:
+      - name: http-metrics
+        port: 10255
+        protocol: TCP
+      - name: cadvisor
+        port: 4194
+        protocol: TCP
+      - name: https-metrics
+        port: 10250
+        protocol: TCP
