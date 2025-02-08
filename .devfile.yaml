@@ -8,16 +8,20 @@ components:
       image: quay.io/devfile/universal-developer-image:latest
       env:
         - name: KUBEDOCK_ENABLED
-          value: 'true'
+          value: 'false'
 
-        - name: KUBEDOCK_PARAMS
-          value: "--reverse-proxy --kubeconfig /home/user/.kube/config --initimage quay.io/agiertli/kubedock:0.13.0"
-
-        - name: KUBEDOCK_ENABLED
-          value: 'true'
         - name: DOCKER_HOST
-          value: 'tcp://127.0.0.1:2475'
-        - name: TESTCONTAINERS_RYUK_DISABLED
-          value: 'true'
-        - name: TESTCONTAINERS_CHECKS_DISABLE
-          value: 'true'
+          value: 'tcp://127.0.0.1:2376'
+
+  - name: docker-in-docker
+    container:
+      image: docker:25.0-dind-rootless
+      env:
+        - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
+          value: '-p 0.0.0.0:2376:2376/tcp'
+
+      endpoints:
+        - exposure: none
+          name: did
+          protocol: tcp
+          targetPort: 2376
