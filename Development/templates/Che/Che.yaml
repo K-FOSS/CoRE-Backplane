@@ -67,18 +67,23 @@ spec:
               value: 'tcp://127.0.0.1:2376'
         name: universal-developer-image
 
-      - container:
-          sourceMapping: /projects
-          image: docker:25.0-dind-rootless
-          env:
-            - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
-              value: '-p 0.0.0.0:2376:2376/tcp'
-          endpoints:
-            - exposure: none
-              name: did
-              protocol: tcp
-              targetPort: 2376
-        name: docker-in-docker
+
+      #
+      # TODO: Move this to Kubemod or similar, have a mutating webhook that checks users authorization and grants them an extra Docker in Docker container for Container related stuff, along with a virtual
+      # Kubernetes environment with Loft or even a fully functional cluster API Kamaji or similar, that reminds me I need to get around to actually getting the cluster operators and stuff online
+      #
+      # - container:
+      #     sourceMapping: /projects
+      #     image: docker:25.0-dind-rootless
+      #     env:
+      #       - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
+      #         value: '-p 0.0.0.0:2376:2376/tcp'
+      #     endpoints:
+      #       - exposure: none
+      #         name: did
+      #         protocol: tcp
+      #         targetPort: 2376
+      #   name: docker-in-docker
 
     defaultNamespace:
       autoProvision: true
