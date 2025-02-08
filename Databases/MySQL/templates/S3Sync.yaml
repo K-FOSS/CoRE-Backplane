@@ -1,0 +1,24 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: mysql-core-minio-s3
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    creationPolicy: Owner
+    name: mysql-core-minio-s3
+
+  data:
+    # Root  
+    - secretKey: AWS_ACCESS_KEY_ID
+      remoteRef:
+        key: MySQL/S3
+        property: AccessKey
+
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      remoteRef:
+        key: MySQL/S3
+        property: SecretKey
