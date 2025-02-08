@@ -238,6 +238,20 @@ alloy:
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
+        mimir.rules.kubernetes "default" {
+          address = "https://metrics.mylogin.space"
+          oauth2 {
+            client_id = nonsensitive(remote.kubernetes.secret.metricscredentials.data["ClientID"]) 
+            client_secret = remote.kubernetes.secret.metricscredentials.data["ClientSecret"]
+
+            scopes = ["openid", "profile", "email", "metrics"]
+
+            token_url = "https://idp.mylogin.space/application/o/token/"
+          }
+        }
+
+
+
         // PSQL monitoring
         // read the credentials secret for remote_write authorization
         remote.kubernetes.secret "psqlcreds" {
