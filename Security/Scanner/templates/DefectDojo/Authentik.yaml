@@ -1,0 +1,92 @@
+
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Release.Name }}-defectdojo
+spec:
+  providerConfigRef:
+    name: authentik
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Release.Name }}-defectdojo-oidc
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+          "goauthentik.io/providers/oauth2/scope-offline_access"
+        ]
+      }
+
+      data "authentik_user" "akadmin" {
+        username = "kjones"
+      }
+
+      data "authentik_certificate_key_pair" "cert" {
+        name = "tls"
+      }
+
+      resource "random_password" "client-secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
+      resource "authentik_provider_oauth2" "auth-provider" {
+        name          = "defectdojo"
+        client_id     = "defectdojo"
+        client_secret = random_password.client-secret.result
+        signing_key = data.authentik_certificate_key_pair.cert.id
+        allowed_redirect_uris = [
+          {
+            matching_mode = "regex",
+            url           = "https://defectdojo.int.mylogin.space/.*",
+          },
+        ]
+
+        property_mappings  = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+      }
+
+      resource "authentik_application" "application" {
+        name              = "defectdojo"
+        slug              = "defectdojo"
+        group             = "Security"
+        protocol_provider = authentik_provider_oauth2.auth-provider.id
+      }
+
+      output "OIDC_CLIENT_ID" {
+        value = "defectdojo"
+        sensitive = true
+      }
+
+      output "OIDC_CLIENT_SECRET" {
+        value     = random_password.client-secret.result
+        sensitive = true
+      }
+
+      output "OIDC_ISSUER_URL" {
+        value = "https://idp.mylogin.space/application/o/defectdojo/"
+        sensitive = true
+      }
+
+      output "OIDC_SCOPES" {
+        value     = "openid profile email offline_access"
+        sensitive = true
+      }
