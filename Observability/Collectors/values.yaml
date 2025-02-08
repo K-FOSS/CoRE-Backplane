@@ -207,13 +207,6 @@ alloy:
         prometheus.exporter.self "self_metrics" {
         }
 
-        prometheus.exporter.cadvisor "local" { }
-
-        prometheus.scrape "cadvisor" {
-        	targets    = prometheus.exporter.cadvisor.local.targets
-        	forward_to = [prometheus.relabel.tagged.receiver]
-        }
-
         prometheus.relabel "tagged" {
         	rule {
         		source_labels = ["__address__"]
