@@ -125,6 +125,15 @@ configMaps:
         # Database
         #
 
+        sql_type: pgsql
+        sql_server: {{ .psqlHostname }}
+        sql_port: {{ .psqlPort }}
+        sql_database: {{ .database }}
+        sql_username: {{ .username }}
+        sql_password: '{{ .password }}'
+        new_sql_schema: true
+        update_sql_schema: false
+
         #
         # Authentication
         #
@@ -153,7 +162,6 @@ configMaps:
         ldap_uids: [cn]
 
         auth_method:
-          - sql
           - ldap
 
         #
