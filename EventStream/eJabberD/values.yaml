@@ -90,6 +90,12 @@ persistence:
     name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-prod-config'
     mountPath: /opt/ejabberd/conf
 
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /opt/ejabberd/conf/ejabberd.yml
+            readOnly: true
+            subPath: ejabberd.yml
 
   tls:
     enabled: true
