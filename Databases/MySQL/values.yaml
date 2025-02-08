@@ -33,15 +33,13 @@ pxc-db:
     apply: disabled
     schedule: "0 4 * * *"
   enableCRValidationWebhook: false
-  tls: {}
-    # SANs:
-    #   - pxc-1.example.com
-    #   - pxc-2.example.com
-    #   - pxc-3.example.com
-    # issuerConf:
-    #   name: special-selfsigned-issuer
-    #   kind: ClusterIssuer
-    #   group: cert-manager.io
+  tls:
+    SANs:
+      - mysql.mylogin.space
+    issuerConf:
+      name: kjdev-cluster
+      kind: ClusterIssuer
+      group: cert-manager.io
 
   pxc:
     size: 3
@@ -50,14 +48,17 @@ pxc-db:
 
     # imagePullPolicy: Always
     autoRecovery: true
-    # expose:
-    #   enabled: true
-    #   type: LoadBalancer
-    #   trafficPolicy: Local
-    #   loadBalancerSourceRanges:
-    #   - 10.0.0.0/8
-    #   annotations:
-    #     networking.gke.io/load-balancer-type: "Internal"
+    expose:
+      enabled: true
+      type: LoadBalancer
+      trafficPolicy: Local
+      loadBalancerSourceRanges:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+      annotations:
+        purelb.io/allow-local: 'true'
+        purelb.io/addresses: '10.1.1.37'
+        external-dns.alpha.kubernetes.io/hostname: 'mysql.mylogin.space'
 
     # schedulerName: mycustom-scheduler
     imagePullSecrets: []
