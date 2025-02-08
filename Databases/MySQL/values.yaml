@@ -477,62 +477,19 @@ pxc-db:
     imagePullSecrets: []
     # - name: private-registry-credentials
     pitr:
-      enabled: false
-      storageName: s3-us-west-binlogs
+      enabled: true
+      storageName: s3-minio
       timeBetweenUploads: 60
       resources:
         requests: {}
         limits: {}
     storages:
-      s3-us-west:
-        type: s3
-        verifyTLS: true
-        nodeSelector:
-          storage: tape
-          backupWorker: 'True'
-        resources:
-          requests:
-            memory: 1G
-            cpu: 600m
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-              - matchExpressions:
-                - key: backupWorker
-                  operator: In
-                  values:
-                  - 'True'
-        tolerations:
-          - key: "backupWorker"
-            operator: "Equal"
-            value: "True"
-            effect: "NoSchedule"
-        annotations:
-          testName: scheduled-backup
-        labels:
-          backupWorker: 'True'
-        schedulerName: 'default-scheduler'
-        priorityClassName: 'high-priority'
-        containerSecurityContext:
-          privileged: true
-        podSecurityContext:
-          fsGroup: 1001
-          supplementalGroups: [1001, 1002, 1003]
-        s3:
-          bucket: S3-BACKUP-BUCKET-NAME-HERE
-          # Use credentialsSecret OR credentialsAccessKey/credentialsSecretKey
-          credentialsSecret: my-cluster-name-backup-s3
-          #credentialsAccessKey: REPLACE-WITH-AWS-ACCESS-KEY
-          #credentialsSecretKey: REPLACE-WITH-AWS-SECRET-KEY
-          region: us-west-2
-          endpointUrl: https://sfo2.digitaloceanspaces.com
-      s3-us-west-binlogs:
+      s3-minio:
         type: s3
         s3:
-          bucket: mysql
-          credentialsSecret: 'test'
-          region: us-west-2
+          bucket: mysql-backups
+          credentialsSecret: 'mysql-core-minio-s3'
+          region: us-east-1
           endpointUrl: https://s3.mylogin.space
 
     schedule: []
