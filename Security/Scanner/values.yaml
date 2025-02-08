@@ -179,28 +179,6 @@ defectdojo:
     DD_SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL: '<your authorization endpoint>'
     DD_SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL: '<your token endpoint>'
 
-
-  # To add (or override) extra variables which need to be pulled from another configMap, you can
-  # use extraEnv. For example:
-  extraEnv:
-    - name: DD_SOCIAL_AUTH_KEYCLOAK_KEY
-      valueFrom:
-        secretKeyRef:
-          name: '{{ .Release.Name }}-defectdojo-oidc'
-          key: OIDC_CLIENT_ID
-
-    - name: DD_SOCIAL_AUTH_KEYCLOAK_SECRET
-      valueFrom:
-        secretKeyRef:
-          name: '{{ .Release.Name }}-defectdojo-oidc'
-          key: OIDC_CLIENT_SECRET
-
-    - name: DD_ADMIN_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: core-security-creds
-          key: password
-
   # To add code snippet which would extend setting functionality, you might add it here
   # It will be stored as ConfigMap and mounted `dojo/settings/local_settings.py`.
   # For more see: https://documentation.defectdojo.com/getting_started/configuration/
