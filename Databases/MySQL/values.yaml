@@ -49,24 +49,22 @@ pxc-db:
     # imagePullPolicy: Always
     autoRecovery: true
     expose:
-      enabled: true
-      type: LoadBalancer
-      trafficPolicy: Local
-      loadBalancerSourceRanges:
-        - 10.0.0.0/8
-        - 172.16.0.0/12
-      annotations:
-        purelb.io/allow-local: 'true'
-        purelb.io/addresses: '10.1.1.37'
-        external-dns.alpha.kubernetes.io/hostname: 'mysql.mylogin.space'
+      enabled: false
+    #   type: LoadBalancer
+    #   trafficPolicy: Local
+    #   loadBalancerSourceRanges:
+    #     - 10.0.0.0/8
+    #     - 172.16.0.0/12
+    #   annotations:
+    #     purelb.io/allow-local: 'true'
+    #     purelb.io/addresses: '10.1.1.37'
+    #     external-dns.alpha.kubernetes.io/hostname: 'mysql.mylogin.space'
 
     # schedulerName: mycustom-scheduler
     imagePullSecrets: []
     # - name: private-registry-credentials
     annotations: {}
     #  iam.amazonaws.com/role: role-arn
-    labels:
-      wan-mode: 'public'
 
     priorityClassName: tier2-priority
     readinessDelaySec: 15
@@ -294,7 +292,7 @@ pxc-db:
     #   - 1001
 
   proxysql:
-    enabled: false
+    enabled: true
     size: 3
     image: ""
     # imagePullPolicy: Always
@@ -355,16 +353,18 @@ pxc-db:
     #  iam.amazonaws.com/role: role-arn
     labels: {}
     #  rack: rack-22
-    # serviceType: ClusterIP
+    serviceType: LoadBalancer
     # externalTrafficPolicy: Cluster
     # runtimeClassName: image-rc
-    # loadBalancerSourceRanges:
-    #   - 10.0.0.0/8
-    # loadBalancerIP: 127.0.0.1
-    # serviceAnnotations:
-    #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
-    # serviceLabels:
-    #   rack: rack-23
+    loadBalancerSourceRanges:
+      - 10.0.0.0/8
+    loadBalancerIP: 127.0.0.1
+    serviceAnnotations:
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '10.1.1.37'
+      external-dns.alpha.kubernetes.io/hostname: 'mysql.mylogin.space'
+    serviceLabels:
+      wan-mode: 'public'
     # priorityClassName: high-priority
     # schedulerName: mycustom-scheduler
     readinessDelaySec: 15
