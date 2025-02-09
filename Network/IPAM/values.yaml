@@ -91,6 +91,116 @@ controllers:
               periodSeconds: 5
               failureThreshold: 30
 
+      ns:
+        image:
+          repository: powerdns/pdns-auth-48
+          tag: 4.8.4
+          pullPolicy: IfNotPresent
+
+        # -- Override the command(s) for the default container
+        command: ['/usr/local/sbin/pdns_server']
+        # -- Override the args for the default container
+        args: 
+          - --config-dir=/etc/pdns
+          - --disable-syslog=yes
+          - --socket-dir=/tmp
+          - --gpgsql-host=psql.mylogin.space
+          - --gpgsql-port=$(PSQL_PORT)
+          - --gpgsql-dbname=DlzcnePHKR
+          - --gpgsql-user=$(USERNAME)
+          - --gpgsql-password=$(PASSWORD)
+
+        env:
+          - name: PSQL_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
+                key: psqlHostname
+
+          - name: PSQL_PORT
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
+                key: psqlPort
+
+          - name: USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
+                key: username
+
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
+                key: password
+
+        # -- Override the working directory for the default container
+        workingDir: /etc/pdns
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own livenessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default livenessProbe.
+            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own startupProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default startupProbe.
+            # If you selected `custom: true`, this field holds the definition of the startupProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              timeoutSeconds: 1
+              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
+              periodSeconds: 5
+              failureThreshold: 30
+
+
 service:
   main:
     # -- Enables or disables the service
