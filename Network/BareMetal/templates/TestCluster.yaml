@@ -195,7 +195,9 @@ spec:
   clusterName: tink-test
   replicas: 1
   selector:
-    matchLabels: {}
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: test
+      pool: test
   template:
     metadata:
       labels:
@@ -264,13 +266,18 @@ spec:
   template:
     spec:
       format: ignition
-      preKubeadmCommands:
-        - (systemctl stop containerd || true) && systemctl start containerd
       joinConfiguration:
         nodeRegistration:
           kubeletExtraArgs:
             provider-id: PROVIDER_ID
-            max-pods: 256
+            read-only-port: "0"
+            anonymous-auth: "false"
+      users:
+        - name: kjones
+          sshAuthorizedKeys:
+            - 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfBgbghC6DS1eQ9iJY4EvKiAtslvEkowPV4RdqOPXMplggU70HuicTMweCS9EsU6dL+DVq6MFUjoyAnBLn5TDf/n9MD3HVMdelV5OH2fWhn93EjmVjTBP/hEgqhF+LiwgyMF0REsXmpUmO7c6y9WQkqAcrgTE/dn3AT5F7egFsp68/ArplHMT3zMULlO5MtrrzZO1NQ7Ibjb/e5Cn++0X6CEgAN62hH2G6Slw16sbZTTX6vOdfDFPX8r2YycdVQ0+iIb2tcVlcdlBzrxsw/Ri/Pq1fWFpVBlAgrjXNhI9IUYkW2K/V5vkZOpLURAp4HDDKoLuT0rXdXOis8EZyUG9jL202jm1De5EhsBgzZiZf/lgQ0RDrQy9VzRH16iaaZo9Dll3O8bS303FbE6pIGcYrUu6tbrCigjPkbD/8DzfsuVySWmLUROHh48HtA4v3Eymgn18pUFuZLPOZyEMffJ7xXUIJZ5LTAiZ3Ti5lftcwEdisJbAvtRNndKOOkfISsss= kristianfjones@KJDev-Laptop1'
+          sudo: ALL=(ALL) NOPASSWD:ALL
+
 #---
 # apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 # kind: TinkerbellMachineTemplate
