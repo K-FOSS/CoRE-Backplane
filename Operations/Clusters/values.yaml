@@ -6,56 +6,18 @@ kamaji:
   # -- The number of the pod replicas for the Kamaji controller.
   replicaCount: 1
 
-  image:
-    # -- The container image of the Kamaji controller.
-    repository: clastix/kamaji
-    pullPolicy: Always
 
   # -- A list of extra arguments to add to the kamaji controller default ones
   extraArgs: []
 
   serviceMonitor:
     # -- Toggle the ServiceMonitor true if you have Prometheus Operator installed and configured
-    enabled: false
+    enabled: true
 
   etcd:
     # -- Install an etcd with enabled multi-tenancy along with Kamaji
     deploy: false
 
-  # -- The address the probe endpoint binds to. (default ":8081")
-  healthProbeBindAddress: ":8081"
-
-  # -- The livenessProbe for the controller container
-  livenessProbe:
-    httpGet:
-      path: /healthz
-      port: healthcheck
-    initialDelaySeconds: 15
-    periodSeconds: 20
-
-  # -- The readinessProbe for the controller container
-  readinessProbe:
-    httpGet:
-      path: /readyz
-      port: healthcheck
-    initialDelaySeconds: 5
-    periodSeconds: 10
-
-  # -- (string) The address the metric endpoint binds to. (default ":8080")
-  metricsBindAddress: ":8080"
-
-  imagePullSecrets: []
-  nameOverride: ""
-  fullnameOverride: ""
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: kamaji-controller-manager
 
   # -- The annotations to apply to the Kamaji controller pods.
   podAnnotations: {}
@@ -110,11 +72,11 @@ kamaji:
     basicAuth:
       usernameSecret:
         # -- The name of the Secret containing the username used to connect to the relational database.
-        name: ops-cluster-db
+        name: {{ include "kamaji.fullname" $.Subcharts.kamaji }}
         # -- The namespace of the Secret containing the username used to connect to the relational database.
-        namespace: multicluster-controlplane
+        namespace: {{ .Release.Namespace }}
         # -- The Secret key where the data is stored.
-        keyPath: POSTGRES_USER
+        keyPath: username
 
       passwordSecret:
         # -- The name of the Secret containing the password used to connect to the relational database.
