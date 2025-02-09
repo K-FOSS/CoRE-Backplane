@@ -71,18 +71,10 @@ kamaji:
 
     basicAuth:
       usernameSecret:
-        # -- The name of the Secret containing the username used to connect to the relational database.
-        name: {{ include "kamaji.fullname" $.Subcharts.kamaji }}
-        # -- The namespace of the Secret containing the username used to connect to the relational database.
-        namespace: {{ .Release.Namespace }}
         # -- The Secret key where the data is stored.
         keyPath: username
 
       passwordSecret:
-        # -- The name of the Secret containing the password used to connect to the relational database.
-        name: ops-cluster-db
-        # -- The namespace of the Secret containing the password used to connect to the relational database.
-        namespace: multicluster-controlplane
         # -- The Secret key where the data is stored.
         keyPath: POSTGRES_PASSWORD
 
