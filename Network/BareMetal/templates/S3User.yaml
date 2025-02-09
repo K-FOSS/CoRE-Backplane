@@ -1,0 +1,14 @@
+
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}
+ 
+spec:
+  name: S3Static
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-s3-creds
+
