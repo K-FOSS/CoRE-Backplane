@@ -7,11 +7,14 @@ metadata:
     wan-mode: public
     lan-mode: private
 
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      namespace: kuadrant-core-prod
+      namespace: core-prod
       name: main-gw
 
   hostnames:

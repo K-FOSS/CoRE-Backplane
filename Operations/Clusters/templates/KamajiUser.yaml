@@ -1,7 +1,10 @@
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
-  name: {{ include "kamaji.fullname" . }}
+  name: {{ include "kamaji.fullname" $.Subcharts.kamaji }}
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
 
 spec:
   name: Kamaji
@@ -9,4 +12,4 @@ spec:
     - LDAPService
 
   writeConnectionSecretToRef:
-    name: kamaji
+    name: {{ include "kamaji.fullname" $.Subcharts.kamaji }}
