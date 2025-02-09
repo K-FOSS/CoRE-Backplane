@@ -1,0 +1,285 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: TinkerbellCluster
+metadata:
+  name: kub-poc
+
+spec:
+  imageLookupBaseRegistry: ""
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: KubeadmControlPlane
+metadata:
+  name: kub-poc-control-plane
+
+spec:
+  kubeadmConfigSpec:
+    format: ignition
+    ignition:
+      containerLinuxConfig:
+        additionalConfig: |
+          storage:
+            links:
+              - path: /etc/extensions/kubernetes.raw
+                hard: false
+                target: /opt/extensions/kubernetes/kubernetes-{{ .Values.kubeVersion }}-arm64.raw
+            files:
+              - path: /etc/sysupdate.kubernetes.d/kubernetes-v1.29.conf
+                mode: 0644
+                contents:
+                  remote:
+                    url: https://github.com/flatcar/sysext-bakery/releases/download/latest/kubernetes-v1.29.conf
+              - path: /etc/sysupdate.d/noop.conf
+                mode: 0644
+                contents:
+                  remote:
+                    url: https://github.com/flatcar/sysext-bakery/releases/download/latest/noop.conf
+              - path: /opt/extensions/kubernetes/kubernetes-{{ .Values.kubeVersion }}-arm64.raw
+                contents:
+                  remote:
+                    url: https://github.com/flatcar/sysext-bakery/releases/download/latest/kubernetes-{{ .Values.kubeVersion }}-arm64.raw
+          systemd:
+            units:
+              - name: systemd-sysupdate.service
+                dropins:
+                  - name: kubernetes.conf
+                    contents: |
+                      [Service]
+                      ExecStartPre=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/kubernetes.raw > /tmp/kubernetes"
+                      ExecStartPre=/usr/lib/systemd/systemd-sysupdate -C kubernetes update
+                      ExecStartPost=/usr/bin/sh -c "readlink --canonicalize /etc/extensions/kubernetes.raw > /tmp/kubernetes-new"
+                      ExecStartPost=/usr/bin/sh -c "if ! cmp --silent /tmp/kubernetes /tmp/kubernetes-new; then touch /run/reboot-required; fi"
+              - name: update-engine.service
+                # Set this to 'false' if you want to enable Flatcar auto-update
+                mask: false
+              - name: locksmithd.service
+                # NOTE: To coordinate the node reboot in this context, we recommend to use Kured.
+                mask: true
+              - name: systemd-sysupdate.timer
+                # Set this to 'true' if you want to enable the Kubernetes auto-update.
+                # NOTE: Only patches version will be pulled.
+                enabled: false
+              - name: kubeadm.service
+                enabled: true
+                dropins:
+                  - name: 10-flatcar.conf
+                    contents: |
+                      [Unit]
+                      Requires=containerd.service
+                      After=containerd.service
+
+    clusterConfiguration: {}
+    
+    users:
+      - name: root
+        sshAuthorizedKeys:
+          - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfBgbghC6DS1eQ9iJY4EvKiAtslvEkowPV4RdqOPXMplggU70HuicTMweCS9EsU6dL+DVq6MFUjoyAnBLn5TDf/n9MD3HVMdelV5OH2fWhn93EjmVjTBP/hEgqhF+LiwgyMF0REsXmpUmO7c6y9WQkqAcrgTE/dn3AT5F7egFsp68/ArplHMT3zMULlO5MtrrzZO1NQ7Ibjb/e5Cn++0X6CEgAN62hH2G6Slw16sbZTTX6vOdfDFPX8r2YycdVQ0+iIb2tcVlcdlBzrxsw/Ri/Pq1fWFpVBlAgrjXNhI9IUYkW2K/V5vkZOpLURAp4HDDKoLuT0rXdXOis8EZyUG9jL202jm1De5EhsBgzZiZf/lgQ0RDrQy9VzRH16iaaZo9Dll3O8bS303FbE6pIGcYrUu6tbrCigjPkbD/8DzfsuVySWmLUROHh48HtA4v3Eymgn18pUFuZLPOZyEMffJ7xXUIJZ5LTAiZ3Ti5lftcwEdisJbAvtRNndKOOkfISsss= kristianfjones@KJDev-Laptop1
+    
+    initConfiguration:
+      nodeRegistration:
+        kubeletExtraArgs:
+          provider-id: PROVIDER_ID
+
+    joinConfiguration:
+      nodeRegistration:
+        ignorePreflightErrors:
+          - DirAvailable--etc-kubernetes-manifests
+        kubeletExtraArgs:
+          provider-id: PROVIDER_ID
+
+    preKubeadmCommands:
+      - until ping cloudbase.it -c 2 -t 10; do sleep 1; done
+
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: TinkerbellMachineTemplate
+      name: kub-poc-control-plane
+
+  replicas: 1
+  version: {{ .Values.kubeVersion }}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: kub-poc
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 192.168.0.0/16
+    services:
+      cidrBlocks:
+        - 172.26.0.0/16
+
+  controlPlaneEndpoint:
+    host: 10.1.1.40
+    port: 6443
+
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: KubeadmControlPlane
+    name: kub-poc-control-plane
+
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: TinkerbellCluster
+    name: kub-poc
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: TinkerbellMachineTemplate
+metadata:
+  name: kub-poc-control-plane
+
+spec:
+  template:
+    spec:
+      hardwareAffinity:
+        preferred:
+          - weight: 100
+            hardwareAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  resolvemy.host/nodetype: infra
+      templateOverride: |
+        version: "0.1"
+        name: kub-poc-control-plane-flatcar-arm64
+        global_timeout: 6000
+        tasks:
+          - name: "kub-poc-control-plane-flatcar"
+            worker: "{{.device_1}}"
+            volumes:
+              - /dev:/dev
+              - /dev/console:/dev/console
+              - /lib/firmware:/lib/firmware:ro
+              - /run:/run
+            actions:
+              - name: "stream-image"
+                image: quay.io/tinkerbell-actions/image2disk:v1.0.0
+                timeout: 600
+                environment:
+                  IMG_URL: https://alpha.release.flatcar-linux.net/amd64-usr/3874.0.0/flatcar_production_image.bin.bz2
+                  DEST_DISK: /dev/nvme0n1
+                  COMPRESSED: true
+              - name: "change-kernel-configuration"
+                image: quay.io/tinkerbell-actions/writefile:v1.0.0
+                timeout: 90
+                environment:
+                  DEST_DISK: /dev/nvme0n1p6
+                  FS_TYPE: btrfs
+                  DEST_PATH: /grub.cfg
+                  UID: 0
+                  GID: 0
+                  MODE: 0777
+                  DIRMODE: 0755
+                  CONTENTS: |
+                    set linux_append="$linux_append flatcar.autologin=tty1 flatcar.config.url=http://10.1.1.66:50061/2009-04-04/user-data"
+              - name: "reboot"
+                image: tinkerbell.azurecr.io/tinkerbell/reboot:1.0
+                timeout: 90
+                volumes:
+                  - /worker:/worker
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: kub-poc-worker-a
+
+  labels:
+    cluster.x-k8s.io/cluster-name: kub-poc
+    pool: worker-a
+spec:
+  clusterName: kub-poc
+
+  replicas: 1
+
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: kub-poc
+      pool: worker-a
+
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: kub-poc
+        pool: worker-a
+
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: kub-poc-worker-a
+
+      clusterName: kub-poc
+
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: TinkerbellMachineTemplate
+        name: kub-poc-worker-a
+      version: v1.24.10
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: kub-poc-worker-a
+
+spec:
+  template:
+    spec:
+      format: ignition
+      preKubeadmCommands:
+        - (systemctl stop containerd || true) && systemctl start containerd
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            provider-id: PROVIDER_ID
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: TinkerbellMachineTemplate
+metadata:
+  name: kub-poc-worker-a
+
+spec:
+  template:
+    spec:
+      templateOverride: |
+        version: "0.1"
+        name: kub-poc-worker-flatcar
+        global_timeout: 6000
+        tasks:
+          - name: "kub-poc-worker-flatcar"
+            worker: "{{.device_1}}"
+            volumes:
+              - /dev:/dev
+              - /dev/console:/dev/console
+              - /lib/firmware:/lib/firmware:ro
+              - /run:/run
+            actions:
+              - name: "stream-image"
+                image: tinkerbell.azurecr.io/oci2disk:v1.0.0
+                timeout: 600
+                environment:
+                  IMG_URL: tinkerbell.azurecr.io/cluster-api-provider-tinkerbell-flatcar/flatcar-stable337424av:v1.24.10.gz
+                  DEST_DISK: /dev/sda
+                  COMPRESSED: true
+              - name: "change-kernel-configuration"
+                image: tinkerbell.azurecr.io/writefile:v1.0.0
+                timeout: 90
+                environment:
+                  DEST_DISK: /dev/sda6
+                  FS_TYPE: btrfs
+                  DEST_PATH: /grub.cfg
+                  UID: 0
+                  GID: 0
+                  MODE: 0777
+                  DIRMODE: 0755
+                  CONTENTS: |
+                    set linux_append="$linux_append flatcar.autologin=tty1 ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data"
+              - name: "reboot"
+                image: tinkerbell.azurecr.io/reboot:v1.0.0
+                timeout: 3000
+                pid: host
