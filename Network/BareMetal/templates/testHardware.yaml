@@ -1,0 +1,67 @@
+apiVersion: "tinkerbell.org/v1alpha1"
+kind: Hardware
+metadata:
+  name: test-machine
+
+  labels:
+    manufacturer: dell
+    idrac-version: '6'
+    dc: '1'
+    rack: '1'
+    resolvemy.host/machinetype: baremetal
+    resolvemy.host/nodetype: infra
+
+spec:
+  metadata:
+    facility:
+      facility_code: onprem
+
+    manufacturer:
+      slug: dell
+
+    instance:
+      userdata: ""
+      hostname: infra2
+      id: f0:4d:a2:09:60:ba
+
+      operating_system:
+        distro: "ubuntu"
+        os_slug: "ubuntu_20_04"
+        version: "20.04"
+
+  interfaces:
+    - dhcp:
+        arch: x86_64
+        hostname: infra2
+        ip:
+          address: 172.31.241.238
+          gateway: 172.31.241.237
+          netmask: 255.255.255.0
+
+        lease_time: 86400
+        mac: f0:4d:a2:09:60:ba
+
+        name_servers:
+          - 1.1.1.1
+          - 1.0.0.1
+        uefi: true
+
+      netboot:
+        allowPXE: true
+        allowWorkflow: true
+        ipxe:
+          contents: >
+            #!ipxe
+
+
+            set base-url
+            http://alpha.release.flatcar-linux.net/amd64-usr/current
+
+
+            kernel ${base-url}/flatcar_production_pxe.vmlinuz
+            initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1
+            ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data
+
+            initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
+
+            boot
