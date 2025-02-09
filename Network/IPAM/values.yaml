@@ -168,7 +168,7 @@ service:
         appProtocol:
 
 persistence:
-  configs:
+  dhcp-config:
     enabled: true
     mountPath: /etc/DHCP
     type: custom
@@ -177,6 +177,27 @@ persistence:
       main: # the controller with the "main" identifier
         main: # the container with the "main" identifier
           - path: /etc/DHCP
+
+configMaps:
+  config:
+    # -- Enables or disables the configMap
+    enabled: true
+    # -- Labels to add to the configMap
+    labels: {}
+    # -- Annotations to add to the configMap
+    annotations: {}
+    # -- configMap data content. Helm template enabled.
+    data:
+      entry.sh: |
+        #!/bin/sh
+        echo "HelloWorld"
+
+        /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
+
+        echo "Starking Stork Agent"
+
+        exec tail -f /dev/null
+
 
 netbox:
   # Default values for NetBox.
