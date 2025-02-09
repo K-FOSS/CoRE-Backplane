@@ -195,6 +195,20 @@ persistence:
             subPath: entry.sh
 
 
+  socket:
+    enabled: true
+    mountPath: /etc/DHCP
+    type: custom
+
+    volumeSpec:
+      emptyDir:
+        medium: Memory
+
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /var/run/DHCP
+
 configMaps:
   config:
     # -- Enables or disables the configMap
