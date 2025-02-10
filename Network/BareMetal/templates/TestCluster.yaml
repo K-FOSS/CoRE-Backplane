@@ -324,3 +324,52 @@ spec:
 #                 image: tinkerbell.azurecr.io/reboot:v1.0.0
 #                 timeout: 3000
 #                 pid: host
+---
+apiVersion: "tinkerbell.org/v1alpha1"
+kind: Hardware
+metadata:
+  name: node2
+
+  labels:
+    manufacturer: dell
+    idrac-version: '6'
+    resolvemy.host/dc: '1'
+    resolvemy.host/rack: '1'
+    resolvemy.host/machinetype: baremetal
+    resolvemy.host/nodetype: infra
+    cluster.x-k8s.io/cluster-name: tink-test
+    pool: test
+
+spec:
+  metadata:
+    facility:
+      facility_code: onprem
+
+    manufacturer:
+      slug: dell
+
+    instance:
+      userdata: ""
+      hostname: node2
+      id: f0:4d:a2:03:cd:e6
+
+  interfaces:
+    - dhcp:
+        arch: x86_64
+        hostname: node2
+        ip:
+          address: 172.31.241.74
+          gateway: 172.31.241.73
+          netmask: 255.255.255.252
+
+        lease_time: 86400
+        mac: f0:4d:a2:03:cd:e6
+
+        name_servers:
+          - 1.1.1.1
+          - 1.0.0.1
+        uefi: false
+
+      netboot:
+        allowPXE: true
+        allowWorkflow: true
