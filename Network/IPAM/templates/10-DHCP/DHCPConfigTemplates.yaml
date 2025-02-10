@@ -463,6 +463,48 @@ data:
                 "boot-file-name": "ipxe.efi"
             },
             {
+                "name": "iPXE",
+                "test": "option[175].exists",
+                "option-data": [
+                    {
+                        "name": "tftp-server-name",
+                        "data": "10.1.1.66"
+                    },
+                    {
+                        "name": "boot-file-name",
+                        "data": "http://boot.netboot.xyz"
+                    }
+                ]
+            },
+            {
+                "name": "UEFI clients",
+                "test": "option[93].hex == 0x0007 and not option[175].exists",
+                "option-data": [
+                    {
+                        "name": "tftp-server-name",
+                        "data": "10.1.1.66"
+                    },
+                    {
+                        "name": "boot-file-name",
+                        "data": "ipxe.efi"
+                    }
+                ]
+            },
+            {
+                "name": "BIOS clients",
+                "test": "option[93].hex == 0x0000 and not option[175].exists",
+                "option-data": [
+                    {
+                        "name": "tftp-server-name",
+                        "data": "10.1.1.66"
+                    },
+                    {
+                        "name": "boot-file-name",
+                        "data": "undionly.kpxe"
+                    }
+                ]
+            },
+            {
               "name": "ubnt",
               "test": "substring(option[60].hex,0,4) == 'ubnt'",
               "option-def": [
