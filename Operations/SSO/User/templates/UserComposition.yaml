@@ -12,6 +12,10 @@ spec:
   writeConnectionSecretsToNamespace: core-prod
 
   resources:
+    #
+    # Create the user and use Terraform random to generate username, password, 
+    # and create the template for the S3 Bucket and other related resources and variables
+    #
     - name: user
       base:
         apiVersion: tf.upbound.io/v1beta1
@@ -26,7 +30,7 @@ spec:
 
           forProvider:
             source: Inline
-            module: |
+            module: | # hcl
               resource "random_string" "username" {
                 length  = 10
                 special = false
@@ -319,6 +323,10 @@ spec:
                 hostname: psql-int.mylogin.space
                 port: 5432
                 uri: postgres://
+
+              mqtt:
+                hostname: mqtt.mylogin.space
+                port: 1883
               
               mysql:
                 hostname: mysql.mylogin.space
@@ -624,7 +632,7 @@ spec:
 
           forProvider:
             source: Inline
-            module: |
+            module: | # hcl
               variable "database" {
                 description = "Database Configuration"
                 type        = object({
@@ -805,7 +813,7 @@ spec:
 
           forProvider:
             source: Inline
-            module: |
+            module: | # hcl
               variable "ldap" {
                 description = "Database Configuration"
                 type = object(
