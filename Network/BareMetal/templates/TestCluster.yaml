@@ -157,13 +157,13 @@ spec:
               - /lib/firmware:/lib/firmware:ro
               - /run:/run
             actions:
-              - name: "stream-image"
-                image: quay.io/tinkerbell-actions/image2disk:v1.0.0
-                timeout: 600
+              - name: "stream ubuntu"
+                image: quay.io/tinkerbell-actions/qemuimg2disk:v1.0.0
+                timeout: 300
                 environment:
-                  IMG_URL: https://alpha.release.flatcar-linux.net/amd64-usr/3874.0.0/flatcar_production_image.bin.bz2
-                  DEST_DISK: /dev/sda
-                  COMPRESSED: true
+                    IMG_URL: https://alpha.release.flatcar-linux.net/amd64-usr/3874.0.0/flatcar_production_qemu_image.img
+                    DEST_DISK: /dev/sda
+
               - name: "change-kernel-configuration"
                 image: quay.io/tinkerbell-actions/writefile:v1.0.0
                 timeout: 90
