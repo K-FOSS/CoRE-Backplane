@@ -162,13 +162,13 @@ spec:
                 timeout: 600
                 environment:
                   IMG_URL: https://alpha.release.flatcar-linux.net/amd64-usr/3874.0.0/flatcar_production_image.bin.bz2
-                  DEST_DISK: /dev/nvme0n1
+                  DEST_DISK: /dev/sda
                   COMPRESSED: true
               - name: "change-kernel-configuration"
                 image: quay.io/tinkerbell-actions/writefile:v1.0.0
                 timeout: 90
                 environment:
-                  DEST_DISK: /dev/nvme0n1p6
+                  DEST_DISK: /dev/sda1
                   FS_TYPE: btrfs
                   DEST_PATH: /grub.cfg
                   UID: 0
@@ -375,7 +375,7 @@ spec:
           contents: | # shell
             #!ipxe
             set base-url http://alpha.release.flatcar-linux.net/amd64-usr/current
-            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1 ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data
+            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1
             initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
             boot
 
