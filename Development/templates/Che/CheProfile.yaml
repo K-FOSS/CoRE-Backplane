@@ -8,6 +8,19 @@ metadata:
   annotations:
     controller.devfile.io/mount-as: subpath
     controller.devfile.io/mount-path: /home/user
+  namespace: kjones-che
 data:
-  .profile: |
+  .bash_profile: |
+    # .bash_profile
+
+    # Get the aliases and functions
+    if [ -f ~/.bashrc ]; then
+            . ~/.bashrc
+    fi
+
+    getSecret() {
+      kubectl get secret $@ -o go-template='{{range $k,$v := .data}}{{printf "%s: " $k}}{{if not $v}}{{$v}}{{else}}{{$v | base64decode}}{{end}}{{"\n"}}{{end}}'
+    }
+
+    # User specific environment and startup programs
     alias getArgoPass='kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
