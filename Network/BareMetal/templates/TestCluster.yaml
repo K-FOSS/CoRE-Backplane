@@ -144,13 +144,13 @@ spec:
               labelSelector:
                 matchLabels:
                   resolvemy.host/nodetype: infra
-      templateOverride: |
+      templateOverride: | #yaml
         version: "0.1"
         name: kub-poc-control-plane-flatcar-arm64
         global_timeout: 6000
         tasks:
           - name: "kub-poc-control-plane-flatcar"
-            worker: "{{.device_1}}"
+            worker: "{{`{{.device_1}}`}}"
             volumes:
               - /dev:/dev
               - /dev/console:/dev/console
