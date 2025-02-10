@@ -42,27 +42,21 @@ spec:
         mac: f0:4d:a2:09:60:ba
 
         name_servers:
-          - 66.165.222.100
           - 1.1.1.1
           - 1.0.0.1
-        uefi: true
+        uefi: false
 
       netboot:
         allowPXE: true
         allowWorkflow: true
         ipxe:
-          contents: >
+          contents: |
             #!ipxe
-
-
-            set base-url
-            http://alpha.release.flatcar-linux.net/amd64-usr/current
-
-
-            kernel ${base-url}/flatcar_production_pxe.vmlinuz
-            initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1
-            ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data
-
+            
+            set base-url http://alpha.release.flatcar-linux.net/amd64-usr/current
+            
+            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1 ignition.config.url=https://example.com/pxe-config.ign
+            
             initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
 
             boot
