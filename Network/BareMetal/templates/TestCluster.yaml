@@ -336,6 +336,8 @@ metadata:
     resolvemy.host/dc: '1'
     resolvemy.host/rack: '1'
     resolvemy.host/machinetype: baremetal
+    cluster.x-k8s.io/cluster-name: tink-test
+    pool: test
 
 spec:
   metadata:
@@ -349,6 +351,8 @@ spec:
       userdata: ""
       hostname: node2
       id: f0:4d:a2:03:cd:e6
+  disks:
+    - device: /dev/sda
 
   interfaces:
     - dhcp:
@@ -369,6 +373,12 @@ spec:
 
       netboot:
         allowPXE: true
-        allowWorkflow: false
-        ipxe:
-          url: 'https://boot.netboot.xyz'
+        allowWorkflow: true
+        # ipxe:
+        #   contents: |
+        #     #!ipxe
+        #     dhcp
+        #     kernel http://deb.debian.org/debian/dists/stable/main/installer-arm64/current/images/netboot/debian-installer/arm64/linux initrd=initrd.gz install auto=true priority=critical
+        #     initrd --name initrd.gz http://deb.debian.org/debian/dists/stable/main/installer-arm64/current/images/netboot/debian-installer/arm64/initrd.gz
+        #     boot
+        #   url: 'https://boot.netboot.xyz'
