@@ -14,3 +14,17 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/env/0/value
         value: 10.1.1.66
+
+  - target:
+      kind: Deployment
+      name: tink-server
+
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:4317
+
+          - name: OTEL_EXPORTER_OTLP_INSECURE
+            value: 'true'
