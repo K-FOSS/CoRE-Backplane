@@ -304,8 +304,13 @@ alloy:
         // Tracing
         //
         otelcol.receiver.otlp "default" {
-          http {}
-          grpc {}
+          http {
+            endpoint = "0.0.0.0:4318"
+          }
+          grpc {
+            endpoint = "0.0.0.0:4317"
+          }
+
 
           output {
             traces  = [otelcol.processor.k8sattributes.default.input]
@@ -329,6 +334,27 @@ alloy:
         otelcol.exporter.otlp "default" {
           client {
             endpoint = "tempo-core-tempo.core-prod.svc.cluster.local:4317"
+          }
+        }
+
+        otelcol.receiver.jaeger "local" {
+          protocols {
+            grpc {
+              endpoint = "0.0.0.0:14250"
+            }
+            thrift_http {
+              endpoint = "0.0.0.0:14268"
+            }
+            thrift_binary {
+              endpoint = "0.0.0.0:6832"
+            }
+            thrift_compact {
+              endpoint = "0.0.0.0:6831"
+            }
+          }
+
+          output {
+            traces  = [otelcol.processor.k8sattributes.default.input]
           }
         }
 
@@ -397,6 +423,26 @@ alloy:
       - name: 'otel-http'
         port: 4318
         targetPort: 4318
+        protocol: 'TCP'
+
+      - name: 'jaeger-grpc'
+        port: 14250
+        targetPort: 14250
+        protocol: 'TCP'
+
+      - name: 'jaeger-thrift-http'
+        port: 14268
+        targetPort: 14268
+        protocol: 'TCP'
+
+      - name: 'jaeger-thrift-binary'
+        port: 6832
+        targetPort: 6832
+        protocol: 'TCP'
+
+      - name: 'jaeger-thrift-compact'
+        port: 6831
+        targetPort: 6831
         protocol: 'TCP'
 
     # -- Host aliases to add to the Alloy container.
