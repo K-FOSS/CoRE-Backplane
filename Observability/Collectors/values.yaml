@@ -48,11 +48,24 @@ alloy:
         // 
         loki.source.syslog "syslog" {
           listener {
+            address  = "0.0.0.0:1514"
+            labels   = { 
+              component = "loki.source.syslog", 
+              protocol = "tcp",
+              job = "syslog", 
+            }
+          }
+
+
+
+          listener {
             address               = "0.0.0.0:1514"
             protocol = "UDP"
             idle_timeout          = "1m0s"
             label_structured_data = true
-            labels                = {
+            labels = {
+              component = "loki.source.syslog",
+              protocol = "udp",
               job = "syslog",
             }
             max_message_length = 0
