@@ -33,7 +33,7 @@ alloy:
       # -- Content to assign to the new ConfigMap.  This is passed into `tpl` allowing for templating from values.
       content: | # js
         logging {
-          level = "debug"
+          level = "info"
           format = "json"
 
           write_to = [loki.write.loki.receiver]
@@ -661,8 +661,6 @@ alloy:
     clusterIP: ''
     # -- Value for internal traffic policy. 'Cluster' or 'Local'
     internalTrafficPolicy: Cluster
-    annotations: {}
-      # cloud.google.com/load-balancer-type: Internal
 
   serviceMonitor:
     enabled: false
