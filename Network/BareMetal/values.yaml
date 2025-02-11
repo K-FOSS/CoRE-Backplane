@@ -11,7 +11,7 @@ controllers:
     strategy: RollingUpdate
 
     containers:
-      main:
+      s3tftpd:
         image:
           repository: ghcr.io/hanazuki/s3tftpd
           tag: latest
@@ -119,7 +119,7 @@ service:
 # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/)
 # @default -- See below
 route:
-  nsadmin:
+  main:
     # -- Enables or disables the route
     enabled: true
 
@@ -201,6 +201,9 @@ stack:
   # See individual chart documentation for additional detail.
 
   smee:
+    image: quay.io/tinkerbell/smee:v0.15.2
+    tinkWorkerImage: quay.io/tinkerbell/tink-worker:v0.12.2
+
     trustedProxies: ['0.0.0.0/0']
     publicIP: '10.1.1.66'
     logLevel: 'debug'
@@ -222,17 +225,17 @@ stack:
 
 
   hegel:
-    # image: quay.io/tinkerbell/hegel:v0.11.1
+    image: quay.io/tinkerbell/hegel:v0.14.2
     trustedProxies: ['0.0.0.0/0']
 
-  # rufio:
-  #   image: quay.io/tinkerbell/rufio:v0.3.2
+  rufio:
+    image: quay.io/tinkerbell/rufio:v0.3.2
 
-  # tink:
-  #   controller:
-  #     image: quay.io/tinkerbell/tink-controller:v0.9.0
-  #   server:
-  #     image: quay.io/tinkerbell/tink:v0.9.0
+  tink:
+    controller:
+      image: quay.io/tinkerbell/tink-controller:v0.12.2
+    server:
+      image: quay.io/tinkerbell/tink:v0.12.2
 
 
 s3-proxy:
