@@ -430,17 +430,17 @@ alloy:
         targetPort: 14250
         protocol: 'TCP'
 
-      - name: 'jaeger-thrift-http'
+      - name: 'jaeger-http'
         port: 14268
         targetPort: 14268
         protocol: 'TCP'
 
-      - name: 'jaeger-thrift-binary'
+      - name: 'jaeger-binary'
         port: 6832
         targetPort: 6832
         protocol: 'TCP'
 
-      - name: 'jaeger-thrift-compact'
+      - name: 'jaeger-compact'
         port: 6831
         targetPort: 6831
         protocol: 'TCP'
@@ -576,7 +576,8 @@ alloy:
     podAnnotations: {}
 
     # -- Extra pod labels to add.
-    podLabels: {}
+    podLabels:
+      logs: loki-myloginspace
 
     # -- PodDisruptionBudget configuration.
     podDisruptionBudget:
