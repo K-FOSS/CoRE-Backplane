@@ -761,3 +761,256 @@ alloy:
   #   stringData:
   #     PROMETHEUS_HOST: 'https://prometheus-us-central1.grafana.net/api/prom/push'
   #     PROMETHEUS_USERNAME: '123456'
+
+
+vector:
+  # Default values for Vector
+  # See Vector helm documentation to learn more:
+  # https://vector.dev/docs/setup/installation/package-managers/helm/
+
+  # nameOverride -- Override the name of resources.
+  nameOverride: ""
+
+  # fullnameOverride -- Override the full name of resources.
+  fullnameOverride: ""
+
+  # role -- [Role](https://vector.dev/docs/setup/deployment/roles/) for this Vector instance, valid options are:
+  # "Agent", "Aggregator", and "Stateless-Aggregator".
+
+  # Each role is created with the following workloads:
+  # Agent = DaemonSet
+  # Aggregator = StatefulSet
+  # Stateless-Aggregator = Deployment
+  role: "Stateless-Aggregator"
+
+  # replicas -- Specify the number of Pods to create. Valid for the "Aggregator" and "Stateless-Aggregator" roles.
+  replicas: 1
+
+  # Adding additional entries with hostAliases
+  hostAliases: []
+  # - ip: "127.0.0.1"
+  #   hostnames:
+  #   - "foo.local"
+  #   - "bar.local"
+
+
+  # podManagementPolicy -- Specify the [podManagementPolicy](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies)
+  # for the StatefulSet. Valid for the "Aggregator" role.
+  podManagementPolicy: OrderedReady
+
+
+  # podLabels -- Set labels on Vector Pods.
+  podLabels:
+    vector.dev/exclude: "true"
+
+  # podPriorityClassName -- Set the [priorityClassName](https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass)
+  # on Vector Pods.
+  podPriorityClassName: ""
+  # Configuration for Vector's Service.
+  service:
+    # service.enabled -- If true, create and provide a Service resource for Vector.
+    enabled: true
+    # service.type -- Set the type for Vector's Service.
+    type: "ClusterIP"
+    # service.annotations -- Set annotations on Vector's Service.
+    annotations: {}
+    # service.topologyKeys -- Specify the [topologyKeys](https://kubernetes.io/docs/concepts/services-networking/service-topology/#using-service-topology)
+    # field on Vector's Service.
+    topologyKeys: []
+    #   - "kubernetes.io/hostname"
+    #   - "topology.kubernetes.io/zone"
+    #   - "topology.kubernetes.io/region"
+    #   - "*"
+    # service.ports -- Manually set the Service ports, overriding automated generation of Service ports.
+    ports: []
+    # service.externalTrafficPolicy -- Specify the [externalTrafficPolicy](https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/#preserving-the-client-source-ip).
+    externalTrafficPolicy: ""
+    # service.internalTrafficPolicy -- Specify the [internalTrafficPolicy](https://kubernetes.io/docs/concepts/services-networking/service-traffic-policy).
+    internalTrafficPolicy: ""
+    # service.loadBalancerIP -- Specify the [loadBalancerIP](https://kubernetes.io/docs/concepts/services-networking/service/#loadbalancer).
+    loadBalancerIP: ""
+    # service.ipFamilyPolicy -- Configure [IPv4/IPv6 dual-stack](https://kubernetes.io/docs/concepts/services-networking/dual-stack/).
+    ipFamilyPolicy: ""
+    # service.ipFamilies -- Configure [IPv4/IPv6 dual-stack](https://kubernetes.io/docs/concepts/services-networking/dual-stack/).
+    ipFamilies: []
+
+  # Configuration for Vector's Headless Service.
+  serviceHeadless:
+    # serviceHeadless.enabled -- If true, create and provide a Headless Service resource for Vector.
+    enabled: true
+
+  # Configuration for Vector's Ingress.
+  ingress:
+    # ingress.enabled -- If true, create and use an Ingress resource.
+    enabled: false
+    # ingress.className -- Specify the [ingressClassName](https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress),
+    # requires Kubernetes >= 1.18
+    className: ""
+    # ingress.annotations -- Set annotations on the Ingress.
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    # ingress.hosts -- Configure the hosts and paths for the Ingress.
+    hosts: []
+    #  - host: chart-example.local
+    #    paths:
+    #      - path: /
+    #        pathType: ImplementationSpecific
+    #        # Specify the port name or number on the Service
+    #        # Using name requires Kubernetes >=1.19
+    #        port:
+    #          name: ""
+    #          number: ""
+    # ingress.tls -- Configure TLS for the Ingress.
+    tls: []
+    #  - secretName: chart-example-tls
+    #    hosts:
+    #      - chart-example.local
+
+  # existingConfigMaps -- List of existing ConfigMaps for Vector's configuration instead of creating a new one. Requires
+  # dataDir to be set. Additionally, containerPorts, service.ports, and serviceHeadless.ports should be specified based on
+  # your supplied configuration. If set, this parameter takes precedence over customConfig and the chart's default configs.
+  existingConfigMaps: []
+
+  # dataDir -- Specify the path for Vector's data, only used when existingConfigMaps are used.
+  dataDir: ""
+
+  # customConfig -- Override Vector's default configs, if used **all** options need to be specified. This section supports
+  # using helm templates to populate dynamic values. See Vector's [configuration documentation](https://vector.dev/docs/reference/configuration/)
+  # for all options.
+  customConfig:
+    data_dir: /vector-data-dir
+    api:
+      enabled: false
+      address: 127.0.0.1:8686
+      playground: false
+    sources:
+      syslog:
+        type: syslog
+        address: 0.0.0.0:1514
+        mode: udp
+        permit_origin:
+          - 10.0.0.0/8
+          - 172.0.0.0/12
+          - 192.168.0.0/16
+    sinks:
+      loki:
+        type: loki
+        inputs: [syslog]
+        endpoint: http://loki-core-distributor.core-prod.svc.cluster.local:3100
+
+  # defaultVolumes -- Default volumes that are mounted into pods. In most cases, these should not be changed.
+  # Use `extraVolumes`/`extraVolumeMounts` for additional custom volumes.
+  # @default -- See `values.yaml`
+  defaultVolumes: []
+
+  # defaultVolumeMounts -- Default volume mounts. Corresponds to `volumes`.
+  # @default -- See `values.yaml`
+  defaultVolumeMounts: []
+
+  # extraVolumes -- Additional Volumes to use with Vector Pods.
+  extraVolumes: []
+
+  # extraVolumeMounts -- Additional Volume to mount into Vector Containers.
+  extraVolumeMounts: []
+
+  # initContainers -- Init Containers to be added to the Vector Pods.
+  initContainers: []
+
+  # extraContainers -- Extra Containers to be added to the Vector Pods.
+  extraContainers: []
+
+  # Configuration for Vector's data persistence.
+  persistence:
+    # persistence.enabled -- If true, create and use PersistentVolumeClaims.
+    enabled: false
+
+    hostPath:
+      # persistence.hostPath.enabled -- If true, use hostPath persistence. Valid for the "Agent" role, if it's disabled
+      # the "Agent" role will use emptyDir.
+      enabled: false
+
+  # dnsPolicy -- Specify the [dnsPolicy](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy)
+  # for Vector Pods.
+  dnsPolicy: ClusterFirst
+
+  # dnsConfig -- Specify the [dnsConfig](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-dns-config)
+  # options for Vector Pods.
+  dnsConfig: {}
+    # nameservers:
+    #   - 1.2.3.4
+    # searches:
+    #   - ns1.svc.cluster-domain.example
+    #   - my.dns.search.suffix
+    # options:
+    #   - name: ndots
+    #     value: "2"
+    #   - name: edns0
+
+  # shareProcessNamespace -- Specify the [shareProcessNamespace](https://kubernetes.io/docs/tasks/configure-pod-container/share-process-namespace/)
+  # options for Vector Pods.
+  shareProcessNamespace: false
+
+  # livenessProbe -- Override default liveness probe settings. If customConfig is used, requires customConfig.api.enabled
+  # to be set to true.
+  livenessProbe: {}
+    # httpGet:
+    #   path: /health
+    #   port: api
+
+  # readinessProbe -- Override default readiness probe settings. If customConfig is used,
+  # requires customConfig.api.enabled to be set to true.
+  readinessProbe: {}
+    # httpGet:
+    #   path: /health
+    #   port: api
+
+  # Configure a PodMonitor for Vector, requires the PodMonitor CRD to be installed.
+  podMonitor:
+    # podMonitor.enabled -- If true, create a PodMonitor for Vector.
+    enabled: false
+    # podMonitor.jobLabel -- Override the label to retrieve the job name from.
+    jobLabel: app.kubernetes.io/name
+    # podMonitor.port -- Override the port to scrape.
+    port: prom-exporter
+    # podMonitor.path -- Override the path to scrape.
+    path: /metrics
+    # podMonitor.interval -- Override the interval at which metrics should be scraped.
+    interval:
+    # podMonitor.scrapeTimeout -- Override the timeout after which the scrape is ended.
+    scrapeTimeout:
+    # podMonitor.relabelings -- [RelabelConfigs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config)
+    # to apply to samples before scraping.
+    relabelings: []
+    # podMonitor.metricRelabelings -- [MetricRelabelConfigs](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#metric_relabel_configs)
+    # to apply to samples before ingestion.
+    metricRelabelings: []
+    # podMonitor.podTargetLabels -- [podTargetLabels](https://prometheus-operator.dev/docs/operator/api/#monitoring.coreos.com/v1.PodMonitorSpec)
+    # transfers labels on the Kubernetes Pod onto the target.
+    podTargetLabels: []
+    # podMonitor.additionalLabels -- Adds additional labels to the PodMonitor.
+    additionalLabels: {}
+    # podMonitor.honorLabels -- If true, honor_labels is set to true in the [scrape config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config).
+    honorLabels: false
+    # podMonitor.honorTimestamps -- If true, honor_timestamps is set to true in the [scrape config](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#scrape_config).
+    honorTimestamps: true
+
+  # Log level for Vector.
+  logLevel: "info"
+
+  # Optional built-in HAProxy load balancer.
+  haproxy:
+    # haproxy.enabled -- If true, create a HAProxy load balancer.
+    enabled: false
+
+  # extraObjects -- Create extra manifests via values. Would be passed through `tpl` for templating.
+  extraObjects: []
+    # - apiVersion: v1
+    #   kind: ConfigMap
+    #   metadata:
+    #     name: vector-dashboards
+    #     labels:
+    #       grafana_dashboard: "1"
+    #   data:
+    #     vector.json: |
+    #       {{ .Files.Get "dashboards/vector.json" | fromJson | toJson }}
