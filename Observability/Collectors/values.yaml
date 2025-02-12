@@ -205,6 +205,20 @@ alloy:
           forward_to = [loki.write.loki.receiver]
         }
 
+        // Setup a reciever specifically for Vector
+        loki.source.api "listener" {
+          http {
+            listen_address = "0.0.0.0"
+            listen_port = 9999
+          }
+
+          labels = { 
+            component = "loki.source.api", 
+          }
+
+          forward_to = [loki.write.loki.receiver]
+        }
+
         loki.write "loki" {
           endpoint {
             url = "https://logs.mylogin.space/loki/api/v1/push"
@@ -474,6 +488,12 @@ alloy:
         port: 6831
         targetPort: 6831
         protocol: 'TCP'
+
+      - name: 'loki-write'
+        port: 9999
+        targetPort: 9999
+        protocol: 'TCP'
+        appProtocol: 'http'
 
     # -- Host aliases to add to the Alloy container.
     hostAliases: []
@@ -850,19 +870,16 @@ vector:
       playground: false
     sources:
       syslog:
-        type: syslog
+        type: socket
         address: 0.0.0.0:1514
         mode: udp
-        permit_origin:
-          - 10.0.0.0/8
-          - 172.0.0.0/12
-          - 192.168.0.0/16
+
     sinks:
       loki:
         type: loki
         inputs: [syslog]
         compression: snappy
-        endpoint: http://loki-core-distributor.core-prod.svc.cluster.local:3100
+        endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
         encoding:
           codec: json
         labels:
