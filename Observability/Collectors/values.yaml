@@ -837,43 +837,7 @@ vector:
   # Configuration for Vector's Headless Service.
   serviceHeadless:
     # serviceHeadless.enabled -- If true, create and provide a Headless Service resource for Vector.
-    enabled: true
-
-  # Configuration for Vector's Ingress.
-  ingress:
-    # ingress.enabled -- If true, create and use an Ingress resource.
     enabled: false
-    # ingress.className -- Specify the [ingressClassName](https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress),
-    # requires Kubernetes >= 1.18
-    className: ""
-    # ingress.annotations -- Set annotations on the Ingress.
-    annotations: {}
-      # kubernetes.io/ingress.class: nginx
-      # kubernetes.io/tls-acme: "true"
-    # ingress.hosts -- Configure the hosts and paths for the Ingress.
-    hosts: []
-    #  - host: chart-example.local
-    #    paths:
-    #      - path: /
-    #        pathType: ImplementationSpecific
-    #        # Specify the port name or number on the Service
-    #        # Using name requires Kubernetes >=1.19
-    #        port:
-    #          name: ""
-    #          number: ""
-    # ingress.tls -- Configure TLS for the Ingress.
-    tls: []
-    #  - secretName: chart-example-tls
-    #    hosts:
-    #      - chart-example.local
-
-  # existingConfigMaps -- List of existing ConfigMaps for Vector's configuration instead of creating a new one. Requires
-  # dataDir to be set. Additionally, containerPorts, service.ports, and serviceHeadless.ports should be specified based on
-  # your supplied configuration. If set, this parameter takes precedence over customConfig and the chart's default configs.
-  existingConfigMaps: []
-
-  # dataDir -- Specify the path for Vector's data, only used when existingConfigMaps are used.
-  dataDir: ""
 
   # customConfig -- Override Vector's default configs, if used **all** options need to be specified. This section supports
   # using helm templates to populate dynamic values. See Vector's [configuration documentation](https://vector.dev/docs/reference/configuration/)
@@ -897,7 +861,10 @@ vector:
       loki:
         type: loki
         inputs: [syslog]
+        compression: snappy
         endpoint: http://loki-core-distributor.core-prod.svc.cluster.local:3100
+        encoding:
+          codec: json
 
   # defaultVolumes -- Default volumes that are mounted into pods. In most cases, these should not be changed.
   # Use `extraVolumes`/`extraVolumeMounts` for additional custom volumes.
