@@ -164,24 +164,6 @@ spec:
                     IMG_URL: https://cloud-images.ubuntu.com/daily/server/focal/current/focal-server-cloudimg-amd64.img
                     DEST_DISK: /dev/sda
 
-              - name: "change-kernel-configuration"
-                image: quay.io/tinkerbell-actions/writefile:v1.0.0
-                timeout: 90
-                environment:
-                  DEST_DISK: /dev/sda1
-                  FS_TYPE: btrfs
-                  DEST_PATH: /grub.cfg
-                  UID: 0
-                  GID: 0
-                  MODE: 0777
-                  DIRMODE: 0755
-                  CONTENTS: |
-                    set linux_append="$linux_append flatcar.autologin=tty1 flatcar.config.url=http://10.1.1.66:50061/2009-04-04/user-data"
-              - name: "reboot"
-                image: tinkerbell.azurecr.io/tinkerbell/reboot:1.0
-                timeout: 90
-                volumes:
-                  - /worker:/worker
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -375,7 +357,7 @@ spec:
           contents: | # shell
             #!ipxe
             set base-url http://alpha.release.flatcar-linux.net/amd64-usr/current
-            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1
+            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1 ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data
             initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
             boot
 
