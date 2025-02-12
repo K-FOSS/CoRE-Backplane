@@ -874,10 +874,19 @@ vector:
         address: 0.0.0.0:1514
         mode: udp
 
+    transforms:
+      cisco_parser:
+        type: remap
+        inputs:
+          - syslog
+        source: |
+          . = parse_grok!(.message, "^<%{NUMBER:syslog_pri}>%{NUMBER:seq_num}: %{DATA:device}: %{MONTH:month} %{NUMBER:day} %{TIME:time}: %%{DATA:log_identifier}: %{GREEDYDATA:message}")
+
     sinks:
       loki:
         type: loki
-        inputs: [syslog]
+        inputs:
+          - cisco_parser
         compression: snappy
         endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
         encoding:
