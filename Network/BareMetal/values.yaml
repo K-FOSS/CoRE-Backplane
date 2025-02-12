@@ -18,7 +18,9 @@ controllers:
           pullPolicy: IfNotPresent
 
         # -- Override the args for the default container
-        args: 
+        args:
+          - --single-port
+          - --verbosity=8
           - '--force-path-style'
           - --endpoint-url=$(S3_ENDPOINT)
           - s3://$(S3_BUCKET)
@@ -162,6 +164,10 @@ route:
             name: main
             weight: 1
 
+
+defaultPodOptions:
+  labels:
+    logs: loki-myloginspace
 
 stack:
   stack:
