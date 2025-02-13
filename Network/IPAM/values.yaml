@@ -20,7 +20,7 @@ controllers:
     strategy: RollingUpdate
 
     containers:
-      main:
+      dhcp:
         image:
           repository: kristianfjones/kea
           tag: vps1-core
@@ -292,7 +292,7 @@ persistence:
 
     advancedMounts:
       main: # the controller with the "main" identifier
-        main: # the container with the "main" identifier
+        dhcp: # the container with the "main" identifier
           - path: /etc/DHCP
 
   scripts:
@@ -306,7 +306,7 @@ persistence:
 
     advancedMounts:
       main: # the controller with the "main" identifier
-        main: # the container with the "main" identifier
+        dhcp: # the container with the "main" identifier
           - path: /usr/local/bin/entry.sh
             readOnly: true
             subPath: entry.sh
@@ -337,7 +337,7 @@ persistence:
 
     advancedMounts:
       main: # the controller with the "main" identifier
-        main: # the container with the "main" identifier
+        dhcp: # the container with the "main" identifier
           - path: /var/run/DHCP
 
 configMaps:
