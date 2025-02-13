@@ -458,6 +458,7 @@ data:
             {
               "name": "pxe-legacy",
               "test": "not member('ipxe') and option[93].hex == 0x0000",
+              "next-server": "10.1.1.66",
               "option-data": [
                 {
                   "name": "tftp-server-name",
@@ -466,25 +467,18 @@ data:
                 {
                   "name": "boot-file-name",
                   "data": "undionly.kpxe"
-                },
-                {
-                  "name": "next-server",
-                  "data": "10.1.1.67"
                 }
               ]
             },
             {
               "name": "pxe-uefi",
               "test": "not member('ipxe') and not member('pxe-legacy')",
+              "next-server": "10.1.1.66",
               "option-data": [
                 {
                   "name": "tftp-server-name",
                   "data": "tftp.mylogin.space"
 
-                },
-                {
-                  "name": "next-server",
-                  "data": "10.1.1.67"
                 },
                 {
                   "name": "boot-file-name",
