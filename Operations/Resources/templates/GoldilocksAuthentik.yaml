@@ -42,12 +42,12 @@ spec:
         application = authentik_application.name.uuid
       }
 
-      resource "authentik_group" "group" {
+      data "authentik_group" "admins" {
         name = "Server Admins"
       }
 
       resource "authentik_policy_binding" "test-ent-access" {
         target = authentik_application_entitlement.ent.id
-        group  = authentik_group.group.id
+        group  = data.authentik_group.group.id
         order  = 0
       }
