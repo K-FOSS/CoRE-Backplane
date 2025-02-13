@@ -13,7 +13,7 @@ spec:
 
   forProvider:
     source: Inline
-    module: |
+    module: | # hcl
       data "authentik_flow" "default-authorization-flow" {
         slug = "default-provider-authorization-explicit-consent"
       }
@@ -71,6 +71,7 @@ spec:
         name              = "loki-test"
         slug              = "loki-test"
         protocol_provider = authentik_provider_oauth2.auth-provider.id
+        meta_launch_url   = "blank://blank"
       }
 
       output "client_id" {
