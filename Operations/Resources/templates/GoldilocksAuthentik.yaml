@@ -2,17 +2,17 @@
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
-  name: {{ include "goldilocks.fullname" $.Subcharts.goldilocks }}
+  name: '{{ include "goldilocks.fullname" $.Subcharts.goldilocks }}'
 
 spec:
   providerConfigRef:
     name: authentik
   writeConnectionSecretToRef:
     namespace: {{ .Release.Namespace }}
-    name: {{ include "goldilocks.fullname" $.Subcharts.goldilocks }}-sso
+    name: '{{ include "goldilocks.fullname" $.Subcharts.goldilocks }}-sso'
   forProvider:
     source: Inline
-    module: |
+    module: | # hcl
       data "authentik_flow" "default-authorization-flow" {
         slug = "default-provider-authorization-implicit-consent"
       }
@@ -35,4 +35,19 @@ spec:
         slug              = "goldilocks"
         group             = "Observability"
         protocol_provider = authentik_provider_proxy.golidlocks.id
+      }
+
+      resource "authentik_application_entitlement" "ent" {
+        name        = "servers-ent"
+        application = authentik_application.name.uuid
+      }
+
+      resource "authentik_group" "group" {
+        name = "Server Admins"
+      }
+
+      resource "authentik_policy_binding" "test-ent-access" {
+        target = authentik_application_entitlement.ent.uuid
+        group  = authentik_group.group.id
+        order  = 0
       }
