@@ -48,5 +48,8 @@ patches:
       name: dc1-k3s-node1-baremetal-core-tftp
 
     patch: |-
-      - op: remove
-        path: /spec/ports/*/nodePort
+      apiVersion: v1
+      kind: Service
+      spec:
+        ports:
+          - nodePort: null
