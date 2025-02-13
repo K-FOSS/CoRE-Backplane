@@ -94,12 +94,7 @@ service:
 
     externalTrafficPolicy: Local
 
-    annotations:
-      purelb.io/allow-local: 'true'
-      purelb.io/addresses: '10.1.1.67'
-      external-dns.alpha.kubernetes.io/hostname: 'tftp.mylogin.space'
-      purelb.io/allow-shared-ip: dhcp.resolvemy.host
-
+    annotations: {}
     labels:
       wan-mode: public
 
@@ -256,9 +251,17 @@ stack:
       image: quay.io/tinkerbell/tink:v0.12.2
 
 tftp:
+  minSessionPort: 80000
+  maxSessionPort: 800501
   service:
     enabled: true
     port: 69
+    annotations:
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '10.1.1.67'
+      external-dns.alpha.kubernetes.io/hostname: 'tftp.mylogin.space'
+      purelb.io/allow-shared-ip: dhcp.resolvemy.host
+
 
 s3-proxy:
   # Default values for s3-proxy.
