@@ -94,7 +94,12 @@ service:
 
     externalTrafficPolicy: Local
 
-    annotations: {}
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: static.mylogin.space
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '10.1.1.67'
+      purelb.io/allow-shared-ip: dhcp.resolvemy.host
+
     labels:
       wan-mode: public
 
@@ -137,11 +142,7 @@ route:
     kind: UDPRoute
 
     # -- Provide additional annotations which may be required.
-    annotations:
-      external-dns.alpha.kubernetes.io/hostname: static.mylogin.space
-      purelb.io/allow-local: 'true'
-      purelb.io/addresses: '10.1.1.67'
-      purelb.io/allow-shared-ip: dhcp.resolvemy.host
+    annotations: {}
 
     # -- Provide additional labels which may be required.
     labels:
