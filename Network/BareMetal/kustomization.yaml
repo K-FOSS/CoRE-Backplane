@@ -28,6 +28,7 @@ patches:
         path: /spec/template/metadata/labels/logs
         value: loki-myloginspace
 
+
   - target:
       kind: Deployment
       name: tink-server
@@ -41,3 +42,11 @@ patches:
 
           - name: OTEL_EXPORTER_OTLP_INSECURE
             value: 'true'
+
+  - target:
+      kind: Service
+      name: dc1-k3s-node1-baremetal-core-tftp
+
+    patch: |-
+      - op: remove
+        path: /spec/ports/0/nodePort
