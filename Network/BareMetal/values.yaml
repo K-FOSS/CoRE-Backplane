@@ -90,7 +90,13 @@ service:
     primary: true
 
     # -- Set the service type
-    type: ClusterIP
+    type: LoadBalancer
+
+    externalTrafficPolicy: Local
+
+    annotations:
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '10.1.1.69'
 
     ports:
       http:
