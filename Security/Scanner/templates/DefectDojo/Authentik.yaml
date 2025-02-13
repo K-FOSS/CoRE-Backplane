@@ -72,6 +72,27 @@ spec:
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
+      resource "authentik_application_entitlement" "ent" {
+        name        = "servers-ent"
+        application = authentik_application.application.uuid
+      }
+
+      data "authentik_group" "group" {
+        name = "Server Admins"
+      }
+
+      resource "authentik_policy_binding" "test-ent-access" {
+        target = authentik_application_entitlement.ent.id
+        group  = data.authentik_group.group.id
+        order  = 0
+      }
+
+      resource "authentik_policy_binding" "app-access" {
+        target = authentik_application.application.uuid
+        group  = data.authentik_group.group.id
+        order  = 0
+      }
+
       output "OIDC_CLIENT_ID" {
         value = "defectdojo"
         sensitive = true
