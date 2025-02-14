@@ -30,7 +30,14 @@ spec:
       disableDhcp: false
       netboot:
         allowPXE: true
-        allowWorkflow: true
+        allowWorkflow: false
+        ipxe:
+          contents: | # shell
+            #!ipxe
+            set base-url http://static.mylogin.space/flatcar
+            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz rootfstype=btrfs flatcar.first_boot=1 sshkey={{ .Values.admin.sshKey }} ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data
+            initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
+            boot
   metadata:
     facility:
       facility_code: onprem
@@ -89,6 +96,7 @@ metadata:
 spec:
   bootOptions:
     toggleAllowNetboot: true
+    bootMode: iso
   hardwareMap:
     device_1: f0:4d:a2:09:60:ba
   hardwareRef: infra2
