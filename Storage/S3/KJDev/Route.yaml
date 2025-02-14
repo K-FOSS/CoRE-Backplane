@@ -20,8 +20,16 @@ spec:
 
   rules:
     - backendRefs:
-        - name: s3-gw
+        - group: ''
+          kind: Service
+          name: s3-gw
           port: 9000
+          weight: 1
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 
       timeouts:
         request: 1800s
