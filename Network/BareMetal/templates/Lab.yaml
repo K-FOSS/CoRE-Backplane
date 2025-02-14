@@ -11,6 +11,9 @@ metadata:
     resolvemy.host/rack: '1'  
 
 spec:
+  disks:
+    - device: /dev/sda
+
   interfaces:
     - dhcp:
         arch: x86_64
@@ -27,19 +30,7 @@ spec:
       disableDhcp: false
       netboot:
         allowPXE: true
-        allowWorkflow: false
-        ipxe:
-          contents: >
-            #!ipxe
-
-            dhcp 
-
-            kernel https://boot.netboot.xyz/memdisk iso raw
-
-            initrd https://mirrors.centos.org/mirrorlist?path=/10-stream/BaseOS/x86_64/iso/CentOS-Stream-10-latest-x86_64-dvd1.iso&redirect=1&protocol=https
-
-
-            boot
+        allowWorkflow: true
   metadata:
     facility:
       facility_code: onprem
@@ -48,3 +39,57 @@ spec:
       id: f0:4d:a2:09:60:ba
     manufacturer:
       slug: dell
+---
+apiVersion: tinkerbell.org/v1alpha1
+kind: Template
+metadata:
+  name: infra2
+
+spec:
+  data: | # yaml
+    version: "0.1"
+    name: kub-poc-control-plane-flatcar-arm64
+    global_timeout: 6000
+    tasks:
+      - name: "kub-poc-control-plane-flatcar"
+        worker: "{{`{{.device_1}}`}}"
+        volumes:
+          - /dev:/dev
+          - /dev/console:/dev/console
+          - /lib/firmware:/lib/firmware:ro
+          - /run:/run
+        actions:
+          - name: "stream ubuntu"
+            image: docker.io/zhaog918/qemuimg2disk:v1.0.0
+            timeout: 1800
+            environment:
+                IMG_URL: https://alpha.release.flatcar-linux.net/amd64-usr/current/flatcar_production_qemu_image.img
+                DEST_DISK: /dev/sda
+
+          - name: "change-kernel-configuration"
+            image: quay.io/tinkerbell-actions/writefile:v1.0.0
+            timeout: 90
+            environment:
+              DEST_DISK: /dev/sda1
+              FS_TYPE: btrfs
+              DEST_PATH: /grub.cfg
+              UID: 0
+              GID: 0
+              MODE: 0777
+              DIRMODE: 0755
+              CONTENTS: |
+                set linux_append="$linux_append flatcar.autologin=tty1 flatcar.config.url=http://10.1.1.66:50061/2009-04-04/user-data"
+
+---
+apiVersion: tinkerbell.org/v1alpha1
+kind: Workflow
+metadata:
+  name: infra2
+
+spec:
+  bootOptions:
+    toggleAllowNetboot: true
+  hardwareMap:
+    device_1: f0:4d:a2:09:60:ba
+  hardwareRef: infra2
+  templateRef: infra2
