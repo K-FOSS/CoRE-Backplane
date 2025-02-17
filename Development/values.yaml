@@ -415,9 +415,24 @@ gitlab:
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
       host: psql-int.mylogin.space
+      load_balancing:
+        hosts:
+          - psql.mylogin.space
+          - psql-int-rep.mylogin.space
+
       database: gl-core
 
       username: gl-core
+
+      keepalives: 1
+
+      keepalivesIdle: 30
+      keepalivesInterval: 30
+      keepalivesCount: 0
+      tcpUserTimeout: 0
+      preparedStatements: false
+
+
 
       password:
         useSecret: true
@@ -464,6 +479,8 @@ gitlab:
       authToken: {}
 
       autoMigrate: true
+
+
 
       psql:
         host: psql-int.mylogin.space
