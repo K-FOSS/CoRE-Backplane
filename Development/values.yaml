@@ -980,7 +980,7 @@ gitlab:
         "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
 
     webservice:
-      workerProcesses: 1
+      workerProcesses: 2
       replicaCount: 1
       puma:
         threads:
@@ -1003,13 +1003,14 @@ gitlab:
           enabled: true
 
     sidekiq:
+      concurrency: 10
       resources:
         requests:
           cpu: 48m
           memory: 1239M
         limits:
-          cpu: 407m
-          memory: 1813M
+          cpu: '1'
+          memory: 2G
 
     gitlab-shell:
       resources:
