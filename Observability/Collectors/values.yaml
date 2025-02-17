@@ -112,6 +112,8 @@ alloy:
           name = "core-backplane-observeability-collectors-oauth-creds"
         }
 
+        // Begin Auto Discovery Configuration
+
         // discovery.kubernetes allows you to find scrape targets from Kubernetes resources.
         // It watches cluster state and ensures targets are continually synced with what is currently running in your cluster.
         discovery.kubernetes "pod" {
@@ -122,6 +124,13 @@ alloy:
             label = "logs=loki-myloginspace"
           }
         }
+
+        // discover all services, to be used later in this config
+        discovery.kubernetes "services" {
+          role = "service"
+        }
+
+        // End Auto Discovery
 
         // discovery.relabel rewrites the label set of the input targets by applying one or more relabeling rules.
         // If no rules are defined, then the input targets are exported as-is.
@@ -267,6 +276,179 @@ alloy:
         }
 
         prometheus.operator.probes "probes" {
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
+        // Generic scrape of any pod with Annotation "prometheus.io/scrape: true"
+        discovery.relabel "annotation_autodiscovery_pods" {
+          targets = discovery.kubernetes.pod.targets
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+            regex = "true"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_job"]
+            action = "replace"
+            target_label = "job"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_instance"]
+            action = "replace"
+            target_label = "instance"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+            action = "replace"
+            target_label = "__metrics_path__"
+          }
+
+          // Choose the pod port
+          // The discovery generates a target for each declared container port of the pod.
+          // If the metricsPortName annotation has value, keep only the target where the port name matches the one of the annotation.
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_port_name"]
+            target_label = "__tmp_port"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_portName"]
+            regex = "(.+)"
+            target_label = "__tmp_port"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_port_name"]
+            action = "keepequal"
+            target_label = "__tmp_port"
+          }
+
+          // If the metrics port number annotation has a value, override the target address to use it, regardless whether it is
+          // one of the declared ports on that Pod.
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port", "__meta_kubernetes_pod_ip"]
+            regex = "(\\d+);(([A-Fa-f0-9]{1,4}::?){1,7}[A-Fa-f0-9]{1,4})"
+            replacement = "[$2]:$1" // IPv6
+            target_label = "__address__"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_port", "__meta_kubernetes_pod_ip"]
+            regex = "(\\d+);((([0-9]+?)(\\.|$)){4})" // IPv4, takes priority over IPv6 when both exists
+            replacement = "$2:$1"
+            target_label = "__address__"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scheme"]
+            action = "replace"
+            target_label = "__scheme__"
+          }
+
+
+          // add labels
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label = "pod"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label = "container"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_controller_name"]
+            target_label = "controller"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label = "namespace"
+          }
+
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app"]
+            target_label = "app"
+          }
+
+          // map all labels
+          rule {
+            action = "labelmap"
+            regex  = "__meta_kubernetes_pod_label_(.+)"
+          }
+        }
+
+        // Generic scrape of any service with
+        // Annotation Autodiscovery
+        discovery.relabel "annotation_autodiscovery_services" {
+          targets = discovery.kubernetes.services.targets
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_scrape"]
+            regex = "true"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_job"]
+            action = "replace"
+            target_label = "job"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_instance"]
+            action = "replace"
+            target_label = "instance"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_path"]
+            action = "replace"
+            target_label = "__metrics_path__"
+          }
+
+          // Choose the service port
+          rule {
+            source_labels = ["__meta_kubernetes_service_port_name"]
+            target_label = "__tmp_port"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_portName"]
+            regex = "(.+)"
+            target_label = "__tmp_port"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_port_name"]
+            action = "keepequal"
+            target_label = "__tmp_port"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_service_port_number"]
+            target_label = "__tmp_port"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_port"]
+            regex = "(.+)"
+            target_label = "__tmp_port"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_port_number"]
+            action = "keepequal"
+            target_label = "__tmp_port"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_service_annotation_prometheus_io_scheme"]
+            action = "replace"
+            target_label = "__scheme__"
+          }
+        }
+
+        prometheus.scrape "metrics" {
+          job_name   = "integrations/autodiscovery_metrics"
+          targets  = concat(discovery.relabel.annotation_autodiscovery_pods.output, discovery.relabel.annotation_autodiscovery_services.output)
+          honor_labels = true
+          clustering {
+            enabled = true
+          }
+          forward_to = [prometheus.relabel.metrics_service.receiver]
+        }
+
+        prometheus.relabel "metrics_service" {
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
