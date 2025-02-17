@@ -979,6 +979,19 @@ gitlab:
         "helm.sh/hook": "pre-install"
         "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
 
+    webservice:
+      workerProcesses: 6
+      replicaCount: 1
+      puma:
+        threads:
+          min: 4
+          max: 6
+
+      resources:
+        requests:
+          cpu: '1'
+          memory: '4G'
+
     exporter:
       enabled: false
       metrics:
