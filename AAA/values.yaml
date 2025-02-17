@@ -115,33 +115,32 @@ authentik:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
         value: 'null'
 
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
+        value: 'psql-int-rep.mylogin.space'
 
-      # - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
-      #   value: 'psql-int-rep.mylogin.space'
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
+        value: '5432'
 
-      # - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PORT
-      #   value: '5432'
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_HEALTH_CHECK
+        value: 'true'
 
-      # - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_HEALTH_CHECK
-      #   value: 'true'
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Database
 
-      # - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
-      #   valueFrom:
-      #     secretKeyRef:
-      #       name: authentik-database-prod
-      #       key: Database
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Username
 
-      # - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
-      #   valueFrom:
-      #     secretKeyRef:
-      #       name: authentik-database-prod
-      #       key: Username
-
-      # - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
-      #   valueFrom:
-      #     secretKeyRef:
-      #       name: authentik-database-prod
-      #       key: Password
+      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: authentik-database-prod
+            key: Password
 
       #
       # Email
