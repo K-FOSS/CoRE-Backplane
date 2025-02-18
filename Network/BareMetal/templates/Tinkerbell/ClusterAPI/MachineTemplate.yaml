@@ -1,0 +1,34 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: TinkerbellMachineTemplate
+metadata:
+  name: kub-poc-control-plane
+
+spec:
+  template:
+    spec:
+      hardwareAffinity:
+        preferred:
+          - weight: 100
+            hardwareAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  resolvemy.host/nodetype: infra
+      templateOverride: | # yaml
+        version: "0.1"
+        name: kub-poc-control-plane-flatcar-arm64
+        global_timeout: 6000
+        tasks:
+          - name: "kub-poc-control-plane-flatcar"
+            worker: "{{`{{.device_1}}`}}"
+            volumes:
+              - /dev:/dev
+              - /dev/console:/dev/console
+              - /lib/firmware:/lib/firmware:ro
+              - /run:/run
+            actions:
+              - name: "stream ubuntu"
+                image: docker.io/zhaog918/qemuimg2disk:v1.0.0
+                timeout: 600
+                environment:
+                    IMG_URL: https://cloud-images.ubuntu.com/daily/server/focal/current/focal-server-cloudimg-amd64.img
+                    DEST_DISK: /dev/sda

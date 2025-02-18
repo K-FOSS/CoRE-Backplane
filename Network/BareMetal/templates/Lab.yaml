@@ -1,3 +1,36 @@
+
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: kub-poc
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 192.168.0.0/16
+    services:
+      cidrBlocks:
+        - 172.26.0.0/16
+
+  controlPlaneEndpoint:
+    host: 10.1.1.40
+    port: 6443
+
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: TalosControlPlane
+    name: talos-cp
+
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: TinkerbellCluster
+    name: kub-poc
+
+---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
 kind: TalosControlPlane
 metadata:
@@ -51,7 +84,7 @@ spec:
             #!ipxe
 
             imgfree
-            kernel https://pxe.factory.talos.dev/image/53f71594e53cf7e1ef9b01a7e8a9494858a88814485406d07d7bc663a555953d/v1.10.0-alpha.1/kernel-amd64 talos.platform=metal console=tty0 init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on ima_template=ima-ng ima_appraise=fix ima_hash=sha512 selinux=1
+            kernel https://pxe.factory.talos.dev/image/53f71594e53cf7e1ef9b01a7e8a9494858a88814485406d07d7bc663a555953d/v1.10.0-alpha.1/kernel-amd64 talos.platform=metal console=tty0 init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on ima_template=ima-ng ima_appraise=fix ima_hash=sha512 talos.config=http://10.1.1.66:50061/2009-04-04/user-data selinux=1
             initrd https://pxe.factory.talos.dev/image/53f71594e53cf7e1ef9b01a7e8a9494858a88814485406d07d7bc663a555953d/v1.10.0-alpha.1/initramfs-amd64.xz
             boot
   metadata:
