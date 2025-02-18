@@ -32,17 +32,3 @@ spec:
                 environment:
                     IMG_URL: https://static.mylogin.space/talos/nocloud-amd64.raw
                     DEST_DISK: /dev/sda
-
-              - name: "change-kernel-configuration"
-                image: quay.io/tinkerbell-actions/writefile:v1.0.0
-                timeout: 90
-                environment:
-                  DEST_DISK: /dev/sda1
-                  FS_TYPE: btrfs
-                  DEST_PATH: /grub.cfg
-                  UID: 0
-                  GID: 0
-                  MODE: 0777
-                  DIRMODE: 0755
-                  CONTENTS: |
-                    set linux_append="$linux_append talos.config=http://10.1.1.66:50061/2009-04-04/user-data"
