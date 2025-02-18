@@ -1,3 +1,18 @@
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: TalosControlPlane
+metadata:
+  name: talos-cp
+spec:
+  version: v1.18.1
+  replicas: 1
+  infrastructureTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: TinkerbellMachineTemplate
+    name: kub-poc-control-plane
+  controlPlaneConfig:
+    controlplane:
+      generateType: controlplane
+---
 apiVersion: tinkerbell.org/v1alpha1
 kind: Hardware
 metadata:
