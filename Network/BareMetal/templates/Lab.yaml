@@ -34,9 +34,10 @@ spec:
         ipxe:
           contents: | # shell
             #!ipxe
-            set base-url http://static.mylogin.space/flatcar
-            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz rootfstype=btrfs flatcar.autologin sshkey={{ .Values.admin.sshKey }}
-            initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
+
+            imgfree
+            kernel https://pxe.factory.talos.dev/image/53f71594e53cf7e1ef9b01a7e8a9494858a88814485406d07d7bc663a555953d/v1.10.0-alpha.1/kernel-amd64 talos.platform=metal console=tty0 init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on ima_template=ima-ng ima_appraise=fix ima_hash=sha512 selinux=1
+            initrd https://pxe.factory.talos.dev/image/53f71594e53cf7e1ef9b01a7e8a9494858a88814485406d07d7bc663a555953d/v1.10.0-alpha.1/initramfs-amd64.xz
             boot
   metadata:
     facility:
