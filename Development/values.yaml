@@ -417,9 +417,10 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
-      host: psql-int.mylogin.space
+      host: psql.mylogin.space
       load_balancing:
         hosts:
+          - psql-int.mylogin.space
           - psql-int-rep.mylogin.space
 
       database: gl-core
@@ -471,6 +472,7 @@ gitlab:
         enabled: false
 
       host: redis.mylogin.space
+      database: 130
       port: 6379
 
     praefect:
@@ -526,7 +528,7 @@ gitlab:
     ## Rails based portions of this chart share many settings
     appConfig:
       ## https://docs.gitlab.com/charts/charts/globals#general-application-settings
-      enableUsagePing: true
+      enableUsagePing: false
 
       enableSeatLink: true
 
