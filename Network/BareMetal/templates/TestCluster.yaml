@@ -199,6 +199,8 @@ metadata:
     idrac-version: '6'
     resolvemy.host/dc: '1'
     resolvemy.host/rack: '1'
+    resolvemy.host/nodetype: infra
+    pool: 'test'
 
 spec:
   metadata:
@@ -238,9 +240,10 @@ spec:
         ipxe:
           contents: | # shell
             #!ipxe
-            set base-url http://alpha.release.flatcar-linux.net/amd64-usr/current
-            kernel ${base-url}/flatcar_production_pxe.vmlinuz initrd=flatcar_production_pxe_image.cpio.gz flatcar.first_boot=1 ignition.config.url=http://10.1.1.66:50061/2009-04-04/user-data
-            initrd ${base-url}/flatcar_production_pxe_image.cpio.gz
+
+            imgfree
+            kernel https://pxe.factory.talos.dev/image/3623c5ea66f3e45617feeb145662a23e5ba3b42a2a8378737aab19929957eaa8/v1.9.4/kernel-amd64 talos.platform=metal console=tty1 console=ttyS0 init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=5m talos.config=http://10.43.211.207:50061/2009-04-04/user-data
+            initrd https://pxe.factory.talos.dev/image/3623c5ea66f3e45617feeb145662a23e5ba3b42a2a8378737aab19929957eaa8/v1.9.4/initramfs-amd64.xz
             boot
 
         # ipxe:
