@@ -1,25 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources:
-  #
-  # TODO: Automate this version with GitOps and Renovate or my own custom CAS-Updater 
-  #
-
-  # Tinkerbell Cluster API
-  - https://github.com/tinkerbell/cluster-api-provider-tinkerbell/releases/download/v0.6.4/infrastructure-components.yaml
-
-
 patches:
-  - target:
-      kind: Deployment
-      name: capt-controller-manager
-
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/0/value
-        value: 10.1.1.66
-
   - target:
       kind: Deployment
 
