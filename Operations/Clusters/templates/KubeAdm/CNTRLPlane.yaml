@@ -1,0 +1,14 @@
+apiVersion: operator.cluster.x-k8s.io/v1alpha2
+kind: ControlPlaneProvider
+metadata:
+  name: kubeadm
+  namespace: capi-system
+
+spec:
+  manager:
+    featureGates:
+      ClusterTopology: true
+      KubeadmBootstrapFormatIgnition: true
+
+    leaderElection:
+      leaderElect: false
