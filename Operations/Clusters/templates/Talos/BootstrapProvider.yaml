@@ -4,3 +4,8 @@ metadata:
   name: talos
 spec:
   version: {{ .Values.providers.talos.bootstrap.version }}
+  deployment:
+    containers:
+      - name: manager
+        args:
+          '--enable-leader-election': 'false'
