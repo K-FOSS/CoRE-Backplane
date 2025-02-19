@@ -21,12 +21,18 @@ spec:
     - static.mylogin.space
     - '66.165.222.102'
 
-
-
   rules:
     - backendRefs:
-        - name: traefik-core-s3-proxy
+        - group: ''
+          kind: Service
+          name: traefik-core-s3-proxy
           port: 80
+          weight: 1
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 
       timeouts:
         request: 1800s
