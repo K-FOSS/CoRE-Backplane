@@ -38,6 +38,8 @@ spec:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: TinkerbellMachineTemplate
     name: kub-poc-control-plane
+    namespace: core-prod
+
   controlPlaneConfig:
     controlplane:
       generateType: controlplane
@@ -52,7 +54,10 @@ metadata:
     manufacturer: dell
     resolvemy.host/dc: '1'
     resolvemy.host/machinetype: baremetal    
-    resolvemy.host/rack: '1'  
+    resolvemy.host/rack: '1'
+    resolvemy.host/nodetype: infra
+    cluster.x-k8s.io/cluster-name: tink-test
+    pool: test
 
 spec:
   disks:
@@ -80,7 +85,7 @@ spec:
             #!ipxe
 
             imgfree
-            kernel https://pxe.factory.talos.dev/image/3623c5ea66f3e45617feeb145662a23e5ba3b42a2a8378737aab19929957eaa8/v1.9.4/kernel-amd64 talos.platform=nocloud console=tty1 console=ttyS0 net.ifnames=0 init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.config=http://10.1.1.66:50061/2009-04-04/user-data
+            kernel https://pxe.factory.talos.dev/image/3623c5ea66f3e45617feeb145662a23e5ba3b42a2a8378737aab19929957eaa8/v1.9.4/kernel-amd64 talos.platform=metal console=tty1 console=ttyS0 net.ifnames=0 ip=eth0:dhcp init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.config=http://10.43.211.207:50061/2009-04-04/user-data
             initrd https://pxe.factory.talos.dev/image/3623c5ea66f3e45617feeb145662a23e5ba3b42a2a8378737aab19929957eaa8/v1.9.4/initramfs-amd64.xz
             boot
   metadata:
