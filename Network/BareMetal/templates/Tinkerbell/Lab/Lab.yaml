@@ -43,6 +43,16 @@ spec:
   controlPlaneConfig:
     controlplane:
       generateType: controlplane
+      talosVersion: v1.9
+      configPatches:
+        - op: replace
+          path: /debug
+          value: true
+
+        - op: replace
+          path: /machine/features/kubePrism/enabled
+          value: false
+
 ---
 apiVersion: tinkerbell.org/v1alpha1
 kind: Hardware
