@@ -1,75 +1,75 @@
-apiVersion: controlplane.cluster.x-k8s.io/v1beta1
-kind: KubeadmControlPlane
-metadata:
-  name: kub-poc-control-plane
+# apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+# kind: KubeadmControlPlane
+# metadata:
+#   name: kub-poc-control-plane
 
-spec:
-  kubeadmConfigSpec:
-    format: ignition
-    clusterConfiguration: {}
-    users:
-      - name: root
-        sshAuthorizedKeys:
-          - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfBgbghC6DS1eQ9iJY4EvKiAtslvEkowPV4RdqOPXMplggU70HuicTMweCS9EsU6dL+DVq6MFUjoyAnBLn5TDf/n9MD3HVMdelV5OH2fWhn93EjmVjTBP/hEgqhF+LiwgyMF0REsXmpUmO7c6y9WQkqAcrgTE/dn3AT5F7egFsp68/ArplHMT3zMULlO5MtrrzZO1NQ7Ibjb/e5Cn++0X6CEgAN62hH2G6Slw16sbZTTX6vOdfDFPX8r2YycdVQ0+iIb2tcVlcdlBzrxsw/Ri/Pq1fWFpVBlAgrjXNhI9IUYkW2K/V5vkZOpLURAp4HDDKoLuT0rXdXOis8EZyUG9jL202jm1De5EhsBgzZiZf/lgQ0RDrQy9VzRH16iaaZo9Dll3O8bS303FbE6pIGcYrUu6tbrCigjPkbD/8DzfsuVySWmLUROHh48HtA4v3Eymgn18pUFuZLPOZyEMffJ7xXUIJZ5LTAiZ3Ti5lftcwEdisJbAvtRNndKOOkfISsss= kristianfjones@KJDev-Laptop1
+# spec:
+#   kubeadmConfigSpec:
+#     format: ignition
+#     clusterConfiguration: {}
+#     users:
+#       - name: root
+#         sshAuthorizedKeys:
+#           - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfBgbghC6DS1eQ9iJY4EvKiAtslvEkowPV4RdqOPXMplggU70HuicTMweCS9EsU6dL+DVq6MFUjoyAnBLn5TDf/n9MD3HVMdelV5OH2fWhn93EjmVjTBP/hEgqhF+LiwgyMF0REsXmpUmO7c6y9WQkqAcrgTE/dn3AT5F7egFsp68/ArplHMT3zMULlO5MtrrzZO1NQ7Ibjb/e5Cn++0X6CEgAN62hH2G6Slw16sbZTTX6vOdfDFPX8r2YycdVQ0+iIb2tcVlcdlBzrxsw/Ri/Pq1fWFpVBlAgrjXNhI9IUYkW2K/V5vkZOpLURAp4HDDKoLuT0rXdXOis8EZyUG9jL202jm1De5EhsBgzZiZf/lgQ0RDrQy9VzRH16iaaZo9Dll3O8bS303FbE6pIGcYrUu6tbrCigjPkbD/8DzfsuVySWmLUROHh48HtA4v3Eymgn18pUFuZLPOZyEMffJ7xXUIJZ5LTAiZ3Ti5lftcwEdisJbAvtRNndKOOkfISsss= kristianfjones@KJDev-Laptop1
     
-    initConfiguration:
-      nodeRegistration:
-        kubeletExtraArgs:
-          provider-id: PROVIDER_ID
+#     initConfiguration:
+#       nodeRegistration:
+#         kubeletExtraArgs:
+#           provider-id: PROVIDER_ID
 
-    joinConfiguration:
-      nodeRegistration:
-        ignorePreflightErrors:
-          - DirAvailable--etc-kubernetes-manifests
-        kubeletExtraArgs:
-          provider-id: PROVIDER_ID
+#     joinConfiguration:
+#       nodeRegistration:
+#         ignorePreflightErrors:
+#           - DirAvailable--etc-kubernetes-manifests
+#         kubeletExtraArgs:
+#           provider-id: PROVIDER_ID
 
-    preKubeadmCommands:
-      - until ping cloudbase.it -c 2 -t 10; do sleep 1; done
+#     preKubeadmCommands:
+#       - until ping cloudbase.it -c 2 -t 10; do sleep 1; done
 
-  machineTemplate:
-    infrastructureRef:
-      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-      kind: TinkerbellMachineTemplate
-      name: kub-poc-control-plane
+#   machineTemplate:
+#     infrastructureRef:
+#       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+#       kind: TinkerbellMachineTemplate
+#       name: kub-poc-control-plane
 
-  replicas: 1
-  version: {{ .Values.kubeVersion }}
----
-apiVersion: cluster.x-k8s.io/v1beta1
-kind: MachineDeployment
-metadata:
-  labels:
-    cluster.x-k8s.io/cluster-name: tink-test
-    pool: test
-  name: tink-test
-
-spec:
-  clusterName: tink-test
-  replicas: 1
-  selector:
-    matchLabels:
-      cluster.x-k8s.io/cluster-name: tink-test
-      pool: test
-  template:
-    metadata:
-      labels:
-        cluster.x-k8s.io/cluster-name: tink-test
-        pool: test
-    spec:
-      bootstrap:
-        configRef:
-          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-          kind: KubeadmConfigTemplate
-          name: test-cluster
-
-      clusterName: tink-test
-      infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-        kind: TinkerbellMachineTemplate
-        name: kub-poc-control-plane
-      version: 'v1.32.1'
+#   replicas: 1
+#   version: {{ .Values.kubeVersion }}
 #---
+# apiVersion: cluster.x-k8s.io/v1beta1
+# kind: MachineDeployment
+# metadata:
+#   labels:
+#     cluster.x-k8s.io/cluster-name: tink-test
+#     pool: test
+#   name: tink-test
+
+# spec:
+#   clusterName: tink-test
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       cluster.x-k8s.io/cluster-name: tink-test
+#       pool: test
+#   template:
+#     metadata:
+#       labels:
+#         cluster.x-k8s.io/cluster-name: tink-test
+#         pool: test
+#     spec:
+#       bootstrap:
+#         configRef:
+#           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+#           kind: KubeadmConfigTemplate
+#           name: test-cluster
+
+#       clusterName: tink-test
+#       infrastructureRef:
+#         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+#         kind: TinkerbellMachineTemplate
+#         name: kub-poc-control-plane
+#       version: 'v1.32.1'
+# #---
 
 # apiVersion: cluster.x-k8s.io/v1beta1
 # kind: MachineDeployment
@@ -109,27 +109,27 @@ spec:
 #         kind: TinkerbellMachineTemplate
 #         name: kub-poc-worker-a
 #       version: v1.24.10
----
-apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-kind: KubeadmConfigTemplate
-metadata:
-  name: test-cluster
+# ---
+# apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+# kind: KubeadmConfigTemplate
+# metadata:
+#   name: test-cluster
 
-spec:
-  template:
-    spec:
-      format: ignition
-      joinConfiguration:
-        nodeRegistration:
-          kubeletExtraArgs:
-            provider-id: PROVIDER_ID
-            read-only-port: "0"
-            anonymous-auth: "false"
-      users:
-        - name: kjones
-          sshAuthorizedKeys:
-            - 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfBgbghC6DS1eQ9iJY4EvKiAtslvEkowPV4RdqOPXMplggU70HuicTMweCS9EsU6dL+DVq6MFUjoyAnBLn5TDf/n9MD3HVMdelV5OH2fWhn93EjmVjTBP/hEgqhF+LiwgyMF0REsXmpUmO7c6y9WQkqAcrgTE/dn3AT5F7egFsp68/ArplHMT3zMULlO5MtrrzZO1NQ7Ibjb/e5Cn++0X6CEgAN62hH2G6Slw16sbZTTX6vOdfDFPX8r2YycdVQ0+iIb2tcVlcdlBzrxsw/Ri/Pq1fWFpVBlAgrjXNhI9IUYkW2K/V5vkZOpLURAp4HDDKoLuT0rXdXOis8EZyUG9jL202jm1De5EhsBgzZiZf/lgQ0RDrQy9VzRH16iaaZo9Dll3O8bS303FbE6pIGcYrUu6tbrCigjPkbD/8DzfsuVySWmLUROHh48HtA4v3Eymgn18pUFuZLPOZyEMffJ7xXUIJZ5LTAiZ3Ti5lftcwEdisJbAvtRNndKOOkfISsss= kristianfjones@KJDev-Laptop1'
-          sudo: ALL=(ALL) NOPASSWD:ALL
+# spec:
+#   template:
+#     spec:
+#       format: ignition
+#       joinConfiguration:
+#         nodeRegistration:
+#           kubeletExtraArgs:
+#             provider-id: PROVIDER_ID
+#             read-only-port: "0"
+#             anonymous-auth: "false"
+#       users:
+#         - name: kjones
+#           sshAuthorizedKeys:
+#             - 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDfBgbghC6DS1eQ9iJY4EvKiAtslvEkowPV4RdqOPXMplggU70HuicTMweCS9EsU6dL+DVq6MFUjoyAnBLn5TDf/n9MD3HVMdelV5OH2fWhn93EjmVjTBP/hEgqhF+LiwgyMF0REsXmpUmO7c6y9WQkqAcrgTE/dn3AT5F7egFsp68/ArplHMT3zMULlO5MtrrzZO1NQ7Ibjb/e5Cn++0X6CEgAN62hH2G6Slw16sbZTTX6vOdfDFPX8r2YycdVQ0+iIb2tcVlcdlBzrxsw/Ri/Pq1fWFpVBlAgrjXNhI9IUYkW2K/V5vkZOpLURAp4HDDKoLuT0rXdXOis8EZyUG9jL202jm1De5EhsBgzZiZf/lgQ0RDrQy9VzRH16iaaZo9Dll3O8bS303FbE6pIGcYrUu6tbrCigjPkbD/8DzfsuVySWmLUROHh48HtA4v3Eymgn18pUFuZLPOZyEMffJ7xXUIJZ5LTAiZ3Ti5lftcwEdisJbAvtRNndKOOkfISsss= kristianfjones@KJDev-Laptop1'
+#           sudo: ALL=(ALL) NOPASSWD:ALL
 
 #---
 # apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
