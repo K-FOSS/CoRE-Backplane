@@ -4,3 +4,14 @@ metadata:
   name: talos
 spec:
   version: {{ .Values.providers.talos.cntrlplane.version }}
+
+  manifestPatches:
+    - |
+      apiversion: apps/v1
+      kind: Deployment
+      spec:
+        template:
+          spec:
+            containers:
+              - args:
+                  - '--enable-leader-election=false'
