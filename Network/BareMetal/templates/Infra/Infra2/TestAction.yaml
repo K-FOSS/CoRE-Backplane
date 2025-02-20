@@ -1,0 +1,11 @@
+apiVersion: bmc.tinkerbell.org/v1alpha1
+kind: Job
+metadata:
+  name: infra2-test
+spec:
+  machineRef:
+    name: '{{ .Release.Name }}-infra2'
+    namespace: '{{ .Release.Namespace }}'
+  tasks:
+    - powerAction: 'off'
+    - powerAction: 'on'
