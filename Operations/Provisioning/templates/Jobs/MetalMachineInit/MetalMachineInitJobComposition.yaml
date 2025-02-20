@@ -1,0 +1,54 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: metal-provision-job
+  labels:
+    implementation: mixed
+spec:
+  compositeTypeRef:
+    apiVersion: resolvemy.host/v1alpha1
+    kind: XMetalMachineInitJob
+
+  writeConnectionSecretsToNamespace: core-prod
+  
+  resources:
+    #
+    # Obtain the existing versions of 
+    - name: 
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha2
+        kind: Object
+        spec:
+          providerConfigRef:
+            name: authentik
+
+          managementPolicies:
+            - Observe
+
+          forProvider:
+            manifest:
+              apiVersion: tinkerbell.org/v1alpha1
+              kind: Hardware
+              metadata:
+                # name in manifest is optional and defaults to Object name
+                name: youshouldneverseeme
+                namespace: replacemeduringruntime
+
+
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.hardwareRef.name
+          toFieldPath: spec.forProvider.manifest.metadata.name
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.hardwareRef.namespace
+          toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+      #
+      # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+      #
+      readinessChecks:
+        - type: MatchCondition
+          matchCondition:
+            type: Ready
+            status: 'True'

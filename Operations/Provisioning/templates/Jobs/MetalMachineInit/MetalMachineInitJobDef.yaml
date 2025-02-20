@@ -1,0 +1,69 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xmetalmachineinitjob.resolvemy.host
+spec:
+  group: resolvemy.host
+
+  names:
+    kind: XMetalMachineInitJob
+    plural: xmetalmachineinitjobs
+
+  claimNames:
+    kind: MetalMachineInitJob
+    plural: metalmachineinitjobs
+
+  connectionSecretKeys:
+    - username
+    - password
+    - database
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                name:
+                  type: string
+
+                hardwareRef:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+
+                    namespace:
+                      type: string
+
+
+                iDRAC:
+                  type: object
+                  
+                  properties:
+                    ipAddress:
+                      type: string
+
+
+                force:
+                  type: boolean
+                  default: false
+
+                    
+
+              required:
+                - name
+                - iDRAC
+            status:
+              description: A Status represents the observed state
+              properties:
+                share:
+                  description: Freeform field containing status information
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
