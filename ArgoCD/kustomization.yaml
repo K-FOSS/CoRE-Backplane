@@ -2,8 +2,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: argocd
 
-resources:
-  - https://github.com/hyperspike/argocd-cluster-register/releases/download/v0.0.22/install.yaml
+# resources:
+#   - https://github.com/hyperspike/argocd-cluster-register/releases/download/v0.0.22/install.yaml
 
 patches:
   - path: argocd-lovely-plugin.yaml
@@ -11,28 +11,28 @@ patches:
       kind: Deployment
       name: argocd-repo-server
 
-  - target:
-      kind: Role
-      name: automent-manager-role
+#   - target:
+#       kind: Role
+#       name: automent-manager-role
 
-    patch: |-
-      - op: replace
-        path: /rules/0/apiGroups
-        value:
-          - ''
+#     patch: |-
+#       - op: replace
+#         path: /rules/0/apiGroups
+#         value:
+#           - ''
 
-  - target:
-      kind: ClusterRole
-      name: automent-manager-role
+#   - target:
+#       kind: ClusterRole
+#       name: automent-manager-role
 
-    patch: |-
-      - op: replace
-        path: /rules/0/apiGroups
-        value:
-          - ''
+#     patch: |-
+#       - op: replace
+#         path: /rules/0/apiGroups
+#         value:
+#           - ''
 
 
-images:
-  - name: ghcr.io/dmolik/automent
-    newName: ghcr.io/dmolik/automent
-    newTag: v0.0.19
+# images:
+#   - name: ghcr.io/dmolik/automent
+#     newName: ghcr.io/dmolik/automent
+#     newTag: v0.0.19
