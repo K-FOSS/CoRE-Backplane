@@ -1,11 +1,18 @@
 apiVersion: bmc.tinkerbell.org/v1alpha1
 kind: Machine
 metadata:
-  name: {{ .Release.Name }}-infra2
+  name: '{{ .Release.Name }}-infra2'
 spec:
   connection:
     host: 172.31.241.234
+
+    providerOptions:
+      redfish:
+        port: 443
+        useBasicAuth: true
+    
     authSecretRef:
-      name: {{ .Release.Name }}-infra2
-      namespace: {{ .Release.Namespace }}
+      name: '{{ .Release.Name }}-infra2'
+      namespace: '{{ .Release.Namespace }}'
     insecureTLS: true
+    
