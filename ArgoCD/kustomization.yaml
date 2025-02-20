@@ -10,3 +10,13 @@ patches:
     target:
       kind: Deployment
       name: argocd-repo-server
+
+  - target:
+      kind: Role
+      name: automent-manager-role
+
+    patch: |-
+      - op: replace
+        path: /rules/0/apiGroups
+        value:
+          - '*'
