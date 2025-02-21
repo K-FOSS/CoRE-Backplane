@@ -37,9 +37,7 @@ spec:
                 namespace: ''
               spec:
                 dnsNames:
-                  - vshn.appcat.vshn.ch
-                duration: 87600h
-                isCA: true
+                  - test.idrac.resolvemy.host
                 issuerRef:
                   group: cert-manager.io
                   kind: Issuer
@@ -48,11 +46,10 @@ spec:
                   algorithm: RSA
                   encoding: PKCS1
                   size: 4096
-                renewBefore: 2400h
                 secretName: tls-ca-certificate
-                subject:
-                  organizations:
-                    - vshn-appcat-ca
+                # subject:
+                #   organizations:
+                #     - core
           providerConfigRef:
             name: local-k8s
 
@@ -60,6 +57,10 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.iDRAC.tls.automagic.issuerRef
           toFieldPath: spec.forProvider.manifest.spec.issuerRef
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.namespace
+          toFieldPath: spec.forProvider.manifest.metadata.namespace
 
         - type: FromCompositeFieldPath
           fromFieldPath: spec.iDRAC.networking.hostname
