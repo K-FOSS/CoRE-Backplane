@@ -1,0 +1,23 @@
+apiVersion: resolvemy.host/v1alpha1
+kind: XiDRAC
+metadata:
+  name: infra1
+
+spec:
+  name: idrac-test
+
+  iDRAC:
+    ipAddress: 172.16.20.64/24
+    gateway: 172.16.20.254
+
+    hostname: idrac.infra1.dc1.resolvemy.host
+
+  tls:
+    enabled: true
+
+    automagic:
+      enabled: true
+
+      issuerRef:
+        name: kjdev-cluster
+        kind: ClusterIssuer

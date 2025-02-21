@@ -1,0 +1,120 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: idrac
+
+  labels:
+    implementation: mixed
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
+spec:
+  compositeTypeRef:
+    apiVersion: resolvemy.host/v1alpha1
+    kind: XiDRAC
+
+  writeConnectionSecretsToNamespace: core-prod
+  
+  resources:
+    #
+    # Create new certificate
+    #
+    - name: tls-cert
+      base:
+        apiVersion: cert-manager.io/v1
+        kind: Certificate
+        spec:
+          secretName: ipaddrnetwork-default-certificates
+          commonName: ipaddr.network
+          dnsNames:
+            - ipaddr.network
+          issuerRef:
+            name: kjdev-cluster
+            kind: ClusterIssuer
+
+
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.tls.automagic.issuerRef
+          toFieldPath: spec.issuerRef
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.iDRAC.hostname
+          toFieldPath: spec.commonName
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.iDRAC.hostname
+          toFieldPath: spec.dnsNames[0]
+
+
+        #
+        # Use IDs to auto generate the output secrets
+        #
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: 'spec.secretName'
+          transforms:
+            - type: string
+              string:
+                type: Format
+                fmt: '%s-tls-secret'
+
+    # #
+    # # Obtain the existi
+    # - name: tf-base
+    #   base:
+    #     apiVersion: tf.upbound.io/v1beta1
+    #     kind: Workspace
+    #     spec:
+    #       providerConfigRef:
+    #         name: tf-provisioning
+
+    #       writeConnectionSecretToRef:
+    #         namespace: core-prod
+    #         name: key1
+
+    #       forProvider:
+    #         source: Inline
+    #         module: | # hcl
+
+
+
+    #         varmap:
+    #           ldaps:
+    #             hostname: ldap.mylogin.space
+    #             port: 636
+    #             uri: ldaps://
+
+    #   patches:
+    #     - type: FromCompositeFieldPath
+    #       fromFieldPath: spec.hardwareRef.name
+    #       toFieldPath: spec.forProvider.manifest.metadata.name
+
+    #     - type: FromCompositeFieldPath
+    #       fromFieldPath: spec.hardwareRef.namespace
+    #       toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+
+    #     #
+    #     # Use IDs to auto generate the output secrets
+    #     #
+    #     - type: FromCompositeFieldPath
+    #       fromFieldPath: metadata.uid
+    #       toFieldPath: 'spec.writeConnectionSecretToRef.name'
+    #       transforms:
+    #         - type: string
+    #           string:
+    #             type: Format
+    #             fmt: '%s-secret'
+
+
+    #   #
+    #   # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+    #   #
+    #   readinessChecks:
+    #     - type: MatchCondition
+    #       matchCondition:
+    #         type: Ready
+    #         status: 'True'
+      
