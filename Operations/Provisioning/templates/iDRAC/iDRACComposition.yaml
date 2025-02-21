@@ -26,23 +26,35 @@ spec:
       base:
         apiVersion: kubernetes.crossplane.io/v1alpha1
         kind: Object
+        metadata: {}
         spec:
-          providerConfigRef:
-            name: local-k8s
-
           forProvider:
             manifest:
               apiVersion: cert-manager.io/v1
               kind: Certificate
+              metadata:
+                name: ''
+                namespace: ''
               spec:
-                secretName: replaceme
-                commonName: test.com
                 dnsNames:
-                  - test.com
+                  - vshn.appcat.vshn.ch
+                duration: 87600h
+                isCA: true
                 issuerRef:
-                  name: kjdev-cluster
-                  kind: ClusterIssuer
-
+                  group: cert-manager.io
+                  kind: Issuer
+                  name: ''
+                privateKey:
+                  algorithm: RSA
+                  encoding: PKCS1
+                  size: 4096
+                renewBefore: 2400h
+                secretName: tls-ca-certificate
+                subject:
+                  organizations:
+                    - vshn-appcat-ca
+          providerConfigRef:
+            name: local-k8s
 
       patches:
         - type: FromCompositeFieldPath
