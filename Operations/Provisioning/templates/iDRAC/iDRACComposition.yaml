@@ -20,32 +20,42 @@ spec:
     #
     # Create new certificate
     #
+
+
     - name: tls-cert
       base:
-        apiVersion: cert-manager.io/v1
-        kind: Certificate
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
         spec:
-          secretName: replaceme
-          commonName: test.com
-          dnsNames:
-            - test.com
-          issuerRef:
-            name: kjdev-cluster
-            kind: ClusterIssuer
+          providerConfigRef:
+            name: local-k8s
+
+          forProvider:
+            manifest:
+              apiVersion: cert-manager.io/v1
+              kind: Certificate
+              spec:
+                secretName: replaceme
+                commonName: test.com
+                dnsNames:
+                  - test.com
+                issuerRef:
+                  name: kjdev-cluster
+                  kind: ClusterIssuer
 
 
       patches:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.iDRAC.tls.automagic.issuerRef
-          toFieldPath: spec.issuerRef
+          toFieldPath: spec.forProvider.manifest.spec.issuerRef
 
         - type: FromCompositeFieldPath
           fromFieldPath: spec.iDRAC.networking.hostname
-          toFieldPath: spec.commonName
+          toFieldPath: spec.forProvider.manifest.spec.commonName
 
         - type: FromCompositeFieldPath
           fromFieldPath: spec.iDRAC.networking.hostname
-          toFieldPath: spec.dnsNames[0]
+          toFieldPath: spec.forProvider.manifest.spec.dnsNames[0]
 
 
         #
@@ -53,21 +63,13 @@ spec:
         #
         - type: FromCompositeFieldPath
           fromFieldPath: metadata.uid
-          toFieldPath: 'spec.secretName'
+          toFieldPath: spec.forProvider.manifest.spec.secretName
           transforms:
             - type: string
               string:
                 type: Format
                 fmt: '%s-tls-secret'
 
-        - type: FromCompositeFieldPath
-          fromFieldPath: metadata.name
-          toFieldPath: 'metadata.name'
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: '%s-tls'
 
       readinessChecks:
         - matchCondition:
