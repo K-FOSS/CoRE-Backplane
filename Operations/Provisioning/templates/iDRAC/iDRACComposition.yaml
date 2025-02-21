@@ -208,6 +208,15 @@ spec:
                 password = locals.password
               }
 
+              data "redfish_bios" "bios" {
+
+              }
+
+              output "bios_attributes" {
+                value     = data.redfish_bios.bios
+                sensitive = true
+              }
+
             varmap:
               init: false
               ipAddress: 
@@ -218,10 +227,6 @@ spec:
               credentials:
                 username: root
                 password: calvin
-              ldaps:
-                hostname: ldap.mylogin.space
-                port: 636
-                uri: ldaps://
 
       patches:
         - type: FromCompositeFieldPath
