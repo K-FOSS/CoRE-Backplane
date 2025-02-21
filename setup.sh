@@ -26,3 +26,7 @@ echo "Getting talosctl"
 
 wget -O ./Meta/bin/talosctl https://github.com/siderolabs/talos/releases/download/v1.10.0-alpha.1/talosctl-linux-amd64
 chmod +x ./Meta/bin/talosctl
+
+echo "Installing ArgoCD CLI"
+wget -O ./Meta/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+chmod +x ./Meta/bin/argocd
