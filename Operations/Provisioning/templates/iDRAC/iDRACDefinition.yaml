@@ -1,0 +1,103 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xidrac.resolvemy.host
+spec:
+  group: resolvemy.host
+
+  names:
+    kind: XiDRAC
+    plural: xidrac
+
+  claimNames:
+    kind: iDRAC
+    plural: idrac
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                name:
+                  type: string
+
+
+                iDRAC:
+                  description: Configure the connection to the Dell iDRAC
+                  type: object
+                  
+                  properties:
+                    version:
+                      type: integer
+                      default: 7
+
+                    networking:
+                      type: object
+                      description: Configure the iDRAC Networking
+
+
+                      properties:
+                        ipAddress:
+                          type: string
+                          description: IP Address including /SUBNET
+
+
+                        hostname:
+                          type: string
+                          description: Full hostname to use for DNS, ingress, and TLS certificates
+
+                        gateway:
+                          type: string
+
+                    tls:
+                      type: object
+
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: true
+
+                        automagic:
+                          type: object
+                           
+                          properties:
+                            enabled:
+                              type: boolean
+                              default: true
+
+                            useCertManager:
+                              type: boolean
+                              default: true
+
+                        secretRef:
+                          type: object
+                          description: Use your own existing TLS certificate on the iDRAC
+
+                          properties:
+                            name:
+                              type: string
+
+                            namespace:
+                              type: string
+
+                init:
+                  type: boolean
+                  default: false
+
+              required:
+                - name
+                - iDRAC
+            status:
+              description: A Status represents the observed state
+              properties:
+                share:
+                  description: Freeform field containing status information
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
