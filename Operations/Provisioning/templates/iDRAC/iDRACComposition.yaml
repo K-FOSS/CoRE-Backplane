@@ -145,6 +145,12 @@ spec:
           toFieldPath: status.share.tls.key
           type: ToCompositeFieldPath
 
+        - fromFieldPath: status.atProvider.manifest.data['keystore.p12']
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.tls.pks
+          type: ToCompositeFieldPath
+
       #
       # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
       #
@@ -281,6 +287,10 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.init
           toFieldPath: spec.forProvider.varmap.init
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.tls.pks
+          toFieldPath: spec.forProvider.varmap.certificate
 
         #
         # Use IDs to auto generate the output secrets
