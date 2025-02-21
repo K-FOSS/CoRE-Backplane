@@ -60,6 +60,15 @@ spec:
                 type: Format
                 fmt: '%s-tls-secret'
 
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: 'metadata.name'
+          transforms:
+            - type: string
+              string:
+                type: Format
+                fmt: '%s-tls'
+
       readinessChecks:
         - matchCondition:
             status: 'True'
