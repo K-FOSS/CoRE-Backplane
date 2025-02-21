@@ -128,6 +128,21 @@ spec:
           fromFieldPath: spec.namespace
           toFieldPath: spec.forProvider.manifest.metadata.namespace
 
+        #
+        # Load TLS Certificate into shared
+        #
+        - fromFieldPath: status.atProvider.manifest.data['tls.crt']
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.tls.cert
+          type: ToCompositeFieldPath
+
+        - fromFieldPath: status.atProvider.manifest.data['tls.key']
+          policy:
+            fromFieldPath: Required
+          toFieldPath: status.share.tls.key
+          type: ToCompositeFieldPath
+
       #
       # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
       #
