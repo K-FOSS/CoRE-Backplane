@@ -2,8 +2,13 @@ apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   name: metal-provision-job
+
   labels:
     implementation: mixed
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
 spec:
   compositeTypeRef:
     apiVersion: resolvemy.host/v1alpha1
@@ -14,7 +19,7 @@ spec:
   resources:
     #
     # Obtain the existing versions of 
-    - name: 
+    - name: hardware-ref
       base:
         apiVersion: kubernetes.crossplane.io/v1alpha2
         kind: Object
