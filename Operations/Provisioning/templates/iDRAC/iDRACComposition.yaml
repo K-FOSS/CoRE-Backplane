@@ -36,7 +36,7 @@ spec:
 
       patches:
         - type: FromCompositeFieldPath
-          fromFieldPath: spec.tls.automagic.issuerRef
+          fromFieldPath: spec.iDRAC.tls.automagic.issuerRef
           toFieldPath: spec.issuerRef
 
         - type: FromCompositeFieldPath
@@ -59,6 +59,12 @@ spec:
               string:
                 type: Format
                 fmt: '%s-tls-secret'
+
+      readinessChecks:
+        - matchCondition:
+            status: 'True'
+            type: Ready
+          type: MatchCondition
 
     # #
     # # Obtain the existi
