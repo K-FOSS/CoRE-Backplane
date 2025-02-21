@@ -155,59 +155,91 @@ spec:
 
     # #
     # # Obtain the existi
-    # - name: tf-base
-    #   base:
-    #     apiVersion: tf.upbound.io/v1beta1
-    #     kind: Workspace
-    #     spec:
-    #       providerConfigRef:
-    #         name: tf-provisioning
+    - name: tf-base
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: tf-provisioning
 
-    #       writeConnectionSecretToRef:
-    #         namespace: core-prod
-    #         name: key1
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
 
-    #       forProvider:
-    #         source: Inline
-    #         module: | # hcl
+          forProvider:
+            source: Inline
+            module: | # hcl
+              locals {
+                username = var.init == true ? "root" : var.credentials.username
+                password =  var.init == true ? "calvin" : var.credentials.password
+              }
+
+              provider "redfish" {
+                # # `redfish_servers` is used to align with enhancements to password management.
+                # # Map of server BMCs with their alias keys and respective user credentials.
+                # # This is required when resource/datasource's `redfish_alias` is not null
+                redfish_servers  = var.server
+
+                username = locals.username
+                password = locals.password
+              }
+
+            varmap:
+              init: false
+              ipAddress: 
+              server:
+                default:
+                  endpoint: ''
+                  ssl_insecure: true
+              credentials:
+                username: root
+                password: calvin
+              ldaps:
+                hostname: ldap.mylogin.space
+                port: 636
+                uri: ldaps://
+
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.iDRAC.networking.ipAddress
+          toFieldPath: spec.forProvider.varmap.server.default.endpoint
+          transforms:
+            - type: string
+              string:
+                type: Regexp
+                regexp:
+                  match: '^(([0-9]{1,3}\.){3}[0-9]{1,3})($|/\d+)$'
+                  group: 1
+
+            - type: string
+              string:
+                type: Format
+                fmt: 'https://%s'
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.init
+          toFieldPath: spec.forProvider.varmap.init
+
+        #
+        # Use IDs to auto generate the output secrets
+        #
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: 'spec.writeConnectionSecretToRef.name'
+          transforms:
+            - type: string
+              string:
+                type: Format
+                fmt: '%s-tf-base-secret'
 
 
-
-    #         varmap:
-    #           ldaps:
-    #             hostname: ldap.mylogin.space
-    #             port: 636
-    #             uri: ldaps://
-
-    #   patches:
-    #     - type: FromCompositeFieldPath
-    #       fromFieldPath: spec.hardwareRef.name
-    #       toFieldPath: spec.forProvider.manifest.metadata.name
-
-    #     - type: FromCompositeFieldPath
-    #       fromFieldPath: spec.hardwareRef.namespace
-    #       toFieldPath: spec.forProvider.manifest.metadata.namespace
-
-
-    #     #
-    #     # Use IDs to auto generate the output secrets
-    #     #
-    #     - type: FromCompositeFieldPath
-    #       fromFieldPath: metadata.uid
-    #       toFieldPath: 'spec.writeConnectionSecretToRef.name'
-    #       transforms:
-    #         - type: string
-    #           string:
-    #             type: Format
-    #             fmt: '%s-secret'
-
-
-    #   #
-    #   # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
-    #   #
-    #   readinessChecks:
-    #     - type: MatchCondition
-    #       matchCondition:
-    #         type: Ready
-    #         status: 'True'
+      #
+      # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+      #
+      readinessChecks:
+        - type: MatchCondition
+          matchCondition:
+            type: Ready
+            status: 'True'
       
