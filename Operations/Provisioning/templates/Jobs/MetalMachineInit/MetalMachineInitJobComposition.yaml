@@ -18,7 +18,7 @@ spec:
   writeConnectionSecretsToNamespace: core-prod
   mode: Pipeline
   pipeline:
-    - step: patch-and-transform
+    - step: get-bases
       functionRef:
         name: function-patch-and-transform
       input:
@@ -63,6 +63,12 @@ spec:
                 policy:
                   fromFieldPath: Required
                 toFieldPath: status.share.objectName
+                type: ToCompositeFieldPath
+
+              - fromFieldPath: status.atProvider.manifest.spec.interfaces[0].netboot
+                policy:
+                  fromFieldPath: Required
+                toFieldPath: status.share.sourceNetboot
                 type: ToCompositeFieldPath
 
             #
