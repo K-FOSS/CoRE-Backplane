@@ -197,20 +197,20 @@ spec:
           #         type: Ready
           #         status: 'True'
 
-  - step: automatically-detect-ready-composed-resources
-    functionRef:
-      name: function-auto-ready
+    - step: automatically-detect-ready-composed-resources
+      functionRef:
+        name: function-auto-ready
 
-  - step: sequence-creation
-    functionRef:
-      name: function-sequencer
-    input:
-      apiVersion: sequencer.fn.crossplane.io/v1beta1
-      kind: Input
-      rules:
-        - sequence:
-          - hardware-ref
-          - testing-ref
+    - step: sequence-creation
+      functionRef:
+        name: function-sequencer
+      input:
+        apiVersion: sequencer.fn.crossplane.io/v1beta1
+        kind: Input
+        rules:
+          - sequence:
+            - hardware-ref
+            - testing-ref
         # - sequence:
         #   - first-resource
         #   - third-resource
