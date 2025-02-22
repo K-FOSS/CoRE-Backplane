@@ -125,10 +125,6 @@ spec:
                     hardwareName: replacedatruntime
                 providerConfigRef:
                   name: local-k8s
-          
-
-                managementPolicies:
-                  - Observe
 
             patches:
               - type: FromCompositeFieldPath
@@ -138,10 +134,6 @@ spec:
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.clusterRef.name
                 toFieldPath: spec.observeObjects.selector.matchLabels["cluster.x-k8s.io/cluster-name"]
-
-              - type: FromCompositeFieldPath
-                fromFieldPath: spec.hardwareRef.namespace
-                toFieldPath: spec.forProvider.manifest.metadata.namespace
 
             #
             # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
