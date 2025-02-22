@@ -1,0 +1,63 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: HTTPRoute
+metadata:
+  name: idrac-node1
+  
+  labels:
+    wan-mode: public
+    lan-mode: private
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: {{ .Release.Namespace}}
+      name: priv-gw
+
+  hostnames:
+    - idrac.infra1.dc1.resolvemy.host
+
+  rules:
+    - backendRefs:
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: idrac-node1
+
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: idrac-node1
+spec:
+  endpoints:
+    - ip:
+        address: 172.16.20.61
+        port: 443
+---
+# apiVersion: gateway.envoyproxy.io/v1alpha1
+# kind: ClientTrafficPolicy
+# metadata:
+#   name: client-timeout
+# spec:
+#   targetRefs:
+#     - group: gateway.networking.k8s.io
+#       kind: Gateway
+#       name: eg
+#   connection:
+#     bufferLimit: 1024
+---
+apiVersion: gateway.networking.k8s.io/v1alpha3
+kind: BackendTLSPolicy
+metadata:
+  name: tls-upstream-dev
+spec:
+  targetRefs:
+    - group: gateway.envoyproxy.io
+      kind: Backend
+      name: idrac-node1
+  validation:
+    caCertificateRefs:
+      - kind: Secret
+        name: 6d853a32-753f-4592-8e87-2e574e2e27b8-tls-secret
+        group: ''
+    hostname: idrac.infra1.dc1.resolvemy.host
