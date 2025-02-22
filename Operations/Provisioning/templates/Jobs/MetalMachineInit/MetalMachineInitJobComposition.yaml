@@ -59,6 +59,12 @@ spec:
                 fromFieldPath: spec.hardwareRef.namespace
                 toFieldPath: spec.forProvider.manifest.metadata.namespace
 
+              - fromFieldPath: status.atProvider.manifest.metadata.labels['v1alpha1.tinkerbell.org/ownerName']
+                policy:
+                  fromFieldPath: Required
+                toFieldPath: status.share.objectName
+                type: ToCompositeFieldPath
+
             #
             # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
             #
