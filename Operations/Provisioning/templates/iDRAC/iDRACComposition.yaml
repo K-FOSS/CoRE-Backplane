@@ -260,18 +260,18 @@ spec:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.iDRAC.networking.ipAddress
           toFieldPath: spec.forProvider.varmap.server.default.endpoint
-          transforms:
-            - type: string
-              string:
-                type: Regexp
-                regexp:
-                  match: '^(([0-9]{1,3}\.){3}[0-9]{1,3})($|/\d+)$'
-                  group: 1
+          # transforms:
+          #   - type: string
+          #     string:
+          #       type: Regexp
+          #       regexp:
+          #         match: '^(([0-9]{1,3}\.){3}[0-9]{1,3})($|/\d+)$'
+          #         group: 1
 
-            - type: string
-              string:
-                type: Format
-                fmt: 'https://%s'
+          #   - type: string
+          #     string:
+          #       type: Format
+          #       fmt: 'https://%s'
 
         - type: FromCompositeFieldPath
           fromFieldPath: spec.init
