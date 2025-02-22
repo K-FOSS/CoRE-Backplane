@@ -115,6 +115,47 @@ spec:
                   type: Ready
                   status: 'True'
 
+          #
+          #
+          #
+          - name: testing-ref
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: local-k8s
+
+                managementPolicies:
+                  - Observe
+
+                forProvider:
+                  manifest:
+                    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                    kind: TinkerbellMachine
+                    metadata:
+                      # name in manifest is optional and defaults to Object name
+                      name: youshouldneverseeme
+                      namespace: replacemeduringruntime
+
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: status.share.objectName
+                toFieldPath: spec.forProvider.manifest.metadata.name
+
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.clusterRef.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+            #
+            # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+            #
+            readinessChecks:
+              - type: MatchCondition
+                matchCondition:
+                  type: Ready
+                  status: 'True'
+
           - name: test-hw-ref
             base:
               apiVersion: kubernetes.crossplane.io/v1alpha1
