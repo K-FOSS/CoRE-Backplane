@@ -67,3 +67,84 @@ spec:
                 matchCondition:
                   type: Ready
                   status: 'True'
+
+          #
+          # Load the cluster into memory in order to find the child resources
+          #
+          - name: cluster-ref
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: local-k8s
+
+                managementPolicies:
+                  - Observe
+
+                forProvider:
+                  manifest:
+                    apiVersion: cluster.x-k8s.io/v1beta1
+                    kind: Cluster
+                    metadata:
+                      # name in manifest is optional and defaults to Object name
+                      name: youshouldneverseeme
+                      namespace: replacemeduringruntime
+
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.clusterRef.name
+                toFieldPath: spec.forProvider.manifest.metadata.name
+
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.clusterRef.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+            #
+            # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+            #
+            readinessChecks:
+              - type: MatchCondition
+                matchCondition:
+                  type: Ready
+                  status: 'True'
+
+          - name: test-hw-ref
+            base:
+              apiVersion: kubernetes.crossplane.io/v1alpha2
+              kind: Object
+              spec:
+                providerConfigRef:
+                  name: local-k8s
+
+                managementPolicies:
+                  - Observe
+
+                forProvider:
+                  manifest:
+                    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                    kind: TinkerbellMachine
+                    metadata:
+                      # name in manifest is optional and defaults to Object name
+                      name: ''
+                      namespace: replacemeduringruntime
+                    spec:
+                      hardwareName: youshouldneverseeme
+
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.hardwareRef.name
+                toFieldPath: spec.forProvider.manifest.spec.hardwareName
+
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.hardwareRef.namespace
+                toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+            #
+            # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+            #
+            readinessChecks:
+              - type: MatchCondition
+                matchCondition:
+                  type: Ready
+                  status: 'True'
