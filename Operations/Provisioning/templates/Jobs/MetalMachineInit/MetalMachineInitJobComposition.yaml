@@ -120,16 +120,12 @@ spec:
                   selector:
                     matchLabels:
                       cluster.x-k8s.io/cluster-name: replacedatruntime
-                objectTemplate:
-                  spec:
-                    hardwareName: replacedatruntime
+
                 providerConfigRef:
                   name: local-k8s
 
             patches:
-              - type: FromCompositeFieldPath
-                fromFieldPath: spec.hardwareRef.name
-                toFieldPath: spec.objectTemplate.spec.hardwareName
+
 
               - type: FromCompositeFieldPath
                 fromFieldPath: spec.clusterRef.name
