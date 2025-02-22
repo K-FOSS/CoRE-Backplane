@@ -71,6 +71,12 @@ spec:
                 toFieldPath: status.share.sourceNetboot
                 type: ToCompositeFieldPath
 
+              - fromFieldPath: status.atProvider.manifest
+                policy:
+                  fromFieldPath: Required
+                toFieldPath: status.share.hardwareManifest
+                type: ToCompositeFieldPath
+
             #
             # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
             #
@@ -190,3 +196,62 @@ spec:
           #       matchCondition:
           #         type: Ready
           #         status: 'True'
+
+  - step: automatically-detect-ready-composed-resources
+    functionRef:
+      name: function-auto-ready
+
+  - step: sequence-creation
+    functionRef:
+      name: function-sequencer
+    input:
+      apiVersion: sequencer.fn.crossplane.io/v1beta1
+      kind: Input
+      rules:
+        - sequence:
+          - hardware-ref
+          - testing-ref
+        # - sequence:
+        #   - first-resource
+        #   - third-resource
+
+    # - step: set-bootmode
+    #   functionRef:
+    #     name: function-patch-and-transform
+    #   input:
+    #     apiVersion: pt.fn.crossplane.io/v1beta1
+    #     kind: Resources
+    #     resources:
+    #       - name: hardware-ref
+    #         base:
+    #           apiVersion: kubernetes.crossplane.io/v1alpha2
+    #           kind: Object
+    #           spec:
+    #             providerConfigRef:
+    #               name: local-k8s
+
+    #             managementPolicies:
+    #               - Observe
+    #               - Update
+
+    #             forProvider:
+    #               manifest:
+    #                 apiVersion: tinkerbell.org/v1alpha1
+    #                 kind: Hardware
+    #                 metadata:
+    #                   # name in manifest is optional and defaults to Object name
+    #                   name: youshouldneverseeme
+    #                   namespace: replacemeduringruntime
+
+    #         patches:
+    #           - type: FromCompositeFieldPath
+    #             fromFieldPath: spec.hardwareRef.name
+    #             toFieldPath: spec.forProvider.manifest.metadata.name
+
+    #           - type: FromCompositeFieldPath
+    #             fromFieldPath: spec.hardwareRef.namespace
+    #             toFieldPath: spec.forProvider.manifest.metadata.namespace
+
+    #           - type: FromCompositeFieldPath
+    #             fromFieldPath: status.share.hardwareManifest
+    #             toFieldPath: spec.forProvider.manifest
