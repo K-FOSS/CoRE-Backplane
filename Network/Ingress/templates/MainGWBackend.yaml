@@ -1,0 +1,17 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: main-gw
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: core-prod
+      name: main-gw
+
+  connection:
+    bufferLimit: 100M
+
+  dns:
+    dnsRefreshRate: 1m
+    respectDnsTtl: true
