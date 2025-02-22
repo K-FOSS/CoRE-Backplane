@@ -22,7 +22,10 @@ spec:
         - group: gateway.envoyproxy.io
           kind: Backend
           name: idrac-node1
-
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: Backend
@@ -58,6 +61,6 @@ spec:
   validation:
     caCertificateRefs:
       - kind: Secret
-        name: 6d853a32-753f-4592-8e87-2e574e2e27b8-tls-secret
+        name: 6d853a32-753f-4592-8e87-2e574e2e27b8-tls-ca
         group: ''
     hostname: idrac.infra1.dc1.resolvemy.host
