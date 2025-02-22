@@ -156,33 +156,31 @@ spec:
                   type: Ready
                   status: 'True'
 
-          - name: test-hw-ref
-            base:
-              apiVersion: kubernetes.crossplane.io/v1alpha1
-              kind: ObservedObjectCollection
-              spec:
-                observeObjects:
-                  apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-                  kind: TinkerbellMachine
-                  selector:
-                    matchLabels:
-                      cluster.x-k8s.io/cluster-name: replacedatruntime
+          # - name: test-hw-ref
+          #   base:
+          #     apiVersion: kubernetes.crossplane.io/v1alpha1
+          #     kind: ObservedObjectCollection
+          #     spec:
+          #       observeObjects:
+          #         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+          #         kind: TinkerbellMachine
+          #         selector:
+          #           matchLabels:
+          #             cluster.x-k8s.io/cluster-name: replacedatruntime
 
-                providerConfigRef:
-                  name: local-k8s
+          #       providerConfigRef:
+          #         name: local-k8s
 
-            patches:
+          #   patches:
+          #     - type: FromCompositeFieldPath
+          #       fromFieldPath: spec.clusterRef.name
+          #       toFieldPath: spec.observeObjects.selector.matchLabels["cluster.x-k8s.io/cluster-name"]
 
-
-              - type: FromCompositeFieldPath
-                fromFieldPath: spec.clusterRef.name
-                toFieldPath: spec.observeObjects.selector.matchLabels["cluster.x-k8s.io/cluster-name"]
-
-            #
-            # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
-            #
-            readinessChecks:
-              - type: MatchCondition
-                matchCondition:
-                  type: Ready
-                  status: 'True'
+          #   #
+          #   # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
+          #   #
+          #   readinessChecks:
+          #     - type: MatchCondition
+          #       matchCondition:
+          #         type: Ready
+          #         status: 'True'
