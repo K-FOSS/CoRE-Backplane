@@ -11,6 +11,29 @@ spec:
   connection:
     bufferLimit: 100M
 
+  tcpKeepalive:
+    idleTime: 5m
+    interval: 15s
+    probes: 9
+
+
+  http2:
+    initialConnectionWindowSize: 32Mi
+    initialStreamWindowSize: 64Ki
+    maxConcurrentStreams: 200
+    onInvalidMessage: TerminateStream
+  
+  loadBalancer:
+    type: LeastRequest
+    consistentHash:
+      tableSize: 65537
+      type: SourceIP
+    
+  retry:
+    numRetries: 2
+  
+  useClientProtocol: true
+
   dns:
     dnsRefreshRate: 1m
     respectDnsTtl: true
