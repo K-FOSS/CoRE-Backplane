@@ -1,0 +1,24 @@
+{{ if .Values.harbor.enabled }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: '{{ template "harbor.core" $.Subcharts.harbor }}-s3'
+spec:
+  secretStoreRef:
+    name: mainvault-core
+    kind: ClusterSecretStore
+
+  target:
+    name: harbor-core-s3
+
+  data:
+    - secretKey: REGISTRY_STORAGE_S3_ACCESSKEY
+      remoteRef:
+        key: Harbor/S3
+        property: AccessKey
+
+    - secretKey: REGISTRY_STORAGE_S3_SECRETKEY
+      remoteRef:
+        key: Harbor/S3
+        property: SecretKey
+{{- end }}
