@@ -19,6 +19,30 @@ spec:
     - ipam.mylogin.space
 
   rules:
-    - backendRefs:
+
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+          headers:
+            - type: RegularExpression
+              name: Content-Length
+              value: '\d*'
+      backendRefs:
         - name: netbox-ipam
-          port: 80
+          port: 80  
+
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: Content-Length
+                value: 0
+
+      backendRefs:
+        - name: netbox-ipam
+          port: 80  
