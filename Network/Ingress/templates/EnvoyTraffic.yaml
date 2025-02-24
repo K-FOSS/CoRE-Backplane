@@ -5,14 +5,25 @@ metadata:
   namespace: core-prod
 
 spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: Gateway
-    name: main-gw
+  targetSelectors:
+    - kind: Gateway
+      matchLabels:
+        resolvemy.host/gw: 'main-gw'
+        resolvemy.host/security: 'public'
+        resolvemy.host/env: 'prod'
 
   path:
     disableMergeSlashes: true
     escapedSlashesAction: KeepUnchanged
+
+
+
+  http2:
+    initialConnectionWindowSize: 32Mi
+    initialStreamWindowSize: 64Ki
+    maxConcurrentStreams: 200
+
+  http3: {}
 
   connection:
     bufferLimit: 100M
