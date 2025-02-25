@@ -8,21 +8,6 @@ crossplane:
   # -- The deployment strategy for the Crossplane and RBAC Manager pods.
   deploymentStrategy: RollingUpdate
 
-  image:
-    # -- Repository for the Crossplane pod image.
-    repository: xpkg.upbound.io/crossplane/crossplane
-    # -- The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`.
-    tag: ""
-    # -- The image pull policy used for Crossplane and RBAC Manager pods.
-    pullPolicy: IfNotPresent
-
-  # -- Add `nodeSelectors` to the Crossplane pod deployment.
-  nodeSelector: {}
-  # -- Add `tolerations` to the Crossplane pod deployment.
-  tolerations: []
-  # -- Add `affinities` to the Crossplane pod deployment.
-  affinity: {}
-
   # -- Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork` grants the Crossplane Pod access to the host network namespace.
   hostNetwork: false
 
@@ -38,6 +23,7 @@ crossplane:
 
   # -- Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod.
   leaderElection: false
+
   # -- Add custom arguments to the Crossplane pod.
   args:
     - --enable-external-secret-stores
@@ -93,9 +79,9 @@ crossplane:
   resourcesCrossplane:
     limits:
       # -- CPU resource limits for the Crossplane pod.
-      cpu: 100m
+      cpu: '1'
       # -- Memory resource limits for the Crossplane pod.
-      memory: 512Mi
+      memory: 2Gi
     requests:
       # -- CPU resource requests for the Crossplane pod.
       cpu: 1m
