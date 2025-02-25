@@ -50,7 +50,7 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                env: {{ env }}
+                env: {{ environment }}
                 harbor:
                   fullnameOverride: '{{cluster}}-development-harbor-helm'
 
@@ -71,7 +71,7 @@ spec:
                             valueFrom:
                               secretKeyRef:
                                 key: psqlURI
-                                name: {{cluster}}-development-hoppscotch-{{ env }}
+                                name: {{cluster}}-development-hoppscotch-{{environment}}
 
       destination:
         server: '{{url}}'
