@@ -2,10 +2,12 @@ apiVersion: gateway.networking.k8s.io/v1alpha2
 kind: TLSRoute
 metadata:
   name: {{ .Release.Name }}
-  
   labels:
     wan-mode: public
     lan-mode: private
+    resolvemy.host/gw: 'main-gw'
+    resolvemy.host/security: 'public'
+    resolvemy.host/env: 'prod'
 
 spec:
   parentRefs:
