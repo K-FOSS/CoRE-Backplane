@@ -37,3 +37,26 @@ spec:
         - op: replace
           path: /cluster/proxy/disabled
           value: true
+
+        #
+        # Configure Remote Pullthrough Registry Cache
+        #
+        - op: replace
+          path: /machine/registries/mirrors
+          value: 
+            docker.io:
+              endpoints:
+                - https://registry.writemy.codes/v2/proxy-docker.io
+              overridePath: true
+            ghcr.io:
+              endpoints:
+                - https://registry.writemy.codes/v2/proxy-ghcr.io
+              overridePath: true
+            gcr.io:
+              endpoints:
+                - https://registry.writemy.codes/v2/proxy-gcr.io
+              overridePath: true
+            registry.k8s.io:
+              endpoints:
+                - https://registry.writemy.codes/v2/proxy-registry.k8s.io
+              overridePath: true
