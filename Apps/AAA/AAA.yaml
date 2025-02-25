@@ -50,18 +50,18 @@ spec:
         repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
         targetRevision: HEAD
 
-        helm:
-          valuesObject:
-            env: '{{ environment }}'
-
-            authentik:
-              global:
-                additionalLabels:
-                  resolvemy.host/env: '{{ environment }}'
-                  resolvemy.host/priortiy: 'critical'
-
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: '{{ environment }}'
+
+                authentik:
+                  global:
+                    additionalLabels:
+                      resolvemy.host/env: '{{ environment }}'
+                      resolvemy.host/priortiy: 'critical'
 
       destination:
         server: '{{url}}'
