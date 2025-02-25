@@ -18,6 +18,10 @@ spec:
         ldap_url             = "ldaps://ldap.mylogin.space:636"
         ldap_search_dn       = "cn=${file("${path.module}/username")},ou=users,dc=ldap,dc=mylogin,dc=space"
         ldap_search_password = file("${path.module}/password")
+
+        ldap_filter = "(objectClass=user)"
+        ldap_group_base_dn = "ou=groups,dc=ldap,dc=mylogin,dc=space"
+        ldap_group_admin_dn = "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"
         ldap_base_dn         = "dc=ldap,dc=mylogin,dc=space"
         ldap_uid             = "cn"
         ldap_verify_cert     = true
