@@ -1,0 +1,16 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: '{{ template "harbor.core" $.Subcharts.harbor }}-caches'
+spec:
+  providerConfigRef:
+    name: '{{ template "harbor.core" $.Subcharts.harbor }}'
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "harbor_registry" "dockerhub" {
+        provider_name = "docker-hub"
+        name          = "test_docker_harbor"
+        endpoint_url  = "https://hub.docker.com"
+      }
