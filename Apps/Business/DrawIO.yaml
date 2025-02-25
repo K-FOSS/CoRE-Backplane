@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: core-backplane-business-drawio
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/manifest-generate-paths: .
+
+spec:
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: core-prod
+
+  project: core
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+  source:
+    repoURL: https://github.com/K-FOSS/CoRE-Business.git
+    path: Apps/DrawIO
+    targetRevision: HEAD

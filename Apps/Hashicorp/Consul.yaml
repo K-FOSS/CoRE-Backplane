@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-consul-main
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '5'
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dc1-k3s-node1
+            url: https://kubernetes.default.svc
+            namespace: core-prod
+            hub: 'true'
+            spoke: 'true'
+            dnsLBIP: 10.1.1.60
+            helmName: consul
+            name: dc1-k3s-node1
+            main: 'false'
+            replicas: '1'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{cluster}}-consul'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      ignoreDifferences:
+        - kind: Service
+          name: infra1-dc1-dns
+          jqPathExpressions:
+            - .spec.allocateLoadBalancerNodePorts
+          
+      source:
+        path: Mesh/Service/Consul
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                consul:
+                  global:
+                    name: {{name}}
+                  
+                  dns:
+                    additionalSpec: |
+                      loadBalancerIP: {{dnsLBIP}}
+                      externalTrafficPolicy: Local
+                      allocateLoadBalancerNodePorts: false
+                    annotations: null
+                    clusterIP: null
+                    enableRedirection: false
+                    enabled: false
+                    type: LoadBalancer
+
+                  server:
+                    replicas: {{ replicas }}
+
+                  syncCatalog:
+                    consulNodeName: '{{name}}-sync'
+                    consulPrefix: '{{name}}-'
+
+                  
+  
+
+      destination:
+        server: '{{url}}'
+        namespace: '{{namespace}}'

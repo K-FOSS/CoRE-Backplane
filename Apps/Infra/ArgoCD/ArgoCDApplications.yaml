@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dc1-k3s
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+
+spec:
+  project: default
+
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+      - CreateNamespace=true
+
+  source:
+    repoURL: https://github.com/K-FOSS/node1-k3s.dc1.resolvemy.host.git
+    targetRevision: HEAD
+    path: Apps
+    directory:
+      recurse: true
+
+  destination: 
+    server: https://kubernetes.default.svc
+    namespace: argocd

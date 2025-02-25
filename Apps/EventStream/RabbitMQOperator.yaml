@@ -1,0 +1,45 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-rabbitmq-operator
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dc1-k3s-node1
+            url: https://kubernetes.default.svc
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+  template:
+    metadata:
+      name: '{{cluster}}-rabbitmq-operator'
+    
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+
+      source:
+        path: EventStream/RabbitMQ/Operator
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
+

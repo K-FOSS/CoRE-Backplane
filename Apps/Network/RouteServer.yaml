@@ -1,0 +1,34 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-routeserver
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dc1-k3s-node1
+            url: https://kubernetes.default.svc
+            environment: 'prod'
+  template:
+    metadata:
+      name: '{{cluster}}-network-routeserver'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      source:
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        path: Network/RouteServer
+        targetRevision: main
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
+

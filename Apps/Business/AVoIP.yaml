@@ -1,0 +1,48 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-business-avoip
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dc1-k3s-node1
+            url: https://kubernetes.default.svc
+            jitsiIngress: meet.mylogin.space
+            environment: 'prod'
+  
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+  template:
+    metadata:
+      name: '{{cluster}}-business-avoip'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+
+      source:
+        repoURL: https://github.com/K-FOSS/CoRE-Business.git
+        path: AVoIP
+        targetRevision: HEAD
+
+        plugin:
+          name: argocd-lovely-plugin
+        #   env:
+        #     - name: LOVELY_HELM_MERGE
+        #       value: |- 
+        #         nextcloud:
+        #           nextcloud:
+        #             host: {{ingress}}
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod

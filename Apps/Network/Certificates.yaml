@@ -1,0 +1,42 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tls-certs
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dc1-k3s-node1
+            url: https://kubernetes.default.svc
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{cluster}}-tls-certs'
+      
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+
+      source:
+        path: Security/Certificates
+        repoURL: https://github.com/EntraptaJ/Home1.resolvemy.host.git
+        targetRevision: HEAD
+
+      destination:
+        server: '{{url}}'
+        namespace: core-prod
