@@ -3,10 +3,13 @@ kind: BackendTrafficPolicy
 metadata:
   name: main-gw
 spec:
-  targetRefs:
+  targetSelectors:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: main-gw
+      matchLabels:
+        resolvemy.host/gw: 'main-gw'
+        resolvemy.host/security: 'public'
+        resolvemy.host/env: 'prod'
 
   connection:
     bufferLimit: 100M

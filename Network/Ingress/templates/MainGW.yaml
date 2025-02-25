@@ -21,9 +21,10 @@ spec:
       purelb.io/addresses: '66.165.222.102'
 
   listeners:
-    - name: https
+    - name: https-myloginspace
       port: 443
       protocol: HTTPS
+      hostname: '*.mylogin.space'
       allowedRoutes:
         namespaces:
           from: All
@@ -35,16 +36,47 @@ spec:
             name: myloginspace-default-certificates
             namespace: core-prod
 
-          - group: ''
-            kind: Secret
-            name: writemycodes-default-certificates
-            namespace: core-prod
-
+    - name: https-intmyloginspace
+      port: 443
+      protocol: HTTPS
+      hostname: '*.writemy.codes'
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
           - group: ''
             kind: Secret
             name: myloginspace-int-default-certificates
             namespace: core-prod
 
+
+    - name: https-writemycodes
+      port: 443
+      protocol: HTTPS
+      hostname: '*.writemy.codes'
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: writemycodes-default-certificates
+            namespace: core-prod
+
+    - name: https-resolvemyhost
+      port: 443
+      protocol: HTTPS
+      hostname: '*.resolvemy.host'
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
           - group: ''
             kind: Secret
             name: resolvemyhost-default-certificates
@@ -135,6 +167,14 @@ spec:
     - name: tls-dnsudp
       port: 853
       protocol: UDP
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: mqtt
+      port: 443
+      hostname: mqtt.mylogin.space
+      protocol: TLS
       allowedRoutes:
         namespaces:
           from: All
