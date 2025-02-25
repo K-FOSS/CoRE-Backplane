@@ -50,9 +50,28 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                env: {{ cluster }}
+                env: {{ env }}
                 harbor:
                   fullnameOverride: '{{cluster}}-development-harbor-helm'
+
+            - name: LOVELY_KUSTOMIZE_PATCH
+              value: |
+                - op: replace
+                  path: /patches/0
+                  value: |-
+                    - target:
+                        kind: Deployment
+                        name: {{cluster}}-development-hoppscotch
+
+                      patch: |-
+                        - op: replace
+                          path: /spec/template/spec/containers/0/env
+                          value:
+                            - name: DATABASE_URL
+                              valueFrom:
+                                secretKeyRef:
+                                  key: psqlURI
+                                  name: {{cluster}}-development-hoppscotch-{{ env }}
 
       destination:
         server: '{{url}}'
