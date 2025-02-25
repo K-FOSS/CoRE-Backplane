@@ -7,6 +7,7 @@ metadata:
     wan-mode: 'public'
     lan-mode: 'private'
     resolvemy.host/gw: 'main-gw'
+    resolvemy.host/gw-ns: '{{ .Release.Namespace }}'
     resolvemy.host/security: 'public'
     resolvemy.host/env: 'prod'
 
@@ -22,19 +23,18 @@ spec:
 
   listeners:
     - name: tls-mqtt
-      port: 443
-      hostname: mqtt.mylogin.space
-      protocol: TLS
-      tls:
-        mode: Passthrough
       allowedRoutes:
         namespaces:
           from: All
+      hostname: mqtt.mylogin.space
+      port: 8443
+      protocol: TLS
+      tls:
+        mode: Passthrough
 
     - name: https-myloginspace
       port: 443
       protocol: HTTPS
-      hostname: '*.mylogin.space'
       allowedRoutes:
         namespaces:
           from: All
@@ -46,47 +46,16 @@ spec:
             name: myloginspace-default-certificates
             namespace: core-prod
 
-    - name: https-intmyloginspace
-      port: 443
-      protocol: HTTPS
-      hostname: '*.int.mylogin.space'
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
           - group: ''
             kind: Secret
             name: myloginspace-int-default-certificates
             namespace: core-prod
 
-
-    - name: https-writemycodes
-      port: 443
-      protocol: HTTPS
-      hostname: '*.writemy.codes'
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
           - group: ''
             kind: Secret
             name: writemycodes-default-certificates
             namespace: core-prod
 
-    - name: https-resolvemyhost
-      port: 443
-      protocol: HTTPS
-      hostname: '*.resolvemy.host'
-      allowedRoutes:
-        namespaces:
-          from: All
-      tls:
-        mode: Terminate
-        certificateRefs:
           - group: ''
             kind: Secret
             name: resolvemyhost-default-certificates
