@@ -1,0 +1,49 @@
+{{ if .Values.harbor.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: '{{ template "harbor.core" $.Subcharts.harbor }}'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
+spec:
+  credentials:
+    - filename: username
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: harbor-core
+        key: username
+
+    - filename: password
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: harbor-core
+        key: password
+  configuration: | # hcl
+    provider "harbor" {
+      url      = "https://registry.writemy.codes"
+      username = "admin"
+      password = file("${path.module}/password")
+      insecure = false
+      api_version = 2
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-{{ template "harbor.core" $.Subcharts.harbor }}"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        harbor = {
+          source = "goharbor/harbor"
+          version = "3.10.19"
+        }
+      }
+    }
+{{- end }}
