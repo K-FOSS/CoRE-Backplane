@@ -60,3 +60,13 @@ The [.devfile.yaml](./.devfile.yaml) ensures everyone gets the same extensions a
 For my credential vault for machine and service credentials I use [Hashicorp Vault](https://www.hashicorp.com/products/vault) I have two instances running, one which is called [CoreVault](./Hashicorp/CoreVault/) and then [Vault](./Hashicorp/Vault/) CoreVault has to be manually unsealed, or at least it used to, I eventually got around to setting up a workflow using external secrets and Crossplane to automatically unseal CoREVault and then Vault uses CoreVault Transit seal to unseal. The keys to unlock CoREVault are also stored in the organizations 1Password.
 
 Both CoreVault and Vault use [Consul](./Mesh/Service/Consul/) as their storage to allow for scalability and multi node high availability. This is also done to ensure there is no chicken and egg situation, CoreVault has some secrets that are synced down by [External-Secrets](https://external-secrets.io/latest/) deployed at [Operations/Secrets/](./Operations/Secrets/)
+
+
+# Labels I use
+
+I use various labels across my Kubernetes resources to be able to select things by priorty for backups, monitoring, and to be able to search and filter for various things like auto matic staging environments and the like
+
+| Label                      | Type            |      Options                         | Options |
+|--------------------------- | ----------------| ------------------------------------ | ------- |
+| resolvemy.host/env         | EnvironmentMode | prod, staging, poc, lab              | 
+| mylogin.space/tenant       | String          | core.mylogin.space                   |
