@@ -14,3 +14,8 @@ spec:
         name          = "test_docker_harbor"
         endpoint_url  = "https://hub.docker.com"
       }
+
+      resource "harbor_project" "dockerhubcache" {
+        name = "acctest"
+        registry_id = harbor_registry.dockerhub.registry_id
+      }
