@@ -71,6 +71,24 @@ spec:
                                 key: psqlURI
                                 name: {{cluster}}-development-hoppscotch-{{ environment }}
 
+                          - name: JWT_SECRET
+                            valueFrom:
+                              secretKeyRef:
+                                key: JWTSecret
+                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+
+                          - name: SESSION_SECRET
+                            valueFrom:
+                              secretKeyRef:
+                                key: SessionSecret
+                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+
+                          - name: DATA_ENCRYPTION_KEY
+                            valueFrom:
+                              secretKeyRef:
+                                key: DBEncryptionKey
+                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+
       destination:
         server: '{{url}}'
         namespace: core-prod
