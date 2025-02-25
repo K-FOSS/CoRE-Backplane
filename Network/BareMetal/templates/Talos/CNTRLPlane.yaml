@@ -6,6 +6,7 @@ metadata:
 spec:
   version: v1.32.2
   replicas: 2
+
   infrastructureTemplate:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: TinkerbellMachineTemplate
@@ -42,21 +43,25 @@ spec:
         # Configure Remote Pullthrough Registry Cache
         #
         - op: add
-          path: /machine/registries/mirrors
-          value: 
-            docker.io:
-              endpoints:
-                - https://registry.writemy.codes/v2/proxy-docker.io
-              overridePath: true
-            ghcr.io:
-              endpoints:
-                - https://registry.writemy.codes/v2/proxy-ghcr.io
-              overridePath: true
-            gcr.io:
-              endpoints:
-                - https://registry.writemy.codes/v2/proxy-gcr.io
-              overridePath: true
-            registry.k8s.io:
-              endpoints:
-                - https://registry.writemy.codes/v2/proxy-registry.k8s.io
-              overridePath: true
+          path: /machine/registries
+          value:
+            mirrors:
+              docker.io:
+                endpoints:
+                  - https://registry.writemy.codes/v2/proxy-docker.io
+                overridePath: true
+
+              ghcr.io:
+                endpoints:
+                  - https://registry.writemy.codes/v2/proxy-ghcr.io
+                overridePath: true
+
+              gcr.io:
+                endpoints:
+                  - https://registry.writemy.codes/v2/proxy-gcr.io
+                overridePath: true
+
+              registry.k8s.io:
+                endpoints:
+                  - https://registry.writemy.codes/v2/proxy-registry.k8s.io
+                overridePath: true
