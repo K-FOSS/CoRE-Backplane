@@ -1,0 +1,24 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: '{{ template "harbor.core" $.Subcharts.harbor }}-sso'
+spec:
+  providerConfigRef:
+    name: '{{ template "harbor.core" $.Subcharts.harbor }}'
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: '{{ template "harbor.core" $.Subcharts.harbor }}-tf-sso'
+  forProvider:
+    source: Inline
+    module: |
+      resource "harbor_config_auth" "ldap" {
+        auth_mode            = "ldap_auth"
+        primary_auth_mode    = false
+        ldap_url             = "ldap.mylogin.space:389"
+        ldap_search_dn       = "cn=harbor-core,ou=users,dc=ldap,dc=mylogin,dc=space"
+        ldap_search_password = file("${path.module}/password")
+        ldap_base_dn         = "dc=ldap,dc=mylogin,dc=space"
+        ldap_uid             = "cn"
+        ldap_verify_cert     = false
+      }
