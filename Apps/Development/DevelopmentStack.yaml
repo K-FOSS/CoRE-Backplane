@@ -89,6 +89,27 @@ spec:
                                 key: DBEncryptionKey
                                 name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
 
+                          - name: VITE_ALLOWED_AUTH_PROVIDERS
+                            value: 'GITHUB'
+
+                          - name: GITHUB_CALLBACK_URL
+                            value: 'https://rest.writemy.codes/v1/auth/github/callback'
+
+                          - name: GITHUB_SCOPE
+                            values: user:email
+
+                          - name: GITHUB_CLIENT_ID
+                            valueFrom:
+                              secretKeyRef:
+                                key: GitHubClientID
+                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+
+                          - name: GITHUB_CLIENT_SECRET
+                            valueFrom:
+                              secretKeyRef:
+                                key: GitHubClientSecret
+                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+
       destination:
         server: '{{url}}'
         namespace: core-prod
