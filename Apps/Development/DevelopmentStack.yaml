@@ -57,21 +57,20 @@ spec:
             - name: LOVELY_KUSTOMIZE_PATCH
               value: |-
                 - op: replace
-                  path: /patches/0
-                  value: |-
-                    target:
-                      kind: Deployment
-                      name: {{cluster}}-development-hoppscotch
+                  path: /patches/0/target/name
+                  value: {{cluster}}-development-hoppscotch
 
-                    patch: |
-                      - op: replace
-                        path: /spec/template/spec/containers/0/env
-                        value:
-                          - name: DATABASE_URL
-                            valueFrom:
-                              secretKeyRef:
-                                key: psqlURI
-                                name: {{cluster}}-development-hoppscotch-{{environment}}
+                - op: replace
+                  path: /patches/0/target/patch
+                  value: |-
+                    - op: replace
+                      path: /spec/template/spec/containers/0/env
+                      value:
+                        - name: DATABASE_URL
+                          valueFrom:
+                            secretKeyRef:
+                              key: psqlURI
+                              name: {{cluster}}-development-hoppscotch-{{environment}}
 
       destination:
         server: '{{url}}'
