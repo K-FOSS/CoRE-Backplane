@@ -11,12 +11,12 @@ spec:
     module: |
       resource "harbor_registry" "dockerhub" {
         provider_name = "docker-hub"
-        name          = "test_docker_harbor"
+        name          = "docker-hub"
         endpoint_url  = "https://hub.docker.com"
       }
 
       resource "harbor_project" "dockerhubcache" {
-        name = "acctest"
+        name = "proxy-docker.io"
         public = true
         registry_id = harbor_registry.dockerhub.registry_id
       }
