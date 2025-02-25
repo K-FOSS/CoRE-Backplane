@@ -1,0 +1,24 @@
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: {{ .Release.Name }}
+  
+  labels:
+    wan-mode: public
+    lan-mode: private
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: core-prod
+      name: main-gw
+      sectionName: tls-mqtt
+
+  hostnames:
+    - mqtt.mylogin.space
+
+  rules:
+    - backendRefs:
+        - name: {{ .Release.Name }}
+          port: 8883
