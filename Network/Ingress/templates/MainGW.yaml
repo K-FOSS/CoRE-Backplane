@@ -21,6 +21,16 @@ spec:
       purelb.io/addresses: '66.165.222.102'
 
   listeners:
+    - name: tls-mqtt
+      port: 443
+      hostname: mqtt.mylogin.space
+      protocol: TLS
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-myloginspace
       port: 443
       protocol: HTTPS
@@ -171,12 +181,3 @@ spec:
         namespaces:
           from: All
 
-    - name: tls-mqtt
-      port: 443
-      hostname: mqtt.mylogin.space
-      protocol: TLS
-      tls:
-        mode: Passthrough
-      allowedRoutes:
-        namespaces:
-          from: All
