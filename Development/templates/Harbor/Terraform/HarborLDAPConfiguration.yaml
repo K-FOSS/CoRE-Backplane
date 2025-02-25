@@ -15,10 +15,10 @@ spec:
       resource "harbor_config_auth" "ldap" {
         auth_mode            = "ldap_auth"
         primary_auth_mode    = false
-        ldap_url             = "ldap.mylogin.space:389"
+        ldap_url             = "ldaps://ldap.mylogin.space:636"
         ldap_search_dn       = "cn=${file("${path.module}/username")},ou=users,dc=ldap,dc=mylogin,dc=space"
         ldap_search_password = file("${path.module}/password")
         ldap_base_dn         = "dc=ldap,dc=mylogin,dc=space"
         ldap_uid             = "cn"
-        ldap_verify_cert     = false
+        ldap_verify_cert     = true
       }
