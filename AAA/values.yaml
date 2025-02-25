@@ -1,3 +1,9 @@
+env: 'staging'
+
+gateway:
+  name: main-gw
+  namespace: core-prod
+
 authentik:
   # -- Provide a name in place of `authentik`. Prefer using global.nameOverride if possible
   nameOverride: ""
@@ -180,14 +186,6 @@ authentik:
           secretKeyRef:
             name: authentik-database-prod
             key: Password
-
-    # -- envFrom to pass to all deployed Deployments. Does not apply to GeoIP
-    # @default -- `[]` (See [values.yaml])
-    envFrom: []
-      # - configMapRef:
-      #     name: config-map-name
-      # - secretRef:
-      #     name: secret-name
 
     # -- Additional volumeMounts to all deployed Deployments. Does not apply to GeoIP
     # @default -- `[]` (See [values.yaml])
@@ -429,13 +427,6 @@ authentik:
     # -- Alternative DNS policy for authentik server pods
     dnsPolicy: ""
 
-    # -- authentik server pod-level security context
-    # @default -- `{}` (See [values.yaml])
-    securityContext: {}
-      # runAsUser: 1000
-      # runAsGroup: 1000
-      # fsGroup: 1000
-
     # -- authentik server container-level security context
     # @default -- See [values.yaml]
     containerSecurityContext: {}
@@ -452,21 +443,6 @@ authentik:
     # -- terminationGracePeriodSeconds for container lifecycle hook
     terminationGracePeriodSeconds: 30
 
-    # -- Prority class for the authentik server pods
-    # @default -- `""` (defaults to global.priorityClassName)
-    priorityClassName: ""
-
-    # -- [Node selector]
-    # @default -- `{}` (defaults to global.nodeSelector)
-    nodeSelector: {}
-
-    # -- [Tolerations] for use with node taints
-    # @default -- `[]` (defaults to global.tolerations)
-    tolerations: []
-
-    # -- Assign custom [affinity] rules to the deployment
-    # @default -- `{}` (defaults to the global.affinity preset)
-    affinity: {}
 
     # -- Assign custom [TopologySpreadConstraints] rules to the authentik server
     # @default -- `[]` (defaults to global.topologySpreadConstraints)
@@ -773,42 +749,6 @@ authentik:
       # capabilities:
       #   drop:
       #     - ALL
-
-    # -- terminationGracePeriodSeconds for container lifecycle hook
-    terminationGracePeriodSeconds: 30
-
-    # -- Prority class for the authentik worker pods
-    # @default -- `""` (defaults to global.priorityClassName)
-    priorityClassName: ""
-
-    # -- [Node selector]
-    # @default -- `{}` (defaults to global.nodeSelector)
-    nodeSelector: {}
-
-    # -- [Tolerations] for use with node taints
-    # @default -- `[]` (defaults to global.tolerations)
-    tolerations: []
-
-    # -- Assign custom [affinity] rules to the deployment
-    # @default -- `{}` (defaults to the global.affinity preset)
-    affinity: {}
-
-    # -- Assign custom [TopologySpreadConstraints] rules to the authentik worker
-    # @default -- `[]` (defaults to global.topologySpreadConstraints)
-    ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-topology-spread-constraints/
-    ## If labelSelector is left out, it will default to the labelSelector configuration of the deployment
-    topologySpreadConstraints: []
-      # - maxSkew: 1
-      #   topologyKey: topology.kubernetes.io/zone
-      #   whenUnsatisfiable: DoNotSchedule
-
-    # -- Deployment strategy to be added to the authentik worker Deployment
-    # @default -- `{}` (defaults to global.deploymentStrategy)
-    deploymentStrategy: {}
-      # type: RollingUpdate
-      # rollingUpdate:
-      #   maxSurge: 25%
-      #   maxUnavailable: 25%
 
 
   serviceAccount:

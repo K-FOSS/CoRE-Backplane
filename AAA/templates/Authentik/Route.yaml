@@ -6,13 +6,17 @@ metadata:
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
+    resolvemy.host/gw: '{{ .Values.gateway.name }}'
+    resolvemy.host/gw-ns: '{{ .Values.gateway.namespace }}' 
+    resolvemy.host/security: 'public'
+    resolvemy.host/env: 'prod'
 
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      namespace: core-prod
-      name: main-gw
+      namespace: {{ .Values.gateway.namespace }}
+      name: {{ .Values.gateway.name }}
 
   hostnames:
     - idp.mylogin.space
