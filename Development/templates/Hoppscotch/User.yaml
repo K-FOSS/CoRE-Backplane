@@ -1,0 +1,15 @@
+{{ if .Values.hoppscotch.enabled }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ include "hoppscotch.fullname" $.Subcharts.hoppscotch }}-{{ .Values.env }}
+
+  labels:
+    resolvemy.host/env: 'prod'
+
+spec:
+  name: Hoppscotch
+
+  writeConnectionSecretToRef:
+    name: {{ include "hoppscotch.fullname" $.Subcharts.hoppscotch }}-{{ .Values.env }}
+{{- end }}
