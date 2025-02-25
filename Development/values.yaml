@@ -1064,6 +1064,9 @@ gitlab:
 harbor:
   enabled: true
 
+  ldap:
+    server: ldap.mylogin.space
+
   expose:
     # Set how to expose the service. Set the type as "ingress", "clusterIP", "nodePort" or "loadBalancer"
     # and fill the information in the corresponding section
@@ -1529,7 +1532,7 @@ harbor:
       existingSecret: ""
       # Login and password in htpasswd string format. Excludes `registry.credentials.username`  and `registry.credentials.password`. May come in handy when integrating with tools like argocd or flux. This allows the same line to be generated each time the template is rendered, instead of the `htpasswd` function from helm, which generates different lines each time because of the salt.
       # htpasswdString: $apr1$XLefHzeG$Xl4.s00sMSCCcMyJljSZb0 # example string
-      htpasswdString: ""
+      htpasswdString: harbor_registry_user:$2y$10$L4LTCe2fG2H42qquClN5.e6L4PnL68.LaRAVfxPW37HAKm2vX9iX.
     middleware:
       enabled: false
 
@@ -1675,11 +1678,12 @@ harbor:
       # used doesn't support configuring it
       # harborDatabaseIndex defaults to "0", but it can be configured to "6", this config is optional
       # cacheLayerDatabaseIndex defaults to "0", but it can be configured to "7", this config is optional
-      coreDatabaseIndex: "7"
-      jobserviceDatabaseIndex: "8"
-      registryDatabaseIndex: "9"
-      trivyAdapterIndex: "5"
-      # harborDatabaseIndex: "6"
+      coreDatabaseIndex: "0"
+      jobserviceDatabaseIndex: '7'
+      registryDatabaseIndex: '8'
+      chartmuseumDatabaseIndex: '9'
+      trivyAdapterIndex: '14'
+      #harborDatabaseIndex: "6"
       # cacheLayerDatabaseIndex: "7"
       # username field can be an empty string, and it will be authenticated against the default user
       username: ""
