@@ -1,0 +1,73 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: '{{ template "harbor.core" $.Subcharts.harbor }}-caches'
+spec:
+  providerConfigRef:
+    name: '{{ template "harbor.core" $.Subcharts.harbor }}'
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "harbor_registry" "dockerhub" {
+        provider_name = "docker-hub"
+        name          = "docker-hub"
+        endpoint_url  = "https://hub.docker.com"
+      }
+
+      resource "harbor_registry" "k8s" {
+        provider_name = "docker-registry"
+        name          = "proxy-registry.k8s.io"
+        endpoint_url  = "https://registry.k8s.io/"
+        depends_on = [
+          proxmox_vm_qemu.container-registry
+        ]
+      }
+
+      resource "harbor_registry" "ghcr" {
+        provider_name = "github"
+        name          = "proxy-ghcr.io"
+        endpoint_url  = "https://ghcr.io/"
+      }
+
+      resource "harbor_registry" "gcr" {
+        provider_name = "docker-registry"
+        name          = "proxy-gcr.io"
+        endpoint_url  = "https://gcr.io/"
+      }
+
+      resource "harbor_registry" "quay" {
+        provider_name = "docker-registry"
+        name          = "proxy-quay.io"
+        endpoint_url  = "https://quay.io/"
+      }
+
+      resource "harbor_project" "dockerhubcache" {
+        name = "proxy-docker.io"
+        public = true
+        registry_id = harbor_registry.dockerhub.registry_id
+      }
+
+      resource "harbor_project" "project-ghcr" {
+        name = "proxy-ghcr.io"
+        public = true
+        registry_id = harbor_registry.ghcr.registry_id
+      }
+
+      resource "harbor_project" "project-k8s" {
+        name = "proxy-registry.k8s.io"
+        public = true
+        registry_id = harbor_registry.k8s.registry_id
+      }
+
+      resource "harbor_project" "project-gcr" {
+        name = "proxy-gcr.io"
+        public = true
+        registry_id = harbor_registry.gcr.registry_id
+      }
+
+      resource "harbor_project" "project-quay" {
+        name = "proxy-quay.io"
+        public = true
+        registry_id = harbor_registry.quay.registry_id
+      }
