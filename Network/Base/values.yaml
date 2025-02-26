@@ -9,6 +9,10 @@ cilium:
   podLabels:
     logs: loki-myloginspace
 
+
+  #
+  # Pulled from https://www.talos.dev/v1.9/kubernetes-guides/network/deploying-cilium/
+  #
   securityContext:
     capabilities:
       ciliumAgent:
@@ -336,7 +340,7 @@ cilium:
   ipam:
     # -- Configure IP Address Management mode.
     # ref: https://docs.cilium.io/en/stable/network/concepts/ipam/
-    mode: "cluster-pool"
+    mode: 'kubernetes'
     # -- Maximum rate at which the CiliumNode custom resource is updated.
     ciliumNodeUpdateRate: "15s"
     # -- Pre-allocation settings for IPAM in Multi-Pool mode
