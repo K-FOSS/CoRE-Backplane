@@ -40,15 +40,15 @@ data:
       neighbor pnet peer-group
       neighbor pnet ebgp-multihop 6
       neighbor pnet remote-as 64512
-      bgp listen range 10.4.0.0/16 peer-group pnet
+      neighbor 172.31.241.237 peer-group WAN-RT
       bgp listen range 172.31.241.0/24 peer-group cilium
       bgp listen range 172.16.20.0/24 peer-group cilium
       !
       address-family ipv4 unicast
         maximum-paths 64
         maximum-paths ibgp 64
-        neighbor WAN-GW route-reflector-client
         neighbor WAN-GW soft-reconfiguration inbound
+        neighbor WAN-RT soft-reconfiguration inbound
         neighbor cilium soft-reconfiguration inbound
         neighbor pnet soft-reconfiguration inbound
       exit-address-family
