@@ -46,13 +46,16 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
+                {{ $parts := split ":" .server }}
+                {{ $hostname := split "//" $parts._1 }}
+              
                 cilium:
                   #
                   # TODO: Get this using some fancy Go Template shit to auto extract
                   # the port and the host
                   #
-                  k8sServiceHost: {{ (splitList ":" (splitList "//" .server)._1)._0 }}
-                  k8sServicePort: '{{ (splitList ":" .server)._1 | default "443" }}'
+                  k8sServiceHost: '{{ $hostname._1  }}'
+                  k8sServicePort: '{{ $parts._2 | default "443" }}'
 
       destination:
         server: '{{ .server }}'
