@@ -31,9 +31,9 @@ data:
       bgp disable-ebgp-connected-route-check
       bgp bestpath peer-type multipath-relax
       bgp graceful-restart stalepath-time 300
-      neighbor kuberouter peer-group
-      neighbor kuberouter ebgp-multihop 4
-      neighbor kuberouter remote-as 64512
+      neighbor cilium peer-group
+      neighbor cilium ebgp-multihop 4
+      neighbor cilium remote-as 64512
       neighbor WAN-GW peer-group
       neighbor WAN-RT peer-group
       neighbor WAN-RT remote-as internal
@@ -41,13 +41,14 @@ data:
       neighbor pnet ebgp-multihop 6
       neighbor pnet remote-as 64512
       bgp listen range 10.4.0.0/16 peer-group pnet
+      bgp listen range 172.31.241.0/24 peer-group cilium
       !
       address-family ipv4 unicast
         maximum-paths 64
         maximum-paths ibgp 64
         neighbor WAN-GW route-reflector-client
         neighbor WAN-GW soft-reconfiguration inbound
-        neighbor kuberouter soft-reconfiguration inbound
+        neighbor cilium soft-reconfiguration inbound
         neighbor pnet soft-reconfiguration inbound
       exit-address-family
     exit
