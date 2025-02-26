@@ -1,0 +1,11 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: TLSRoute
+      name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}
+
+  proxyProtocol: true

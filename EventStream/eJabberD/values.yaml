@@ -4,8 +4,8 @@ global:
   fullnameOverride: eventstream-ejabberd
 
 portRange:
-  min: 15000
-  max: 16000
+  min: 16100
+  max: 16500
 
 controllers:
   main:
@@ -120,7 +120,26 @@ service:
     type: ClusterIP
 
     ports:
-      
+      tcp-stun:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 5478
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: 
+
       mqtts:
         # -- Enables or disables the port
         enabled: true
@@ -323,6 +342,11 @@ configMaps:
             module: ejabberd_s2s_in
             transport: tcp
 
+          - port: 5478
+            module: ejabberd_stun
+            tls: true
+            use_proxy_protocol: true
+
           - port: 5443
             ip: '::'
             module: ejabberd_http
@@ -341,6 +365,7 @@ configMaps:
             module: mod_mqtt
             backlog: 1000
             tls: true
+            use_proxy_protocol: true
 
         certfiles:
           - /tls/tls-combined.pem
