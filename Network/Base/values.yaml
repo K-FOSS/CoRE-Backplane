@@ -9,6 +9,30 @@ cilium:
   podLabels:
     logs: loki-myloginspace
 
+  securityContext:
+    capabilities:
+      ciliumAgent:
+        - CHOWN
+        - KILL
+        - NET_ADMIN
+        - NET_RAW
+        - IPC_LOCK
+        - SYS_ADMIN
+        - SYS_RESOURCE
+        - DAC_OVERRIDE
+        - FOWNER
+        - SETGID
+        - SETUID
+      cleanCiliumState:
+        - NET_ADMIN
+        - SYS_ADMIN
+        - SYS_RESOURCE
+
+  cgroup:
+    autoMount:
+      enabled: false
+    hostRoot: /sys/fs/cgroup
+
   bandwidthManager:
     # -- Enable bandwidth manager infrastructure (also prerequirement for BBR)
     enabled: true
@@ -19,12 +43,14 @@ cilium:
   nat46x64Gateway:
     # -- Enable RFC8215-prefixed translation
     enabled: false
+
   # -- EnableHighScaleIPcache enables the special ipcache mode for high scale
   # clusters. The ipcache content will be reduced to the strict minimum and
   # traffic will be encapsulated to carry security identities.
   highScaleIPcache:
     # -- Enable the high scale mode for the ipcache.
     enabled: false
+
   # -- Configure L2 announcements
   l2announcements:
     # -- Enable L2 announcements
@@ -35,6 +61,7 @@ cilium:
     # leaseRenewDeadline: 5s
     # -- The timeout between retries if renewal fails
     # leaseRetryPeriod: 2s
+
   # -- Configure L2 pod announcements
   l2podAnnouncements:
     # -- Enable L2 pod announcements
@@ -200,8 +227,10 @@ cilium:
     # -- Enable support for Gateway API in cilium
     # This will automatically set enable-envoy-config as well.
     enabled: false
+
     # -- Enable proxy protocol for all GatewayAPI listeners. Note that _only_ Proxy protocol traffic will be accepted once this is enabled.
     enableProxyProtocol: false
+
     # -- Enable Backend Protocol selection support (GEP-1911) for Gateway API via appProtocol.
     enableAppProtocol: false
 
