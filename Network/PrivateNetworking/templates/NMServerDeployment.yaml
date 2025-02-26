@@ -183,11 +183,18 @@ spec:
             - name: MQ_SERVER_PORT
               value: '8443'
 
-            - name: MQ_ADMIN_PASSWORD
+            - name: MQ_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ $fullName }}-netmaker-creds
                   key: username
+                  optional: false
+
+            - name: MQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $fullName }}-netmaker-creds
+                  key: password
                   optional: false
 
             - name: DISPLAY_KEYS
