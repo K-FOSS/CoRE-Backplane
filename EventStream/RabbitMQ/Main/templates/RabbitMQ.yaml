@@ -46,8 +46,10 @@ spec:
 
   rabbitmq:
     additionalPlugins:
+      - rabbitmq_auth_backend_cache
       - rabbitmq_auth_backend_ldap
       - rabbitmq_mqtt
+      - rabbitmq_web_mqtt
     #   - rabbitmq_federation
     #   - rabbitmq_federation_management
     advancedConfig: |
@@ -77,10 +79,12 @@ spec:
       cluster_partition_handling = pause_minority
       disk_free_limit.relative = 1.0
       collect_statistics_interval = 10000
-      auth_backends.1 = ldap
+
+      auth_backends.1 = cache
+      auth_cache.cached_backend = ldap
       auth_ldap.servers.1 = ldap.mylogin.space
-      auth_ldap.use_ssl = true
-      auth_ldap.port = 636
+      auth_ldap.use_ssl = false
+      auth_ldap.port = 389
       auth_ldap.log = true
       auth_ldap.timeout = 15000
 
