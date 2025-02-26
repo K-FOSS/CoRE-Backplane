@@ -41,4 +41,21 @@ spec:
         - path:
             type: PathPrefix
             value: /
+
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ $fullName }}-netmaker-server
+          port: {{ .Values.netmaker.server.port }}
+          weight: 1
+
+      
+      timeouts:
+        backendRequest: 10s
+        request: 20s
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /api
 {{- end }}
