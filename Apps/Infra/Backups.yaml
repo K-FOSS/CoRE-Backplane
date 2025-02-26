@@ -17,6 +17,8 @@ spec:
             resolvemy.host/env: 'prod'
         values:
           clusterName: '{{.name}}'
+          environment: '{{index .metadata.labels "resolvemy.host/env"}}'
+          bucket: velero-backup
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -52,7 +54,7 @@ spec:
                         provider: aws
 
                         # bucket is the name of the bucket to store backups in. Required.
-                        bucket: velero-backup
+                        bucket: {{ .values.bucket }}
 
                         # prefix is the directory under which all Velero data should be stored within the bucket. Optional.
                         prefix: {{.values.clusterName}}
@@ -78,5 +80,5 @@ spec:
 
       destination:
         server: '{{.server}}'
-        namespace: core-prod
+        namespace: core-{{ .environment }}
 
