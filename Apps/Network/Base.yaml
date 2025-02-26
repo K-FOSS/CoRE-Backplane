@@ -1,0 +1,60 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-base
+  namespace: argocd
+
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-net-base'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
+      source:
+        path: Network/Base
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                cilium:
+                  #
+                  # TODO: Get this using some fancy Go Template shit to auto extract
+                  # the port and the host
+                  #
+                  k8sServiceHost: {{ (splitList ":" (splitList "//" .server)._1)._0 }}
+                  k8sServicePort: '{{ (splitList ":" .server)._1 | default "443" }}'
+
+      destination:
+        server: '{{ .server }}'
+        namespace: kube-system
+
