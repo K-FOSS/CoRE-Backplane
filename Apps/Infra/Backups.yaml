@@ -16,8 +16,8 @@ spec:
             mylogin.space/tenant: 'core.mylogin.space'
             resolvemy.host/env: 'prod'
         values:
-          clusterName: '{{.name}}'
-          environment: '{{index .metadata.labels "resolvemy.host/env"}}'
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
           bucket: velero-backup
 
   syncPolicy:
@@ -25,7 +25,7 @@ spec:
 
   template:
     metadata:
-      name: '{{.values.clusterName}}-backups'
+      name: '{{ .values.clusterName }}-backups'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -57,7 +57,7 @@ spec:
                         bucket: {{ .values.bucket }}
 
                         # prefix is the directory under which all Velero data should be stored within the bucket. Optional.
-                        prefix: {{.values.clusterName}}
+                        prefix: {{ .values.clusterName }}
 
                         # default indicates this location is the default backup storage location. Optional.
                         default: true
@@ -79,6 +79,6 @@ spec:
                           s3Url: <path:CORE0_SITE1/data/Backups/Velero/CloudFlare#URL>
 
       destination:
-        server: '{{.server}}'
-        namespace: core-{{ .environment }}
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
 

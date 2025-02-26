@@ -21,15 +21,15 @@ spec:
           matchLabels:
             mylogin.space/tenant: 'core.mylogin.space'
         values:
-          clusterName: '{{.name}}'
-          environment: '{{index .metadata.labels "resolvemy.host/env"}}'
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
 
   template:
     metadata:
-      name: '{{.values.clusterName}}-qos'
+      name: '{{ .values.clusterName }}-qos'
 
       labels:
         resolvemy.host/priortiy: 'critical'
@@ -48,5 +48,5 @@ spec:
           name: argocd-lovely-plugin
 
       destination:
-        server: '{{.server}}'
-        namespace: core-{{ .environment }}
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
