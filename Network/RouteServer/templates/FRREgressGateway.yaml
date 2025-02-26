@@ -1,0 +1,49 @@
+{{- if .Values.frr.routeserver.enabled }}
+{{- $fullName := include "routeserver.fullname" . -}}
+---
+
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: {{ $fullName }}-frr
+
+  labels:
+    app.kubernetes.io/instance: {{ $fullName }}
+    app.kubernetes.io/name: routeserver
+    app.kubernetes.io/component: frr
+
+spec:
+  # Specify which pods should be subject to the current policy.
+  # Multiple pod selectors can be specified.
+  selectors:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/instance: {{ $fullName }}
+          app.kubernetes.io/name: routeserver
+          app.kubernetes.io/component: frr
+
+          {{- with .Values.frr.routeserver.podLabels }}
+          {{- toYaml . | nindent 8 }}
+          {{- end }}
+          
+
+  # Specify which destination CIDR(s) this policy applies to.
+  # Multiple CIDRs can be specified.
+  destinationCIDRs:
+    - '0.0.0.0/0'
+
+  # Configure the gateway node.
+  egressGateway:
+    # Specify which node should act as gateway for this policy.
+    nodeSelector:
+      matchLabels:
+        kubernetes.io/os: linux
+
+    # Specify the IP address used to SNAT traffic matched by the policy.
+    # It must exist as an IP associated with a network interface on the instance.
+    egressIP: 10.1.1.179
+
+    # Alternatively it's possible to specify the interface to be used for egress traffic.
+    # In this case the first IPv4 assigned to that interface will be used as egress IP.
+    # interface: enp0s8
+{{- end }}
