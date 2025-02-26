@@ -1,0 +1,18 @@
+apiVersion: cilium.io/v2alpha1
+kind: CiliumBGPClusterConfig
+metadata:
+  name: cilium-bgp-cluster
+  namespace: kube-system
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  bgpInstances:
+    - name: main
+      localASN: 64512
+      peers:
+        - name: rs1.resolvemy.host
+          peerAddress: 10.1.1.179
+          peerASN: 64567
+          peerConfigRef:
+            name: default
