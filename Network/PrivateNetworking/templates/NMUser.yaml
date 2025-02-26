@@ -1,0 +1,16 @@
+{{- if .Values.netmaker.ui.enabled }}
+{{- $fullName := include "pnetwork.fullname" . -}}
+---
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ $fullName }}-netmaker-user
+ 
+spec:
+  name: Netmaker
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ $fullName }}-netmaker-creds
+{{- end }}
