@@ -26,20 +26,16 @@ data:
     exit
     !
     router bgp 64567
-      bgp router-id 2.2.2.2
+      bgp router-id 10.1.1.179
       no bgp ebgp-requires-policy
       bgp disable-ebgp-connected-route-check
       bgp bestpath peer-type multipath-relax
       bgp graceful-restart stalepath-time 300
       neighbor cilium peer-group
-      neighbor cilium ebgp-multihop 4
+      neighbor cilium ebgp-multihop 6
       neighbor cilium remote-as 64512
-      neighbor WAN-GW peer-group
       neighbor WAN-RT peer-group
       neighbor WAN-RT remote-as internal
-      neighbor pnet peer-group
-      neighbor pnet ebgp-multihop 6
-      neighbor pnet remote-as 64512
       neighbor 172.31.241.237 peer-group WAN-RT
       bgp listen range 172.31.241.0/24 peer-group cilium
       bgp listen range 172.16.20.0/24 peer-group cilium
@@ -47,10 +43,10 @@ data:
       address-family ipv4 unicast
         maximum-paths 64
         maximum-paths ibgp 64
-        neighbor WAN-GW soft-reconfiguration inbound
+        neighbor WAN-RT route-reflector-client
+        neighbor WAN-RT attribute-unchanged next-hop
         neighbor WAN-RT soft-reconfiguration inbound
         neighbor cilium soft-reconfiguration inbound
-        neighbor pnet soft-reconfiguration inbound
       exit-address-family
     exit
     !
