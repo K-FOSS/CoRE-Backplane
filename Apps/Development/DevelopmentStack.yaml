@@ -75,6 +75,18 @@ spec:
                       - op: replace
                         path: /spec/template/spec/containers/0/env
                         value:
+                          - name: ENABLE_SUBPATH_BASED_ACCESS
+                            value: 'true'
+                
+                          - name: VITE_BASE_URL
+                            value: https://rest.writemy.codes
+
+                          - name: VITE_BACKEND_API_URL
+                            value: https://rest.writemy.codes/backend/v1
+                          
+                          - name: VITE_BACKEND_GQL_URL
+                            value: https://rest.writemy.codes/backend/graphql
+
                           - name: DATABASE_URL
                             valueFrom:
                               secretKeyRef:
@@ -108,9 +120,6 @@ spec:
                           - name: MAILER_SMTP_URL
                             value: 'smtps://mail.mylogin.space'
 
-                          - name: VITE_BACKEND_GQL_URL
-                            value: 'https://rest.writemy.codes/graphql'
-
                           - name: MAILER_SMTP_PORT
                             value: '587'
 
@@ -136,7 +145,7 @@ spec:
                             value: 'GITHUB'
 
                           - name: GITHUB_CALLBACK_URL
-                            value: 'https://rest.writemy.codes/v1/auth/github/callback'
+                            value: 'https://rest.writemy.codes/backend/v1/auth/github/callback'
 
                           - name: GITHUB_SCOPE
                             value: 'user:email'
