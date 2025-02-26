@@ -1,0 +1,32 @@
+{{ $chart := index $.Subcharts "psmdb-db" }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ include "psmdb-database.fullname" $chart }}-config
+
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: {{ include "psmdb-database.fullname" $chart }}-config
+    template:
+      engineVersion: v2
+      templateFrom:
+        - target: Data
+          configMap:
+            name: {{ include "psmdb-database.fullname" $chart }}-config-tpl
+            items:
+              - key: my_mongod.conf
+
+  data:
+    - secretKey: Username
+      remoteRef:
+        key: MongoDB/Credentials
+        property: Username
+
+    - secretKey: Password
+      remoteRef:
+        key: MongoDB/Credentials
+        property: Password

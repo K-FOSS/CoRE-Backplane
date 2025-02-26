@@ -1,0 +1,31 @@
+{{ $chart := index $.Subcharts "psmdb-db" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "psmdb-database.fullname" $chart }}-config-tpl
+
+  labels:
+    app.kubernetes.io/name: pgpool
+
+data:
+  my_mongod.conf: | # yaml
+    security:
+      authorization: "enabled"
+      ldap:
+        authz:
+          queryTemplate: '{USER}?memberOf?base'
+        servers: "ldap.mylogin.space"
+        transportSecurity: tls
+        bind: {{`
+          queryUser: "cn={{`{{ .Username }}`}},ou=users,dc=ldap,dc=mylogin,dc=space"
+          queryPassword: "{{ .Password }}"
+          `}}
+        userToDNMapping:
+          '[
+              {
+                match : "(.+)",
+                ldapQuery: "ou=users,dc=ldap,dc=mylogin,dc=space??sub?(cn={0})"
+              }
+      ]'
+    setParameter:
+      authenticationMechanisms: 'PLAIN,SCRAM-SHA-1'
