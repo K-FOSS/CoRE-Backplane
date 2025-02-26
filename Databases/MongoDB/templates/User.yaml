@@ -1,0 +1,19 @@
+{{ $chart := index $.Subcharts "psmdb-db" }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ include "psmdb-database.fullname" $chart }}
+
+spec:
+  name: MongoDB
+
+  username: mongodb-{{ .Values.env }}
+
+  buckets:
+    - mongodb-backups
+
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ include "psmdb-database.fullname" $chart }}-creds
