@@ -6,14 +6,18 @@ metadata:
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
+    resolvemy.host/gw: '{{ .Values.gateway.name }}'
+    resolvemy.host/gw-ns: '{{ .Values.gateway.namespace }}' 
+    resolvemy.host/security: 'public'
+    resolvemy.host/env: '{{ .Values.env }}'
 
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      namespace: core-prod
-      name: main-gw
-      sectionName: https
+      namespace: {{ .Values.gateway.namespace }}
+      name: {{ .Values.gateway.name }}
+      sectionName: {{ .Values.gateway.sectionName }}
 
   hostnames:
     - ipam.mylogin.space
@@ -29,8 +33,11 @@ spec:
               name: Content-Length
               value: '\d*'
       backendRefs:
-        - name: netbox-ipam
-          port: 80  
+        - group: ''
+          kind: Service
+          name: netbox-ipam
+          port: 80
+          weight: 1
 
     - matches:
         - path:
@@ -44,5 +51,8 @@ spec:
                 value: 0
 
       backendRefs:
-        - name: netbox-ipam
-          port: 80  
+        - group: ''
+          kind: Service
+          name: netbox-ipam
+          port: 80
+          weight: 1
