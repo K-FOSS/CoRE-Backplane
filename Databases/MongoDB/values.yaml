@@ -6,10 +6,10 @@ psmdb-db:
   # Declare variables to be passed into your templates.
 
   # Platform type: kubernetes, openshift
-  # platform: kubernetes
+  platform: kubernetes
 
   # Cluster DNS Suffix
-  # clusterServiceDNSSuffix: svc.cluster.local
+  clusterServiceDNSSuffix: svc.cluster.local
   # clusterServiceDNSMode: "Internal"
 
   finalizers:
@@ -29,6 +29,7 @@ psmdb-db:
   crVersion: 1.19.1
   pause: false
   unmanaged: false
+
   unsafeFlags:
     tls: false
     replsetSize: false
@@ -42,9 +43,14 @@ psmdb-db:
   #   - service.beta.kubernetes.io/aws-load-balancer-backend-protocol
   # ignoreLabels:
   #   - rack
+
+  #
+  # TODO: Setup mutlicluster MongoDB
+  #
   multiCluster:
     enabled: false
     # DNSSuffix: svc.clusterset.local
+
   updateStrategy: SmartUpdate
   upgradeOptions:
     versionServiceEndpoint: https://check.percona.com
@@ -52,18 +58,10 @@ psmdb-db:
     schedule: "0 2 * * *"
     setFCV: false
 
-  image:
-    repository: percona/percona-server-mongodb
-    tag: 7.0.15-9-multi
-
   imagePullPolicy: Always
-  # imagePullSecrets: []
-  # initImage:
-  #   repository: percona/percona-server-mongodb-operator
-  #   tag: 1.19.1
-  # initContainerSecurityContext: {}
-  # tls:
-  #   mode: preferTLS
+
+  tls:
+    mode: preferTLS
   #   # 90 days in hours
   #   certValidityDuration: 2160h
   #   allowInvalidCertificates: true
@@ -71,16 +69,16 @@ psmdb-db:
   #     name: special-selfsigned-issuer
   #     kind: ClusterIssuer
   #     group: cert-manager.io
-  secrets: {}
+  secrets:
     # If you set users secret here the operator will use existing one or generate random values
     # If not set the operator generates the default secret with name <cluster_name>-secrets
     # users: my-cluster-name-secrets
     # encryptionKey: my-cluster-name-mongodb-encryption-key
-    # ssl: my-cluster-name-ssl
+    ssl: myloginspace-default-certificates
     # sslInternal: my-cluster-name-ssl-internal
     # keyFile: my-cluster-name-mongodb-keyfile
     # vault: my-cluster-name-vault
-    # ldapSecret: my-ldap-secret
+    ldapSecret: my-ldap-secret
     # sse: my-cluster-name-sse
 
   pmm:
@@ -182,41 +180,7 @@ psmdb-db:
       #   inMemory:
       #     engineConfig:
       #        inMemorySizeRatio: 0.5
-      # sidecars:
-      # - image: busybox
-      #   command: ["/bin/sh"]
-      #   args: ["-c", "while true; do echo echo $(date -u) 'test' >> /dev/null; sleep 5;done"]
-      #   name: rs-sidecar-1
-      #   volumeMounts:
-      #     - mountPath: /volume1
-      #       name: sidecar-volume-claim
-      #     - mountPath: /secret
-      #       name: sidecar-secret
-      #     - mountPath: /configmap
-      #       name: sidecar-config
-      # sidecarVolumes:
-      # - name: sidecar-secret
-      #   secret:
-      #     secretName: mysecret
-      # - name: sidecar-config
-      #   configMap:
-      #     name: myconfigmap
-      # - name: backup-nfs
-      #   nfs:
-      #     server: "nfs-service.storage.svc.cluster.local"
-      #     path: "/psmdb-some-name-rs0"
-      # sidecarPVCs:
-      # - apiVersion: v1
-      #   kind: PersistentVolumeClaim
-      #   metadata:
-      #     name: sidecar-volume-claim
-      #   spec:
-      #     resources:
-      #       requests:
-      #         storage: 1Gi
-      #     volumeMode: Filesystem
-      #     accessModes:
-      #       - ReadWriteOnce
+
       podDisruptionBudget:
         maxUnavailable: 1
       # splitHorizons:
@@ -244,16 +208,12 @@ psmdb-db:
       # schedulerName: ""
       resources:
         limits:
-          cpu: "300m"
-          memory: "0.5G"
+          cpu: '300m'
+          memory: '0.5G'
         requests:
-          cpu: "300m"
-          memory: "0.5G"
+          cpu: '300m'
+          memory: '0.5G'
       volumeSpec:
-        # emptyDir: {}
-        # hostPath:
-        #   path: /data
-        #   type: Directory
         pvc:
           # annotations:
           #   volume.beta.kubernetes.io/storage-class: example-hostpath
@@ -264,264 +224,20 @@ psmdb-db:
           resources:
             requests:
               storage: 3Gi
-      # hostAliases:
-      # - ip: "10.10.0.2"
-      #   hostnames:
-      #   - "host1"
-      #   - "host2"
+
       nonvoting:
         enabled: false
-        # podSecurityContext: {}
-        # containerSecurityContext: {}
-        size: 3
-        # configuration: |
-        #   operationProfiling:
-        #     mode: slowOp
-        #   systemLog:
-        #     verbosity: 1
-        # serviceAccountName: percona-server-mongodb-operator
-        affinity:
-          antiAffinityTopologyKey: "kubernetes.io/hostname"
-          # advanced:
-          #   podAffinity:
-          #     requiredDuringSchedulingIgnoredDuringExecution:
-          #     - labelSelector:
-          #         matchExpressions:
-          #         - key: security
-          #           operator: In
-          #           values:
-          #           - S1
-          #       topologyKey: failure-domain.beta.kubernetes.io/zone
-        # tolerations: []
-        # priorityClass: ""
-        # annotations: {}
-        # labels: {}
-        # nodeSelector: {}
-        podDisruptionBudget:
-          maxUnavailable: 1
-        resources:
-          limits:
-            cpu: "300m"
-            memory: "0.5G"
-          requests:
-            cpu: "300m"
-            memory: "0.5G"
-        volumeSpec:
-          # emptyDir: {}
-          # hostPath:
-          #   path: /data
-          #   type: Directory
-          pvc:
-            # annotations:
-            #   volume.beta.kubernetes.io/storage-class: example-hostpath
-            # labels:
-            #   rack: rack-22
-            # storageClassName: standard
-            # accessModes: [ "ReadWriteOnce" ]
-            resources:
-              requests:
-                storage: 3Gi
+
       arbiter:
         enabled: false
         size: 1
-        # serviceAccountName: percona-server-mongodb-operator
-        affinity:
-          antiAffinityTopologyKey: "kubernetes.io/hostname"
-          # advanced:
-          #   podAffinity:
-          #     requiredDuringSchedulingIgnoredDuringExecution:
-          #     - labelSelector:
-          #         matchExpressions:
-          #         - key: security
-          #           operator: In
-          #           values:
-          #           - S1
-          #       topologyKey: failure-domain.beta.kubernetes.io/zone
-        # tolerations: []
-        # priorityClass: ""
-        # annotations: {}
-        # labels: {}
-        # nodeSelector: {}
+
 
   sharding:
-    enabled: true
+    enabled: false
     balancer:
       enabled: true
 
-    configrs:
-      size: 3
-      # terminationGracePeriodSeconds: 300
-      # externalNodes:
-      # - host: 34.124.76.90
-      # - host: 34.124.76.91
-      #   port: 27017
-      #   votes: 0
-      #   priority: 0
-      # - host: 34.124.76.92
-      # configuration: |
-      #   operationProfiling:
-      #     mode: slowOp
-      #   systemLog:
-      #     verbosity: 1
-      # serviceAccountName: percona-server-mongodb-operator
-      # topologySpreadConstraints:
-      #   - labelSelector:
-      #       matchLabels:
-      #         app.kubernetes.io/name: percona-server-mongodb
-      #     maxSkew: 1
-      #     topologyKey: kubernetes.io/hostname
-      #     whenUnsatisfiable: DoNotSchedule
-      affinity:
-        antiAffinityTopologyKey: "kubernetes.io/hostname"
-        # advanced:
-        #   podAffinity:
-        #     requiredDuringSchedulingIgnoredDuringExecution:
-        #     - labelSelector:
-        #         matchExpressions:
-        #         - key: security
-        #           operator: In
-        #           values:
-        #           - S1
-        #       topologyKey: failure-domain.beta.kubernetes.io/zone
-      # tolerations: []
-      # priorityClass: ""
-      # annotations: {}
-      # labels: {}
-      # podSecurityContext: {}
-      # containerSecurityContext: {}
-      # nodeSelector: {}
-      # livenessProbe: {}
-      # readinessProbe: {}
-      # runtimeClassName: image-rc
-      # sidecars:
-      # - image: busybox
-      #   command: ["/bin/sh"]
-      #   args: ["-c", "while true; do echo echo $(date -u) 'test' >> /dev/null; sleep 5;done"]
-      #   name: rs-sidecar-1
-      #   volumeMounts:
-      #     - mountPath: /volume1
-      #       name: sidecar-volume-claim
-      # sidecarPVCs: []
-      # sidecarVolumes: []
-      podDisruptionBudget:
-        maxUnavailable: 1
-      expose:
-        enabled: false
-        type: ClusterIP
-        # loadBalancerIP: 10.0.0.0
-        # loadBalancerSourceRanges:
-        #   - 10.0.0.0/8
-        # annotations:
-        #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
-        # labels:
-        #   some-label: some-key
-        # internalTrafficPolicy: Local
-        # externalTrafficPolicy: Local
-      resources:
-        limits:
-          cpu: "300m"
-          memory: "0.5G"
-        requests:
-          cpu: "300m"
-          memory: "0.5G"
-      volumeSpec:
-        # emptyDir: {}
-        # hostPath:
-        #   path: /data
-        #   type: Directory
-        pvc:
-          # annotations:
-          #   volume.beta.kubernetes.io/storage-class: example-hostpath
-          # labels:
-          #   rack: rack-22
-          # storageClassName: standard
-          # accessModes: [ "ReadWriteOnce" ]
-          resources:
-            requests:
-              storage: 3Gi
-      # hostAliases:
-      # - ip: "10.10.0.2"
-      #   hostnames:
-      #   - "host1"
-      #   - "host2"
-
-    mongos:
-      size: 3
-      # terminationGracePeriodSeconds: 300
-      # configuration: |
-      #   systemLog:
-      #     verbosity: 1
-      # serviceAccountName: percona-server-mongodb-operator
-      # topologySpreadConstraints:
-      #   - labelSelector:
-      #       matchLabels:
-      #         app.kubernetes.io/name: percona-server-mongodb
-      #     maxSkew: 1
-      #     topologyKey: kubernetes.io/hostname
-      #     whenUnsatisfiable: DoNotSchedule
-      affinity:
-        antiAffinityTopologyKey: "kubernetes.io/hostname"
-        # advanced:
-        #   podAffinity:
-        #     requiredDuringSchedulingIgnoredDuringExecution:
-        #     - labelSelector:
-        #         matchExpressions:
-        #         - key: security
-        #           operator: In
-        #           values:
-        #           - S1
-        #       topologyKey: failure-domain.beta.kubernetes.io/zone
-      # tolerations: []
-      # priorityClass: ""
-      # annotations: {}
-      # labels: {}
-      # podSecurityContext: {}
-      # containerSecurityContext: {}
-      # nodeSelector: {}
-      # livenessProbe: {}
-      # readinessProbe: {}
-      # runtimeClassName: image-rc
-      # sidecars:
-      # - image: busybox
-      #   command: ["/bin/sh"]
-      #   args: ["-c", "while true; do echo echo $(date -u) 'test' >> /dev/null; sleep 5;done"]
-      #   name: rs-sidecar-1
-      #   volumeMounts:
-      #     - mountPath: /volume1
-      #       name: sidecar-volume-claim
-      # sidecarPVCs: []
-      # sidecarVolumes: []
-      podDisruptionBudget:
-        maxUnavailable: 1
-      resources:
-        limits:
-          cpu: "300m"
-          memory: "0.5G"
-        requests:
-          cpu: "300m"
-          memory: "0.5G"
-      expose:
-        enabled: false
-        type: ClusterIP
-        # loadBalancerIP: 10.0.0.0/8
-        # loadBalancerSourceRanges:
-        #   - 10.0.0.0/8
-        # annotations:
-        #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
-        # labels:
-        #   some-label: some-key
-        # internalTrafficPolicy: Local
-        # externalTrafficPolicy: Local
-        # nodePort: 32017
-      # auditLog:
-      #   destination: file
-      #   format: BSON
-      #   filter: '{}'
-      # hostAliases:
-      # - ip: "10.10.0.2"
-      #   hostnames:
-      #   - "host1"
-      #   - "host2"
 
   # users:
   # - name: my-user
@@ -579,13 +295,7 @@ psmdb-db:
 
   backup:
     enabled: true
-    image:
-      repository: percona/percona-backup-mongodb
-      tag: 2.8.0-multi
-    # annotations:
-    #   iam.amazonaws.com/role: role-arn
-    # podSecurityContext: {}
-    # containerSecurityContext: {}
+
     # resources:
     #   limits:
     #     cpu: "300m"
@@ -604,7 +314,7 @@ psmdb-db:
           prefix: 
 
     pitr:
-      enabled: false
+      enabled: true
       oplogOnly: false
       # oplogSpanMin: 10
       # compressionType: gzip
@@ -628,12 +338,12 @@ psmdb-db:
     #       "node01:2017": /usr/bin/mongo
     #       "node03:27017": /usr/bin/mongo
     tasks:
-    # - name: daily-s3-us-west
-    #   enabled: true
-    #   schedule: "0 0 * * *"
-    #   keep: 3
-    #   storageName: s3-us-west
-    #   compressionType: gzip
+      - name: daily-s3-minio
+        enabled: true
+        schedule: "0 0 * * *"
+        keep: 3
+        storageName: s3-us-west
+        compressionType: gzip
     # - name: weekly-s3-us-west
     #   enabled: false
     #   schedule: "0 0 * * 0"

@@ -10,7 +10,7 @@ spec:
     name: mainvault-core
 
   target:
-    name: {{ include "psmdb-database.fullname" $chart }}-config
+    name: {{ include "psmdb-database.fullname" $chart }}-rs0-mongod
     template:
       engineVersion: v2
       templateFrom:
@@ -18,7 +18,7 @@ spec:
           configMap:
             name: {{ include "psmdb-database.fullname" $chart }}-config-tpl
             items:
-              - key: my_mongod.conf
+              - key: mongod.conf
 
   data:
     - secretKey: Username
