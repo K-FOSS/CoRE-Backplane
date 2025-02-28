@@ -58,6 +58,16 @@ spec:
               value: |-
                 patches:
                   - target:
+                      kind: Service
+                      name: {{cluster}}-development-hoppscotch
+
+                    patch: |
+                      - op: add
+                        path: /spec/ports/0/targetPort
+                        value: http
+
+
+                  - target:
                       kind: Deployment
                       name: {{cluster}}-development-hoppscotch
 
