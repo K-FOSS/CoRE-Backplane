@@ -632,26 +632,6 @@ authentik:
       ## Has higher precedence over `worker.pdb.minAvailable`
       maxUnavailable: ""
 
-    ## authentik worker image
-    ## This should match what is deployed in the server. Prefer using global.image
-    image:
-      # -- Repository to use to the authentik worker
-      # @default -- `""` (defaults to global.image.repository)
-      repository: "" # defaults to global.image.repository
-      # -- Tag to use to the authentik worker
-      # @default -- `""` (defaults to global.image.tag)
-      tag: "" # defaults to global.image.tag
-      # -- Digest to use to the authentik worker
-      # @default -- `""` (defaults to global.image.digest)
-      digest: "" # defaults to global.image.digest
-      # -- Image pull policy to use to the authentik worker
-      # @default -- `""` (defaults to global.image.pullPolicy)
-      pullPolicy: "" # defaults to global.image.pullPolicy
-
-    # -- Secrets with credentials to pull images from a private registry
-    # @default -- `[]` (defaults to global.imagePullSecrets)
-    imagePullSecrets: []
-
     # -- Environment variables to pass to the authentik worker. Does not apply to GeoIP
     # See configuration options at https://goauthentik.io/docs/installation/configuration/
     # @default -- `[]` (See [values.yaml])
@@ -668,6 +648,40 @@ authentik:
       #     configMapKeyRef:
       #       name: config-map-name
       #       key: config-map-key
+
+    livenessProbe:
+      # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
+      failureThreshold: 10
+      # -- Number of seconds after the container has started before [probe] is initiated
+      initialDelaySeconds: 5
+      # -- How often (in seconds) to perform the [probe]
+      periodSeconds: 30
+      # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
+      successThreshold: 1
+      # -- Number of seconds after which the [probe] times out
+      timeoutSeconds: 10
+      ## Probe configuration
+      exec:
+        command:
+          - ak
+          - healthcheck
+
+    readinessProbe:
+      # -- Minimum consecutive failures for the [probe] to be considered failed after having succeeded
+      failureThreshold: 10
+      # -- Number of seconds after the container has started before [probe] is initiated
+      initialDelaySeconds: 5
+      # -- How often (in seconds) to perform the [probe]
+      periodSeconds: 30
+      # -- Minimum consecutive successes for the [probe] to be considered successful after having failed
+      successThreshold: 1
+      # -- Number of seconds after which the [probe] times out
+      timeoutSeconds: 10
+      ## Probe configuration
+      exec:
+        command:
+          - ak
+          - healthcheck
 
     # -- envFrom to pass to the authentik worker. Does not apply to GeoIP
     # @default -- `[]` (See [values.yaml])
