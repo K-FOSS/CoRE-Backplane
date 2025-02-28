@@ -68,6 +68,14 @@ spec:
                 })
               }
 
+              variable "mqtts" {
+                description = "MQTTs Configuration"
+                type        = object({
+                  hostname = string
+                  port = string
+                })
+              }
+
               variable "sips" {
                 description = "SIPs Configuration"
                 type        = object({
@@ -88,6 +96,16 @@ spec:
 
               variable "mysql" {
                 description = "MySQL Configuration"
+
+                type = object({
+                  hostname = string
+                  port = string
+                  uri = string
+                })
+              }
+
+              variable "mongodb" {
+                description = "MongoDB Configuration"
 
                 type = object({
                   hostname = string
@@ -326,12 +344,18 @@ spec:
 
               mqtt:
                 hostname: mqtt.mylogin.space
-                port: 1883
+                port: 8443
+                uri: mqtts://
               
               mysql:
                 hostname: mysql.mylogin.space
                 port: 3306
-                uri: mysql
+                uri: mysql://
+
+              mongodb:
+                hostname: mongo.mylogin.space
+                port: 3306
+                uri: mongodb://
 
               s3:
                 hostname: s3.mylogin.space
@@ -522,7 +546,9 @@ spec:
           fromConnectionSecretKey: S3URI
 
 
-
+    #
+    # PostgreSQL Database Configuration
+    #
     - name: role
 
       readinessChecks:
@@ -611,7 +637,9 @@ spec:
           forProvider:
             connectionLimit: -1
 
-
+    #
+    # Create the Database on PSQL for the user/serviceAccount to access
+    #
     - name: db-tf
       readinessChecks:
         - type: MatchCondition
@@ -716,7 +744,99 @@ spec:
               string:
                 type: Format
                 fmt: '%s-psql-secret'
+    
+    #
+    # MongoDB Configuration
+    #
+    - name: db-mongodb-tf
+      
+      readinessChecks:
+        - type: MatchCondition
+          matchCondition:
+            type: Ready
+            status: 'True'
 
+      base:
+        apiVersion: tf.upbound.io/v1beta1
+        kind: Workspace
+        spec:
+          providerConfigRef:
+            name: mongodb-{{ .Values.env }}-tf
+
+          writeConnectionSecretToRef:
+            namespace: core-prod
+            name: key1
+
+          forProvider:
+            source: Inline
+            module: | # hcl
+              variable "config" {
+                description = "Database Configuration"
+                type        = object({
+                  enabled = bool
+                  
+                  databases = set(string)
+                })
+              }
+
+              variable "user" {
+                description = "Database Configuration"
+                type        = object({
+                  name = string
+                })
+              }
+
+              locals {
+                databases = concat([var.config.enabled == true ? var.user.name : ], tolist(var.config.databases))
+              }
+
+              output "testing123" {
+                value = flatten([
+                          for database in local.databases : [
+                            {
+                              role = "readWrite",
+                              db = "${var.database.name}"
+                            },
+                            {
+                              role = "dbOwner",
+                              db = "${var.database.name}"
+                            }
+                          ]
+                        ])
+                sensitive = false
+              }
+
+            varmap:
+              config:
+                enabled: false
+
+              user:
+                name: ''
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.mongodb
+          toFieldPath: spec.forProvider.varmap.config
+          policy:
+            fromFieldPath: Required
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: status.share.username
+          toFieldPath: spec.forProvider.varmap.user.name
+          policy:
+            fromFieldPath: Required
+
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.uid
+          toFieldPath: "spec.writeConnectionSecretToRef.name"
+          transforms:
+            - type: string
+              string:
+                type: Format
+                fmt: '%s-mongodb-secret'
+
+    #
+    # Minio S3 Configuration
+    #
     - name: bucket
 
       readinessChecks:
