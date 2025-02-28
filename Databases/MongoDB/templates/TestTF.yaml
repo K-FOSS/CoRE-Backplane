@@ -61,7 +61,13 @@ spec:
 
       resource "mongodb_role" "testuser" {
         role = "cn=testuser1,ou=virtual-groups,dc=ldap,dc=mylogin,dc=space"
-        db = "testuser1"
+        db = "admin"
+        privileges = [
+          {
+            resource = { db = "testuser1", collection = "" }
+            actions  = ["find", "update", "insert", "remove"]
+          },
+        ]
         roles = [
           { 
             role = "readWrite",
