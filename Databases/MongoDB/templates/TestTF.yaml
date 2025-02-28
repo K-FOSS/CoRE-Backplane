@@ -10,60 +10,28 @@ spec:
   forProvider:
     source: Inline
     module: |
-      resource "mongodb_db_role" "main-new" {
-        name = "cn=Network,ou=groups,dc=ldap,dc=mylogin,dc=space"
-        
-        database = "admin"
-
-        inherited_role {
-          role = "readAnyDatabase"
-          db =   "admin"
-        }
-
-        inherited_role {
-          role = "readWriteAnyDatabase"
-          db =   "admin"
-        }
-      }
-
-      resource "mongodb_db_role" "AdminRole" {
-        name = "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"
-        
-        database = "admin"
-        
-        privilege {
-          db = "admin"
-          collection = ""
-          actions = ["collStats"]
-        }
-
-        inherited_role {
-          role = "readAnyDatabase"
-          db =   "admin"
-        }
-
-        inherited_role {
-          role = "dbAdminAnyDatabase"
-          db =   "admin"
-        }
-
-        inherited_role {
-          role = "clusterMonitor"
-          db =   "admin"
-        }
-
-        inherited_role {
-          role = "readWriteAnyDatabase"
-          db =   "admin"
-        }
-
-        inherited_role {
-          role = "restore"
-          db =   "admin"
-        }
-
-        inherited_role {
-          role = "backup"
-          db =   "admin"
-        }
+      resource "mongodb_role" "example" {
+        role = "cn=Network,ou=groups,dc=ldap,dc=mylogin,dc=space"
+        db   = "admin"
+        privileges = [
+          {
+            resource = { cluster = true }
+            actions  = ["addShard"]
+          },
+          {
+            resource = { db = "config", collection = "" }
+            actions  = ["find", "update", "insert", "remove"]
+          },
+          {
+            resource = { db = "users", collection = "usersCollection" },
+            actions  = ["update", "insert", "remove"]
+          },
+          {
+            resource = { db = "", collection = "" },
+            actions  = ["find"]
+          }
+        ]
+        roles = [
+          { role = "read", db = "admin" },
+        ]
       }

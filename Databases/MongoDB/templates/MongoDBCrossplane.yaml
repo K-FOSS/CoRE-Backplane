@@ -32,15 +32,9 @@ spec:
     }
 
     provider "mongodb" {
-      host = "{{ include "psmdb-database.fullname" $chart }}-rs0-0.{{ .Release.Namespace }}.svc.cluster.local"
-      port = "27017"
+      uri      = "mongodb://{{ include "psmdb-database.fullname" $chart }}-rs0-0.{{ .Release.Namespace }}.svc.cluster.local/admin?replicaSet=rs0&ssl=false"
       username = local.credentials.username
       password = local.credentials.password
-      auth_database = "admin"
-      ssl = false
-      replica_set = "rs0" #optional
-      retrywrites = false # default true
-      direct = true // default false
     }
 
     // Modules _must_ use remote state. The provider does not persist state.
@@ -52,9 +46,9 @@ spec:
       }
 
       required_providers {
-        mongodb = {
-          source = "fabiovpcaumo/mongodb"
-          version = "0.1.11"
+        mongodb-driver = {
+          source = "RiskIdent/mongodb-driver"
+          version = "0.2.1"
         }
       }
     }
