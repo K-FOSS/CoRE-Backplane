@@ -106,6 +106,42 @@ persistence:
 
 
 route:
+  ws-mqtt:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    hostnames:
+      - iot-mqtt.mylogin.space
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+
+        # Kind of the referent resource.
+        kind: Gateway
+
+        # Name of the referent resource
+        name: main-gw
+
+        sectionName: https-myloginspace
+
+        # Namespace of the referent resource
+        namespace: core-prod
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 5280
+            name: main
+            weight: 1
+
+
   mqtt:
     # -- Enables or disables the route
     enabled: true
@@ -281,6 +317,11 @@ configMaps:
           - port: 5222
             ip: '::'
             module: ejabberd_c2s
+
+          - port: 5280
+            module: ejabberd_http
+            request_handlers:
+              /mqtt: mod_mqtt
 
           - port: 5269
             ip: '::'
