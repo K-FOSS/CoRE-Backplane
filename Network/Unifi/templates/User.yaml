@@ -1,0 +1,28 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}
+
+spec:
+  name: Unifi Controller
+
+  username: unifi
+ 
+  psql:
+    enabled: false
+
+  mysql:
+    enabled: false
+
+  mongodb:
+    enabled: true
+
+    databases:
+      - unifi
+      - unifi_stat
+
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-creds
