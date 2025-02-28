@@ -9,23 +9,19 @@ global:
 {{ end }}
 
 service:
-  main:
-    # -- Enables or disables the service
+  http:
     enabled: true
 
     # -- Configure which controller this service should target
     controller: main
 
-    # -- Make this the primary service for this controller (used in probes, notes, etc...).
-    # If there is more than 1 service targeting the controller, make sure that only 1 service is
-    # marked as primary.
-    primary: true
+    nameOverride: http
 
     # -- Set the service type
     type: ClusterIP
 
     ports:
-      http:
+      mqtts:
         # -- Enables or disables the port
         enabled: true
 
@@ -45,6 +41,24 @@ service:
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol: http
 
+  mqttx:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: main
+
+    nameOverride: mqtt
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: ClusterIP
+
+    ports:
       mqtts:
         # -- Enables or disables the port
         enabled: true
