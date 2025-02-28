@@ -87,85 +87,17 @@ psmdb-db:
       repository: percona/pmm-client
 
     serverHost: monitoring-service
-  #   mongodParams: ""
-  #   mongosParams: ""
-  #   resources: {}
-  #   containerSecurityContext: {}
+
 
   replsets:
     rs0:
       name: rs0
       size: 3
-      # terminationGracePeriodSeconds: 300
-      # externalNodes:
-      # - host: 34.124.76.90
-      # - host: 34.124.76.91
-      #   port: 27017
-      #   votes: 0
-      #   priority: 0
-      # - host: 34.124.76.92
-      # configuration: |
-      #   operationProfiling:
-      #     mode: slowOp
-      #   systemLog:
-      #     verbosity: 1
-      # serviceAccountName: percona-server-mongodb-operator
-      # topologySpreadConstraints:
-      #   - labelSelector:
-      #       matchLabels:
-      #         app.kubernetes.io/name: percona-server-mongodb
-      #     maxSkew: 1
-      #     topologyKey: kubernetes.io/hostname
-      #     whenUnsatisfiable: DoNotSchedule
-      # replsetOverrides:
-      #   my-cluster-name-rs0-0:
-      #     host: my-cluster-name-rs0-0.example.net:27017
-      #     priority: 3
-      #     tags:
-      #       key: value-0
-      #   my-cluster-name-rs0-1:
-      #     host: my-cluster-name-rs0-1.example.net:27017
-      #     tags:
-      #       key: value-1
-      #   my-cluster-name-rs0-2:
-      #     host: my-cluster-name-rs0-2.example.net:27017
-      #     tags:
-      #       key: value-2
-      affinity:
-        antiAffinityTopologyKey: "kubernetes.io/hostname"
-        # advanced:
-        #   podAffinity:
-        #     requiredDuringSchedulingIgnoredDuringExecution:
-        #     - labelSelector:
-        #         matchExpressions:
-        #         - key: security
-        #           operator: In
-        #           values:
-        #           - S1
-        #       topologyKey: failure-domain.beta.kubernetes.io/zone
-      # tolerations: []
-      # primaryPreferTagSelector:
-      #   region: us-west-2
-      #   zone: us-west-2c
-      # priorityClass: ""
-      # annotations: {}
-      # labels: {}
-      # podSecurityContext: {}
-      # containerSecurityContext: {}
-      # nodeSelector: {}
-      # livenessProbe:
-      #   failureThreshold: 4
-      #   initialDelaySeconds: 60
-      #   periodSeconds: 30
-      #   timeoutSeconds: 10
-      #   startupDelaySeconds: 7200
-      # readinessProbe:
-      #   failureThreshold: 8
-      #   initialDelaySeconds: 10
-      #   periodSeconds: 3
-      #   successThreshold: 1
-      #   timeoutSeconds: 2
-      # runtimeClassName: image-rc
+
+      affinity: {}
+
+      priorityClass: 'tier2-priority'
+
       # storage:
       #   engine: wiredTiger
       #   wiredTiger:
@@ -181,18 +113,6 @@ psmdb-db:
       #     engineConfig:
       #        inMemorySizeRatio: 0.5
 
-      podDisruptionBudget:
-        maxUnavailable: 1
-      # splitHorizons:
-      #   my-cluster-name-rs0-0:
-      #     external: rs0-0.mycluster.xyz
-      #     external-2: rs0-0.mycluster2.xyz
-      #   my-cluster-name-rs0-1:
-      #     external: rs0-1.mycluster.xyz
-      #     external-2: rs0-1.mycluster2.xyz
-      #   my-cluster-name-rs0-2:
-      #     external: rs0-2.mycluster.xyz
-      #     external-2: rs0-2.mycluster2.xyz
       expose:
         enabled: false
         type: ClusterIP
@@ -215,12 +135,8 @@ psmdb-db:
           memory: '0.5G'
       volumeSpec:
         pvc:
-          # annotations:
-          #   volume.beta.kubernetes.io/storage-class: example-hostpath
-          # labels:
-          #   rack: rack-22
-          # storageClassName: standard
-          # accessModes: [ "ReadWriteOnce" ]
+          labels:
+            resolvemy.host/env: 'prod'
           resources:
             requests:
               storage: 3Gi
@@ -342,7 +258,7 @@ psmdb-db:
         enabled: true
         schedule: "0 0 * * *"
         keep: 3
-        storageName: s3-us-west
+        storageName: core-minio
         compressionType: gzip
     # - name: weekly-s3-us-west
     #   enabled: false

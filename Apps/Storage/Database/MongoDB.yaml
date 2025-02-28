@@ -44,6 +44,12 @@ spec:
               value: |- # yaml
                 env: {{ environment }}
                 psmdb-db:
+                  replsets:
+                    rs0:
+                      volumeSpec:
+                        pvc:
+                          labels:
+                            resolvemy.host/env: '{{ environment }}'
                   backup:
                     storages:
                       core-minio:
