@@ -120,14 +120,8 @@ psmdb-db:
         enabled: true
         type: ClusterIP
 
-        annotations:
-          purelb.io/allow-local: 'true'
-          external-dns.alpha.kubernetes.io/hostname: 'mongodb.mylogin.space'
-        #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
-        labels:
-          wan-mode: public
         # internalTrafficPolicy: Local
-        # externalTrafficPolicy: Local
+        externalTrafficPolicy: Local
       # schedulerName: ""
 
       volumeSpec:
