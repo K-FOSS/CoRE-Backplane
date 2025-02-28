@@ -1,0 +1,60 @@
+{{ $chart := index $.Subcharts "psmdb-db" }}
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: mongodb-{{ .Values.env }}-tf
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+spec:
+  credentials:
+    - filename: username
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: {{ include "psmdb-database.fullname" $chart }}-users
+        key: MONGODB_USER_ADMIN_USER
+
+    - filename: password
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: {{ include "psmdb-database.fullname" $chart }}-users
+        key: MONGODB_DATABASE_ADMIN_PASSWORD
+  configuration: |
+    locals {
+      # Common tags to be assigned to all resources
+      credentials = {
+        description = "tf-deploy.resolvemy.host"
+        username = file("${path.module}/username")
+        password = file("${path.module}/password")
+      }
+    }
+
+    provider "mongodb" {
+      host = "{{ include "psmdb-database.fullname" $chart }}-rs0-0.{{ .Release.Namespace }}.svc.cluster.local"
+      port = "27017"
+      username = local.credentials.username
+      password = local.credentials.password
+      auth_database = "admin"
+      ssl = false
+      replica_set = "rs0" #optional
+      retrywrites = false # default true
+      direct = true // default false
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-mongodb-{{ .Values.env }}-tf"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        mongodb = {
+          source = "fabiovpcaumo/mongodb"
+          version = "0.1.11"
+        }
+      }
+    }
