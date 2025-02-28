@@ -14,7 +14,7 @@ data:
       authorization: "enabled"
       ldap:
         authz:
-          queryTemplate: '{USER}?memberOf?base'
+          queryTemplate: 'dc=ldap,dc=mylogin,dc=space?memberOf?base?(&(|(objectClass=group)(objectClass=user))(|(member={USER})(cn={PROVIDED_USER})))'
         servers: "ldap.mylogin.space"
         transportSecurity: tls
         bind: {{`
