@@ -12,14 +12,14 @@ spec:
       source: Secret
       secretRef:
         namespace: {{ .Release.Namespace }}
-        name: {{ include "psmdb-database.fullname" $chart }}-users
+        name: internal-{{ include "psmdb-database.fullname" $chart }}-users
         key: MONGODB_USER_ADMIN_USER
 
     - filename: password
       source: Secret
       secretRef:
         namespace: {{ .Release.Namespace }}
-        name: {{ include "psmdb-database.fullname" $chart }}-users
+        name: internal-{{ include "psmdb-database.fullname" $chart }}-users
         key: MONGODB_DATABASE_ADMIN_PASSWORD
   configuration: |
     locals {
