@@ -1,0 +1,28 @@
+{{ $chart := index $.Subcharts "psmdb-db" }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ include "psmdb-database.fullname" $chart }}-config-tpl
+spec:
+  providerConfigRef:
+    name: mongodb-{{ .Values.env }}-tf
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "mongodb_db_role" "role" {
+        name = "cn=TestUser1,ou=users,dc=ldap,dc=mylogin,dc=space"
+        
+        database = "admin"
+        
+        privilege {
+          db = "admin"
+          collection = ""
+          actions = ["collStats"]
+        }
+
+        inherited_role {
+          role = "dbAdminAnyDatabase"
+          db =   "admin"
+        }
+      }
