@@ -43,6 +43,17 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
                 env: {{ environment }}
+                psmdb-db:
+                  backup:
+                    storages:
+                      core-minio:
+                        type: s3
+                        s3:
+                          bucket: mongodb-backups
+                          region: us-east-1
+                          credentialsSecret: {{cluster}}-db-mong-s3
+                          endpointUrl: https://s3.mylogin.space
+                          prefix: ''
 
       destination:
         server: '{{url}}'
