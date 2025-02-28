@@ -84,16 +84,56 @@ spec:
                 psql:
                   type: object
                   properties:
+                    enabled:
+                      type: boolean
+                      default: false
+
                     uri:
                       type: string
                       default: postgres://
 
+                    databases:
+                      oneOf:
+                        - type: string
+                        - type: array
+                          items:
+                            type: string
+
                 mysql:
                   type: object
                   properties:
+                    enabled:
+                      type: boolean
+                      default: false
+                
                     uri:
                       type: string
                       default: mysql://
+
+                    databases:
+                      oneOf:
+                        - type: string
+                        - type: array
+                          items:
+                            type: string
+
+                mongodb:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      default: false
+
+                    uri:
+                      type: string
+                      default: mysql://
+
+                    databases:
+                      oneOf:
+                        - type: string
+                        - type: array
+                          items:
+                            type: string
 
                 ldaps:
                   type: object
