@@ -1,0 +1,38 @@
+{{- if .Values.mongodb.service.anycast.enabled }}
+{{ $chart := index $.Subcharts "psmdb-db" }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    lan-mode: 'private'
+    wan-mode: 'public'
+
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: 'mongo.mylogin.space'
+    purelb.io/allow-local: 'true'
+
+  name: {{ include "psmdb-database.fullname" $chart }}
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app.kubernetes.io/component: mongod
+    app.kubernetes.io/instance: {{ include "psmdb-database.fullname" $chart }}
+    app.kubernetes.io/managed-by: percona-server-mongodb-operator
+    app.kubernetes.io/name: percona-server-mongodb
+    app.kubernetes.io/part-of: percona-server-mongodb
+    app.kubernetes.io/replset: rs0
+
+  ports:
+    # MongoDB
+    - name: mongodb
+      port: 27017
+      protocol: TCP
+      targetPort: 27017
+
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+{{- end }}
