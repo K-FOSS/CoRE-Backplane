@@ -10,8 +10,24 @@ spec:
   forProvider:
     source: Inline
     module: |
-      resource "mongodb_db_role" "role" {
-        name = "cn=TestUser1,ou=virtual-groups,dc=ldap,dc=mylogin,dc=space"
+      resource "mongodb_db_role" "main-new" {
+        name = "cn=Network,ou=groups,dc=ldap,dc=mylogin,dc=space"
+        
+        database = "admin"
+
+        inherited_role {
+          role = "readAnyDatabase"
+          db =   "admin"
+        }
+
+        inherited_role {
+          role = "readWriteAnyDatabase"
+          db =   "admin"
+        }
+      }
+
+      resource "mongodb_db_role" "AdminRole" {
+        name = "cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space"
         
         database = "admin"
         
@@ -22,7 +38,32 @@ spec:
         }
 
         inherited_role {
+          role = "readAnyDatabase"
+          db =   "admin"
+        }
+
+        inherited_role {
           role = "dbAdminAnyDatabase"
+          db =   "admin"
+        }
+
+        inherited_role {
+          role = "clusterMonitor"
+          db =   "admin"
+        }
+
+        inherited_role {
+          role = "readWriteAnyDatabase"
+          db =   "admin"
+        }
+
+        inherited_role {
+          role = "restore"
+          db =   "admin"
+        }
+
+        inherited_role {
+          role = "backup"
           db =   "admin"
         }
       }
