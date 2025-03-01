@@ -7,6 +7,12 @@ controllers:
     # DaemonSets/CronJobs ignore this.
     strategy: RollingUpdate
 
+    defaultContainerOptions:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+
     containers:
       unifi:
         image:
@@ -37,9 +43,12 @@ persistence:
   data:
     enabled: true
     type: persistentVolumeClaim
-    mountPath: /usr/lib/unifi/data
+    mountPath: 
     accessMode: ReadWriteOnce
     size: 2G
+    globalMounts:
+      - path: /usr/lib/unifi/data
+        readOnly: false
 
 
   tls:
