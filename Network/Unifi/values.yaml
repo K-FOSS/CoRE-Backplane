@@ -24,11 +24,26 @@ controllers:
           - name: DB_MONGO_URI
             valueFrom:
               secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ .Values.env }}'
                 key: DB_MONGO_URI
 
           - name: STATDB_MONGO_URI
             valueFrom:
               secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ .Values.env }}'
                 key: STATDB_MONGO_URI
+
+persistence:
+  data:
+    enabled: true
+    type: persistentVolumeClaim
+    mountPath: /usr/lib/unifi/data
+    accessMode: ReadWriteOnce
+    size: 2G
+
+
+  tls:
+    enabled: true
+    type: secret
+    name: myloginspace-default-certificates
+    mountPath: /usr/lib/unifi/cert
