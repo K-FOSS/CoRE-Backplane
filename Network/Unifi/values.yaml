@@ -39,6 +39,78 @@ controllers:
                 key: STATDB_MONGO_URI
 
 service:
+  unifi-lb:
+    enabled: true
+
+    controller: unifi
+
+    type: LoadBalancer
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    externalTrafficPolicy: Local
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    # # -- Provide additional annotations which may be required.
+    annotations:
+      purelb.io/allow-shared-ip: main-gw.resolvemy.host
+      purelb.io/service-group: main-public
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '66.165.222.102'
+      external-dns.alpha.kubernetes.io/hostname: 'unifi.int.mylogin.space'
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: public
+      lan-mode: private
+
+    ports:
+      inform:
+        enabled: true
+
+        primary: false
+
+        port: 8080
+
+
+      speedtest:
+        enabled: true
+
+        primary: false
+
+        port: 6789
+
+      syslog:
+        enabled: true
+
+        primary: false
+
+        port: 5514
+
+        protocol: UDP
+
+      httpportalredir:
+        enabled: true
+
+        primary: false
+
+        port: 8880
+
+        protocol: HTTP
+
+      httppsortalredir:
+        enabled: true
+
+        primary: false
+
+        port: 8843
+
+        protocol: HTTPS
+
   unifi:
     # -- Enables or disables the service
     enabled: true
@@ -77,9 +149,6 @@ route:
     # -- Set the route kind
     # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
     kind: TLSRoute
-
-    # -- Provide additional annotations which may be required.
-    annotations: {}
 
     # -- Provide additional labels which may be required.
     labels:
@@ -123,7 +192,6 @@ persistence:
     globalMounts:
       - path: /usr/lib/unifi/data
         readOnly: false
-
 
   tls:
     enabled: true
