@@ -787,22 +787,36 @@ spec:
               }
 
               locals {
-                databases = concat([var.config.enabled == true ? var.user.name : nulll], tolist(var.config.databases))
+                databases = concat([var.user.name], tolist(var.config.databases))
+              }
+
+              resource "mongodb_role" "testuser" {
+                role = "cn=${var.user.name},ou=virtual-groups,dc=ldap,dc=mylogin,dc=space"
+                db = "admin"
+                privileges = flatten([
+                  for database in local.databases : [
+                    {
+                      resource = { db = "${database}", collection = "" }
+                      actions  = ["find", "update", "insert", "remove"]
+                    }
+                  ]
+                ])
+                roles = flatten([
+                  for database in local.databases : [
+                    {
+                      role = "readWrite",
+                      db = "${database}"
+                    },
+                    {
+                      role = "dbOwner",
+                      db = "${database}"
+                    }
+                  ]
+                ])
               }
 
               output "testing123" {
-                value = flatten([
-                          for database in local.databases : [
-                            {
-                              role = "readWrite",
-                              db = "${var.database.name}"
-                            },
-                            {
-                              role = "dbOwner",
-                              db = "${var.database.name}"
-                            }
-                          ]
-                        ])
+                value = 
                 sensitive = false
               }
 
@@ -810,14 +824,14 @@ spec:
               config:
                 enabled: false
 
+                databases: []
+
               user:
                 name: ''
       patches:
         - type: FromCompositeFieldPath
           fromFieldPath: spec.mongodb
           toFieldPath: spec.forProvider.varmap.config
-          policy:
-            fromFieldPath: Required
 
         - type: FromCompositeFieldPath
           fromFieldPath: status.share.username
