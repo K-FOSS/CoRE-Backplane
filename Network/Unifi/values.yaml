@@ -1,1 +1,31 @@
 env: prod
+
+controllers:
+  unifi:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    containers:
+      unifi:
+        image:
+          repository: ghcr.io/goofball222/unifi
+          tag: latest-alpine
+          pullPolicy: Always
+
+        env:
+          - name: DB_MONGO_LOCAL
+            value: 'false'
+
+          - name: DB_MONGO_URI
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+                key: DB_MONGO_URI
+
+          - name: STATDB_MONGO_URI
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+                key: STATDB_MONGO_URI
