@@ -38,6 +38,81 @@ controllers:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ .Values.env }}'
                 key: STATDB_MONGO_URI
 
+service:
+  unifi:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: unifi
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: ClusterIP
+
+    ports:
+      https:
+        # -- Enables or disables the port
+        enabled: true
+
+        primary: true
+      
+        # -- The port number
+        port: 8443
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTPS
+
+route:
+  unifi-web:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: TLSRoute
+
+    # -- Provide additional annotations which may be required.
+    annotations: {}
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - unifi.mylogin.space
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+
+        # Kind of the referent resource.
+        kind: Gateway
+
+        # Name of the referent resource
+        name: main-gw
+
+        sectionName: tls-mqtt
+
+        # Namespace of the referent resource
+        namespace: core-prod
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 8443
+            name: unifi
+            weight: 1
+
 persistence:
   data:
     enabled: true
