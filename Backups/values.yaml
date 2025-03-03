@@ -479,6 +479,19 @@ velero:
   #       includedNamespaces:
   #       - foo
   schedules:
+    core-prod:
+      disabled: false
+      schedule: '0 * * * *'
+      useOwnerReferencesInBackup: true
+      template:
+        ttl: '24h'
+        storageLocation: cloudflare-s3
+        defaultVolumesToFsBackup: true
+        labelSelector:
+          matchLabels:
+            resolvemy.host/env: 'prod'
+
+
     core:
       disabled: false
       schedule: '0 0 * * *'
