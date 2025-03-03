@@ -1,0 +1,72 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-storage-base
+  namespace: argocd
+
+spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-storage-base'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
+      source:
+        path: Storage/Base
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          # env:
+          #   - name: LOVELY_HELM_MERGE
+          #     value: |- # yaml
+          #       {{ $parts := split ":" .server }}
+          #       {{ $hostname := split "//" $parts._1 }}
+              
+          #       cilium:
+          #         k8sServiceHost: '{{ $hostname._1  }}'
+          #         k8sServicePort: '{{ $parts._2 | default "443" }}'
+
+          #       cluster:
+          #         # -- Name of the cluster. Only required for Cluster Mesh and mutual authentication with SPIRE.
+          #         # It must respect the following constraints:
+          #         # * It must contain at most 32 characters;
+          #         # * It must begin and end with a lower case alphanumeric character;
+          #         # * It may contain lower case alphanumeric characters and dashes between.
+          #         # The "default" name cannot be used if the Cluster ID is different from 0.
+          #         name: {{ .values.clusterName }}
+          #         # -- (int) Unique ID of the cluster. Must be unique across all connected
+          #         # clusters and in the range of 1 to 255. Only required for Cluster Mesh,
+          #         # may be 0 if Cluster Mesh is not used.
+          #         id: 0
+
+      destination:
+        server: '{{ .server }}'
+        namespace: longhorn-system
+
