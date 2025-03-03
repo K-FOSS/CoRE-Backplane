@@ -1,43 +1,43 @@
-{{- $fullName := include "pnetwork.fullname" . -}}
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app.kubernetes.io/instance: {{ $fullName }}
+# {{- $fullName := include "pnetwork.fullname" . -}}
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   labels:
+#     app.kubernetes.io/instance: {{ $fullName }}
 
-    app.kubernetes.io/name: netmaker
-    app.kubernetes.io/component: server
+#     app.kubernetes.io/name: netmaker
+#     app.kubernetes.io/component: server
 
-  name: {{ $fullName }}-netmaker-server-wg
+#   name: {{ $fullName }}-netmaker-server-wg
 
-  annotations:
-    purelb.io/allow-shared-ip: main-gw.resolvemy.host
-    purelb.io/service-group: main-public
-    purelb.io/allow-local: 'true'
-    purelb.io/addresses: '66.165.222.102'
+#   annotations:
+#     purelb.io/allow-shared-ip: main-gw.resolvemy.host
+#     purelb.io/service-group: main-public
+#     purelb.io/allow-local: 'true'
+#     purelb.io/addresses: '66.165.222.102'
 
-spec:
-  type: LoadBalancer
+# spec:
+#   type: LoadBalancer
 
-  ports:
-{{- range untilStep (.Values.netmaker.server.wireguard.min|int) (.Values.netmaker.server.wireguard.max|int) 1 }}
-    - port: {{ . }}
-      targetPort: {{ . }}
-      protocol: UDP
-      name: 'udp-{{ . }}'
-{{ end }}
+#   ports:
+# {{- range untilStep (.Values.netmaker.server.wireguard.min|int) (.Values.netmaker.server.wireguard.max|int) 1 }}
+#     - port: {{ . }}
+#       targetPort: {{ . }}
+#       protocol: UDP
+#       name: 'udp-{{ . }}'
+# {{ end }}
 
-{{- range untilStep (.Values.netmaker.server.extraPorts.min|int) (.Values.netmaker.server.extraPorts.max|int) 1 }}
-    - port: {{ . }}
-      targetPort: {{ . }}
-      protocol: UDP
-      name: 'udp-{{ . }}'
-{{ end }}
+# {{- range untilStep (.Values.netmaker.server.extraPorts.min|int) (.Values.netmaker.server.extraPorts.max|int) 1 }}
+#     - port: {{ . }}
+#       targetPort: {{ . }}
+#       protocol: UDP
+#       name: 'udp-{{ . }}'
+# {{ end }}
 
-  selector:
-    app.kubernetes.io/instance: {{ $fullName }}
+#   selector:
+#     app.kubernetes.io/instance: {{ $fullName }}
 
-    app.kubernetes.io/name: netmaker
-    app.kubernetes.io/component: server
+#     app.kubernetes.io/name: netmaker
+#     app.kubernetes.io/component: server
 
