@@ -45,14 +45,16 @@ spec:
                 - rw
 
         - op: add
-          path: /machine/sysctls/vm.nr_hugepages
-          value: '1024'
+          path: /machine/sysctls
+          value:
+            vm.nr_hugepages: '1024'
 
         - op: add
-          path: /machine/kernel/modules
+          path: /machine/kernel
           value:
-            - name: nvme_tcp
-            - name: vfio_pci
+            modules:
+              - name: nvme_tcp
+              - name: vfio_pci
 
         #
         # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
