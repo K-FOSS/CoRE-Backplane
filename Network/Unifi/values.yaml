@@ -2,10 +2,10 @@ env: prod
 
 global:
   # -- Propagate global metadata to Pod labels.
-  propagateGlobalMetadataToPods: false
+  propagateGlobalMetadataToPods: true
   # -- Set additional global labels. Helm templates can be used.
   labels:
-    resolvemy.host/env: 'prod'
+    resolvemy.host/env: '{{ .Values.env }}'
 
 defaultPodOptions:
   # -- Set annotations on the Pod. Pod-specific values will be merged with this.
