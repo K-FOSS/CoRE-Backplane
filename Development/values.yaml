@@ -197,12 +197,20 @@ artifact-hub:
       # Allows auto mount of ServiceAccountToken on the serviceAccount created
       automountServiceAccountToken: true
 
+    
+
     # Create and bind role for service account
     rbac:
       # Enable creation and binding of role
       create: true
     deploy:
       readinessGates: []
+      livenessProbe:
+        httpGet:
+          path: /api/v1/packages/stats
+          port: 8000
+        initialDelaySeconds: 60
+        periodSeconds: 30
       replicaCount: 1
       image:
         # Hub image repository (without the tag)
