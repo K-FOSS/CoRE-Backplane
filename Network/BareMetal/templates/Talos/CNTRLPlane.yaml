@@ -57,6 +57,54 @@ spec:
               - name: vfio_pci
 
         #
+        # OIDC For API Server
+        #
+        - op: add
+          path: /machine/files
+          value:
+            - path: /etc/kubernetes/auth-config.yaml
+              permissions: 0644
+              op: create
+              content: |- # yaml
+                apiVersion: apiserver.config.k8s.io/v1beta1
+                kind: AuthenticationConfiguration
+                jwt:
+                  - issuer:
+                      url: https://idp.mylogin.space/application/o/che/
+                      audiences:
+                        - <path:CORE0_SITE1/data/IDE/Che/Authentik#ClientID>
+                    claimMappings:
+                      username:
+                        expression: 'claims.preferred_username'
+                      groups:
+                        expression: 'claims.groups'
+                      uid:
+                        expression: 'claims.sub'
+                    userValidationRules:
+                      - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
+                        message: 'username cannot used reserved system: prefix'
+
+                  - issuer:
+                      url: https://idp.mylogin.space/application/o/headlamp/
+                      audiences:
+                        - headlamp
+                    claimMappings:
+                      username:
+                        expression: 'claims.preferred_username'
+                      groups:
+                        expression: 'claims.groups'
+                      uid:
+                        expression: 'claims.sub'
+                    userValidationRules:
+                      - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
+                        message: 'username cannot used reserved system: prefix'
+
+        - op: add
+          path: /cluster/apiServer/extraArgs
+          value:
+            authentication-config: /etc/kubernetes/auth-config.yaml
+
+        #
         # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
         #
         - op: replace
