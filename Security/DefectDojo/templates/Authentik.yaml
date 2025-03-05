@@ -2,14 +2,14 @@
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
-  name: {{ .Release.Name }}-defectdojo
+  name: {{ .Release.Name }}
 spec:
   providerConfigRef:
     name: authentik
 
   writeConnectionSecretToRef:
     namespace: {{ .Release.Namespace }}
-    name: {{ .Release.Name }}-defectdojo-oidc
+    name: {{ .Release.Name }}-oidc
 
   forProvider:
     source: Inline
@@ -55,7 +55,7 @@ spec:
         allowed_redirect_uris = [
           {
             matching_mode = "regex",
-            url           = "https://defectdojo.int.mylogin.space/.*",
+            url           = "https://{{ .Values.defectdojo.domain }}/.*",
           },
         ]
 
@@ -116,7 +116,7 @@ spec:
       resource "authentik_provider_proxy" "defectdojo-proxy" {
         name               = "defectdojo-proxy"
         mode               = "forward_single"
-        external_host      = "https://defectdojo.int.mylogin.space/"
+        external_host      = "https://{{ .Values.defectdojo.domain }}/"
         authorization_flow = data.authentik_flow.default-authorization-flow.id
         invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
       }

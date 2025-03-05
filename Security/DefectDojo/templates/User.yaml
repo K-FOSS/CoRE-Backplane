@@ -1,0 +1,12 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ .Release.Name }}
+
+spec:
+  name: DefectDojo
+
+  username: defectdojo-{{ .Values.env }}
+
+  writeConnectionSecretToRef:
+    name: {{ .Release.Name }}-creds

@@ -1,21 +1,26 @@
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
-  name: {{ .Release.Name }}-defectdojo
+  name: {{ .Release.Name }}
 
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
+    resolvemy.host/gw: '{{ .Values.gateway.name }}'
+    resolvemy.host/gw-ns: '{{ .Values.gateway.namespace }}' 
+    resolvemy.host/security: 'private'
+    resolvemy.host/env: '{{ .Values.env }}'
 
 spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      namespace: core-prod
-      name: main-gw
+      namespace: {{ .Values.gateway.namespace }}
+      name: {{ .Values.gateway.name }}
+      sectionName: {{ .Values.gateway.sectionName }}
 
   hostnames:
-    - defectdojo.int.mylogin.space
+    - {{ .Values.defectdojo.domain }}
   rules:
     - backendRefs:
         - group: ''

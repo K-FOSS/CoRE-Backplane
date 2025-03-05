@@ -1,0 +1,88 @@
+env: prod
+
+gateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: https-myloginspace
+
+defectdojo:
+  enabled: true
+
+  database: postgresql
+  # Primary hostname of instance
+
+  domain: test.int.mylogin.space
+
+  celery:
+    broker: redis
+    # To use an external celery broker, set the hostname here
+    brokerHost: 'redis.mylogin.space'
+
+  django:
+    ingress:
+      enabled: false
+
+  initializer:
+    run: false
+
+  createSecret: false
+
+  postgresql:
+    enabled: false
+    postgresServer: psql.mylogin.space
+    auth:
+      username: sys-scanner
+      database: sys-scanner
+      existingSecret: core-security-creds
+      secretKeys:
+        adminPasswordKey: password
+        userPasswordKey: password
+        replicationPasswordKey: postgresql-replication-password
+
+  redis:
+    enabled: false
+    scheme: "redis"
+    transportEncryption:
+      enabled: true
+      params: ''
+    auth:
+      existingSecret: core-security-creds
+      existingSecretPasswordKey: password
+    architecture: standalone
+    # To use an external Redis instance, set enabled to false and uncomment
+    # the line below:
+    redisServer: 'redis.mylogin.space'
+
+  # To add extra variables not predefined by helm config it is possible to define in extraConfigs block, e.g. below:
+  # NOTE  Do not store any kind of sensitive information inside of it
+  # extraConfigs:
+  #   DD_SOCIAL_AUTH_AUTH0_OAUTH2_ENABLED: 'true'
+  #   DD_SOCIAL_AUTH_AUTH0_KEY: 'dev'
+  #   DD_SOCIAL_AUTH_AUTH0_DOMAIN: 'xxxxx'
+
+  # Extra secrets can be created inside of extraSecrets block:
+  # NOTE  This is just an exmaple, do not store sensitive data in plain text form, better inject it during the deployment/upgrade by --set extraSecrets.secret=someSecret
+  # extraSecrets:
+  #   DD_SOCIAL_AUTH_AUTH0_SECRET: 'xxx'
+  extraConfigs:
+    DD_SOCIAL_AUTH_AUTH0_OAUTH2_ENABLED: 'true'
+    DD_SOCIAL_AUTH_AUTH0_KEY: 'dev'
+    DD_SOCIAL_AUTH_AUTH0_DOMAIN: 'xxxxx'
+    DD_SESSION_COOKIE_SECURE: 'True'
+    DD_CSRF_COOKIE_SECURE: 'True'
+    DD_SECURE_SSL_REDIRECT: 'True'
+    DD_SOCIAL_AUTH_KEYCLOAK_OAUTH2_ENABLED: 'True'
+    DD_SOCIAL_AUTH_KEYCLOAK_AUTHORIZATION_URL: 'https://idp.mylogin.space/application/o/authorize/'
+    DD_SOCIAL_AUTH_KEYCLOAK_ACCESS_TOKEN_URL: 'https://idp.mylogin.space/application/o/token/'
+
+  # To add code snippet which would extend setting functionality, you might add it here
+  # It will be stored as ConfigMap and mounted `dojo/settings/local_settings.py`.
+  # For more see: https://documentation.defectdojo.com/getting_started/configuration/
+  # For example:
+  # localsettingspy: |
+  #   INSTALLED_APPS += (
+  #     'debug_toolbar',
+  #   )
+  #   MIDDLEWARE = [
+  #       'debug_toolbar.middleware.DebugToolbarMiddleware',
+  #   ] + MIDDLEWARE

@@ -3,12 +3,17 @@ kind: ApplicationSet
 metadata:
   name: core-backplane-security-scanner
   namespace: argocd
+  
+  labels:
+    resolvemy.host/env: 'prod'
+
 spec:
   generators:
     - list:
         elements:
           - cluster: dc1-k3s-node1
             url: https://kubernetes.default.svc
+
 
   template:
     metadata:
@@ -32,34 +37,6 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-          env:
-            - name: LOVELY_HELM_MERGE
-              value: |-
-                defectdojo:
-                  extraEnv:
-                    - name: DD_SOCIAL_AUTH_KEYCLOAK_KEY
-                      valueFrom:
-                        secretKeyRef:
-                          name: '{{cluster}}-security-scanner-defectdojo-oidc'
-                          key: OIDC_CLIENT_ID
-
-                    - name: DD_SOCIAL_AUTH_KEYCLOAK_SECRET
-                      valueFrom:
-                        secretKeyRef:
-                          name: '{{cluster}}-security-scanner-defectdojo-oidc'
-                          key: OIDC_CLIENT_SECRET
-
-                    - name: DD_SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY
-                      valueFrom:
-                        secretKeyRef:
-                          name: '{{cluster}}-security-scanner-defectdojo'
-                          key: DD_SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY
-
-                    - name: DD_ADMIN_PASSWORD
-                      valueFrom:
-                        secretKeyRef:
-                          name: core-security-creds
-                          key: password
 
       destination:
         server: '{{url}}'
