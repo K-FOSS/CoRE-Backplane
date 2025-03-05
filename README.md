@@ -70,3 +70,4 @@ I use various labels across my Kubernetes resources to be able to select things 
 |--------------------------- | ----------------| ------------------------------------ | ------- |
 | resolvemy.host/env         | EnvironmentMode | prod, staging, poc, lab              | 
 | mylogin.space/tenant       | String          | core.mylogin.space                   |
+| resolvemy.host/site        | DC Ref          | The datacenter/compute location site |
