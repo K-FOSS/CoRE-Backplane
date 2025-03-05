@@ -19,6 +19,8 @@ spec:
         values:
           clusterName: '{{ .name }}'
           environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -50,12 +52,29 @@ spec:
                 {{ $hostname := split "//" $parts._1 }}
               
                 cilium:
-                  #
-                  # TODO: Get this using some fancy Go Template shit to auto extract
-                  # the port and the host
-                  #
                   k8sServiceHost: '{{ $hostname._1  }}'
                   k8sServicePort: '{{ $parts._2 | default "443" }}'
+
+                  cluster:
+                    # -- Name of the cluster. Only required for Cluster Mesh and mutual authentication with SPIRE.
+                    # It must respect the following constraints:
+                    # * It must contain at most 32 characters;
+                    # * It must begin and end with a lower case alphanumeric character;
+                    # * It may contain lower case alphanumeric characters and dashes between.
+                    # The "default" name cannot be used if the Cluster ID is different from 0.
+                    name: {{ .values.clusterName }}
+                    # -- (int) Unique ID of the cluster. Must be unique across all connected
+                    # clusters and in the range of 1 to 255. Only required for Cluster Mesh,
+                    # may be 0 if Cluster Mesh is not used.
+                    id: 0
+
+                envoy-gw:
+                  config:
+                    envoyGateway:
+                      gateway:
+                        controllerName: envoy.{{ .values.tenant }}/base
+                  
+                  kubernetesClusterDomain: {{ .values.clusterDomain }}
 
       destination:
         server: '{{ .server }}'
