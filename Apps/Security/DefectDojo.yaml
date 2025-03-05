@@ -62,6 +62,10 @@ spec:
                       database: defectdojo-{{ .values.environment }}
                       existingSecret: {{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-creds
 
+                  redis:
+                    auth:
+                      existingSecret: {{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-creds
+
                   extraEnv:
                     - name: DD_SOCIAL_AUTH_KEYCLOAK_KEY
                       valueFrom:
