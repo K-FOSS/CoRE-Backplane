@@ -1056,6 +1056,24 @@ vector:
         address: 0.0.0.0:1514
         mode: udp
 
+      talos_kernel_logs:
+        type: socket
+        address: 0.0.0.0:6050
+        mode: udp
+        max_length: 102400
+        decoding:
+          codec: json
+        host_key: __host
+
+      talos_service_logs:
+        type: socket
+        address: 0.0.0.0:6051
+        mode: udp
+        max_length: 102400
+        decoding:
+          codec: json
+        host_key: __host
+
     transforms:
       cisco_parser:
         type: remap
@@ -1063,6 +1081,23 @@ vector:
           - syslog
         source: |
           . = parse_grok!(.message, "^<%{NUMBER:syslog_pri}>%{NUMBER:seq_num}: %{DATA:device}: %{MONTH:month} %{NUMBER:day} %{TIME:time}: %%{DATA:log_identifier}: %{GREEDYDATA:message}")
+
+      talos_kernel_logs_xform:
+        type: remap
+        inputs:
+          - talos_kernel_logs
+        source: |-
+          .__host = replace!(.__host, r'172\.16\.20\..+', "infra2")
+          .__host = replace!(.__host, r'172\.31\.241\..+', "node2")
+
+      talos_service_logs_xform:
+        type: remap
+        inputs:
+          - talos_service_logs
+        source: |-
+          .__host = replace!(.__host, r'172\.16\.20\..+', "infra2")
+          .__host = replace(.__host, r'172\.31\.241\..+', "node2")
+
 
     sinks:
       loki:
@@ -1075,6 +1110,42 @@ vector:
           codec: json
         labels:
           job: syslog
+
+      talos_kernel:
+        type: loki
+        inputs:
+          - talos_kernel_logs_xform
+        endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
+        encoding:
+          codec: json
+          except_fields:
+            - __host
+        batch:
+          max_bytes: 1048576
+        out_of_order_action: rewrite_timestamp
+        labels:
+          hostname: >-
+                    {{`{{ __host }}`}}
+          facility: >-
+                    {{`{{ facility }}`}}
+
+      talos_service:
+        type: loki
+        inputs:
+          - talos_service_logs_xform
+        endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
+        encoding:
+          codec: json
+          except_fields:
+            - __host
+        batch:
+          max_bytes: 400000
+        out_of_order_action: rewrite_timestamp
+        labels:
+          hostname: >-
+                    {{`{{ __host }}`}}
+          service: >-
+                    {{`{{ "talos-service" }}`}}
 
   # defaultVolumes -- Default volumes that are mounted into pods. In most cases, these should not be changed.
   # Use `extraVolumes`/`extraVolumeMounts` for additional custom volumes.
