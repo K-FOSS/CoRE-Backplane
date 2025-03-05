@@ -24,10 +24,10 @@ spec:
 
   template:
     metadata:
-      name: '{{ .values.clusterName }}-security-defectdojo-{{ .Values.environment }}'
+      name: '{{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}'
 
       labels:
-        resolvemy.host/env: '{{ .Values.environment }}'
+        resolvemy.host/env: '{{ .values.environment }}'
         resolvemy.host/priority: 'critical'
 
       annotations:
@@ -51,33 +51,33 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
-                env: {{ .Values.environment }}
+                env: {{ .values.environment }}
                 defectdojo:
-                  host: {{ .Values.domain }}
+                  host: {{ .values.domain }}
 
                   extraEnv:
                     - name: DD_SOCIAL_AUTH_KEYCLOAK_KEY
                       valueFrom:
                         secretKeyRef:
-                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .Values.environment }}-oidc'
+                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-oidc'
                           key: OIDC_CLIENT_ID
 
                     - name: DD_SOCIAL_AUTH_KEYCLOAK_SECRET
                       valueFrom:
                         secretKeyRef:
-                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .Values.environment }}-oidc'
+                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-oidc'
                           key: OIDC_CLIENT_SECRET
 
                     - name: DD_SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY
                       valueFrom:
                         secretKeyRef:
-                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .Values.environment }}-oidc'
+                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-oidc'
                           key: DD_SOCIAL_AUTH_KEYCLOAK_PUBLIC_KEY
 
                     - name: DD_ADMIN_PASSWORD
                       valueFrom:
                         secretKeyRef:
-                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .Values.environment }}-creds'
+                          name: '{{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-creds'
                           key: password
 
       destination:
