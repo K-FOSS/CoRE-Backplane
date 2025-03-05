@@ -54,6 +54,13 @@ spec:
                 env: {{ .values.environment }}
                 defectdojo:
                   host: {{ .values.domain }}
+                  domain: {{ .values.domain }}
+
+                  postgresql:
+                    auth:
+                      username: defectdojo-{{ .values.environment }}
+                      database: defectdojo-{{ .values.environment }}
+                      existingSecret: {{ .values.clusterName }}-security-defectdojo-{{ .values.environment }}-creds
 
                   extraEnv:
                     - name: DD_SOCIAL_AUTH_KEYCLOAK_KEY
