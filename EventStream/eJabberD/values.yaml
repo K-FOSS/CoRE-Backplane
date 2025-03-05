@@ -135,7 +135,11 @@ route:
 
     # -- Configure rules for routing. Defaults to the primary service.
     rules:
-      - backendRefs:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
           - kind: Service
             port: http
             name: http
