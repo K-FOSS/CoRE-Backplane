@@ -152,13 +152,16 @@ controllers:
           pullPolicy: Always
 
         args:
-          - --port={{ $.Values.netbird.management.port }}
+          - --port=$(PORT)
           - --log-file=console
           - --log-level=info
           - --disable-anonymous-metrics=false
           - --single-account-mode-domain=netbird.example.com
           - --dns-domain=netbird.selfhosted
 
+        env:
+          - name: PORT
+            value: {{ $.Values.netbird.management.port }}
   netbird-relay:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
