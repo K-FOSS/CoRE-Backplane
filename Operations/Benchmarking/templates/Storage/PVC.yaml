@@ -1,0 +1,16 @@
+{{- if .Values.storage.enabled -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  volumeMode: Filesystem
+  #volumeMode: Block
+  #storageClassName: longhorn  # replace with your storage class
+  #storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 33Gi
+{{- end -}}
