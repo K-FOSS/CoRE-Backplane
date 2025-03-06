@@ -1,0 +1,13 @@
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: ssd
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+parameters:
+  numberOfReplicas: '2'
+  fsType: 'ext4'
+  diskSelector: 'ssd,fast'
+  nodeSelector: 'fast'
+  migratable: 'true'
+  stalereplicatimeout: '30'
