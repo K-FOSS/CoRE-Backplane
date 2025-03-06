@@ -30,3 +30,8 @@ chmod +x ./Meta/bin/talosctl
 echo "Installing ArgoCD CLI"
 wget -O ./Meta/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 chmod +x ./Meta/bin/argocd
+
+echo "Installing Longhorn CTL"
+
+wget -O ./Meta/bin/longhornctl https://github.com/longhorn/cli/releases/download/v1.8.1/longhornctl-linux-amd64
+chmod +x ./Meta/bin/longhornctl
