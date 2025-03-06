@@ -46,7 +46,7 @@ spec:
         - name: FILE_NAME
           value: "/volume/test"
         - name: SIZE
-          value: '{{ (int (trimSuffix "Gi" .Values.storage.size)) - 1 }}G' # must be 10% smaller than the PVC size due to filesystem also took space
+          value: '{{ sub 1 (int (trimSuffix "Gi" .Values.storage.size)) }}G' # must be 10% smaller than the PVC size due to filesystem also took space
         - name: CPU_IDLE_PROF
           value: "disabled" # must be "enabled" or "disabled"
         volumeMounts:
