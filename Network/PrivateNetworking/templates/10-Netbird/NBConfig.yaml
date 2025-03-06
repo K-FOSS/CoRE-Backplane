@@ -7,25 +7,28 @@ data:
   management.json: |
       {
         "Stuns": [
-          {{- range $i, $server := $.Values.stunServers }}
+          {{- range $index, $server := $.Values.stunServers }}
           {
-            "Proto": "udp",
+            "Proto": "{{ $server.protocol }}",
             "URI": "stun:{{ $server.hostname }}:{{ $server.port }}",
             "Username": "",
             "Password": null
-          } {{ len $.Values.stunServers }} {{ $i }}
-          {{ end -}}
+          }{{ if eq (sub (len $.Values.stunServers) 1) $index }}{{else}},{{ end }}{{ end -}}
         ],
         "TURNConfig": {
           "Turns": [
-          {{- range $i, $server := $.Values.stunServers }}
-          {
-            "Proto": "udp",
-            "URI": "turn:{{ $server.hostname }}:{{ $server.port }}",
-            "Username": "",
-            "Password": null
-          }
-          {{ end -}}
+          {{- range $index, $server := $.Values.turnServers }}
+            {
+              "Proto": "{{ $server.protocol }}",
+              "URI": "turn:{{ $server.hostname }}:{{ $server.port }}",
+              {{- if $server.auth.sso }}
+              "Username": "{{`{{ .Username }}`}}",
+              "Password": "{{`{{ .Password }}`}}"
+              {{- else -}}
+              "Username": "",
+              "Password": null
+              {{ end }}
+            }{{ if eq (sub (len $.Values.turnServers) 1) $index }}{{else}},{{ end }}{{ end }}
           ],
           "CredentialsTTL": "12h",
           "Secret": "",
@@ -50,13 +53,13 @@ data:
           "ClientConfig": {
             "Issuer": "https://idp.example.com/application/o/example-netbird",
             "TokenEndpoint": "https://idp.example.com/application/o/token/",
-            "ClientID": "{{ .IDP_CLIENT_ID }}",
-            "ClientSecret": "",
+            "ClientID": "{{`{{ .IDP_CLIENT_ID }}`}}",
+            "ClientSecret": "{{`{{ .IDP_CLIENT_SECRET }}`}}",
             "GrantType": "client_credentials"
           },
           "ExtraConfig": {
-            "Password": "{{ .IDP_SERVICE_ACCOUNT_PASSWORD }}",
-            "Username": "{{ .IDP_SERVICE_ACCOUNT_USER }}"
+            "Password": "{{`{{ .IDP_SERVICE_ACCOUNT_PASSWORD }}`}}",
+            "Username": "{{`{{ .IDP_SERVICE_ACCOUNT_USER }}`}}"
           },
           "Auth0ClientCredentials": null,
           "AzureClientCredentials": null,
@@ -66,7 +69,7 @@ data:
         "DeviceAuthorizationFlow": {
           "Provider": "hosted",
           "ProviderConfig": {
-            "Audience": "{{`{{ .OIDCClientID }}`}}",
+            "Audience": "{{`{{ .IDP_CLIENT_ID }}`}}",
             "Domain": "{{ .Values.netbird.auth.oidc.provider }}",
             "TokenEndpoint": "{{ .Values.netbird.auth.oidc.tokenEndpoint }}"
           }
