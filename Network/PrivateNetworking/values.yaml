@@ -6,10 +6,7 @@ turnServers:
 stunServers:
   - hostname: nat.mylogin.space
 
-gateway:
-  name: main-gw
-  namespace: core-prod
-  sectionName: https-myloginspace
+
 
 netbird:
   clusterDomain: k0s.resolvemy.host
@@ -17,6 +14,11 @@ netbird:
   domain: vpn.mylogin.space
 
   version: v2.9.0
+
+  gateway:
+    name: main-gw
+    namespace: core-prod
+    sectionName: https-myloginspace
 
   enabled: false
   auth:
@@ -41,36 +43,11 @@ netbird:
   signal:
     enabled: false
 
-    image:
-      repository: wiretrustee/signal
-      tag: latest
-      pullPolicy: Always
-      pullSecrets: []
-
-    replicaCount: 0
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-
-      # limits:
-      #   cpu: 100m
-      #   memory: 128Mi
-
-
-
     port: 10000
     service:
       enabled: true
       type: LoadBalancer # or LoadBalancer
       labels: {}
-
-      annotations:
-        metallb.universe.tf/allow-shared-ip: istio
-        io.cilium/lb-ipam-sharing-key: public-gw
-        metallb.universe.tf/loadBalancerIPs: 66.165.222.101
-        io.cilium/lb-ipam-ips: 66.165.222.101
 
       loadBalancerIP: ''
 
@@ -103,7 +80,7 @@ controllers:
       netbird-dashboard:
         image:
           repository: netbirdio/dashboard
-          tag: {{ .Values.netbird.version }}
+          tag: v2.9.0
           pullPolicy: Always
 
 
@@ -117,7 +94,7 @@ controllers:
       netbird-management:
         image:
           repository: netbirdio/managemen
-          tag: {{ .Values.netbird.version }}
+          tag: v2.9.0
           pullPolicy: Always
 
         args:
@@ -138,7 +115,7 @@ controllers:
       netbird-relay:
         image:
           repository: netbirdio/relay
-          tag: {{ .Values.netbird.version }}
+          tag: v2.9.0
           pullPolicy: Always
 
   netbird-signal:
@@ -151,7 +128,7 @@ controllers:
       netbird-signal:
         image:
           repository: netbirdio/signal
-          tag: {{ .Values.netbird.version }}
+          tag: v2.9.0
           pullPolicy: Always
 
 
