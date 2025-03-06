@@ -60,6 +60,9 @@ netbird:
   signal:
     enabled: false
 
+    logs:
+      level: info
+
     port: 10000
     service:
       enabled: true
@@ -73,6 +76,8 @@ netbird:
 
     version: 0.37.1
 
+    logs:
+      level: info
 
     port: 33073
     service:
@@ -90,6 +95,9 @@ netbird:
 
   dashboard:
     port: 8080
+
+    logs:
+      level: info
 
 controllers:
   netbird-dashboard:
@@ -149,7 +157,7 @@ controllers:
     containers:
       netbird-management:
         image:
-          repository: netbirdio/managemen
+          repository: netbirdio/management
           tag: '{{ $.Values.netbird.management.version }}'
           pullPolicy: Always
 
@@ -176,6 +184,14 @@ controllers:
           repository: netbirdio/relay
           tag: '{{ $.Values.netbird.version }}'
           pullPolicy: Always
+
+        ports:
+          - name: psql
+            containerPort: 5432
+
+        env:
+          - name: NB_LISTEN_ADDRESS
+            value: '{{ $.Values.netbird.management.port }}'
 
   netbird-signal:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
