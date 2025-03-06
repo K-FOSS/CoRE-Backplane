@@ -2,12 +2,16 @@ env: prod
 
 turnServers:
   - hostname: turn.mylogin.space
+    port: 3478
+    protocol: UDP
     auth:
       sso: true
 
 
 stunServers:
   - hostname: nat.mylogin.space
+    port: 3478
+    protocol: UDP
 
 
 
@@ -170,6 +174,10 @@ controllers:
           repository: netbirdio/signal
           tag: v2.9.0
           pullPolicy: Always
+
+        args:
+          - --log-file=console
+          - --log-level=debug
 
 
 service:

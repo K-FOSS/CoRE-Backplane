@@ -4,30 +4,29 @@ kind: ConfigMap
 metadata:
   name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-netbird-config
 data:
-  management.json: |
+  {{ if  }}
+  management.json: 
       {
         "Stuns": [
+          {{- range $i, $server := $.Values.stunServers }}
           {
             "Proto": "udp",
-            "URI": "stun:nat.ipaddr.network:3478",
-            "Username": "demo",
-            "Password": "secret"
+            "URI": "stun:{{ $server.hostname }}:{{ $server.port }}",
+            "Username": "",
+            "Password": null
           }
+          {{ end -}}
         ],
         "TURNConfig": {
           "Turns": [
-            {
-              "Proto": "tcp",
-              "URI": "turn:nat.ipaddr.network:3478",
-              "Username": "demo",
-              "Password": "secret"
-            },
-            {
-              "Proto": "udp",
-              "URI": "turn:nat.ipaddr.network:3478",
-              "Username": "demo",
-              "Password": "secret"
-            }
+          {{- range $i, $server := $.Values.stunServers }}
+          {
+            "Proto": "udp",
+            "URI": "turn:{{ $server.hostname }}:{{ $server.port }}",
+            "Username": "",
+            "Password": null
+          }
+          {{ end -}}
           ],
           "CredentialsTTL": "12h",
           "Secret": "",
@@ -35,20 +34,35 @@ data:
         },
         "Signal": {
           "Proto": "http",
-          "URI": "vpn.ipaddr.network:{{ .Values.netbird.signal.port }}",
+          "URI": ":{{ .Values.netbird.signal.port }}",
           "Username": "",
           "Password": null
         },
         "Datadir": "",
         "HttpConfig": {
-          "Address": "0.0.0.0:443",
+          "Address": "0.0.0.0:80",
           "AuthIssuer": "{{ .Values.netbird.auth.oidc.provider }}/",
           "AuthAudience": "{{`{{ .OIDCClientID }}`}}",
           "AuthKeysLocation": "{{ .Values.netbird.auth.oidc.provider }}/jwks/",
           "OIDCConfigEndpoint": "{{ .Values.netbird.auth.oidc.provider }}/.well-known/openid-configuration"
         },
         "IdpManagerConfig": {
-          "Manager": "none"
+          "ManagerType": "authentik",
+          "ClientConfig": {
+            "Issuer": "https://idp.example.com/application/o/example-netbird",
+            "TokenEndpoint": "https://idp.example.com/application/o/token/",
+            "ClientID": "{{ .IDP_CLIENT_ID }}",
+            "ClientSecret": "",
+            "GrantType": "client_credentials"
+          },
+          "ExtraConfig": {
+            "Password": "{{ .IDP_SERVICE_ACCOUNT_PASSWORD }}",
+            "Username": "{{ .IDP_SERVICE_ACCOUNT_USER }}"
+          },
+          "Auth0ClientCredentials": null,
+          "AzureClientCredentials": null,
+          "KeycloakClientCredentials": null,
+          "ZitadelClientCredentials": null
         },
         "DeviceAuthorizationFlow": {
           "Provider": "hosted",
