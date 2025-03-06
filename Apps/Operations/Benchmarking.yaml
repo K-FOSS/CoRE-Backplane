@@ -18,10 +18,10 @@ spec:
           matchLabels:
             mylogin.space/tenant: 'core.mylogin.space'
             resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
         values:
           clusterName: '{{ .name }}'
           environment: 'testing'
+          nodetype: '{{ index .metadata.labels "resolvemy.host/nodetype" }}'
           clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
           tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
 
@@ -52,9 +52,12 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-          # env:
-          #   - name: LOVELY_HELM_MERGE
-          #     value: |- # yaml
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+              storage:
+                longhorn:
+                  enabled: {{ eq .values.nodetype "infra" }}
 
       destination:
         server: '{{ .server }}'
