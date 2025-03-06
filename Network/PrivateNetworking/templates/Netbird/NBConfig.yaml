@@ -4,8 +4,7 @@ kind: ConfigMap
 metadata:
   name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-netbird-config
 data:
-  {{ if  }}
-  management.json: 
+  management.json: |
       {
         "Stuns": [
           {{- range $i, $server := $.Values.stunServers }}
