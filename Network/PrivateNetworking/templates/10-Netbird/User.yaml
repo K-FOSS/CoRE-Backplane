@@ -1,0 +1,15 @@
+{{ if .Values.netbird.enabled }}
+
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-netbird'
+ 
+spec:
+  name: Netbird
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-creds'
+{{ end }}
