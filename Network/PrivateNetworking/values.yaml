@@ -87,7 +87,7 @@ controllers:
           - name: AUTH_AUDIENCE
             valueFrom:
               secretKeyRef:
-                name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config'
                 key: AUTH_AUDIENCE
                 optional: false
 
@@ -97,14 +97,14 @@ controllers:
           - name: AUTH_SUPPORTED_SCOPES
             valueFrom:
               secretKeyRef:
-                name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config'
                 key: AUTH_SUPPORTED_SCOPES
                 optional: false
 
           - name: AUTH_CLIENT_ID
             valueFrom:
               secretKeyRef:
-                name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config'
                 key: AUTH_CLIENT_ID
                 optional: false
 
@@ -112,7 +112,7 @@ controllers:
             value: 'https://idp.mylogin.space/application/o/netbird'
 
           - name: NETBIRD_MGMT_API_ENDPOINT
-            value: https://vpn.ipaddr.network:33073
+            value: https://{{ $.Values.netbird.domain }}:33073
 
           - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
             value: https://vpn.ipaddr.network:33073
