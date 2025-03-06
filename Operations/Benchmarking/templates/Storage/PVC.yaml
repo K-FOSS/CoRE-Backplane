@@ -5,12 +5,14 @@ metadata:
   name: {{ .Release.Name }}
 spec:
   volumeMode: Filesystem
-  #volumeMode: Block
-  #storageClassName: longhorn  # replace with your storage class
+
+  {{- if .Values.storage.longhorn.enabled -}}
   storageClassName: ssd
+  {{- end -}}
+
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 32Gi
+      storage: {{ .Values.storage.size }}
 {{- end -}}
