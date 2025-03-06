@@ -3,7 +3,7 @@ env: prod
 turnServers:
   - hostname: turn.mylogin.space
     port: 3478
-    protocol: UDP
+    protocol: udp
     auth:
       sso: true
 
@@ -12,6 +12,11 @@ stunServers:
   - hostname: nat.mylogin.space
     port: 3478
     protocol: UDP
+
+  - hostname: turn.mylogin.space
+    port: 5478
+    protocol: UDP
+
 
 global:
   test: test
@@ -81,6 +86,9 @@ netbird:
       externalIPs: []
       loadBalancerIP: ''
 
+  dashboard:
+    port: 80
+
 controllers:
   netbird-dashboard:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
@@ -140,11 +148,11 @@ controllers:
       netbird-management:
         image:
           repository: netbirdio/managemen
-          tag: v2.9.0
+          tag: '{{ $.Values.netbird.version }}'
           pullPolicy: Always
 
         args:
-          - --port=80
+          - --port={{ $.Values.netbird.management.port }}
           - --log-file=console
           - --log-level=info
           - --disable-anonymous-metrics=false
@@ -161,7 +169,7 @@ controllers:
       netbird-relay:
         image:
           repository: netbirdio/relay
-          tag: v2.9.0
+          tag: '{{ $.Values.netbird.version }}'
           pullPolicy: Always
 
   netbird-signal:
@@ -174,7 +182,7 @@ controllers:
       netbird-signal:
         image:
           repository: netbirdio/signal
-          tag: v2.9.0
+          tag: '{{ $.Values.netbird.version }}'
           pullPolicy: Always
 
         args:
@@ -226,7 +234,7 @@ service:
         primary: true
 
         # -- The port number
-        port: 80
+        port: {{ $.Values.netbird.dashboard.port }}
 
         # -- Port protocol.
         # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
@@ -236,6 +244,145 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol: http
+
+  netbird-signal:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: netbird-signal
+
+    nameOverride: nb-signal
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: false
+
+    # -- Set the service type
+    type: ClusterIP
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    externalTrafficPolicy:
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    # # -- Provide additional annotations which may be required.
+
+    annotations:
+      purelb.io/allow-shared-ip: main-gw.resolvemy.host
+      purelb.io/service-group: main-public
+      purelb.io/allow-local: 'true'
+      purelb.io/addresses: '66.165.222.102'
+      external-dns.alpha.kubernetes.io/hostname: 'vpn.mylogin.space'
+
+    # -- Provide additional labels which may be required.
+    labels: {}
+    # -- Allow adding additional match labels
+    extraSelectorLabels: {}
+
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: {{ $.Values.netbird.signal.port }}
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: ''
+
+
+route:
+  dashboard:
+    # -- Enables or disables the route
+    enabled: true
+
+    nameOverride: netbird-dashboard
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - {{ $.Values.netbird.domain }}
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+
+        # Kind of the referent resource.
+        kind: Gateway
+
+        # Name of the referent resource
+        name: {{ $.Values.netbird.gateway.name }}
+        # Namespace of the referent resource
+        namespace: {{ $.Values.netbird.gateway.namespace }}
+
+
+        sectionName: {{ $.Values.netbird.gateway.sectionName }}
+
+
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - kind: Service
+            port: http
+            name: netbird-dashboard
+            weight: 1
+
+persistence:
+  config:
+    enabled: true
+
+    type: secret
+
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . -}}-config'
+
+    defaultMode: 0755
+
+    advancedMounts:
+      netbird-management: # the controller with the "main" identifier
+        netbird-management: # the container with the "main" identifier
+          - path: /etc/netbird/management.json
+            readOnly: true
+            subPath: management.json
+
+  tls:
+    enabled: true
+    type: secret
+    name: myloginspace-default-certificates
+    
+    advancedMounts:
+      netbird-management: # the controller with the "main" identifier
+        netbird-management: # the container with the "main" identifier
+          - path: /etc/tls
+
 
 netmaker:
   clusterDomain: cluster.local
