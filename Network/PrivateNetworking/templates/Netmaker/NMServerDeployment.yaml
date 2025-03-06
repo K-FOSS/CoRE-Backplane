@@ -288,31 +288,6 @@ spec:
               protocol: TCP
             {{ end }}
 
-        - name: frr
-          image: frrouting/frr:v8.3.1
-
-          securityContext:
-            allowPrivilegeEscalation: true
-            privileged: true
-
-          volumeMounts:
-            - mountPath: /etc/frr
-              name: frr-tmp
-
-            - name: frr-config
-              mountPath: /etc/frr/daemons
-              
-              subPath: daemons
-
-            - name: frr-config
-              mountPath: /etc/frr/frr.conf
-              
-              subPath: frr.conf
-
-          ports:
-            - containerPort: 179
-              name: bgp
-
         {{- with .Values.netmaker.server.sidecars }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

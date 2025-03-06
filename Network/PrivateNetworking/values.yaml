@@ -1,7 +1,22 @@
 env: prod
 
+turnServers:
+  - hostname: turn.mylogin.space
+
+stunServers:
+  - hostname: nat.mylogin.space
+
+gateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: https-myloginspace
+
 netbird:
   clusterDomain: k0s.resolvemy.host
+
+  domain: vpn.mylogin.space
+
+  version: v2.9.0
 
   enabled: false
   auth:
@@ -43,26 +58,6 @@ netbird:
       #   cpu: 100m
       #   memory: 128Mi
 
-    certSANs:
-      dnsNames: []
-      ipAddresses: []
-
-    extraArgs: {}
-
-    labels: {}
-    annotations: {}
-    podLabels:
-      logs: loki-myloginspace
-    podAnnotations: {}
-    nodeSelector: {}
-    tolerations: []
-    podAntiAffinity: soft
-    podAntiAffinityTopologyKey: kubernetes.io/hostname
-    affinity: {}
-    extraEnv: []
-    sidecars: []
-    extraVolumes: []
-    extraVolumeMounts: []
 
 
     port: 10000
@@ -82,43 +77,6 @@ netbird:
   management:
     enabled: false
 
-    image:
-      repository: netbirdio/management
-      tag: latest
-      pullPolicy: Always
-      pullSecrets: []
-
-    replicaCount: 0
-
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      # limits:
-      #   cpu: 100m
-      #   memory: 128Mi
-
-    certSANs:
-      dnsNames: []
-      ipAddresses: []
-
-    extraArgs: {}
-
-    labels: {}
-    annotations: {}
-    podLabels:
-      logs: loki-myloginspace
-    podAnnotations: {}
-    nodeSelector: {}
-    tolerations: []
-    podAntiAffinity: soft
-    podAntiAffinityTopologyKey: kubernetes.io/hostname
-    affinity: {}
-    extraEnv: []
-    sidecars: []
-    extraVolumes: []
-    extraVolumeMounts: []
-
 
     port: 33073
     service:
@@ -133,55 +91,124 @@ netbird:
 
       externalIPs: []
       loadBalancerIP: ''
-  
-  dashboard:
-    enabled: false
 
-    image:
-      repository: wiretrustee/dashboard
-      tag: main
-      pullPolicy: Always
-      pullSecrets: []
+controllers:
+  netbird-dashboard:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
 
-    replicaCount: 0
+    containers:
+      netbird-dashboard:
+        image:
+          repository: netbirdio/dashboard
+          tag: {{ .Values.netbird.version }}
+          pullPolicy: Always
 
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      # limits:
-      #   cpu: 100m
-      #   memory: 128Mi
 
-    certSANs:
-      dnsNames: []
-      ipAddresses: []
+  netbird-management:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
 
-    extraArgs: {}
+    containers:
+      netbird-management:
+        image:
+          repository: netbirdio/managemen
+          tag: {{ .Values.netbird.version }}
+          pullPolicy: Always
 
-    labels: {}
+        args:
+          - --port=80
+          - --log-file=console
+          - --log-level=info
+          - --disable-anonymous-metrics=false
+          - --single-account-mode-domain=netbird.example.com
+          - --dns-domain=netbird.selfhosted
+
+  netbird-relay:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    containers:
+      netbird-relay:
+        image:
+          repository: netbirdio/relay
+          tag: {{ .Values.netbird.version }}
+          pullPolicy: Always
+
+  netbird-signal:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    containers:
+      netbird-signal:
+        image:
+          repository: netbirdio/signal
+          tag: {{ .Values.netbird.version }}
+          pullPolicy: Always
+
+
+service:
+  netbird-dashboard:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: netbird-dashboard
+
+    nameOverride: nb-dashboard
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: false
+
+    # -- Set the service type
+    type: ClusterIP
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    externalTrafficPolicy:
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    # # -- Provide additional annotations which may be required.
     annotations: {}
-    podLabels:
-      logs: loki-myloginspace
-    podAnnotations: {}
-    nodeSelector: {}
-    tolerations: []
-    podAntiAffinity: soft
-    podAntiAffinityTopologyKey: kubernetes.io/hostname
-    affinity: {}
-    extraEnv: []
-    sidecars: []
-    extraVolumes: []
-    extraVolumeMounts: []
+    # -- Provide additional labels which may be required.
+    labels: {}
+    # -- Allow adding additional match labels
+    extraSelectorLabels: {}
 
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: true
 
-    port: 80
-    service:
-      enabled: true
-      type: ClusterIP # or LoadBalancer
-      labels: {}
-      annotations: {}
-      loadBalancerIP: ''
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 80
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: http
 
 netmaker:
   clusterDomain: cluster.local

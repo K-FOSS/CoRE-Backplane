@@ -1,20 +1,12 @@
 {{- if .Values.netbird.enabled }}
-{{- $fullName := include "pnetwork.fullname" . -}}
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $fullName }}-netbird-config
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-netbird-config
 data:
   management.json: |
       {
         "Stuns": [
-          {
-            "Proto": "tcp",
-            "URI": "stun:nat.ipaddr.network:3478",
-            "Username": "demo",
-            "Password": "secret"
-          },
           {
             "Proto": "udp",
             "URI": "stun:nat.ipaddr.network:3478",
