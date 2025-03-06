@@ -83,6 +83,40 @@ controllers:
           tag: v2.9.0
           pullPolicy: Always
 
+        env:
+          - name: AUTH_AUDIENCE
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config
+                key: AUTH_AUDIENCE
+                optional: false
+
+          - name: USE_AUTH0
+            value: 'false'
+
+          - name: AUTH_SUPPORTED_SCOPES
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config
+                key: AUTH_SUPPORTED_SCOPES
+                optional: false
+
+          - name: AUTH_CLIENT_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-netbird-config
+                key: AUTH_CLIENT_ID
+                optional: false
+
+          - name: AUTH_AUTHORITY
+            value: 'https://idp.mylogin.space/application/o/netbird'
+
+          - name: NETBIRD_MGMT_API_ENDPOINT
+            value: https://vpn.ipaddr.network:33073
+
+          - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
+            value: https://vpn.ipaddr.network:33073
+
 
   netbird-management:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
