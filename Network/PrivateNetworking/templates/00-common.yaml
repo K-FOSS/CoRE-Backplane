@@ -54,23 +54,6 @@ route:
             name: netbird-dashboard
             weight: 1
 
-persistence:
-  config:
-    enabled: true
-
-    type: secret
-
-    name: '{{ .Release.Name }}-netbird-config'
-
-    defaultMode: 0755
-
-    advancedMounts:
-      netbird-management: # the controller with the "main" identifier
-        netbird-management: # the container with the "main" identifier
-          - path: /etc/netbird/management.json
-            readOnly: true
-            subPath: management.json
-
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
