@@ -64,6 +64,22 @@ data:
             "Password": "{{`{{ .Password }}`}}"
           }
         },
+        "PKCEAuthorizationFlow": {	
+            "ProviderConfig": {	
+                "ClientID": "{{ .IDP_CLIENT_ID }}",	
+                "ClientSecret": "",	
+                "Domain": "",	
+                "Audience": "{{ .IDP_CLIENT_ID }}",	
+                "TokenEndpoint": "https://idp.mylogin.space/application/o/token/",	
+                "DeviceAuthEndpoint": "",	
+                "AuthorizationEndpoint": "https://idp.mylogin.space/application/o/authorize/",	
+                "Scope": "openid profile email offline_access api",	
+                "UseIDToken": false,	
+                "RedirectURLs": [	
+                    "http://localhost:53000"	
+                ]	
+            }	
+        },
         "StoreConfig": {
           "Engine": "postgres"
         },
@@ -71,6 +87,11 @@ data:
           "Provider": "hosted",
           "ProviderConfig": {
             "Audience": "{{`{{ .IDP_CLIENT_ID }}`}}",
+            "ClientID": "{{ .IDP_CLIENT_ID }}",	
+            "ClientSecret": "",	
+            "Scope": "openid",	
+            "UseIDToken": false,	
+            "DeviceAuthEndpoint": "https://idp.mylogin.space/application/o/device/",
             "Domain": "idp.mylogin.space",
             "TokenEndpoint": "{{ .Values.netbird.auth.oidc.tokenEndpoint }}"
           }
