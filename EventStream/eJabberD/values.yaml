@@ -203,9 +203,16 @@ configMaps:
     annotations: {}
     # -- configMap data content. Helm template enabled.
     data:
-      ejabberd.yml: |
-        hosts:{{`
+      ejabberd.yml: | # yaml
+        hosts:
           - mylogin.space
+          - turn.mylogin.space
+
+        host_config:	
+          turn.mylogin.space:	
+            auth_method: [internal]	
+          mylogin.space:	
+            auth_method: [ldap]
 
         #
         # AAA
@@ -215,7 +222,7 @@ configMaps:
         # Database
         #
 
-        sql_type: pgsql
+        sql_type: pgsql {{`
         sql_server: {{ .psqlHostname }}
         sql_port: {{ .psqlPort }}
         sql_database: {{ .database }}
@@ -244,7 +251,7 @@ configMaps:
         
         ldap_rootdn: 'cn={{ .username }},ou=users,dc=ldap,dc=mylogin,dc=space'
         ldap_password: '{{ .password }}'
-        ldap_encrypt: tls
+        ldap_encrypt: tls`}}
 
         #
         # LDAP Searching
@@ -252,9 +259,6 @@ configMaps:
         ldap_base: 'ou=users,dc=ldap,dc=mylogin,dc=space'
         ldap_filter: '(memberOf=cn=MQTT Users,ou=groups,dc=ldap,dc=mylogin,dc=space)'
         ldap_uids: [cn]
-
-        auth_method:
-          - ldap
 
         #
         # Authorization
@@ -270,7 +274,7 @@ configMaps:
               - ::FFFF:127.0.0.1/128
           admin:
             user:
-              - admin@mq.broker.mylogin.space
+              - kjones@mylogin.space
 
         access_rules:
           local:
@@ -339,12 +343,15 @@ configMaps:
 
           - port: 5478
             module: ejabberd_stun
-            tls: true
-            use_proxy_protocol: false
+            transport: udp
+            tls: false
             use_turn: true
             turn_min_port: 16100
             turn_max_port: 16500
+
+            auth_realm: turn.mylogin.space
             auth_type: user
+
             turn_ipv4_address: 66.165.222.102
 
           - port: 5443
@@ -457,4 +464,4 @@ configMaps:
           mod_vcard: {}
           mod_vcard_xupdate: {}
           mod_version:
-            show_os: false`}}
+            show_os: false
