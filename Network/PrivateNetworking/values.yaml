@@ -167,6 +167,10 @@ controllers:
           - --disable-anonymous-metrics=false
           - --dns-domain=netbird.selfhosted
 
+        ports:
+          - name: http
+            containerPort: '{{ $.Values.netbird.management.port }}'
+
         env:
           - name: NETBIRD_STORE_ENGINE_POSTGRES_DSN
             valueFrom:
