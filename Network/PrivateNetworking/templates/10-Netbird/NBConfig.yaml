@@ -46,16 +46,18 @@ data:
           "Address": "0.0.0.0:80",
           "AuthIssuer": "{{ .Values.netbird.auth.oidc.provider }}/",
           "AuthAudience": "{{`{{ .OIDCClientID }}`}}",
+          "AuthUserIDClaim": "",
           "AuthKeysLocation": "{{ .Values.netbird.auth.oidc.provider }}/jwks/",
-          "OIDCConfigEndpoint": "{{ .Values.netbird.auth.oidc.provider }}/.well-known/openid-configuration"
+          "OIDCConfigEndpoint": "{{ .Values.netbird.auth.oidc.provider }}/.well-known/openid-configuration",
+          "IdpSignKeyRefreshEnabled": false
         },
         "IdpManagerConfig": {
           "ManagerType": "authentik",
           "ClientConfig": {
-            "Issuer": "https://idp.mylogin.space/application/o/netbird",
+            "Issuer": "https://idp.mylogin.space/application/o/netbird/",
             "TokenEndpoint": "https://idp.mylogin.space/application/o/token/",
             "ClientID": "{{`{{ .IDP_CLIENT_ID }}`}}",
-            "ClientSecret": "{{`{{ .IDP_CLIENT_SECRET }}`}}",
+            "ClientSecret": "",
             "GrantType": "client_credentials"
           },
           "ExtraConfig": {
@@ -74,7 +76,7 @@ data:
           "Provider": "hosted",
           "ProviderConfig": {
             "Audience": "{{`{{ .IDP_CLIENT_ID }}`}}",
-            "Domain": "{{ .Values.netbird.auth.oidc.provider }}",
+            "Domain": "idp.mylogin.space",
             "TokenEndpoint": "{{ .Values.netbird.auth.oidc.tokenEndpoint }}"
           }
         }
