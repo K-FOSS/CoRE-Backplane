@@ -9,6 +9,51 @@ global:
 {{ end }}
 
 route:
+  signal:
+    # -- Enables or disables the route
+    enabled: true
+
+    nameOverride: netbird-signal
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - '{{ $.Values.netbird.domain }}'
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - group: gateway.networking.k8s.io
+
+        # Kind of the referent resource.
+        kind: Gateway
+
+        # Name of the referent resource
+        name: {{ .Values.netbird.gateway.name }}
+        # Namespace of the referent resource
+        namespace: {{ .Values.netbird.gateway.namespace }}
+        sectionName: {{ .Values.netbird.gateway.sectionName }}
+
+
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /signalexchange.SignalExchange
+        backendRefs:
+          - kind: Service
+            port: http
+            name: netbird-signal
+            weight: 1
+
   dashboard:
     # -- Enables or disables the route
     enabled: true
@@ -93,6 +138,9 @@ route:
           - path:
               type: PathPrefix
               value: /api
+          - path:
+              type: PathPrefix
+              value: /management.ManagementService
         backendRefs:
           - kind: Service
             port: http
