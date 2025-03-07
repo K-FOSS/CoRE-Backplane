@@ -167,10 +167,6 @@ controllers:
           - --disable-anonymous-metrics=false
           - --dns-domain=netbird.selfhosted
 
-        ports:
-          - name: http
-            containerPort: '{{ $.Values.netbird.management.port }}'
-
         env:
           - name: NETBIRD_STORE_ENGINE_POSTGRES_DSN
             valueFrom:
@@ -180,7 +176,7 @@ controllers:
                 optional: false
 
           - name: PORT
-            value: '{{ $.Values.netbird.management.port }}'
+            value: 33073
   netbird-relay:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
@@ -216,6 +212,7 @@ controllers:
           pullPolicy: Always
 
         args:
+          - --port=8080
           - --log-file=console
           - --log-level=debug
 
@@ -320,7 +317,7 @@ service:
         primary: true
 
         # -- The port number
-        port: 8080
+        port: 33073
 
         # -- Port protocol.
         # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
@@ -359,12 +356,7 @@ service:
 
     # # -- Provide additional annotations which may be required.
 
-    annotations:
-      purelb.io/allow-shared-ip: main-gw.resolvemy.host
-      purelb.io/service-group: main-public
-      purelb.io/allow-local: 'true'
-      purelb.io/addresses: '66.165.222.102'
-      external-dns.alpha.kubernetes.io/hostname: 'vpn.mylogin.space'
+    annotations: {}
 
     # -- Provide additional labels which may be required.
     labels: {}
