@@ -7,6 +7,7 @@ portRange:
   min: 16100
   max: 16500
 
+
 controllers:
   main:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
@@ -18,7 +19,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/processone/ejabberd
-          tag: latest
+          tag: '24.12'
           pullPolicy: IfNotPresent
 
         # -- Probe configuration
@@ -221,16 +222,17 @@ configMaps:
         #
         # Database
         #
-
-        sql_type: pgsql {{`
-        sql_server: {{ .psqlHostname }}
+        
+        sql_type: pgsql 
+        sql_server: {{`{{ .psqlHostname }}
         sql_port: {{ .psqlPort }}
         sql_database: {{ .database }}
         sql_username: {{ .username }}
         sql_password: '{{ .password }}'
         new_sql_schema: true
         update_sql_schema: true
-        default_db: 'sql'
+        default_db: 'sql'`}}
+
 
         #
         # Authentication
@@ -249,7 +251,7 @@ configMaps:
         # LDAP Bind
         #
         
-        ldap_rootdn: 'cn={{ .username }},ou=users,dc=ldap,dc=mylogin,dc=space'
+        ldap_rootdn: 'cn={{`{{ .username }},ou=users,dc=ldap,dc=mylogin,dc=space'
         ldap_password: '{{ .password }}'
         ldap_encrypt: tls`}}
 
