@@ -145,7 +145,6 @@ controllers:
             value: https://{{ $.Values.netbird.domain }}
 
           - name: NETBIRD_MGMT_GRPC_API_ENDPOINT
-            value: https://{{ $.Values.netbird.domain }}
 
 
   netbird-management:
@@ -166,10 +165,16 @@ controllers:
           - --log-file=console
           - --log-level=info
           - --disable-anonymous-metrics=false
-          - --single-account-mode-domain=netbird.example.com
           - --dns-domain=netbird.selfhosted
 
         env:
+          - name: NETBIRD_STORE_ENGINE_POSTGRES_DSN
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-privatenetworking-core-netbird-creds'
+                key: psqlURI
+                optional: false
+
           - name: PORT
             value: '{{ $.Values.netbird.management.port }}'
   netbird-relay:
