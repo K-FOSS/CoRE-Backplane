@@ -213,9 +213,6 @@ configMaps:
           - turn.mylogin.space
 
         host_config:	
-          turn.mylogin.space:	
-            auth_method:
-              - sql
           mylogin.space:	
             auth_method: ldap
 
@@ -246,6 +243,8 @@ configMaps:
         new_sql_schema: true
         update_sql_schema: true
         default_db: 'sql'`}}
+
+        sm_db_type: redis
 
         
 
@@ -337,13 +336,12 @@ configMaps:
 
           - port: 5478
             module: ejabberd_stun
-            transport: udp
-            tls: false
+            tls: true
             use_turn: true
             turn_min_port: 16100
             turn_max_port: 16500
 
-            auth_realm: turn.mylogin.space
+            auth_realm: mylogin.space
             auth_type: user
 
             turn_ipv4_address: 66.165.222.102
