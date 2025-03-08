@@ -40,6 +40,10 @@ spec:
           type: PathPrefix
           value: /c
       
+      timeouts:
+        backendRequest: 1800s
+        request: 1800s
+
       backendRefs:
         - group: ''
           kind: Service
@@ -47,12 +51,18 @@ spec:
           port: 80
           weight: 1
 
+
+
     - backendRefs:
         - group: ''
           kind: Service
           name: {{ .Release.Name }}-harbor-helm-portal
           port: 80
           weight: 1
+
+      timeouts:
+        backendRequest: 1800s
+        request: 1800s
 
       matches:
         - path:
