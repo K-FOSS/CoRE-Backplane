@@ -3,9 +3,26 @@ metadata:
   name: core-devspace
 
 components:
+  - name: var-run
+    volume:
+      ephemeral: true
+      size: 1G
+
+  - name: client-certs
+    volume:
+      ephemeral: true
+      size: 1G
+
+
   - name: devtools
     container:
       image: registry.writemy.codes/proxy-quay.io/devfile/universal-developer-image:latest
+      volumeMounts:
+        - name: var-run
+          path: /var/run
+
+        - name: client-certs
+          path: /certs/client
       env:
         - name: KUBEDOCK_ENABLED
           value: 'false'
@@ -13,9 +30,21 @@ components:
         - name: DOCKER_HOST
           value: 'tcp://127.0.0.1:2376'
 
+        - name: DOCKER_CERT_PATH
+          value: '/certs/client/'
+
+        - name: DOCKER_TLS_VERIFY
+          value: '1'
+
   - name: docker-in-docker
     container:
       image: registry.writemy.codes/proxy-docker.io/docker:25.0-dind-rootless
+      volumeMounts:
+        - name: var-run
+          path: /var/run
+
+        - name: client-certs
+          path: /certs/client
       env:
         - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
           value: '-p 0.0.0.0:2376:2376/tcp'
