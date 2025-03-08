@@ -207,10 +207,14 @@ configMaps:
     annotations: {}
     # -- configMap data content. Helm template enabled.
     data:
-      ejabberd.yml: > # yaml
+      ejabberd.yml: |
         hosts:
           - mylogin.space
           - turn.mylogin.space
+
+        default_ram_db: redis
+
+        sm_db_type: redis
 
         host_config:	
           mylogin.space:	
@@ -244,8 +248,6 @@ configMaps:
         new_sql_schema: true
         update_sql_schema: true
         default_db: 'sql'`}}
-
-        sm_db_type: redis
 
         
 
