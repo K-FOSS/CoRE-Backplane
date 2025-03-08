@@ -1,0 +1,25 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: cdn-serena-meowmeow
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    name: cdn-serena-meowmeow
+
+  data:
+    - secretKey: AccessKey
+      remoteRef:
+        key: Storage/CDN/S3
+        property: AccessKey
+
+    - secretKey: SecretKey
+      remoteRef:
+        key: Storage/CDN/S3
+        property: SecretKey

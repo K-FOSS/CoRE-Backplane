@@ -1,0 +1,56 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-storage-cdn
+  namespace: argocd
+
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/env: 'prod'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-cdn-{{ .values.environment }}'
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
+      source:
+        path: Storage/CDN
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          # env:
+          #   - name: LOVELY_HELM_MERGE
+          #     value: |- # yaml
+
+
+      destination:
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
+
