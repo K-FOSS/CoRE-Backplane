@@ -73,6 +73,11 @@ serena-meowmeow:
         # Log format
         format: json
 
+      authproviders:
+        basic:
+          serena-meowmeow:
+            realm: meowmeow.snd.fyi
+
       server:
         timeouts:
           readTimeout: 1800s
@@ -85,6 +90,19 @@ serena-meowmeow:
           mount:
             path:
               - /
+          resources:
+            - path: /*
+              # HTTP Methods authorized (Must be in HEAD, GET, PUT or DELETE)
+              methods:
+                - GET
+              # A authentication provider declared in section before, here is the key name
+              provider: serena-meowmeow
+              # Basic authentication section
+              basic:
+                credentials:
+                  - user: <path:CORE0_SITE1/data/Storage/CDN/MeowMeow#Username>
+                    password:
+                      value: <path:CORE0_SITE1/data/Storage/CDN/MeowMeow#Password>
           bucket:
             name: <path:CORE0_SITE1/data/Storage/CDN/S3#Bucket>
             region: us-east-1
