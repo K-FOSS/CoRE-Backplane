@@ -211,20 +211,31 @@ configMaps:
 
         host_config:	
           turn.mylogin.space:	
-            auth_method: [internal]	
+            auth_method:
+              - sql
           mylogin.space:	
-            auth_method: [ldap]
+            auth_method: ldap
 
-        #
-        # AAA
-        #
+            ldap_servers:
+              - ldap.mylogin.space
+
+            ldap_port: 636
+            ldap_encrypt: tls
+            ldap_uids:
+              - cn
+            ldap_rootdn: 'cn={{`{{ .username }},ou=users,dc=ldap,dc=mylogin,dc=space'
+            ldap_password: '{{ .password }}'
+
+            ldap_base: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+            ldap_filter: '(memberOf=cn=MQTT Users,ou=groups,dc=ldap,dc=mylogin,dc=space)'
+            ldap_uids: [cn]
 
         #
         # Database
         #
         
         sql_type: pgsql 
-        sql_server: {{`{{ .psqlHostname }}
+        sql_server: {{ .psqlHostname }}
         sql_port: {{ .psqlPort }}
         sql_database: {{ .database }}
         sql_username: {{ .username }}
@@ -233,34 +244,12 @@ configMaps:
         update_sql_schema: true
         default_db: 'sql'`}}
 
-
-        #
-        # Authentication
-        #
-
-        #
-        # LDAP
-        #
-
-        ldap_servers:
-          - ldap.mylogin.space
-
-        ldap_port: 636
-
-        #
-        # LDAP Bind
-        #
         
-        ldap_rootdn: 'cn={{`{{ .username }},ou=users,dc=ldap,dc=mylogin,dc=space'
-        ldap_password: '{{ .password }}'
-        ldap_encrypt: tls`}}
 
         #
         # LDAP Searching
         #
-        ldap_base: 'ou=users,dc=ldap,dc=mylogin,dc=space'
-        ldap_filter: '(memberOf=cn=MQTT Users,ou=groups,dc=ldap,dc=mylogin,dc=space)'
-        ldap_uids: [cn]
+
 
         #
         # Authorization
