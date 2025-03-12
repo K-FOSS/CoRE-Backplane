@@ -1,0 +1,57 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xcluster.resolvemy.host
+spec:
+  group: resolvemy.host
+
+  names:
+    kind: XCluster
+    plural: xclusters
+
+  claimNames:
+    kind: Cluster
+    plural: clusters
+
+  connectionSecretKeys:
+    - talosconfig
+    - kubeconfig
+
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                name:
+                  type: string
+
+                type:
+                  type: string
+
+                  enum:
+                    - talos
+
+                controlplane:
+                  type: object
+                  properties:
+                    ipAddress:
+                      type: string
+
+              required:
+                - name
+                - type
+                - controlplane
+            status:
+              description: A Status represents the observed state
+              properties:
+                share:
+                  description: Freeform field containing status information
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+              type: object
