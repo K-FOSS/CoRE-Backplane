@@ -1,0 +1,51 @@
+apiVersion: resolvemy.host/v1alpha1
+kind: Cluster
+metadata:
+  name: authentik-core
+
+  namespace: multicluster-controlplane   
+
+  labels:
+    argocd.argoproj.io/instance: dc1-k3s-node1-ops-cluster
+
+spec:
+  name: core-prod
+
+  description: Main cluster
+
+  tenantRef:
+    group: mylogin.space
+    kind: Tenant
+    name: core.mylogin.space
+    namespace: core-prod
+
+  environment: prod
+
+  versions:
+    kubernetes: 1.32.1
+    talos: 1.9.4
+
+  clustertype: infra
+
+  computetype: baremetal
+
+  domain: k3s.dc1.resolvemy.host
+
+  type: talos
+
+  networks:
+    loadbalancer:
+      anycast: 10.1.1.0/24
+
+      public: 66.165.222.106/32
+
+      pool: 172.27.0.0/24
+
+    pods: 172.16.21.0/24
+
+    services: 10.1.2.0/24
+
+  controlplane:
+    ipAddress: 10.1.1.10
+
+
