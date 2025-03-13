@@ -30,6 +30,65 @@ spec:
               properties:
                 name:
                   type: string
+                  description: Friendly name of the cluster
+
+                description:
+                  type: string
+                  description: Additonal notes and description about the deployed cluster
+
+                tenantRef:
+                  type: object
+                  description: Tenant ref to attach details to the deployed cluster
+                  properties:
+                    group:
+                      type: string
+
+                      default: {{ .Values.tenant.group }}
+
+                    kind:
+                      type: string
+
+                      default: {{ .Values.tenant.kind }}
+
+                    name:
+                      type: string
+
+                    namespace:
+                      type: string
+
+
+                environment:
+                  type: string
+                  description: env of the deployed cluster
+
+                versions:
+                  type: object
+
+                networks:
+                  type: object
+
+                  description: Network configuration of the cluster
+                  properties:
+                    loadbalancer:
+                      type: object
+                      description: Load balancer IP addresses, generally handled by PureLB
+                      properties:
+                        anycast:
+                          type: string
+
+                        public:
+                          type: string
+
+                        pool:
+                          type: string
+                    
+                    services:
+                      type: string
+                      description: pool used for the services within the cluster
+
+                    pods:
+                      type: string
+                      description: IP Pool assigned to pods within the deployed cluster
 
                 type:
                   type: string
@@ -45,6 +104,8 @@ spec:
 
               required:
                 - name
+                - env
+                - networks
                 - type
                 - controlplane
             status:
