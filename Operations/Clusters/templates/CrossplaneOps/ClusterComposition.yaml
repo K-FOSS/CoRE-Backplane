@@ -76,9 +76,6 @@ spec:
                           - name: hello-world
                             image: docker.io/hello-world
                             timeout: 1800
-                            environment:
-                                IMG_URL: https://static.mylogin.space/talos/nocloud-amd64.raw
-                                DEST_DISK: /dev/sda
 
             ---
             apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
@@ -96,7 +93,7 @@ spec:
               infrastructureTemplate:
                 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
                 kind: TinkerbellMachineTemplate
-                name: get $flexServer.status.atProvider "id"
+                name: {{ get $flexServer.metadata "name" }}
                 namespace: core-prod
 
               controlPlaneConfig:
@@ -305,8 +302,3 @@ spec:
                 kind: TinkerbellCluster
                 name: {{ get $tinkCluster.metadata "name" }}
                 namespace: core-prod `}}
-
-
-    - step: automatically-detect-ready-composed-resources
-      functionRef:
-        name: function-auto-ready
