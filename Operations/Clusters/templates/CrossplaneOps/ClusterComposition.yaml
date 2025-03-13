@@ -37,6 +37,7 @@ spec:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
             kind: TinkerbellCluster
             metadata:
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
               annotations:
                 {{ setResourceNameAnnotation $tinkclusterResourceName }}
             spec:
@@ -48,6 +49,7 @@ spec:
             apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
             kind: TinkerbellMachineTemplate
             metadata:
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
               annotations:
                 {{ setResourceNameAnnotation $tinkTemplateResourceName }}
             spec:
@@ -82,6 +84,7 @@ spec:
             apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
             kind: TalosControlPlane
             metadata:
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
               annotations:
                 {{ setResourceNameAnnotation $talosCNTRLPlaneResourceName }}
             spec:
@@ -95,7 +98,7 @@ spec:
                 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
                 kind: TinkerbellMachineTemplate
                 name: {{ get $tinkTemplate.metadata "name" }}
-                namespace: core-prod
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
 
               controlPlaneConfig:
                 controlplane:
@@ -259,6 +262,7 @@ spec:
             apiVersion: cluster.x-k8s.io/v1beta1
             kind: Cluster
             metadata:
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
               labels:
                 resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
                 resolvemy.host/clustertype: {{ get $xr.spec "clustertype" }}
@@ -296,10 +300,10 @@ spec:
                 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
                 kind: TalosControlPlane
                 name: {{ get $talosCNTRLPlane.metadata "name" }}
-                namespace: core-prod
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
 
               infrastructureRef:
                 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
                 kind: TinkerbellCluster
                 name: {{ get $tinkCluster.metadata "name" }}
-                namespace: core-prod `}}
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }} `}}
