@@ -264,25 +264,12 @@ spec:
                             path: /machine/registries
                             value:
                               mirrors:
-                                docker.io:
+                                {{- range $registry, $path := .Values.crossplane.clusters.registry.mirror.paths }}
+                                {{ $registry }}:
                                   endpoints:
-                                    - https://registry.writemy.codes/v2/proxy-docker.io
-                                  overridePath: true
-
-                                ghcr.io:
-                                  endpoints:
-                                    - https://registry.writemy.codes/v2/proxy-ghcr.io
-                                  overridePath: true
-
-                                gcr.io:
-                                  endpoints:
-                                    - https://registry.writemy.codes/v2/proxy-gcr.io
-                                  overridePath: true
-
-                                registry.k8s.io:
-                                  endpoints:
-                                    - https://registry.writemy.codes/v2/proxy-registry.k8s.io
-                                  overridePath: true 
+                                    - {{ $.Values.crossplane.clusters.registry.mirror.base }}/{{ $path }}
+                                  overridepath: true
+                                {{- end }}
             ---{{`
             apiVersion: kubernetes.crossplane.io/v1alpha1
             kind: Object
