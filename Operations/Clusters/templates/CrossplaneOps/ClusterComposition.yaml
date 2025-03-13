@@ -78,6 +78,7 @@ spec:
                             timeout: 1800
 
             ---
+            {{ $tinkTemplate := getComposedResource . $tinkTemplateResourceName }}
             apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
             kind: TalosControlPlane
             metadata:
@@ -93,7 +94,7 @@ spec:
               infrastructureTemplate:
                 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
                 kind: TinkerbellMachineTemplate
-                name: {{ get $flexServer.metadata "name" }}
+                name: {{ get $tinkTemplate.metadata "name" }}
                 namespace: core-prod
 
               controlPlaneConfig:
