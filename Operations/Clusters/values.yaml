@@ -11,6 +11,26 @@ tenant:
 
   kind: Tenant
 
+crossplane:
+  clusters:
+    registry:
+      mirror:
+        base: https://registry.writemy.codes/v2/
+
+        paths:
+          docker.io: proxy-docker.io
+          
+          ghcr.io: proxy-ghcr.io
+
+          gcr.io: proxy-gcr.io
+
+          registry.k8s.io: proxy-registry.k8s.io
+  functionsRef:
+    gotemplate:
+      name: function-go-templating
+
+
+
 tinkerbell:
   ip: '10.1.1.66'
 

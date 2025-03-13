@@ -1,0 +1,312 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: cluster-init
+
+  labels:
+    implementation: mixed
+    resolvemy.host/env: 'alpha'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
+spec:
+  compositeTypeRef:
+    apiVersion: resolvemy.host/v1alpha1
+    kind: XCluster
+
+  writeConnectionSecretsToNamespace: core-prod
+  mode: Pipeline
+  pipeline:
+    - step: cluster-base
+      functionRef:
+        name: {{ .Values.crossplane.functionsRef.gotemplate.name }}
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: | # yaml
+            {{`{{ $xr := getCompositeResource . }}
+            {{ $clusterResourceName := "cluster" }}
+            {{ $tinkclusterResourceName := "tinkcluster" }}
+            {{ $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
+            {{ $tinkTemplateResourceName := "tinktemplate" }}
+            {{ $networks := $xr.spec.networks }}
+        
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: TinkerbellCluster
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $tinkclusterResourceName }}
+            spec:
+              controlPlaneEndpoint:
+                host: 172.16.20.140
+                port: 6443
+              imageLookupBaseRegistry: 'ghcr.io/tinkerbell/cluster-api-provider-tinkerbell'
+            ---
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+            kind: TinkerbellMachineTemplate
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $tinkTemplateResourceName }}
+            spec:
+              template:
+                spec:
+                  hardwareAffinity:
+                    preferred:
+                      - weight: 100
+                        hardwareAffinityTerm:
+                          labelSelector:
+                            matchLabels:
+                              resolvemy.host/nodetype: infra
+                  templateOverride: | # yaml
+                    version: "0.1"
+                    name: kub-poc-control-plane-flatcar-arm64
+                    global_timeout: 6000
+                    tasks:
+                      - name: "kub-poc-control-plane-flatcar"
+                        worker: "{{.device_1}}"
+                        volumes:
+                          - /dev:/dev
+                          - /dev/console:/dev/console
+                          - /lib/firmware:/lib/firmware:ro
+                          - /run:/run
+                        actions:
+                          - name: hello-world
+                            image: docker.io/hello-world
+                            timeout: 1800
+                            environment:
+                                IMG_URL: https://static.mylogin.space/talos/nocloud-amd64.raw
+                                DEST_DISK: /dev/sda
+
+            ---
+            apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+            kind: TalosControlPlane
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $talosCNTRLPlaneResourceName }}
+            spec:
+              version: v1.32.2
+              replicas: 2
+
+              rolloutStrategy:
+                type: OnDelete
+
+              infrastructureTemplate:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                kind: TinkerbellMachineTemplate
+                name: get $flexServer.status.atProvider "id"
+                namespace: core-prod
+
+              controlPlaneConfig:
+                controlplane:
+                  generateType: controlplane
+                  talosVersion: v1.9
+                  configPatches:
+                    - op: replace
+                      path: /debug
+                      value: true
+
+                    - op: replace
+                      path: /machine/install/disk
+                      value: /dev/sda
+
+                    - op: replace
+                      path: /machine/features/kubePrism/enabled
+                      value: false
+
+                    #
+                    # Longhorn Requirements
+                    #
+                    - op: add
+                      path: /machine/kubelet/extraMounts
+                      value:
+                        - destination: /var/lib/longhorn
+                          type: bind
+                          source: /var/lib/longhorn
+                          options:
+                            - bind
+                            - rshared
+                            - rw
+
+                    - op: add
+                      path: /machine/sysctls
+                      value:
+                        vm.nr_hugepages: '1024'
+
+                    - op: add
+                      path: /machine/kernel
+                      value:
+                        modules:
+                          - name: nvme_tcp
+                          - name: vfio_pci
+
+                    #
+                    # OIDC For API Server
+                    #
+                    - op: add
+                      path: /machine/files
+                      value:
+                        - path: /var/kubernetes/auth-config.yaml
+                          permissions: 0o644
+                          op: create
+                          content: |- # yaml
+                            apiVersion: apiserver.config.k8s.io/v1beta1
+                            kind: AuthenticationConfiguration
+                            jwt:
+                              - issuer:
+                                  url: https://idp.mylogin.space/application/o/che/
+                                  audiences:
+                                    - <path:CORE0_SITE1/data/IDE/Che/Authentik#ClientID>
+                                claimMappings:
+                                  username:
+                                    expression: 'claims.preferred_username'
+                                  groups:
+                                    expression: 'claims.groups'
+                                  uid:
+                                    expression: 'claims.sub'
+                                userValidationRules:
+                                  - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
+                                    message: 'username cannot used reserved system: prefix'
+
+                              - issuer:
+                                  url: https://idp.mylogin.space/application/o/headlamp/
+                                  audiences:
+                                    - headlamp
+                                claimMappings:
+                                  username:
+                                    expression: 'claims.preferred_username'
+                                  groups:
+                                    expression: 'claims.groups'
+                                  uid:
+                                    expression: 'claims.sub'
+                                userValidationRules:
+                                  - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
+                                    message: 'username cannot used reserved system: prefix'
+
+                    - op: add
+                      path: /cluster/apiServer/extraVolumes
+                      value:
+                        - hostPath: /var/kubernetes/auth-config.yaml
+                          mountPath: /var/kubernetes/auth-config.yaml
+                          readonly: true
+
+                    - op: add
+                      path: /cluster/apiServer/extraArgs
+                      value:
+                        authentication-config: /var/kubernetes/auth-config.yaml
+
+                    #
+                    # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
+                    #
+                    - op: replace
+                      path: /cluster/network/cni
+                      value:
+                        name: none
+
+                    #
+                    # KubeDNS
+                    #
+                    - op: replace
+                      path: /machine/features/hostDNS/forwardKubeDNSToHost
+                      value: false
+
+
+                    #
+                    # Cilium from the network base stack is running in KubeProxy replacement mode
+                    #
+                    - op: replace
+                      path: /cluster/proxy/disabled
+                      value: true
+
+                    #
+                    # Setup Logging 
+                    #
+                    - op: add
+                      path: /machine/logging
+                      value:
+                        destinations:
+                          - endpoint: 'udp://10.1.1.14:6051'
+                            format: 'json_lines' 
+                    #
+                    # Configure Remote Pullthrough Registry Cache
+                    # `}}
+                    - op: add
+                      path: /machine/registries
+                      value:
+                        mirrors:
+                          docker.io:
+                            endpoints:
+                              - https://registry.writemy.codes/v2/proxy-docker.io
+                            overridePath: true
+
+                          ghcr.io:
+                            endpoints:
+                              - https://registry.writemy.codes/v2/proxy-ghcr.io
+                            overridePath: true
+
+                          gcr.io:
+                            endpoints:
+                              - https://registry.writemy.codes/v2/proxy-gcr.io
+                            overridePath: true
+
+                          registry.k8s.io:
+                            endpoints:
+                              - https://registry.writemy.codes/v2/proxy-registry.k8s.io
+                            overridePath: true 
+            ---{{`
+            {{ $talosCNTRLPlane := getComposedResource . $talosCNTRLPlaneResourceName }}
+            {{ $tinkCluster := getComposedResource . $tinkclusterResourceName }}
+            apiVersion: cluster.x-k8s.io/v1beta1
+            kind: Cluster
+            metadata:
+              labels:
+                resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
+                resolvemy.host/clustertype: {{ get $xr.spec "clustertype" }}
+                resolvemy.host/computetype: {{ get $xr.spec "computetype" }}
+                resolvemy.host/env: {{ get $xr.spec "environment" }}
+                resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
+                resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
+                resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
+                cluster.kubernetes.io/domain: {{ get $xr.spec "domain" }}
+                mylogin.space/tenant: 'core.mylogin.space'
+                take-along-label.capi-to-argocd.resolvemy.host/nodetype: ''
+                take-along-label.capi-to-argocd.resolvemy.host/clustertype: ''
+                take-along-label.capi-to-argocd.resolvemy.host/computetype: ''
+                take-along-label.capi-to-argocd.resolvemy.host/env: ''
+                take-along-label.capi-to-argocd.resolvemy.host/lbpool: ''
+                take-along-label.capi-to-argocd.resolvemy.host/lbanycast: ''
+                take-along-label.capi-to-argocd.resolvemy.host/lbpublic: ''
+                take-along-label.capi-to-argocd.mylogin.space/tenant: ''
+                take-along-label.capi-to-argocd.cluster.kubernetes.io/domain: ''
+
+              annotations:
+                {{ setResourceNameAnnotation $clusterResourceName }}
+            spec:
+              
+              clusterNetwork:
+                pods:
+                  cidrBlocks:
+                    - {{ $networks.pods }}
+                
+                services:
+                  cidrBlocks:
+                    - {{ $networks.services }}
+
+              controlPlaneRef:
+                apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+                kind: TalosControlPlane
+                name: {{ get $talosCNTRLPlane.metadata "name" }}
+                namespace: core-prod
+
+              infrastructureRef:
+                apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                kind: TinkerbellCluster
+                name: {{ get $tinkCluster.metadata "name" }}
+                namespace: core-prod `}}
+
+
+    - step: automatically-detect-ready-composed-resources
+      functionRef:
+        name: function-auto-ready
