@@ -33,6 +33,7 @@ spec:
             {{ $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
             {{ $tinkTemplateResourceName := "tinktemplate" }}
             {{ $clusterCustomResource := "crossplaneResource" }}
+            {{ $clusterArgoCDSecretResource := "argocd-cluster-secret" }}
             {{ $networks := $xr.spec.networks }}
 
             apiVersion: kubernetes.crossplane.io/v1alpha1
@@ -331,12 +332,12 @@ spec:
                 
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
-                      resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
-                      resolvemy.host/clustertype: {{ get $xr.spec "clustertype" }}
-                      resolvemy.host/computetype: {{ get $xr.spec "computetype" }}
-                      resolvemy.host/env: {{ get $xr.spec "environment" }}
+                      resolvemy.host/nodetype: {{ $xr.spec.clustertype }}
+                      resolvemy.host/clustertype: {{ $xr.spec.clustertype }}
+                      resolvemy.host/computetype: {{ $xr.spec.computetype }}
+                      resolvemy.host/env: {{ $xr.spec.environment }}
 
-                      cluster.kubernetes.io/domain: {{ get $xr.spec "domain" }}
+                      cluster.kubernetes.io/domain: {{ $xr.spec.domain }}
                       mylogin.space/tenant: 'core.mylogin.space'
                       take-along-label.capi-to-argocd.resolvemy.host/nodetype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/clustertype: ''
@@ -354,7 +355,7 @@ spec:
                       pods:
                         cidrBlocks:
                           - {{ $networks.pods }}
-                      
+                      serviceDomain: {{ $xr.spec.domain }}
                       services:
                         cidrBlocks:
                           - {{ $networks.services }}
@@ -370,3 +371,30 @@ spec:
                       kind: TinkerbellCluster
                       name: {{ $tinkCluster.status.atProvider.manifest.metadata.name }}
                       namespace: {{ $tinkCluster.status.atProvider.manifest.metadata.namespace }} `}}
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $clusterArgoCDSecretResource }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              managementPolicies:
+                - Update
+
+              forProvider:
+                manifest:
+                  {{ $clusterAPIResource := getComposedResource . $clusterResourceName }}
+                  apiVersion: v1
+                  kind: Secret
+                  metadata:
+                    # name in manifest is optional and defaults to Object name
+                    name: cluster-{{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+                    namespace: argocd
+
+                    annotations:
+                      resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
+                      resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
+                      resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
