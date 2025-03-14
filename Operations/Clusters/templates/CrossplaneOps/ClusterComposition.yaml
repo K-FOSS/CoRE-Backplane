@@ -32,6 +32,7 @@ spec:
             {{ $tinkclusterResourceName := "tinkcluster" }}
             {{ $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
             {{ $tinkTemplateResourceName := "tinktemplate" }}
+            {{ $clusterResource := "cluster" }}
             {{ $networks := $xr.spec.networks }}
 
             apiVersion: kubernetes.crossplane.io/v1alpha1
@@ -281,6 +282,27 @@ spec:
                                   overridepath: true
                                 {{- end }}
             ---{{`
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $clusterResource }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              managementPolicies:
+                - Observe
+
+              forProvider:
+                manifest:
+                  apiVersion: resolvemy.host/v1alpha1
+                  kind: Cluster
+                  metadata:
+                    # name in manifest is optional and defaults to Object name
+                    name: {{ .observed.composite.resource.spec.claimRef.name }}
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+            ---
             apiVersion: kubernetes.crossplane.io/v1alpha1
             kind: Object
             metadata:
@@ -290,6 +312,9 @@ spec:
               providerConfigRef:
                 name: local-k8s
 
+              readiness:
+                policy: SuccessfulCreate
+
               forProvider:
                 manifest:
                   {{ $talosCNTRLPlane := getComposedResource . $talosCNTRLPlaneResourceName }}
@@ -297,14 +322,6 @@ spec:
                   apiVersion: cluster.x-k8s.io/v1beta1
                   kind: Cluster
                   metadata:
-                    ownerReferences:
-                      - apiVersion: {{ .observed.composite.resource.apiVersion }}
-                        blockOwnerDeletion: true
-                        controller: true
-                        kind: {{ .observed.composite.resource.kind }}
-                        name: {{ .observed.composite.resource.metadata.name }}
-                        uid: {{ .observed.composite.resource.metadata.uid }}
-                
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
                       resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
