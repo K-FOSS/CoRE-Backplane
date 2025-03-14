@@ -45,6 +45,9 @@ spec:
               providerConfigRef:
                 name: local-k8s
 
+              readiness:
+                policy: SuccessfulCreate
+
               forProvider:
                 manifest:
                   apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -53,7 +56,7 @@ spec:
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                   spec:
                     controlPlaneEndpoint:
-                      host: 172.16.20.140
+                      host: {{ .observed.composite.resource.spec.controlplane.ipAddress }}
                       port: 6443
                     imageLookupBaseRegistry: 'ghcr.io/tinkerbell/cluster-api-provider-tinkerbell'
             ---
@@ -66,6 +69,9 @@ spec:
             spec:
               providerConfigRef:
                 name: local-k8s
+
+              readiness:
+                policy: SuccessfulCreate
 
               forProvider:
                 manifest:
@@ -101,179 +107,179 @@ spec:
                                   timeout: 1800
 
             ---
-            # apiVersion: kubernetes.crossplane.io/v1alpha1
-            # kind: Object
-            # metadata:
-            #   namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-            #   annotations:
-            #     {{ setResourceNameAnnotation $talosCNTRLPlaneResourceName }}
-            # spec:
-            #   providerConfigRef:
-            #     name: local-k8s
+            apiVersion: kubernetes.crossplane.io/v1alpha1
+            kind: Object
+            metadata:
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+              annotations:
+                {{ setResourceNameAnnotation $talosCNTRLPlaneResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
 
-            #   forProvider:
-            #     manifest:
-            #       {{ $tinkTemplate := getComposedResource . $tinkTemplateResourceName }}
-            #       apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
-            #       kind: TalosControlPlane
-            #       metadata:
-            #         namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-            #       spec:
-            #         version: v1.32.2
-            #         replicas: 2
+              forProvider:
+                manifest:
+                  {{ $tinkTemplate := getComposedResource . $tinkTemplateResourceName }}
+                  apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+                  kind: TalosControlPlane
+                  metadata:
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                  spec:
+                    version: v1.32.2
+                    replicas: 2
 
-            #         rolloutStrategy:
-            #           type: OnDelete
+                    rolloutStrategy:
+                      type: OnDelete
 
-            #         infrastructureTemplate:
-            #           apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-            #           kind: TinkerbellMachineTemplate
-            #           name: {{ get $tinkTemplate.metadata "name" }}
-            #           namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                    infrastructureTemplate:
+                      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                      kind: TinkerbellMachineTemplate
+                      name: {{ $tinkTemplate.status.atProvider.manifest.metadata.name }}
+                      namespace: {{ $tinkTemplate.status.atProvider.manifest.metadata.name }}
 
-            #         controlPlaneConfig:
-            #           controlplane:
-            #             generateType: controlplane
-            #             talosVersion: v1.9
-            #             configPatches:
-            #               - op: replace
-            #                 path: /debug
-            #                 value: true
+                    controlPlaneConfig:
+                      controlplane:
+                        generateType: controlplane
+                        talosVersion: v1.9
+                        configPatches:
+                          - op: replace
+                            path: /debug
+                            value: true
 
-            #               - op: replace
-            #                 path: /machine/install/disk
-            #                 value: /dev/sda
+                          - op: replace
+                            path: /machine/install/disk
+                            value: /dev/sda
 
-            #               - op: replace
-            #                 path: /machine/features/kubePrism/enabled
-            #                 value: false
+                          - op: replace
+                            path: /machine/features/kubePrism/enabled
+                            value: false
 
-            #               #
-            #               # Longhorn Requirements
-            #               #
-            #               - op: add
-            #                 path: /machine/kubelet/extraMounts
-            #                 value:
-            #                   - destination: /var/lib/longhorn
-            #                     type: bind
-            #                     source: /var/lib/longhorn
-            #                     options:
-            #                       - bind
-            #                       - rshared
-            #                       - rw
+                          #
+                          # Longhorn Requirements
+                          #
+                          - op: add
+                            path: /machine/kubelet/extraMounts
+                            value:
+                              - destination: /var/lib/longhorn
+                                type: bind
+                                source: /var/lib/longhorn
+                                options:
+                                  - bind
+                                  - rshared
+                                  - rw
 
-            #               - op: add
-            #                 path: /machine/sysctls
-            #                 value:
-            #                   vm.nr_hugepages: '1024'
+                          - op: add
+                            path: /machine/sysctls
+                            value:
+                              vm.nr_hugepages: '1024'
 
-            #               - op: add
-            #                 path: /machine/kernel
-            #                 value:
-            #                   modules:
-            #                     - name: nvme_tcp
-            #                     - name: vfio_pci
+                          - op: add
+                            path: /machine/kernel
+                            value:
+                              modules:
+                                - name: nvme_tcp
+                                - name: vfio_pci
 
-            #               #
-            #               # OIDC For API Server
-            #               #
-            #               - op: add
-            #                 path: /machine/files
-            #                 value:
-            #                   - path: /var/kubernetes/auth-config.yaml
-            #                     permissions: 0o644
-            #                     op: create
-            #                     content: |- # yaml
-            #                       apiVersion: apiserver.config.k8s.io/v1beta1
-            #                       kind: AuthenticationConfiguration
-            #                       jwt:
-            #                         - issuer:
-            #                             url: https://idp.mylogin.space/application/o/che/
-            #                             audiences:
-            #                               - <path:CORE0_SITE1/data/IDE/Che/Authentik#ClientID>
-            #                           claimMappings:
-            #                             username:
-            #                               expression: 'claims.preferred_username'
-            #                             groups:
-            #                               expression: 'claims.groups'
-            #                             uid:
-            #                               expression: 'claims.sub'
-            #                           userValidationRules:
-            #                             - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
-            #                               message: 'username cannot used reserved system: prefix'
+                          #
+                          # OIDC For API Server
+                          #
+                          - op: add
+                            path: /machine/files
+                            value:
+                              - path: /var/kubernetes/auth-config.yaml
+                                permissions: 0o644
+                                op: create
+                                content: |- # yaml
+                                  apiVersion: apiserver.config.k8s.io/v1beta1
+                                  kind: AuthenticationConfiguration
+                                  jwt:
+                                    - issuer:
+                                        url: https://idp.mylogin.space/application/o/che/
+                                        audiences:
+                                          - <path:CORE0_SITE1/data/IDE/Che/Authentik#ClientID>
+                                      claimMappings:
+                                        username:
+                                          expression: 'claims.preferred_username'
+                                        groups:
+                                          expression: 'claims.groups'
+                                        uid:
+                                          expression: 'claims.sub'
+                                      userValidationRules:
+                                        - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
+                                          message: 'username cannot used reserved system: prefix'
 
-            #                         - issuer:
-            #                             url: https://idp.mylogin.space/application/o/headlamp/
-            #                             audiences:
-            #                               - headlamp
-            #                           claimMappings:
-            #                             username:
-            #                               expression: 'claims.preferred_username'
-            #                             groups:
-            #                               expression: 'claims.groups'
-            #                             uid:
-            #                               expression: 'claims.sub'
-            #                           userValidationRules:
-            #                             - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
-            #                               message: 'username cannot used reserved system: prefix'
+                                    - issuer:
+                                        url: https://idp.mylogin.space/application/o/headlamp/
+                                        audiences:
+                                          - headlamp
+                                      claimMappings:
+                                        username:
+                                          expression: 'claims.preferred_username'
+                                        groups:
+                                          expression: 'claims.groups'
+                                        uid:
+                                          expression: 'claims.sub'
+                                      userValidationRules:
+                                        - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
+                                          message: 'username cannot used reserved system: prefix'
 
-            #               - op: add
-            #                 path: /cluster/apiServer/extraVolumes
-            #                 value:
-            #                   - hostPath: /var/kubernetes/auth-config.yaml
-            #                     mountPath: /var/kubernetes/auth-config.yaml
-            #                     readonly: true
+                          - op: add
+                            path: /cluster/apiServer/extraVolumes
+                            value:
+                              - hostPath: /var/kubernetes/auth-config.yaml
+                                mountPath: /var/kubernetes/auth-config.yaml
+                                readonly: true
 
-            #               - op: add
-            #                 path: /cluster/apiServer/extraArgs
-            #                 value:
-            #                   authentication-config: /var/kubernetes/auth-config.yaml
+                          - op: add
+                            path: /cluster/apiServer/extraArgs
+                            value:
+                              authentication-config: /var/kubernetes/auth-config.yaml
 
-            #               #
-            #               # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
-            #               #
-            #               - op: replace
-            #                 path: /cluster/network/cni
-            #                 value:
-            #                   name: none
+                          #
+                          # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
+                          #
+                          - op: replace
+                            path: /cluster/network/cni
+                            value:
+                              name: none
 
-            #               #
-            #               # KubeDNS
-            #               #
-            #               - op: replace
-            #                 path: /machine/features/hostDNS/forwardKubeDNSToHost
-            #                 value: false
+                          #
+                          # KubeDNS
+                          #
+                          - op: replace
+                            path: /machine/features/hostDNS/forwardKubeDNSToHost
+                            value: false
 
 
-            #               #
-            #               # Cilium from the network base stack is running in KubeProxy replacement mode
-            #               #
-            #               - op: replace
-            #                 path: /cluster/proxy/disabled
-            #                 value: true
+                          #
+                          # Cilium from the network base stack is running in KubeProxy replacement mode
+                          #
+                          - op: replace
+                            path: /cluster/proxy/disabled
+                            value: true
 
-            #               #
-            #               # Setup Logging 
-            #               #
-            #               - op: add
-            #                 path: /machine/logging
-            #                 value:
-            #                   destinations:
-            #                     - endpoint: 'udp://10.1.1.14:6051'
-            #                       format: 'json_lines' 
-            #               #
-            #               # Configure Remote Pullthrough Registry Cache
-            #               # `}}
-            #               - op: add
-            #                 path: /machine/registries
-            #                 value:
-            #                   mirrors:
-            #                     {{- range $registry, $path := .Values.crossplane.clusters.registry.mirror.paths }}
-            #                     {{ $registry }}:
-            #                       endpoints:
-            #                         - {{ $.Values.crossplane.clusters.registry.mirror.base }}/{{ $path }}
-            #                       overridepath: true
-            #                     {{- end }}
+                          #
+                          # Setup Logging 
+                          #
+                          - op: add
+                            path: /machine/logging
+                            value:
+                              destinations:
+                                - endpoint: 'udp://10.1.1.14:6051'
+                                  format: 'json_lines' 
+                          #
+                          # Configure Remote Pullthrough Registry Cache
+                          # `}}
+                          - op: add
+                            path: /machine/registries
+                            value:
+                              mirrors:
+                                {{- range $registry, $path := .Values.crossplane.clusters.registry.mirror.paths }}
+                                {{ $registry }}:
+                                  endpoints:
+                                    - {{ $.Values.crossplane.clusters.registry.mirror.base }}/{{ $path }}
+                                  overridepath: true
+                                {{- end }}
             ---{{`
             # apiVersion: kubernetes.crossplane.io/v1alpha1
             # kind: Object
@@ -314,7 +320,6 @@ spec:
             #           take-along-label.capi-to-argocd.cluster.kubernetes.io/domain: ''
 
             #         annotations:
-            #           {{ setResourceNameAnnotation  }}
             #       spec:
             #         clusterNetwork:
             #           pods:
