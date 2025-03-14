@@ -303,20 +303,20 @@ spec:
                       resolvemy.host/clustertype: {{ get $xr.spec "clustertype" }}
                       resolvemy.host/computetype: {{ get $xr.spec "computetype" }}
                       resolvemy.host/env: {{ get $xr.spec "environment" }}
-                      resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
-                      resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
-                      resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
+
                       cluster.kubernetes.io/domain: {{ get $xr.spec "domain" }}
                       mylogin.space/tenant: 'core.mylogin.space'
                       take-along-label.capi-to-argocd.resolvemy.host/nodetype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/clustertype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/computetype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/env: ''
-                      take-along-label.capi-to-argocd.resolvemy.host/lbpool: ''
-                      take-along-label.capi-to-argocd.resolvemy.host/lbanycast: ''
-                      take-along-label.capi-to-argocd.resolvemy.host/lbpublic: ''
                       take-along-label.capi-to-argocd.mylogin.space/tenant: ''
                       take-along-label.capi-to-argocd.cluster.kubernetes.io/domain: ''
+
+                    annotations:
+                      resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
+                      resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
+                      resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
                   spec:
                     clusterNetwork:
                       pods:
