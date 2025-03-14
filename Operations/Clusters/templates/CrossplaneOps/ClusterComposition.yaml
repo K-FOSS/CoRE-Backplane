@@ -297,6 +297,14 @@ spec:
                   apiVersion: cluster.x-k8s.io/v1beta1
                   kind: Cluster
                   metadata:
+                    ownerReferences:
+                      - apiVersion: {{ .observed.composite.resource.spec.apiVersion }}
+                        blockOwnerDeletion: true
+                        controller: true
+                        kind: {{ .observed.composite.resource.kind }}
+                        name: {{ .observed.composite.resource.metadata.name }}
+                        uid: {{ .observed.composite.resource.metadata.uid }}
+                
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
                       resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
