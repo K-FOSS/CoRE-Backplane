@@ -286,7 +286,7 @@ spec:
             kind: Object
             metadata:
               annotations:
-                {{ setResourceNameAnnotation $clusterResource }}
+                {{ setResourceNameAnnotation $clusterCustomResource }}
             spec:
               providerConfigRef:
                 name: local-k8s
@@ -307,7 +307,7 @@ spec:
             kind: Object
             metadata:
               annotations:
-                {{ setResourceNameAnnotation $clusterCustomResource }}
+                {{ setResourceNameAnnotation $clusterResourceName }}
             spec:
               providerConfigRef:
                 name: local-k8s
@@ -323,14 +323,12 @@ spec:
                   apiVersion: cluster.x-k8s.io/v1beta1
                   kind: Cluster
                   metadata:
-                    # ownerReferences:
-                    #   - apiVersion: {{ .observed.composite.resource.apiVersion }}
-                    #     blockOwnerDeletion: true
-                    #     controller: false
-                    #     kind: Cluster
-                    #     name: {{ .observed.composite.resource.metadata.name }}
-                    #     uid: {{ .observed.composite.resource.metadata.uid }}
-                    #     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                    ownerReferences:
+                      - apiVersion: {{ .observed.composite.resource.apiVersion }}
+                        kind: Cluster
+                        name: {{ .observed.composite.resource.metadata.name }}
+                        uid: {{ $cluster.status.atProvider.manifest.metadata.uid }}
+                        namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                 
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
