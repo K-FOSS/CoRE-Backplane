@@ -32,7 +32,7 @@ spec:
             {{ $tinkclusterResourceName := "tinkcluster" }}
             {{ $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
             {{ $tinkTemplateResourceName := "tinktemplate" }}
-            {{ $clusterResource := "cluster" }}
+            {{ $clusterCustomResource := "crossplaneResource" }}
             {{ $networks := $xr.spec.networks }}
 
             apiVersion: kubernetes.crossplane.io/v1alpha1
@@ -307,7 +307,7 @@ spec:
             kind: Object
             metadata:
               annotations:
-                {{ setResourceNameAnnotation $clusterResourceName }}
+                {{ setResourceNameAnnotation $clusterCustomResource }}
             spec:
               providerConfigRef:
                 name: local-k8s
@@ -319,9 +319,19 @@ spec:
                 manifest:
                   {{ $talosCNTRLPlane := getComposedResource . $talosCNTRLPlaneResourceName }}
                   {{ $tinkCluster := getComposedResource . $tinkclusterResourceName }}
+                  {{ $cluster := getComposedResource . $clusterCustomResource }}
                   apiVersion: cluster.x-k8s.io/v1beta1
                   kind: Cluster
                   metadata:
+                    # ownerReferences:
+                    #   - apiVersion: {{ .observed.composite.resource.apiVersion }}
+                    #     blockOwnerDeletion: true
+                    #     controller: false
+                    #     kind: Cluster
+                    #     name: {{ .observed.composite.resource.metadata.name }}
+                    #     uid: {{ .observed.composite.resource.metadata.uid }}
+                    #     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
                       resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
