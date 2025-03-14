@@ -121,7 +121,7 @@ spec:
                   metadata:
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                   spec:
-                    version: v1.32.2
+                    version: {{ .observed.composite.resource.spec.versions.kubernetes }}
                     replicas: 2
 
                     rolloutStrategy:
@@ -136,7 +136,7 @@ spec:
                     controlPlaneConfig:
                       controlplane:
                         generateType: controlplane
-                        talosVersion: v1.9
+                        talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
                         configPatches:
                           - op: replace
                             path: /debug
@@ -277,63 +277,61 @@ spec:
                                   overridepath: true
                                 {{- end }}
             ---{{`
-            # apiVersion: kubernetes.crossplane.io/v1alpha1
-            # kind: Object
-            # metadata:
-            #   namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-            #   annotations:
-            #     {{ setResourceNameAnnotation $clusterResourceName }}
-            # spec:
-            #   providerConfigRef:
-            #     name: local-k8s
+            apiVersion: kubernetes.crossplane.io/v1alpha1
+            kind: Object
+            metadata:
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+              annotations:
+                {{ setResourceNameAnnotation $clusterResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
 
-            #   forProvider:
-            #     manifest:
-            #       {{ $talosCNTRLPlane := getComposedResource . $talosCNTRLPlaneResourceName }}
-            #       {{ $tinkCluster := getComposedResource . $tinkclusterResourceName }}
-            #       apiVersion: cluster.x-k8s.io/v1beta1
-            #       kind: Cluster
-            #       metadata:
-            #         namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-            #         labels:
-            #           resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
-            #           resolvemy.host/clustertype: {{ get $xr.spec "clustertype" }}
-            #           resolvemy.host/computetype: {{ get $xr.spec "computetype" }}
-            #           resolvemy.host/env: {{ get $xr.spec "environment" }}
-            #           resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
-            #           resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
-            #           resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
-            #           cluster.kubernetes.io/domain: {{ get $xr.spec "domain" }}
-            #           mylogin.space/tenant: 'core.mylogin.space'
-            #           take-along-label.capi-to-argocd.resolvemy.host/nodetype: ''
-            #           take-along-label.capi-to-argocd.resolvemy.host/clustertype: ''
-            #           take-along-label.capi-to-argocd.resolvemy.host/computetype: ''
-            #           take-along-label.capi-to-argocd.resolvemy.host/env: ''
-            #           take-along-label.capi-to-argocd.resolvemy.host/lbpool: ''
-            #           take-along-label.capi-to-argocd.resolvemy.host/lbanycast: ''
-            #           take-along-label.capi-to-argocd.resolvemy.host/lbpublic: ''
-            #           take-along-label.capi-to-argocd.mylogin.space/tenant: ''
-            #           take-along-label.capi-to-argocd.cluster.kubernetes.io/domain: ''
-
-            #         annotations:
-            #       spec:
-            #         clusterNetwork:
-            #           pods:
-            #             cidrBlocks:
-            #               - {{ $networks.pods }}
+              forProvider:
+                manifest:
+                  {{ $talosCNTRLPlane := getComposedResource . $talosCNTRLPlaneResourceName }}
+                  {{ $tinkCluster := getComposedResource . $tinkclusterResourceName }}
+                  apiVersion: cluster.x-k8s.io/v1beta1
+                  kind: Cluster
+                  metadata:
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                    labels:
+                      resolvemy.host/nodetype: {{ get $xr.spec "clustertype" }}
+                      resolvemy.host/clustertype: {{ get $xr.spec "clustertype" }}
+                      resolvemy.host/computetype: {{ get $xr.spec "computetype" }}
+                      resolvemy.host/env: {{ get $xr.spec "environment" }}
+                      resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
+                      resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
+                      resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
+                      cluster.kubernetes.io/domain: {{ get $xr.spec "domain" }}
+                      mylogin.space/tenant: 'core.mylogin.space'
+                      take-along-label.capi-to-argocd.resolvemy.host/nodetype: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/clustertype: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/computetype: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/env: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/lbpool: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/lbanycast: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/lbpublic: ''
+                      take-along-label.capi-to-argocd.mylogin.space/tenant: ''
+                      take-along-label.capi-to-argocd.cluster.kubernetes.io/domain: ''
+                  spec:
+                    clusterNetwork:
+                      pods:
+                        cidrBlocks:
+                          - {{ $networks.pods }}
                       
-            #           services:
-            #             cidrBlocks:
-            #               - {{ $networks.services }}
+                      services:
+                        cidrBlocks:
+                          - {{ $networks.services }}
 
-            #         controlPlaneRef:
-            #           apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
-            #           kind: TalosControlPlane
-            #           name: {{ get $talosCNTRLPlane.metadata "name" }}
-            #           namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                    controlPlaneRef:
+                      apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+                      kind: TalosControlPlane
+                      name: {{ $talosCNTRLPlane.status.atProvider.manifest.metadata.name }}
+                      namespace: {{ $talosCNTRLPlane.status.atProvider.manifest.metadata.namespace }}
 
-            #         infrastructureRef:
-            #           apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-            #           kind: TinkerbellCluster
-            #           name: {{ get $tinkCluster.metadata "name" }}
-            #           namespace: {{ .observed.composite.resource.spec.claimRef.namespace }} `}}
+                    infrastructureRef:
+                      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                      kind: TinkerbellCluster
+                      name: {{ $tinkCluster.status.atProvider.manifest.metadata.name }}
+                      namespace: {{ $tinkCluster.status.atProvider.manifest.metadata.namespace }} `}}
