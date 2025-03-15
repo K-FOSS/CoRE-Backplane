@@ -1,0 +1,28 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: tf-talos
+
+  namespace: multicluster-controlplane
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+spec:
+  configuration: |
+    provider "talos" {}
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-authentik"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        talos = {
+          source = "siderolabs/talos"
+          version = "0.7.1"
+        }
+      }
+    }

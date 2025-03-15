@@ -1,0 +1,105 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: cluster-node
+
+  labels:
+    implementation: mixed
+    resolvemy.host/env: 'alpha'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
+spec:
+  compositeTypeRef:
+    apiVersion: {{ .Values.clusterNodes.group }}/{{ .Values.clusterNodes.version }}
+    kind: X{{ .Values.clusterNodes.kind }}
+
+  writeConnectionSecretsToNamespace: core-prod
+  mode: Pipeline
+  pipeline:
+    - step: clusternode-base
+      functionRef:
+        name: {{ .Values.crossplane.functionsRef.gotemplate.name }}
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: | # yaml {{`
+            {{ $tfTalosImageName := "tf-talos-factory" }}
+            {{ $clusterCustomResourceName := "custom-cluster" }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $clusterCustomResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              managementPolicies:
+                - Observe
+
+              forProvider:
+                manifest:
+                  apiVersion: resolvemy.host/v1alpha1
+                  kind: Cluster
+                  metadata:
+                    # name in manifest is optional and defaults to Object name
+                    name: {{ .observed.composite.resource.spec.claimRef.name }}
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+            ---
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $tfTalosImageName }}
+
+            spec:
+              providerConfigRef:
+                name: tf-talos
+
+              forProvider:
+                source: Inline
+                varmap:
+                  talos:
+                    version: 'v1.9.4'
+                module: | # hcl
+                  variable "talos" {
+                    description = "Talos Configuration"
+                    type        = object({
+                      version = string
+                    })
+                  }
+
+                  data "talos_image_factory_extensions_versions" "this" {
+                    # get the latest talos version
+                    talos_version = var.talos.version
+                    filters = {
+                      names = [
+                        "bnx2-bnx2x",
+                        "drbd",
+                        "iscsi-tools",
+                        "util-linux-tools",
+                        "zfs"
+                      ] 
+                    }
+                  }
+
+                  resource "talos_image_factory_schematic" "this" {
+                    schematic = yamlencode(
+                      {
+                        customization = {
+                          systemExtensions = {
+                            officialExtensions = data.talos_image_factory_extensions_versions.this.extensions_info.*.name
+                          }
+                        }
+                      }
+                    )
+                  }
+              
+                  output "schematic_id" {
+                    value = talos_image_factory_schematic.this.id
+                  }
+                `}}
