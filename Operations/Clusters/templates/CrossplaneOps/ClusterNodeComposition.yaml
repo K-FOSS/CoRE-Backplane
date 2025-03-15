@@ -144,28 +144,16 @@ spec:
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
 
                     labels:
-                      manufacturer: dell
-                      idrac-version: '6'
-                      resolvemy.host/dc: '1'
-                      resolvemy.host/rack: '1'
-                      resolvemy.host/nodetype: infra
-                      pool: 'test'
+                      resolvemy.host/nodetype: {{ $clusterCustomResource.status.atProvider.manifest.spec.clustertype }}
+                      cluster.x-k8s.io/cluster-name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
 
                     ownerReferences:
                       - apiVersion: {{ $clusterCustomResource.status.atProvider.manifest.apiVersion }}
                         kind: {{ $clusterCustomResource.status.atProvider.manifest.Kind }}
                         name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
                         uid: {{ $clusterCustomResource.status.atProvider.manifest.metadata.uid }}
-
-
                   spec:
                     metadata:
-                      facility:
-                        facility_code: onprem
-
-                      manufacturer:
-                        slug: dell
-
                       instance:
                         hostname: {{ .observed.composite.resource.spec.claimRef.name }}
                     disks:
