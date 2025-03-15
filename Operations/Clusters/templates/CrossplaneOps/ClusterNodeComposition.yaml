@@ -161,11 +161,12 @@ spec:
 
                     interfaces:
                       {{ range $index, $network := .observed.composite.resource.spec.networks }}
+                      {{ $ipAddress := regexp.Replace "(.*)\/\d{1,3}" "$1" $network.ipAddress }}
                       - dhcp:
                           arch: x86_64
                           hostname: {{ $.observed.composite.resource.spec.claimRef.name }}
                           ip:
-                            address: {{ $network.ipAddress }}
+                            address: {{ $ipAddress }}
                             gateway: {{ $network.gateway }}
                             netmask: {{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}
 
@@ -186,7 +187,7 @@ spec:
                               #!ipxe
 
                               imgfree
-                              kernel https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.spec.versions.talos }}/kernel-amd64 talos.platform=metal ip={{ $network.ipAddress }}::{{ $network.gateway }}:{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}:{{ $.observed.composite.resource.spec.claimRef.name }}:eno1:off::: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.logging.kernel=udp://10.1.1.14:6050/ talos.config=http://10.1.1.66:50061/2009-04-04/user-data
+                              kernel https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.spec.versions.talos }}/kernel-amd64 talos.platform=metal ip={{ $ipAddress }}::{{ $network.gateway }}:{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}:{{ $.observed.composite.resource.spec.claimRef.name }}:eno1:off::: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.logging.kernel=udp://10.1.1.14:6050/ talos.config=http://10.1.1.66:50061/2009-04-04/user-data
                               initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.spec.versions.talos }}/initramfs-amd64.xz
                               boot
                       {{ end }}
