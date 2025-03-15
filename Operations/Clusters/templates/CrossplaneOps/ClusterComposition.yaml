@@ -329,7 +329,8 @@ spec:
                         kind: Cluster
                         name: {{ $cluster.status.atProvider.manifest.metadata.name }}
                         uid: {{ $cluster.status.atProvider.manifest.metadata.uid }}
-                
+
+                    name: {{ .observed.composite.resource.spec.claimRef.name }}
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
                       resolvemy.host/nodetype: {{ $xr.spec.clustertype }}
@@ -399,4 +400,4 @@ spec:
                       resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
                       resolvemy.host/lbanycast: {{ $networks.loadbalancer.anycast }}
                       resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
-          `}}
+            `}}
