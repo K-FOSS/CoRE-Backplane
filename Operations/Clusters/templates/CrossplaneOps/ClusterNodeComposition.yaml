@@ -64,13 +64,13 @@ spec:
               forProvider:
                 source: Inline
                 varmap:
+                  ipAddresses: 
+                    {{ range .observed.composite.resource.spec.networks }}
+                    - {{ .ipAddress }}
+
+                    {{ end }}
                   talos:
                     version: 'v1.9.4'
-                    ipAddresses: 
-                      {{ range .observed.composite.resource.spec.networks }}
-                      - {{ .ipAddress }}
-
-                      {{ end }}
                 module: | # hcl
                   variable "talos" {
                     description = "Talos Configuration"
@@ -117,7 +117,7 @@ spec:
                   }
 
                   output "subnetmask" {
-                    value = jsonencode(flatten([for ipAddress in var.ipAddresses : [cidrnetmask(ipAddress)]]))
+                    value = flatten([for ipAddress in var.ipAddresses : [cidrnetmask(ipAddress)]])
                   }
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
@@ -164,4 +164,35 @@ spec:
                     disks:
                       - device: /dev/sda
 
+                    interfaces:
+                      {{ range $index, $network := .observed.composite.resource.spec.networks }}
+                      - dhcp:
+                          arch: x86_64
+                          hostname: {{ $.observed.composite.resource.spec.claimRef.name }}
+                          ip:
+                            address: {{ $network.ipAddress }}
+                            gateway: {{ $network.macAddress }}
+                            netmask: {{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}
+
+                          lease_time: 86400
+                          mac: {{ $network.macAddress }}
+
+                          name_servers:
+                            {{ range $dnsServer := $network.dns }}
+                            - {{ $dnsServer }}
+                            {{ end }}
+
+                        disableDhcp: false
+                        netboot:
+                          allowPXE: true
+                          allowWorkflow: false
+                          ipxe:
+                            contents: | # shell
+                              #!ipxe
+
+                              imgfree
+                              kernel https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.spec.versions.talos }}/kernel-amd64 talos.platform=metal ip=172.31.241.74::172.31.241.73:255.255.255.252::eno1:off::: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.logging.kernel=udp://10.1.1.14:6050/ talos.config=http://10.1.1.66:50061/2009-04-04/user-data
+                              initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }/{{ $clusterCustomResource.spec.versions.talos }}/initramfs-amd64.xz
+                              boot
+                      {{ end }}
                 `}}
