@@ -29,6 +29,7 @@ spec:
           template: | # yaml {{`
             {{ $tfTalosImageName := "tf-talos-factory" }}
             {{ $clusterCustomResourceName := "custom-cluster" }}
+            {{ $tinkHardwareResourceName := "tink-hardware" }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -43,12 +44,12 @@ spec:
 
               forProvider:
                 manifest:
-                  apiVersion: resolvemy.host/v1alpha1
-                  kind: Cluster
+                  apiVersion: {{ .observed.composite.resource.spec.clusterRef.group }}`}}/{{ .Values.cluster.version }}{{`
+                  kind: {{ .observed.composite.resource.spec.clusterRef.kind }}
                   metadata:
                     # name in manifest is optional and defaults to Object name
-                    name: {{ .observed.composite.resource.spec.claimRef.name }}
-                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                    name: {{ .observed.composite.resource.spec.clusterRef.name }}
+                    namespace: {{ .observed.composite.resource.spec.clusterRef.namespace }}
             ---
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
@@ -102,4 +103,75 @@ spec:
                   output "schematic_id" {
                     value = talos_image_factory_schematic.this.id
                   }
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $tinkHardwareResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              managementPolicies:
+                - Observe
+                - Create
+
+              forProvider:
+                manifest:
+                  apiVersion: tinkerbell.org/v1alpha1
+                  kind: Hardware
+                  metadata:
+                    name: {{ .observed.composite.resource.spec.claimRef.name }}
+
+                    labels:
+                      manufacturer: dell
+                      idrac-version: '6'
+                      resolvemy.host/dc: '1'
+                      resolvemy.host/rack: '1'
+                      resolvemy.host/nodetype: infra
+                      pool: 'test'
+
+                  spec:
+                    metadata:
+                      facility:
+                        facility_code: onprem
+
+                      manufacturer:
+                        slug: dell
+
+                      instance:
+                        hostname: node2
+                        id: f0:4d:a2:03:cd:e6
+                    disks:
+                      - device: /dev/sda
+
+                    interfaces:
+                      - dhcp:
+                          arch: x86_64
+                          hostname: node2
+                          ip:
+                            address: 172.31.241.74
+                            gateway: 172.31.241.73
+                            netmask: 255.255.255.252
+
+                          lease_time: 86400
+                          mac: f0:4d:a2:03:cd:e6
+
+                          name_servers:
+                            - 1.1.1.1
+                            - 1.0.0.1
+
+                        disableDhcp: false
+                        netboot:
+                          allowPXE: true
+                          allowWorkflow: false
+                          ipxe:
+                            contents: | # shell
+                              #!ipxe
+
+                              imgfree
+                              kernel https://pxe.factory.talos.dev/image/{{ .Values.talos.image }}/v1.9.4/kernel-amd64 talos.platform=metal ip=172.31.241.74::172.31.241.73:255.255.255.252::eno1:off::: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.logging.kernel=udp://10.1.1.14:6050/ talos.config=http://10.43.211.207:50061/2009-04-04/user-data
+                              initrd https://pxe.factory.talos.dev/image/{{ .Values.talos.image }}/v1.9.4/initramfs-amd64.xz
+                              boot
                 `}}
