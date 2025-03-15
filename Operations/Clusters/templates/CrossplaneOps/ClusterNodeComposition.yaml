@@ -151,6 +151,13 @@ spec:
                       resolvemy.host/nodetype: infra
                       pool: 'test'
 
+                    ownerReferences:
+                      - apiVersion: {{ $clusterCustomResource.status.atProvider.manifest.apiVersion }}
+                        kind: {{ $clusterCustomResource.status.atProvider.manifest.Kind }}
+                        name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
+                        uid: {{ $clusterCustomResource.status.atProvider.manifest.metadata.uid }}
+
+
                   spec:
                     metadata:
                       facility:
