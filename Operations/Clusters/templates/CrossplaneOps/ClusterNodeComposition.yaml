@@ -66,7 +66,11 @@ spec:
                 varmap:
                   talos:
                     version: 'v1.9.4'
-                    ipAddress: 
+                    ipAddresses: 
+                      {{ range .observed.composite.resource.spec.networks }}
+                      - {{ .ipAddress }}
+
+                      {{ end }}
                 module: | # hcl
                   variable "talos" {
                     description = "Talos Configuration"
@@ -77,9 +81,9 @@ spec:
                     )
                   }
 
-                  variable "ipAddress" {
+                  variable "ipAddresses" {
                     description = "IP Address Configuration"
-                    type = string
+                    type = set(string)
                   }
 
                   data "talos_image_factory_extensions_versions" "this" {
@@ -113,7 +117,7 @@ spec:
                   }
 
                   output "subnetmask" {
-                    value = cidrnetmask(var.ipAddress)
+                    value = jsonencode(flatten([for ipAddress in var.ipAddresses : [cidrnetmask(ipAddress)]]))
                   }
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
