@@ -1,18 +1,21 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: xclusters.resolvemy.host
+  {{ $group := .Values.cluster.group }}
+  {{ $name := .Values.cluster.kind }}
+  
+  name: x{{ $name | lower }}s.{{ $group }}
 spec:
-  group: resolvemy.host
+  group: {{ $group }}
 
   names:
-    kind: XCluster
-    plural: xclusters
+    kind: X{{ $name }}
+    plural: x{{ $name | lower }}s
 
   claimNames:
-    kind: Cluster
-    plural: clusters
-
+    kind: {{ .Values.cluster.kind }}
+    plural: {{ $name | lower }}s
+  
   connectionSecretKeys:
     - talosconfig
     - kubeconfig
