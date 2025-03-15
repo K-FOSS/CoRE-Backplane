@@ -35,3 +35,7 @@ echo "Installing Longhorn CTL"
 
 wget -O ./Meta/bin/longhornctl https://github.com/longhorn/cli/releases/download/v1.8.1/longhornctl-linux-amd64
 chmod +x ./Meta/bin/longhornctl
+
+echo "Installing Crossplane CLI"
+wget -O ./Meta/bin/crossplane https://releases.crossplane.io/stable/current/bin/linux_amd64/crank
+chmod +x ./Meta/bin/crossplane
