@@ -1,9 +1,9 @@
 apiVersion: resolvemy.host/v1alpha1
 kind: Cluster
 metadata:
-  name: authentik-core
+  name: core-dc1-talos
 
-  namespace: multicluster-controlplane   
+  namespace: core-prod
 
   labels:
     argocd.argoproj.io/instance: dc1-k3s-node1-ops-cluster
@@ -19,7 +19,7 @@ spec:
     name: core.mylogin.space
     namespace: core-prod
 
-  environment: poc
+  environment: prod
 
   versions:
     kubernetes: v1.32.1
@@ -41,9 +41,9 @@ spec:
 
       pool: 172.27.0.0/24
 
-    pods: 172.16.21.0/24
+    pods: 172.20.54.0/24
 
-    services: 10.1.2.0/24
+    services: 10.44.0.0/24
 
   controlplane:
     ipAddress: 10.1.1.10
