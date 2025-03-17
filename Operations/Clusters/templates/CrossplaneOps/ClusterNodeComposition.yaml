@@ -123,6 +123,7 @@ spec:
                     value = flatten([for ipAddress in var.ipAddresses : [cidrnetmask(ipAddress)]])
                   }
             ---
+            {{ if ne $.observed.resources nil }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -192,4 +193,5 @@ spec:
                               initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/initramfs-amd64.xz
                               boot
                       {{ end }}
+            {{ end }}      
                 `}}
