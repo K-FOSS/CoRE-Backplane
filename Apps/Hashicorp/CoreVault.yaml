@@ -37,6 +37,18 @@ spec:
                     ha:
                       replicas: 1
 
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      kind: Service
+                      name: {{cluster}}-corevault-active
+
+                    patch: |
+                      - op: add
+                        path: /metadata/labels/wan-mode
+                        value: public
+
       destination:
         server: '{{url}}'
         namespace: core-prod
