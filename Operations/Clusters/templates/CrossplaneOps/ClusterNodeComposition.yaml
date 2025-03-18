@@ -154,6 +154,12 @@ spec:
                       resolvemy.host/nodetype: {{ $clusterCustomResource.status.atProvider.manifest.spec.clustertype }}
                       cluster.x-k8s.io/cluster-name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
 
+                    ownerReferences:
+                      - apiVersion: {{ $clusterCustomResource.status.atProvider.manifest.apiVersion }}
+                        kind: {{ $clusterCustomResource.status.atProvider.manifest.Kind }}
+                        name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
+                        uid: {{ $clusterCustomResource.status.atProvider.manifest.metadata.uid }}
+
                   spec:
                     metadata:
                       instance:
@@ -195,3 +201,5 @@ spec:
                       {{ end }}
             {{ end }}      
                 `}}
+
+                # TODO Get this setup in order to programatically test if cluster has been deployed already and set first boot mode automatically, perhaps take advantage of go templates conditional alongside adding and updating statuses 
