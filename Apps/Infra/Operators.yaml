@@ -7,15 +7,23 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
+  goTemplate: true
+
+  goTemplateOptions:
+    - 'missingkey=error'
+
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
 
   template:
     metadata:
-      name: '{{cluster}}-ops-operator'
+      name: '{{ .values.clusterName }}-ops-operator'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -43,5 +51,5 @@ spec:
           name: argocd-lovely-plugin
 
       destination:
-        server: '{{url}}'
+        server: '{{ .server }}'
         namespace: operator-lifecycle-manager
