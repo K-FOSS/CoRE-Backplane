@@ -13,6 +13,7 @@ spec:
           - cluster: dc1-k3s-node1
             url: https://kubernetes.default.svc
             namespace: core-prod
+            domain: consul.dc1.resolvemy.host
             hub: 'true'
             spoke: 'true'
             dnsLBIP: 10.1.1.60
@@ -70,6 +71,23 @@ spec:
                   syncCatalog:
                     consulNodeName: '{{name}}-sync'
                     consulPrefix: '{{name}}-'
+
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      kind: Service
+                      name: {{cluster}}-consul-ui
+
+                    patch: |
+                      - op: add
+                        path: /metadata/labels/wan-mode
+                        value: public
+
+                      - op: add
+                        path: /metadata/annotations
+                        value:
+                          external-dns.alpha.kubernetes.io/hostname: {{ domain }}
 
                   
   
