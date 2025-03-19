@@ -784,6 +784,32 @@ cf-dns:
 purelb:
   enabled: true
 
+  networks:
+    - name: core-public
+      pools:
+        - subnet: 66.165.222.96/27
+          pool: 66.165.222.102/32
+          aggregation: default
+
+    - name: anycast
+      pools:
+        - subnet: 10.1.1.0/24
+          pool: 10.1.1.0/24
+          aggregation: default
+
+        - subnet: 66.165.222.96/27
+          pool: 66.165.222.100/32
+          aggregation: default
+
+        # ns1.resolvemy.host
+        - subnet: 66.165.222.96/27
+          pool: 66.165.222.105/32
+          aggregation: default
+
+        - subnet: 66.165.222.96/27
+          pool: 66.165.222.110-66.165.222.127
+          aggregation: default
+
 envoy-gw:
   enabled: true
   config:

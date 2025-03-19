@@ -1,0 +1,17 @@
+{{ if .Values.purelb.enabled }}
+{{ range $index, $network := .Values.purelb.networks }}
+apiVersion: purelb.io/v1
+kind: ServiceGroup
+metadata:
+  name: $network.name
+spec:
+  local:
+    v4pools:
+      {{ range $poolIndex, $pool := $network.pools }}
+      - subnet: $pool.subnet
+        pool: $pool.pool
+        aggregation: $pool.aggregation
+
+      {{ end }}
+---
+{{ end }}
