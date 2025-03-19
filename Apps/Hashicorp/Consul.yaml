@@ -20,6 +20,7 @@ spec:
           environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
           clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
           tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          datacenter: {{ index .metadata.labels "resolvemy.host/dc" }}
           domain: 'consul.{{ index .metadata.labels "resolvemy.host/dc" }}.resolvemy.host'
           replicas: '1'
 
@@ -48,6 +49,10 @@ spec:
                 consul:
                   global:
                     name: {{ .name }}
+
+                    datacenter: {{ .values.datacenter }}
+
+                    domain: consul.{{ .values.tenant }}
                   
                   dns:
                     enabled: false
