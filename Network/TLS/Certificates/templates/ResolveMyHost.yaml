@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: resolvemyhost-default-certificates
+
+spec:
+  secretName: resolvemyhost-default-certificates
+  commonName: resolvemy.host
+  dnsNames:
+    - resolvemy.host
+    - '*.resolvemy.host'
+  issuerRef:
+    name: kjdev-cluster
+    kind: ClusterIssuer

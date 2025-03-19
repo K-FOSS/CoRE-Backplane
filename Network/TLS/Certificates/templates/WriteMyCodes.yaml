@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: writemycodes-default-certificates
+
+spec:
+  secretName: writemycodes-default-certificates
+  commonName: writemy.codes
+  dnsNames:
+    - writemy.codes
+    - '*.writemy.codes'
+    - '*.git.writemy.codes'
+  issuerRef:
+    name: kjdev-cluster
+    kind: ClusterIssuer

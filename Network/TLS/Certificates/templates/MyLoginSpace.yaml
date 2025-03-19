@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: myloginspace-default-certificates
+spec:
+  secretName: myloginspace-default-certificates
+  additionalOutputFormats:
+    - type: CombinedPEM
+
+  commonName: mylogin.space
+  dnsNames:
+    - mylogin.space
+    - '*.mylogin.space'
+    - '*.s3.mylogin.space'
+  issuerRef:
+    name: kjdev-cluster
+    kind: ClusterIssuer
