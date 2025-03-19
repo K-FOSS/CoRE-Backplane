@@ -198,28 +198,15 @@ cert-manager:
   # Flags will override options that are set here.
   #
   # For example:
-  #  config:
-  #    apiVersion: controller.config.cert-manager.io/v1alpha1
-  #    kind: ControllerConfiguration
-  #    logging:
-  #      verbosity: 2
-  #      format: text
-  #    leaderElectionConfig:
-  #      namespace: kube-system
-  #    kubernetesAPIQPS: 9000
-  #    kubernetesAPIBurst: 9000
-  #    numberOfConcurrentWorkers: 200
-  #    featureGates:
-  #      AdditionalCertificateOutputFormats: true
-  #      DisallowInsecureCSRUsageDefinition: true
-  #      ExperimentalCertificateSigningRequestControllers: true
-  #      ExperimentalGatewayAPISupport: true
-  #      LiteralCertificateSubject: true
-  #      SecretsFilteredCaching: true
-  #      ServerSideApply: true
-  #      StableCertificateRequestName: true
-  #      UseCertificateRequestBasicConstraints: true
-  #      ValidateCAA: true
+  config:
+    apiVersion: controller.config.cert-manager.io/v1alpha1
+    kind: ControllerConfiguration
+    logging:
+      verbosity: 2
+      format: json
+    featureGates:
+      AdditionalCertificateOutputFormats: true
+      ServerSideApply: true
   #    metricsTLSConfig:
   #      dynamic:
   #        secretNamespace: "cert-manager"
@@ -228,7 +215,6 @@ cert-manager:
   #        - cert-manager-metrics
   #        - cert-manager-metrics.cert-manager
   #        - cert-manager-metrics.cert-manager.svc
-  config: {}
 
   # Setting Nameservers for DNS01 Self Check.
   # For more information, see the [cert-manager documentation](https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check).
@@ -604,7 +590,12 @@ cert-manager:
     #  # This should be uncommented and set as a default by the chart once
     #  # the apiVersion of WebhookConfiguration graduates beyond v1alpha1.
     #  securePort: 10250
-    config: {}
+    config:
+      apiVersion: webhook.config.cert-manager.io/v1alpha1
+      kind: WebhookConfiguration
+      featureGates:
+        AdditionalCertificateOutputFormats: true
+        ServerSideApply: true
 
     # The update strategy for the cert-manager webhook deployment.
     # For more information, see the [Kubernetes documentation](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy)
