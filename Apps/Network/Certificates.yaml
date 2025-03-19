@@ -7,18 +7,26 @@ metadata:
     argocd.argoproj.io/sync-wave: '2'
 
 spec:
+  goTemplate: true
+
+  goTemplateOptions:
+    - 'missingkey=error'
+
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
 
   template:
     metadata:
-      name: '{{cluster}}-tls-certs'
+      name: '{{ .values.clusterName }}-tls-certs'
       
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -33,8 +41,8 @@ spec:
           - RespectIgnoreDifferences=true
 
       source:
-        path: Security/Certificates
-        repoURL: https://github.com/EntraptaJ/Home1.resolvemy.host.git
+        path: Network/TLS/Certificates
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
         targetRevision: HEAD
 
       destination:
