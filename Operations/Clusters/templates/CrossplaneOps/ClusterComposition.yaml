@@ -143,6 +143,7 @@ spec:
                       controlplane:
                         generateType: controlplane
                         talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
+                      
                         configPatches:
                           - op: replace
                             path: /debug
@@ -341,13 +342,29 @@ spec:
                       resolvemy.host/env: {{ $xr.spec.environment }}
 
                       cluster.kubernetes.io/domain: {{ $xr.spec.domain }}
+
+                      #
+                      # TODO: Finish setting up the tenant resource and getting this hooked into Netbox
+                      #
                       mylogin.space/tenant: 'core.mylogin.space'
+
+                      #
+                      # Kubernetes Topography management
+                      #
+                      topology.kubernetes.io/region: '{{ $xr.spec.metadata.region }}'
+                      topology.kubernetes.io/zone: '{{ $xr.spec.metadata.region }}-{{ $xr.spec.metadata.datacenter }}'
+                      resolvemy.host/dc: '{{ $xr.spec.metadata.datacenter }}'
+
                       take-along-label.capi-to-argocd.resolvemy.host/nodetype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/clustertype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/computetype: ''
                       take-along-label.capi-to-argocd.resolvemy.host/env: ''
                       take-along-label.capi-to-argocd.mylogin.space/tenant: ''
                       take-along-label.capi-to-argocd.cluster.kubernetes.io/domain: ''
+                      take-along-label.capi-to-argocd.topology.kubernetes.io/region: ''
+                      take-along-label.capi-to-argocd.topology.kubernetes.io/zone: ''
+                      take-along-label.capi-to-argocd.resolvemy.host/dc: ''
+
 
                     annotations:
                       resolvemy.host/lbpool: {{ $networks.loadbalancer.pool }}
