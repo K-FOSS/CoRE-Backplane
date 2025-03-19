@@ -52,6 +52,8 @@ spec:
                             resolvemy.host/env: '{{ environment }}'
                   backup:
                     annotations:
+                      argocd.argoproj.io/tracking-id: {{cluster}}-db-mongo-{{ environment }}:psmdb.percona.com/PerconaServerMongoDB:core-{{ environment }}/{{cluster}}-db-mong
+                    labels:
                       argocd.argoproj.io/instance: {{cluster}}-db-mongo-{{ environment }}
                     storages:
                       core-minio:
