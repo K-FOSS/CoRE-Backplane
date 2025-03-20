@@ -223,6 +223,11 @@ spec:
                   metadata:
                     name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
 
+                    labels:
+                      topology.kubernetes.io/region: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}'
+                      topology.kubernetes.io/zone: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.datacenter }}'
+
+
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
                 `}}
