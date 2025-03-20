@@ -30,6 +30,7 @@ spec:
             {{ $tfTalosImageName := "tf-talos-factory" }}
             {{ $clusterCustomResourceName := "custom-cluster" }}
             {{ $tinkHardwareResourceName := "tink-hardware" }}
+            {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -202,7 +203,29 @@ spec:
                               initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/initramfs-amd64.xz
                               boot
                       {{ end }}
-            {{ end }}      
+            {{ end }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $targetClusterNodeResourceName }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
+
+              managementPolicies:
+                - Observe
+                - Update
+
+              forProvider:
+                manifest:
+                  apiVersion: v1
+                  kind: Node
+                  metadata:
+                    name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._1 }}
+
+                  spec:
+                    providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
                 `}}
 
                 # TODO Get this setup in order to programatically test if cluster has been deployed already and set first boot mode automatically, perhaps take advantage of go templates conditional alongside adding and updating statuses 
