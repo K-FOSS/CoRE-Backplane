@@ -1,0 +1,57 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-argocd
+  namespace: argocd
+
+spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+            topology.kubernetes.io/region: 'yxl'
+        values:
+          clusterName: '{{ .name }}'
+          environment: 'prod'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-argocd-{{ .values.environment }}'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=true
+
+      source:
+        path: ArgoCD
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: {{ .values.environment }}
+
+      destination:
+        server: '{{ .server }}'
+        namespace: argocd
