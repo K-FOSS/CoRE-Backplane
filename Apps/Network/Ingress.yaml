@@ -21,6 +21,8 @@ spec:
         values:
           clusterName: '{{ .name }}'
           environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -44,6 +46,15 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: {{ .values.environment }}
+
+                tenant: {{ .values.tenant }}
+
+                gatewayClass:
+                  controllerName: envoy.{{ .values.tenant }}/base
 
       destination:
         server: '{{ .server }}'
