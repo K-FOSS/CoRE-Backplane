@@ -48,14 +48,14 @@ spec:
       }
 
       resource "authentik_provider_oauth2" "auth-provider" {
-        name          = "Headlamp"
-        client_id     = "headlamp"
+        name          = "Headlamp {{ .Values.cluster.name }} {{ .Values.datacenter }} {{ .Values.region }}"
+        client_id     = "headlamp-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         client_secret = random_password.client-secret.result
         signing_key = data.authentik_certificate_key_pair.cert.id
         allowed_redirect_uris = [
           {
             matching_mode = "regex",
-            url           = "https://headlamp.int.mylogin.space/.*",
+            url           = "https://headlamp.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.resolvemy.host/.*",
           },
         ]
 
@@ -66,8 +66,8 @@ spec:
 
       resource "authentik_application" "application" {
         name              = "Headlamp"
-        slug              = "headlamp"
-        group             = "Observability"
+        slug              = "headlamp-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
@@ -103,7 +103,7 @@ spec:
       }
 
       output "OIDC_ISSUER_URL" {
-        value = "https://idp.mylogin.space/application/o/headlamp/"
+        value = "https://idp.mylogin.space/application/o/headlamp-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/"
         sensitive = true
       }
 
