@@ -37,7 +37,7 @@ spec:
             {{ $kubernetesProviderResourceName := "k8s-provider" }}
             {{ $networks := $xr.spec.networks }}
 
-            apiVersion: kubernetes.crossplane.io/v1alpha1
+            apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
@@ -66,7 +66,7 @@ spec:
                       port: 6443
                     imageLookupBaseRegistry: 'ghcr.io/tinkerbell/cluster-api-provider-tinkerbell'
             ---
-            apiVersion: kubernetes.crossplane.io/v1alpha1
+            apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
@@ -118,7 +118,7 @@ spec:
                                   timeout: 1800
 
             ---
-            apiVersion: kubernetes.crossplane.io/v1alpha1
+            apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
@@ -330,7 +330,7 @@ spec:
                     name: {{ .observed.composite.resource.spec.claimRef.name }}
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
             ---
-            apiVersion: kubernetes.crossplane.io/v1alpha1
+            apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
@@ -451,7 +451,7 @@ spec:
                       resolvemy.host/lbpublic: {{ $networks.loadbalancer.public }}
 
             ---
-            apiVersion: kubernetes.crossplane.io/v1alpha1
+            apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: ProviderConfig
             metadata:
               name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-provider
