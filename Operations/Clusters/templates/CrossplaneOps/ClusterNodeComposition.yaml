@@ -30,6 +30,7 @@ spec:
             {{ $tfTalosImageName := "tf-talos-factory" }}
             {{ $clusterCustomResourceName := "custom-cluster" }}
             {{ $tinkHardwareResourceName := "tink-hardware" }}
+            {{ $ciliumBGPResourceName := "cilium-bgp" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -231,6 +232,40 @@ spec:
 
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
+            ---
+            {{ if .observed.composite.resource.spec.bgp.instances }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $ciliumBGPResourceName }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
+
+              managementPolicies:
+                - Observe
+                - Update
+
+              forProvider:
+                manifest:
+                  apiVersion: cilium.io/v2alpha1
+                  kind: CiliumBGPNodeConfig
+                  metadata:
+                    name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                  spec:
+                    bgpInstances:
+                      {{ range $index, $bgpInstance := .observed.composite.resource.spec.bgp.instances }}
+                      - localASN: {{ $bgpInstance.asn }}
+                        name: {{ $bgpInstance.name }}
+                        peers:
+                          {{ range $peerIndex, $peer := $bgpInstance.peers }}
+                          - name: {{ $peer.name }}
+                            peerASN: {{ $peer.asn }}
+                            peerAddress: {{ $peer.address }}
+                          {{ end }}
+                      {{ end }}
+            {{ end }}
                 `}}
 
                 # TODO Get this setup in order to programatically test if cluster has been deployed already and set first boot mode automatically, perhaps take advantage of go templates conditional alongside adding and updating statuses 
