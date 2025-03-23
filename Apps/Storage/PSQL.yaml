@@ -57,7 +57,7 @@ spec:
                 psql:
                   hub: {{ .values.hub }}
 
-                  standby: {{ .values.hub == "false" }}
+                  standby: {{- if eq .values.hub "infra" }} true{{- else }} false{{- end -}}
 
       destination:
         server: '{{ .server }}'
