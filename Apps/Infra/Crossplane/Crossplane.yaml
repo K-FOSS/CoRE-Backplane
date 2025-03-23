@@ -8,16 +8,25 @@ metadata:
     argocd.argoproj.io/sync-wave: '0'
 
 spec:
+  goTemplate: true
+
+  goTemplateOptions:
+    - 'missingkey=error'
+
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
-            clusterDomain: cluster.local
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+        values:
+          clusterName: '{{ .name }}'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+          crossplanens: '{{ index .metadata.labels "mylogin.space/crossplanens" }}'
 
   template:
     metadata:
-      name: '{{cluster}}-ops-crossplane'
+      name: '{{ .values.clusterName }}-ops-crossplane'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -38,5 +47,5 @@ spec:
           name: argocd-lovely-plugin
 
       destination:
-        server: '{{url}}'
-        namespace: crossplane-system
+        server: '{{ .server }}'
+        namespace: {{ .values.crossplanens }}
