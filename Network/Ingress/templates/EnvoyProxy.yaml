@@ -1,0 +1,60 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-{{ .Values.tenant }}
+spec:
+  logging:
+    level:
+      default: error
+  mergeGateways: false
+  provider:
+    kubernetes:
+      envoyDeployment:
+        container:
+          resources:
+            limits:
+              cpu: 6312m
+              memory: 5603M
+            requests:
+              cpu: 58m
+              memory: 118M
+        pod:
+          labels:
+            logs: loki-myloginspace
+        replicas: 2
+      envoyService:
+        externalTrafficPolicy: Local
+        type: LoadBalancer
+    type: Kubernetes
+#   telemetry:
+#     accessLog:
+#       disable: true
+#       settings:
+#         - format:
+#             json:
+#               message: '%LOCAL_REPLY_BODY%'
+#               status: '%RESPONSE_CODE%'
+#             type: JSON
+#           sinks:
+#             - openTelemetry:
+#                 backendRefs:
+#                   - group: ''
+#                     kind: Service
+#                     name: dc1-k3s-node1-collectors-alloy
+#                     namespace: core-prod
+#                     port: 4317
+#                 port: 4317
+#                 resources:
+#                   k8s.cluster.name: dc1-k3s
+#               type: OpenTelemetry
+#     tracing:
+#       provider:
+#         backendRefs:
+#           - group: ''
+#             kind: Service
+#             name: dc1-k3s-node1-collectors-alloy
+#             namespace: core-prod
+#             port: 4317
+#         port: 4317
+#         type: OpenTelemetry
+#       samplingRate: 0
