@@ -465,4 +465,36 @@ spec:
                   namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                   name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-kubeconfig   
                   key: value
+            ---
+            {{ range $index, $network := .observed.composite.resource.spec.networks.loadbalancer.networks }}
+            {{ $networkID := "anycastnet-{{ $network.name }}" }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $networkID }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-provider
+
+              managementPolicies:
+                - Create
+                - Observe
+                - Update
+
+              forProvider:
+                manifest:
+                  apiVersion: purelb.io/v1
+                  kind: ServiceGroup
+                  metadata:
+                    name: {{ $network.name }}
+                  spec:
+                    local:
+                      v4pools:
+                        {{ range $poolIndex, $pool := $network.pools }}
+                        - subnet: {{ $pool.subnet }}
+                          pool: {{ $pool.pool }}
+                          aggregation: {{ $pool.aggregation }}
+                        {{ end }}
+            {{ end }}
             `}}
