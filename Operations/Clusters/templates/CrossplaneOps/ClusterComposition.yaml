@@ -467,7 +467,7 @@ spec:
                   key: value
             ---
             {{ range $index, $network := .observed.composite.resource.spec.networks.loadbalancer.networks }}
-            {{ $networkID := "anycastnet-{{ $network.name }}" }}
+            {{ $networkID := printf "anycastnet-%s" $network.name }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
