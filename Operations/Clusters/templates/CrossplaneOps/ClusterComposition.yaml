@@ -467,11 +467,12 @@ spec:
                   key: value
             ---
             {{ range $index, $network := .observed.composite.resource.spec.networks.loadbalancer.networks }}
+            {{ $networkID := printf "anycastnet-%s" $network.name }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
-                {{ setResourceNameAnnotation "anycastnet-{{ $network.name }}" }}
+                {{ setResourceNameAnnotation $networkID }}
             spec:
               providerConfigRef:
                 name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-provider
