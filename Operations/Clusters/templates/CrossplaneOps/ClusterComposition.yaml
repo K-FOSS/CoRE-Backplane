@@ -31,6 +31,7 @@ spec:
             {{ $clusterResourceName := "cluster" }}
             {{ $tinkclusterResourceName := "tinkcluster" }}
             {{ $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
+            {{ $talosConfigResourceName := "talosconfig" }}
             {{ $tinkTemplateResourceName := "tinktemplate" }}
             {{ $clusterCustomResource := "crossplaneResource" }}
             {{ $clusterArgoCDSecretResource := "argocd-cluster-secret" }}
@@ -494,5 +495,39 @@ spec:
                         {{ end }}
             ---
             {{ end }}
-            
+            apiVersion: tf.upbound.io/v1beta1
+            kind: ProviderConfig
+            metadata:
+              name: tf-talos-{{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-provider
+
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+
+              annotations:
+                {{ setResourceNameAnnotation $talosConfigResourceName }}
+            spec:
+              credentials:
+                - filename: talos-config
+                  source: Secret
+                  secretRef:
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                    name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-kubeconfig
+                    key: value
+              configuration: |
+                provider "talos" {}
+
+                // Modules _must_ use remote state. The provider does not persist state.
+                terraform {
+                  backend "kubernetes" {
+                    secret_suffix     = "providerconfig-tf-talos-{{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-provider"
+                    namespace         = "{{ .observed.composite.resource.spec.claimRef.namespace }}"
+                    in_cluster_config = true
+                  }
+
+                  required_providers {
+                    talos = {
+                      source = "siderolabs/talos"
+                      version = "0.7.1"
+                    }
+                  }
+                }
             `}}
