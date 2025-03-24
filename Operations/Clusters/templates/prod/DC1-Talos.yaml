@@ -30,6 +30,16 @@ spec:
     kubernetes: v1.32.1
     talos: v1.9.4
 
+  bgp:
+    instances:
+      - asn: 64512
+        name: main
+        peers:
+          - address: 10.1.1.179
+            asn: 64567
+            name: rs0.dc1.resolvemy.host
+
+
   clustertype: infra
 
   computetype: baremetal
@@ -43,7 +53,7 @@ spec:
       networks:
         - name: core-public
           pools:
-            - subnet: 66.165.222.96/27
+            - subnet: 66.165.222.101/32
               pool: 66.165.222.101/32
               aggregation: default
 
