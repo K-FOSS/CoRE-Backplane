@@ -255,7 +255,7 @@ spec:
                     name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
                   spec:
                     bgpInstances:
-                      {{ $bgpInstances := (merge .observed.composite.resource.spec.bgp $clusterCustomResource.status.atProvider.manifest.spec.bgp).instances  }}
+                      {{ $bgpInstances := concat .observed.composite.resource.spec.bgp.instances $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances  }}
                       {{ range $index, $bgpInstance := $bgpInstances }}
                       - localASN: {{ $bgpInstance.asn }}
                         name: {{ $bgpInstance.name }}
