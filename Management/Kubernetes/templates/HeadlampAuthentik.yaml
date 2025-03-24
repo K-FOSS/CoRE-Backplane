@@ -31,10 +31,6 @@ spec:
         ]
       }
 
-      data "authentik_user" "akadmin" {
-        username = "kjones"
-      }
-
       data "authentik_certificate_key_pair" "cert" {
         name = "tls"
       }
@@ -49,7 +45,7 @@ spec:
 
       resource "authentik_provider_oauth2" "auth-provider" {
         name          = "Headlamp {{ .Values.cluster.name }} {{ .Values.datacenter }} {{ .Values.region }}"
-        client_id     = "headlamp-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        client_id     = "{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         client_secret = random_password.client-secret.result
         signing_key = data.authentik_certificate_key_pair.cert.id
         allowed_redirect_uris = [
@@ -66,34 +62,37 @@ spec:
 
       resource "authentik_application" "application" {
         name              = "Headlamp"
-        slug              = "headlamp-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        slug              = "{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
-      resource "authentik_application_entitlement" "ent" {
-        name        = "servers-ent"
+      {{ range $index, $group := .Values.oauth.groups }}
+      data "authentik_group" "group-{{ $index }}" {
+        name = "{{ $group }}"
+      } 
+
+      resource "authentik_application_entitlement" "ent-{{ $index }}" {
+        name        = "${data.authentik_group.group-{{ $index }}.id}-ent"
         application = authentik_application.application.uuid
       }
 
-      data "authentik_group" "group" {
-        name = "Server Admins"
-      }
+      resource "authentik_policy_binding" "ent-{{ $index }}-access" {
+        target = authentik_application_entitlement.ent-{{ $index }}.id
+        group  = data.authentik_group.group-{{ $index }}.id
+        order  = {{ $index }}
+      } 
 
-      resource "authentik_policy_binding" "test-ent-access" {
-        target = authentik_application_entitlement.ent.id
-        group  = data.authentik_group.group.id
-        order  = 0
-      }
-
-      resource "authentik_policy_binding" "app-access" {
+      resource "authentik_policy_binding" "ent-{{ $index }}-app-access" {
         target = authentik_application.application.uuid
-        group  = data.authentik_group.group.id
-        order  = 0
+        group  = data.authentik_group.group-{{ $index }}.id
+        order  = {{ $index }}
       }
+
+      {{ end }}
 
       output "OIDC_CLIENT_ID" {
-        value = "headlamp"
+        value = authentik_provider_oauth2.auth-provider.client_id
         sensitive = true
       }
 
@@ -103,11 +102,11 @@ spec:
       }
 
       output "OIDC_ISSUER_URL" {
-        value = "https://idp.mylogin.space/application/o/headlamp-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/"
+        value = "{{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/"
         sensitive = true
       }
 
       output "OIDC_SCOPES" {
-        value     = "openid profile email offline_access"
+        value     = "{{ .Values.oauth.scopes }}"
         sensitive = true
       }
