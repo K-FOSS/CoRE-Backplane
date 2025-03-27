@@ -33,6 +33,7 @@ spec:
             {{ $tinkHardwareResourceName := "tink-hardware" }}
             {{ $tinkMachineResourceName := "tink-workmachine" }}
             {{ $ciliumBGPResourceName := "cilium-bgp" }}
+            {{ $talosTFTest := "talos-tf-test" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             ---
           
@@ -212,7 +213,6 @@ spec:
                               boot
                           {{ else }}
                           allowPXE: true
-                          test: {{ toJson $tinkMachineResource.status.atProvider.manifest }}
                           allowWorkflow: true
                           {{ end }}
 
@@ -308,8 +308,47 @@ spec:
                     name: {{ $tinkMachineName }}
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
             {{ end }}
+            ---
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $talosTFTest }}
 
-                
+            spec:
+              providerConfigRef:
+                name:  tf-talos-{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-provider
+
+              forProvider:
+                source: Inline
+                varmap:
+                  talosConfig: {{ $talosHardware.status.atProvider.manifest.spec.userData }}
+                  nodeIP: {{ (index $tinkMachineResource.status.atProvider.manifest.status.addresses 0).address }}
+                module: | # hcl
+                  variable "talosConfig" {
+                    description = "Talos Config"
+                    type        = string
+                  }
+
+                  variable "nodeIP" {
+                    description = "Talos Node IP Address"
+                    type        = string
+                  }
+
+                  resource "talos_machine_configuration_apply" "node-apply" {
+                    client_configuration = file("${path.module}/talos-config")
+                    machine_configuration_input = var.talosConfig
+                    node = var.nodeIP
+                    config_patches = [
+                      yamlencode({
+                        machine = {
+                          install = {
+                            disk = "/testing123"
+                          }
+                        }
+                      })
+                    ]
+                  }
             `}}
                   
                 
