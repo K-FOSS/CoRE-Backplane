@@ -34,6 +34,8 @@ spec:
             {{ $tinkMachineResourceName := "tink-workmachine" }}
             {{ $ciliumBGPResourceName := "cilium-bgp" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
+            ---
+          
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -129,6 +131,7 @@ spec:
                   }
             {{ end }} 
             ---
+          
             {{ $talosImageFactory := getComposedResource . $tfTalosImageName }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -205,6 +208,7 @@ spec:
                               kernel https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/kernel-amd64 reboot=hard talos.platform=metal ip={{ $ipAddress }}::{{ $network.gateway }}:{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}:{{ $.observed.composite.resource.spec.claimRef.name }}:eno1:off::: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.logging.kernel=udp://10.1.1.14:6050/ talos.config=http://10.1.1.66:50061/2009-04-04/user-data
                               initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/initramfs-amd64.xz
                               boot
+
                       {{ end }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
@@ -230,11 +234,10 @@ spec:
                     labels:
                       topology.kubernetes.io/region: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}'
                       topology.kubernetes.io/zone: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.datacenter }}'
-
-
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
             ---
+          
             {{ if .observed.composite.resource.spec.bgp.instances }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -272,9 +275,9 @@ spec:
                               name: default
                           {{ end }}
                       {{ end }}
-            {{ end }}
-                
+            {{ end }}   
             ---
+          
             {{ $talosHardware := getComposedResource . $tinkHardwareResourceName }}
             {{ $tinkMachineName := index $talosHardware.status.atProvider.manifest.metadata.labels "v1alpha1.tinkerbell.org/ownerName" }}
             {{ if $tinkMachineName }}
@@ -296,10 +299,9 @@ spec:
                   kind: TinkerbellMachine
                   metadata:
                     name: {{ $tinkMachineName }}
-            {{ end }}
-
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+            {{ end }}                
             `}}
-                  
                   
                 
                 # TODO Get this setup in order to programatically test if cluster has been deployed already and set first boot mode automatically, perhaps take advantage of go templates conditional alongside adding and updating statuses 
