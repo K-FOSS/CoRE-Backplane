@@ -198,6 +198,8 @@ spec:
 
                         disableDhcp: false
                         netboot:
+                          {{ $tinkMachineResource := getComposedResource . $tinkMachineResourceName }}
+                          {{ if eq $tinkMachineResource.status.atProvider.manifest.status.ready true }}
                           allowPXE: true
                           allowWorkflow: false
                           ipxe:
@@ -208,6 +210,10 @@ spec:
                               kernel https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/kernel-amd64 reboot=hard talos.platform=metal ip={{ $ipAddress }}::{{ $network.gateway }}:{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}:{{ $.observed.composite.resource.spec.claimRef.name }}:eno1:off::: init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.logging.kernel=udp://10.1.1.14:6050/ talos.config=http://10.1.1.66:50061/2009-04-04/user-data
                               initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/initramfs-amd64.xz
                               boot
+                          {{ else }}
+                          allowPXE: true
+                          allowWorkflow: true
+                          {{ end }}
 
                       {{ end }}
             ---
@@ -300,7 +306,30 @@ spec:
                   metadata:
                     name: {{ $tinkMachineName }}
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-            {{ end }}                
+            {{ end }}
+            ---
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation $tfTalosImageName }}
+
+            spec:
+              providerConfigRef:
+                name:  tf-talos-{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-provider
+
+              forProvider:
+                source: Inline
+                varmap:
+                  ipAddresses: 
+                    {{ range .observed.composite.resource.spec.networks }}
+                    - {{ .ipAddress }}
+                    {{ end }}
+                  talos:
+                    version: {{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}
+                module: | # hcl
+                  
+                
             `}}
                   
                 
