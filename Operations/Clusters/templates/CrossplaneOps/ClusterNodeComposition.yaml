@@ -332,10 +332,6 @@ spec:
                     type        = string
                   }
 
-                  locals {
-                    talosconfig = yamldecode(file("${path.module}/talos-config")).{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
-                  }
-
                   resource "talos_machine_configuration_apply" "node-apply" {
                     client_configuration = {
                       ca_certificate = local.talosconfig.ca

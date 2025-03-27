@@ -513,6 +513,10 @@ spec:
               configuration: |
                 provider "talos" {}
 
+                locals {
+                  talosconfig = yamldecode(file("${path.module}/talos-config")).{{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+                }
+
                 // Modules _must_ use remote state. The provider does not persist state.
                 terraform {
                   backend "kubernetes" {
