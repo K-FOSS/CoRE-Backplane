@@ -198,9 +198,9 @@ spec:
 
                         disableDhcp: false
                         netboot:
-                          {{ $tinkMachineResource := getComposedResource . $tinkMachineResourceName }}
+                          {{ $tinkMachineResource := getComposedResource $ $tinkMachineResourceName }}
                           {{ if eq $tinkMachineResource.status.atProvider.manifest.status.ready true }}
-                          allowPXE: true
+                          allowPXE: {{ $tinkMachineResource.status.atProvider.manifest.status.ready }}
                           allowWorkflow: false
                           ipxe:
                             contents: | # shell
