@@ -62,7 +62,6 @@ spec:
                     namespace: {{ .observed.composite.resource.spec.clusterRef.namespace }}
             ---
             {{ $clusterCustomResource := getComposedResource . $clusterCustomResourceName }}
-
             {{ if $clusterCustomResource.status.atProvider }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
@@ -132,7 +131,6 @@ spec:
                   }
             {{ end }} 
             ---
-          
             {{ $talosImageFactory := getComposedResource . $tfTalosImageName }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -244,7 +242,6 @@ spec:
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
             ---
-          
             {{ if .observed.composite.resource.spec.bgp.instances }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -284,7 +281,6 @@ spec:
                       {{ end }}
             {{ end }}   
             ---
-          
             {{ $talosHardware := getComposedResource . $tinkHardwareResourceName }}
             {{ $tinkMachineName := index $talosHardware.status.atProvider.manifest.metadata.labels "v1alpha1.tinkerbell.org/ownerName" }}
             {{ if $tinkMachineName }}
