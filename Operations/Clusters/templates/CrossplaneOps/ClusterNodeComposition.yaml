@@ -307,28 +307,7 @@ spec:
                     name: {{ $tinkMachineName }}
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
             {{ end }}
-            ---
-            apiVersion: tf.upbound.io/v1beta1
-            kind: Workspace
-            metadata:
-              annotations:
-                {{ setResourceNameAnnotation $tfTalosImageName }}
 
-            spec:
-              providerConfigRef:
-                name:  tf-talos-{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-provider
-
-              forProvider:
-                source: Inline
-                varmap:
-                  ipAddresses: 
-                    {{ range .observed.composite.resource.spec.networks }}
-                    - {{ .ipAddress }}
-                    {{ end }}
-                  talos:
-                    version: {{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}
-                module: | # hcl
-                  
                 
             `}}
                   
