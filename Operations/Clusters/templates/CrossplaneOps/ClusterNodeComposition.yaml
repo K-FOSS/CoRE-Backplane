@@ -312,11 +312,12 @@ spec:
 
             spec:
               providerConfigRef:
-                name:  tf-talos-{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-provider
+                name:  tf-talos-{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
 
               forProvider:
                 source: Inline
                 varmap:
+                  talosConfig: {{ $talosHardware.status.atProvider.manifest.spec.userData }}
                   nodeIP: {{ (index (getComposedResource . $tinkMachineResourceName).status.atProvider.manifest.status.addresses 0).address }}
                 module: | # hcl
                   variable "talosConfig" {
