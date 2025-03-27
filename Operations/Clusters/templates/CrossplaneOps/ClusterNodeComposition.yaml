@@ -322,9 +322,8 @@ spec:
               forProvider:
                 source: Inline
                 varmap:
-                  {{ $tinkMachineResource := getComposedResource $ $tinkMachineResourceName }}
                   talosConfig: {{ $talosHardware.status.atProvider.manifest.spec.userData }}
-                  nodeIP: {{ (index $tinkMachineResource.status.atProvider.manifest.status.addresses 0).address }}
+                  nodeIP: {{ (index (getComposedResource . $tinkMachineResourceName).status.atProvider.manifest.status.addresses 0).address }}
                 module: | # hcl
                   variable "talosConfig" {
                     description = "Talos Config"
