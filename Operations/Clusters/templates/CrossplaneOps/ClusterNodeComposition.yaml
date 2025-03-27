@@ -317,7 +317,8 @@ spec:
               forProvider:
                 source: Inline
                 varmap:
-                  talosConfig: {{ $talosHardware.status.atProvider.manifest.spec.userData }}
+                  talosConfig: |
+            {{ indent 8 $talosHardware.status.atProvider.manifest.spec.userData }}
                   nodeIP: {{ (index (getComposedResource . $tinkMachineResourceName).status.atProvider.manifest.status.addresses 0).address }}
                 module: | # hcl
                   variable "talosConfig" {
