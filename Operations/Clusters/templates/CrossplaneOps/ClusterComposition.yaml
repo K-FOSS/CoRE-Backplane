@@ -508,7 +508,7 @@ spec:
                   source: Secret
                   secretRef:
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-                    name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-kubeconfig
+                    name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}-talosconfig
                     key: value
               configuration: |
                 provider "talos" {}
@@ -525,6 +525,11 @@ spec:
                     talos = {
                       source = "siderolabs/talos"
                       version = "0.7.1"
+                    }
+
+                    local = {
+                      source = "hashicorp/local"
+                      version = "2.5.2"
                     }
                   }
                 }
