@@ -343,7 +343,35 @@ spec:
                     endpoint = var.nodeIP
                     config_patches = [
                       yamlencode({
+                        debug = false
+                        cluster = {
+                          allowschedulingoncontrolplanes = true
+                        }
                         machine = {
+                          network = {
+                            interfaces = [
+                              {{ range $index, $network := .observed.composite.resource.spec.networks }}
+                              {{ $ipAddress := regexReplaceAll "(.*)/[1-3][0-9]" $network.ipAddress "${1}" }}
+                              {
+                                addresses = [
+                                "{{ $ipAddress }}"
+                                ]
+                                deviceSelector = {
+                                  hardwareAddr = "{{ $network.macAddress }}"
+                                  driver = "*"
+                                }
+                                routes = [
+                                  {
+                                    network = "0.0.0.0/0"
+                                    gateway = "{{ $network.gateway }}"
+                                    metric = 1024
+                                  }
+                                ]
+                                mtu = 9000
+                              },
+                              {{ end }}
+                            ]
+                          }
                           nodeLabels = {
                             testing = "hello-world"
                           }
