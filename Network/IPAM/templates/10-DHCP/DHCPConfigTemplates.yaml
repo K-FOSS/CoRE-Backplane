@@ -1198,7 +1198,7 @@ data:
 
               // Name of the shared network. It may be an arbitrary string
               // and it must be unique among all shared networks.
-              "name": "management.dc1.resolvemy.host",
+              "name": "infra2.dc1.yxl.resolvemy.host",
               // You may specify interface name if the shared network is
               // reachable directly from the server.
               // You can specify many parameters that are allowed in subnet scope
@@ -1270,17 +1270,19 @@ data:
             {
               "authoritative": false,
 
-              "name": "node2.dc1.resolvemy.host",
+              "name": "infra1.dc1.resolvemy.host",
 
               "match-client-id": false,
               "option-data": [],
               "rebind-timer": 10800,
 
-              "ddns-qualifying-suffix": "node2.resolvemy.host.",
+              "ddns-qualifying-suffix": "infra1.dc1.yxl.resolvemy.host.",
 
               "relay": {
                 "ip-addresses": [
-                  "172.31.241.73"
+                  "172.31.241.73",
+                  "172.31.241.77",
+                  "172.31.241.90"
                 ]
               },
               "renew-timer": 1800,
@@ -1321,14 +1323,99 @@ data:
                   "reservations": [
                     {
                       "hw-address": "f0:4d:a2:03:cd:e6",
-                      "hostname": "node2",
+                      "hostname": "infra1",
                       "ip-address": "172.31.241.74"
                     }
                   ],
                   "renew-timer": 1800,
                   "subnet": "172.31.241.72/30",
                   "valid-lifetime": 3600
-                }
+                },
+                {
+                  "id": 211,
+                  "match-client-id": false,
+                  "server-hostname": "dhcp.service.kjdev",
+                  "option-data": [
+                    {
+                      "name": "domain-name-servers",
+                      "data": "1.1.1.1"
+                    },
+                    {
+                      "name": "pcode",
+                      "data": "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00"
+                    },
+                    {
+                      "name": "tcode",
+                      "data": "America/Winnipeg"
+                    },
+                    {
+                      "name": "interface-mtu",
+                      "data": "9000"
+                    },
+                    {
+                      "name": "routers",
+                      "data": "172.31.241.77"
+                    },
+                    {
+                      "name": "time-servers",
+                      "data": "162.159.200.123"
+                    }
+                  ],
+                  "rebind-timer": 10800,
+                  "reservations": [
+                    {
+                      "hw-address": "f0:4d:a2:03:cd:e8",
+                      "hostname": "infra1",
+                      "ip-address": "172.31.241.78"
+                    }
+                  ],
+                  "renew-timer": 1800,
+                  "subnet": "172.31.241.76/30",
+                  "valid-lifetime": 3600
+                },
+                {
+                  "id": 212,
+                  "match-client-id": false,
+                  "server-hostname": "dhcp.service.kjdev",
+                  "option-data": [
+                    {
+                      "name": "domain-name-servers",
+                      "data": "1.1.1.1"
+                    },
+                    {
+                      "name": "pcode",
+                      "data": "CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00"
+                    },
+                    {
+                      "name": "tcode",
+                      "data": "America/Winnipeg"
+                    },
+                    {
+                      "name": "interface-mtu",
+                      "data": "9000"
+                    },
+                    {
+                      "name": "routers",
+                      "data": "172.31.241.81"
+                    },
+                    {
+                      "name": "time-servers",
+                      "data": "162.159.200.123"
+                    }
+                  ],
+                  "rebind-timer": 10800,
+                  "reservations": [
+                    {
+                      "hw-address": "f0:4d:a2:03:cd:ec",
+                      "hostname": "infra1",
+                      "ip-address": "172.31.241.82"
+                    }
+                  ],
+                  "renew-timer": 1800,
+                  "subnet": "172.31.241.80/30",
+                  "valid-lifetime": 3600
+                },
+
               ],
               "valid-lifetime": 3600
             },
