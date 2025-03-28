@@ -348,6 +348,15 @@ spec:
                           allowschedulingoncontrolplanes = true
                         }
                         machine = {
+                          kubelet = {
+                            nodeIP = {
+                              validSubnets = [
+                                {{ range $index, $network := .observed.composite.resource.spec.networks }}
+                                {{ $network.ipAddress }}
+                                {{ end }}
+                              ]
+                            }
+                          }
                           network = {
                             interfaces = [
                               {{ range $index, $network := .observed.composite.resource.spec.networks }}
