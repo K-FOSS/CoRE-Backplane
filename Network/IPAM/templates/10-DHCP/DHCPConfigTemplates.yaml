@@ -1270,27 +1270,38 @@ data:
             {
               "authoritative": false,
 
-              "name": "infra1.dc1.resolvemy.host",
-
+              // Name of the shared network. It may be an arbitrary string
+              // and it must be unique among all shared networks.
+              "name": "eth1.infra1.dc1.yxl.resolvemy.host",
+              // You may specify interface name if the shared network is
+              // reachable directly from the server.
+              // You can specify many parameters that are allowed in subnet scope
+              // here. It's useful to put them here if they apply to all subnets
+              // in this shared network. It's likely that the most common
+              // parameter here will be option values defined with option-data.
               "match-client-id": false,
               "option-data": [],
               "rebind-timer": 10800,
 
-              "ddns-qualifying-suffix": "infra1.dc1.yxl.resolvemy.host.",
-
+              "ddns-qualifying-suffix": "manage.resolvemy.host.",
+              // If all the traffic coming from that shared network is reachable
+              // via relay and that relay always use the same IP address, you
+              // can specify that relay address here. Since this example shows
+              // a shared network reachable directly, we put 0.0.0.0 here.
+              // It would be better to skip the relay scope altogether, but
+              // it was left here for demonstration purposes.
               "relay": {
                 "ip-addresses": [
-                  "172.31.241.73",
-                  "172.31.241.77",
-                  "172.31.241.90"
+                  "172.31.241.73"
                 ]
               },
+              // Timer values can be overridden here.
               "renew-timer": 1800,
 
               "store-extended-info": true,
               "subnet4": [
                 {
-                  "id": 210,
+                  "id": 110,
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1313,10 +1324,6 @@ data:
                     {
                       "name": "routers",
                       "data": "172.31.241.73"
-                    },
-                    {
-                      "name": "time-servers",
-                      "data": "162.159.200.123"
                     }
                   ],
                   "rebind-timer": 10800,
@@ -1330,9 +1337,45 @@ data:
                   "renew-timer": 1800,
                   "subnet": "172.31.241.72/30",
                   "valid-lifetime": 3600
-                },
+                }
+              ],
+              "valid-lifetime": 3600
+            },
+            {
+              "authoritative": false,
+
+              // Name of the shared network. It may be an arbitrary string
+              // and it must be unique among all shared networks.
+              "name": "eth2.infra1.dc1.yxl.resolvemy.host",
+              // You may specify interface name if the shared network is
+              // reachable directly from the server.
+              // You can specify many parameters that are allowed in subnet scope
+              // here. It's useful to put them here if they apply to all subnets
+              // in this shared network. It's likely that the most common
+              // parameter here will be option values defined with option-data.
+              "match-client-id": false,
+              "option-data": [],
+              "rebind-timer": 10800,
+
+              "ddns-qualifying-suffix": "manage.resolvemy.host.",
+              // If all the traffic coming from that shared network is reachable
+              // via relay and that relay always use the same IP address, you
+              // can specify that relay address here. Since this example shows
+              // a shared network reachable directly, we put 0.0.0.0 here.
+              // It would be better to skip the relay scope altogether, but
+              // it was left here for demonstration purposes.
+              "relay": {
+                "ip-addresses": [
+                  "172.31.241.73"
+                ]
+              },
+              // Timer values can be overridden here.
+              "renew-timer": 1800,
+
+              "store-extended-info": true,
+              "subnet4": [
                 {
-                  "id": 211,
+                  "id": 111,
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1355,10 +1398,6 @@ data:
                     {
                       "name": "routers",
                       "data": "172.31.241.77"
-                    },
-                    {
-                      "name": "time-servers",
-                      "data": "162.159.200.123"
                     }
                   ],
                   "rebind-timer": 10800,
@@ -1372,9 +1411,32 @@ data:
                   "renew-timer": 1800,
                   "subnet": "172.31.241.76/30",
                   "valid-lifetime": 3600
-                },
+                }
+              ],
+              "valid-lifetime": 3600
+            },
+            {
+              "authoritative": false,
+
+              "name": "eth3.infra1.dc1.yxl.resolvemy.host",
+
+              "match-client-id": false,
+              "option-data": [],
+              "rebind-timer": 10800,
+
+              "ddns-qualifying-suffix": "infra1.dc1.yxl.resolvemy.host.",
+
+              "relay": {
+                "ip-addresses": [
+                  "172.31.241.81"
+                ]
+              },
+              "renew-timer": 1800,
+
+              "store-extended-info": true,
+              "subnet4": [
                 {
-                  "id": 212,
+                  "id": 112,
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1424,7 +1486,7 @@ data:
               "authoritative": false,
               // Name of the shared network. It may be an arbitrary string
               // and it must be unique among all shared networks.
-              "name": "node0.dc1.resolvemy.host",
+              "name": "idrac.infra2.dc1.yxl.resolvemy.host",
               // You may specify interface name if the shared network is
               // reachable directly from the server.
               // You can specify many parameters that are allowed in subnet scope
