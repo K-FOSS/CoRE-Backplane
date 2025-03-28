@@ -197,6 +197,7 @@ spec:
                         disableDhcp: false
                         netboot:
                           {{ $tinkMachineResource := getComposedResource $ $tinkMachineResourceName }}
+                          {{ $talosConfigWorkflowResource := getComposedResource $ $talosTFTest }}
                           {{ if eq $tinkMachineResource.status.atProvider.manifest.status.ready true }}
                           allowPXE: {{ $tinkMachineResource.status.atProvider.manifest.status.ready }}
                           allowWorkflow: false
@@ -358,6 +359,7 @@ spec:
                             }
                           }
                           network = {
+                            hostname = "{{ $.observed.composite.resource.spec.claimRef.name }}"
                             interfaces = [
                               {{ range $index, $network := .observed.composite.resource.spec.networks }}
                               {
