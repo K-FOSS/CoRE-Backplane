@@ -185,7 +185,7 @@ spec:
                           ip:
                             address: {{ $ipAddress }}
                             gateway: {{ $network.gateway }}
-                            netmask: {{ if eq (len $.Values.stunServers $talosImageFactory.status.atProvider.outputs.subnetmask) (len $.observed.composite.resource.spec.networks) }}{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}{{ else }}255.255.255.255{{ end }}
+                            netmask: 255.255.255.252
 
                           lease_time: 86400
                           mac: {{ $network.macAddress }}
