@@ -131,7 +131,7 @@ spec:
             {{ end }} 
             ---
             {{ $talosImageFactory := getComposedResource . $tfTalosImageName }}
-            {{ if eq (len $.Values.stunServers $talosImageFactory.status.atProvider.outputs.subnetmask) (len .observed.composite.resource.spec.networks) }}
+            
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -185,7 +185,7 @@ spec:
                           ip:
                             address: {{ $ipAddress }}
                             gateway: {{ $network.gateway }}
-                            netmask: {{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}
+                            netmask: {{ if eq (len $.Values.stunServers $talosImageFactory.status.atProvider.outputs.subnetmask) (len $.observed.composite.resource.spec.networks) }}{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}{{ else }}255.255.255.255{{ end }}
 
                           lease_time: 86400
                           mac: {{ $network.macAddress }}
@@ -216,7 +216,6 @@ spec:
                           {{ end }}
 
                       {{ end }}
-            {{ end }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
