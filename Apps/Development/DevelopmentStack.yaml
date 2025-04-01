@@ -8,19 +8,25 @@ metadata:
     argocd.argoproj.io/sync-wave: '20'
 
 spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
-            environment: 'prod'
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/env: 'prod'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
   
   template:
     metadata:
-      name: '{{cluster}}-development'
+      name: '{{ .values.clusterName }}-development'
 
       labels:
         resolvemy.host/env: 'prod'
@@ -50,16 +56,16 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                env: {{ environment }}
+                env: {{ .values.environment }}
                 harbor:
-                  fullnameOverride: '{{cluster}}-development-harbor-helm'
+                  fullnameOverride: '{{ .values.clusterName }}-development-harbor-helm'
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
                   - target:
                       kind: Service
-                      name: {{cluster}}-development-hoppscotch
+                      name: {{ .values.clusterName }}-development-hoppscotch
 
                     patch: |
                       - op: add
@@ -69,7 +75,7 @@ spec:
 
                   - target:
                       kind: Deployment
-                      name: {{cluster}}-development-hoppscotch
+                      name: {{ .values.clusterName }}-development-hoppscotch
 
                     patch: |
                       - op: replace
@@ -116,25 +122,25 @@ spec:
                             valueFrom:
                               secretKeyRef:
                                 key: psqlURI
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}
 
                           - name: JWT_SECRET
                             valueFrom:
                               secretKeyRef:
                                 key: JWTSecret
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}-secrets
 
                           - name: SESSION_SECRET
                             valueFrom:
                               secretKeyRef:
                                 key: SessionSecret
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}-secrets
 
                           - name: DATA_ENCRYPTION_KEY
                             valueFrom:
                               secretKeyRef:
                                 key: DBEncryptionKey
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}-secrets
 
                           - name: MAILER_USE_CUSTOM_CONFIGS
                             value: 'true'
@@ -158,13 +164,13 @@ spec:
                             valueFrom:
                               secretKeyRef:
                                 key: username
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}
 
                           - name: MAILER_SMTP_PASSWORD
                             valueFrom:
                               secretKeyRef:
                                 key: password
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}
 
                           - name: VITE_ALLOWED_AUTH_PROVIDERS
                             value: 'GITHUB'
@@ -179,14 +185,14 @@ spec:
                             valueFrom:
                               secretKeyRef:
                                 key: GitHubClientID
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}-secrets
 
                           - name: GITHUB_CLIENT_SECRET
                             valueFrom:
                               secretKeyRef:
                                 key: GitHubClientSecret
-                                name: {{cluster}}-development-hoppscotch-{{ environment }}-secrets
+                                name: {{ .values.clusterName }}-development-hoppscotch-{{ .values.environment }}-secrets
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
