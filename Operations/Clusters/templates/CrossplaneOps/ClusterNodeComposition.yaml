@@ -365,31 +365,6 @@ spec:
                           }
                           network = {
                             hostname = "{{ $.observed.composite.resource.spec.claimRef.name }}"
-                            interfaces = [
-                              {{ range $index, $network := .observed.composite.resource.spec.networks }}
-                              {
-                                {{ if $network.static }}
-                                addresses = [
-                                "{{ $network.ipAddress }}"
-                                ]
-                                routes = [
-                                  {
-                                    network = "0.0.0.0/0"
-                                    gateway = "{{ $network.gateway }}"
-                                    mtu = {{ $network.mtu }}
-                                  }
-                                ]
-                                {{ else }}
-                                dhcp = true
-                                {{ end }}
-                                deviceSelector = {
-                                  hardwareAddr = "{{ $network.macAddress }}"
-                                }
-
-                                mtu = {{ $network.mtu }}
-                              },
-                              {{ end }}
-                            ]
                           }
                           nodeLabels = {
                             testing = "hello-world"
