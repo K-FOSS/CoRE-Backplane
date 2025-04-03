@@ -331,7 +331,7 @@ spec:
             {{ end }}
             {{ end }}
             ---
-            {{ if $clusterCustomResource.status.atProvider }}
+            {{ if (and $clusterCustomResource.status.atProvider $talosHardware.status.atProvider) }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
             metadata:
@@ -349,7 +349,7 @@ spec:
                 source: Inline
                 varmap:
                   talosConfig: |
-            {{ indent 8 $talosHardware.status.atProvider.manifest.spec.userData }}
+            {{ indent 8 (default '' $talosHardware.status.atProvider.manifest.spec.userData) }}
                   nodeIP: {{ (index (getComposedResource . $tinkMachineResourceName).status.atProvider.manifest.status.addresses 0).address }}
                 module: | # hcl
                   variable "talosConfig" {
