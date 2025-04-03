@@ -303,6 +303,7 @@ spec:
             {{ end }}
             ---
             {{ $talosHardware := getComposedResource . $tinkHardwareResourceName }}
+            {{ if $talosHardware.status.atProvider.manifest.metadata.labels }}
             {{ $tinkMachineName := index $talosHardware.status.atProvider.manifest.metadata.labels "v1alpha1.tinkerbell.org/ownerName" }}
             {{ if $tinkMachineName }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
@@ -327,6 +328,7 @@ spec:
                   metadata:
                     name: {{ $tinkMachineName }}
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+            {{ end }}
             {{ end }}
             ---
             {{ if $clusterCustomResource.status.atProvider }}
