@@ -192,7 +192,7 @@ spec:
                           ip:
                             address: {{ $ipAddress }}
                             gateway: {{ $network.gateway }}
-                            netmask: {{ if eq (len $talosImageFactory.status.atProvider.outputs.subnetmask) (len $.observed.composite.resource.spec.networks) }}{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}{{ else }}255.255.255.252{{end}}
+                            netmask: {{ if eq (len (default [] $talosImageFactory.status.atProvider.outputs.subnetmask)) (len $.observed.composite.resource.spec.networks) }}{{ index $talosImageFactory.status.atProvider.outputs.subnetmask $index }}{{ else }}255.255.255.252{{end}}
 
                           lease_time: 86400
                           mac: {{ $network.macAddress }}
