@@ -1,0 +1,27 @@
+{{ if .Values.psql.standby  }}
+{{ range $index, $username := .Values.psql.pushUsers }}
+{{ $VaultKey := ($username | title) }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: pqsl-{{ $username | lower }}-sync
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: {{ $username | lower }}.psql-main.credentials.postgresql.acid.zalan.do
+
+  data:
+    - secretKey: username
+      remoteRef:
+        key: PSQL/Users/{{ $VaultKey }}
+        property: username
+
+    - secretKey: password
+      remoteRef:
+        key: PSQL/Users/{{ $VaultKey }}
+        property: password
+{{- end }}
+{{- end }}
