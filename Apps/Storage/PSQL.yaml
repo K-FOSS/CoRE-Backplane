@@ -56,6 +56,15 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
+                env: {{ .values.environment }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
 
                 psql:
                   controllerID: psql.{{ .values.tenant }}/{{ .values.environment }}

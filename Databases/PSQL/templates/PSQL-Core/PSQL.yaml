@@ -20,10 +20,10 @@ spec:
   enableConnectionPooler: false
 
   masterServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int.mylogin.space'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
 
   replicaServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.mylogin.space'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
 
   allowedSourceRanges:
     - 0.0.0.0/0
