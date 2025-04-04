@@ -4,18 +4,32 @@ metadata:
   name: core-backplane-network-ipam
   namespace: argocd
 spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+        values:
+          clusterName: '{{ .name }}'
+          environment: 'prod'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+          hub: '{{ index .metadata.labels "mylogin.space/hub" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
 
   template:
     metadata:
-      name: '{{cluster}}-network-ipam'
+      name: '{{cluster}}-network-ipam-{{ .values.environment }}'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -34,6 +48,14 @@ spec:
               value: 'netbox-ipam'
             - name: LOVELY_HELM_MERGE
               value: |-
+                env: '{{ .values.environment }}'
+
+                hub: {{ .values.hub }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
                 persistence:
                   configs:
                     enabled: true
@@ -41,9 +63,8 @@ spec:
                     type: custom
                     volumeSpec:
                       secret:
-                        secretName: '{{cluster}}-network-ipam-dhcp-config'
-
+                        secretName: '{{cluster}}-network-ipam-{{ .values.environment }}-dhcp-config'
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
