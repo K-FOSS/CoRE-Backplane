@@ -1,0 +1,24 @@
+{{ if ne .Values.hub true }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: authentik-core
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: authentik-core
+
+  data:
+    - secretKey: username
+      remoteRef:
+        key: AAA/Authentik/User
+        property: username
+
+    - secretKey: password
+      remoteRef:
+        key: AAA/Authentik/User
+        property: password
+{{- end }}
