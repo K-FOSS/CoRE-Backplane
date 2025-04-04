@@ -29,7 +29,7 @@ spec:
 
   template:
     metadata:
-      name: '{{cluster}}-network-ipam-{{ .values.environment }}'
+      name: '{{ .values.clusterName }}-network-ipam-{{ .values.environment }}'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -63,7 +63,7 @@ spec:
                     type: custom
                     volumeSpec:
                       secret:
-                        secretName: '{{cluster}}-network-ipam-{{ .values.environment }}-dhcp-config'
+                        secretName: '{{ .values.clusterName }}-network-ipam-{{ .values.environment }}-dhcp-config'
 
       destination:
         server: '{{ .server }}'
