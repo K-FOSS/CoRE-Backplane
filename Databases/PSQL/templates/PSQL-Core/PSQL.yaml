@@ -1,5 +1,3 @@
-{{ if .Values.psql.hub }}
-
 apiVersion: acid.zalan.do/v1
 kind: postgresql
 metadata:
@@ -118,6 +116,12 @@ spec:
 #  maintenanceWindows:
 #  - 01:00-06:00  #UTC
 #  - Sat:00:00-04:00
+
+  {{ if .Values.psql.standby }}
+  standby:
+    standby_host: psql-int.mylogin.space
+    standby_port: '5432'
+  {{ end }}
 
 
   # Custom TLS certificate. Disabled unless tls.secretName has a value.
