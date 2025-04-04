@@ -1,16 +1,17 @@
 env: 'staging'
 
+cluster:
+  name: k8s
+  domain: cluster.local
+
+hub: false
+
 gateway:
   name: main-gw
   namespace: core-prod
 
 authentik:
-  # -- Provide a name in place of `authentik`. Prefer using global.nameOverride if possible
-  nameOverride: ""
-  # -- String to fully override `"authentik.fullname"`. Prefer using global.fullnameOverride if possible
-  fullnameOverride: ""
-  # -- Override the Kubernetes version, which is used to evaluate certain manifests
-  kubeVersionOverride: ""
+
 
 
   ## Globally shared configuration for authentik components.
@@ -172,25 +173,25 @@ authentik:
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
-            name: authentik-database-prod
+            name: aaa-authentik-database
             key: SecretKey
 
       - name: AUTHENTIK_POSTGRESQL__NAME
         valueFrom:
           secretKeyRef:
-            name: authentik-database-prod
+            name: aaa-authentik-database
             key: Database
 
       - name: AUTHENTIK_POSTGRESQL__USER
         valueFrom:
           secretKeyRef:
-            name: authentik-database-prod
+            name: aaa-authentik-database
             key: Username
 
       - name: AUTHENTIK_POSTGRESQL__PASSWORD
         valueFrom:
           secretKeyRef:
-            name: authentik-database-prod
+            name: aaa-authentik-database
             key: Password
 
     # -- Additional volumeMounts to all deployed Deployments. Does not apply to GeoIP
