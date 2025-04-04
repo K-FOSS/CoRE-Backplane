@@ -781,6 +781,37 @@ cilium:
 cf-dns:
   enabled: false
 
+  provider: cloudflare
+
+  commonAnnotations:
+    argocd.argoproj.io/sync-options: ServerSideApply=false
+
+  sources:
+    - crd
+    - service
+    - ingress
+    - gateway-httproute
+    - gateway-grpcroute
+    - gateway-tlsroute
+    - gateway-tcproute
+    - gateway-udproute
+
+  ## @param publishInternalServices Allow external-dns to publish DNS records for ClusterIP services
+  ##
+  publishInternalServices: true
+
+  ## Cloudflare configuration to be set via arguments/env. variables
+  ##
+  cloudflare:
+    ## @param cloudflare.secretName When using the Cloudflare provider, it's the name of the secret containing cloudflare_api_token or cloudflare_api_key.
+    ## This ignores cloudflare.apiToken, and cloudflare.apiKey
+    ##
+    secretName: kjdev-cloudflare
+
+    proxied: false
+
+  labelFilter: 'wan-mode=public'
+
 purelb:
   enabled: true
 
