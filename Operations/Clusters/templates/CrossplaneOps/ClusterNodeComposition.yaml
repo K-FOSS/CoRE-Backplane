@@ -378,7 +378,18 @@ spec:
                     endpoint = var.nodeIP
                     config_patches = [
                       yamlencode({
+                        cluster = {
+                          apiServer = {
+                            extraArgs = {
+                              feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
+                            }
+                          }
+                        }
                         machine = {
+                          sysctls = {
+                            user.max_user_namespaces = "11255"
+                          }
+
                           kubelet = {
                             nodeIP = {
                               validSubnets = [
@@ -386,6 +397,13 @@ spec:
                                 "{{ $network.ipAddress }}",
                                 {{ end }}
                               ]
+                            }
+
+                            extraConfig = {
+                              featureGates = {
+                                UserNamespacesSupport = true
+                                UserNamespacesPodSecurityStandards = true
+                              }
                             }
                           }
                           network = {
