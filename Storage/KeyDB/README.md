@@ -40,5 +40,7 @@ We currently manually "use" 3 "databases" and these are due to the applications 
 | 95 | Blink | Link Sharing | |
 | 100 | Outline | Docs |
 | 120 | eJabberD | MQTT, SIP, and XMPP broker |
+| 130 | eJabberD | MQTT, SIP, and XMPP broker |
+| 131 | ArgoCD Talos DC1 Prod CoRE Cluster | ArgoCD |
 
 Further usage relies upon ArgoCD, Database Operator, KeyDB, TwemProxy, OAM/KubeVela, and Crossplane ****TODO: Make that stuff****
