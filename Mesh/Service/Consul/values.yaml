@@ -1339,7 +1339,7 @@ consul:
     exposeService:
       # When enabled, deploys a Kubernetes Service to reach the Consul servers.
       # @type: boolean
-      enabled: true
+      enabled: false
       # Type of service, supports LoadBalancer or NodePort.
       # @type: string
       type: LoadBalancer
@@ -1539,7 +1539,7 @@ consul:
   externalServers:
     # If true, the Helm chart will be configured to talk to the external servers.
     # If setting this to true, you must also set `server.enabled` to false.
-    enabled: false
+    enabled: true
 
     # An array of external Consul server hosts that are used to make
     # HTTPS connections from the components in this Helm chart.
@@ -1551,7 +1551,8 @@ consul:
     # should be the same, however, they may be different if you
     # wish to use separate hosts for the HTTPS connections. `tlsServerName` is required if TLS is enabled and 'hosts' is not a DNS name.
     # @type: array<string>
-    hosts: []
+    hosts:
+      - consul.
 
     # The HTTPS port of the Consul servers.
     httpsPort: 8501
