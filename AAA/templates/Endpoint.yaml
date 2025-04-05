@@ -1,0 +1,11 @@
+{{ if ne .Values.hub true }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: aaa-authentik
+spec:
+  endpoints:
+    - fqdn:
+        hostname: idp.mylogin.space
+        port: 443
+{{- end }}
