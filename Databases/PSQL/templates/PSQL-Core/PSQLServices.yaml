@@ -1,8 +1,10 @@
 {{ if .Values.psql.hub }}
+{{ $replicas := (include "psql.mylogin.space/replicas" $) }}
+{{- range $index, $id := untilStep (int 0) (int $replicas) 1 -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: psql-main-0
+  name: psql-main-{{ $index }}
 
   labels:
     application: spilo
@@ -24,59 +26,7 @@ spec:
   selector:
     application: spilo
     cluster-name: psql-main
-    statefulset.kubernetes.io/pod-name: psql-main-0
+    statefulset.kubernetes.io/pod-name: psql-main-{{ $index }}
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: psql-main-1
-
-  labels:
-    application: spilo
-    cluster-name: psql-main
-    team: core
-
-spec:
-  type: ClusterIP
-  clusterIP: 'None'
-
-  publishNotReadyAddresses: true
-
-  ports:
-    - name: postgresql
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
-
-  selector:
-    application: spilo
-    cluster-name: psql-main
-    statefulset.kubernetes.io/pod-name: psql-main-1
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: psql-main-2
-
-  labels:
-    application: spilo
-    cluster-name: psql-main
-    team: core
-
-spec:
-  type: ClusterIP
-  clusterIP: 'None'
-
-  publishNotReadyAddresses: true
-
-  ports:
-    - name: postgresql
-      port: 5432
-      protocol: TCP
-      targetPort: 5432
-
-  selector:
-    application: spilo
-    cluster-name: psql-main
-    statefulset.kubernetes.io/pod-name: psql-main-2
+{{- end }}
 {{- end }}

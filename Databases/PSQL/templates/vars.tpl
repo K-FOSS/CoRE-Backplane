@@ -1,0 +1,1 @@
+{{ define "psql.mylogin.space/replicas" }}{{ if .Values.psql.standby }}1{{ else }}2{{ end }}{{ end }}

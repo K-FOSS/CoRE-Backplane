@@ -13,17 +13,17 @@ metadata:
 spec:
   teamId: core
 
-  numberOfInstances: {{ if .Values.psql.standby }}1{{ else }}2{{ end }}
+  numberOfInstances: {{ include "psql.mylogin.space/replicas" $ }} 
 
   podPriorityClassName: 'tier2-priority'
 
   enableConnectionPooler: false
 
   masterServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space,{{ if .Values.psql.hub }}psql-int.{{ .Values.tenant.domain }}{{ end }}'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ if .Values.psql.hub }},psql-int.{{ .Values.tenant.domain }}{{ end }}'
 
   replicaServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ if .Values.psql.hub }},psql-int-rep.{{ .Values.tenant.domain }}{{ end }}'
 
   allowedSourceRanges:
     - 0.0.0.0/0
