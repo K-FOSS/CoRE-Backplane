@@ -20,7 +20,7 @@ spec:
   enableConnectionPooler: false
 
   masterServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space,{{ if .Values.psql.hub }}psql-int.{{ .Values.tenant.domain }}{{ end }}'
 
   replicaServiceAnnotations:
     external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
@@ -109,6 +109,9 @@ spec:
 
     maximum_lag_on_failover: 33554432
 
+  #
+  # TODO Actually setup maintenance windows and sync windows across services within CoRE
+  #
 #  maintenanceWindows:
 #  - 01:00-06:00  #UTC
 #  - Sat:00:00-04:00
@@ -120,28 +123,8 @@ spec:
   {{ end }}
 
 
-  # Custom TLS certificate. Disabled unless tls.secretName has a value.
+  # We load a custom TLS certificate created by Cert-Manager
   tls:
     secretName: 'myloginspace-default-certificates'  # should correspond to a Kubernetes Secret resource to load
     certificateFile: 'tls.crt'
     privateKeyFile: 'tls.key'
-    caFile: ''  # optionally configure Postgres with a CA certificate
-    caSecretName: '' # optionally the ca.crt can come from this secret instead.
-
-# Enables change data capture streams for defined database tables
-#  streams:
-#  - applicationId: test-app
-#    database: foo
-#    tables:
-#      data.state_pending_outbox:
-#        eventType: test-app.status-pending
-#      data.state_approved_outbox:
-#        eventType: test-app.status-approved
-#      data.orders_outbox:
-#        eventType: test-app.order-completed
-#        idColumn: o_id
-#        payloadColumn: o_payload
-#    # Optional. Filter ignores events before a certain txnId and lsn. Can be used to skip bad events
-#    filter:
-#      data.orders_outbox: "[?(@.source.txId > 500 && @.source.lsn > 123456)]"
-#    batchSize: 1000

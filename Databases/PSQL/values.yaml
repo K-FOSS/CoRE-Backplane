@@ -1,19 +1,37 @@
 psql:
+  #
+  # Control wether this is a hub or spoke deployment
+  #
   hub: true
 
+  #
+  # Optional [Postgres Operator](https://postgres-operator.readthedocs.io/en/latest/administrator/)
+  # Controller ID to allow for multiple operators per 
+  # 
+  #
   controllerID: ''
 
+  #
+  # Configure if this is a standby (spoke) cluster or not
+  #
   standby: false
 
   secretStore:
     - name: mainvault-core
       kind: ClusterSecretStore
   
+  #
+  # Operator controlled postgres users/user credentials to push to [Vault](../../Hashicorp/Vault) 
+  # via [External Secrets Operator](../../Operations/Secrets)
+  #
   pushUsers:
     - postgres
     - standby
     - opsadmin
 
+#
+# Configuration related to the Kubernetes Cluster and it's DNS domain
+#
 cluster:
   name: k8s
   domain: cluster.local
@@ -22,6 +40,13 @@ gateway:
   name: main-gw
   namespace: core-prod
   sectionName: https-myloginspace
+
+#
+# Tenant configuration
+# See [Tenant Model](../)
+#
+tenant:
+  domain: mylogin.space
 
 datacenter: dc1
 
