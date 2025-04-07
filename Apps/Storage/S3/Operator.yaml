@@ -19,7 +19,7 @@ spec:
         values:
           clusterName: '{{ .name }}'
           environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
-
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
   syncPolicy:
     preserveResourcesOnDeletion: true
 
@@ -44,6 +44,24 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: '{{ .values.environment }}'
+
+                operator:
+                  ###
+                  # Root key for Operator Helm Chart
+                  operator:
+                    env:
+                      - name: OPERATOR_STS_ENABLED
+                        value: 'on'
+
+                      - name: CLUSTER_DOMAIN
+                        value: '{{ .values.clusterDomain }}'
+                      - name: WATCHED_NAMESPACE
+                        value: 'core-{{ .values.environment }}'
+
 
       destination:
         server: '{{ .server }}'
