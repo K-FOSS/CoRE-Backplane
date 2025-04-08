@@ -23,6 +23,7 @@ spec:
           datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
           domain: '{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
           replicas: '1'
+          hub: '{{ index .metadata.labels "mylogin.space/hub" }}'
 
   template:
     metadata:
@@ -63,7 +64,7 @@ spec:
                       - op: add
                         path: /metadata/annotations
                         value:
-                          external-dns.alpha.kubernetes.io/hostname: corevault.{{ .values.domain }}
+                          external-dns.alpha.kubernetes.io/hostname: corevault.{{ .values.domain }}{{ if .values.hub }},corevault.{{ .values.datacenter }}.mylogin.space{{ end }}
 
       destination:
         server: '{{ .server }}'
