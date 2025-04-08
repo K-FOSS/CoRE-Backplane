@@ -379,6 +379,13 @@ spec:
                     config_patches = [
                       yamlencode({
                         cluster = {
+                          etcd = {
+                            advertisedSubnets = [
+                              {{- range $index, $network := .observed.composite.resource.spec.networks }}
+                              "{{ $network.ipAddress }}",
+                              {{- end }}
+                            ]
+                          }
                           apiServer = {
                             extraArgs = {
                               feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
@@ -393,9 +400,9 @@ spec:
                           kubelet = {
                             nodeIP = {
                               validSubnets = [
-                                {{ range $index, $network := .observed.composite.resource.spec.networks }}
+                                {{- range $index, $network := .observed.composite.resource.spec.networks }}
                                 "{{ $network.ipAddress }}",
-                                {{ end }}
+                                {{- end }}
                               ]
                             }
 
