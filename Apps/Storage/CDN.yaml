@@ -18,6 +18,7 @@ spec:
         values:
           clusterName: '{{ .name }}'
           environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -45,10 +46,14 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-          # env:
-          #   - name: LOVELY_HELM_MERGE
-          #     value: |- # yaml
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: '{{ .values.environment }}'
 
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
 
       destination:
         server: '{{ .server }}'
