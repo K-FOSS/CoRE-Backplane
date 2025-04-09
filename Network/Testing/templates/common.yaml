@@ -125,6 +125,57 @@ controllers:
               ## This means it has a maximum of 5*30=150 seconds to start up before it fails
               periodSeconds: 5
               failureThreshold: 30
+
+
+# -- Configure the gateway routes for the chart here.
+# Additional routes can be added by adding a dictionary key similar to the 'main' route.
+# [[ref]](https://gateway-api.sigs.k8s.io/references/spec/)
+# @default -- See below
+route:
+  default:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    # -- Provide additional annotations which may be required.
+    annotations: {}
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+        # Kind of the referent resource.
+        kind: Gateway
+        # Name of the referent resource
+        name: main-gw
+        # Namespace of the referent resource
+        namespace: core-prod
+
+
+    # -- Host addresses. Helm template can be passed.
+    hostnames:
+      - {{ .Values.domain }}
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - kind: Service
+            port: 8080
+            name: main
+            weight: 1
 {{ end }}
 
 {{- end -}}
