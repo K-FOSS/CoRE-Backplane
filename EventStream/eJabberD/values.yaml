@@ -11,6 +11,19 @@ portRange:
   min: 16100
   max: 16500
 
+cluster:
+  name: k8s
+  domain: cluster.local
+
+gateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: https-myloginspace
+
+datacenter: dc1
+
+region: yxl
+
 defaultPodOptions:
   labels:
     logs: loki-myloginspace
@@ -113,92 +126,7 @@ persistence:
 
 
 
-route:
-  ws-mqtt:
-    # -- Enables or disables the route
-    enabled: true
 
-    nameOverride: ws-mqtt
-
-    # -- Set the route kind
-    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
-    kind: HTTPRoute
-
-    hostnames:
-      - iot-mqtt.mylogin.space
-
-    # -- Configure the resource the route attaches to.
-    parentRefs:
-      - # Group of the referent resource.
-        group: gateway.networking.k8s.io
-
-        # Kind of the referent resource.
-        kind: Gateway
-
-        # Name of the referent resource
-        name: main-gw
-
-        sectionName: https-myloginspace
-
-        # Namespace of the referent resource
-        namespace: core-prod
-
-    # -- Configure rules for routing. Defaults to the primary service.
-    rules:
-      - matches:
-          - path:
-              type: PathPrefix
-              value: /
-        backendRefs:
-          - kind: Service
-            port: http
-            name: http
-            weight: 1
-
-  mqtt:
-    # -- Enables or disables the route
-    enabled: true
-
-    # -- Set the route kind
-    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
-    kind: TLSRoute
-
-    nameOverride: mqtt
-
-    # -- Provide additional annotations which may be required.
-    annotations: {}
-
-    # -- Provide additional labels which may be required.
-    labels:
-      wan-mode: 'public'
-      lan-mode: 'private'
-
-    hostnames:
-      - iot-mqtt.mylogin.space
-
-    # -- Configure the resource the route attaches to.
-    parentRefs:
-      - # Group of the referent resource.
-        group: gateway.networking.k8s.io
-
-        # Kind of the referent resource.
-        kind: Gateway
-
-        # Name of the referent resource
-        name: main-gw
-
-        sectionName: tls-mqtt
-
-        # Namespace of the referent resource
-        namespace: core-prod
-
-    # -- Configure rules for routing. Defaults to the primary service.
-    rules:
-      - backendRefs:
-          - kind: Service
-            port: 1883
-            name: mqttx
-            weight: 1
 
 configMaps:
   config:

@@ -23,6 +23,8 @@ spec:
           clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
           tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
           datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
           domain: '{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
           replicas: '1'
           hub: '{{ index .metadata.labels "mylogin.space/hub" }}'
@@ -57,6 +59,14 @@ spec:
                 env: {{ .values.environment }}
 
                 hub: {{ .values.hub }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
 
       destination:
         server: '{{ .server }}'
