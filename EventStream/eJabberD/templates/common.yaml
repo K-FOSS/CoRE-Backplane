@@ -59,6 +59,26 @@ service:
     type: ClusterIP
 
     ports:
+      mqtt:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 1884
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: mqtt
+
       mqtts:
         # -- Enables or disables the port
         enabled: true

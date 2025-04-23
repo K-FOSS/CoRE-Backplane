@@ -155,7 +155,6 @@ route:
             name: http
             weight: 1
 
-
   mqtt:
     # -- Enables or disables the route
     enabled: true
@@ -372,6 +371,13 @@ configMaps:
             backlog: 1000
             tls: true
             use_proxy_protocol: true
+
+          - port: 1884
+            ip: '::'
+            module: mod_mqtt
+            backlog: 1000
+            tls: false
+            use_proxy_protocol: false
 
         certfiles:
           - /tls/tls-combined.pem
