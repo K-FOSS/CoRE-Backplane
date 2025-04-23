@@ -9,18 +9,30 @@ metadata:
     argocd.argoproj.io/sync-wave: '5'
 
 spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+          domain: '{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
+          replicas: '1'
+          hub: '{{ index .metadata.labels "mylogin.space/hub" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
   
   template:
     metadata:
-      name: '{{cluster}}-ejabberd'
+      name: '{{ .values.clusterName }}-ejabberd-{{ .values.environment }}'
     
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -39,8 +51,14 @@ spec:
 
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: {{ .values.environment }}
+
+                hub: {{ .values.hub }}
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
 
