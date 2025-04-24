@@ -18,6 +18,7 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     IPv4Address: '66.165.222.105'
+                    hub: false
                     nameserver:
                       domain: 'ns1.resolvemy.host'
                       address:
@@ -58,6 +59,19 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
+                env: {{ .values.environment }}
+
+                hub: {{ .values.hub }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
+
                 service:
                   main:
                     annotations:
