@@ -1,0 +1,51 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-ops-vms
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  goTemplate: true
+
+  goTemplateOptions:
+    - 'missingkey=error'
+
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-ops-vms-{{ .values.environment }}'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+
+      source:
+        path: Operations/VirtualMachines
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+
+      destination:
+        server: '{{ .server }}'
+        namespace: operators
+
