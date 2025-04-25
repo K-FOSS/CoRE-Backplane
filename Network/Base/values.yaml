@@ -359,9 +359,9 @@ cilium:
       # type: [array, string]
       # @schema
       # -- IPv6 CIDR list range to delegate to individual nodes for IPAM.
-      clusterPoolIPv6PodCIDRList: ["fd00::/104"]
+      clusterPoolIPv6PodCIDRList: ["2a11:6c7:2000:3901::/64"]
       # -- IPv6 CIDR mask size to delegate to individual nodes for IPAM.
-      clusterPoolIPv6MaskSize: 120
+      clusterPoolIPv6MaskSize: 119
       # -- IP pools to auto-create in multi-pool IPAM mode.
       autoCreateCiliumPodIPPools: {}
       #   default:
@@ -427,7 +427,7 @@ cilium:
   
   ipv6:
     # -- Enable IPv6 support.
-    enabled: false
+    enabled: true
   
   # -- Configure Kubernetes specific configuration
   k8s:
@@ -506,7 +506,7 @@ cilium:
   # direct routing and the Kubernetes CIDR is included in the native routing CIDR,
   # the user must configure the routes to reach pods, either manually or by
   # setting the auto-direct-node-routes flag.
-  ipv4NativeRoutingCIDR: "0.0.0.0/0"
+  ipv4NativeRoutingCIDR: '0.0.0.0/0'
   # -- (string) Allows to explicitly specify the IPv6 CIDR for native routing.
   # When specified, Cilium assumes networking for this CIDR is preconfigured and
   # hands traffic destined for that range to the Linux network stack without
@@ -517,7 +517,7 @@ cilium:
   # direct routing and the Kubernetes CIDR is included in the native routing CIDR,
   # the user must configure the routes to reach pods, either manually or by
   # setting the auto-direct-node-routes flag.
-  ipv6NativeRoutingCIDR: ""
+  ipv6NativeRoutingCIDR: '::/0'
 
   # -- cilium-monitor sidecar.
   monitor:
