@@ -421,7 +421,14 @@ spec:
                     clusterNetwork:
                       pods:
                         cidrBlocks:
-                          - {{ $networks.pods }}
+                          {{ with $xr.spec.networks.pod }}
+                          {{ range $index, $address := .ipv4 }}
+                          - {{ $address }}
+                          {{ end }}
+                          {{ range $index, $address := .ipv6 }}
+                          - {{ $address }}
+                          {{ end }}
+                          {{ end }}
                       serviceDomain: {{ $xr.spec.domain }}
                       services:
                         cidrBlocks:
