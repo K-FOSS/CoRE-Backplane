@@ -1,0 +1,47 @@
+{{ if .Values.hub }}
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-db
+
+spec:
+  secretStoreRefs:
+    - kind: ClusterSecretStore
+      name: mainvault-core
+      
+
+  selector:
+    secret:
+      name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds
+
+  data:
+    - match:
+        secretKey: psqlURI
+        remoteRef:
+          remoteKey: NS/Admin/Database
+          property: URI
+
+    - match:
+        secretKey: username
+        remoteRef:
+          remoteKey: NS/Admin/Credentials
+          property: Username
+
+    - match:
+        secretKey: ldapsURI
+        remoteRef:
+          remoteKey: NS/Admin/LDAP
+          property: URI
+
+    - match:
+        secretKey: ldapsBIND
+        remoteRef:
+          remoteKey: NS/Admin/LDAP
+          property: Bind
+
+    - match:
+        secretKey: password
+        remoteRef:
+          remoteKey: NS/Admin/Credentials
+          property: Password
+{{- end }}

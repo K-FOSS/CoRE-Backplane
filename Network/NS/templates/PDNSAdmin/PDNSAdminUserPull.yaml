@@ -1,0 +1,34 @@
+{{ if ne .Values.hub true }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-db
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds
+
+  data:
+    - secretKey: psqlURI
+      remoteRef:
+        key: NS/Admin/Database
+        property: URI
+
+    - secretKey: ldapsBIND
+      remoteRef:
+        key: NS/Admin/LDAP
+        property: Bind
+
+    - secretKey: ldapsURI
+      remoteRef:
+        key: NS/Admin/LDAP
+        property: URI
+
+    - secretKey: password
+      remoteRef:
+        key: NS/Admin/Credentials
+        property: Password
+{{- end }}
