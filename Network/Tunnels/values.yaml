@@ -331,6 +331,7 @@ configMaps:
         log syslog informational
         !
         ip prefix-list ADV seq 1 permit any
+        ip prefix-list BGP64567-ConnectedAdv seq 10 permit 172.31.242.8/29
         !
         debug bgp neighbor-events
         !
@@ -338,6 +339,10 @@ configMaps:
         !
         route-map OUT permit 10
           match ip address prefix-list ADV
+        exit
+        !
+        route-map BGP64567-Connected permit 10
+          match ip address prefix-list BGP64567-ConnectedAdv
         exit
         !
         router bgp 64567
@@ -351,13 +356,14 @@ configMaps:
           neighbor cilium remote-as 64512
           neighbor routeserver peer-group
           neighbor routeserver remote-as 64567
-          neighbor 10.1.1.179 peer-group routeserver
-          bgp listen range 172.31.242.8/29 peer-group cilium
-
+          neighbor 172.20.56.151 peer-group routeserver
+          neighbor 172.31.242.11 peer-group routeserver
+          bgp listen range 172.31.242.9/32 peer-group cilium
           !
           address-family ipv4 unicast
             maximum-paths 64
             maximum-paths ibgp 64
+            redistribute connected route-map BGP64567-Connected
             neighbor cilium soft-reconfiguration inbound
             neighbor routeserver soft-reconfiguration inbound
           exit-address-family
