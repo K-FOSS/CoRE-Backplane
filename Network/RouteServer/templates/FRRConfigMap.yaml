@@ -21,6 +21,8 @@ data:
     !
     ip nht resolve-via-default
     !
+    debug bgp neighbor-events
+    !
     route-map OUT permit 10
       match ip address prefix-list ADV
     exit
@@ -39,7 +41,7 @@ data:
       neighbor routeserver peer-group
       neighbor routeserver remote-as internal
       neighbor 172.31.241.237 peer-group WAN-RT
-      neighbor 10.1.1.140 peer-group routeserver
+      neighbor 10.44.0.244 peer-group routeserver
       bgp listen range 172.31.241.0/24 peer-group cilium
       bgp listen range 172.16.20.0/24 peer-group cilium
       !
