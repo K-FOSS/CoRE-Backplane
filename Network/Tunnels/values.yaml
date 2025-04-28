@@ -3,6 +3,9 @@
 networking:
   publicAddress: 66.165.222.101
 
+  routeserver:
+    ipv4Address: 10.1.1.140
+
 controllers:
   tunneler:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
@@ -33,6 +36,7 @@ controllers:
           capabilities:
             add: 
               - 'NET_ADMIN'
+              - 'SYS_ADMIN'
 
         # -- Probe configuration
         # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
@@ -267,7 +271,7 @@ configMaps:
         #
         vtysh_enable=yes
         zebra_options="  -A 127.0.0.1 -s 90000000"
-        bgpd_options="--no_kernel -A 127.0.0.1"
+        bgpd_options="-A 127.0.0.1"
         ospfd_options="  -A 127.0.0.1"
         ospf6d_options=" -A ::1"
         ripd_options="   -A 127.0.0.1"
@@ -335,7 +339,7 @@ configMaps:
         exit
         !
         router bgp 64567
-          bgp router-id 10.1.1.179
+          bgp router-id 10.1.1.140
           no bgp ebgp-requires-policy
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
@@ -343,12 +347,17 @@ configMaps:
           neighbor cilium peer-group
           neighbor cilium ebgp-multihop 6
           neighbor cilium remote-as 64512
+          neighbor routeserver peer-group
+          neighbor routeserver remote-as 64567
+          neighbor 10.1.1.179 peer-group routeserver
           bgp listen range 172.31.242.8/29 peer-group cilium
+
           !
           address-family ipv4 unicast
             maximum-paths 64
             maximum-paths ibgp 64
             neighbor cilium soft-reconfiguration inbound
+            neighbor routeserver soft-reconfiguration inbound
           exit-address-family
         exit
         !
