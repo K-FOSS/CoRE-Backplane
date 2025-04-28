@@ -13,85 +13,85 @@ networking:
   publicAddress: 66.165.222.101
 
 controllers:
-  # Tunneler:
-  #   # For Deployments, valid values are Recreate (default) and RollingUpdate.
-  #   # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
-  #   # DaemonSets/CronJobs ignore this.
-  #   strategy: RollingUpdate
+  tunneler:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
 
-  #   nameOverride: core-tunneler
+    nameOverride: tunneler
 
-  #   containers:
-  #     main:
-  #       image:
-  #         repository: linuxserver/wireguard
-  #         #
-  #         # TODO: Get Renovate or similar managing this
-  #         #
-  #         tag: latest
-  #         pullPolicy: IfNotPresent
+    containers:
+      main:
+        image:
+          repository: linuxserver/wireguard
+          #
+          # TODO: Get Renovate or similar managing this
+          #
+          tag: latest
+          pullPolicy: IfNotPresent
 
-  #       # -- Probe configuration
-  #       # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-  #       # @default -- See below
-  #       probes:
-  #         # -- Liveness probe configuration
-  #         # @default -- See below
-  #         liveness:
-  #           # -- Enable the liveness probe
-  #           enabled: false
-  #           # -- Set this to `true` if you wish to specify your own livenessProbe
-  #           custom: false
-  #           # -- sets the probe type when not using a custom probe
-  #           # @default -- "TCP"
-  #           type: TCP
-  #           # -- The spec field contains the values for the default livenessProbe.
-  #           # If you selected `custom: true`, this field holds the definition of the livenessProbe.
-  #           # @default -- See below
-  #           spec:
-  #             initialDelaySeconds: 0
-  #             periodSeconds: 10
-  #             timeoutSeconds: 1
-  #             failureThreshold: 3
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own livenessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default livenessProbe.
+            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
 
-  #         # -- Redainess probe configuration
-  #         # @default -- See below
-  #         readiness:
-  #           # -- Enable the readiness probe
-  #           enabled: false
-  #           # -- Set this to `true` if you wish to specify your own readinessProbe
-  #           custom: false
-  #           # -- sets the probe type when not using a custom probe
-  #           # @default -- "TCP"
-  #           type: TCP
-  #           # -- The spec field contains the values for the default readinessProbe.
-  #           # If you selected `custom: true`, this field holds the definition of the readinessProbe.
-  #           # @default -- See below
-  #           spec:
-  #             initialDelaySeconds: 0
-  #             periodSeconds: 10
-  #             timeoutSeconds: 1
-  #             failureThreshold: 3
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
 
-  #         # -- Startup probe configuration
-  #         # @default -- See below
-  #         startup:
-  #           # -- Enable the startup probe
-  #           enabled: false
-  #           # -- Set this to `true` if you wish to specify your own startupProbe
-  #           custom: false
-  #           # -- sets the probe type when not using a custom probe
-  #           # @default -- "TCP"
-  #           type: TCP
-  #           # -- The spec field contains the values for the default startupProbe.
-  #           # If you selected `custom: true`, this field holds the definition of the startupProbe.
-  #           # @default -- See below
-  #           spec:
-  #             initialDelaySeconds: 0
-  #             timeoutSeconds: 1
-  #             ## This means it has a maximum of 5*30=150 seconds to start up before it fails
-  #             periodSeconds: 5
-  #             failureThreshold: 30    
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own startupProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default startupProbe.
+            # If you selected `custom: true`, this field holds the definition of the startupProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              timeoutSeconds: 1
+              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
+              periodSeconds: 5
+              failureThreshold: 30    
 
   main:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
@@ -185,21 +185,21 @@ persistence:
             readOnly: true
             subPath: turnserver.conf
 
-  # tunnelconfig:
-  #   enabled: true
+  tunnelconfig:
+    enabled: true
 
-  #   type: secret
+    type: secret
 
-  #   name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-tunnelerconfig'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-tunnelerconfig'
 
-  #   defaultMode: 0755
+    defaultMode: 0755
 
-  #   advancedMounts:
-  #     netbird-management: # the controller with the "main" identifier
-  #       netbird-management: # the container with the "main" identifier
-  #         - path: /config/wg_confs/wg0.conf
-  #           readOnly: true
-  #           subPath: wg-home1.conf
+    advancedMounts:
+      tunneler: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /config/wg_confs/wg0.conf
+            readOnly: true
+            subPath: wg-home1.conf
 
   tls:
     enabled: true
