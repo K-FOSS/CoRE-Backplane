@@ -22,6 +22,17 @@ controllers:
           tag: latest
           pullPolicy: IfNotPresent
 
+        securityContext:
+          seLinuxOptions: {}
+          privileged: false
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          seccompProfile:
+            type: "RuntimeDefault"
+          capabilities:
+            add: 
+              - 'NET_ADMIN'
 
         # -- Probe configuration
         # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
