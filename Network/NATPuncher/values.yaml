@@ -13,6 +13,86 @@ networking:
   publicAddress: 66.165.222.101
 
 controllers:
+  # Tunneler:
+  #   # For Deployments, valid values are Recreate (default) and RollingUpdate.
+  #   # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+  #   # DaemonSets/CronJobs ignore this.
+  #   strategy: RollingUpdate
+
+  #   nameOverride: core-tunneler
+
+  #   containers:
+  #     main:
+  #       image:
+  #         repository: linuxserver/wireguard
+  #         #
+  #         # TODO: Get Renovate or similar managing this
+  #         #
+  #         tag: latest
+  #         pullPolicy: IfNotPresent
+
+  #       # -- Probe configuration
+  #       # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+  #       # @default -- See below
+  #       probes:
+  #         # -- Liveness probe configuration
+  #         # @default -- See below
+  #         liveness:
+  #           # -- Enable the liveness probe
+  #           enabled: false
+  #           # -- Set this to `true` if you wish to specify your own livenessProbe
+  #           custom: false
+  #           # -- sets the probe type when not using a custom probe
+  #           # @default -- "TCP"
+  #           type: TCP
+  #           # -- The spec field contains the values for the default livenessProbe.
+  #           # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+  #           # @default -- See below
+  #           spec:
+  #             initialDelaySeconds: 0
+  #             periodSeconds: 10
+  #             timeoutSeconds: 1
+  #             failureThreshold: 3
+
+  #         # -- Redainess probe configuration
+  #         # @default -- See below
+  #         readiness:
+  #           # -- Enable the readiness probe
+  #           enabled: false
+  #           # -- Set this to `true` if you wish to specify your own readinessProbe
+  #           custom: false
+  #           # -- sets the probe type when not using a custom probe
+  #           # @default -- "TCP"
+  #           type: TCP
+  #           # -- The spec field contains the values for the default readinessProbe.
+  #           # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+  #           # @default -- See below
+  #           spec:
+  #             initialDelaySeconds: 0
+  #             periodSeconds: 10
+  #             timeoutSeconds: 1
+  #             failureThreshold: 3
+
+  #         # -- Startup probe configuration
+  #         # @default -- See below
+  #         startup:
+  #           # -- Enable the startup probe
+  #           enabled: false
+  #           # -- Set this to `true` if you wish to specify your own startupProbe
+  #           custom: false
+  #           # -- sets the probe type when not using a custom probe
+  #           # @default -- "TCP"
+  #           type: TCP
+  #           # -- The spec field contains the values for the default startupProbe.
+  #           # If you selected `custom: true`, this field holds the definition of the startupProbe.
+  #           # @default -- See below
+  #           spec:
+  #             initialDelaySeconds: 0
+  #             timeoutSeconds: 1
+  #             ## This means it has a maximum of 5*30=150 seconds to start up before it fails
+  #             periodSeconds: 5
+  #             failureThreshold: 30    
+
   main:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
@@ -112,6 +192,24 @@ persistence:
     mountPath: /etc/tls
 
 configMaps:
+  tunnelerConfig:
+    enabled: true
+
+    data:
+      wg-home1.conf: |
+        [Interface]
+        ListenPort = 54763
+        Address = 172.31.242.9/29
+        PrivateKey = {{`{{ .wireguardKey }}`}}
+        MTU = 1420
+        Table = off
+
+        [Peer]
+        # Name = ipad.august.mylogin.space
+        PublicKey = CFD3e0e3cHydLnNltfy8hQWs6ZM28+PcRBhjcb7GIBQ=
+        AllowedIPs = 172.31.242.9/32
+
+
   config:
     # -- Enables or disables the configMap
     enabled: true
