@@ -1,55 +1,266 @@
-frr:
-  routeserver:
+routeservers:
+  rs0:
+    ipAddress: 1.1.1.1
+
+controllers:
+  rs0-routeserver:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    nameOverride: route-server
+
+    containers:
+      frr:
+        image:
+          repository: frrouting/frr
+          #
+          # TODO: Get Renovate or similar managing this
+          #
+          tag: v8.3.1
+          pullPolicy: IfNotPresent
+
+        securityContext:
+          seLinuxOptions: {}
+          privileged: false
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          seccompProfile:
+            type: "RuntimeDefault"
+          capabilities:
+            add: 
+              - 'NET_ADMIN'
+              - 'SYS_ADMIN'
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own livenessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default livenessProbe.
+            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own startupProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default startupProbe.
+            # If you selected `custom: true`, this field holds the definition of the startupProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              timeoutSeconds: 1
+              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
+              periodSeconds: 5
+              failureThreshold: 30    
+
+persistence:
+  frrconfig:
     enabled: true
 
-    image:
-      repository: frrouting/frr
-      tag: v8.3.1
-      pullPolicy: Always
-      pullSecrets: []
+    type: configMap
 
-    replicaCount: 1
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-frrconfig'
 
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
+    defaultMode: 0755
 
-      # limits:
-      #   cpu: 100m
-      #   memory: 128Mi
+    advancedMounts:
+      rs0-routeserver: # the controller with the "main" identifier
+        frr: # the container with the "main" identifier
+          - path: /etc/frr/frr.conf
+            readOnly: true
+            subPath: frr.conf
 
-    certSANs:
-      dnsNames: []
-      ipAddresses: []
-
-    extraArgs: {}
-
-    labels: {}
-    annotations: {}
-    podLabels:
-      logs: loki-myloginspace
-
-    podAnnotations: {}
-    nodeSelector: {}
-    tolerations: []
-    podAntiAffinity: soft
-    podAntiAffinityTopologyKey: kubernetes.io/hostname
-    affinity: {}
-    extraEnv: []
-    sidecars: []
-    extraVolumes: []
-    extraVolumeMounts: []
+          - path: /etc/frr/daemons
+            readOnly: true
+            subPath: daemons
 
 
-    port: 8080
-    service:
-      enabled: true
-      type: LoadBalancer # or LoadBalancer
-      labels: {}
+configMaps:
+  frrconfig:
+    enabled: true
 
-      annotations:
-        purelb.io/addresses: 10.1.1.179
+    data:
+      daemons: |
+        # This file tells the frr package which daemons to start.
+        #
+        # Sample configurations for these daemons can be found in
+        # /usr/share/doc/frr/examples/.
+        #
+        # ATTENTION:
+        #
+        # When activating a daemon for the first time, a config file, even if it is
+        # empty, has to be present *and* be owned by the user and group "frr", else
+        # the daemon will not be started by /etc/init.d/frr. The permissions should
+        # be u=rw,g=r,o=.
+        # When using "vtysh" such a config file is also needed. It should be owned by
+        # group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
+        #
+        # The watchfrr, zebra and staticd daemons are always started.
+        #
+        bgpd=yes
+        ospfd=no
+        ospf6d=no
+        ripd=no
+        ripngd=no
+        isisd=no
+        pimd=no
+        ldpd=no
+        nhrpd=no
+        eigrpd=no
+        babeld=no
+        sharpd=no
+        pbrd=no
+        bfdd=no
+        fabricd=no
+        vrrpd=no
+        pathd=no
 
-      externalIPs: []
-      loadBalancerIP: ''
+        #
+        # If this option is set the /etc/init.d/frr script automatically loads
+        # the config via "vtysh -b" when the servers are started.
+        # Check /etc/pam.d/frr if you intend to use "vtysh"!
+        #
+        vtysh_enable=yes
+        zebra_options="  -A 127.0.0.1 -s 90000000"
+        bgpd_options="--no_kernel -A 127.0.0.1"
+        ospfd_options="  -A 127.0.0.1"
+        ospf6d_options=" -A ::1"
+        ripd_options="   -A 127.0.0.1"
+        ripngd_options=" -A ::1"
+        isisd_options="  -A 127.0.0.1"
+        pimd_options="   -A 127.0.0.1"
+        ldpd_options="   -A 127.0.0.1"
+        nhrpd_options="  -A 127.0.0.1"
+        eigrpd_options=" -A 127.0.0.1"
+        babeld_options=" -A 127.0.0.1"
+        sharpd_options=" -A 127.0.0.1"
+        pbrd_options="   -A 127.0.0.1"
+        staticd_options="-A 127.0.0.1"
+        bfdd_options="   -A 127.0.0.1"
+        fabricd_options="-A 127.0.0.1"
+        vrrpd_options="  -A 127.0.0.1"
+        pathd_options="  -A 127.0.0.1"
+
+        # configuration profile
+        #
+        #frr_profile="traditional"
+        #frr_profile="datacenter"
+
+        #
+        # This is the maximum number of FD's that will be available.
+        # Upon startup this is read by the control files and ulimit
+        # is called.  Uncomment and use a reasonable value for your
+        # setup if you are expecting a large number of peers in
+        # say BGP.
+        #MAX_FDS=1024
+
+        # The list of daemons to watch is automatically generated by the init script.
+        #watchfrr_options=""
+
+        # To make watchfrr create/join the specified netns, use the following option:
+        #watchfrr_options="--netns"
+        # This only has an effect in /etc/frr/<somename>/daemons, and you need to
+        # start FRR with "/usr/lib/frr/frrinit.sh start <somename>".
+
+        # for debugging purposes, you can specify a "wrap" command to start instead
+        # of starting the daemon directly, e.g. to use valgrind on ospfd:
+        #   ospfd_wrap="/usr/bin/valgrind"
+        # or you can use "all_wrap" for all daemons, e.g. to use perf record:
+        #   all_wrap="/usr/bin/perf record --call-graph -"
+        # the normal daemon command is added to this at the end.
+
+      frr.conf: |
+        # default to using syslog. /etc/rsyslog.d/45-frr.conf places the log in
+        # /var/log/frr/frr.log
+        #
+        # Note:
+        # FRR's configuration shell, vtysh, dynamically edits the live, in-memory
+        # configuration while FRR is running. When instructed, vtysh will persist the
+        # live configuration to this file, overwriting its contents. If you want to
+        # avoid this, you can edit this file manually before starting FRR, or instruct
+        # vtysh to write configuration to a different file.
+        log syslog informational
+        !
+        ip prefix-list ADV seq 1 permit any
+        !
+        debug bgp neighbor-events
+        !
+        ip nht resolve-via-default
+        !
+        route-map OUT permit 10
+          match ip address prefix-list ADV
+        exit
+        !
+        router bgp 64567
+          bgp router-id 10.1.1.179
+          no bgp ebgp-requires-policy
+          bgp disable-ebgp-connected-route-check
+          bgp bestpath peer-type multipath-relax
+          bgp graceful-restart stalepath-time 300
+          neighbor cilium peer-group
+          neighbor cilium ebgp-multihop 6
+          neighbor cilium remote-as 64512
+          neighbor WAN-RT peer-group
+          neighbor WAN-RT remote-as internal
+          neighbor routeserver peer-group
+          neighbor routeserver remote-as internal
+          neighbor 172.31.241.237 peer-group WAN-RT
+          bgp listen range 172.31.241.0/24 peer-group cilium
+          bgp listen range 172.16.20.0/24 peer-group cilium
+          bgp listen range 172.20.56.0/22 peer-group routeserver
+          !
+          address-family ipv4 unicast
+            maximum-paths 64
+            maximum-paths ibgp 64
+            neighbor WAN-RT route-reflector-client
+            neighbor WAN-RT attribute-unchanged next-hop
+            neighbor WAN-RT soft-reconfiguration inbound
+            neighbor cilium soft-reconfiguration inbound
+            neighbor routeserver soft-reconfiguration inbound
+          exit-address-family
+        exit
+        !
+        end
