@@ -172,6 +172,26 @@ controllers:
 
 
 persistence:
+  frrconfig:
+    enabled: true
+
+    type: configmap
+
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-frrconfig'
+
+    defaultMode: 0755
+
+    advancedMounts:
+      tunneler: # the controller with the "main" identifier
+        frr: # the container with the "main" identifier
+          - path: /etc/frr/frr.conf
+            readOnly: true
+            subPath: frr.conf
+
+          - path: /etc/frr/daemons
+            readOnly: true
+            subPath: daemons
+
   tunnelconfig:
     enabled: true
 
