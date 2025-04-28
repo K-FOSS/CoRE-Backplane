@@ -7,6 +7,11 @@ portRange:
   min: 15000
   max: 16000
 
+networking:
+  expose: true
+
+  publicAddress: 66.165.222.101
+
 controllers:
   main:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
@@ -257,7 +262,7 @@ configMaps:
         #
         # By default, this value is empty, and no address mapping is used.
         #
-        external-ip=66.165.222.102
+        external-ip={{ $.Values.networking.publicAddress }}
         #
         #OR:
         #
