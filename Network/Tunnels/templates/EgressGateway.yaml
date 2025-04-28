@@ -1,0 +1,16 @@
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-tunneler
+spec:
+  destinationCIDRs:
+    - 10.1.1.140
+  egressGateway:
+    interface: kube-lb0
+    nodeSelector:
+      matchLabels:
+        kubernetes.io/os: linux
+  selectors:
+    - podSelector:
+        matchLabels:
+          {{- include "bjw-s.common.lib.metadata.selectorLabels" . | nindent 10 }}
