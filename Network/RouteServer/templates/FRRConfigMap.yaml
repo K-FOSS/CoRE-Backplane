@@ -36,7 +36,10 @@ data:
       neighbor cilium remote-as 64512
       neighbor WAN-RT peer-group
       neighbor WAN-RT remote-as internal
+      neighbor routeserver peer-group
+      neighbor routeserver remote-as internal
       neighbor 172.31.241.237 peer-group WAN-RT
+      neighbor 10.1.1.140 peer-group routeserver
       bgp listen range 172.31.241.0/24 peer-group cilium
       bgp listen range 172.16.20.0/24 peer-group cilium
       !
@@ -47,6 +50,8 @@ data:
         neighbor WAN-RT attribute-unchanged next-hop
         neighbor WAN-RT soft-reconfiguration inbound
         neighbor cilium soft-reconfiguration inbound
+        neighbor routeserver soft-reconfiguration inbound\
+        neighbor routeserver route-reflector-client
       exit-address-family
     exit
     !
