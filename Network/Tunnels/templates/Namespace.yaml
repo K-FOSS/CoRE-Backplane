@@ -1,0 +1,16 @@
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+
+  labels:
+    kubernetes.io/metadata.name: {{ .Release.Namespace }}
+    pod-security.kubernetes.io/enforce: privileged
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+
+spec:
+  finalizers:
+    - kubernetes
