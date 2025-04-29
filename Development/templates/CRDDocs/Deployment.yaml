@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crds-docs
+
+  labels:
+    app: doc
+spec:
+  selector:
+    matchLabels:
+      app: doc
+  template:
+    metadata:
+      labels:
+        app: doc
+    spec:
+      containers:
+        - name: doc
+          image: crdsdev/doc:latest
+          env:
+            - name: REDIS_HOST
+              value: 'redis.mylogin.space'
+            - name: ANALYTICS
+              value: "true"
+          ports:
+            - containerPort: 5000
+              name: doc
