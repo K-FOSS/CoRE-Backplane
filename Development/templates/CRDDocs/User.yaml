@@ -1,0 +1,14 @@
+{{ if and .Values.crddocs.enabled .Values.crddocs.hub }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-crd-docs
+
+spec:
+  name: crds.writemy.codes
+#   groups:
+#     - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-crd-docs-creds
+{{- end }}
