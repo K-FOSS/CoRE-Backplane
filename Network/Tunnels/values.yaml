@@ -332,6 +332,9 @@ configMaps:
         !
         ip prefix-list ADV seq 1 permit any
         ip prefix-list BGP64567-ConnectedAdv seq 10 permit 172.31.242.8/29
+        ip prefix-list PrivateIPSpace seq 10 permit 10.0.0.0/8 ge 8
+        ip prefix-list PrivateIPSpace seq 11 permit 172.16.0.0/12 ge 12
+        ip prefix-list PrivateIPSpace seq 12 permit 192.168.0.0/16 ge 16
         !
         debug bgp neighbor-events
         !
@@ -365,6 +368,8 @@ configMaps:
             maximum-paths ibgp 64
             redistribute connected route-map BGP64567-Connected
             neighbor cilium soft-reconfiguration inbound
+            neighbor routeserver route-reflector-client
+            neighbor routeserver next-hop-self force
             neighbor routeserver soft-reconfiguration inbound
           exit-address-family
         exit
