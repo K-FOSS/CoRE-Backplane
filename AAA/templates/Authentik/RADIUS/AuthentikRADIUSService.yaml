@@ -1,0 +1,42 @@
+{{- if .Values.authentik.radius.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: test-radius
+    app.kubernetes.io/name: myloginspace-radius
+    lan-mode: 'private'
+    wan-mode: 'public'
+
+  annotations:
+    consul.hashicorp.com/service-name: radius
+    external-dns.alpha.kubernetes.io/hostname: 'radius.mylogin.space'
+
+  name: myloginspace-radius
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app.kubernetes.io/name: myloginspace-radius
+
+  ports:
+    # Plaintext radius
+    - name: tcp-radius
+      protocol: TCP
+      appProtocol: radius
+      targetPort: 1812
+      port: 1812
+
+    # Prometheus Metrics
+    - name: http-metrics
+      protocol: TCP
+      appProtocol: radiuss
+      targetPort: 9300
+      port: 9300
+
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+{{- end }}
