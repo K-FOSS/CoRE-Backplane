@@ -331,7 +331,7 @@ configMaps:
         log syslog informational
         !
         ip prefix-list ADV seq 1 permit any
-        ip prefix-list BGP64567-ConnectedAdv seq 10 permit 172.31.242.8/29
+        ip prefix-list BGP64513-ConnectedAdv seq 10 permit 172.31.242.8/29
         ip prefix-list PrivateIPSpace seq 10 permit 10.0.0.0/8 ge 8
         ip prefix-list PrivateIPSpace seq 11 permit 172.16.0.0/12 ge 12
         ip prefix-list PrivateIPSpace seq 12 permit 192.168.0.0/16 ge 16
@@ -344,21 +344,19 @@ configMaps:
           match ip address prefix-list ADV
         exit
         !
-        route-map BGP64567-Connected permit 10
-          match ip address prefix-list BGP64567-ConnectedAdv
+        route-map BGP64513-Connected permit 10
+          match ip address prefix-list BGP64513-ConnectedAdv
         exit
         !
-        router bgp 64567
+        router bgp 64513
           bgp router-id 10.1.1.140
           no bgp ebgp-requires-policy
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
-          neighbor cilium peer-group
-          neighbor cilium ebgp-multihop 6
-          neighbor cilium remote-as 64512
           neighbor routeserver peer-group
           neighbor routeserver remote-as 64567
+          neighbor 172.31.243.1 peer-group routeserver
           neighbor 172.20.56.151 peer-group routeserver
           neighbor 172.31.242.11 peer-group routeserver
           bgp listen range 172.31.242.9/32 peer-group cilium
