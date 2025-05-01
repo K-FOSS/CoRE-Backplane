@@ -247,14 +247,18 @@ configMaps:
           neighbor WAN-RT remote-as internal
           neighbor routeserver peer-group
           neighbor routeserver remote-as internal
+          neighbor tunneler peer-group
+          neighbor tunneler remote-as 64513
           neighbor 172.31.241.237 peer-group WAN-RT
+          neighbor 172.31.243.1 peer-group routeserver
           bgp listen range 172.31.241.0/24 peer-group cilium
           bgp listen range 172.16.20.0/24 peer-group cilium
-          bgp listen range 172.20.56.0/22 peer-group routeserver
+          bgp listen range 172.20.56.0/22 peer-group tunneler
           !
           address-family ipv4 unicast
             maximum-paths 64
             maximum-paths ibgp 64
+            neighbor tunneler activate
             neighbor WAN-RT route-reflector-client
             neighbor WAN-RT attribute-unchanged next-hop
             neighbor WAN-RT soft-reconfiguration inbound
