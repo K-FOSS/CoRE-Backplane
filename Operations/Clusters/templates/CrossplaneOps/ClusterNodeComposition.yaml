@@ -288,6 +288,7 @@ spec:
                       {{ range $index, $bgpInstance := $bgpInstances }}
                       - localASN: {{ $bgpInstance.asn }}
                         name: {{ $bgpInstance.name }}
+                        localPort: 180
                         peers:
                           {{ range $peerIndex, $peer := $bgpInstance.peers }}
                           - name: {{ $peer.name }}
@@ -423,6 +424,30 @@ spec:
                             hostname = "{{ $.observed.composite.resource.spec.claimRef.name }}"
 
                             interfaces = [
+                              {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                              {{ if $network.static }}
+                              {
+                                interface = "enx{{ replace ":" $network.macAddress }}"
+                                mtu = "{{ $network.mtu }}"
+                                addresses = [
+                                  {{- range $addrIndex, $address := $network.addresses }}
+                                  "{{ $address }}",
+                                  {{- end }}
+                                ]
+
+                                routes = [
+                                  {{- range $routeIndex, $route := $network.routes }}
+                                  {
+                                    network = "{{ $route.network }}"
+                                    gateway = "{{ $route.gateway }}"
+
+                                    metric = {{ $route.metric }}
+                                  },
+                                  {{- end }}
+                                ]
+                              }
+                              {{- end }}
+                              {{- end }}
                               {
                                 interface = "kube-lb0"
                                 ignore = true
