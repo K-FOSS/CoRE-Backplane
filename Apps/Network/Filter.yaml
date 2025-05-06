@@ -1,0 +1,83 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-home-filter
+  namespace: argocd
+spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name:  core-home1-talos-prod
+                  values:
+                    hub: false
+                    ipAddresses:
+                      router: 10.1.1.1
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+                  topology.kubernetes.io/region: 'yvr'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'prod'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-network-filter-{{ .values.environment }}'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+
+      source:
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        path: Network/Filter
+        targetRevision: main
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: {{ .values.environment }}
+
+                hub: {{ .values.hub }}
+
+                router:
+                  ipAddress: {{ .values.ipAddresses.router }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
+
+
+      destination:
+        server: '{{ .server }}'
+        namespace: core-net-{{ .values.environment }}
+
