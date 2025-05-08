@@ -1,3 +1,4 @@
+{{ if .Values.netbox.enabled }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -61,3 +62,4 @@ spec:
     forwardAccessToken: true
     clientSecret:
       name: '{{ include "ipam.fullname" . }}-netbox-oidc'
+{{- end }}
