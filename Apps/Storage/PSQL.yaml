@@ -28,11 +28,21 @@ spec:
 
                     standby: false
 
+                    pooler:
+                      peers:
+                        - hostname: psql-int.core-home1-talos-prod.home1.yvr.mylogin.space
+                          port: 5432
+
                 - name: core-home1-talos-prod
                   values:
                     hub: false
 
                     standby: true
+
+                    pooler:
+                      peers:
+                        - hostname: psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space
+                          port: 5432
 
           - clusters:
               selector:
@@ -89,6 +99,11 @@ spec:
                   hub: {{ .values.hub }}
 
                   standby: {{ .values.standby }}
+
+
+                pooler:
+                  peers:
+                    {{ nindent 20 (toYaml .values.pooler.peers) }}
 
       destination:
         server: '{{ .server }}'
