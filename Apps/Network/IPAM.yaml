@@ -19,9 +19,19 @@ spec:
                   values:
                     hub: false
 
+                    netbox:
+                      hub: false
+
+                      enabled: true
+
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+
+                    netbox:
+                      hub: false
+
+                      enabled: false
           - clusters:
               selector:
                 matchLabels:
@@ -78,6 +88,8 @@ spec:
                       secret:
                         secretName: '{{ .values.clusterName }}-network-ipam-{{ .values.environment }}-dhcp-config'
 
+                netbox:
+                  enabled: {{ .values.netbox.enabled }}
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
