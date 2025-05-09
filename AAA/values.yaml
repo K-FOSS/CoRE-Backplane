@@ -194,19 +194,6 @@ authentik:
             name: aaa-authentik-database
             key: Password
 
-    # -- Additional volumeMounts to all deployed Deployments. Does not apply to GeoIP
-    # @default -- `[]` (See [values.yaml])
-    volumeMounts:
-      - name: tls-certs
-        mountPath: /certs
-
-    # -- Additional volumes to all deployed Deployments.
-    # @default -- `[]` (See [values.yaml])
-    volumes:
-      - name: tls-certs
-        secret:
-          secretName: myloginspace-default-certificates
-
   ## Authentik configuration
   authentik:
     # -- Log level for server and worker
