@@ -12,21 +12,35 @@ spec:
   # goTemplateOptions:
   #   - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-        values:
-          clusterName: '{{ .name }}'
-          environment: 'prod'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
-          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
-          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
-          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
-          hub: '{{ index .metadata.labels "mylogin.space/hub" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    hub: true
+
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'prod'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -71,6 +85,21 @@ spec:
                     additionalLabels:
                       resolvemy.host/env: '{{ .values.environment }}'
                       resolvemy.host/priority: 'critical'
+
+                    {{ if .values.hub }}
+                    # -- Additional volumeMounts to all deployed Deployments. Does not apply to GeoIP
+                    # @default -- `[]` (See [values.yaml])
+                    volumeMounts:
+                      - name: tls-certs
+                        mountPath: /certs
+
+                    # -- Additional volumes to all deployed Deployments.
+                    # @default -- `[]` (See [values.yaml])
+                    volumes:
+                      - name: tls-certs
+                        secret:
+                          secretName: myloginspace-default-certificates
+                    {{- end }}
 
       destination:
         server: '{{ .server }}'
