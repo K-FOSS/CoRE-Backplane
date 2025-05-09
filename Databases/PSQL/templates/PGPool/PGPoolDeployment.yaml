@@ -48,6 +48,18 @@ spec:
         runAsGroup: 70
         fsGroup: 70
 
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 10.44.0.10
+          - 1.1.1.1
+        options:
+          - name: edns0
+          - name: ndots
+            value: '0'
+
+
+
       containers:
         - name: pgpool
           image: kristianfjones/pgpool:latest
