@@ -20,7 +20,11 @@ route:
     kind: HTTPRoute
 
     hostnames:
+      {{ if .Values.hub }}
       - iot-mqtt.mylogin.space
+      {{- end }}
+      - iot-mqtt.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
+
 
     # -- Configure the resource the route attaches to.
     parentRefs:
@@ -69,7 +73,9 @@ route:
       lan-mode: 'private'
 
     hostnames:
+      {{ if .Values.hub }}
       - iot-mqtt.mylogin.space
+      {{- end }}
       - iot-mqtt.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
 
     # -- Configure the resource the route attaches to.
@@ -189,7 +195,7 @@ service:
 
   turn:
     # -- Enables or disables the service
-    enabled: true
+    enabled: {{ if .Values.hub }}true{{ else }}false{{ end }}
 
     # -- Configure which controller this service should target
     controller: main
