@@ -10,19 +10,35 @@ spec:
         kubevirt.io/domain: testvm
     spec:
       domain:
+        machine:
+          type: q35
+        features:
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: false
         devices:
           autoattachPodInterface: false
           disks:
             - name: vyos-install-cd
               cdrom:
                 bus: sata
+
+            - name: data-disk
+              disk:
+                bus: virtio
         resources:
           requests:
             memory: 2Gi
           limits:
             memory: 2Gi
       volumes:
-
         - name: vyos-install-cd
           dataVolume:
             name: vyos-iso
+
+        - name: data-disk
+          emptyDisk:
+            capacity: 10Gi
