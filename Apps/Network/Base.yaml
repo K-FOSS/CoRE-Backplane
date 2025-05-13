@@ -85,6 +85,15 @@ spec:
               value: |-
                 patches:
                   - target:
+                      kind: DaemonSet
+                      name: kube-multus-ds
+
+                    patch: |
+                      - op: replace
+                        path: /spec/template/spec/volumes/8/hostPath/path
+                        value: /var/run/netns/
+
+                  - target:
                       kind: ConfigMap
                       name: {{ .values.clusterName }}-net-base-frr-k8s-frr-startup
 
