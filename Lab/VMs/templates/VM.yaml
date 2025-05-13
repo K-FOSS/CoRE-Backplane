@@ -13,22 +13,23 @@ spec:
         devices:
           autoattachPodInterface: false
           disks:
-          - disk:
-              bus: virtio
-            name: containerdisk
-          - disk:
-              bus: virtio
-            name: cloudinitdisk
+            - name: vyos-install-cd
+              cdrom:
+                bus: sata
+
+            - name: vyos-root-disk
+              disk:
+                bus: virtio
         resources:
           requests:
             memory: 256Mi
       volumes:
-      - name: containerdisk
-        containerDisk:
-          image: quay.io/kubevirt/cirros-container-disk-demo
-      - name: cloudinitdisk
-        cloudInitNoCloud:
-          userData: |
-            #cloud-config
-            password: passw0rd
-            chpasswd: { expire: False }
+
+        - name: vyos-install-cd
+          dataVolume:
+            name: vyos-iso
+
+        - name: vyos-root-disk
+          emptyDisk:
+            capacity: 10Gi
+            bus: virtio

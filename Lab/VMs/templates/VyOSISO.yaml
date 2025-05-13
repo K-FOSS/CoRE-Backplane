@@ -1,0 +1,17 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: vyos-iso
+
+spec:
+  pvc:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+    storageClassName: longhorn
+  source:
+    http:
+      url: >-
+        https://github.com/vyos/vyos-nightly-build/releases/download/2025.05.13-0019-rolling/vyos-2025.05.13-0019-rolling-generic-amd64.iso
