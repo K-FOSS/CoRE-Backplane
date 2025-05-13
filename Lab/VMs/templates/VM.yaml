@@ -9,6 +9,10 @@ spec:
       labels:
         kubevirt.io/domain: testvm
     spec:
+      networks:
+        - name: default
+          pod: {} # Stock pod network
+
       domain:
         machine:
           type: q35
@@ -30,6 +34,10 @@ spec:
             - name: data-disk
               disk:
                 bus: virtio
+
+          interfaces:
+            - name: default
+              masquerade: {}
         resources:
           requests:
             memory: 2Gi
