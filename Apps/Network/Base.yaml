@@ -93,6 +93,21 @@ spec:
                         path: /spec/template/spec/volumes/8/hostPath/path
                         value: /var/run/netns/
 
+                      - op: add
+                        path: /spec/template/spec/initContainers/1
+                        value:
+                          command:
+                            - /install-cni.sh
+                          image: ghcr.io/siderolabs/install-cni:v1.7.0  # adapt to your talos version
+                          name: install-cni
+                          securityContext:
+                            privileged: true
+                          volumeMounts:
+                            - mountPath: /host/opt/cni/bin
+                              mountPropagation: Bidirectional
+                              name: cnibin
+
+
                   - target:
                       kind: ConfigMap
                       name: {{ .values.clusterName }}-net-base-frr-k8s-frr-startup
