@@ -1,0 +1,69 @@
+apiVersion: resolvemy.host/v1alpha1
+kind: ClusterNode
+metadata:
+  name: sbc2.home1.yvr.resolvemy.host
+
+  namespace: core-prod
+
+  labels:
+    argocd.argoproj.io/instance: dc1-k3s-node1-ops-cluster
+
+spec:
+  name: sbc2.home1.yvr.resolvemy.host
+
+  description: home1.yvr.resolvemy.host x86 SBC
+
+  danger:
+    warningdonotdounlessyouknowwhatyouaredoing:
+      wipeOnReboot: false
+
+  clusterRef:
+    group: resolvemy.host
+    kind: Cluster
+    name: core-home1-talos
+    namespace: core-prod
+
+  tenantRef:
+    group: mylogin.space
+    kind: Tenant
+    name: core.mylogin.space
+    namespace: core-prod
+
+  environment: prod
+
+  bgp:
+    instances:
+      - asn: 64512
+        name: wan-gw
+        peers:
+          - address: 172.31.192.1
+            asn: 64567
+            name: wan-gw1.home1.yvr.resolvemy.host
+
+          - address: 172.31.192.20	
+            asn: 64567	
+            name: spine0.home1.yvr.resolvemy.host
+
+          - address: 172.31.192.20	
+            asn: 64567	
+            name: spine0.home1.yvr.resolvemy.host
+
+  networks:
+    - macAddress: 10:02:b5:86:17:65
+      addresses:
+        - 172.31.192.13/24
+        - 2a0c:b642:a05:169e:a45c:2000:0:13/83
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.192.1
+
+      ipAddress: 172.31.192.13/24
+      gateway: 172.31.192.1
+      mtu: 1500
+
+      static: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
