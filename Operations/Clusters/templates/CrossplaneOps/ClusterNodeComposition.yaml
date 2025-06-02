@@ -427,8 +427,8 @@ spec:
                               {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                               {{ if $network.static }}
                               {
-                                interface = "enx{{ replace $network.macAddress ":" ""  }}"
-                                mtu = "{{ $network.mtu }}"
+                                interface = "enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"
+                                mtu = {{ $network.mtu }}
                                 addresses = [
                                   {{- range $addrIndex, $address := $network.addresses }}
                                   "{{ $address }}",
