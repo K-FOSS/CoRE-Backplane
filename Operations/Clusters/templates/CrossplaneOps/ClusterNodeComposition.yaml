@@ -293,6 +293,11 @@ spec:
                           - name: {{ $peer.name }}
                             peerASN: {{ $peer.asn }}
                             peerAddress: {{ $peer.address }}
+
+                            {{ with $peer.localAddress }}
+                            localAddress: {{ . }}
+                            {{ end }}
+                            
                             peerConfigRef:
                               group: cilium.io
                               kind: CiliumBGPPeerConfig
