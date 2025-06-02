@@ -110,12 +110,26 @@ spec:
                       items:
                         type: object
 
+                        description: Configuration of a BGP Instance configured on each cluster node
+
+                        required:
+                          - name
+                          - asn
+                          - peers
+
                         properties:
                           asn:
                             type: integer
 
+                            description: BGP ASN for the configured instance
+
                           name:
                             type: string
+
+                          port:
+                            type: integer
+
+                            description: Port if configured the BGP instance will be connectable vs just outgoing registration/neighbor events
 
                           peers:
                             type: array
@@ -133,15 +147,24 @@ spec:
                               properties:
                                 name:
                                   type: string
+
+                                  description: Name used to differenticate between peers in statuses and references for other configuration
                               
                                 address:
                                   type: string
 
+                                  description: IPv4 or IPv6 address of the peer to connect to
+
                                 localAddress:
                                   type: string
 
+                                  description: Local Address IPv4 or IPv6 interface address used to connect to the peer from
+
+
                                 asn:
                                   type: integer
+
+                                  description: ASN of the peer
 
                 versions:
                   type: object
