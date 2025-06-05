@@ -101,7 +101,7 @@ spec:
                   }
 
                   data "talos_image_factory_extensions_versions" "this" {
-                    # get the latest talos version
+                    # get the version as specified by cluster
                     talos_version = var.talos.version
                     filters = {
                       names = [
@@ -124,9 +124,24 @@ spec:
                       }
                     )
                   }
+
+                  data "talos_image_factory_urls" "this" {
+                    # get the version as specified by cluster
+                    talos_version = var.talos.version
+                    schematic_id = talos_image_factory_schematic.this.id
+                    platform = "metal"
+                  }
               
                   output "schematic_id" {
                     value = talos_image_factory_schematic.this.id
+                  }
+
+                  output "test" {
+                    value = data.talos_image_factory_urls.this.urls
+                  }
+
+                  output "iso_url" {
+                    value = data.talos_image_factory_urls.this.urls.iso
                   }
 
                   output "subnetmask" {
