@@ -1,0 +1,22 @@
+# 00-multus.conflist
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cilium-multus-conf
+  namespace: kube-system
+data:
+  multus-cilium.conflist: |
+    {
+      "cniVersion": "0.4.0",
+      "name": "multus-cilium",
+      "plugins": [
+        {
+          "type": "multus",
+          "capabilities": { "portMappings": true },
+          "logLevel": "debug",
+          "delegates": [
+            { "type": "cilium-cni" }               # <- default interface
+          ]
+        }
+      ]
+    }
