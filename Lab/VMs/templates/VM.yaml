@@ -26,12 +26,15 @@ spec:
         devices:
           autoattachPodInterface: false
           disks:
+            {{ if .Values.installing }}
             - name: vyos-install-cd
-              bootOrder: 1
+              bootOrder: 2
               cdrom:
                 bus: sata
+            {{ end }}
 
             - name: data-disk
+              bootOrder: {{ if .Values.installing }}2{{ else }}1{{ end }}
               disk:
                 bus: virtio
 
@@ -48,6 +51,19 @@ spec:
           dataVolume:
             name: vyos-iso
 
-        - name: data-disk
-          emptyDisk:
-            capacity: 10Gi
+        - dataVolume:
+            name: rootdisk-template
+          name: data-disk
+
+  dataVolumeTemplates:
+    - metadata:
+        name: rootdisk-template
+      spec:
+        pvc:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
+        source:
+          blank: {}
