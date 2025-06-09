@@ -10,17 +10,32 @@ spec:
   # goTemplateOptions:
   #   - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-        values:
-          clusterName: '{{ .name }}'
-          environment: 'testing'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    installing: true
+
+                - name: core-home1-talos-prod
+                  values:
+                    installing: false
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'testing'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -50,6 +65,8 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
                 env: {{ .values.environment }}
+
+                installing: {{ .values.installing }}
 
       destination:
         server: '{{ .server }}'
