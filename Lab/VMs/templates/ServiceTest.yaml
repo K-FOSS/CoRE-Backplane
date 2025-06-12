@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vyos-wg
+spec:
+  ports:
+    - port: 64762
+      protocol: UDP
+      targetPort: 64762
+  selector:
+    vm: vyos-lab
+    app.kubernetes.io/name: 'vyos-vm'
+  type: ClusterIP
