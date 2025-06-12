@@ -93,12 +93,16 @@ spec:
                         path: /spec/template/spec/volumes/8/hostPath/path
                         value: /var/run/netns/
 
+                      - op: replace
+                        path: /spec/template/spec/containers/0/image
+                        value: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
+
                       - op: add
                         path: /spec/template/spec/initContainers/1
                         value:
                           command:
                             - /install-cni.sh
-                          image: ghcr.io/siderolabs/install-cni:v1.9.0  # adapt to your talos version
+                          image: ghcr.io/siderolabs/install-cni:v1.9.0
                           name: install-cni
                           securityContext:
                             privileged: true
