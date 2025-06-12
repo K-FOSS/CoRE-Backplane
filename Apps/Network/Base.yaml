@@ -97,6 +97,16 @@ spec:
                         path: /spec/template/spec/containers/0/image
                         value: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
 
+                      - op: replace
+                        path: /spec/template/spec/containers/0/resources
+                        value:
+                          limits:
+                            cpu: 500m
+                            memory: 1G
+                          requests:
+                            cpu: 100m
+                            memory: 256Mi
+
                       - op: add
                         path: /spec/template/spec/initContainers/1
                         value:
