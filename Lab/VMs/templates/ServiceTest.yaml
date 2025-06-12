@@ -2,6 +2,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: vyos-wg
+
+  annotations:
+    purelb.io/allow-shared-ip: main-gw.resolvemy.host
+    purelb.io/service-group: core-public
+    purelb.io/allow-local: 'true'
+
 spec:
   ports:
     - port: 64762
@@ -10,4 +16,4 @@ spec:
   selector:
     vm.kubevirt.io/name: 'testvm'
 
-  type: ClusterIP
+  type: LoadBalancer
