@@ -321,7 +321,13 @@ configMaps:
           address-family {{ $afiIndex }} {{ $safiIndex }}
             {{- range $safiKeyIndex, $safiKey := $safi }}
             {{- range $safiSubKeyIndex, $safiSubKey := $safiKey }}
+            
+            {{- if kindIs "map" $safiSubKey }}
             {{ $safiKeyIndex }} {{ $safiSubKey.name }} {{ $safiSubKey.action }} 
+            {{- else }}
+            {{ $safiKeyIndex }} {{ if eq $safiSubKeyIndex "base" }}{{ $safiSubKey }}{{ else }}{{ $safiSubKeyIndex }} {{ $safiSubKey }}{{ end }}
+
+            {{- end }}
             {{- end }}
             {{- end }}
           exit-address-family
