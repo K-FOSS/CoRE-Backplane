@@ -9,14 +9,116 @@ global:
 
 {{ end }}
 
+controllers:
+
+{{/* $. is the top-level context.
+     $name  -> "rs0", "rs1", ...
+     $rs    -> the whole rs0/rs1 map (ipAddress, peers, peerGroups …) */}}
+{{- range $name, $rs := .Values.routeservers }}
+  {{ $name }}-routeserver:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    nameOverride: route-server
+
+    containers:
+      frr:
+        image:
+          repository: frrouting/frr
+          #
+          # TODO: Get Renovate or similar managing this
+          #
+          tag: {{ $rs.frr.version }}
+          pullPolicy: IfNotPresent
+
+        securityContext:
+          seLinuxOptions: {}
+          privileged: false
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          seccompProfile:
+            type: "RuntimeDefault"
+          capabilities:
+            add: 
+              - 'NET_ADMIN'
+              - 'SYS_ADMIN'
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own livenessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default livenessProbe.
+            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own startupProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: TCP
+            # -- The spec field contains the values for the default startupProbe.
+            # If you selected `custom: true`, this field holds the definition of the startupProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              timeoutSeconds: 1
+              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
+              periodSeconds: 5
+              failureThreshold: 30
+
+{{- end }}
+
 
 service:
-  bgp:
+  {{- range $name, $rs := .Values.routeservers }}
+  {{ $name }}-bgp:
     # -- Enables or disables the service
     enabled: true
 
     # -- Configure which controller this service should target
-    controller: rs0-routeserver
+    controller: {{ $name }}-routeserver
 
     # -- Make this the primary service for this controller (used in probes, notes, etc...).
     # If there is more than 1 service targeting the controller, make sure that only 1 service is
@@ -38,7 +140,7 @@ service:
     # # -- Provide additional annotations which may be required.
     annotations:
       purelb.io/allow-local: 'true'
-      purelb.io/addresses: '{{ $.Values.routeservers.rs0.ipAddress }}'
+      purelb.io/addresses: '{{ $rs.ipAddress }}'
 
     # -- Allow adding additional match labels
     extraSelectorLabels: {}
@@ -63,7 +165,67 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:
+  {{- end }}
 
+configMaps:
+  frrconfig:
+    data:
+      frr.conf: |
+        # default to using syslog. /etc/rsyslog.d/45-frr.conf places the log in
+        # /var/log/frr/frr.log
+        #
+        # Note:
+        # FRR's configuration shell, vtysh, dynamically edits the live, in-memory
+        # configuration while FRR is running. When instructed, vtysh will persist the
+        # live configuration to this file, overwriting its contents. If you want to
+        # avoid this, you can edit this file manually before starting FRR, or instruct
+        # vtysh to write configuration to a different file.
+        log syslog informational
+        !
+        ip prefix-list ADV seq 1 permit any
+        !
+        debug bgp neighbor-events
+        !
+        ip nht resolve-via-default
+        !
+        route-map OUT permit 10
+          match ip address prefix-list ADV
+        exit
+        !
+        router bgp 64567
+          bgp router-id 10.1.1.179
+          no bgp ebgp-requires-policy
+          bgp disable-ebgp-connected-route-check
+          bgp bestpath peer-type multipath-relax
+          bgp graceful-restart stalepath-time 300
+          neighbor cilium peer-group
+          neighbor cilium ebgp-multihop 6
+          neighbor cilium remote-as 64512
+          neighbor WAN-RT peer-group
+          neighbor WAN-RT remote-as internal
+          neighbor routeserver peer-group
+          neighbor routeserver remote-as internal
+          neighbor tunneler peer-group
+          neighbor tunneler remote-as 64513
+          neighbor 172.31.241.237 peer-group WAN-RT
+          neighbor 172.31.243.1 peer-group routeserver
+          bgp listen range 172.31.241.0/24 peer-group cilium
+          bgp listen range 172.16.20.0/24 peer-group cilium
+          bgp listen range 172.20.56.0/22 peer-group tunneler
+          !
+          address-family ipv4 unicast
+            maximum-paths 64
+            maximum-paths ibgp 64
+            neighbor tunneler activate
+            neighbor WAN-RT route-reflector-client
+            neighbor WAN-RT attribute-unchanged next-hop
+            neighbor WAN-RT soft-reconfiguration inbound
+            neighbor cilium soft-reconfiguration inbound
+            neighbor routeserver soft-reconfiguration inbound
+          exit-address-family
+        exit
+        !
+        end
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}

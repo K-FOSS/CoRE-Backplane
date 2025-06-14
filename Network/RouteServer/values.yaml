@@ -1,100 +1,49 @@
 routeservers:
+  
   rs0:
     ipAddress: 1.1.1.1
 
-controllers:
-  rs0-routeserver:
-    # For Deployments, valid values are Recreate (default) and RollingUpdate.
-    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
-    # DaemonSets/CronJobs ignore this.
-    strategy: RollingUpdate
+    frr:
+      version: v8.3.1
 
-    nameOverride: route-server
+    peers:
+      - peerAddress: 172.31.192.16
+        # remoteASN: ''
 
-    containers:
-      frr:
-        image:
-          repository: frrouting/frr
-          #
-          # TODO: Get Renovate or similar managing this
-          #
-          tag: v8.3.1
-          pullPolicy: IfNotPresent
+        softReconfiguration: true
 
-        securityContext:
-          seLinuxOptions: {}
-          privileged: false
-          allowPrivilegeEscalation: false
-          runAsNonRoot: false
-          readOnlyRootFilesystem: false
-          seccompProfile:
-            type: "RuntimeDefault"
-          capabilities:
-            add: 
-              - 'NET_ADMIN'
-              - 'SYS_ADMIN'
+        peerGroup: frr-gw
 
-        # -- Probe configuration
-        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-        # @default -- See below
-        probes:
-          # -- Liveness probe configuration
-          # @default -- See below
-          liveness:
-            # -- Enable the liveness probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own livenessProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default livenessProbe.
-            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              periodSeconds: 10
-              timeoutSeconds: 1
-              failureThreshold: 3
+    peerGroups:
+      - name: frr-gw
+        remoteASN: 64567
 
-          # -- Redainess probe configuration
-          # @default -- See below
-          readiness:
-            # -- Enable the readiness probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own readinessProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default readinessProbe.
-            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              periodSeconds: 10
-              timeoutSeconds: 1
-              failureThreshold: 3
 
-          # -- Startup probe configuration
-          # @default -- See below
-          startup:
-            # -- Enable the startup probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own startupProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default startupProbe.
-            # If you selected `custom: true`, this field holds the definition of the startupProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              timeoutSeconds: 1
-              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
-              periodSeconds: 5
-              failureThreshold: 30    
+  rs1:
+    ipAddress: 1.1.1.1
+
+    peers:
+      - peerAddress: 172.31.192.16
+        # remoteASN: ''
+
+        softReconfiguration: true
+
+        peerGroup: frr-gw
+
+    peerGroups:
+      - name: frr-gw
+        remoteASN: 64567
+
+
+
+
+frr:
+  #
+  # TODO: Get this automatically updating with Renovate or similar
+  #
+  version: v8.3.1
+
+
 
 persistence:
   frrconfig:
@@ -211,60 +160,3 @@ configMaps:
         # or you can use "all_wrap" for all daemons, e.g. to use perf record:
         #   all_wrap="/usr/bin/perf record --call-graph -"
         # the normal daemon command is added to this at the end.
-
-      frr.conf: |
-        # default to using syslog. /etc/rsyslog.d/45-frr.conf places the log in
-        # /var/log/frr/frr.log
-        #
-        # Note:
-        # FRR's configuration shell, vtysh, dynamically edits the live, in-memory
-        # configuration while FRR is running. When instructed, vtysh will persist the
-        # live configuration to this file, overwriting its contents. If you want to
-        # avoid this, you can edit this file manually before starting FRR, or instruct
-        # vtysh to write configuration to a different file.
-        log syslog informational
-        !
-        ip prefix-list ADV seq 1 permit any
-        !
-        debug bgp neighbor-events
-        !
-        ip nht resolve-via-default
-        !
-        route-map OUT permit 10
-          match ip address prefix-list ADV
-        exit
-        !
-        router bgp 64567
-          bgp router-id 10.1.1.179
-          no bgp ebgp-requires-policy
-          bgp disable-ebgp-connected-route-check
-          bgp bestpath peer-type multipath-relax
-          bgp graceful-restart stalepath-time 300
-          neighbor cilium peer-group
-          neighbor cilium ebgp-multihop 6
-          neighbor cilium remote-as 64512
-          neighbor WAN-RT peer-group
-          neighbor WAN-RT remote-as internal
-          neighbor routeserver peer-group
-          neighbor routeserver remote-as internal
-          neighbor tunneler peer-group
-          neighbor tunneler remote-as 64513
-          neighbor 172.31.241.237 peer-group WAN-RT
-          neighbor 172.31.243.1 peer-group routeserver
-          bgp listen range 172.31.241.0/24 peer-group cilium
-          bgp listen range 172.16.20.0/24 peer-group cilium
-          bgp listen range 172.20.56.0/22 peer-group tunneler
-          !
-          address-family ipv4 unicast
-            maximum-paths 64
-            maximum-paths ibgp 64
-            neighbor tunneler activate
-            neighbor WAN-RT route-reflector-client
-            neighbor WAN-RT attribute-unchanged next-hop
-            neighbor WAN-RT soft-reconfiguration inbound
-            neighbor cilium soft-reconfiguration inbound
-            neighbor routeserver soft-reconfiguration inbound
-          exit-address-family
-        exit
-        !
-        end
