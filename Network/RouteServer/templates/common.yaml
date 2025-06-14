@@ -294,14 +294,13 @@ configMaps:
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
-          {{- range $peerGroupIndex, $peerGroup := $rs.peerGroups }}
+          {{- range $peerGroupIndex, $peerGroup := $rs.bgp.peerGroups }}
           neighbor {{ $peerGroup.name }} peer-group
           {{- with $peerGroup.ebgpmultihop }}
           neighbor {{ $peerGroup.name }} ebgp-multihop {{ . }}
           {{- end }}
           neighbor {{ $peerGroup.name }} remote-as {{ $peerGroup.asn }}
           {{- end }}
-          neighbor 172.31.241.237 peer-group WAN-RT
           neighbor 172.31.243.1 peer-group routeserver
           bgp listen range 172.31.241.0/24 peer-group cilium
           bgp listen range 172.16.20.0/24 peer-group cilium
