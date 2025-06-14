@@ -303,7 +303,9 @@ configMaps:
           {{- end }}
 
           {{- range $peerIndex, $peer := $rs.bgp.peers }}
-          neighbor {{ $peer.address }} 
+          {{- with $peer.remoteASN }}
+          neighbor {{ $peer.address }} remote-as {{ . }}
+          {{- end }}
 
           {{- with $peer.ebgpmultihop }}
           neighbor {{ $peer.address }} ebgp-multihop {{ . }}
