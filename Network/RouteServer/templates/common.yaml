@@ -319,17 +319,15 @@ configMaps:
           {{- range $afiIndex, $afi := $rs.bgp.afi }}
           {{- range $safiIndex, $safi := $afi }}
           address-family {{ $afiIndex }} {{ $safiIndex }}
-            {{ range $safiKeyIndex, $safiKey := $safi }}
-            {{ range $safiSubKeyIndex, $safiSubKey := $safiKey }}
+            {{- range $safiKeyIndex, $safiKey := $safi }}
+            {{- range $safiSubKeyIndex, $safiSubKey := $safiKey }}
             {{ $safiKeyIndex }} {{ $safiSubKey.name }} {{ $safiSubKey.action }} 
-            {{ end }}
-            {{ end }}
-
+            {{- end }}
+            {{- end }}
           exit-address-family
           {{- end }}
-
           {{- end }}
-          
+          !
           address-family ipv4 unicast
             maximum-paths 64
             maximum-paths ibgp 64
