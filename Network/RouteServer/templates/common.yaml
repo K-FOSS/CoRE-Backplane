@@ -289,11 +289,15 @@ configMaps:
         exit
         !
         router bgp 64567
-          bgp router-id 10.1.1.179
+          bgp router-id {{ $rs.ipAddress }}
           no bgp ebgp-requires-policy
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
+          {{- range $peerGroupIndex, $peerGroup := $rs.peerGroups }}
+          neighbor {{ $peerGroup.name }} peer-group
+          neighbor {{ $peerGroup.name }} remote-as {{ $peerGroup.asn }}
+          {{- end }}
           neighbor cilium peer-group
           neighbor cilium ebgp-multihop 6
           neighbor cilium remote-as 64512
