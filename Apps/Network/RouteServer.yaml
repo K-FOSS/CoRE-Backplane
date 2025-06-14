@@ -19,14 +19,64 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
-                    ipAddresses:
-                      rs0: 10.1.1.179
+                    routeservers:
+                      rs0:
+                        ipAddress: 10.1.1.179
+
+                        bgp:
+                          enabled: true
+
+                          peers:
+                            - peerAddress: 172.31.241.237
+                              # remoteASN: ''
+
+                              #eBGPMultihop: 6
+
+                              softReconfiguration: true
+
+                              peerGroup: WAN-RT
+
+                          peerGroups:
+                            - name: cilium
+                              asn: 64512
+                              ebgpmultihop: 6
+
+                            - name: tunneler
+                              asn: 64513
+                              ebgpmultihop: 6
+
+                            - name: WAN-RT
+                              asn: 64567
+                        frr:
+                          version: v8.3.1
 
                 - name:  core-home1-talos-prod
                   values:
                     hub: false
-                    ipAddresses:
-                      rs0: 10.1.1.181
+                    routeservers:
+                      rs0:
+                        ipAddress: 10.1.1.179
+
+                        bgp:
+                          enabled: true
+
+                          peers:
+                            - peerAddress: 172.31.192.16
+                              # remoteASN: ''
+
+                              eBGPMultihop: 6
+
+                              softReconfiguration: true
+
+                              peerGroup: frr-gw
+
+                          peerGroups:
+                            - name: frr-gw
+                              asn: 64567
+                              ebgpmultihop: 6
+
+                        frr:
+                          version: v8.3.1
           - clusters:
               selector:
                 matchLabels:
@@ -70,8 +120,7 @@ spec:
                 hub: {{ .values.hub }}
 
                 routeservers:
-                  rs0:
-                    ipAddress: {{ .values.ipAddresses.rs0 }}
+                {{ nindent 2 (toYaml .values.routeservers) }}
 
                 cluster:
                   name: {{ .values.clusterName }}
