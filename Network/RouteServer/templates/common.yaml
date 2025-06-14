@@ -169,13 +169,12 @@ service:
 
 configMaps:
 configMaps:
-  frrconfig:
+{{- range $name, $rs := .Values.routeservers }}
+  {{ $name }}-config:
     enabled: true
 
     data:
-
-      {{- range $name, $rs := .Values.routeservers }}
-      {{ $name }}-daemons: |
+      daemons: |
         # This file tells the frr package which daemons to start.
         #
         # Sample configurations for these daemons can be found in
@@ -266,7 +265,7 @@ configMaps:
 
 
 
-      {{ $name }}-frr.conf: |
+      frr.conf: |
         # default to using syslog. /etc/rsyslog.d/45-frr.conf places the log in
         # /var/log/frr/frr.log
         #
@@ -327,34 +326,32 @@ configMaps:
         exit
         !
         end
-      {{- end }}
+{{- end }}
 
 
 
 persistence:
-  frrconfig:
+  {{- range $name, $rs := .Values.routeservers }}
+  {{ $name }}-config:
     enabled: true
 
     type: configMap
 
-    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-frrconfig'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $name }}-config'
 
     defaultMode: 0755
 
     advancedMounts:
-      {{- range $name, $rs := .Values.routeservers }}
-
       {{ $name }}-routeserver: # the controller with the "main" identifier
         frr: # the container with the "main" identifier
           - path: /etc/frr/frr.conf
             readOnly: true
-            subPath: {{ $name }}-frr.conf
+            subPath: frr.conf
 
           - path: /etc/frr/daemons
             readOnly: true
-            subPath: {{ $name }}-daemons
-
-      {{- end }}
+            subPath: daemons
+  {{- end }}
 
 
 {{- end -}}
