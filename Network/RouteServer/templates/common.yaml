@@ -170,7 +170,8 @@ service:
 configMaps:
   frrconfig:
     data:
-      frr.conf: |
+      {{- range $name, $rs := .Values.routeservers }}
+      {{ $name }}-frr.conf: |
         # default to using syslog. /etc/rsyslog.d/45-frr.conf places the log in
         # /var/log/frr/frr.log
         #
@@ -226,6 +227,35 @@ configMaps:
         exit
         !
         end
+      {{- end }}
+
+
+
+persistence:
+  frrconfig:
+    enabled: true
+
+    type: configMap
+
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-frrconfig'
+
+    defaultMode: 0755
+
+    advancedMounts:
+      {{- range $name, $rs := .Values.routeservers }}
+
+      {{ $name }}-routeserver: # the controller with the "main" identifier
+        frr: # the container with the "main" identifier
+          - path: /etc/frr/frr.conf
+            readOnly: true
+            subPath: {{ $name }}-frr.conf
+
+          - path: /etc/frr/daemons
+            readOnly: true
+            subPath: daemons
+
+      {{- end }}
+
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
