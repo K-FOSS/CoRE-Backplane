@@ -30,7 +30,7 @@ controllers:
           #
           # TODO: Get Renovate or similar managing this
           #
-          tag: {{ $rs.frr.version | default $.Values.frr.defaultVersion }}
+          tag: {{ if and $rs.frr $rs.frr.version }}{{ $rs.frr.version }}{{ else }}{{ $.Values.frr.defaultVersion }}{{ end }}
           pullPolicy: IfNotPresent
 
         securityContext:
