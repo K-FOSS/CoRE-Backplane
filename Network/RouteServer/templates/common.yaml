@@ -317,8 +317,11 @@ configMaps:
           {{- end }}
           !
           {{- range $afiIndex, $afi := $rs.bgp.afi }}
-          {{- range $safiIndex, $safi := $rs.bgp.afi }}
-          address-family {{ $afiIndex }} {{ $safiIndex }} 
+          {{- range $safiIndex, $safi := $afi }}
+          address-family {{ $afiIndex }} {{ $safiIndex }}
+            
+
+          exit-address-family
           {{- end }}
 
           {{- end }}
