@@ -320,7 +320,9 @@ configMaps:
           {{- range $safiIndex, $safi := $afi }}
           address-family {{ $afiIndex }} {{ $safiIndex }}
             {{ range $safiKeyIndex, $safiKey := $safi }}
-            {{ $safiKeyIndex }} 
+            {{ range $safiSubKeyIndex, $safiSubKey := $safiKey }}
+            {{ $safiKeyIndex }} {{ $safiSubKey.name }} {{ $safiSubKey.action }} 
+            {{ end }}
             {{ end }}
 
           exit-address-family
