@@ -301,9 +301,19 @@ configMaps:
           {{- end }}
           neighbor {{ $peerGroup.name }} remote-as {{ $peerGroup.asn }}
           {{- end }}
-          neighbor 172.31.243.1 peer-group routeserver
-          bgp listen range 172.31.241.0/24 peer-group cilium
-          bgp listen range 172.20.56.0/22 peer-group tunneler
+
+          {{- range $peerIndex, $peer := $rs.bgp.peers }}
+          neighbor {{ $peer.address }} 
+
+          {{- with $peer.ebgpmultihop }}
+          neighbor {{ $peer.address }} ebgp-multihop {{ . }}
+          {{- end }}
+
+          {{- with $peer.peerGroup }}
+          neighbor {{ $peer.address }} peer-group {{ . }}
+          {{- end }}
+
+          {{- end }}
           !
           address-family ipv4 unicast
             maximum-paths 64
