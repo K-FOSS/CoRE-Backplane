@@ -296,6 +296,9 @@ configMaps:
           bgp graceful-restart stalepath-time 300
           {{- range $peerGroupIndex, $peerGroup := $rs.peerGroups }}
           neighbor {{ $peerGroup.name }} peer-group
+          {{- with $peerGroup.ebgpmultihop }}
+          neighbor {{ $peerGroup.name }} ebgp-multihop {{ . }}
+          {{- end }}
           neighbor {{ $peerGroup.name }} remote-as {{ $peerGroup.asn }}
           {{- end }}
           neighbor cilium peer-group
