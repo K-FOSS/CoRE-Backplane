@@ -316,6 +316,13 @@ configMaps:
 
           {{- end }}
           !
+          {{- range $afiIndex, $afi := $rs.bgp.afi }}
+          {{- range $safiIndex, $safi := $rs.bgp.afi }}
+          address-family {{ $afiIndex }} {{ $safiIndex }} 
+          {{- end }}
+
+          {{- end }}
+          
           address-family ipv4 unicast
             maximum-paths 64
             maximum-paths ibgp 64
