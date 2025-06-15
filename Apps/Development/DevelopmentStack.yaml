@@ -12,14 +12,35 @@ spec:
   goTemplateOptions:
     - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/env: 'prod'
-        values:
-          clusterName: '{{ .name }}'
-          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    hub: false
+
+                    gitlab:
+                      enabled: false
+
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
+
+                    gitlab:
+                      enabled: false
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/env: 'prod'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -57,6 +78,12 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
                 env: {{ .values.environment }}
+
+                hub: {{ .values.hub }}
+
+                gitlab:
+                  enabled: {{ .values.gitlab.enabled }}
+
                 harbor:
                   fullnameOverride: '{{ .values.clusterName }}-development-harbor-helm'
 
