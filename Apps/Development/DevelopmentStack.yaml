@@ -26,11 +26,29 @@ spec:
                     gitlab:
                       enabled: false
 
+                    harbor:
+                      enabled: false
+
+                    artifacthub:
+                      enabled: false
+
+                    che:
+                      enabled: true
+
                 - name: core-home1-talos-prod
                   values:
                     hub: false
 
                     gitlab:
+                      enabled: false
+
+                    harbor:
+                      enabled: false
+
+                    artifacthub:
+                      enabled: false
+
+                    che:
                       enabled: false
 
           - clusters:
@@ -84,8 +102,13 @@ spec:
                 gitlab:
                   enabled: {{ .values.gitlab.enabled }}
 
+                artifact-hub:
+                  enabled: {{ .values.artifacthub.enabled }}
+
                 harbor:
                   fullnameOverride: '{{ .values.clusterName }}-development-harbor-helm'
+
+                  enabled: {{ .values.harbor.enabled }}
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
