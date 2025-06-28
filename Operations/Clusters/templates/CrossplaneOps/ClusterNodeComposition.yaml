@@ -220,6 +220,14 @@ spec:
 
                         disableDhcp: false
                         netboot:
+                          {{- if $.observed.composite.resource.spec.overrides.pxe.script }}
+                          allowPXE: true
+                          allowWorkflow: false
+                          ipxe:
+                            contents: | # shell
+            {{ indent 18 $.observed.composite.resource.spec.overrides.pxe.script }}
+
+                          {{- else }}
                           {{ $tinkMachineResource := getComposedResource $ $tinkMachineResourceName }}
                           {{ $talosConfigWorkflowResource := getComposedResource $ $talosTFTest }}
                           {{ if eq $tinkMachineResource.status.atProvider.manifest.status.ready true }}
@@ -228,7 +236,6 @@ spec:
                           ipxe:
                             contents: | # shell
                               #!ipxe
-
                               imgfree
                               kernel https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/kernel-amd64 reboot=hard talos.platform=metal init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m `}}{{ if .Values.logging.talos.kernel.enabled }}talos.logging.kernel={{ .Values.logging.talos.kernel.endpoint }}{{ end }} {{` {{ if $.observed.composite.resource.spec.danger.warningdonotdounlessyouknowwhatyouaredoing.wipeOnReboot }}talos.experimental.wipe=system{{ end }} talos.config=http://`}}{{ .Values.tinkerbell.ip }}{{`:50061/2009-04-04/user-data
                               initrd https://pxe.factory.talos.dev/image/{{ $talosImageFactory.status.atProvider.outputs.schematic_id }}/{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}/initramfs-amd64.xz
@@ -237,6 +244,7 @@ spec:
                           allowPXE: true
                           allowWorkflow: true
                           {{ end }}
+                          {{- end }}
 
                       {{ end }}
             {{ end }}
