@@ -448,7 +448,12 @@ spec:
                               {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                               {{ if $network.static }}
                               {
-                                {{ if $network.bridge  }}
+                                interface = "enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"
+
+                                {{ if $network.bridge }}
+                                mtu = {{ $network.mtu }}
+                              },
+                              {
                                 interface = "br{{ $netIndex }}"
                                 bridge = {
                                   stp = {
@@ -457,11 +462,8 @@ spec:
 
                                   interfaces = ["enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"]
                                 }
+                                {{- end }}
 
-                                {{ else }}
-                                interface = "enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"
-
-                                {{ end }}
                                 mtu = {{ $network.mtu }}
                                 addresses = [
                                   {{- range $addrIndex, $address := $network.addresses }}
