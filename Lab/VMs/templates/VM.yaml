@@ -13,6 +13,11 @@ spec:
         - name: default
           pod: {} # Stock pod network
 
+
+        - name: bridge-net
+          multus:
+            networkName: backend-network
+
       priorityClassName: system-cluster-critical
 
       domain:
@@ -41,13 +46,23 @@ spec:
                 bus: virtio
 
           interfaces:
+            - bridge: {}
+              name: bridge-net
+
             - name: default
               masquerade: {}
+              ports:
+                - name: wireguard
+                  port: 64762
+                  protocol: UDP
+
         resources:
           requests:
-            memory: 2Gi
+            memory: 4Gi
+            cpu: '100m'
           limits:
-            memory: 2Gi
+            memory: 4Gi
+            cpu: 2
       volumes:
         - name: vyos-install-cd
           dataVolume:
