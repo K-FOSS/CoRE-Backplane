@@ -67,7 +67,7 @@ spec:
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
-      {{ range $index, $group := .Values.oauth.groups }}
+      {{ range $index, $group := .Values.oidc.groups }}
       data "authentik_group" "group-{{ $index }}" {
         name = "{{ $group }}"
       } 
@@ -107,7 +107,7 @@ spec:
       }
 
       output "OIDC_SCOPES" {
-        value     = "{{ .Values.oauth.scopes }}"
+        value     = "{{ .Values.oidc.scopes }}"
         sensitive = true
       }
 {{- end }}
