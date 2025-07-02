@@ -1,0 +1,83 @@
+cluster:
+  name: k8s
+  domain: cluster.local
+
+gateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: https-myloginspace
+
+datacenter: dc1
+
+region: yxl
+
+authentik:
+  autoconfigure: true
+
+ldap:
+  enabled: true
+
+admin:
+  dashboard:
+    enabled: true
+
+    domainKey: s3-dashboard
+
+oidc:
+  enabled: true
+
+  indexKey: headlamp
+
+  scopes: ''
+
+  groups:
+    - Server Admins
+
+  authentik:
+    urlBase: https://idp.mylogin.space
+
+
+domain: mylogin.space
+
+secrets:
+  keys:
+    oidc:
+      clientid:
+        key: Minio/OIDC
+        property: ClientID
+
+
+      clientsecret:
+        key: Minio/OIDC
+        property: ClientSecret
+
+    ldap:
+      hostname:
+        key: Minio/LDAP
+        property: Hostname
+
+      port:
+        key: Minio/LDAP
+        property: Port
+
+      username:
+        key: Minio/User
+        property: Username
+
+      password:
+        keys: Minio/User
+        property: Password
+
+
+    root:
+      username:
+        key: Minio/General
+        property: RootUsername
+
+      password:
+        keys: Minio/General
+        property: RootPassword
+
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core

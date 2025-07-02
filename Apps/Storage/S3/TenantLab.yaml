@@ -1,0 +1,69 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-storage-s3-tenant
+  namespace: argocd
+
+spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+        values:
+          clusterName: '{{ .name }}'
+          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-core-storage-s3-tenant-{{ .values.environment }}'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=true
+
+      source:
+        path: Storage/S3/TenantLab
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+
+                env: {{ .values.environment }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
+
+      destination:
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}

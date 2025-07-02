@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dash-{{ .Release.Name }}
+
+spec:
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http-console
+      port: 9090
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    v1.min.io/tenant: {{ .Release.Name }}
+
+  sessionAffinity: None
+  type: ClusterIP
+

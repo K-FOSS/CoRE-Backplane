@@ -1,0 +1,113 @@
+{{- if .Values.authentik.autoconfigure }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  providerConfigRef:
+    name: authentik
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Release.Name }}-aaa
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+          "goauthentik.io/providers/oauth2/scope-offline_access"
+        ]
+      }
+
+      data "authentik_certificate_key_pair" "cert" {
+        name = "tls"
+      }
+
+      resource "random_password" "client-secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
+      resource "authentik_provider_oauth2" "auth-provider" {
+        name          = "S3 {{ .Values.cluster.name }} {{ .Values.datacenter }} {{ .Values.region }}"
+        client_id     = "{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        client_secret = random_password.client-secret.result
+        signing_key = data.authentik_certificate_key_pair.cert.id
+        allowed_redirect_uris = [
+          {
+            matching_mode = "regex",
+            url           = "https://{{ .Values.admin.dashboard.domainKey }}.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}/oauth_callback",
+          },
+        ]
+
+        property_mappings  = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+      }
+
+      resource "authentik_application" "application" {
+        name              = "S3"
+        slug              = "{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        protocol_provider = authentik_provider_oauth2.auth-provider.id
+      }
+
+      {{ range $index, $group := .Values.oauth.groups }}
+      data "authentik_group" "group-{{ $index }}" {
+        name = "{{ $group }}"
+      } 
+
+      resource "authentik_application_entitlement" "ent-{{ $index }}" {
+        name        = "${data.authentik_group.group-{{ $index }}.id}-ent"
+        application = authentik_application.application.uuid
+      }
+
+      resource "authentik_policy_binding" "ent-{{ $index }}-access" {
+        target = authentik_application_entitlement.ent-{{ $index }}.id
+        group  = data.authentik_group.group-{{ $index }}.id
+        order  = {{ $index }}
+      } 
+
+      resource "authentik_policy_binding" "ent-{{ $index }}-app-access" {
+        target = authentik_application.application.uuid
+        group  = data.authentik_group.group-{{ $index }}.id
+        order  = {{ $index }}
+      }
+
+      {{ end }}
+
+      output "OIDC_CLIENT_ID" {
+        value = authentik_provider_oauth2.auth-provider.client_id
+        sensitive = true
+      }
+
+      output "OIDC_CLIENT_SECRET" {
+        value     = random_password.client-secret.result
+        sensitive = true
+      }
+
+      output "OIDC_ISSUER_URL" {
+        value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/"
+        sensitive = true
+      }
+
+      output "OIDC_SCOPES" {
+        value     = "{{ .Values.oauth.scopes }}"
+        sensitive = true
+      }
+{{- end }}

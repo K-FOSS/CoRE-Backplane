@@ -1,0 +1,90 @@
+
+apiVersion: minio.min.io/v2
+kind: Tenant
+metadata:
+  name: {{ .Release.Name }}
+
+scheduler:
+  name: ""
+spec:
+  configuration:
+    name: {{ .Release.Name }}-config
+
+  imagePullSecret: {}
+
+  mountPath: /export
+  features:
+    bucketDNS: true
+    enableSFTP: false
+    domains:
+      minio:
+        - s3.mylogin.space
+
+  pools:
+    - name: pool-0
+
+      resources:
+        requests:
+          cpu: 64m
+          memory: 512Mi
+
+      servers: 4
+
+      volumeClaimTemplate:
+        metadata:
+          name: data
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: '322122547200'
+        status: {}
+      volumesPerServer: 1
+
+  priorityClassName: tier2-priority
+
+  env:
+    - name: MINIO_DOMAIN
+      value: s3.mylogin.space
+
+    - name: MINIO_BROWSER_REDIRECT_URL
+      value: https://s3.int.mylogin.space
+
+    - name: MINIO_SERVER_URL
+      value: https://s3.mylogin.space
+
+    #
+    # OIDC
+    #
+    - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
+      value: https://s3.int.mylogin.space/oauth_callback
+
+    - name: MINIO_DOMAIN
+      value: 's3.mylogin.space,core-prod.svc.cluster.local,core-prod.svc.k0s.resolvemy.host'
+
+    - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN
+      value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+
+    - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER
+      value: '(&(objectclass=user)(cn=%s))'
+
+    - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER
+      value: '(&(objectclass=group)(member=%s))'
+
+    - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN
+      value: ou=groups,dc=ldap,dc=mylogin,dc=space
+
+
+  prometheusOperator: false
+  # prometheus:
+  #   diskCapacityGB: 20
+  #   resources: {}
+  #   securityContext:
+  #     fsGroup: 1000
+  #     runAsGroup: 1000
+  #     runAsNonRoot: true
+  #     runAsUser: 1000
+
+  requestAutoCert: false
+
