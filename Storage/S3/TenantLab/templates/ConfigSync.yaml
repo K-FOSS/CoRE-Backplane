@@ -14,9 +14,6 @@ spec:
       engineVersion: v2
       data:
         config.env: | # sh
-          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,{{ .Values.ldap.base }}"
-          export MINIO_IDENTITY_OPENID_CONFIG_URL="{{ .Values.oidc.authentik.urlBase }}/application/o/S3/.well-known/openid-configuration"
-          export MINIO_IDENTITY_OPENID_SCOPES="{{ .Values.oidc.scopes | join "," }}"
           #
           # TODO Figure out if we can move this directly to tenant
           #
@@ -41,10 +38,6 @@ spec:
           export MINIO_IDENTITY_LDAP_SERVER_ADDR="{{ .LDAPHostname }}:{{ .LDAPPort }}" 
 
           export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .Username }},ou=users,`}}{{ .Values.ldap.base }}"
-
-          export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(&(objectclass=user)(cn=%s))"
-
-          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=group)(member=%d))"
   data:
     - secretKey: OIDCClientID
       remoteRef:
