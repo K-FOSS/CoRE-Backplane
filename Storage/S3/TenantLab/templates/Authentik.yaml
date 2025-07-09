@@ -107,7 +107,7 @@ spec:
       }
 
       output "OIDC_SCOPES" {
-        value     = "{{ .Values.oidc.scopes | join "," }}"
+        value     = tostring(data.authentik_property_mapping_provider_scope.scopes)
         sensitive = true
       }
 {{- end }}
