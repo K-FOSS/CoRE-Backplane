@@ -45,11 +45,11 @@ spec:
         name       = "{{ .Release.Name }}-s3-dash"
         scope_name = "{{ .Release.Name }}-s3"
         expression = <<EOF
-        if ak_is_group_member(request.user, name=local.admingroup):
-          return {
-            "policy": "consoleAdmin",
-          }
-        return None
+      if ak_is_group_member(request.user, name=local.admingroup):
+        return {
+          "policy": "consoleAdmin",
+        }
+      return None
       EOF
       }
 
