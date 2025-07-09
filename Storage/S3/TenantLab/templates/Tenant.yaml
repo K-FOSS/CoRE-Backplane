@@ -68,7 +68,10 @@ spec:
       value: 's3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }},{{ .Release.Namespace }}.svc.cluster.local,{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
 
     - name: MINIO_IDENTITY_OPENID_CONFIG_URL
-      value: '{{ .Values.oidc.authentik.urlBase }}/application/o/S3/.well-known/openid-configuration'
+      valueFrom:
+        secretKeyRef:
+          name: {{ .Release.Name }}-aaa
+          key: MINIO_IDENTITY_OPENID_CONFIG_URL
 
     - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN
       value: 'ou=users,{{ .Values.ldap.base }}'
