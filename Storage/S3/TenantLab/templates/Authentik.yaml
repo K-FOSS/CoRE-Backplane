@@ -41,7 +41,7 @@ spec:
         is_superuser = false
       }
 
-      resource "authentik_property_mapping_provider_scope" "name" {
+      resource "authentik_property_mapping_provider_scope" "dashscope" {
         name       = "{{ .Release.Name }}-s3-dash"
         scope_name = "{{ .Release.Name }}-s3"
         expression = <<EOF
@@ -85,7 +85,7 @@ spec:
           },
         ]
 
-        property_mappings  = data.authentik_property_mapping_provider_scope.scopes.ids
+        property_mappings  = concat([data.authentik_property_mapping_provider_scope.dashscope.id], tolist(data.authentik_property_mapping_provider_scope.scopes.ids)) 
         authorization_flow = data.authentik_flow.default-authorization-flow.id
         invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
       }
