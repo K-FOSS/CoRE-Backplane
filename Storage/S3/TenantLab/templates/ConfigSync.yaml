@@ -13,22 +13,21 @@ spec:
     template:
       engineVersion: v2
       data:
-        config.env: | {{`
+        config.env: | # sh
+          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,dc=ldap,dc=mylogin,dc=space"
+          export MINIO_IDENTITY_OPENID_CONFIG_URL="{{ .Values.oidc.authentik.urlBase }}/application/o/S3/.well-known/openid-configuration"
+          export MINIO_IDENTITY_OPENID_SCOPES="{{ .Values.oidc.scopes | join "," }}"
+          {{`
           export MINIO_ROOT_USER="{{ .RootUsername }}"
 
-          export MINIO_IDENTITY_OPENID_CONFIG_URL="https://idp.mylogin.space/application/o/S3/.well-known/openid-configuration"
-
           export MINIO_IDENTITY_OPENID_CLIENT_SECRET="{{ .OIDCClientSecret }}"
-
-          export MINIO_IDENTITY_OPENID_SCOPES="openid,profile,email,minio"
 
           export MINIO_ROOT_PASSWORD="{{ .RootPassword }}"
 
           export MINIO_STORAGE_CLASS_STANDARD="EC:2"
 
-          export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OIDCClientID }}" `}}
+          export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OIDCClientID }}"
 
-          {{`
           #
           # LDAP
           #
@@ -41,8 +40,6 @@ spec:
           export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(&(objectclass=user)(cn=%s))"
 
           export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=group)(member=%d))"
-
-          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,dc=ldap,dc=mylogin,dc=space"
 
           export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="{{ .Password }}"`}}
   data:
