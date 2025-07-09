@@ -113,10 +113,10 @@ spec:
       }
 
       output "OIDC_SCOPES" {
-        value = join(",", [
+        value = concat(join(",", [
           for s in data.authentik_property_mapping_provider_scope.scopes.managed_list :
           replace(s, "goauthentik.io/providers/oauth2/scope-", "")
-        ])
+        ]), tolist(authentik_property_mapping_provider_scope.dashscope.name))
         sensitive = true
       }
 {{- end }}
