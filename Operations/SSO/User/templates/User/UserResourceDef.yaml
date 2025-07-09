@@ -45,6 +45,21 @@ spec:
     - mysqlPort
     - mysqlURI
 
+    #
+    # MongoDB
+    #
+    - mongoHostname
+    - mongoURI
+    - mongoPort
+
+    # 
+    # MQTT
+    #
+    - mqttHostname
+    - mqttPort
+
+    - miscJSON
+
     # S3
     - S3Hostname
     - S3Port
@@ -74,12 +89,6 @@ spec:
                 serviceAccount:
                   type: boolean
                   default: true
-
-                database:
-                  type: object
-                  properties:
-                    name:
-                      type: string
 
                 psql:
                   type: object
@@ -143,6 +152,12 @@ spec:
                       type: boolean
                       default: false
 
+                    buckets:
+                      type: array
+
+                      items:
+                        type: string   
+
                     writeCredentialsSecretRef:      
                       type: object
 
@@ -152,19 +167,6 @@ spec:
                   
                         name:
                           type: string
-
-
-                bucket:
-                  type: object
-                  properties:
-                    name:
-                      type: string
-
-                buckets:
-                  type: array
-
-                  items:
-                    type: string                
 
                 groups:
                   type: array
