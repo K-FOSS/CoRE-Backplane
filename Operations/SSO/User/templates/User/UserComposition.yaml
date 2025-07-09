@@ -1,1016 +1,368 @@
+
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   name: sso-user
+
   labels:
     implementation: mixed
+    resolvemy.host/env: 'alpha'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+
 spec:
   compositeTypeRef:
     apiVersion: mylogin.space/v1alpha1
     kind: XUser
 
   writeConnectionSecretsToNamespace: core-prod
-
-  resources:
-    #
-    # Create the user and use Terraform random to generate username, password, 
-    # and create the template for the S3 Bucket and other related resources and variables
-    #
-    - name: user
-      base:
-        apiVersion: tf.upbound.io/v1beta1
-        kind: Workspace
-        spec:
-          providerConfigRef:
-            name: authentik
-
-          writeConnectionSecretToRef:
-            namespace: core-prod
-            name: key1
-
-          forProvider:
-            source: Inline
-            module: | # hcl
-              resource "random_string" "username" {
-                length  = 10
-                special = false
-                upper = false
-                numeric = false
-              }
-
-              resource "random_password" "password" {
-                length  = 16
-                lower   = true
-                numeric = true
-                upper   = true
-                special = true
-                override_special = "$-_.+!*'(),"
-              }
-
-              variable "name" {
-                description = "Accounts friendly name"
-                type        = string
-              }
-
-              variable "username" {
-                description = "Accounts username"
-                type        = string
-                default = null
-                nullable = true
-              }
-
-              variable "ldaps" {
-                description = "LDAPs Configuration"
-                type        = object({
-                  hostname = string
-                  port = string
-                  uri = string
-                })
-              }
-
-              variable "mqtts" {
-                description = "MQTTs Configuration"
-                type        = object({
-                  hostname = string
-                  port = string
-                })
-              }
-
-              variable "sips" {
-                description = "SIPs Configuration"
-                type        = object({
-                  hostname = string
-                  port = string
-                  uri = string
-                })
-              }
-
-              variable "psql" {
-                description = "PSQL Configuration"
-                type        = object({
-                  hostname = string
-                  port = string
-                  uri = string
-                })
-              }
-
-              variable "mysql" {
-                description = "MySQL Configuration"
-
-                type = object({
-                  hostname = string
-                  port = string
-                  uri = string
-                })
-              }
-
-              variable "mongodb" {
-                description = "MongoDB Configuration"
-
-                type = object({
-                  hostname = string
-                  port = string
-                  uri = string
-                })
-              }
-
-              variable "s3" {
-                description = "S3 Configuration"
-
-                type = object({
-                  hostname = string
-                  port = string
-                })
-              }
-
-              variable "databaseName" {
-                description = "Accounts Database"
-                type        = string
-                default = null
-                nullable = true
-              }
-
-              variable "bucket" {
-                description = "Accounts S3 Bucket"
-                type        = string
-                nullable = true
-                default = null
-              }
-
-              variable "groups" {
-                description = "The groups the account should be apart of"
-
-                type = set(string)
-                default = []
-              }
-
-              variable "buckets" {
-                description = "The S3 Buckets the account should have access to"
-
-                type = set(string)
-
-                nullable = true
-                default = []
-
-              }
-
-              variable "serviceAccount" {
-                description = "If the account is a service account or not"
-                
-                type = bool
-                
-                default = true
-              }
-
-              data "authentik_group" "groups" {
-                for_each = var.groups
-                name = each.key
-              }
-
-              locals {
-                username = try(length(var.username), 0) > 0 ? var.username : random_string.username.result
-                databaseName = try(length(var.databaseName), 0) > 0 ? var.databaseName : local.username
-                groups = [for group in data.authentik_group.groups : group.id]
-                bucket = try(length(var.bucket), 0) > 0 ? var.bucket : local.username
-                buckets = concat([local.bucket], tolist(var.buckets))
-                password = random_password.password.result
-              }
-
-              resource "authentik_user" "name" {
-                name = var.name
-                username = local.username
-
-                password = local.password
-
-                groups = local.groups
-
-                type = var.serviceAccount == true ? "service_account" : "internal"
-              }
-
-              output "username" {
-                value = local.username
-                sensitive = false
-              }
-
-              output "password" {
-                value = local.password
-                sensitive = true
-              }
-
-              output "database" {
-                value = local.databaseName
-                sensitive = false
-              }
-
-              #
-              # LDAP
-              #
-
-              output "ldapsHostname" {
-                value = var.ldaps.hostname
-                sensitive = false
-              }
-
-              output "ldapsBIND" {
-                value = "cn=${local.username},ou=users,dc=ldap,dc=mylogin,dc=space"
-                sensitive = false
-              }
-
-              output "ldapsPort" {
-                value = var.ldaps.port
-                sensitive = false
-              }
-
-              output "ldapsURI" {
-                value = "${var.ldaps.uri}${var.ldaps.hostname}:${var.ldaps.port}"
-                sensitive = true
-              }
-
-              #
-              # SIPs
-              #
-
-              output "sipsHostname" {
-                value = var.sips.hostname
-                sensitive = false
-              }
-
-              output "sipsPort" {
-                value = var.sips.port
-                sensitive = false
-              }
-
-              output "sipsURI" {
-                value = "TODO"
-                sensitive = true
-              }
-
-              #
-              # PSQL
-              #
-
-              output "psqlHostname" {
-                value = var.psql.hostname
-                sensitive = false
-              }
-
-              output "psqlPort" {
-                value = var.psql.port
-                sensitive = false
-              }
-
-              output "psqlURI" {
-                value = "${var.psql.uri}${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
-                sensitive = true
-              }
-
-              #
-              # MySQL
-              #
-
-              output "mysqlHostname" {
-                value = var.mysql.hostname
-                sensitive = false
-              }
-
-              output "mysqlPort" {
-                value = var.mysql.port
-                sensitive = false
-              }
-
-              output "mysqlURI" {
-                value = "${var.mysql.uri}${local.username}:${local.password}@${var.mysql.hostname}:${var.mysql.port}/${local.databaseName}"
-                sensitive = true
-              }
-
-              #
-              # S3
-              #
-
-              output "bucket" {
-                value = local.bucket
-                sensitive = false
-              }
-
-              output "S3Hostname" {
-                value = var.s3.hostname
-                sensitive = false
-              }
-
-              output "S3Port" {
-                value = var.s3.port
-                sensitive = false
-              }
-
-              output "S3URI" {
-                value = "https://${var.s3.hostname}:${var.s3.port}"
-                sensitive = true
-              }
-
-              output "bucketPolicy" {
-                value = jsonencode({
-                  Version = "2012-10-17"
-                  Statement = [
-                    {
-                      Effect = "Allow"
-                      Action = [
-                        "s3:*"
-                      ],
-                      Resource = flatten([
-                          for bucket in local.buckets : ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
-                        ])
-                      
-                    }
-                  ]
-                })
-              }
-
-
-            varmap:
-              ldaps:
-                hostname: ldap.mylogin.space
-                port: 636
-                uri: ldaps://
-
-              sips:
-                hostname: sip.resolvemy.host
-                port: 5061
-                uri: sips://
-
-              psql:
-                hostname: psql-int.mylogin.space
-                port: 5432
-                uri: postgres://
-
-              mqtts:
-                hostname: mqtt.mylogin.space
-                port: 8443
-                uri: mqtts://
-              
-              mysql:
-                hostname: mysql.mylogin.space
-                port: 3306
-                uri: mysql://
-
-              mongodb:
-                hostname: mongo.mylogin.space
-                port: 3306
-                uri: mongodb://
-
-              s3:
-                hostname: s3.mylogin.space
-                port: 443
-
-              name: ''
-              serviceAccount: true
-              groups:
-                - LDAPService
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.name
-          toFieldPath: spec.forProvider.varmap.name
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.username
-          toFieldPath: spec.forProvider.varmap.username
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.database.name
-          toFieldPath: spec.forProvider.varmap.databaseName
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.psql.uri
-          toFieldPath: spec.forProvider.varmap.psql.uri
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.mysql.uri
-          toFieldPath: spec.forProvider.varmap.mysql.uri
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.bucket.name
-          toFieldPath: spec.forProvider.varmap.bucket
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.serviceAccount
-          toFieldPath: spec.forProvider.varmap.serviceAccount
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.buckets
-          toFieldPath: spec.forProvider.varmap.buckets
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.groups
-          toFieldPath: spec.forProvider.varmap.groups
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: metadata.uid
-          toFieldPath: "spec.writeConnectionSecretToRef.name"
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: '%s-secret'
-
-
-        #
-        # LDAP
-        #
-        - type: ToCompositeFieldPath
-          fromFieldPath: status.atProvider.outputs.ldapsBIND
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.ldap.user
-          
-
-        - type: ToCompositeFieldPath
-          fromFieldPath: spec.writeConnectionSecretToRef.name
-          toFieldPath: status.share.userSecret
-          policy:
-            fromFieldPath: Required
-
-        - fromFieldPath: status.atProvider.outputs.username
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.username
-          type: ToCompositeFieldPath
-
-        - fromFieldPath: status.atProvider.outputs.database
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.database
-          type: ToCompositeFieldPath
-
-        - fromFieldPath: status.atProvider.outputs.bucket
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.bucket
-          type: ToCompositeFieldPath
-
-        - fromFieldPath: status.atProvider.outputs.bucketPolicy
-          policy:
-            fromFieldPath: Required
-          toFieldPath: status.share.bucketPolicy
-          type: ToCompositeFieldPath
-
-      #
-      # TODO: Actually get this testing and doing things in the right order instead of rapid fire hitting APIs and recreating things
-      #
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-      
-      connectionDetails:
-        - name: username
-          fromConnectionSecretKey: username
-
-        - name: password
-          fromConnectionSecretKey: password
-
-        - name: database
-          fromConnectionSecretKey: database
-
-        #
-        # LDAP
-        #
-
-        - name: ldapsHostname
-          fromConnectionSecretKey: ldapsHostname
-
-        - name: ldapsBIND
-          fromConnectionSecretKey: ldapsBIND
-
-        - name: ldapsPort
-          fromConnectionSecretKey: ldapsPort
-
-        - name: ldapsURI
-          fromConnectionSecretKey: ldapsURI
-
-        #
-        # SIPs
-        #
-        - name: sipsHostname
-          fromConnectionSecretKey: sipsHostname
-
-        - name: sipsPort
-          fromConnectionSecretKey: sipsPort
-
-        - name: sipsURI
-          fromConnectionSecretKey: sipsURI
-
-        #
-        # SIP
-        #
-
-        #
-        # PSQL
-        #
-
-        - name: psqlHostname
-          fromConnectionSecretKey: psqlHostname
-
-        - name: psqlPort
-          fromConnectionSecretKey: psqlPort
-
-        - name: psqlURI
-          fromConnectionSecretKey: psqlURI
-
-        #
-        # MySQL
-        #
-
-        - name: mysqlHostname
-          fromConnectionSecretKey: mysqlHostname
-
-        - name: mysqlPort
-          fromConnectionSecretKey: mysqlPort
-
-        - name: mysqlURI
-          fromConnectionSecretKey: mysqlURI
-
-        #
-        # S3
-        #
-
-        - name: bucket
-          fromConnectionSecretKey: bucket
-
-        - name: S3Hostname
-          fromConnectionSecretKey: S3Hostname
-
-        - name: S3Port
-          fromConnectionSecretKey: S3Port
-
-        - name: S3URI
-          fromConnectionSecretKey: S3URI
-
-
-    #
-    # PostgreSQL Database Configuration
-    #
-    - name: role
-
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.userSecret
-          toFieldPath: spec.forProvider.passwordSecretRef.name
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: metadata.name
-          transforms:
-            - string:
-                convert: ToLower
-                type: Convert
-              type: string
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: metadata.annotations[crossplane.io/external-name]
-          policy:
-            fromFieldPath: Required
-      base:
-        apiVersion: postgresql.sql.crossplane.io/v1alpha1
-        kind: Role
-        spec:
-          providerConfigRef:
-            name: psql-main
-
-          forProvider:
-            passwordSecretRef:
-              name: password
-              namespace: core-prod
-              key: password
-
-            privileges:
-              login: true
-
-    - name: database
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.database
-          toFieldPath: metadata.name
-          transforms:
-            - string:
-                convert: ToLower
-                type: Convert
-              type: string
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.database
-          toFieldPath: metadata.annotations[crossplane.io/external-name]
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.owner
-          policy:
-            fromFieldPath: Required
-      base:
-        apiVersion: postgresql.sql.crossplane.io/v1alpha1
-        kind: Database
-        spec:
-          deletionpolicy: Orphan
-          providerConfigRef:
-            name: psql-main
-
-          forProvider:
-            connectionLimit: -1
-
-    #
-    # Create the Database on PSQL for the user/serviceAccount to access
-    #
-    - name: db-tf
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      base:
-        apiVersion: tf.upbound.io/v1beta1
-        kind: Workspace
-        spec:
-          providerConfigRef:
-            name: psql
-
-          writeConnectionSecretToRef:
-            namespace: core-prod
-            name: key1
-
-          forProvider:
-            source: Inline
-            module: | # hcl
-              variable "database" {
-                description = "Database Configuration"
-                type        = object({
-                  name = string
-                })
-              }
-
-              variable "role" {
-                description = "Database Configuration"
-                type        = object({
-                  name = string
-                })
-              }
-
-              resource "postgresql_grant" "database" {
-                database    = var.database.name
-                role        = var.role.name
-                object_type = "database"
-                privileges  = [
-                  "CREATE",
-                  "CONNECT",
-                  "TEMPORARY"
-                ]
-              }
-
-              resource "postgresql_grant" "tables" {
-                database    = var.database.name
-                role        = var.role.name
-                schema      = "public"
-                object_type = "table"
-                privileges  = [
-                  "ALL"
-                ]
-              }
-
-              resource "postgresql_grant" "sequences" {
-                database    = var.database.name
-                role        = var.role.name
-                schema      = "public"
-                object_type = "sequence"
-                privileges  = [
-                  "ALL"
-                ]
-              }
-
-              resource "postgresql_grant" "schema" {
-                database    = var.database.name
-                role        = var.role.name
-                schema      = "public"
-                object_type = "schema"
-                privileges  = [
-                  "USAGE"
-                ]
-              }
- 
-            varmap:
-              database:
-                name: ''
-              
-              role:
-                name: ''
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.database
-          toFieldPath: spec.forProvider.varmap.database.name
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.varmap.role.name
-          policy:
-            fromFieldPath: Required
-
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: metadata.uid
-          toFieldPath: "spec.writeConnectionSecretToRef.name"
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: '%s-psql-secret'
-    
-    #
-    # MongoDB Configuration
-    #
-    - name: db-mongodb-tf
-      
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      base:
-        apiVersion: tf.upbound.io/v1beta1
-        kind: Workspace
-        spec:
-          providerConfigRef:
-            name: mongodb-{{ .Values.env }}-tf
-
-          writeConnectionSecretToRef:
-            namespace: core-prod
-            name: key1
-
-          forProvider:
-            source: Inline
-            module: | # hcl
-              variable "config" {
-                description = "Database Configuration"
-                type        = object({
-                  enabled = bool
+  mode: Pipeline
+  pipeline:
+    - step: user-base
+      functionRef:
+        name: {{ .Values.crossplane.functionsRef.gotemplate.name }}
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: | # yaml 
+            {{`
+            {{ $userCredsWorkspace := "user-creds-ws" }}
+            {{- define "username" -}}
+            {{- if  }}
+            {{- end }}
+            ---
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $userCredsWorkspace }}
+
+            spec:
+              providerConfigRef:
+                name: tf-talos
+
+              forProvider:
+                source: Inline
+                varmap:
+                  ldaps:
+                    hostname: ldap.mylogin.space
+                    port: 636
+                    uri: ldaps://
+
+                  sips:
+                    hostname: sip.resolvemy.host
+                    port: 5061
+                    uri: sips://
+
+                  psql:
+                    hostname: psql-int.mylogin.space
+                    port: 5432
+                    uri: postgres://
+
+                  mqtts:
+                    hostname: mqtt.mylogin.space
+                    port: 8443
+                    uri: mqtts://
                   
-                  databases = set(string)
-                })
-              }
+                  mysql:
+                    hostname: mysql.mylogin.space
+                    port: 3306
+                    uri: mysql://
 
-              variable "user" {
-                description = "Database Configuration"
-                type        = object({
-                  name = string
-                })
-              }
+                  mongodb:
+                    hostname: mongo.mylogin.space
+                    port: 3306
+                    uri: mongodb://
 
-              locals {
-                databases = concat([var.user.name], tolist(var.config.databases))
-              }
+                  s3:
+                    hostname: s3.mylogin.space
+                    port: 443
 
-              resource "mongodb_role" "testuser" {
-                role = "cn=${var.user.name},ou=virtual-groups,dc=ldap,dc=mylogin,dc=space"
-                db = "admin"
-                privileges = flatten([
-                  for database in local.databases : [
-                    {
-                      resource = { db = "${database}", collection = "" }
-                      actions  = ["find", "update", "insert", "remove"]
-                    }
-                  ]
-                ])
-                roles = flatten([
-                  for database in local.databases : [
-                    {
-                      role = "readWrite",
-                      db = "${database}"
-                    },
-                    {
-                      role = "dbOwner",
-                      db = "${database}"
-                    }
-                  ]
-                ])
-              }
-
-            varmap:
-              config:
-                enabled: false
-
-                databases: []
-
-              user:
-                name: ''
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: spec.mongodb
-          toFieldPath: spec.forProvider.varmap.config
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.varmap.user.name
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: metadata.uid
-          toFieldPath: "spec.writeConnectionSecretToRef.name"
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: '%s-mongodb-secret'
-
-    #
-    # Minio S3 Configuration
-    #
-    - name: bucket
-
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.bucket
-          toFieldPath: spec.forProvider.bucketName
-          policy:
-            fromFieldPath: Required
-
-      base:
-        apiVersion: minio.crossplane.io/v1
-        kind: Bucket
-        spec:
-          providerConfigRef:
-            name: s3-prod
-
-          forProvider:
-            region: us-east-1
-            bucketName: 'test'
-
-
-    - name: bucket-policy
-
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: metadata.name
-          transforms:
-            - string:
-                convert: ToLower
-                type: Convert
-              type: string
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: metadata.annotations[crossplane.io/external-name]
-          policy:
-            fromFieldPath: Required
-
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.bucketPolicy
-          toFieldPath: spec.forProvider.rawPolicy
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: |
-                  %s
-          policy:
-            fromFieldPath: Required
-      base:
-        apiVersion: minio.crossplane.io/v1
-        kind: Policy
-        spec:
-          providerConfigRef:
-            name: s3-prod
-
-          forProvider:
-            region: us-east-1
-            bucketName: 'test'
-    
-    - name: minio-tf
-
-      readinessChecks:
-        - type: MatchCondition
-          matchCondition:
-            type: Ready
-            status: 'True'
-
-      base:
-        apiVersion: tf.upbound.io/v1beta1
-        kind: Workspace
-        spec:
-          providerConfigRef:
-            name: minio-s3
-
-          writeConnectionSecretToRef:
-            namespace: core-prod
-            name: key1
-
-          forProvider:
-            source: Inline
-            module: | # hcl
-              variable "ldap" {
-                description = "Database Configuration"
-                type = object(
-                  {
-                    user = string
+                  name: {{ .observed.composite.resource.spec.name }}
+                  serviceAccount: true
+                  groups:
+                    - LDAPService
+                module: | # hcl
+                  resource "random_string" "username" {
+                    length  = 10
+                    special = false
+                    upper = false
+                    numeric = false
                   }
-                )
-              }
 
-              variable "username" {
-                description = "LDAP/SSO Username Policy"
-                type = string
-              }
-
-              variable "policy" {
-                description = "LDAP/SSO Username Policy"
-                type = object(
-                  {
-                    name = string
+                  resource "random_password" "password" {
+                    length  = 16
+                    lower   = true
+                    numeric = true
+                    upper   = true
+                    special = true
+                    override_special = "$-_.+!*'(),"
                   }
-                )
-              }
 
-              resource "minio_iam_ldap_user_policy_attachment" "user" {
-                user_dn = var.ldap.user
-                policy_name = var.policy.name
-              }
+                  variable "name" {
+                    description = "Accounts friendly name"
+                    type        = string
+                  }
 
- 
-            varmap:
-              policy:
-                name: ''
-              ldap:
-                user: 'test'
+                  variable "username" {
+                    description = "Accounts username"
+                    type        = string
+                    default = null
+                    nullable = true
+                  }
 
-              username: ''
+                  variable "ldaps" {
+                    description = "LDAPs Configuration"
+                    type        = object({
+                      hostname = string
+                      port = string
+                      uri = string
+                    })
+                  }
 
-              bucketPolicy: ''
-      patches:
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.varmap.policy.name
-          transforms:
-            - string:
-                convert: ToLower
-                type: Convert
-              type: string
-          policy:
-            fromFieldPath: Required
+                  variable "mqtts" {
+                    description = "MQTTs Configuration"
+                    type        = object({
+                      hostname = string
+                      port = string
+                    })
+                  }
 
+                  variable "sips" {
+                    description = "SIPs Configuration"
+                    type        = object({
+                      hostname = string
+                      port = string
+                      uri = string
+                    })
+                  }
 
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.ldap.user
-          toFieldPath: spec.forProvider.varmap.ldap.user
-          policy:
-            fromFieldPath: Required
+                  variable "psql" {
+                    description = "PSQL Configuration"
+                    type        = object({
+                      hostname = string
+                      port = string
+                      uri = string
+                    })
+                  }
 
-        - type: FromCompositeFieldPath
-          fromFieldPath: status.share.username
-          toFieldPath: spec.forProvider.varmap.username
-          policy:
-            fromFieldPath: Required
+                  variable "mysql" {
+                    description = "MySQL Configuration"
 
-        - type: FromCompositeFieldPath
-          fromFieldPath: metadata.uid
-          toFieldPath: "spec.writeConnectionSecretToRef.name"
-          transforms:
-            - type: string
-              string:
-                type: Format
-                fmt: '%s-s3-ldap-secret'
+                    type = object({
+                      hostname = string
+                      port = string
+                      uri = string
+                    })
+                  }
+
+                  variable "mongodb" {
+                    description = "MongoDB Configuration"
+
+                    type = object({
+                      hostname = string
+                      port = string
+                      uri = string
+                    })
+                  }
+
+                  variable "s3" {
+                    description = "S3 Configuration"
+
+                    type = object({
+                      hostname = string
+                      port = string
+                    })
+                  }
+
+                  variable "databaseName" {
+                    description = "Accounts Database"
+                    type        = string
+                    default = null
+                    nullable = true
+                  }
+
+                  variable "bucket" {
+                    description = "Accounts S3 Bucket"
+                    type        = string
+                    nullable = true
+                    default = null
+                  }
+
+                  variable "groups" {
+                    description = "The groups the account should be apart of"
+
+                    type = set(string)
+                    default = []
+                  }
+
+                  variable "buckets" {
+                    description = "The S3 Buckets the account should have access to"
+
+                    type = set(string)
+
+                    nullable = true
+                    default = []
+
+                  }
+
+                  variable "serviceAccount" {
+                    description = "If the account is a service account or not"
+                    
+                    type = bool
+                    
+                    default = true
+                  }
+
+                  data "authentik_group" "groups" {
+                    for_each = var.groups
+                    name = each.key
+                  }
+
+                  locals {
+                    username = try(length(var.username), 0) > 0 ? var.username : random_string.username.result
+                    databaseName = try(length(var.databaseName), 0) > 0 ? var.databaseName : local.username
+                    groups = [for group in data.authentik_group.groups : group.id]
+                    bucket = try(length(var.bucket), 0) > 0 ? var.bucket : local.username
+                    buckets = concat([local.bucket], tolist(var.buckets))
+                    password = random_password.password.result
+                  }
+
+                  # resource "authentik_user" "name" {
+                  #   name = var.name
+                  #   username = local.username
+
+                  #   password = local.password
+
+                  #   groups = local.groups
+
+                  #   type = var.serviceAccount == true ? "service_account" : "internal"
+                  # }
+
+                  output "username" {
+                    value = local.username
+                    sensitive = false
+                  }
+
+                  output "password" {
+                    value = local.password
+                    sensitive = true
+                  }
+
+                  output "database" {
+                    value = local.databaseName
+                    sensitive = false
+                  }
+
+                  #
+                  # LDAP
+                  #
+
+                  output "ldapsHostname" {
+                    value = var.ldaps.hostname
+                    sensitive = false
+                  }
+
+                  output "ldapsBIND" {
+                    value = "cn=${local.username},ou=users,dc=ldap,dc=mylogin,dc=space"
+                    sensitive = false
+                  }
+
+                  output "ldapsPort" {
+                    value = var.ldaps.port
+                    sensitive = false
+                  }
+
+                  output "ldapsURI" {
+                    value = "${var.ldaps.uri}${var.ldaps.hostname}:${var.ldaps.port}"
+                    sensitive = true
+                  }
+
+                  #
+                  # SIPs
+                  #
+
+                  output "sipsHostname" {
+                    value = var.sips.hostname
+                    sensitive = false
+                  }
+
+                  output "sipsPort" {
+                    value = var.sips.port
+                    sensitive = false
+                  }
+
+                  output "sipsURI" {
+                    value = "TODO"
+                    sensitive = true
+                  }
+
+                  #
+                  # PSQL
+                  #
+
+                  output "psqlHostname" {
+                    value = var.psql.hostname
+                    sensitive = false
+                  }
+
+                  output "psqlPort" {
+                    value = var.psql.port
+                    sensitive = false
+                  }
+
+                  output "psqlURI" {
+                    value = "${var.psql.uri}${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
+                    sensitive = true
+                  }
+
+                  #
+                  # MySQL
+                  #
+
+                  output "mysqlHostname" {
+                    value = var.mysql.hostname
+                    sensitive = false
+                  }
+
+                  output "mysqlPort" {
+                    value = var.mysql.port
+                    sensitive = false
+                  }
+
+                  output "mysqlURI" {
+                    value = "${var.mysql.uri}${local.username}:${local.password}@${var.mysql.hostname}:${var.mysql.port}/${local.databaseName}"
+                    sensitive = true
+                  }
+
+                  #
+                  # S3
+                  #
+
+                  output "bucket" {
+                    value = local.bucket
+                    sensitive = false
+                  }
+
+                  output "S3Hostname" {
+                    value = var.s3.hostname
+                    sensitive = false
+                  }
+
+                  output "S3Port" {
+                    value = var.s3.port
+                    sensitive = false
+                  }
+
+                  output "S3URI" {
+                    value = "https://${var.s3.hostname}:${var.s3.port}"
+                    sensitive = true
+                  }
+            ---
+            `}}
