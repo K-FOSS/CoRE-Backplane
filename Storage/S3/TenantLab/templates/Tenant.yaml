@@ -28,7 +28,7 @@ spec:
           cpu: 64m
           memory: 512Mi
 
-      servers: 4
+      servers: {{ .Values.s3.replicas }}
 
       volumeClaimTemplate:
         metadata:
@@ -68,7 +68,7 @@ spec:
       value: 's3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }},{{ .Release.Namespace }}.svc.cluster.local,{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
 
     - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_BASE_DN
-      value: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+      value: 'ou=users,{{ .Values.ldap.base }}'
 
     - name: MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER
       value: '(&(objectclass=user)(cn=%s))'
@@ -77,7 +77,7 @@ spec:
       value: '(&(objectclass=group)(member=%s))'
 
     - name: MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN
-      value: ou=groups,dc=ldap,dc=mylogin,dc=space
+      value: 'ou=groups,{{ .Values.ldap.base }}'
 
 
   prometheusOperator: false

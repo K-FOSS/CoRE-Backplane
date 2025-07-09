@@ -14,9 +14,16 @@ spec:
       engineVersion: v2
       data:
         config.env: | # sh
-          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,dc=ldap,dc=mylogin,dc=space"
+          export MINIO_IDENTITY_LDAP_GROUP_SEARCH_BASE_DN="ou=groups,{{ .Values.ldap.base }}"
           export MINIO_IDENTITY_OPENID_CONFIG_URL="{{ .Values.oidc.authentik.urlBase }}/application/o/S3/.well-known/openid-configuration"
           export MINIO_IDENTITY_OPENID_SCOPES="{{ .Values.oidc.scopes | join "," }}"
+          #
+          # TODO Figure out if we can move this directly to tenant
+          #
+          export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+          export MINIO_IDENTITY_LDAP_USER_DN_ATTRIBUTES="cn,uid,mail,lastname,name"
+
+
           {{`
           export MINIO_ROOT_USER="{{ .RootUsername }}"
 
@@ -24,7 +31,7 @@ spec:
 
           export MINIO_ROOT_PASSWORD="{{ .RootPassword }}"
 
-          export MINIO_STORAGE_CLASS_STANDARD="EC:2"
+          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="{{ .Password }}"
 
           export MINIO_IDENTITY_OPENID_CLIENT_ID="{{ .OIDCClientID }}"
 
@@ -33,15 +40,11 @@ spec:
           #
           export MINIO_IDENTITY_LDAP_SERVER_ADDR="{{ .LDAPHostname }}:{{ .LDAPPort }}" 
 
-          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .Username }},ou=users,dc=ldap,dc=mylogin,dc=space"
-
-          export MINIO_IDENTITY_LDAP_USER_DN_ATTRIBUTES="cn,uid,mail,lastname,name"
+          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN="cn={{ .Username }},ou=users,`}}{{ .Values.ldap.base }}"
 
           export MINIO_IDENTITY_LDAP_USER_DN_SEARCH_FILTER="(&(objectclass=user)(cn=%s))"
 
           export MINIO_IDENTITY_LDAP_GROUP_SEARCH_FILTER="(&(objectclass=group)(member=%d))"
-
-          export MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD="{{ .Password }}"`}}
   data:
     - secretKey: OIDCClientID
       remoteRef:
