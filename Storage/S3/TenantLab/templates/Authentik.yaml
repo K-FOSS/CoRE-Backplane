@@ -108,7 +108,12 @@ spec:
       }
 
       output "OIDC_ISSUER_URL" {
-        value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/"
+        value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-s3/"
+        sensitive = true
+      }
+
+      output "MINIO_IDENTITY_OPENID_CONFIG_URL" {
+        value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-s3/.well-known/openid-configuration"
         sensitive = true
       }
 
