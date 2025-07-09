@@ -19,10 +19,12 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    debug: false
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    debug: true
 
           - clusters:
               selector:
@@ -59,11 +61,10 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-        #   env:
-        #     - name: LOVELY_HELM_MERGE
-        #       value: |- 
-        #         s3-operator:
-        #           kubernetesClusterDomain: 
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                debug: {{ .values.debug }}
 
 
       destination:
