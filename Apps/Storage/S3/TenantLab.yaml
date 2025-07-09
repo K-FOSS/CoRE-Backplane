@@ -10,20 +10,34 @@ spec:
   # goTemplateOptions:
   #   - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-        values:
-          clusterName: '{{ .name }}'
-          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
-          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
-          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
-          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    replicas: 1
+
+                - name: core-home1-talos-prod
+                  values:
+                    replicas: 1
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -63,6 +77,9 @@ spec:
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
+
+                s3:
+                  replicas: {{ .values.replicas }}
 
       destination:
         server: '{{ .server }}'
