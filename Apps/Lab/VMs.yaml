@@ -21,9 +21,13 @@ spec:
                   values:
                     installing: false
 
+                    wan: false
+
                 - name: core-home1-talos-prod
                   values:
                     installing: false
+
+                    wan: true
 
           - clusters:
               selector:
@@ -67,6 +71,9 @@ spec:
                 env: {{ .values.environment }}
 
                 installing: {{ .values.installing }}
+                
+                networks:
+                  wan: {{ .values.wan }}
 
       destination:
         server: '{{ .server }}'
