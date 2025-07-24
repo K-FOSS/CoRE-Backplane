@@ -435,7 +435,9 @@ spec:
                               validSubnets = [
                                 {{- range $index, $network := .observed.composite.resource.spec.networks }}
                                 {{- range $addrIndex, $address := $network.addresses }}
+                                {{- if . }}
                                 "{{ $address }}",
+                                {{- end }}
                                 {{- end }}
                                 {{- end }}
                               ]
