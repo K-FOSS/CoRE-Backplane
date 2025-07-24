@@ -410,7 +410,11 @@ spec:
                           etcd = {
                             advertisedSubnets = [
                               {{- range $index, $network := .observed.composite.resource.spec.networks }}
-                              "{{ $network.ipAddress }}",
+                              {{- range $addrIndex, $address := $network.addresses }}
+                              {{- if . }}
+                              "{{ $address }}",
+                              {{- end }}
+                              {{- end }}
                               {{- end }}
                             ]
                           }
