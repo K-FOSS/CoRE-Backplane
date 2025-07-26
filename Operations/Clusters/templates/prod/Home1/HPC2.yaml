@@ -36,10 +36,17 @@ spec:
       - asn: 64512
         name: wan-gw
         peers:
+          - address: 172.31.192.1
+            asn: 64567
+            name: sbc1.home1.yvr.resolvemy.host
+
           - address: 172.31.192.2
             asn: 64567
-            name: wan-rt1.home1.yvr.resolvemy.host
+            name: wan-gw1.home1.yvr.resolvemy.host
 
+          - address: 172.31.192.16
+            asn: 64567
+            name: cpe-sw1.home1.yvr.resolvemy.host
 
   networks:
     - macAddress: e0:d5:5e:65:02:d9
@@ -49,6 +56,7 @@ spec:
       routes:
         - network: 0.0.0.0/0
           gateway: 172.31.192.2
+          metric: 1024
 
       mtu: 1500
 
