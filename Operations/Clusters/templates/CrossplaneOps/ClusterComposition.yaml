@@ -432,7 +432,9 @@ spec:
                       serviceDomain: {{ $xr.spec.domain }}
                       services:
                         cidrBlocks:
-                          - {{ $networks.services }}
+                          {{ range $serviceNetIndex, $serviceNetwork := $xr.spec.networks.service }}
+                          - {{ $serviceNetwork }}
+                          {{ end }}
 
                     controlPlaneRef:
                       apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
@@ -563,11 +565,13 @@ spec:
                   required_providers {
                     talos = {
                       source = "siderolabs/talos"
+                      // TODO: Use Renovate to automatically update this
                       version = "0.7.1"
                     }
 
                     local = {
                       source = "hashicorp/local"
+                      // TODO: Use Renovate to automatically update this
                       version = "2.5.2"
                     }
                   }

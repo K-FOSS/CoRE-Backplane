@@ -202,12 +202,12 @@ spec:
 
                       ipAddress:
                         type: string
-                        description: Network configuration for the compute node
+                        description: deprecated removing soon Network configuration for the compute node
                         nullable: true
 
                       gateway:
                         type: string
-                        description: Depreicated Network gateway/router of the compute node network
+                        description: deprecated removing soon Network gateway/router of the compute node network
                         nullable: true
 
                       static:
@@ -307,6 +307,24 @@ spec:
                   description: Override the existing variables and configuration used by the BMPS
 
                   properties:
+
+                    cni:
+                      type: object
+
+                      descriptions: Overrides for specific Container Network Interface configurations and parameters at the node level
+
+                      properties:
+                        cilium:
+                          type: object
+
+                          description: Override configurations for the Cilium CNI
+
+                          properties:
+                            networkInterfaces:
+                              type: array
+
+                              description: Network interfaces to be passed to the cilium "Devices" configuration option (See cilium documenation for further context)
+
                     pxe:
                       type: object
                       description: Override the automated iPXE Settings

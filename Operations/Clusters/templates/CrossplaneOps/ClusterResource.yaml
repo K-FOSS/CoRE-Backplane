@@ -202,6 +202,27 @@ spec:
 
                   description: Network configuration of the cluster
                   properties:
+                    cni:
+                      type: object
+
+                      description: Container Network Interface Configuration
+
+                      properties:
+                        type:
+                          type: string
+
+                          description: Name of the CNI used, defaults to cilium
+
+                          default: cilium
+
+                        enabled:
+                          type: boolean
+
+                          description: Wether or not we automatically deploy a CNI
+
+                          default: true
+
+                        
                     loadbalancer:
                       type: object
                       description: Load balancer IP addresses, generally handled by PureLB
@@ -242,10 +263,14 @@ spec:
 
                         pool:
                           type: string
+
+                        
                     
                     services:
                       type: string
-                      description: pool used for the services within the cluster
+                      description: deprecated removing soon pool used for the services within the cluster
+
+                      nullable: false
 
                     service:
                       type: array
@@ -255,10 +280,11 @@ spec:
                       items:
                         type: string
 
-
                     pods:
                       type: string
-                      description: IP Pool assigned to pods within the deployed cluster
+                      description: deprecated removing soon IP Pool assigned to pods within the deployed cluster
+
+                      nullable: true
 
                     pod:
                       type: object
