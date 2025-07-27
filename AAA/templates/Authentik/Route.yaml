@@ -29,6 +29,12 @@ spec:
           port: 80
           weight: 1
 
+        {{- range $index, $peer := .Values.peers }}
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: aaa-server-{{ $peer.cluster }}
+          weight: 1
+        {{- end }}
       
       timeouts:
         backendRequest: 10s
