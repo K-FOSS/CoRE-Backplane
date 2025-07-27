@@ -369,4 +369,14 @@ spec:
                     sensitive = true
                   }
             ---
+            apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
+            kind: CompositeConnectionDetails
+            {{ if eq $.observed.resources nil }}
+            data: {}
+            {{ else }}
+            data:
+              username: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username }}
+              password: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.password }}
+              url: {{ "http://www.example.com" | b64enc }}
+            {{ end }}
             `}}
