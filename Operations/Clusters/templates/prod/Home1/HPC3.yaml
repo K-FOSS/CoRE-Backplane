@@ -66,3 +66,24 @@ spec:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
+
+  overrides:
+    pxe:
+      script: >
+        #!ipxe
+
+
+        imgfree
+
+
+        kernel tftp://172.20.60.5/talos/kernel-amd64 reboot=hard
+        talos.platform=metal init_on_alloc=1 slab_nomerge pti=on consoleblank=0
+        nvme_core.io_timeout=4294967295 printk.devkmsg=on
+        talos.device.settle_time=2m
+        talos.config=http://172.20.53.165:50061/2009-04-04/user-data
+
+
+        initrd tftp://172.20.60.5/talos/initramfs-amd64.xz
+
+
+        boot
