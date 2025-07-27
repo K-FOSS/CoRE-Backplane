@@ -1,0 +1,12 @@
+{{- range $index, $peer := .Values.peers }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: aaa-server-{{ $peer.cluster }}
+
+spec:
+  endpoints:
+    - fqdn:
+        hostname: {{ $peer.endpoint }}
+        port: 80
+{{- end }}

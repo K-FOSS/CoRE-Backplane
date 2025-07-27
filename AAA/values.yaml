@@ -4,6 +4,10 @@ cluster:
   name: k8s
   domain: cluster.local
 
+peers:
+  - cluster: core-dc1-talos-prod
+    endpoint: aaa-server.core-dc1-talos-prod.dc1.yxl.mylogin.space
+
 datacenter: dc1
 
 region: yxl
@@ -462,9 +466,11 @@ authentik:
     ## authentik server service configuration
     service:
       # -- authentik server service annotations
-      annotations: {}
+      annotations:
+        external-dns.alpha.kubernetes.io/hostname: redis.mylogin.space
       # -- authentik server service labels
-      labels: {}
+      labels:
+        wan-mode: public
       # -- authentik server service type
       type: ClusterIP
 
