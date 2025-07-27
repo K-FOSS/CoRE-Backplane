@@ -12,11 +12,46 @@
   value: https://s3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
 
 #
+# High Avail
+#
+- name: MINIO_STORAGE_CLASS_STANDARD
+  value: 'EC:0'
+
+#
 # OIDC
 #
 - name: MINIO_IDENTITY_OPENID_REDIRECT_URI
   value: https://{{ .Values.admin.dashboard.domainKey }}.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}/oauth_callback
 
+#
+# LDAP
+#
+- name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_DN
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-sso-user
+      key: ldapsBIND
+
+- name: MINIO_IDENTITY_LDAP_SERVER_ADDR
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-sso-user
+      key: ldapsURI
+
+#
+# Credentials
+#
+- name: MINIO_ROOT_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-sso-user
+      key: username
+
+- name: MINIO_ROOT_USER
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-sso-user
+      key: password
 
 - name: MINIO_DOMAIN
   value: 's3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }},{{ .Release.Namespace }}.svc.cluster.local,{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'

@@ -112,7 +112,7 @@ service:
         primary: true
 
         # -- The port number
-        port: 80
+        port: 9090
 
         # -- Port protocol.
         # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
@@ -123,6 +123,16 @@ service:
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol: http
 
+persistence:
+  data:
+    enabled: true
+    type: persistentVolumeClaim
+    mountPath: 
+    accessMode: ReadWriteOnce
+    size: {{ .Values.s3.storage.size }}
+    globalMounts:
+      - path: /export
+        readOnly: false
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
@@ -171,7 +181,7 @@ spec:
             - ReadWriteOnce
           resources:
             requests:
-              storage: '322122547200'
+              storage: '{{ .Values.s3.storage.size }}'
       volumesPerServer: 1
 
   priorityClassName: tier2-priority
