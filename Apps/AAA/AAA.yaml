@@ -85,6 +85,13 @@ spec:
                   domain: {{ .values.clusterDomain }}
 
                 authentik:
+                  server:
+                    service:
+                      annotations:
+                        external-dns.alpha.kubernetes.io/hostname: aaa-server.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                      # -- authentik server service labels
+                      labels:
+                        wan-mode: public
                   global:
                     additionalLabels:
                       resolvemy.host/env: '{{ .values.environment }}'
