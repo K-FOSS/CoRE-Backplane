@@ -47,7 +47,7 @@
       name: {{ .Release.Name }}-sso-user
       key: username
 
-- name: MINIO_ROOT_USER
+- name: MINIO_ROOT_PASSWORD
   valueFrom:
     secretKeyRef:
       name: {{ .Release.Name }}-sso-user
