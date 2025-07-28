@@ -22,6 +22,8 @@ s3:
 
     size: 10G
 
+    storageClass: 'fast'
+
 authentik:
   autoconfigure: true
 
@@ -58,51 +60,7 @@ oidc:
   authentik:
     urlBase: https://idp.mylogin.space
 
-
 terraform:
   authentikProvider: authentik
 
 domain: mylogin.space
-
-secrets:
-  keys:
-    oidc:
-      clientid:
-        key: Minio/OIDC
-        property: ClientID
-
-
-      clientsecret:
-        key: Minio/OIDC
-        property: ClientSecret
-
-    ldap:
-      hostname:
-        key: Minio/LDAP
-        property: Hostname
-
-      port:
-        key: Minio/LDAP
-        property: Port
-
-      username:
-        key: Minio/User
-        property: Username
-
-      password:
-        keys: Minio/User
-        property: Password
-
-
-    root:
-      username:
-        key: Minio/General
-        property: RootUsername
-
-      password:
-        keys: Minio/General
-        property: RootPassword
-
-  secretStoreRef:
-    kind: ClusterSecretStore
-    name: mainvault-core
