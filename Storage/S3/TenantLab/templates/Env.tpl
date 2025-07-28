@@ -1,6 +1,6 @@
 {{- define "s3-env" -}}
 - name: MINIO_DOMAIN
-  value: s3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
+  value: 's3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }},{{ .Release.Namespace }}.svc.cluster.local,{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
 
 - name: MINIO_BROWSER
   value: {{ if .Values.admin.dashboard.enabled }}on{{ else }}off{{ end }}
@@ -53,8 +53,6 @@
       name: {{ .Release.Name }}-sso-user
       key: password
 
-- name: MINIO_DOMAIN
-  value: 's3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }},{{ .Release.Namespace }}.svc.cluster.local,{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
 
 - name: MINIO_IDENTITY_OPENID_CONFIG_URL
   valueFrom:
