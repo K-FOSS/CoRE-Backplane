@@ -87,6 +87,12 @@
       name: {{ .Release.Name }}-aaa
       key: OIDC_CLIENT_ID
 
+- name: MINIO_IDENTITY_OPENID_SCOPES
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-aaa
+      key: OIDC_SCOPES
+
 - name: MINIO_IDENTITY_OPENID_CLIENT_SECRET
   valueFrom:
     secretKeyRef:
