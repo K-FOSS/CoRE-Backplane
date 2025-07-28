@@ -258,6 +258,13 @@ persistence:
     globalMounts:
       - path: /export
         readOnly: false
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+
+{{- if lt (int .Values.s3.replicas) 3 }}
+{{/* Render the templates */}}
+{{ include "bjw-s.common.loader.generate" . }}
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: BackendTrafficPolicy
@@ -273,14 +280,7 @@ spec:
   timeout:
     http:
       requestTimeout: 1800s
-
-{{- end -}}
-{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
-
-
-{{- if lt (int .Values.s3.replicas) 3 }}
-{{/* Render the templates */}}
-{{ include "bjw-s.common.loader.generate" . }}
+---
 {{- else }}
 apiVersion: minio.min.io/v2
 kind: Tenant
