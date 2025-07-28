@@ -258,6 +258,21 @@ persistence:
     globalMounts:
       - path: /export
         readOnly: false
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-s3
+
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}
+
+  timeout:
+    http:
+      requestTimeout: 1800s
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
