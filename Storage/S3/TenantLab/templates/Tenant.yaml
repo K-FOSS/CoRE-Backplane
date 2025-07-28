@@ -112,6 +112,36 @@ service:
         primary: true
 
         # -- The port number
+        port: 9000
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: HTTP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol: http
+
+  s3-dash:
+    enabled: true
+
+    controller: s3
+
+    type: ClusterIP
+
+    primary: true
+
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
         port: 9090
 
         # -- Port protocol.
@@ -122,6 +152,7 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol: http
+
 
 # -- Configure the gateway routes for the chart here.
 # Additional routes can be added by adding a dictionary key similar to the 'main' route.
@@ -168,10 +199,53 @@ route:
     rules:
       - backendRefs:
           - kind: Service
-            port: 9090
+            port: 9000
             name: s3
             weight: 1
 
+
+  s3-dash:
+    # -- Enables or disables the route
+    enabled: true
+
+    # -- Set the route kind
+    # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
+    kind: HTTPRoute
+
+    # -- Provide additional annotations which may be required.
+    annotations: {}
+
+    hostnames:
+      - {{ .Values.admin.dashboard.domainKey }}.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
+
+    # -- Provide additional labels which may be required.
+    labels:
+      wan-mode: 'public'
+
+
+    # -- Configure the resource the route attaches to.
+    parentRefs:
+      - # Group of the referent resource.
+        group: gateway.networking.k8s.io
+
+        # Kind of the referent resource.
+        kind: Gateway
+
+        # Name of the referent resource
+        name: {{ .Values.gateway.name }}
+
+        sectionName: {{ .Values.gateway.sectionName }}
+
+        # Namespace of the referent resource
+        namespace: {{ .Values.gateway.namespace }}
+
+    # -- Configure rules for routing. Defaults to the primary service.
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 9090
+            name: s3
+            weight: 1
 
 persistence:
   data:
