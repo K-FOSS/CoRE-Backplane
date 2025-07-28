@@ -32,6 +32,12 @@
       name: {{ .Release.Name }}-sso-user
       key: ldapsBIND
 
+- name: MINIO_IDENTITY_LDAP_LOOKUP_BIND_PASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .Release.Name }}-sso-user
+      key: password
+
 - name: MINIO_IDENTITY_LDAP_SERVER_ADDR
   valueFrom:
     secretKeyRef:
