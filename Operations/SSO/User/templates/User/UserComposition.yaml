@@ -57,7 +57,7 @@ spec:
                   ldaps:
                     hostname: ldap.mylogin.space
                     port: 636
-                    uri: {{ default .observed.composite.resource.spec.ldaps.uri "ldaps://" }}
+                    uri: {{ if eq .observed.composite.resource.spec.ldaps.uri nill }}ldaps://{{ else }}{{ .observed.composite.resource.spec.ldaps.uri }}{{ end }}
 
                   sips:
                     hostname: sip.resolvemy.host
