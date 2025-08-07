@@ -1,8 +1,8 @@
----
+{{- range $backendIndex, $backend := .Values.backends }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: homeassistant
+  name: {{ $backend.name }}
 
   labels:
     wan-mode: 'public'
@@ -13,14 +13,18 @@ spec:
       namespace: core-prod
       name: main-gw
   hostnames:
-    - home.mylogin.space
+    {{- range $hostnameIndex, $hostname := $backend.hostnames}}
+    - {{ $hostname }}
+    {{- end }}
   rules:
     - backendRefs:
         - group: gateway.envoyproxy.io
           kind: Backend
-          name: homeassistant
+          name: {{ $backend.name }}
           weight: 1
       matches:
         - path:
             type: PathPrefix
             value: /
+---
+{{- end }}

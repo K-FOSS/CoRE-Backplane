@@ -1,0 +1,11 @@
+{{- range $backendIndex, $backend := .Values.backends }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: {{ $backend.name }}
+
+spec:
+  endpoints:
+    - {{ nindent 6 (toYaml $backend.endpoint) | trim }}
+---
+{{- end }}
