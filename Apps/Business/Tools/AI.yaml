@@ -23,6 +23,11 @@ spec:
         values:
           clusterName: '{{ .name }}'
           environment: 'prod'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
 
   syncPolicy:
@@ -49,6 +54,22 @@ spec:
         path: AI
         repoURL: https://github.com/K-FOSS/CoRE-Business.git
         targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: '{{ .values.environment }}'
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
+
+                hub: {{ .values.hub }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
 
       destination:
         server: '{{ .server }}'
