@@ -1,0 +1,56 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-business-ai
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+
+spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+            topology.kubernetes.io/region: 'yvr'
+        values:
+          clusterName: '{{ .name }}'
+          environment: 'prod'
+
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-business-ai-{{ .values.environment }}'
+    
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
+        
+
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
+      source:
+        path: AI
+        repoURL: https://github.com/K-FOSS/CoRE-Business.git
+        targetRevision: HEAD
+
+      destination:
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
+
