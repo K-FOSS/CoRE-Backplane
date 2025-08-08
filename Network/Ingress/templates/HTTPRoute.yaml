@@ -1,4 +1,5 @@
 {{- range $backendIndex, $backend := .Values.backends }}
+{{- if or (not (hasKey $backend "expose")) $backend.expose }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -26,5 +27,6 @@ spec:
         - path:
             type: PathPrefix
             value: /
+{{- end }}
 ---
 {{- end }}
