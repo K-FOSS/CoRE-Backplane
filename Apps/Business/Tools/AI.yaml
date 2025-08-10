@@ -61,6 +61,12 @@ spec:
               value: |- # yaml
                 env: '{{ .values.environment }}'
 
+                ai:
+                  namespace:
+                    name: core-ai-{{ .values.environment }}
+
+                    create: true
+
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
@@ -73,5 +79,5 @@ spec:
 
       destination:
         server: '{{ .server }}'
-        namespace: core-{{ .values.environment }}
+        namespace: core-ai-{{ .values.environment }}
 
