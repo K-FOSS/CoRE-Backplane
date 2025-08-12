@@ -1,0 +1,82 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-business-ai-node2
+  namespace: argocd
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+
+spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+        values:
+          clusterName: '{{ .name }}'
+          environment: 'prod'
+          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-business-ai-node2-{{ .values.environment }}'
+    
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
+        
+
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+
+      source:
+        path: AI
+        repoURL: https://github.com/K-FOSS/CoRE-Business.git
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                env: '{{ .values.environment }}'
+
+                ai:
+                  namespace:
+                    name: core-ai-{{ .values.environment }}
+
+                    create: true
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
+
+                hub: {{ .values.hub }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+      destination:
+        server: '{{ .server }}'
+        namespace: core-ai-{{ .values.environment }}
+
