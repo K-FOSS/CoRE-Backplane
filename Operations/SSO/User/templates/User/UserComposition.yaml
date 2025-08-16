@@ -374,9 +374,9 @@ spec:
             {{ if ($tfUserCredsWorkspace | getResourceCondition "Ready").Status "True" }}
 
             {{ if eq .observed.composite.resource.spec.s3.createUserBucket false }}
-              {{ $buckets := .observed.composite.resource.spec.s3 }}
+              {{ $buckets := .observed.composite.resource.spec.s3.buckets }}
             {{ else }}
-              {{ $buckets := prepend .observed.composite.resource.spec.s3 $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+              {{ $buckets := prepend .observed.composite.resource.spec.s3.buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
             {{ end }}
 
             {{- if eq .observed.composite.resource.spec.s3.createBuckets false }}
@@ -399,6 +399,11 @@ spec:
             {{- end }}
 
             {{- $resources := list -}}
+            {{ if eq .observed.composite.resource.spec.s3.createUserBucket false }}
+              {{ $buckets := .observed.composite.resource.spec.s3 }}
+            {{ else }}
+              {{ $buckets := prepend .observed.composite.resource.spec.s3.buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+            {{ end }}
 
             {{- range $b := $buckets }}
               {{- $resources = append $resources (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b) }}
