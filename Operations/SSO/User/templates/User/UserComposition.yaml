@@ -397,38 +397,6 @@ spec:
                 bucketName: {{ $bucketName }}
             ---
             {{- end }}
-
-            {{- $resources := list -}}
-            {{ if eq .observed.composite.resource.spec.s3.createUserBucket false }}
-              {{ $buckets := .observed.composite.resource.spec.s3 }}
-            {{ else }}
-              {{ $buckets := prepend .observed.composite.resource.spec.s3.buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-            {{ end }}
-
-            {{- range $b := $buckets }}
-              {{- $resources = append $resources (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b) }}
-            {{- end -}}
-
-            {{- $policy := dict
-                "Version"  "2012-10-17"
-                "Statement" (list (dict
-                  "Effect"   "Allow"
-                  "Action"   (list "s3:*")
-                  "Resource" ($resources | uniq | sortAlpha)
-                ))
-            -}}
-            apiVersion: minio.crossplane.io/v1
-            kind: Policy
-            metadata:
-              annotations:
-                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-            spec:
-              providerConfigRef:
-                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
-
-              forProvider:
-                rawPolicy: $policy
-            {{- end }}
             ---
             apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
             kind: CompositeConnectionDetails
