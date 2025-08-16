@@ -20,9 +20,13 @@ spec:
                   values:
                     hub: false
 
+                    mode: Distributed
+
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+
+                    mode: SingleBinary
 
           - clusters:
               selector:
@@ -75,6 +79,7 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
                 loki:
+                  deploymentMode: {{ .values.mode }}
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
 
