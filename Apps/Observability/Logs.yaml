@@ -82,6 +82,9 @@ spec:
                   deploymentMode: {{ .values.mode }}
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
+                  
+                  singleBinary:
+                    replicas: {{ if eq .values.mode "SingleBinary" }}1{{ else }}0{{ end }}
 
       destination:
         server: '{{ .server }}'
