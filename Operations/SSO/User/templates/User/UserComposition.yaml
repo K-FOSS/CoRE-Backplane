@@ -374,17 +374,19 @@ spec:
             {{ if ($tfUserCredsWorkspace | getResourceCondition "Ready").Status "True" }}
 
             {{- $buckets := list }}
+            {{- $createBuckets := list }}
 
-            {{ if eq .observed.composite.resource.spec.s3.createUserBucket false }}
-              {{ $buckets := .observed.composite.resource.spec.s3.buckets }}
-            {{ else }}
-              {{ $buckets := prepend .observed.composite.resource.spec.s3.buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-            {{ end }}
+            {{ if eq .observed.composite.resource.spec.s3.createUserBucket true }}
+              {{- $buckets = append $buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+              {{- $createBuckets := append $createBuckets $tfUserCredsWorkspace.status.atProvider.outputs.username  }}
+            {{- end }}
 
-            {{- if eq .observed.composite.resource.spec.s3.createBuckets false }}
-              {{ $createBuckets := without $buckets .observed.composite.resource.spec.s3 }}
-            {{- else }}
-              {{ $createBuckets := $buckets }}
+            {{- range $bucketName := .observed.composite.resource.spec.s3.buckets }}
+              {{ $buckets := prepend $buckets $bucketName }}
+
+              {{- if .observed.composite.resource.spec.s3.createBuckets }}
+                {{- $createBuckets := append $createBuckets $bucketName }}
+              {{- end }}
             {{- end }}
 
             {{- range $bucketIndex, $bucketName := $createBuckets }}
@@ -399,6 +401,8 @@ spec:
                 bucketName: {{ $bucketName }}
             ---
             {{- end }}
+
+
             {{- end }}
             ---
             apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
