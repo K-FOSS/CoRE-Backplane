@@ -669,7 +669,7 @@ loki:
   ingester:
     # -- Number of replicas for the ingester, when zoneAwareReplication.enabled is true, the total
     # number of replicas will match this value with each zone having 1/3rd of the total replicas.
-    replicas: 2
+    replicas: 0
     # -- hostAliases to add
     hostAliases: []
     #  - ip: 1.2.3.4
@@ -881,7 +881,7 @@ loki:
   # --  Configuration for the distributor
   distributor:
     # -- Number of replicas for the distributor
-    replicas: 3
+    replicas: 0
 
     maxUnavailable: 1
 
@@ -913,7 +913,7 @@ loki:
   # --  Configuration for the querier
   querier:
     # -- Number of replicas for the querier
-    replicas: 1
+    replicas: 0
 
     maxUnavailable: 1
 
@@ -950,7 +950,7 @@ loki:
   # -- Configuration for the query-frontend
   queryFrontend:
     # -- Number of replicas for the query-frontend
-    replicas: 1
+    replicas: 0
     maxUnavailable: 1
 
     # -- Additional CLI args for the ingester
@@ -982,7 +982,7 @@ loki:
     # -- Number of replicas for the query-scheduler.
     # It should be lower than `-querier.max-concurrent` to avoid generating back-pressure in queriers;
     # it's also recommended that this value evenly divides the latter
-    replicas: 1
+    replicas: 0
 
     affinity:
       podAntiAffinity: null
@@ -1012,7 +1012,7 @@ loki:
   # -- Configuration for the index-gateway
   indexGateway:
     # -- Number of replicas for the index-gateway
-    replicas: 1
+    replicas: 0
     # -- Whether the index gateway should join the memberlist hashring
     joinMemberlist: true
 
@@ -1066,7 +1066,7 @@ loki:
   # -- Configuration for the compactor
   compactor:
     # -- Number of replicas for the compactor
-    replicas: 1
+    replicas: 0
 
     affinity:
       podAntiAffinity: null
