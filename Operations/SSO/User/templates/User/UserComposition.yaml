@@ -106,7 +106,7 @@ spec:
                     numeric = true
                     upper   = true
                     special = true
-                    override_special = "$-_.+!*'(),"
+                    override_special = "$-_.+!*(),"
                   }
 
                   variable "name" {
@@ -368,6 +368,62 @@ spec:
                     value = "https://${var.s3.hostname}:${var.s3.port}"
                     sensitive = true
                   }
+            {{- if .observed.composite.resource.spec.s3.enabled }}
+            ---
+            {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
+            {{ if ($tfUserCredsWorkspace | getResourceCondition "Ready").Status "True" }}
+
+            {{ if eq .observed.composite.resource.spec.s3.createUserBucket false }}
+              {{ $buckets := .observed.composite.resource.spec.s3 }}
+            {{ else }}
+              {{ $buckets := prepend .observed.composite.resource.spec.s3 $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+            {{ end }}
+
+            {{- if eq .observed.composite.resource.spec.s3.createBuckets false }}
+              {{ $createBuckets := without $buckets .observed.composite.resource.spec.s3 }}
+            {{- else }}
+              {{ $createBuckets := $buckets }}
+            {{- end }}
+
+            {{- range $bucketIndex, $bucketName := $createBuckets }}
+            apiVersion: minio.crossplane.io/v1
+            kind: Bucket
+            spec:
+              providerConfigRef:
+                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+
+              forProvider:
+                region: {{ .observed.composite.resource.spec.s3.region }}
+                bucketName: {{ $bucketName }}
+            ---
+            {{- end }}
+
+            {{- $resources := list -}}
+
+            {{- range $b := $buckets }}
+              {{- $resources = append $resources (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b) }}
+            {{- end -}}
+
+            {{- $policy := dict
+                "Version"  "2012-10-17"
+                "Statement" (list (dict
+                  "Effect"   "Allow"
+                  "Action"   (list "s3:*")
+                  "Resource" ($resources | uniq | sortAlpha)
+                ))
+            -}}
+            apiVersion: minio.crossplane.io/v1
+            kind: Policy
+            metadata:
+              annotations:
+                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+            spec:
+              providerConfigRef:
+                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+
+              forProvider:
+                rawPolicy: $policy
+            {{- end }}
             ---
             apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
             kind: CompositeConnectionDetails

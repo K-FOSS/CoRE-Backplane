@@ -152,11 +152,41 @@ spec:
                       type: boolean
                       default: false
 
+                    region:
+                      type: string
+                      default: us-east-1
+
+
+                    crossplane:
+                      type: object
+                      properties:
+                        terraformProvider:
+                          type: string
+                          
+                          default: {{ .Values.s3.terraform.provider }}
+
+                        crossplaneProvider:
+                          type: string
+                          
+                          default: {{ .Values.s3.crossplane.provider }}
+
+                    createUserBucket:
+                      type: boolean
+
+                      description: Optionally disable the autocreation of a bucket under the username of the account
+
+                    createBuckets:
+                      type: boolean
+
+                      description: Optionally disable the autocreation of the buckets within the buckets field
+
                     buckets:
                       type: array
 
+                      default: []
+
                       items:
-                        type: string   
+                        type: string
 
                     writeCredentialsSecretRef:      
                       type: object
