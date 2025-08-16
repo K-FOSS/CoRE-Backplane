@@ -373,6 +373,8 @@ spec:
             {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
             {{ if ($tfUserCredsWorkspace | getResourceCondition "Ready").Status "True" }}
 
+            {{- $buckets := list }}
+
             {{ if eq .observed.composite.resource.spec.s3.createUserBucket false }}
               {{ $buckets := .observed.composite.resource.spec.s3.buckets }}
             {{ else }}
