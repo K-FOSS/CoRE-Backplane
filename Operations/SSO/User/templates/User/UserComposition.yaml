@@ -414,17 +414,16 @@ spec:
 
             {{- range $b := $buckets }}
               {{- $resources = concat $resources (list (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b)) }}
-            {{- end -}}
+            {{- end }}
 
-            {{- $policy := dict
+            {{ $policy := dict
                 "Version"  "2012-10-17"
                 "Statement" (list (dict
                   "Effect"   "Allow"
                   "Action"   (list "s3:*")
                   "Resource" ($resources | uniq | sortAlpha)
                 ))
-            -}}
-            ---
+            }}
             apiVersion: minio.crossplane.io/v1
             kind: Policy
             metadata:
@@ -436,9 +435,9 @@ spec:
                 name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
               forProvider:
-                rawPolicy: {{ toJson $policy }}
+                rawPolicy: |-
+                  {{ toJson $policy }}
             {{- end }}
-
             {{- end }}
             ---
             apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
