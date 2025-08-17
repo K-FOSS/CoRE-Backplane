@@ -413,7 +413,7 @@ spec:
             {{- $resources := list }}
 
             {{- range $b := $buckets }}
-              {{- $resources = append $resources (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b) }}
+              {{- $resources = concat $resources (list (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b)) }}
             {{- end -}}
 
             {{- $policy := dict
