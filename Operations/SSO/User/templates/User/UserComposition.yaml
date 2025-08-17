@@ -377,7 +377,7 @@ spec:
             {{- $buckets := list }}
             {{- $createBuckets := list }}
 
-            {{ if eq .observed.composite.resource.spec.s3.createUserBucket true }}
+            {{ if ne .observed.composite.resource.spec.s3.createUserBucket false }}
               {{- $buckets = append $buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
               {{- $createBuckets = append $createBuckets $tfUserCredsWorkspace.status.atProvider.outputs.username  }}
             {{- end }}
@@ -385,7 +385,7 @@ spec:
             {{- range $bucketName := .observed.composite.resource.spec.s3.buckets }}
               {{ $buckets = prepend $buckets $bucketName }}
 
-              {{- if .observed.composite.resource.spec.s3.createBuckets }}
+              {{- if ne .observed.composite.resource.spec.s3.createBuckets false }}
                 {{- $createBuckets = append $createBuckets $bucketName }}
               {{- end }}
             {{- end }}
