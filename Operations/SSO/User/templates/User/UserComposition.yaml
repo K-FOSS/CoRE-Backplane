@@ -430,6 +430,7 @@ spec:
               annotations:
                 gotemplating.fn.crossplane.io/ready: 'True'
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+                testing: {{ toJson (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)) }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
