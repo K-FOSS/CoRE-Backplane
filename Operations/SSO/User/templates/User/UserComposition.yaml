@@ -435,38 +435,7 @@ spec:
 
               forProvider:
                 rawPolicy: {{ toJson $policy }}
-            {{- else }}
-            ---
-            apiVersion: minio.crossplane.io/v1
-            kind: Policy
-            metadata:
-              annotations:
-                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                {{ setResourceNameAnnotation $s3MinioPolicy }}
-            spec:
-              providerConfigRef:
-                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
-
-              forProvider:
-                rawPolicy: |-
-                   {{ toJson (index .observed.resources $userCredsWorkspace) }}
             {{- end }}
-
-            {{- else }}
-            ---
-            apiVersion: minio.crossplane.io/v1
-            kind: Policy
-            metadata:
-              annotations:
-                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                testing-two: ''
-                {{ setResourceNameAnnotation $s3MinioPolicy }}
-            spec:
-              providerConfigRef:
-                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
-
-              forProvider:
-                rawPolicy: ''
 
             {{- end }}
             ---
