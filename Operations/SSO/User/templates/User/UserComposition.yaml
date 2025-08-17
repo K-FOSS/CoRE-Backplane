@@ -442,7 +442,7 @@ spec:
             metadata:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                testing: {{ toJson (getResourceCondition "Ready" $tfUserCredsWorkspace).Status }}
+                testing: {{ toJson $.observed.resources }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
@@ -459,7 +459,7 @@ spec:
             metadata:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                testing-two: {{ toJson (getResourceCondition "Ready" $tfUserCredsWorkspace).Status }}
+                testing-two: {{ toJson $.observed.resources }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
