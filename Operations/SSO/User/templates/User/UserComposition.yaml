@@ -378,14 +378,14 @@ spec:
 
             {{ if eq .observed.composite.resource.spec.s3.createUserBucket true }}
               {{- $buckets = append $buckets $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-              {{- $createBuckets := append $createBuckets $tfUserCredsWorkspace.status.atProvider.outputs.username  }}
+              {{- $createBuckets = append $createBuckets $tfUserCredsWorkspace.status.atProvider.outputs.username  }}
             {{- end }}
 
             {{- range $bucketName := .observed.composite.resource.spec.s3.buckets }}
-              {{ $buckets := prepend $buckets $bucketName }}
+              {{ $buckets = prepend $buckets $bucketName }}
 
               {{- if .observed.composite.resource.spec.s3.createBuckets }}
-                {{- $createBuckets := append $createBuckets $bucketName }}
+                {{- $createBuckets = append $createBuckets $bucketName }}
               {{- end }}
             {{- end }}
 
@@ -402,7 +402,31 @@ spec:
             ---
             {{- end }}
 
+            {{- $resources := list }}
 
+            {{- range $b := $buckets }}
+              {{- $resources = append $resources (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b) }}
+            {{- end -}}
+
+            {{- $policy := dict
+                "Version"  "2012-10-17"
+                "Statement" (list (dict
+                  "Effect"   "Allow"
+                  "Action"   (list "s3:*")
+                  "Resource" ($resources | uniq | sortAlpha)
+                ))
+            -}}
+            apiVersion: minio.crossplane.io/v1
+            kind: Policy
+            metadata:
+              annotations:
+                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+            spec:
+              providerConfigRef:
+                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+
+              forProvider:
+                rawPolicy: $policy
             {{- end }}
 
             {{- end }}
