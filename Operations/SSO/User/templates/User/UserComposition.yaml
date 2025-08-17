@@ -30,6 +30,7 @@ spec:
           template: | # yaml 
             {{`
             {{ $userCredsWorkspace := "user-creds-ws" }}
+            {{ $tfMinio := "tf-minio" }}
             {{ $s3MinioPolicy := "minio-policy" }}
             {{- define "username" -}}
             testing
@@ -448,7 +449,7 @@ spec:
                 #
                 # TODO: Actually make this check status and shit
                 gotemplating.fn.crossplane.io/ready: 'True'
-                {{ setResourceNameAnnotation $userCredsWorkspace }}
+                {{ setResourceNameAnnotation $tfMinio }}
 
             spec:
               providerConfigRef:
