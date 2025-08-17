@@ -437,6 +437,60 @@ spec:
               forProvider:
                 rawPolicy: |-
                   {{ toJson $policy }}
+            ---
+            {{- end }}
+
+            {{ if eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "True" }}
+
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $userCredsWorkspace }}
+
+            spec:
+              providerConfigRef:
+                name: {{ $.observed.composite.resource.spec.s3.crossplane.terraformProvider }}
+
+              writeConnectionSecretToRef:
+                name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+
+              forProvider:
+                source: Inline
+                varmap:
+                  ldap:
+                    user: '{{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}'
+                  
+                  policy:
+                    name: '{{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}'
+                module: | # hcl
+                  variable "ldap" {
+                    description = "LDAP Configuration"
+                    type = object(
+                      {
+                        user = string
+                      }
+                    )
+                  }
+
+                  variable "policy" {
+                    description = "LDAP/SSO Username Policy"
+                    type = object(
+                      {
+                        name = string
+                      }
+                    )
+                  }
+
+                  resource "minio_iam_ldap_user_policy_attachment" "user" {
+                    user_dn = var.ldap.user
+                    policy_name = var.policy.name
+                  }
+            
             {{- end }}
             {{- end }}
             ---
