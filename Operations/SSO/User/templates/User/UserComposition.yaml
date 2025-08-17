@@ -402,7 +402,7 @@ spec:
                 {{ setResourceNameAnnotation $bucketName }}
             spec:
               providerConfigRef:
-                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+                name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
               forProvider:
                 region: {{ .observed.composite.resource.spec.s3.region }}
@@ -432,7 +432,7 @@ spec:
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
-                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+                name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
               forProvider:
                 rawPolicy: {{ toJson $policy }}
