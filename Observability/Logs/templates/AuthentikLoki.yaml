@@ -51,14 +51,14 @@ spec:
       }
 
       resource "authentik_provider_oauth2" "auth-provider" {
-        name          = "Loki Testing"
-        client_id     = "loki-test"
+        name          = "Loki {{ .Values.cluster.name }} {{ .Values.datacenter }} {{ .Values.region }}"
+        client_id     = "{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         client_secret = random_password.client-secret.result
         signing_key = data.authentik_certificate_key_pair.cert.id
         allowed_redirect_uris = [
           {
             matching_mode = "regex",
-            url           = "https://logs.mylogin.space/.*",
+            url           = "https://logs.{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space/.*",
           },
         ]
 
@@ -68,14 +68,38 @@ spec:
       }
 
       resource "authentik_application" "application" {
-        name              = "loki-test"
-        slug              = "loki-test"
+        name              = "Loki"
+        slug              = "{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         protocol_provider = authentik_provider_oauth2.auth-provider.id
         meta_launch_url   = "blank://blank"
       }
 
+      {{ range $index, $group := .Values.oauth.groups }}
+      data "authentik_group" "group-{{ $index }}" {
+        name = "{{ $group }}"
+      } 
+
+      resource "authentik_application_entitlement" "ent-{{ $index }}" {
+        name        = "${data.authentik_group.group-{{ $index }}.id}-ent"
+        application = authentik_application.application.uuid
+      }
+
+      resource "authentik_policy_binding" "ent-{{ $index }}-access" {
+        target = authentik_application_entitlement.ent-{{ $index }}.id
+        group  = data.authentik_group.group-{{ $index }}.id
+        order  = {{ $index }}
+      } 
+
+      resource "authentik_policy_binding" "ent-{{ $index }}-app-access" {
+        target = authentik_application.application.uuid
+        group  = data.authentik_group.group-{{ $index }}.id
+        order  = {{ $index }}
+      }
+
+      {{ end }}
+
       output "client_id" {
-        value     = "loki-test"
+        value     = "{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         sensitive = true
       }
 

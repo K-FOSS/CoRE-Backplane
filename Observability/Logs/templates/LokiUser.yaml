@@ -9,11 +9,16 @@ spec:
   groups:
     - LDAPService
 
-  buckets:
-    - 59c3f49a-43d4-4d95-80b1-5155f99f2094
-    - 403e9f61-6d18-45b0-827d-cec519b5c581
-    - da6355e0-7148-42bc-8628-18a5eca97e04
-    - loki-rules-temp
+  s3:
+    enabled: true
+
+    createBuckets: true
+
+    buckets:
+      - 59c3f49a-43d4-4d95-80b1-5155f99f2094
+      - 403e9f61-6d18-45b0-827d-cec519b5c581
+      - da6355e0-7148-42bc-8628-18a5eca97e04
+      - loki-rules-temp
 
   writeConnectionSecretToRef:
     name: {{ include "loki.fullname" $.Subcharts.loki }}
