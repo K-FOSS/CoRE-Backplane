@@ -427,6 +427,19 @@ spec:
 
               forProvider:
                 rawPolicy: $policy
+            {{- else }}
+            apiVersion: minio.crossplane.io/v1
+            kind: Policy
+            metadata:
+              annotations:
+                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+                testing: {{ toJson (getResourceCondition "Ready" $tfUserCredsWorkspace).Status }}
+            spec:
+              providerConfigRef:
+                name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+
+              forProvider:
+                rawPolicy: ''
             {{- end }}
 
             {{- end }}
