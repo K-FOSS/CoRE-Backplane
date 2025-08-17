@@ -372,7 +372,7 @@ spec:
             {{- if .observed.composite.resource.spec.s3.enabled }}
             ---
             {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
-            {{ if eq (getResourceCondition "Ready" $tfUserCredsWorkspace).Status "True" }}
+            {{ if eq (getResourceCondition "Ready" (index .observed.resources $tfUserCredsWorkspace)).Status "True" }}
 
             {{- $buckets := list }}
             {{- $createBuckets := list }}
@@ -442,14 +442,14 @@ spec:
             metadata:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                testing: {{ toJson $.observed.resources }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
                 name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
               forProvider:
-                rawPolicy: ''
+                rawPolicy: |-
+                   {{ toJson (index .observed.resources $tfUserCredsWorkspace) }}
             {{- end }}
 
             {{- else }}
@@ -459,7 +459,7 @@ spec:
             metadata:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                testing-two: {{ toJson $.observed.resources }}
+                testing-two: ''
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
