@@ -59,7 +59,6 @@ spec:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
-
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
@@ -68,6 +67,8 @@ spec:
                   global:
                     domain: argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
                   configs:
+                    params:
+                      redis.server: 'redis.{{ .values.datacenter }}.mylogin.space'
                     cm:
                       url: https://argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
 
