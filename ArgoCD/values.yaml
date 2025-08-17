@@ -243,10 +243,10 @@ argo-cd:
 
       ## Controller Properties
       # -- Number of application status processors
-      controller.status.processors: 50
+      controller.status.processors: 40
 
       # -- Number of application operation processors
-      controller.operation.processors: 30
+      controller.operation.processors: 20
 
       # -- Specifies timeout between application self heal attempts
       controller.self.heal.timeout.seconds: 5
@@ -323,12 +323,12 @@ argo-cd:
 
     resources:
       requests:
-        cpu: 378m
-        memory: 4991M
+        cpu: '2'
+        memory: '2Gi'
 
       limits:
-        cpu: 3070m
-        memory: 9028M
+        cpu: '4'
+        memory: '6Gi'
 
 
     env:
@@ -360,36 +360,36 @@ argo-cd:
         value: '60'
 
     metrics:
-      enabled: true
+      enabled: false
 
       serviceMonitor:
-        enabled: true
+        enabled: false
 
         interval: 5m
     
         additionalLabels:
           resolvemy.host/metrics: mimir
 
-
-
-
   repoServer:
     replicas: 1
 
     resources:
+      requests:
+        cpu: '1'
+        memory: '2Gi'
       limits:
-        cpu: '4'
-        memory: 24Gi
+        cpu: '2'
+        memory: '4Gi'
 
     env:
       - name: ARGOCD_EXEC_TIMEOUT
         value: 900s
 
     metrics:
-      enabled: true
+      enabled: false
 
       serviceMonitor:
-        enabled: true
+        enabled: false
 
         interval: 1m
     
@@ -397,11 +397,11 @@ argo-cd:
           resolvemy.host/metrics: mimir
 
   server:
-    replicas: 2
+    replicas: 1
 
     env:
       - name: ARGOCD_API_SERVER_REPLICAS
-        value: '2'
+        value: '1'
 
     resources:
       requests:
@@ -448,10 +448,10 @@ argo-cd:
         memory: 512Mi
 
     metrics:
-      enabled: true
+      enabled: false
 
       serviceMonitor:
-        enabled: true
+        enabled: false
 
         interval: 5m
     
