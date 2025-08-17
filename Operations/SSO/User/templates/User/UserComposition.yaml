@@ -369,7 +369,7 @@ spec:
                     value = "https://${var.s3.hostname}:${var.s3.port}"
                     sensitive = true
                   }
-            {{- if .observed.composite.resource.spec.s3.enabled }}
+            {{- if and .observed.composite.resource.spec.s3.enabled (ne $.observed.resources nil) }} }}
             ---
             {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
             {{ if eq (getResourceCondition "Ready" (index .observed.resources $userCredsWorkspace)).Status "True" }}
