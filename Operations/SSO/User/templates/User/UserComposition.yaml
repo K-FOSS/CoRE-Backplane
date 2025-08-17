@@ -463,7 +463,7 @@ spec:
                 source: Inline
                 varmap:
                   ldap:
-                    user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND }}'
+                    user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
                   
                   policy:
                     name: '{{ $minioPolicy.metadata.name }}'
