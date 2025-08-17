@@ -370,7 +370,7 @@ spec:
                     sensitive = true
                   }
 
-            {{ if and .observed.composite.resource.spec.s3.enabled (ne $.observed.resources nil) }} }}
+            {{ if and .observed.composite.resource.spec.s3.enabled (ne $.observed.resources nil) }}
             ---
             {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
             {{ if eq (getResourceCondition "Ready" (index .observed.resources $userCredsWorkspace)).Status "True" }}
