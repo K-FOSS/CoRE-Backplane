@@ -30,6 +30,7 @@ spec:
           template: | # yaml 
             {{`
             {{ $userCredsWorkspace := "user-creds-ws" }}
+            {{ $s3MinioPolicy := "minio-policy" }}
             {{- define "username" -}}
             testing
             {{- end }}
@@ -392,6 +393,12 @@ spec:
             {{- range $bucketIndex, $bucketName := $createBuckets }}
             apiVersion: minio.crossplane.io/v1
             kind: Bucket
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $bucketName }}
             spec:
               providerConfigRef:
                 name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
@@ -421,6 +428,7 @@ spec:
             metadata:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
+                {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
                 name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
@@ -435,6 +443,7 @@ spec:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
                 testing: {{ toJson (getResourceCondition "Ready" $tfUserCredsWorkspace).Status }}
+                {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
                 name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
@@ -451,6 +460,7 @@ spec:
               annotations:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
                 testing: {{ toJson (getResourceCondition "Ready" $tfUserCredsWorkspace).Status }}
+                {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
                 name: {{ .observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
