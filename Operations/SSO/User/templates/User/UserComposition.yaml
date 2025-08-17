@@ -430,7 +430,6 @@ spec:
               annotations:
                 gotemplating.fn.crossplane.io/ready: 'True'
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                testing: {{ toJson (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)) }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
               providerConfigRef:
@@ -440,8 +439,6 @@ spec:
                 rawPolicy: |-
                   {{ toJson $policy }}
             ---
-            {{- end }}
-
             {{ if eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "True" }}
 
             apiVersion: tf.upbound.io/v1beta1
@@ -493,6 +490,7 @@ spec:
                     policy_name = var.policy.name
                   }
             
+            {{- end }}
             {{- end }}
             {{- end }}
             ---
