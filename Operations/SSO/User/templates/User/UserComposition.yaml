@@ -371,7 +371,7 @@ spec:
             {{- if .observed.composite.resource.spec.s3.enabled }}
             ---
             {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
-            {{ if (getResourceCondition "Ready" $tfUserCredsWorkspace).Status "True" }}
+            {{ if eq (getResourceCondition "Ready" $tfUserCredsWorkspace).Status "True" }}
 
             {{- $buckets := list }}
             {{- $createBuckets := list }}
