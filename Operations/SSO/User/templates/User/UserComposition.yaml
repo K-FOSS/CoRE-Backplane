@@ -511,7 +511,7 @@ spec:
 
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
 
-                  resource "http" "ldap_login" {
+                  data "http" "ldap_login" {
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15"
                     method = "POST"
 
@@ -526,7 +526,7 @@ spec:
                   }
 
                   output "debug" {
-                    value = http.ldap_login.response_body
+                    value = data.ldap_login.response_body
 
                     sensitive = true
                   }
