@@ -461,7 +461,14 @@ spec:
 
               forProvider:
                 source: Inline
+                env:
+                  - name: user_password
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
+                      key: password
                 varmap:
+                  username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
                   
@@ -477,6 +484,17 @@ spec:
                     )
                   }
 
+                  variable "username" {
+                    description = "LDAP Configuration"
+                    type = string
+                  }
+
+                  variable "user_password" {
+                    description = "LDAP Configuration"
+                    type = string
+                  }
+
+
                   variable "policy" {
                     description = "LDAP/SSO Username Policy"
                     type = object(
@@ -490,6 +508,23 @@ spec:
                     user_dn = var.ldap.user
                     policy_name = var.policy.name
                   }
+
+                  {{- if .observed.composite.resource.spec.s3.createCredentials }}
+
+                  resource "http_request" "ldap_login" {
+                    url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15"
+                    method = "POST"
+
+                    request_headers = {
+                      Content-Type = "application/x-www-form-urlencoded"
+                    }
+
+                    request_body = "LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
+
+                    # optional: skip TLS verification if using self-signed
+                    # insecure = true
+                  }
+                  {{- end }}
             
             {{- end }}
             {{- end }}
