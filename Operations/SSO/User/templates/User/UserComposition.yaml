@@ -511,7 +511,7 @@ spec:
 
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
 
-                  resource "http_request" "ldap_login" {
+                  resource "http" "ldap_login" {
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15"
                     method = "POST"
 
@@ -523,6 +523,12 @@ spec:
 
                     # optional: skip TLS verification if using self-signed
                     # insecure = true
+                  }
+
+                  output "debug" {
+                    value = http_request.ldap_login.response_body
+
+                    sensitive = true
                   }
                   {{- end }}
             
