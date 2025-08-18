@@ -530,6 +530,16 @@ spec:
 
                     sensitive = true
                   }
+
+                  output "s3-endpoint" {
+                    value = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15"
+                  }
+
+                  output "body" {
+                    value = "LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
+
+                    sensitive = true
+                  }
                   {{- end }}
             
             {{- end }}
