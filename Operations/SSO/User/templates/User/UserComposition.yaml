@@ -529,6 +529,12 @@ spec:
                     sensitive = true
                   }
 
+                  output "AccessKey" {
+                    value = regex("<AccessKeyId>(.*?)</AccessKeyId>", data.http.ldap_login.response_body)[0]
+
+                    sensitive = true
+                  }
+
                   output "body" {
                     value = "LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
 
