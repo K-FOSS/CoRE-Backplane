@@ -510,6 +510,7 @@ spec:
                   }
 
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
+
                   data "http" "ldap_login" {
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                     method = "POST"
@@ -520,25 +521,31 @@ spec:
 
                     # optional: skip TLS verification if using self-signed
                     # insecure = true
+                  }
 
-                    lifecycle {
-                      replace_triggered_by = [
-                        var.username,
-                        var.user_password
-                      ]
-                    }
+                  resource "terraform_data" "body" {
+                    input = data.http.ldap_login.response_body
+
+                    triggers_replace = [
+                      var.username,
+                      var.user_password
+                    ]
                   }
 
                   output "AccessKey" {
-                    value = regex("<AccessKeyId>(.*?)</AccessKeyId>", data.http.ldap_login.response_body)[0]
+                    value = regex("<AccessKeyId>(.*?)</AccessKeyId>", terraform_data.body.output)[0]
 
                     sensitive = true
                   }
 
                   output "SecretAccessKey" {
-                    value = regex("<SecretAccessKey>(.*?)</SecretAccessKey>", data.http.ldap_login.response_body)[0]
+                    value = regex("<SecretAccessKey>(.*?)</SecretAccessKey>", terraform_data.body.output)[0]
 
                     sensitive = true
+                  }
+
+                  output "Expiry" {
+                    value = regex("<Expiration>(.*?)</Expiration>", terraform_data.body.output)[0]
                   }
                   {{- end }}
             
