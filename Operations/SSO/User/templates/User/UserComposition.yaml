@@ -524,13 +524,9 @@ spec:
                   }
 
                   output "debug" {
-                    value = data.http.ldap_login
+                    value = data.http.ldap_login.response_body
 
                     sensitive = true
-                  }
-
-                  output "s3-endpoint" {
-                    value = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                   }
 
                   output "body" {
