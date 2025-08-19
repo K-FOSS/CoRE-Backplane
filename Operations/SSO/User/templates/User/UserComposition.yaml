@@ -442,6 +442,8 @@ spec:
             ---
             {{ if eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "True" }}
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
+            {{- $obsMinio := index .observed.resources $tfMinio -}}
+            {{- $hasPrev := and $obsMinio (ne $obsMinio.connectionDetails nil) (ne (index $obsMinio.connectionDetails "Expiry") nil) -}}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
             metadata:
@@ -486,6 +488,7 @@ spec:
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
                       key: SecretAccessKey
                 varmap:
+                  do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
@@ -537,7 +540,10 @@ spec:
                     )
                   }
 
-
+                  variable "do_fetch" {
+                    type    = bool
+                    default = true
+                  }
 
                   resource "minio_iam_ldap_user_policy_attachment" "user" {
                     user_dn = var.ldap.user
@@ -551,7 +557,7 @@ spec:
                   }
 
                   data "http" "ldap_login" {
-                    count  = local.expired ? 1 : 0
+                    count  = var.do_fetch ? 1 : 0
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                     method = "POST"
 
