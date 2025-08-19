@@ -512,27 +512,25 @@ spec:
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
 
                   data "http" "ldap_login" {
-                    url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15"
+                    url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                     method = "POST"
 
                     request_headers = {
                       Content-Type = "application/x-www-form-urlencoded"
                     }
 
-                    request_body = "LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
-
                     # optional: skip TLS verification if using self-signed
                     # insecure = true
                   }
 
                   output "debug" {
-                    value = data.http.ldap_login.response_body
+                    value = data.http.ldap_login
 
                     sensitive = true
                   }
 
                   output "s3-endpoint" {
-                    value = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15"
+                    value = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                   }
 
                   output "body" {
