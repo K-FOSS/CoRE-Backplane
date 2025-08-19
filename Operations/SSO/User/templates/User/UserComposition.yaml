@@ -467,6 +467,12 @@ spec:
                       namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
                       name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
                       key: password
+
+                  - name: TF_VAR_cred_expiry
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                      key: Expiry
                 varmap:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   ldap:
@@ -490,6 +496,11 @@ spec:
                   }
 
                   variable "user_password" {
+                    description = "LDAP Configuration"
+                    type = string
+                  }
+
+                  variable "cred_expiry" {
                     description = "LDAP Configuration"
                     type = string
                   }
@@ -546,6 +557,10 @@ spec:
 
                   output "Expiry" {
                     value = regex("<Expiration>(.*?)</Expiration>", terraform_data.body.output)[0]
+                  }
+
+                  output "expired" {
+                    value = can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
                   }
                   {{- end }}
             
