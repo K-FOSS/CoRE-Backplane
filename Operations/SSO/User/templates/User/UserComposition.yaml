@@ -473,6 +473,18 @@ spec:
                       namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
                       key: Expiry
+
+                  - name: TF_VAR_prev_accesskey
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                      key: AccessKey
+
+                  - name: TF_VAR_prev_secretkey
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                      key: SecretAccessKey
                 varmap:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   ldap:
@@ -505,6 +517,16 @@ spec:
                     type = string
                   }
 
+                  variable "prev_accesskey" {
+                    description = "Prev Access Key"
+                    type = string
+                  }
+
+                  variable "prev_secretkey" {
+                    description = "Previous Secret Access Key"
+                    type = string
+                  }
+
 
                   variable "policy" {
                     description = "LDAP/SSO Username Policy"
@@ -515,6 +537,8 @@ spec:
                     )
                   }
 
+
+
                   resource "minio_iam_ldap_user_policy_attachment" "user" {
                     user_dn = var.ldap.user
                     policy_name = var.policy.name
@@ -522,7 +546,12 @@ spec:
 
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
 
+                  locals {
+                    expired = can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
+                  }
+
                   data "http" "ldap_login" {
+                    count  = local.expired ? 1 : 0
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                     method = "POST"
 
@@ -535,7 +564,7 @@ spec:
                   }
 
                   resource "terraform_data" "body" {
-                    input = data.http.ldap_login.response_body
+                    input = var.cred_expiry ? data.http.ldap_login.response_body : ""
 
                     triggers_replace = [
                       var.username,
@@ -544,23 +573,23 @@ spec:
                   }
 
                   output "AccessKey" {
-                    value = regex("<AccessKeyId>(.*?)</AccessKeyId>", terraform_data.body.output)[0]
+                    value = local.expired ? regex("<AccessKeyId>(.*?)</AccessKeyId>", terraform_data.body.output)[0] : var.prev_accesskey
 
                     sensitive = true
                   }
 
                   output "SecretAccessKey" {
-                    value = regex("<SecretAccessKey>(.*?)</SecretAccessKey>", terraform_data.body.output)[0]
+                    value = local.expired ? regex("<SecretAccessKey>(.*?)</SecretAccessKey>", terraform_data.body.output)[0] : var.prev_secretkey
 
                     sensitive = true
                   }
 
                   output "Expiry" {
-                    value = regex("<Expiration>(.*?)</Expiration>", terraform_data.body.output)[0]
+                    value = local.expired ? regex("<Expiration>(.*?)</Expiration>", terraform_data.body.output)[0] : var.cred_expiry
                   }
 
                   output "expired" {
-                    value = can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
+                    value = local.expired
                   }
                   {{- end }}
             
