@@ -563,29 +563,24 @@ spec:
                     # insecure = true
                   }
 
-                  resource "terraform_data" "body" {
-                    input = var.cred_expiry ? data.http.ldap_login.response_body : ""
-
-                    triggers_replace = [
-                      var.username,
-                      var.user_password
-                    ]
+                  locals {
+                    body = local.expired ? data.http.ldap_login[0].response_body : ""
                   }
 
                   output "AccessKey" {
-                    value = local.expired ? regex("<AccessKeyId>(.*?)</AccessKeyId>", terraform_data.body.output)[0] : var.prev_accesskey
+                    value = local.expired ? regex("<AccessKeyId>(.*?)</AccessKeyId>", local.body)[0] : var.prev_accesskey
 
                     sensitive = true
                   }
 
                   output "SecretAccessKey" {
-                    value = local.expired ? regex("<SecretAccessKey>(.*?)</SecretAccessKey>", terraform_data.body.output)[0] : var.prev_secretkey
+                    value = local.expired ? regex("<SecretAccessKey>(.*?)</SecretAccessKey>", local.body)[0] : var.prev_secretkey
 
                     sensitive = true
                   }
 
                   output "Expiry" {
-                    value = local.expired ? regex("<Expiration>(.*?)</Expiration>", terraform_data.body.output)[0] : var.cred_expiry
+                    value = local.expired ? regex("<Expiration>(.*?)</Expiration>", local.body)[0] : var.cred_expiry
                   }
 
                   output "expired" {
