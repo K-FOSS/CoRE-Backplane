@@ -510,7 +510,6 @@ spec:
                   }
 
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
-
                   data "http" "ldap_login" {
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
                     method = "POST"
@@ -521,12 +520,13 @@ spec:
 
                     # optional: skip TLS verification if using self-signed
                     # insecure = true
-                  }
 
-                  output "debug" {
-                    value = data.http.ldap_login.response_body
-
-                    sensitive = true
+                    lifecycle {
+                      replace_triggered_by = [
+                        var.username,
+                        var.user_password
+                      ]
+                    }
                   }
 
                   output "AccessKey" {
@@ -535,8 +535,8 @@ spec:
                     sensitive = true
                   }
 
-                  output "body" {
-                    value = "LDAPUsername=${var.username}&LDAPPassword=${var.user_password}"
+                  output "SecretAccessKey" {
+                    value = regex("<SecretAccessKey>(.*?)</SecretAccessKey>", data.http.ldap_login.response_body)[0]
 
                     sensitive = true
                   }
