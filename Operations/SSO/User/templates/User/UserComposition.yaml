@@ -613,7 +613,9 @@ spec:
               password: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.password }}
               ldapsBIND: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND }}
               ldapsURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsURI }}
+              {{- if .observed.composite.resource.spec.s3.enabled. }}
               S3AccessKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.AccessKey }}
               S3SecretKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.SecretAccessKey }}
+              {{- end }}
             {{ end }}
             `}}
