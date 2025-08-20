@@ -24,5 +24,9 @@ spec:
       - da6355e0-7148-42bc-8628-18a5eca97e04
       - loki-rules-temp
 
+    writeCredentialsSecretRef:
+      name: {{ include "loki.fullname" $.Subcharts.loki }}-s3-creds
+      namespace: {{ .Release.Namespace }}
+
   writeConnectionSecretToRef:
     name: {{ include "loki.fullname" $.Subcharts.loki }}
