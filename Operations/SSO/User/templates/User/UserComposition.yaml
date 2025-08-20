@@ -464,13 +464,14 @@ spec:
 
               forProvider:
                 source: Inline
-                env:
+                env:  
                   - name: TF_VAR_user_password
                     secretKeyRef:
                       namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
                       name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
                       key: password
 
+                  {{- if not $hasPrev }}
                   - name: TF_VAR_cred_expiry
                     secretKeyRef:
                       namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
@@ -488,6 +489,7 @@ spec:
                       namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
                       key: SecretAccessKey
+                  {{- end }}
                 varmap:
                   do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
