@@ -556,6 +556,10 @@ spec:
                     policy_name = var.policy.name
                   }
 
+                  output "S3Endpoint" {
+                    value = local.S3_ENDPOINT
+                  }
+
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
 
                   locals {
@@ -595,10 +599,6 @@ spec:
                     value = local.expired ? regex("<Expiration>(.*?)</Expiration>", local.body)[0] : var.cred_expiry
                   }
 
-                  output "S3Endpoint" {
-                    value = local.S3_ENDPOINT
-                  }
-
                   output "expired" {
                     value = local.expired
                   }
@@ -620,8 +620,11 @@ spec:
               ldapsURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsURI }}
               {{- if .observed.composite.resource.spec.s3.enabled }}
               S3Hostname: {{ ( index $.observed.resources $tfMinio ).connectionDetails.S3Endpoint }}
+
+              {{- if .observed.composite.resource.spec.s3.createCredentials }}
               S3AccessKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.AccessKey }}
               S3SecretKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.SecretAccessKey }}
+              {{- end }}
               {{- end }}
             {{ end }}
             `}}
