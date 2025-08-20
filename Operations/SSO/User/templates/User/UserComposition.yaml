@@ -32,6 +32,7 @@ spec:
             {{ $userCredsWorkspace := "user-creds-ws" }}
             {{ $tfMinio := "tf-minio" }}
             {{ $s3MinioPolicy := "minio-policy" }}
+            {{ $s3SecretCreation := "minio-s3-secret" }}
             {{- define "username" -}}
             testing
             {{- end }}
@@ -603,7 +604,40 @@ spec:
                     value = local.expired
                   }
                   {{- end }}
-            
+
+            {{- if and .observed.composite.resource.spec.s3.createCredentials (index $.observed.resources $tfMinio ).connectionDetails.AccessKey) }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $s3SecretCreation }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              managementPolicies:
+                - Observe
+                - Create
+                - Update
+
+              readiness:
+                policy: SuccessfulCreate
+
+              forProvider:
+                manifest:
+                  kind: Secret
+                  metadata:
+                    namespace: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
+                    name: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
+                  type: Opaque
+                  data:
+                    S3AccessKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.AccessKey | b64enc }}
+                    S3SecretKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.SecretAccessKey | b64enc }}
+            {{- end }}
+
             {{- end }}
             {{- end }}
             {{- end }}
