@@ -444,8 +444,10 @@ spec:
             {{ if eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "True" }}
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
             {{- $obsMinio := index .observed.resources $tfMinio -}}
-            {{- $hasPrev := and $obsMinio (ne $obsMinio.connectionDetails nil) (ne (index $obsMinio.connectionDetails "Expiry") nil) -}}
-            {{- $now := (now | date "2006-01-02T15:04:05Z07:00") -}}
+            {{- $conn := default (dict) (and $obsMinio $obsMinio.connectionDetails) -}}
+            {{- $expiryB64 := get $conn "Expiry" -}}
+            {{- $hasPrev := $expiryB64 -}}
+            {{- $now := (now | date "2025-01-02T15:04:05Z07:00") -}}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
             metadata:
@@ -472,7 +474,7 @@ spec:
                       name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
                       key: password
 
-                  {{- if and $obsMinio (ne (index $obsMinio.connectionDetails "Expiry") nil) }}
+                  {{- if $hasPrev }}
                   - name: TF_VAR_cred_expiry
                     secretKeyRef:
                       namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
