@@ -471,7 +471,7 @@ spec:
                       name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
                       key: password
 
-                  {{- if ne (index $obsMinio.connectionDetails "Expiry") nil }}
+                  {{- if and $obsMinio (ne (index $obsMinio.connectionDetails "Expiry") nil) }}
                   - name: TF_VAR_cred_expiry
                     value: 
                     secretKeyRef:
