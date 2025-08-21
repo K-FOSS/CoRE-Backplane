@@ -569,7 +569,7 @@ spec:
                   {{- if .observed.composite.resource.spec.s3.createCredentials }}
 
                   locals {
-                    expired = can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
+                    expired = var.do_fetch ? true : can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
                   }
 
                   data "http" "ldap_login" {
