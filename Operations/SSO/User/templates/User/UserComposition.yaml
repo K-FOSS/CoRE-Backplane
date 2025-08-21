@@ -570,7 +570,7 @@ spec:
                     value = true
                   }
 
-                  {{- if and $obsMinio $obsMinio.status.atProvider.output.policyBound .observed.composite.resource.spec.s3.createCredentials }}
+                  {{- if and $obsMinio $obsMinio.status.atProvider.outputs.policyBound .observed.composite.resource.spec.s3.createCredentials }}
 
                   locals {
                     expired = var.do_fetch ? true : can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
