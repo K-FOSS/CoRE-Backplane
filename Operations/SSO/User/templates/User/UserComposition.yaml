@@ -33,6 +33,7 @@ spec:
             {{ $tfMinio := "tf-minio" }}
             {{ $s3MinioPolicy := "minio-policy" }}
             {{ $s3SecretCreation := "minio-s3-secret" }}
+            {{ $tfMinioCreds := "tf-minio-creds" }}
             {{- define "username" -}}
             testing
             {{- end }}
@@ -443,11 +444,6 @@ spec:
             ---
             {{ if eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "True" }}
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
-            {{- $obsMinio := index .observed.resources $tfMinio -}}
-            {{- $conn := default (dict) (and $obsMinio $obsMinio.connectionDetails) -}}
-            {{- $expiryB64 := get $conn "Expiry" -}}
-            {{- $hasPrev := $expiryB64 -}}
-            {{- $now := (now | date "2025-01-02T15:04:05Z07:00") -}}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
             metadata:
@@ -465,6 +461,11 @@ spec:
                 name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
                 namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
 
+              managementPolicie:
+                - Observe
+                - Create
+                - Update
+
               forProvider:
                 source: Inline
                 env:  
@@ -473,28 +474,7 @@ spec:
                       namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
                       name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
                       key: password
-
-                  {{- if $hasPrev }}
-                  - name: TF_VAR_cred_expiry
-                    secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-                      name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
-                      key: Expiry
-
-                  - name: TF_VAR_prev_accesskey
-                    secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-                      name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
-                      key: AccessKey
-
-                  - name: TF_VAR_prev_secretkey
-                    secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
-                      name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
-                      key: SecretAccessKey
-                  {{- end }}
                 varmap:
-                  do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
@@ -568,11 +548,96 @@ spec:
                     value = local.S3_ENDPOINT
                   }
 
-                  output "policyBound" {
-                    value = true
+            {{- end }}
+
+            {{ if and (eq (getResourceCondition "Ready" (index .observed.resources $tfMinio)).Status "True") .observed.composite.resource.spec.s3.createCredentials }}
+            {{- $obsMinio := index .observed.resources $tfMinio -}}
+            {{- $conn := default (dict) (and $obsMinio $obsMinio.connectionDetails) -}}
+            {{- $expiryB64 := get $conn "Expiry" -}}
+            {{- $hasPrev := $expiryB64 -}}
+            {{- $now := (now | date "2025-01-02T15:04:05Z07:00") -}}
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $tfMinioCreds }}
+
+            spec:
+              providerConfigRef:
+                name: {{ $.observed.composite.resource.spec.s3.crossplane.terraformProvider }}
+
+              writeConnectionSecretToRef:
+                name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+
+              managementPolicie:
+                - Observe
+                - Create
+                - Update
+
+              forProvider:
+                source: Inline
+                env:  
+                  - name: TF_VAR_user_password
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
+                      key: password
+                varmap:
+                  do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}true{{ else }}false{{ end }}{{ end }}
+                  username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+                  ldap:
+                    user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
+
+                  test: {{ toJson $obsMinio.resource.status }}
+                module: | # hcl
+                  variable "ldap" {
+                    description = "LDAP Configuration"
+                    type = object(
+                      {
+                        user = string
+                      }
+                    )
                   }
 
-                  {{- if and $obsMinio $obsMinio.resource.status.atProvider.outputs.policyBound .observed.composite.resource.spec.s3.createCredentials }}
+                  variable "username" {
+                    description = "LDAP Configuration"
+                    type = string
+                  }
+
+                  variable "user_password" {
+                    description = "LDAP Configuration"
+                    type = string
+                  }
+
+                  variable "cred_expiry" {
+                    description = "LDAP Configuration"
+                    type = string
+                    nullable = true
+                    default = null
+                  }
+
+                  variable "prev_accesskey" {
+                    description = "Prev Access Key"
+                    type = string
+                    nullable = true
+                    default = null
+                  }
+
+                  variable "prev_secretkey" {
+                    description = "Previous Secret Access Key"
+                    type = string
+                    nullable = true
+                    default = null
+                  }
+
+                  variable "do_fetch" {
+                    type    = bool
+                    default = true
+                  }
 
                   locals {
                     expired = var.do_fetch ? true : can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
@@ -586,9 +651,6 @@ spec:
                     request_headers = {
                       Content-Type = "application/x-www-form-urlencoded"
                     }
-
-                    # optional: skip TLS verification if using self-signed
-                    # insecure = true
                   }
 
                   locals {
@@ -614,42 +676,7 @@ spec:
                   output "expired" {
                     value = local.expired
                   }
-                  {{- end }}
 
-            {{- if and .observed.composite.resource.spec.s3.createCredentials (index $.observed.resources $tfMinio ).connectionDetails.AccessKey }}
-            apiVersion: kubernetes.crossplane.io/v1alpha2
-            kind: Object
-            metadata:
-              annotations:
-                #
-                # TODO: Actually make this check status
-                gotemplating.fn.crossplane.io/ready: 'True'
-                {{ setResourceNameAnnotation $s3SecretCreation }}
-            spec:
-              providerConfigRef:
-                name: local-k8s
-
-              managementPolicies:
-                - Observe
-                - Create
-                - Update
-
-              readiness:
-                policy: SuccessfulCreate
-
-              forProvider:
-                manifest:
-                  kind: Secret
-                  metadata:
-                    namespace: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
-                    name: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
-                  type: Opaque
-                  data:
-                    S3AccessKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.AccessKey | b64enc }}
-                    S3SecretKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.SecretAccessKey | b64enc }}
-            {{- end }}
-
-            {{- end }}
             {{- end }}
             {{- end }}
             ---
@@ -665,11 +692,6 @@ spec:
               ldapsURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsURI }}
               {{- if .observed.composite.resource.spec.s3.enabled }}
               S3Hostname: {{ ( index $.observed.resources $tfMinio ).connectionDetails.S3Endpoint }}
-
-              {{- if .observed.composite.resource.spec.s3.createCredentials }}
-              S3AccessKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.AccessKey }}
-              S3SecretKey: {{ ( index $.observed.resources $tfMinio ).connectionDetails.SecretAccessKey }}
-              {{- end }}
               {{- end }}
             {{ end }}
             `}}
