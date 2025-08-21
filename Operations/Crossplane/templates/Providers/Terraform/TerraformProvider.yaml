@@ -1,19 +1,19 @@
-apiVersion: pkg.crossplane.io/v1alpha1
-kind: ControllerConfig
-metadata:
-  name: terraform-config
+# apiVersion: pkg.crossplane.io/v1alpha1
+# kind: ControllerConfig
+# metadata:
+#   name: terraform-config
 
-  annotations:
-    argocd.argoproj.io/sync-wave: '19'
+#   annotations:
+#     argocd.argoproj.io/sync-wave: '19'
 
-spec:
-  args:
-    - -d
-    - --log-encoding=json
-    - --enable-external-secret-stores
-    # - --sync=2h
-    # - --poll=30m
-    # - --poll-jitter=15m
+# spec:
+#   args:
+#     - -d
+#     - --log-encoding=json
+#     - --enable-external-secret-stores
+#     # - --sync=2h
+#     # - --poll=30m
+#     # - --poll-jitter=15m
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
@@ -26,5 +26,5 @@ metadata:
 spec:
   # TODO: Get this automated with Renovate
   package: xpkg.upbound.io/upbound/provider-terraform:v0.20.0
-  controllerConfigRef:
-    name: terraform-config
+  # controllerConfigRef:
+  #   name: terraform-config
