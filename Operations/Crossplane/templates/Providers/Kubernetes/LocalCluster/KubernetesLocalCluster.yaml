@@ -1,14 +1,14 @@
-apiVersion: pkg.crossplane.io/v1alpha1
-kind: ControllerConfig
-metadata:
-  name: local-k8s-config
+# apiVersion: pkg.crossplane.io/v1alpha1
+# kind: ControllerConfig
+# metadata:
+#   name: local-k8s-config
 
-  annotations:
-    argocd.argoproj.io/sync-wave: '19'
+#   annotations:
+#     argocd.argoproj.io/sync-wave: '19'
 
-spec:
-  args:
-    - --enable-server-side-apply
+# spec:
+#   args:
+#     - --enable-server-side-apply
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
@@ -18,11 +18,11 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '20'
 spec:
-  package: xpkg.upbound.io/upbound/provider-kubernetes:v0.16.0
+  package: ghcr.io/crossplane-contrib/provider-kubernetes:v1.0.0
   runtimeConfigRef:
     apiVersion: pkg.crossplane.io/v1beta1
     kind: DeploymentRuntimeConfig
     name: local-k8s
 
-  controllerConfigRef:
-    name: local-k8s-config
+  # controllerConfigRef:
+  #   name: local-k8s-config
