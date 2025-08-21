@@ -580,7 +580,7 @@ spec:
 
                   data:
                     test: |
-                      {{ toJson (index .observed.resources $s3MinioPolicy)).Status }}
+                      {{ toJson (index .observed.resources $s3MinioPolicy).Status }}
             {{- end }}
 
             {{ if and (eq (getResourceCondition "Ready" (index .observed.resources $tfMinio)).Status "True") .observed.composite.resource.spec.s3.createCredentials }}
