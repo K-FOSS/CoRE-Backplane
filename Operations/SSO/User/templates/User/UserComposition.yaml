@@ -587,9 +587,6 @@ spec:
                 varmap:
                   do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
-                  ldap:
-                    user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
-
                   test: {{ toJson $obsMinio.resource.status }}
                 module: | # hcl
                   variable "ldap" {
@@ -674,6 +671,7 @@ spec:
                   output "expired" {
                     value = local.expired
                   }
+            {{- end }}
 
             {{- end }}
             {{- end }}
