@@ -566,7 +566,11 @@ spec:
                     value = local.S3_ENDPOINT
                   }
 
-                  {{- if .observed.composite.resource.spec.s3.createCredentials }}
+                  output "policyBound" {
+                    value = true
+                  }
+
+                  {{- if and $obsMinio $obsMinio.status.atProvider.output.policyBound .observed.composite.resource.spec.s3.createCredentials }}
 
                   locals {
                     expired = var.do_fetch ? true : can(timecmp(var.cred_expiry, timestamp())) && timecmp(var.cred_expiry, timestamp()) < 0
