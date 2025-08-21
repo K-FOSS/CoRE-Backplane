@@ -34,6 +34,7 @@ spec:
             {{ $s3MinioPolicy := "minio-policy" }}
             {{ $s3SecretCreation := "minio-s3-secret" }}
             {{ $tfMinioCreds := "tf-minio-creds" }}
+            {{ $kubeTest := "kube-test" }}
             {{- define "username" -}}
             testing
             {{- end }}
@@ -546,6 +547,40 @@ spec:
                     value = local.S3_ENDPOINT
                   }
 
+            {{- else }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $kubeTest }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              managementPolicies:
+                - Observe
+                - Create
+                - Update
+
+
+              readiness:
+                policy: SuccessfulCreate
+
+              forProvider:
+                manifest:
+
+                  apiVersion: v1
+                  kind: ConfigMap
+                  metadata:
+                    name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                    namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+
+                  data:
+                    test: |
+                      {{ toJson (index .observed.resources $s3MinioPolicy)).Status }}
             {{- end }}
 
             {{ if and (eq (getResourceCondition "Ready" (index .observed.resources $tfMinio)).Status "True") .observed.composite.resource.spec.s3.createCredentials }}
