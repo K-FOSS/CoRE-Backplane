@@ -395,6 +395,8 @@ spec:
               {{- end }}
             {{- end }}
 
+            {{- $buckets = uniq ($buckets | sortAlpha) }}
+
             {{- range $bucketIndex, $bucketName := $createBuckets }}
             apiVersion: minio.crossplane.io/v1
             kind: Bucket
@@ -419,6 +421,8 @@ spec:
             {{- range $b := $buckets }}
               {{- $resources = concat $resources (list (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b)) }}
             {{- end }}
+
+            {{- $resources = uniq ($resources | sortAlpha) }}
 
             {{ $policy := dict
                 "Version"  "2012-10-17"
