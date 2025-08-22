@@ -478,7 +478,7 @@ spec:
                       key: password
                 varmap:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
-                  can_attach_policy: {{ eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "Ready" }}
+                  can_attach_policy: {{ eq (getResourceCondition "Ready" (index $.observed.resources $s3MinioPolicy)).Status "True" }}
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
                   
