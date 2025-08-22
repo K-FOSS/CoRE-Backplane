@@ -436,6 +436,10 @@ spec:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
+              managementPolicies:
+                - Observe
+                - Create
+
               providerConfigRef:
                 name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
