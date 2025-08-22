@@ -436,10 +436,6 @@ spec:
                 crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
                 {{ setResourceNameAnnotation $s3MinioPolicy }}
             spec:
-              managementPolicies:
-                - Observe
-                - Create
-
               providerConfigRef:
                 name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
@@ -482,7 +478,7 @@ spec:
                       key: password
                 varmap:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
-                  can_attach_policy:  {{ eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "Ready" }}
+                  can_attach_policy: {{ eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "Ready" }}
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
                   
