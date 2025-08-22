@@ -447,7 +447,6 @@ spec:
                 rawPolicy: |-
                   {{ toJson $policy }}
             ---
-            {{ if eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "True" }}
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
@@ -457,7 +456,7 @@ spec:
                 #
                 # TODO: Actually make this check status and shit
                 gotemplating.fn.crossplane.io/ready: 'True'
-                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}-s3-ldap
+                crossplane.io/external-name: {{ printf "%.55s-tfminio" .observed.composite.resource.metadata.name | lower | replace "_" "-" }}
                 {{ setResourceNameAnnotation $tfMinio }}
 
             spec:
@@ -483,6 +482,7 @@ spec:
                       key: password
                 varmap:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+                  can_attach_policy:  {{ eq (getResourceCondition "Ready" (index .observed.resources $s3MinioPolicy)).Status "Ready" }}
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
                   
@@ -496,6 +496,11 @@ spec:
                         user = string
                       }
                     )
+                  }
+                
+                  variable "can_attach_policy" {
+                    description = "Wether the policy has been created successfully"
+                    type = bool
                   }
 
                   variable "username" {
@@ -518,6 +523,7 @@ spec:
                   }
 
                   resource "minio_iam_ldap_user_policy_attachment" "user" {
+                    count = var.can_attach_policy ? 1 : 0
                     user_dn = var.ldap.user
                     policy_name = var.policy.name
                   }
@@ -525,42 +531,6 @@ spec:
                   output "S3Endpoint" {
                     value = local.S3_ENDPOINT
                   }
-
-            {{- else }}
-            apiVersion: kubernetes.crossplane.io/v1alpha2
-            kind: Object
-            metadata:
-              annotations:
-                #
-                # TODO: Actually make this check status
-                gotemplating.fn.crossplane.io/ready: 'True'
-                {{ setResourceNameAnnotation $kubeTest }}
-            spec:
-              providerConfigRef:
-                name: local-k8s
-
-              managementPolicies:
-                - Observe
-                - Create
-                - Update
-
-
-              readiness:
-                policy: SuccessfulCreate
-
-              forProvider:
-                manifest:
-
-                  apiVersion: v1
-                  kind: ConfigMap
-                  metadata:
-                    name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
-                    namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
-
-                  data:
-                    test: |
-                      {{ toJson (index .observed.resources $s3MinioPolicy).Status }}
-            {{- end }}
 
             {{ if and (eq (getResourceCondition "Ready" (index .observed.resources $tfMinio)).Status "True") .observed.composite.resource.spec.s3.createCredentials }}
             {{- $obsMinio := index .observed.resources $tfMinio -}}
