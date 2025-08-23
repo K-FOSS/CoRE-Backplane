@@ -104,14 +104,6 @@ alloy:
           }
         }
 
-
-
-        // read the credentials secret for remote_write authorization
-        remote.kubernetes.secret "logscredentials" {
-          namespace = "core-prod"
-          name = "core-backplane-observeability-collectors-oauth-creds"
-        }
-
         // Begin Auto Discovery Configuration
 
         // discovery.kubernetes allows you to find scrape targets from Kubernetes resources.
@@ -237,11 +229,6 @@ alloy:
         //
         // Metrics
         //
-
-        remote.kubernetes.secret "metricscredentials" {
-          namespace = "core-prod"
-          name = "core-backplane-observeability-collectors-metrics-oauth-creds"
-        }
         
         // Monitor Self https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.self/
         prometheus.exporter.self "self_metrics" {
