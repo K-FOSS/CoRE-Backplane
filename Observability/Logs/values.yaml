@@ -84,14 +84,26 @@ loki:
       - name: S3_ENDPOINT
         valueFrom:
           secretKeyRef:
-            name:  loki-core-s3-creds
+            name: loki-core
             key: S3Hostname
 
       - name: S3_BUCKET
         valueFrom:
           secretKeyRef:
-            name: loki-core-s3-creds
+            name: loki-core
             key: username
+
+      - name: S3_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: loki-core-s3-creds
+            key: AccessKey
+
+      - name: S3_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: loki-core-s3-creds
+            key: SecretAccessKey
 
     # -- Environment variables from secrets or configmaps to add to the single binary pods
     extraEnvFrom: []
