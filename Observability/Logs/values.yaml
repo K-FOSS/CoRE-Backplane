@@ -243,12 +243,6 @@ loki:
     # -- Provides a reloadable runtime configuration file for some specific configuration
     runtimeConfig: {}
 
-    # -- Check https://grafana.com/docs/loki/latest/configuration/#common_config for more info on how to provide a common configuration
-    commonConfig:
-      path_prefix: /var/loki
-      replication_factor: 3
-      compactor_address: '{{ include "loki.compactorAddress" . }}'
-
     # -- Storage config. Providing this will automatically populate all necessary storage configs in the templated config.
     storage:
       # Loki requires a bucket for chunks and the ruler. GEL requires a third bucket for the admin API.
@@ -323,14 +317,6 @@ loki:
 
     # -- Additional storage config
     storage_config:
-      boltdb_shipper:
-        index_gateway_client:
-          server_address: '{{ include "loki.indexGatewayAddress" . }}'
-      tsdb_shipper:
-        index_gateway_client:
-          server_address: '{{ include "loki.indexGatewayAddress" . }}'
-      bloom_shipper:
-        working_directory: /var/loki/data/bloomshipper
       hedging:
         at: "250ms"
         max_per_second: 20
@@ -356,17 +342,6 @@ loki:
     # --  Optional ingester configuration
     ingester:
       chunk_encoding: snappy
-    
-    # --  Optional index gateway configuration
-    index_gateway:
-      mode: simple
-    
-    frontend:
-      scheduler_address: '{{ include "loki.querySchedulerAddress" . }}'
-      tail_proxy_url: '{{ include "loki.querierAddress" . }}'
-    
-    frontend_worker:
-      scheduler_address: '{{ include "loki.querySchedulerAddress" . }}'
     
     # -- Optional distributor configuration
     distributor: {}
