@@ -580,7 +580,7 @@ spec:
                 varmap:
                   do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
-                  test: {{ toJson $obsMinio.resource.status }}
+                  test: {{ toJson $obsMinio.connectionDetails }}
                 module: | # hcl
                   variable "username" {
                     description = "LDAP Configuration"
