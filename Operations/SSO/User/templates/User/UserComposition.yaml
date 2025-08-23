@@ -575,7 +575,7 @@ spec:
                   - name: TF_VAR_user_password
                     secretKeyRef:
                       namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
-                      name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
+                      name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}-sso-secret
                       key: password
                 varmap:
                   do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}true{{ else }}false{{ end }}{{ end }}
