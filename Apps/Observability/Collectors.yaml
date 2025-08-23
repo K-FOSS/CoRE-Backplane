@@ -69,15 +69,18 @@ spec:
 
         plugin:
           name: argocd-lovely-plugin
-          # env:
-          #   - name: LOVELY_HELM_MERGE
-          #     value: |- 
-          #       grafana:
-          #         ldap:
-          #           enabled: true
-          #           # `existingSecret` is a reference to an existing secret containing the ldap configuration
-          #           # for Grafana in a key `ldap-toml`.
-          #           existingSecret: 'grafana-core-ldap'
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                alloy:
+                  alloy:
+                    # -- Extra environment variables to pass to the Alloy container.
+                    extraEnv:
+                      - name: DC
+                        value: '{{ .values.datacenter }}'
+
+                      - name: CLUSTER
+                        value: '{{ .values.clusterName }}'
 
       destination:
         server: '{{ .server }}'
