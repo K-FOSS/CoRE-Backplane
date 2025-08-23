@@ -443,7 +443,10 @@ spec:
               forProvider:
                 source: Inline
                 varmap:
-                  buckets: {{ $buckets }}
+                  buckets:
+                    {{- range $bucketName := $buckets }}
+                    - {{ $bucketName  }}
+                    {{- }}
 
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
 
