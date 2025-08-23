@@ -686,6 +686,11 @@ spec:
               namespace: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.namespace }}
               name: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
 
+              ownerReferences:
+                - apiVersion: {{ .observed.composite.resource.spec.claimRef.apiVersion }}
+                  kind: {{ .observed.composite.resource.spec.claimRef.kind }}
+                  name: {{ .observed.composite.resource.spec.claimRef.name }}
+
               annotations:
                 {{ setResourceNameAnnotation $s3Creds }}
             type: Opaque
