@@ -582,7 +582,7 @@ spec:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   test: {{ (index $obsMinio.connectionDetails "Expiry") | b64dec | toDate "2006-01-02T15:04:05Z07:00" }}
                   test2: {{ toJson (now | dateModify "-1h") }}
-                  test3: {{ (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec | toDate "2006-01-02T15:04:05Z07:00") ($now | dateModify "-1h")) }}
+                  test3: {{ (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec | toDate "2006-01-02T15:04:05Z07:00") (now | dateModify "-1h")) }}
                 module: | # hcl
                   variable "username" {
                     description = "LDAP Configuration"
