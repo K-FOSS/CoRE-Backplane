@@ -577,6 +577,26 @@ spec:
                       namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
                       name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}-sso-secret
                       key: password
+
+                  {{- if $hasPrev }}
+                  - name: TF_VAR_prev_accesskey
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
+                      key: AccessKey
+
+                  - name: TF_VAR_prev_secretkey
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
+                      key: SecretAccessKey
+
+                  - name: TF_VAR_cred_expiry
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
+                      key: Expiry
+                  {{- end }}
                 varmap:
                   do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec | toDate "2006-01-02T15:04:05Z07:00" | ago) (duration "-3600")) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
