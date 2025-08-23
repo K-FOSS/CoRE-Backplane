@@ -7,21 +7,51 @@ metadata:
     argocd.argoproj.io/sync-wave: '20'
 
 spec:
+  goTemplate: true
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    hub: false
+
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'prod'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
 
   template:
     metadata:
-      name: '{{cluster}}-collectors'
+      name: '{{ .values.clusterName }}-collectors'
       
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
+        resolvemy.host/priority: 'critical'
 
     spec:
       project: core
@@ -50,5 +80,5 @@ spec:
           #           existingSecret: 'grafana-core-ldap'
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
