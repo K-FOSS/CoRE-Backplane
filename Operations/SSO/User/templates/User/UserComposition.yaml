@@ -218,7 +218,6 @@ spec:
 
                     nullable = true
                     default = []
-
                   }
 
                   variable "serviceAccount" {
@@ -416,36 +415,51 @@ spec:
             ---
             {{- end }}
 
-            {{- $resources := list }}
-
-            {{- range $b := $buckets }}
-              {{- $resources = concat $resources (list (printf "arn:aws:s3:::%s" $b) (printf "arn:aws:s3:::%s/*" $b)) }}
-            {{- end }}
-
-            {{- $resources = uniq ($resources | sortAlpha) }}
-
-            {{ $policy := dict
-                "Version"  "2012-10-17"
-                "Statement" (list (dict
-                  "Effect"   "Allow"
-                  "Action"   (list "s3:*")
-                  "Resource" $resources
-                ))
-            }}
-            apiVersion: minio.crossplane.io/v1
-            kind: Policy
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
             metadata:
+              name: {{ printf "%.55s-tfminiopolicy" .observed.composite.resource.metadata.name | lower | replace "_" "-" }}
               annotations:
+                #
+                # TODO: Actually make this check status and shit
                 gotemplating.fn.crossplane.io/ready: 'True'
-                crossplane.io/external-name: {{ $tfUserCredsWorkspace.status.atProvider.outputs.username }}
-                {{ setResourceNameAnnotation $s3MinioPolicy }}
+                crossplane.io/external-name: {{ printf "%.55s-tfminiopolicy" .observed.composite.resource.metadata.name | lower | replace "_" "-" }}
+                {{ setResourceNameAnnotation $tfMinio }}
+
             spec:
               providerConfigRef:
-                name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
+                name: {{ $.observed.composite.resource.spec.s3.crossplane.terraformProvider }}
+
+              writeConnectionSecretToRef:
+                name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+
+              managementPolicies:
+                - Observe
+                - Create
+                - Update
 
               forProvider:
-                rawPolicy: |-
-                  {{ toJson $policy }}
+                source: Inline
+                varmap:
+                  buckets: {{ $buckets }}
+
+                  username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+
+                module: | # hcl
+                  variable "buckets" {
+                    description = "The S3 Buckets the account should have access to"
+
+                    type = set(string)
+
+                    default = []
+                  }
+
+                  variable "username" {
+                    description = "Account username"
+                    type        = string
+                    nullable = true
+                  }
             ---
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
             apiVersion: tf.upbound.io/v1beta1
@@ -474,20 +488,11 @@ spec:
 
               forProvider:
                 source: Inline
-                env:  
-                  - name: TF_VAR_user_password
-                    secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
-                      name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}
-                      key: password
                 varmap:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
-                  can_attach_policy: {{ eq (getResourceCondition "Ready" (index $.observed.resources $s3MinioPolicy)).Status "True" }}
                   ldap:
                     user: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
-                  
-                  policy:
-                    name: '{{ $minioPolicy.metadata.name }}'
+
                 module: | # hcl
                   variable "ldap" {
                     description = "LDAP Configuration"
@@ -497,35 +502,16 @@ spec:
                       }
                     )
                   }
-                
-                  variable "can_attach_policy" {
-                    description = "Wether the policy has been created successfully"
-                    type = bool
-                  }
 
                   variable "username" {
                     description = "LDAP Configuration"
                     type = string
                   }
 
-                  variable "user_password" {
-                    description = "LDAP Configuration"
-                    type = string
-                  }
-
-                  variable "policy" {
-                    description = "LDAP/SSO Username Policy"
-                    type = object(
-                      {
-                        name = string
-                      }
-                    )
-                  }
-
                   resource "minio_iam_ldap_user_policy_attachment" "user" {
-                    count = var.can_attach_policy ? 1 : 0
+                    count = 0
                     user_dn = var.ldap.user
-                    policy_name = var.policy.name
+                    policy_name = var.username
                   }
 
                   output "S3Endpoint" {
