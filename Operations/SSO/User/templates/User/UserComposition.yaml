@@ -35,6 +35,7 @@ spec:
             {{ $s3SecretCreation := "minio-s3-secret" }}
             {{ $tfMinioCreds := "tf-minio-creds" }}
             {{ $tfMinioPolicy := "tf-minio-policy" }}
+            {{ $s3Creds := "s3-creds-secret" }}
             {{ $kubeTest := "kube-test" }}
             {{- define "username" -}}
             testing
@@ -684,6 +685,9 @@ spec:
             metadata:
               namespace: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.namespace }}
               name: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
+
+              annotations:
+                {{ setResourceNameAnnotation $s3Creds }}
             type: Opaque
             {{- end }}
 
