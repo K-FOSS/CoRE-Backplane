@@ -34,6 +34,7 @@ spec:
             {{ $s3MinioPolicy := "minio-policy" }}
             {{ $s3SecretCreation := "minio-s3-secret" }}
             {{ $tfMinioCreds := "tf-minio-creds" }}
+            {{ $tfMinioPolicy := "tf-minio-policy" }}
             {{ $kubeTest := "kube-test" }}
             {{- define "username" -}}
             testing
@@ -424,7 +425,7 @@ spec:
                 # TODO: Actually make this check status and shit
                 gotemplating.fn.crossplane.io/ready: 'True'
                 crossplane.io/external-name: {{ printf "%.55s-tfminiopolicy" .observed.composite.resource.metadata.name | lower | replace "_" "-" }}
-                {{ setResourceNameAnnotation $tfMinio }}
+                {{ setResourceNameAnnotation $tfMinioPolicy }}
 
             spec:
               providerConfigRef:
