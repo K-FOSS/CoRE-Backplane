@@ -624,7 +624,7 @@ spec:
 
                   data "http" "ldap_login" {
                     count  = var.do_fetch ? 1 : 0
-                    url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${var.user_password}&DurationSeconds=604800"
+                    url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${urlencode(var.user_password)}&DurationSeconds=604800"
                     method = "POST"
 
                     request_headers = {
