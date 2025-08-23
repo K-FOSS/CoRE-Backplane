@@ -84,13 +84,13 @@ loki:
       - name: S3_ENDPOINT
         valueFrom:
           secretKeyRef:
-            name: {{ include "loki.fullname" $.Subcharts.loki }}
+            name:  loki-core-s3-creds
             key: S3Hostname
 
       - name: S3_BUCKET
         valueFrom:
           secretKeyRef:
-            name: {{ include "loki.fullname" $.Subcharts.loki }}
+            name: loki-core-s3-creds
             key: username
 
     # -- Environment variables from secrets or configmaps to add to the single binary pods
