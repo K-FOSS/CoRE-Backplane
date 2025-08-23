@@ -432,7 +432,7 @@ spec:
                 name: {{ $.observed.composite.resource.spec.s3.crossplane.terraformProvider }}
 
               writeConnectionSecretToRef:
-                name: {{ .observed.composite.resource.metadata.uid }}-s3-ldap
+                name: {{ .observed.composite.resource.metadata.uid }}-s3-tf-policy
                 namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
 
               managementPolicies:
@@ -478,7 +478,6 @@ spec:
                           Resource = flatten([
                               for bucket in var.buckets : ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
                             ])
-                          
                         }
                       ]
                     })
@@ -548,6 +547,7 @@ spec:
             {{- $expiryB64 := get $conn "Expiry" -}}
             {{- $hasPrev := $expiryB64 -}}
             {{- $now := (now | date "2025-01-02T15:04:05Z07:00") -}}
+            ---
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
             metadata:
