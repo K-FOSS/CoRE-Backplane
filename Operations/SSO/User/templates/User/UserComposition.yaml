@@ -580,7 +580,7 @@ spec:
                 varmap:
                   do_fetch: {{ if not $hasPrev }}true{{ else }}{{ if and $obsMinio (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}true{{ else }}false{{ end }}{{ end }}
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
-                  test: {{ (index $obsMinio.connectionDetails "Expiry") | b64dec | toDate "2006-01-02T15:04:05Z07:00" | unixEpoch }}
+                  test: {{ (index $obsMinio.connectionDetails "Expiry") | b64dec | toDate "2006-01-02T15:04:05Z07:00" }}
                   test2: {{ toJson ($now | unixEpoch) }}
                   test3: {{ (lt ((index $obsMinio.connectionDetails "Expiry") | b64dec) ($now)) }}
                 module: | # hcl
