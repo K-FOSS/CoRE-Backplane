@@ -675,6 +675,16 @@ spec:
                   output "expired" {
                     value = local.expired
                   }
+            ---
+            apiVersion: v1
+            kind: Secret
+            data:
+              AccessKey: {{ ( index $.observed.resources $tfMinioCreds ).connectionDetails.AccessKey }}
+              SecretAccessKey: {{ ( index $.observed.resources $tfMinioCreds ).connectionDetails.AccessKey }}
+            metadata:
+              namespace: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.namespace }}
+              name: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
+            type: Opaque
             {{- end }}
 
             {{- end }}
