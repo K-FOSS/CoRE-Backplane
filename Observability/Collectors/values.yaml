@@ -431,12 +431,6 @@ alloy:
           forward_to = []
         }
 
-        mimir.rules.kubernetes "default" {
-          address = "https://metrics.mylogin.space"
-        }
-
-
-
         // PSQL monitoring
         // read the credentials secret for remote_write authorization
 
@@ -450,17 +444,6 @@ alloy:
           scrape_timeout  = "10s"
 
           forward_to = []
-        }
-
-        prometheus.remote_write "mimir" {
-          endpoint {
-            url = "https://metrics.mylogin.space/api/v1/push"
-          }
-
-          external_labels = {
-            cluster = "k3s",
-            dc = "dc1.resolvemy.host",
-          }
         }
 
         //
