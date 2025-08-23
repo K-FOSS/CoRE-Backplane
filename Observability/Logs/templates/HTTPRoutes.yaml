@@ -18,6 +18,19 @@ spec:
   hostnames:
     - logs.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
   rules:
+    {{- if eq .Values.loki.deploymentMode "SingleBinary" }}
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ include "loki.fullname" $.Subcharts.loki }}
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+    {{- else }}
     - backendRefs:
         - group: ''
           kind: Service
@@ -44,3 +57,5 @@ spec:
             value: {{ $path }}
         {{- end -}}
     {{- end -}}
+
+    {{- end }}
