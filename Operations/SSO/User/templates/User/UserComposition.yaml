@@ -542,7 +542,7 @@ spec:
                     value = local.S3_ENDPOINT
                   }
 
-            {{ if and (eq (getResourceCondition "Ready" (index .observed.resources $tfMinio)).Status "True") .observed.composite.resource.spec.s3.createCredentials }}
+            {{ if .observed.composite.resource.spec.s3.createCredentials }}
             {{- $obsMinio := index .observed.resources $tfMinio -}}
             {{- $conn := default (dict) (and $obsMinio $obsMinio.connectionDetails) -}}
             {{- $expiryB64 := get $conn "Expiry" -}}
