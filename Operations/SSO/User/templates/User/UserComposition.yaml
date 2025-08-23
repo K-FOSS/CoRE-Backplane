@@ -541,7 +541,7 @@ spec:
                   }
 
             {{ if .observed.composite.resource.spec.s3.createCredentials }}
-            {{- $obsMinio := index .observed.resources $tfMinio -}}
+            {{- $obsMinio := index .observed.resources $tfMinioCreds -}}
             {{- $conn := default (dict) (and $obsMinio $obsMinio.connectionDetails) -}}
             {{- $expiryB64 := get $conn "Expiry" -}}
             {{- $hasPrev := $expiryB64 -}}
