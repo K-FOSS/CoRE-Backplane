@@ -532,7 +532,6 @@ spec:
                   }
 
                   resource "minio_iam_ldap_user_policy_attachment" "user" {
-                    count = 0
                     user_dn = var.ldap.user
                     policy_name = var.username
                   }
@@ -583,15 +582,6 @@ spec:
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
                   test: {{ toJson $obsMinio.resource.status }}
                 module: | # hcl
-                  variable "ldap" {
-                    description = "LDAP Configuration"
-                    type = object(
-                      {
-                        user = string
-                      }
-                    )
-                  }
-
                   variable "username" {
                     description = "LDAP Configuration"
                     type = string
