@@ -85,17 +85,17 @@ spec:
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
-      output "$oidc.clientID" {
+      output "oidc.clientID" {
         value = authentik_provider_oauth2.auth-provider.client_id
         sensitive = true
       }
 
-      output "$oidc.clientSecret" {
+      output "oidc.clientSecret" {
         value = random_password.client-secret.result
         sensitive = true
       }
 
-      output "$oidc.issuerURL" {
+      output "oidc.issuerURL" {
         value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-argocd/"
         sensitive = true
       }
@@ -105,7 +105,7 @@ spec:
         sensitive = true
       }
 
-      output "$oidc.scopes" {
+      output "oidc.scopes" {
         value = join(",", [
           for s in data.authentik_property_mapping_provider_scope.scopes.managed_list : replace(s, "goauthentik.io/providers/oauth2/scope-", "")
         ])
