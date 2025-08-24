@@ -7,23 +7,41 @@ metadata:
 
 spec:
   goTemplate: true
-  # goTemplateOptions:
-  #   - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-        values:
-          clusterName: '{{ .name }}'
-          environment: 'prod'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
-          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
-          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
-          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    processors:
+                      status: 40
+                      operations: 20
+
+                - name: core-home1-talos-prod
+                  values:
+                    processors:
+                      status: 10
+                      operations: 5
+
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'prod'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
 
   syncPolicy:
@@ -69,6 +87,9 @@ spec:
                   configs:
                     params:
                       redis.server: 'redis.{{ .values.datacenter }}.mylogin.space'
+                      controller.status.processors: {{ .values.processors.status }}
+                      controller.operation.processors: {{ .values.processors.operations }}
+
                     cm:
                       url: https://argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
 
