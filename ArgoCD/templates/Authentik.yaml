@@ -1,0 +1,114 @@
+{{- if .Values.authentik.autoconfigure }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  providerConfigRef:
+    name: {{ .Values.terraform.authentikProvider }}
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: {{ .Release.Name }}-aaa
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+          "goauthentik.io/providers/oauth2/scope-offline_access"
+        ]
+      }
+
+      locals {
+        admingroup = "{{ .Release.Name }} Admins"
+      }
+
+      resource "authentik_group" "admingroup" {
+        name         = local.admingroup
+        users        = []
+        is_superuser = false
+      }
+
+      data "authentik_certificate_key_pair" "cert" {
+        name = "tls"
+      }
+
+      resource "random_password" "client-id" {
+        length  = 64
+        lower   = true
+        numeric = true
+        upper   = true
+        special = false
+      }
+
+      resource "random_password" "client-secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
+      resource "authentik_provider_oauth2" "auth-provider" {
+        name          = "{{ .Release.Name }}"
+        client_id     = random_password.client-id.result
+        client_secret = random_password.client-secret.result
+        signing_key = data.authentik_certificate_key_pair.cert.id
+        allowed_redirect_uris = [
+          {
+            matching_mode = "regex",
+            url           = "https://argocd.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}/oauth_callback",
+          },
+        ]
+
+        property_mappings  = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+      }
+
+      resource "authentik_application" "application" {
+        name              = "{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Release.Name }}"
+        slug              = "{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-argocd"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        protocol_provider = authentik_provider_oauth2.auth-provider.id
+      }
+
+      output "OIDC_CLIENT_ID" {
+        value = authentik_provider_oauth2.auth-provider.client_id
+        sensitive = true
+      }
+
+      output "OIDC_CLIENT_SECRET" {
+        value     = random_password.client-secret.result
+        sensitive = true
+      }
+
+      output "OIDC_ISSUER_URL" {
+        value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-argocd/"
+        sensitive = true
+      }
+
+      output "MINIO_IDENTITY_OPENID_CONFIG_URL" {
+        value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-argocd/.well-known/openid-configuration"
+        sensitive = true
+      }
+
+      output "OIDC_SCOPES" {
+        value = join(",", [
+          for s in data.authentik_property_mapping_provider_scope.scopes.managed_list : replace(s, "goauthentik.io/providers/oauth2/scope-", "")
+        ])
+        sensitive = true
+      }
+{{- end }}

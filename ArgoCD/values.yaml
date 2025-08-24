@@ -11,6 +11,32 @@ datacenter: dc1
 
 region: yxl
 
+
+terraform:
+  authentikProvider: authentik
+
+domain: writemy.codes
+
+authentik:
+  autoconfigure: true
+
+oidc:
+  enabled: true
+
+  indexKey: argocd-dev
+
+  scopes:
+    - openid
+    - profile
+    - email
+    - minio
+
+  groups:
+    - Server Admins
+
+  authentik:
+    urlBase: https://idp.mylogin.space
+
 argo-cd:
   fullnameOverride: 'argocd'
   nameOverride: argocd
