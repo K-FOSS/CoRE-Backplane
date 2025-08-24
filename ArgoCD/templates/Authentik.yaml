@@ -9,7 +9,7 @@ spec:
 
   writeConnectionSecretToRef:
     namespace: {{ .Release.Namespace }}
-    name: {{ .Release.Name }}-aaa
+    name: argocd-secret
 
   forProvider:
     source: Inline
@@ -85,17 +85,17 @@ spec:
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
-      output "OIDC_CLIENT_ID" {
+      output "$oidc.clientID" {
         value = authentik_provider_oauth2.auth-provider.client_id
         sensitive = true
       }
 
-      output "OIDC_CLIENT_SECRET" {
-        value     = random_password.client-secret.result
+      output "$oidc.clientSecret" {
+        value = random_password.client-secret.result
         sensitive = true
       }
 
-      output "OIDC_ISSUER_URL" {
+      output "$oidc.issuerURL" {
         value = "{{ .Values.oidc.authentik.urlBase }}/application/o/{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-argocd/"
         sensitive = true
       }
@@ -105,7 +105,7 @@ spec:
         sensitive = true
       }
 
-      output "OIDC_SCOPES" {
+      output "$oidc.scopes" {
         value = join(",", [
           for s in data.authentik_property_mapping_provider_scope.scopes.managed_list : replace(s, "goauthentik.io/providers/oauth2/scope-", "")
         ])
