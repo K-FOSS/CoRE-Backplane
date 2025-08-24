@@ -13,11 +13,11 @@ controllers:
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
     strategy: RollingUpdate
-
-    {{- with .Values.s3.nodeSelector }}
-    nodeSelector:
-      {{ toYaml . | nindent 6 }}
-    {{- end }}
+    pod:
+      {{- with .Values.s3.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
       
 
     containers:
