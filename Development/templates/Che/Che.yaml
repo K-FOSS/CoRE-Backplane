@@ -11,8 +11,13 @@ metadata:
 spec:
   components:
     cheServer:
-      # deployment:
-      #   containers:
+      deployment:
+        containers:
+          - name: che
+            resources:
+              requests:
+                cpu: '256m'
+                memory: '512M'
           
       debug: false
       logLevel: INFO
@@ -121,6 +126,15 @@ spec:
           - Developers
 
       gateway:
+        deployment:
+          containers:
+            - name: gateway
+              resources:
+                request:
+                  cpu: '20m'
+                limits:
+                  cpu: '20m'
+
         configLabels:
           app: che
           component: che-gateway-config
