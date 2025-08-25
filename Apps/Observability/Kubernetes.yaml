@@ -1,0 +1,79 @@
+
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-observability-k8s
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+
+spec:
+  goTemplate: true
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+                  resolvemy.host/env: 'prod'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-k8s-metrics-{{ .values.environment }}'
+      
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
+        resolvemy.host/priority: 'critical'
+
+    spec:
+      project: core
+
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - RespectIgnoreDifferences=true
+
+      source:
+        path: Observability/Kubernetes
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        targetRevision: HEAD
+
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                metrics-server:
+                  tls:
+                    clusterdomain: {{ .values.clusterDomain }}
+
+      destination:
+        server: '{{ .server }}'
+        namespace: kube-system
