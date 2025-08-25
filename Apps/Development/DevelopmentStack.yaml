@@ -58,7 +58,12 @@ spec:
                   resolvemy.host/env: 'prod'
               values:
                 clusterName: '{{ .name }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -98,6 +103,14 @@ spec:
                 env: {{ .values.environment }}
 
                 hub: {{ .values.hub }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
 
                 gitlab:
                   enabled: {{ .values.gitlab.enabled }}
