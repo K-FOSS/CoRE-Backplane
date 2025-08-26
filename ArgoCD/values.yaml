@@ -123,9 +123,6 @@ argo-cd:
 
       timeout.reconciliation.jitter: '60s'
 
-      # -- Timeout to refresh application data as well as target manifests cache
-      timeout.hard.reconciliation: 0s
-
       resource.ignoreResourceUpdatesEnabled: true
 
       #
@@ -215,13 +212,6 @@ argo-cd:
 
       resource.exclusions: | #yaml
         - apiGroups:
-            - cilium.io
-          kinds:
-            - CiliumIdentity
-          clusters:
-            - "*"
-
-        - apiGroups:
             - "*"
           kinds:
             - ProviderConfigUsage    
@@ -241,13 +231,6 @@ argo-cd:
           kinds:
             - PodVolumeBackup
             - Backup
-          clusters:
-            - "*"
-
-        - apiGroups:
-            - discovery.k8s.io
-          kinds:
-            - EndpointSlice
           clusters:
             - "*"
 
