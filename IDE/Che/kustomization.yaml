@@ -2,13 +2,17 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-patches:
+patchesJson6902:
   - target:
+      group: apps
+      version: v1
       kind: Deployment
       name: che-operator
-
+      namespace: eclipse-che
     patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/resources/request/cpu
-        value: 16m
-
+      [
+        {
+          "op": "replace",
+          "path": "/spec/template/spec/containers/0/resources/requests/cpu",
+          "value": "16m"
+        
