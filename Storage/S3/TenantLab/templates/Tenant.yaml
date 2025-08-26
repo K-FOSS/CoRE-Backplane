@@ -208,7 +208,13 @@ route:
             port: 9000
             name: s3
             weight: 1
-
+        matches:
+          - path:
+              type: PathPrefix
+              value: /
+        timeouts:
+          backendRequest: 1800s
+          request: 1800s
 
   s3-dash:
     # -- Enables or disables the route
@@ -256,9 +262,6 @@ route:
           - path:
               type: PathPrefix
               value: /
-        timeouts:
-          backendRequest: 1800s
-          request: 1800s
 
 persistence:
   data:
