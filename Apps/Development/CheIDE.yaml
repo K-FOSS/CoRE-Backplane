@@ -55,18 +55,6 @@ spec:
 
         plugin:
           name: argocd-lovely-plugin
-          env:
-            - name: LOVELY_KUSTOMIZE_MERGE
-              value: |-
-                patches:
-                  - target:
-                      kind: Deployment
-                      name: che-operator
-
-                    patch: |
-                      - op: replace
-                        path: /spec/template/spec/containers/0/resources/request/cpu
-                        value: 16m
 
       destination:
         server: '{{ .server }}'
