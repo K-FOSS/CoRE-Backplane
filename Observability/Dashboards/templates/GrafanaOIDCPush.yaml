@@ -1,0 +1,29 @@
+{{- if .Values.hub }}
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: grafana-core-oidc
+
+spec:
+  refreshInterval: 6h
+  secretStoreRefs:
+    - name: mainvault-core
+      kind: ClusterSecretStore
+
+  selector:
+    secret:
+      name: grafana-core-authentik
+
+  data:
+    - match:
+        secretKey: client_id
+        remoteRef:
+          remoteKey: Grafana/OIDC
+          property: ClientID
+
+    - match:
+        secretKey: client-secret
+        remoteRef:
+          remoteKey: Grafana/OIDC
+          property: ClientSecret
+{{- end }}
