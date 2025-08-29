@@ -9,9 +9,23 @@ spec:
   groups:
     - LDAPService
 
-  buckets:
-    - mimir-alertmanager
-    - mimir-ruler
+  s3:
+    enabled: true
+
+    createBuckets: true
+
+    crossplane:
+      terraformProvider: s3-yvr-home1-core
+      crossplaneProvider: s3-yvr-home1-core
+
+    buckets:
+      - mimir-alertmanager
+      - mimir-ruler
+
+
+    writeCredentialsSecretRef:
+      name: {{ .Release.Name }}-s3-creds
+      namespace: {{ .Release.Namespace }}
 
   writeConnectionSecretToRef:
-    name: mimir-s3
+    name: {{ .Release.Name }}-creds
