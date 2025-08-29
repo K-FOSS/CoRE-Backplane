@@ -80,15 +80,19 @@ spec:
                   
                 datacenter: {{ .values.datacenter }}
                 region: {{ .values.region }}
-                
+
+                {{ if eq .values.mode "SingleBinary"  }}
+                mimir-distributed:
+                  enabled: false
+
                 mimir:
-                  deploymentMode: {{ .values.mode }}
+                  enabled: true
+                {{ else if eq .values.mode "Distributed" }}
+                mimir-distributed:
+                  enabled: true
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
-                  
-                  singleBinary:
-                    replicas: {{ if eq .values.mode "SingleBinary" }}1{{ else }}0{{ end }}
-
+                {{- end }}
 
       destination:
         server: '{{ .server }}'
