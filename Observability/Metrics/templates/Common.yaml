@@ -225,7 +225,7 @@ configMaps:
         # Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
         memberlist:
           join_members:
-            - dns+{{ include "bjw-s.common.lib.chart.names.fullname" . }}-gossip.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}.:7946
+            - dns+{{ $.Release.Name }}-gossip.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}.:7946
 
 
         alertmanager_storage:
