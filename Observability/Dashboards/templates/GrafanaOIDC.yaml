@@ -1,0 +1,24 @@
+{{- if ne .Values.hub true }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: grafana-core-oidc
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: grafana-core-authentik
+
+  data:
+    - secretKey: client_id
+      remoteRef:
+        key: Grafana/OIDC
+        property: ClientID
+
+    - secretKey: client-secret
+      remoteRef:
+        key: Grafana/OIDC
+        property: ClientSecret
+{{- end }}
