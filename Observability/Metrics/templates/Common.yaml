@@ -16,11 +16,11 @@ controllers:
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
     strategy: RollingUpdate
+    {{- with .Values.mimir.nodeSelector }}
     pod:
-      {{- with .Values.mimir.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
-      {{- end }}
+    {{- end }}
       
 
     containers:
@@ -118,6 +118,16 @@ controllers:
 
 
 configMaps:
+  mimir-alertmanager-fallback:
+    enabled: true
+
+    data:
+      alertmanager_fallback_config.yaml: |
+        receivers:
+            - name: default-receiver
+        route:
+          receiver: default-receiver
+
   mimir-config:
     enabled: true
 
