@@ -676,6 +676,14 @@ spec:
                   output "expired" {
                     value = local.expired
                   }
+
+                  `}}
+                  {{- if .Values.debug }}
+                  output "debug" {
+                    value = local.expired ? local.body : var.prev_secretkey
+                  }
+                  {{- end }}
+                  {{`
             ---
             {{ if (index $.observed.resources $tfMinioCreds).connectionDetails.AccessKey }}
             apiVersion: v1
