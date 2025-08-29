@@ -18,7 +18,16 @@ spec:
     - metrics.mylogin.space
   rules:
     {{- if .Values.mimir.enabled }}
-
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-mimir'
+          port: 80
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
     {{- else }}
     {{ $chart := index $.Subcharts "mimir-distributed" }}
     {{ $values := index .Values "mimir-distributed" }}
