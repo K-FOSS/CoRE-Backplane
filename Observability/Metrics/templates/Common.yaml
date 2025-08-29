@@ -32,6 +32,9 @@ controllers:
 
         replicas: 3
 
+        args:
+          - -config.file=/etc/mimir.yaml
+
         env:
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
@@ -255,6 +258,22 @@ configMaps:
           log_level: warn
 
 persistence:
+  mimir-alertmanager:
+    enabled: true
+
+    type: configMap
+
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-mimir-alertmanager-fallback'
+
+    defaultMode: 0755
+
+    advancedMounts:
+      mimir: # the controller with the "main" identifier
+        mimir: # the container with the "main" identifier
+          - path: /etc/alertmanager-fallback-config.yaml
+            readOnly: true
+            subPath: alertmanager_fallback_config.yaml
+
   mimir-config:
     enabled: true
 
