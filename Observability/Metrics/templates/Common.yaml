@@ -117,6 +117,67 @@ controllers:
               timeoutSeconds: 10
 
 
+
+service:
+  mimir-gossip:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: mimir
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: ClusterIP
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    #externalTrafficPolicy: Local
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    clusterIP: None
+
+    # -- Provide additional annotations which may be required.
+    annotations: {}
+
+    # -- Provide additional labels which may be required.
+    labels: {}
+
+    # -- Allow adding additional match labels
+    extraSelectorLabels: {}
+
+    publishNotReadyAddresses: true
+
+    ports:
+      gossip-tcp:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: false
+
+        # -- The port number
+        port: 7946
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:
+
+
 configMaps:
   mimir-alertmanager-fallback:
     enabled: true
