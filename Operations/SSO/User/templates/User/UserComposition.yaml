@@ -676,6 +676,7 @@ spec:
                     value = local.expired
                   }
             ---
+            {{ if (index $.observed.resources $tfMinioCreds).connectionDetails.AccessKey }}
             apiVersion: v1
             kind: Secret
             data:
@@ -688,6 +689,7 @@ spec:
               annotations:
                 {{ setResourceNameAnnotation $s3Creds }}
             type: Opaque
+            {{- end }}
             {{- end }}
 
             {{- end }}
