@@ -593,6 +593,12 @@ spec:
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
                       key: SecretAccessKey
 
+                  - name: TF_VAR_prev_sessiontoken
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
+                      key: SessionToken
+
                   - name: TF_VAR_cred_expiry
                     secretKeyRef:
                       namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
@@ -622,6 +628,13 @@ spec:
 
                   variable "prev_accesskey" {
                     description = "Prev Access Key"
+                    type = string
+                    nullable = true
+                    default = null
+                  }
+
+                  variable "prev_sessiontoken" {
+                    description = "Prev Session Token"
                     type = string
                     nullable = true
                     default = null
@@ -665,6 +678,12 @@ spec:
 
                   output "SecretAccessKey" {
                     value = var.do_fetch ? regex("<SecretAccessKey>(.*?)</SecretAccessKey>", local.body)[0] : var.prev_secretkey
+
+                    sensitive = true
+                  }
+
+                  output "SessionToken" {
+                    value = var.do_fetch ? regex("<SessionToken>(.*?)</SessionToken>", local.body)[0] : var.prev_sessiontoken
 
                     sensitive = true
                   }
