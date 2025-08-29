@@ -21,7 +21,8 @@ controllers:
       nodeSelector:
         {{ toYaml . | nindent 8 }}
     {{- end }}
-      
+    
+    replicas: 3
 
     containers:
       mimir:
@@ -30,7 +31,7 @@ controllers:
           tag: latest
           pullPolicy: Always
 
-        replicas: 3
+
 
         args:
           - -config.file=/etc/mimir.yaml
