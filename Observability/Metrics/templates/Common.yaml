@@ -129,7 +129,9 @@ service:
     # -- Make this the primary service for this controller (used in probes, notes, etc...).
     # If there is more than 1 service targeting the controller, make sure that only 1 service is
     # marked as primary.
-    primary: true
+    primary: false
+
+    suffix: gossip
 
     # -- Set the service type
     type: ClusterIP
@@ -220,7 +222,8 @@ configMaps:
 
         # Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
         memberlist:
-          join_members: [mimir-1, mimir-2, mimir-3]
+          join_members:
+            - dns+{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-mimir-config.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}.:7946
 
 
         alertmanager_storage:
