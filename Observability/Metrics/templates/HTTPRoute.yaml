@@ -17,6 +17,9 @@ spec:
   hostnames:
     - metrics.mylogin.space
   rules:
+    {{- if .Values.mimir.enabled }}
+
+    {{- else }}
     {{ $chart := index $.Subcharts "mimir-distributed" }}
     {{ $values := index .Values "mimir-distributed" }}
     {{ range $v, $t := $values.ingress.paths }}
@@ -33,3 +36,4 @@ spec:
             value: {{ $path.path }}
         {{ end }}
     {{- end -}}
+    {{- end }}
