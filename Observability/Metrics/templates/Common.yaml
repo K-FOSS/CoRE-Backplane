@@ -1,0 +1,204 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+# Set the nameOverride based on the release name if no override has been set
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: "{{ .Release.Name }}"
+{{ end }}
+
+{{ if eq .Values.mimir.enabled true }}
+
+controllers:
+  mimir:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+    pod:
+      {{- with .Values.mimir.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+      
+
+    containers:
+      mimir:
+        image:
+          repository: grafana/mimir
+          tag: latest
+          pullPolicy: Always
+
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: authentik-core
+                key: username
+
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: authentik-core
+                key: username
+
+          - name: S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: mimir-s3
+                key: username
+
+        # -- Probe configuration
+        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+        # @default -- See below
+        probes:
+          # -- Liveness probe configuration
+          # @default -- See below
+          liveness:
+            # -- Enable the liveness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own livenessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: HTTP
+            # -- The spec field contains the values for the default livenessProbe.
+            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
+            # @default -- See below
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 1
+              failureThreshold: 3
+
+          # -- Redainess probe configuration
+          # @default -- See below
+          readiness:
+            # -- Enable the readiness probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: HTTP
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              exec:
+                command:
+                  - /Healthcheck.sh
+              failureThreshold: 6
+              initialDelaySeconds: 5
+              periodSeconds:  30
+              timeoutSeconds: 10
+
+          # -- Startup probe configuration
+          # @default -- See below
+          startup:
+            # -- Enable the startup probe
+            enabled: false
+            # -- Set this to `true` if you wish to specify your own readinessProbe
+            custom: false
+            # -- sets the probe type when not using a custom probe
+            # @default -- "TCP"
+            type: EXEC
+            # -- The spec field contains the values for the default readinessProbe.
+            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
+            # @default -- See below
+            spec:
+              exec:
+                command:
+                  - /Healthcheck.sh
+              failureThreshold: 30
+              initialDelaySeconds: 15
+              periodSeconds:  10
+              timeoutSeconds: 10
+
+
+configMaps:
+  mimir-config:
+    enabled: true
+
+    data:
+      mimir.yaml: |
+        # Do not use this configuration in production.
+        # It is for demonstration purposes only.
+        # Run Mimir in single process mode, with all components running in 1 process.
+        target: all,alertmanager,overrides-exporter
+
+        # Configure Mimir to use Minio as object storage backend.
+        common:
+          storage:
+            backend: s3
+            s3:
+              endpoint: s3.core-home1-talos-prod.home1.yvr.mylogin.space:443
+              access_key_id: "${AWS_ACCESS_KEY_ID}"
+              secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+              insecure: false
+              bucket_name: ${S3_BUCKET}
+
+        # Blocks storage requires a prefix when using a common object storage bucket.
+        blocks_storage:
+          storage_prefix: blocks
+          s3:
+            bucket_name: ${S3_BUCKET}
+          tsdb:
+            dir: /data/ingester
+
+        # Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
+        memberlist:
+          join_members: [mimir-1, mimir-2, mimir-3]
+
+
+        alertmanager_storage:
+          s3:
+            bucket_name: mimir-alertmanager
+        
+        ruler_storage:
+          s3:
+            bucket_name: mimir-ruler
+
+        ruler:
+          rule_path: /data/ruler
+          alertmanager_url: http://127.0.0.1:8080/alertmanager
+          ring:
+            # Quickly detect unhealthy rulers to speed up the tutorial.
+            heartbeat_period: 2s
+            heartbeat_timeout: 10s
+
+        alertmanager:
+          data_dir: /data/alertmanager
+          fallback_config_file: /etc/alertmanager-fallback-config.yaml
+          external_url: http://localhost:9009/alertmanager
+
+        server:
+          log_level: warn
+
+persistence:
+  mimir-config:
+    enabled: true
+
+    type: configMap
+
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-mimir-config'
+
+    defaultMode: 0755
+
+    advancedMounts:
+      mimir: # the controller with the "main" identifier
+        mimir: # the container with the "main" identifier
+          - path: /etc/mimir.yaml
+            readOnly: true
+            subPath: mimir.yaml
+
+
+
+{{- end }}
+
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{/* Render the templates */}}
+{{ include "bjw-s.common.loader.generate" . }}

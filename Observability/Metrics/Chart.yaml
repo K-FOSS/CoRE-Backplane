@@ -5,7 +5,12 @@ version: 1.0.0
 name: core-backplane-observability-metrics
 
 dependencies:
+  - name: common
+    version: 4.0.1
+    repository: https://bjw-s-labs.github.io/helm-charts/
+
   # Loki Charts
   - name: mimir-distributed
     version: '5.7.0-weekly.327'
     repository: https://grafana.github.io/helm-charts
+    condition: mimir-distributed.enabled
