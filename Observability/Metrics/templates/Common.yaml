@@ -36,19 +36,19 @@ controllers:
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
-                name: authentik-core
-                key: username
+                name: {{ $.Release.Name }}-s3-creds
+                key: AccessKey
 
           - name: AWS_SECRET_ACCESS_KEY
             valueFrom:
               secretKeyRef:
-                name: authentik-core
-                key: username
+                name: {{ $.Release.Name }}-s3-creds
+                key: SecretAccessKey
 
           - name: S3_BUCKET
             valueFrom:
               secretKeyRef:
-                name: mimir-s3
+                name: {{ $.Release.Name }}-creds
                 key: username
 
         # -- Probe configuration
