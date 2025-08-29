@@ -49,6 +49,12 @@ controllers:
                 name: {{ $.Release.Name }}-s3-creds
                 key: SecretAccessKey
 
+          - name: AWS_SESSION_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Release.Name }}-s3-creds
+                key: SessionToken
+
           - name: S3_BUCKET
             valueFrom:
               secretKeyRef:
@@ -273,6 +279,7 @@ configMaps:
               endpoint: s3.core-home1-talos-prod.home1.yvr.mylogin.space:443
               access_key_id: "${AWS_ACCESS_KEY_ID}"
               secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
+              session_token: "${AWS_SESSION_TOKEN}"
               insecure: false
               bucket_name: ${S3_BUCKET}
 
