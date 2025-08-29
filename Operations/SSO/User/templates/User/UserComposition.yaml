@@ -644,7 +644,7 @@ spec:
                   }
 
                   data "http" "ldap_login" {
-                    count  = local.expired ? 1 : 0
+                    count  = var.do_fetch ? 1 : 0
                     url    = "https://${local.S3_ENDPOINT}/?Action=AssumeRoleWithLDAPIdentity&Version=2011-06-15&LDAPUsername=${var.username}&LDAPPassword=${urlencode(var.user_password)}&DurationSeconds=604800"
                     method = "POST"
 
@@ -658,19 +658,19 @@ spec:
                   }
 
                   output "AccessKey" {
-                    value = local.expired ? regex("<AccessKeyId>(.*?)</AccessKeyId>", local.body)[0] : var.prev_accesskey
+                    value = var.do_fetch ? regex("<AccessKeyId>(.*?)</AccessKeyId>", local.body)[0] : var.prev_accesskey
 
                     sensitive = true
                   }
 
                   output "SecretAccessKey" {
-                    value = local.expired ? regex("<SecretAccessKey>(.*?)</SecretAccessKey>", local.body)[0] : var.prev_secretkey
+                    value = var.do_fetch ? regex("<SecretAccessKey>(.*?)</SecretAccessKey>", local.body)[0] : var.prev_secretkey
 
                     sensitive = true
                   }
 
                   output "Expiry" {
-                    value = local.expired ? regex("<Expiration>(.*?)</Expiration>", local.body)[0] : var.cred_expiry
+                    value = var.do_fetch ? regex("<Expiration>(.*?)</Expiration>", local.body)[0] : var.cred_expiry
                   }
 
                   output "expired" {
@@ -680,7 +680,7 @@ spec:
                   `}}
                   {{- if .Values.debug }}
                   output "debug" {
-                    value = local.expired ? local.body : var.prev_secretkey
+                    value = var.do_fetch ? local.body : var.prev_secretkey
                   }
                   {{- end }}
                   {{`
