@@ -20,6 +20,40 @@ spec:
             hub: 'false'
             env: 'prod'
             standby: 'false'
+
+            networking:
+              multus:
+                enabled: false
+
+            peers:
+              - port: '54764'
+                name: sbc1.home1.yvr.resolvemy.host
+                address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
+                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#PublicKey>
+                server:
+                  address: 66.165.222.102
+
+                  service:
+                    enabled: false
+
+                    type: ClusterIP
+
+                    annotations:
+                      purelb.io/allow-shared-ip: main-gw.resolvemy.host
+                      purelb.io/service-group: main-public
+                      purelb.io/allow-local: 'true'
+                      purelb.io/addresses: '{{ $.Values.networking.publicAddress }}'
+
+                network:
+                  localAddress: 172.31.243.2/30
+                  remoteAddress: 172.31.243.1/30
+                  allowedIPs: 0.0.0.0/0
+                  remotePort: '54764'
+
+
+            network:
+              publicAddress: 66.165.222.102
+
   syncPolicy:
     preserveResourcesOnDeletion: true
 
@@ -53,10 +87,26 @@ spec:
                   name: {{ .cluster }}
                   domain: cluster.local
 
+                peers:
+                {{ nindent 2 (toYaml .peers) }}
 
-                datacenter: {{ .datacenter }}
+
+                datacenter: {{ .dc }}
 
                 region: {{ .region }}
+
+                frr:
+                  bgp:
+                    enabled: false
+                  
+                  ospf:
+                    enabled: true
+
+                networking:
+                  publicAddress: 66.165.222.101
+
+                  routeserver:
+                    ipv4Address: 10.1.1.140
 
       destination:
         server: '{{ .url }}'
