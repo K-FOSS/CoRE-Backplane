@@ -8,7 +8,6 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '1'
 spec:
-  goTemplate: true
   generators:
     - list:
         elements:
@@ -24,7 +23,7 @@ spec:
 
   template:
     metadata:
-      name: '{{ .values.cluster }}-tunneler-{{ .values.environment }}'
+      name: '{{cluster}}-tunneler-{{ env }}'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -44,19 +43,19 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                env: {{ .values.environment }}
+                env: {{ env }}
 
-                hub: {{ .values.hub }}
+                hub: {{ hub }}
 
                 cluster:
-                  name: {{ .values.cluster }}
+                  name: {{ cluster }}
                   domain: cluster.local
 
 
-                datacenter: {{ .values.datacenter }}
+                datacenter: {{ datacenter }}
 
-                region: {{ .values.region }}
+                region: {{ region }}
 
       destination:
         server: '{{ .server }}'
-        namespace: core-net-tunneler-{{ .values.environment }}
+        namespace: core-net-tunneler-{{ env }}
