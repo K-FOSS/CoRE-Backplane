@@ -216,21 +216,23 @@ persistence:
             readOnly: true
             subPath: daemons
 
-  # tunnelconfig:
-  #   enabled: true
+  tunnelconfig:
+    enabled: true
 
-  #   type: secret
+    type: configMap
 
-  #   name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-tunneler-wg0'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-tunnelerconfig'
 
-  #   defaultMode: 0755
+    defaultMode: 0755
 
-  #   advancedMounts:
-  #     tunneler: # the controller with the "main" identifier
-  #       main: # the container with the "main" identifier
-  #         - path: /config/wg_confs/wg0.conf
-  #           readOnly: true
-  #           subPath: wg-home1.conf
+    advancedMounts:
+      tunneler: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          {{- range $peerIndex, $peer := .Values.peers }}
+          - path: /config/wg_confs/wg-{{ $peerIndex }}.conf
+            readOnly: true
+            subPath: wg-{{ $peerIndex }}.conf
+          {{- end }}
 
 
 configMaps:
@@ -497,7 +499,10 @@ service:
     ipFamilies: []
 
     # # -- Provide additional annotations which may be required.
-    annotations: {}
+    {{- with $peer.server.service.annotations -}}
+    annotations:
+      {{ nindent 6 (toYaml .) }}
+    {{- end }}
 
     # -- Allow adding additional match labels
     extraSelectorLabels: {}
