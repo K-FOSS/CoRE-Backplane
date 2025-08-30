@@ -15,18 +15,21 @@ spec:
         generators:
           - list:
               elements:
-                - name: core-dc1-talos-prod
-                  values:
-                    hub: false
+                # - name: core-dc1-talos-prod
+                #   values:
+                #     hub: false
 
-                    netbox:
-                      hub: false
+                #     netbox:
+                #       hub: false
 
-                      enabled: true
+                #       enabled: true
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+
+                    dhcp:
+                      enabled: true
 
                     netbox:
                       hub: false
@@ -72,6 +75,10 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
                 env: '{{ .values.environment }}'
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
 
                 hub: {{ .values.hub }}
 
