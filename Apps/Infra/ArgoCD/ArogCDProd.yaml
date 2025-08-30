@@ -95,6 +95,18 @@ spec:
                     cm:
                       url: https://argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
 
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      kind: Secret
+                      name: argocd-secret
+
+                    patch: |
+                      - op: replace
+                        path: /type
+                        value: connection.crossplane.io/v1alpha1
+
       destination:
         server: '{{ .server }}'
         namespace: argocd
