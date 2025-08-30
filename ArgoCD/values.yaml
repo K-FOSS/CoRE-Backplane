@@ -48,16 +48,13 @@ argo-cd:
     # -- Enable Redis secret initialization. If disabled, secret must be provisioned by alternative methods
     enabled: false
 
-  commitServer:
-    enabled: true
-
 
   global:
     logging:
       # -- Set the global logging format. Either: `text` or `json`
       format: json
       # -- Set the global logging level. One of: `debug`, `info`, `warn` or `error`
-      level: warn
+      level: debug
 
     networkPolicy:
       create: false
@@ -412,11 +409,11 @@ argo-cd:
           resolvemy.host/metrics: mimir
 
   server:
-    replicas: 1
+    replicas: 2
 
     env:
       - name: ARGOCD_API_SERVER_REPLICAS
-        value: '1'
+        value: '2'
 
     resources:
       requests:
