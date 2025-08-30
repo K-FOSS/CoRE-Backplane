@@ -26,10 +26,16 @@ spec:
                     gitlab:
                       enabled: false
 
+                    crddocs:
+                      enabled: false
+
                     harbor:
                       enabled: false
 
                     artifacthub:
+                      enabled: false
+
+                    mqttx:
                       enabled: false
 
                     che:
@@ -40,6 +46,12 @@ spec:
                     hub: false
 
                     gitlab:
+                      enabled: false
+
+                    crddocs:
+                      enabled: false
+
+                    mqttx:
                       enabled: false
 
                     harbor:
@@ -122,6 +134,13 @@ spec:
                   fullnameOverride: '{{ .values.clusterName }}-development-harbor-helm'
 
                   enabled: {{ .values.harbor.enabled }}
+
+                crddocs:
+                  enabled: {{ .values.crddocs.enabled }}
+
+                mqttx:
+                  enabled: {{ .values.mqttx.enabled }}
+
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
