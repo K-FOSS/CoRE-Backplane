@@ -25,10 +25,7 @@ components:
           path: /certs/client
       env:
         - name: KUBEDOCK_ENABLED
-          value: 'false'
-
-        - name: DOCKER_HOST
-          value: 'tcp://127.0.0.1:2376'
+          value: 'true'
 
         - name: DOCKER_CERT_PATH
           value: '/certs/client/'
@@ -36,21 +33,4 @@ components:
         - name: DOCKER_TLS_VERIFY
           value: '1'
 
-  - name: docker-in-docker
-    container:
-      image: registry.writemy.codes/proxy-docker.io/docker:25.0-dind-rootless
-      volumeMounts:
-        - name: var-run
-          path: /var/run
 
-        - name: client-certs
-          path: /certs/client
-      env:
-        - name: DOCKERD_ROOTLESS_ROOTLESSKIT_FLAGS
-          value: '-p 0.0.0.0:2376:2376/tcp'
-
-      endpoints:
-        - exposure: none
-          name: did
-          protocol: tcp
-          targetPort: 2376
