@@ -258,9 +258,9 @@ configMaps:
         #
         # The watchfrr, zebra and staticd daemons are always started.
         #
-        bgpd=yes
-        ospfd=yes
-        ospf6d=yes
+        bgpd={{ if .Values.frr.bgp.enabled }}yes{{ else }}false{{ end }}
+        ospfd={{ if .Values.frr.ospf.enabled }}yes{{ else }}false{{ end }}
+        ospf6d={{ if .Values.frr.ospf.enabled }}yes{{ else }}false{{ end }}
         ripd=no
         ripngd=no
         isisd=no
@@ -360,35 +360,37 @@ configMaps:
           match ip address prefix-list BGP64513-ConnectedAdv
         exit
         !
+        {{- if .Values.frr.ospf.enabled }}
+        {{- range $peerIndex, $peer := .Values.peers }}
+        interface wg-{{ $peerIndex }}
+          ip ospf area 0.0.0.0
+        exit
+        !
+        {{- end }}
+        {{- end }}
+        !
         router bgp 64513
           bgp router-id 10.1.1.140
           no bgp ebgp-requires-policy
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
-          neighbor routeserver peer-group
-          neighbor routeserver remote-as 64567
-          neighbor routeserver capability dynamic
-          neighbor routeserver capability extended-nexthop
-          neighbor routeserver ebgp-multihop 10
-          neighbor 10.1.1.179 peer-group routeserver
-          neighbor 172.31.243.1 peer-group routeserver
-          neighbor 172.20.56.151 peer-group routeserver
-          neighbor 172.31.242.11 peer-group routeserver
-          bgp listen range 172.31.242.9/32 peer-group cilium
           !
           address-family ipv4 unicast
             maximum-paths 64
             maximum-paths ibgp 64
             redistribute connected route-map BGP64513-Connected
-            neighbor cilium soft-reconfiguration inbound
-            neighbor routeserver route-reflector-client
-            neighbor routeserver next-hop-self force
-            neighbor routeserver soft-reconfiguration inbound
-            neighbor 172.31.242.10 prefix-list PrivateIPSpace out
-            neighbor 172.31.242.11 prefix-list PrivateIPSpace out
+            redistribute ospf
           exit-address-family
         exit
+        !
+        {{- if .Values.frr.bgp.enabled }}
+        router ospf
+          auto-cost reference-bandwidth 100
+          redistribute static
+          redistribute bgp
+        exit
+        {{- end }}
         !
         end
   {{- end }}
