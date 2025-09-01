@@ -108,6 +108,12 @@ loki:
             name: loki-core-s3-creds
             key: SecretAccessKey
 
+      - name: S3_SESSION_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: loki-core-s3-creds
+            key: SessionToken
+
     # -- Environment variables from secrets or configmaps to add to the single binary pods
     extraEnvFrom: []
 
@@ -257,6 +263,7 @@ loki:
         region: 'us-east-1'
         secretAccessKey: ${S3_SECRET_ACCESS_KEY}
         accessKeyId: ${S3_ACCESS_KEY}
+        session_token: ${S3_SESSION_TOKEN}
         signatureVersion: null
         s3ForcePathStyle: true
         insecure: false
