@@ -31,6 +31,10 @@ controllers:
           tag: latest
           pullPolicy: Always
 
+        ports:
+          - name: http
+            containerPort: 8080
+
 
 
         args:
@@ -89,9 +93,13 @@ controllers:
           # @default -- See below
           readiness:
             # -- Enable the readiness probe
-            enabled: false
+            enabled: true
             # -- Set this to `true` if you wish to specify your own readinessProbe
             custom: false
+
+            path: /ready
+
+            port: http
             # -- sets the probe type when not using a custom probe
             # @default -- "TCP"
             type: HTTP
@@ -99,37 +107,10 @@ controllers:
             # If you selected `custom: true`, this field holds the definition of the readinessProbe.
             # @default -- See below
             spec:
-              exec:
-                command:
-                  - /Healthcheck.sh
-              failureThreshold: 6
-              initialDelaySeconds: 5
-              periodSeconds:  30
+              failureThreshold: 3
+              initialDelaySeconds: 45
+              periodSeconds: 30
               timeoutSeconds: 10
-
-          # -- Startup probe configuration
-          # @default -- See below
-          startup:
-            # -- Enable the startup probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own readinessProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: EXEC
-            # -- The spec field contains the values for the default readinessProbe.
-            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
-            # @default -- See below
-            spec:
-              exec:
-                command:
-                  - /Healthcheck.sh
-              failureThreshold: 30
-              initialDelaySeconds: 15
-              periodSeconds:  10
-              timeoutSeconds: 10
-
-
 
 service:
   mimir:
