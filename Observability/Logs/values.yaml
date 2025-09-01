@@ -249,6 +249,12 @@ loki:
       query_timeout: 300s
       allow_structured_metadata: true
       volume_enabled: true
+      retention_period: 744h
+      retention_stream:
+        - selector: '{env="testing"}'
+          priority: 1
+          period: 24h
+      per_tenant_override_config: /etc/overrides.yaml
 
 
     # -- Provides a reloadable runtime configuration file for some specific configuration
@@ -335,7 +341,13 @@ loki:
         up_to: 3
 
     # --  Optional compactor configuration
-    compactor: {}
+    compactor:
+      compaction_interval: 10m
+      retention_enabled: true
+      retention_delete_delay: 2h
+      retention_delete_worker_count: 150
+
+      delete_request_store: s3
     
     # --  Optional pattern ingester configuration
     pattern_ingester:
