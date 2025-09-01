@@ -73,6 +73,10 @@ spec:
               value: |- 
                 hub: {{ .values.hub }}
                 grafana:
+                  grafana.ini:
+                    live:
+                      ha_engine_address: redis.{{ .values.datacenter }}.mylogin.space:6379
+
                   ldap:
                     enabled: true
                     # `existingSecret` is a reference to an existing secret containing the ldap configuration
