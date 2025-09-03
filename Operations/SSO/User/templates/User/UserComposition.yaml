@@ -30,12 +30,18 @@ spec:
           template: | # yaml 
             {{`
             {{ $userCredsWorkspace := "user-creds-ws" }}
+
+            #
+            # Minio
+            #
             {{ $tfMinio := "tf-minio" }}
             {{ $s3MinioPolicy := "minio-policy" }}
             {{ $s3SecretCreation := "minio-s3-secret" }}
             {{ $tfMinioCreds := "tf-minio-creds" }}
             {{ $tfMinioPolicy := "tf-minio-policy" }}
             {{ $s3Creds := "s3-creds-secret" }}
+            {{ $psqlRole := "psql-role" }}
+
             {{ $kubeTest := "kube-test" }}
             {{- define "username" -}}
             testing
@@ -721,6 +727,35 @@ spec:
             {{- end }}
             {{- end }}
 
+            {{- end }}
+            {{- end }}
+
+            {{- if and .observed.composite.resource.spec.psql.enabled (ne $.observed.resources nil) }}
+            {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
+            {{ if eq (getResourceCondition "Ready" (index .observed.resources $userCredsWorkspace)).Status "True" }}
+            apiVersion: postgresql.sql.crossplane.io/v1alpha1
+            kind: Role
+            metadata:
+              name: {{ lower (( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec) }}
+
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                crossplane.io/external-name: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+                {{ setResourceNameAnnotation $psqlRole }}
+            spec:
+              providerConfigRef:
+                name: {{ $.observed.composite.resource.spec.psql.crossplane.crossplaneProvider }}
+
+              forProvider:
+                passwordSecretRef:
+                  name: {{ .observed.composite.resource.metadata.uid }}-sso-secret
+                  namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                  key: password
+
+                privileges:
+                  login: true
             {{- end }}
             {{- end }}
             ---
