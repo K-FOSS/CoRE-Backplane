@@ -40,12 +40,15 @@ spec:
             {{ $tfMinioCreds := "tf-minio-creds" }}
             {{ $tfMinioPolicy := "tf-minio-policy" }}
             {{ $s3Creds := "s3-creds-secret" }}
-            {{ $psqlRole := "psql-role" }}
 
-            {{ $kubeTest := "kube-test" }}
-            {{- define "username" -}}
-            testing
-            {{- end }}
+            #
+            # PostgreSQL
+            #
+            {{- $psqlRole := "psql-role" }}
+            {{- $psqlDatabase := "psql-db" }}
+            {{- $psqlTF := "psql-tf" }}
+
+            {{- $kubeTest := "kube-test" }}
             ---
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
@@ -86,16 +89,6 @@ spec:
                     hostname: mqtt.mylogin.space
                     port: 8443
                     uri: mqtts://
-                  
-                  mysql:
-                    hostname: mysql.mylogin.space
-                    port: 3306
-                    uri: mysql://
-
-                  mongodb:
-                    hostname: mongo.mylogin.space
-                    port: 3306
-                    uri: mongodb://
 
                   s3:
                     hostname: s3.mylogin.space
@@ -143,46 +136,9 @@ spec:
                     })
                   }
 
-                  variable "mqtts" {
-                    description = "MQTTs Configuration"
-                    type        = object({
-                      hostname = string
-                      port = string
-                    })
-                  }
-
-                  variable "sips" {
-                    description = "SIPs Configuration"
-                    type        = object({
-                      hostname = string
-                      port = string
-                      uri = string
-                    })
-                  }
-
                   variable "psql" {
                     description = "PSQL Configuration"
                     type        = object({
-                      hostname = string
-                      port = string
-                      uri = string
-                    })
-                  }
-
-                  variable "mysql" {
-                    description = "MySQL Configuration"
-
-                    type = object({
-                      hostname = string
-                      port = string
-                      uri = string
-                    })
-                  }
-
-                  variable "mongodb" {
-                    description = "MongoDB Configuration"
-
-                    type = object({
                       hostname = string
                       port = string
                       uri = string
@@ -301,25 +257,6 @@ spec:
                   }
 
                   #
-                  # SIPs
-                  #
-
-                  output "sipsHostname" {
-                    value = var.sips.hostname
-                    sensitive = false
-                  }
-
-                  output "sipsPort" {
-                    value = var.sips.port
-                    sensitive = false
-                  }
-
-                  output "sipsURI" {
-                    value = "TODO"
-                    sensitive = true
-                  }
-
-                  #
                   # PSQL
                   #
 
@@ -335,25 +272,6 @@ spec:
 
                   output "psqlURI" {
                     value = "${var.psql.uri}${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
-                    sensitive = true
-                  }
-
-                  #
-                  # MySQL
-                  #
-
-                  output "mysqlHostname" {
-                    value = var.mysql.hostname
-                    sensitive = false
-                  }
-
-                  output "mysqlPort" {
-                    value = var.mysql.port
-                    sensitive = false
-                  }
-
-                  output "mysqlURI" {
-                    value = "${var.mysql.uri}${local.username}:${local.password}@${var.mysql.hostname}:${var.mysql.port}/${local.databaseName}"
                     sensitive = true
                   }
 
@@ -380,6 +298,7 @@ spec:
                     value = "https://${var.s3.hostname}:${var.s3.port}"
                     sensitive = true
                   }
+            ---
 
             {{ if and .observed.composite.resource.spec.s3.enabled (ne $.observed.resources nil) }}
             ---
@@ -582,8 +501,8 @@ spec:
                 env:  
                   - name: TF_VAR_user_password
                     secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
-                      name: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.name }}-sso-secret
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-sso-secret
                       key: password
 
                   {{- if $hasPrev }}
@@ -756,6 +675,32 @@ spec:
 
                 privileges:
                   login: true
+            ---
+            {{- if .observed.composite.resource.spec.psql.createUserDatabase }}
+            apiVersion: postgresql.sql.crossplane.io/v1alpha1
+            kind: Database
+            metadata:
+              name: {{ lower (( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec) }}
+
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                
+                crossplane.io/external-name: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+
+                {{ setResourceNameAnnotation $psqlDatabase }}
+            spec:
+              deletionpolicy: Orphan
+              providerConfigRef:
+                name: {{ $.observed.composite.resource.spec.psql.crossplane.crossplaneProvider }}
+
+              forProvider:
+                connectionLimit: -1
+            ---
+            {{- end }}
+
+            ---
             {{- end }}
             {{- end }}
             ---
