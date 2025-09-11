@@ -701,6 +701,126 @@ spec:
             ---
             {{- end }}
 
+            {{- $psqlUsername := lower (( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec) }}
+
+            {{- $psqlDBs := list }}
+
+            {{ if ne .observed.composite.resource.spec.psql.createUserDatabase false }}
+              {{- $psqlDBs = append $psqlDBs $psqlUsername }}
+            {{- end }}
+
+            {{- range $dbName := .observed.composite.resource.spec.psql.databases }}
+              {{ $psqlDBs = prepend $psqlDBs $dbName }}
+            {{- end }}
+
+
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $psqlTF }}
+
+            spec:
+              providerConfigRef:
+                name: {{ $.observed.composite.resource.spec.psql.crossplane.terraformProvider }}
+
+              writeConnectionSecretToRef:
+                name: {{ .observed.composite.resource.metadata.uid }}-psql-tf
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+
+              managementPolicies:
+                - Observe
+                - Create
+                - Update
+
+              forProvider:
+                source: Inline
+                env:  
+                  - name: TF_VAR_user_password
+                    secretKeyRef:
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                      name: {{ .observed.composite.resource.metadata.uid }}-sso-secret
+                      key: password
+
+                varmap:
+                  username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+
+                  databases:
+                    {{- range $psqlDB := $psqlDBs }}
+                    - {{ $psqlDB  }}
+                    {{- end }}
+
+                  role:
+                    name: {{ $psqlUsername }}
+
+                module: | # hcl
+                  variable "databases" {
+                    description = "The PSQL Databases the account should have access to"
+
+                    type = set(string)
+
+                    default = []
+                  }
+
+                  variable "role" {
+                    description = "Database Configuration"
+                    type        = object({
+                      name = string
+                    })
+                  }
+
+                  resource "postgresql_grant" "database" {
+                    for_each = var.databases
+
+                    database    = each.value
+                    role        = var.role.name
+                    object_type = "database"
+                    privileges  = [
+                      "CREATE",
+                      "CONNECT",
+                      "TEMPORARY"
+                    ]
+                  }
+
+                  resource "postgresql_grant" "tables" {
+                    for_each = var.databases
+
+                    database    = each.value
+
+                    role        = var.role.name
+                    schema      = "public"
+                    object_type = "table"
+                    privileges  = [
+                      "ALL"
+                    ]
+                  }
+
+                  resource "postgresql_grant" "sequences" {
+                    for_each = var.databases
+
+                    database    = each.value
+                    role        = var.role.name
+                    schema      = "public"
+                    object_type = "sequence"
+                    privileges  = [
+                      "ALL"
+                    ]
+                  }
+
+                  resource "postgresql_grant" "schema" {
+                    for_each = var.databases
+
+                    database    = each.value
+                    role        = var.role.name
+                    schema      = "public"
+                    object_type = "schema"
+                    privileges  = [
+                      "USAGE"
+                    ]
+                  }
             ---
             {{- end }}
             {{- end }}
