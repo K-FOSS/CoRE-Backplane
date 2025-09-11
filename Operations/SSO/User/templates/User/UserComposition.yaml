@@ -677,17 +677,18 @@ spec:
                   login: true
             ---
             {{- if .observed.composite.resource.spec.psql.createUserDatabase }}
+            {{- $psqlDBName := lower (( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec) }}
             apiVersion: postgresql.sql.crossplane.io/v1alpha1
             kind: Database
             metadata:
-              name: {{ lower (( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec) }}
+              name: {{ $psqlDBName }}
 
               annotations:
                 #
                 # TODO: Actually make this check status and shit
                 gotemplating.fn.crossplane.io/ready: 'True'
                 
-                crossplane.io/external-name: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+                crossplane.io/external-name: '{{ $psqlDBName }}'
 
                 {{ setResourceNameAnnotation $psqlDatabase }}
             spec:
@@ -695,6 +696,7 @@ spec:
                 name: {{ $.observed.composite.resource.spec.psql.crossplane.crossplaneProvider }}
 
               forProvider:
+                owner: {{ $psqlDBName }}
                 connectionLimit: -1
             ---
             {{- end }}
