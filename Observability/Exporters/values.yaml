@@ -1,48 +1,9 @@
 kube-prometheus-stack:
-
-  # Default values for kube-prometheus-stack.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
-
-  ## Provide a name in place of kube-prometheus-stack for `app:` labels
-  ##
-  nameOverride: ""
-
-  ## Override the deployment namespace
-  ##
-  namespaceOverride: ""
-
-  ## Provide a k8s version to auto dashboard import script example: kubeTargetVersionOverride: 1.26.6
-  ##
-  kubeTargetVersionOverride: ""
-
-  ## Allow kubeVersion to be overridden while creating the ingress
-  ##
-  kubeVersionOverride: ""
-
-  ## Provide a name to substitute for the full names of resources
-  ##
-  fullnameOverride: ""
-
-  ## Labels to apply to all resources
-  ##
-  commonLabels: {}
-  # scmhash: abc123
-  # myLabel: aakkmd
-
   ## Install Prometheus Operator CRDs
   ##
   crds:
     enabled: false
 
-  ## custom Rules to override "for" and "severity" in defaultRules
-  ##
-  customRules: {}
-    # AlertmanagerFailedReload:
-    #   for: 3m
-    # AlertmanagerMembersInconsistent:
-    #   for: 5m
-    #   severity: "warning"
 
   ## Create default rules for monitoring the cluster
   ##
@@ -86,20 +47,6 @@ kube-prometheus-stack:
 
     ## Reduce app namespace alert scope
     appNamespacesTarget: ".*"
-
-    ## Set keep_firing_for for all alerts
-    keepFiringFor: ""
-
-    ## Labels for default rules
-    labels: {}
-    ## Annotations for default rules
-    annotations: {}
-
-    ## Additional labels for PrometheusRule alerts
-    additionalRuleLabels: {}
-
-    ## Additional annotations for PrometheusRule alerts
-    additionalRuleAnnotations: {}
 
     ## Additional labels for specific PrometheusRule alert groups
     additionalRuleGroupLabels:
@@ -185,26 +132,6 @@ kube-prometheus-stack:
     # KubeAPIDown: true
     # NodeRAIDDegraded: true
 
-  ## Deprecated way to provide custom recording or alerting rules to be deployed into the cluster.
-  ##
-  # additionalPrometheusRules: []
-  #  - name: my-rule-file
-  #    groups:
-  #      - name: my_group
-  #        rules:
-  #        - record: my_record
-  #          expr: 100 * my_record
-
-  ## Provide custom recording or alerting rules to be deployed into the cluster.
-  ##
-  additionalPrometheusRulesMap: {}
-  #  rule-name:
-  #    groups:
-  #    - name: my_group
-  #      rules:
-  #      - record: my_record
-  #        expr: 100 * my_record
-
   ##
   global:
     rbac:
@@ -272,47 +199,6 @@ kube-prometheus-stack:
     ## Deploy alertmanager
     ##
     enabled: false
-
-    # -- BETA: Configure the gateway routes for the chart here.
-    # More routes can be added by adding a dictionary key like the 'main' route.
-    # Be aware that this is an early beta of this feature,
-    # kube-prometheus-stack does not guarantee this works and is subject to change.
-    # Being BETA this can/will change in the future without notice, do not use unless you want to take that risk
-    # [[ref]](https://gateway-api.sigs.k8s.io/references/spec/#gateway.networking.k8s.io%2fv1alpha2)
-    route:
-      main:
-        # -- Enables or disables the route
-        enabled: false
-
-        # -- Set the route apiVersion, e.g. gateway.networking.k8s.io/v1 or gateway.networking.k8s.io/v1alpha2
-        apiVersion: gateway.networking.k8s.io/v1
-        # -- Set the route kind
-        # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
-        kind: HTTPRoute
-
-        annotations: {}
-        labels: {}
-
-        hostnames: []
-        # - my-filter.example.com
-        parentRefs: []
-        # - name: acme-gw
-
-        matches:
-          - path:
-              type: PathPrefix
-              value: /
-
-        ## Filters define the filters that are applied to requests that match this rule.
-        filters: []
-
-        ## Additional custom rules that can be added to the route
-        additionalRules: []
-
-    ## Configuration for Alertmanager secret
-    ##
-    secret:
-      annotations: {}
 
     ## Configuration for creating an Ingress that will map to each Alertmanager replica service
     ## alertmanager.servicePerReplica must be enabled
@@ -1166,12 +1052,7 @@ kube-prometheus-stack:
         - action: replace
           sourceLabels: [__metrics_path__]
           targetLabel: metrics_path
-      # - sourceLabels: [__meta_kubernetes_pod_node_name]
-      #   separator: ;
-      #   regex: ^(.*)$
-      #   targetLabel: nodename
-      #   replacement: $1
-      #   action: replace
+
 
       ## RelabelConfigs to apply to samples before scraping
       ## ref: https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/api-reference/api.md#relabelconfig
@@ -2130,13 +2011,8 @@ kube-prometheus-stack:
     ## Configuration for Prometheus operator service
     ##
     service:
-      annotations: {}
-      labels: {}
-      clusterIP: ""
       ipDualStack:
         enabled: false
-        ipFamilies: ["IPv6", "IPv4"]
-        ipFamilyPolicy: "PreferDualStack"
 
     ## Port to expose on each node
     ## Only used if service.type is 'NodePort'
@@ -2170,21 +2046,6 @@ kube-prometheus-stack:
       ##
       externalIPs: []
 
-    # ## Labels to add to the operator deployment
-    # ##
-    labels: {}
-
-    ## Annotations to add to the operator deployment
-    ##
-    annotations: {}
-
-    ## Labels to add to the operator pod
-    ##
-    podLabels: {}
-
-    ## Annotations to add to the operator pod
-    ##
-    podAnnotations: {}
 
     ## Assign a PriorityClassName to pods if set
     # priorityClassName: ""
