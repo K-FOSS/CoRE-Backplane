@@ -16,11 +16,22 @@ controllers:
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
     strategy: RollingUpdate
-    {{- with .Values.mimir.nodeSelector }}
     pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - '{{ $.Release.Name | lower }}'
+              topologyKey: kubernetes.io/hostname
+
+      {{- with .Values.mimir.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
-    {{- end }}
+      {{- end }}
     
     replicas: 3
 
