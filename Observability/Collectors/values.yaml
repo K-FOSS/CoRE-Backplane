@@ -419,6 +419,25 @@ alloy:
 
         prometheus.exporter.unix "default" { /* use defaults */ }
 
+        prometheus.exporter.cadvisor "integrations_cadvisor" {
+          store_container_labels = false
+        }
+
+        discovery.relabel "integrations_cadvisor" {
+          targets = prometheus.exporter.cadvisor.integrations_cadvisor.targets
+
+          rule {
+            target_label = "job"
+            replacement  = "integrations/cadvisor"
+          }
+        }
+
+        prometheus.scrape "integrations_cadvisor" {
+          targets    = discovery.relabel.integrations_cadvisor.output
+          forward_to = [prometheus.relabel.metrics_service.receiver]
+          job_name   = "integrations/cadvisor"
+        }
+
         prometheus.scrape "metrics" {
           job_name   = "integrations/autodiscovery_metrics"
           targets  = concat(discovery.relabel.annotation_autodiscovery_pods.output, discovery.relabel.annotation_autodiscovery_services.output, prometheus.exporter.unix.default.targets)
