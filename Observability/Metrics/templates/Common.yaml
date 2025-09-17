@@ -346,6 +346,20 @@ persistence:
             subPath: mimir.yaml
 
 
+  mimir-config:
+    enabled: true
+
+    type: configMap
+
+    name: 'prometheus-{{ $.Values.cluster.name }}-expo-prometheus-rulefiles-0'
+
+    defaultMode: 0755
+
+    advancedMounts:
+      mimir: # the controller with the "main" identifier
+        mimir: # the container with the "main" identifier
+          - path: /data/ruler
+
 
 {{- end }}
 
