@@ -495,6 +495,16 @@ alloy:
             url = "http://10.44.4.77:8080/api/v1/push"
           }
 
+          queue_config {
+            capacity             = 250000
+            max_shards           = 8
+            max_samples_per_send = 5000
+          }
+
+          metadata_config {
+            max_samples_per_send = 500
+          }
+
           external_labels = {
             cluster = sys.env("CLUSTER"),
             dc = sys.env("DC"),
