@@ -417,9 +417,11 @@ alloy:
           }
         }
 
+        prometheus.exporter.unix "default" { /* use defaults */ }
+
         prometheus.scrape "metrics" {
           job_name   = "integrations/autodiscovery_metrics"
-          targets  = concat(discovery.relabel.annotation_autodiscovery_pods.output, discovery.relabel.annotation_autodiscovery_services.output)
+          targets  = concat(discovery.relabel.annotation_autodiscovery_pods.output, discovery.relabel.annotation_autodiscovery_services.output, prometheus.exporter.unix.default.targets)
           honor_labels = true
           clustering {
             enabled = true
