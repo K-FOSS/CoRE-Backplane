@@ -417,12 +417,12 @@ alloy:
           }
         }
 
-        prometheus.exporter.unix {
+        prometheus.exporter.unix "default" {
 
         }
 
         prometheus.scrape "node_exporter" {
-          targets = prometheus.exporter.unix.targets
+          targets = prometheus.exporter.unix.default.targets
           forward_to = [prometheus.relabel.node_exporter.receiver]
 
           job_name = "node-exporter"
@@ -437,6 +437,7 @@ alloy:
           }
 
           rule {
+            # The default job name is "integrations/node_exporter" and needs to be replaced
             replacement = "node-exporter"
             target_label = "job"
           }
