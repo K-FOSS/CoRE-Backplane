@@ -417,7 +417,31 @@ alloy:
           }
         }
 
-        prometheus.exporter.unix "default" { /* use defaults */ }
+        prometheus.exporter.unix {
+
+        }
+
+        prometheus.scrape "node_exporter" {
+          targets = prometheus.exporter.unix.targets
+          forward_to = [prometheus.relabel.node_exporter.receiver]
+
+          job_name = "node-exporter"
+        }
+
+        prometheus.relabel "node_exporter" {
+          forward_to = [prometheus.remote_write.mimir.receiver]
+
+          rule {
+            replacement = env("HOSTNAME")
+            target_label = "nodename"
+          }
+
+          rule {
+            # The default job name is "integrations/node_exporter" and needs to be replaced
+            replacement = "node-exporter"
+            target_label = "job"
+          }
+        }
 
         prometheus.exporter.cadvisor "integrations_cadvisor" {
           store_container_labels = false
@@ -440,7 +464,7 @@ alloy:
 
         prometheus.scrape "metrics" {
           job_name   = "integrations/autodiscovery_metrics"
-          targets  = concat(discovery.relabel.annotation_autodiscovery_pods.output, discovery.relabel.annotation_autodiscovery_services.output, prometheus.exporter.unix.default.targets)
+          targets  = concat(discovery.relabel.annotation_autodiscovery_pods.output, discovery.relabel.annotation_autodiscovery_services.output)
           honor_labels = true
           clustering {
             enabled = true
