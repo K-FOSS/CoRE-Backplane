@@ -3,22 +3,18 @@ kind: Gateway
 metadata:
   name: main-gw
 
+  {{- with .gateway.labels }}
   labels:
-    wan-mode: 'public'
-    lan-mode: 'private'
-    resolvemy.host/gw: 'main-gw'
-    resolvemy.host/gw-ns: '{{ .Release.Namespace }}'
-    resolvemy.host/security: 'public'
-    resolvemy.host/env: 'prod'
-
+    {{ tpl . $ | nindent 4 }}
+  {{- end }}
 spec:
   gatewayClassName: eg-{{ .Values.tenant }}
 
+  {{- with .gateway.annotations }}
   infrastructure:
     annotations:
-      purelb.io/allow-shared-ip: main-gw.resolvemy.host
-      purelb.io/service-group: core-public
-      purelb.io/allow-local: 'true'
+      {{ tpl . $ | nindent 6 }}
+  {{- end }}
 
   listeners:
     - name: tls-mqtt

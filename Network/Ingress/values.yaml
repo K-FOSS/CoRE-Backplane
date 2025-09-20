@@ -38,6 +38,20 @@ backends:
         port: 8085
 
 
+gateway:
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+    resolvemy.host/gw: 'main-gw'
+    resolvemy.host/gw-ns: '{{ .Release.Namespace }}'
+    resolvemy.host/security: 'public'
+    resolvemy.host/env: 'prod'
+
+  annotations:
+    purelb.io/allow-shared-ip: main-gw.resolvemy.host
+    purelb.io/service-group: core-public
+    purelb.io/allow-local: 'true'
+
 imaginary:
   # -- A toleration
   tolerations: []
