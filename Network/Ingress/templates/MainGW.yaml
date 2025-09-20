@@ -3,14 +3,14 @@ kind: Gateway
 metadata:
   name: main-gw
 
-  {{- with .gateway.labels }}
+  {{- with .Values.gateway.labels }}
   labels:
     {{ tpl . $ | nindent 4 }}
   {{- end }}
 spec:
   gatewayClassName: eg-{{ .Values.tenant }}
 
-  {{- with .gateway.annotations }}
+  {{- with .Values.gateway.annotations }}
   infrastructure:
     annotations:
       {{ tpl . $ | nindent 6 }}
