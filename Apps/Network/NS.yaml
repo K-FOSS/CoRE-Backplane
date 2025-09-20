@@ -34,6 +34,11 @@ spec:
                         target: l8520277.eero.online
                       address:
                         ipv4: 10.1.1.84
+                        serviceGroup: core-public
+                        sharedIP:
+                          enabled: true
+
+                          key: main-gw.resolvemy.host
                         
           - clusters:
               selector:
@@ -92,6 +97,11 @@ spec:
                       {{ end }}
                       external-dns.alpha.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
                       purelb.io/addresses: '{{ .values.nameserver.address.ipv4 }}'
+                      purelb.io/allow-local: 'true'
+                      {{ if .values.nameserver.address.sharedIP.enabled }}
+                      purelb.io/allow-shared-ip: '{{ .values.nameserver.address.sharedIP.key }}' 
+                      {{ end }}
+                      purelb.io/service-group: '{{ .values.nameserver.address.serviceGroup }}'
 
       destination:
         server: '{{ .server }}'
