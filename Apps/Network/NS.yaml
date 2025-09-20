@@ -15,14 +15,26 @@ spec:
         generators:
           - list:
               elements:
-                - name: core-dc1-talos-prod
+                # - name: core-dc1-talos-prod
+                #   values:
+                #     IPv4Address: '66.165.222.105'
+                #     hub: false
+                #     nameserver:
+                #       domain: 'ns1.resolvemy.host'
+                #       address:
+                #         ipv4: 66.165.222.105
+                      
+                - name: core-home1-talos-prod
                   values:
-                    IPv4Address: '66.165.222.105'
                     hub: false
                     nameserver:
-                      domain: 'ns1.resolvemy.host'
+                      domain: 'ns2.resolvemy.host'
+
+                      dns:
+                        target: l8520277.eero.online
                       address:
-                        ipv4: 66.165.222.105
+                        ipv4: 10.1.1.84
+                        
           - clusters:
               selector:
                 matchLabels:
@@ -75,6 +87,9 @@ spec:
                   main:
                     annotations:
                       consul.hashicorp.com/service-name: ns-core
+                      {{ if .values.nameserver.dns.target }}
+                      external-dns.alpha.kubernetes.io/target: '{{ .values.nameserver.dns.target }}'
+                      {{ end }}
                       external-dns.alpha.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
                       purelb.io/addresses: '{{ .values.nameserver.address.ipv4 }}'
 
