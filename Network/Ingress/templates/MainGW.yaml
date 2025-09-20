@@ -5,7 +5,9 @@ metadata:
 
   {{- with .Values.gateway.labels }}
   labels:
-    {{ tpl . $ | nindent 4 }}
+    {{- range $key, $value := . }}
+    {{ $key }}: {{ tpl $value $ | quote }}
+    {{- end }}
   {{- end }}
 spec:
   gatewayClassName: eg-{{ .Values.tenant }}
@@ -13,7 +15,9 @@ spec:
   {{- with .Values.gateway.annotations }}
   infrastructure:
     annotations:
-      {{ tpl . $ | nindent 6 }}
+      {{- range $key, $value := . }}
+      {{ $key }}: {{ tpl $value $ | quote }}
+      {{- end }}
   {{- end }}
 
   listeners:
