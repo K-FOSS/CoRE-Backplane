@@ -443,10 +443,10 @@ spec:
                             "user.max_user_namespaces" = "11255"
                           }
 
-                          {{- if $.observed.composite.resource.spec.overrides.talos.extensions.kernel.modules }}
+                          {{- if $.observed.composite.resource.spec.overrides.talos.kernel.modules }}
                           kernel = {
                             modules = [
-                              {{- range $modIndex, $kernelModule := $.observed.composite.resource.spec.overrides.talos.extensions.kernel.modules }}
+                              {{- range $modIndex, $kernelModule := $.observed.composite.resource.spec.overrides.talos.kernel.modules }}
                               {
                                 name = "{{ $kernelModule.name }}"
                               },
@@ -508,6 +508,13 @@ spec:
                                 {{- end }}
 
                                 mtu = {{ $network.mtu }}
+
+                                {{- if $network.vip }}
+                                vip = {
+                                  ip = "{{ $network.vip }}"
+                                }
+                                {{- end }}
+
                                 addresses = [
                                   {{- range $addrIndex, $address := $network.addresses }}
                                   "{{ $address }}",
