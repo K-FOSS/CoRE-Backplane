@@ -110,7 +110,11 @@ spec:
                         "bnx2-bnx2x",
                         "drbd",
                         "iscsi-tools",
-                        "util-linux-tools"
+                        "util-linux-tools",
+                        {{ if $.observed.composite.resource.spec.overrides.talos.extensions.system }}
+                        {{ range $extIndex, $extensionName := $.observed.composite.resource.spec.overrides.talos.extensions.system }}
+                        "{{ $extensionName }}",
+                        {{- end }}
                       ] 
                     }
                   }
@@ -436,6 +440,14 @@ spec:
                         machine = {
                           sysctls = {
                             "user.max_user_namespaces" = "11255"
+                          }
+
+                          features = {
+                            kubePrism = {
+                              enabled = true
+
+                              port = 7445
+                            }
                           }
 
                           kubelet = {
