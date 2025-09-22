@@ -111,10 +111,10 @@ spec:
                         "drbd",
                         "iscsi-tools",
                         "util-linux-tools",
-                        {{ if $.observed.composite.resource.spec.overrides.talos.extensions.system }}
-                        {{ range $extIndex, $extensionName := $.observed.composite.resource.spec.overrides.talos.extensions.system }}
+                        {{- if $.observed.composite.resource.spec.overrides.talos.extensions.system }}
+                        {{- range $extIndex, $extensionName := $.observed.composite.resource.spec.overrides.talos.extensions.system }}
                         "{{ $extensionName }}",
-                        {{ end }}
+                        {{- end }}
                         {{ end }}
                       ] 
                     }
@@ -442,6 +442,18 @@ spec:
                           sysctls = {
                             "user.max_user_namespaces" = "11255"
                           }
+
+                          {{- if $.observed.composite.resource.spec.overrides.talos.extensions.kernel.modules }}
+                          kernel = {
+                            modules = [
+                              {{- range $modIndex, $kernelModule := $.observed.composite.resource.spec.overrides.talos.extensions.kernel.modules }}
+                              {
+                                name = "{{ $kernelModule.name }}"
+                              },
+                              {{- end }}
+                            ]
+                          }
+                          {{ end }}
 
                           features = {
                             kubePrism = {
