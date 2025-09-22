@@ -1,0 +1,89 @@
+
+
+apiVersion: resolvemy.host/v1alpha1
+kind: ClusterNode
+metadata:
+  name: laptop1.home1.yvr.resolvemy.host
+
+  namespace: core-prod
+
+  labels:
+    argocd.argoproj.io/instance: dc1-k3s-node1-ops-cluster
+
+spec:
+  name: laptop1.home1.yvr.resolvemy.host
+
+  description: home1.yvr.resolvemy.host MSI Gaming Laptop
+
+  danger:
+    warningdonotdounlessyouknowwhatyouaredoing:
+      wipeOnReboot: false
+
+  clusterRef:
+    group: resolvemy.host
+    kind: Cluster
+    name: core-home1-talos
+    namespace: core-prod
+
+  tenantRef:
+    group: mylogin.space
+    kind: Tenant
+    name: core.mylogin.space
+    namespace: core-prod
+
+  environment: prod
+
+  bgp:
+    instances:
+      - asn: 64512
+        name: wan-gw
+        peers:
+          - address: 172.31.192.1
+            asn: 64567
+            name: sbc1.home1.yvr.resolvemy.host
+
+          - address: 172.31.192.2
+            asn: 64567
+            name: wan-gw1.home1.yvr.resolvemy.host
+
+          - address: 172.31.192.16
+            asn: 64567
+            name: cpe-sw1.home1.yvr.resolvemy.host
+
+  networks:
+    - macAddress: 4c:cc:6a:dc:14:4c
+      bridge: true
+      addresses:
+        - 172.31.192.16/24
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.192.1
+          metric: 600
+
+      mtu: 1500
+
+      static: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+
+  overrides:
+    pxe:
+      script: >
+        #!ipxe
+
+
+        imgfree
+
+
+        kernel https://pxe.factory.talos.dev/image/08fd62e51a4dbb251ad73c1354e6a44f2f8862114bb32b75c74bcb9121d75cb7/v1.9.5/kernel-amd64 reboot=hard
+        talos.platform=metal init_on_alloc=1 slab_nomerge pti=on cpufreq.default_governor=performance consoleblank=0
+        nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.config=http://10.1.1.66:50061/2009-04-04/user-data
+
+
+        initrd https://pxe.factory.talos.dev/image/08fd62e51a4dbb251ad73c1354e6a44f2f8862114bb32b75c74bcb9121d75cb7/v1.9.5/initramfs-amd64.xz
+
+
+        boot
