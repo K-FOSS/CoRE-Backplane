@@ -440,7 +440,9 @@ spec:
                         }
                         machine = {
                           sysctls = {
-                            "user.max_user_namespaces" = "11255"
+                            "user.max_user_namespaces"    = "11255"
+                            "net.core.somaxconn"          = "65535"
+                            "net.core.netdev_max_backlog" = "4096"
                           }
 
                           {{- if $.observed.composite.resource.spec.overrides.talos.kernel.modules }}
