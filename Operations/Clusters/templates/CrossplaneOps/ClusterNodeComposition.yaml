@@ -417,6 +417,11 @@ spec:
                       yamlencode({
                         cluster = {
                           etcd = {
+                            extraArgs = {
+                              "listen-metrics-urls" = "http://0.0.0.0:2381"
+                              "election-timeout" = "5000"
+                              "heartbeat-interval" = "1000"
+                            }
                             advertisedSubnets = [
                               {{- range $index, $network := .observed.composite.resource.spec.networks }}
                               {{- range $addrIndex, $address := $network.addresses }}
