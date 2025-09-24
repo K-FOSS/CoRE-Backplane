@@ -411,7 +411,7 @@ spec:
                       apiVersion: v1alpha1
                       kind: WatchdogTimerConfig
                       device: {{ $.observed.composite.resource.spec.watchdog.devicePath }}
-                      timeout: 5m
+                      timeout: {{ $.observed.composite.resource.spec.watchdog.timeout }}
                     EOT
                   }
                   {{- end }}
@@ -561,7 +561,10 @@ spec:
                             ]
                           }
                         }
-                      })
+                      }),
+                      {{- if $.observed.composite.resource.spec.watchdog.enabled }}
+                      local.watchdog-conf,
+                      {{- end }}
                     ]
                   }
 
