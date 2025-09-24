@@ -404,6 +404,18 @@ spec:
                     value = true
                   }
 
+                  {{- if $.observed.composite.resource.spec.watchdog.enabled }}
+                  locals {
+                    watchdog-conf = <<-EOT
+                      ---
+                      apiVersion: v1alpha1
+                      kind: WatchdogTimerConfig
+                      device: {{ $.observed.composite.resource.spec.watchdog.devicePath }}
+                      timeout: 5m
+                    EOT
+                  }
+                  {{- end }}
+
                   resource "talos_machine_configuration_apply" "node-apply" {
                     client_configuration = {
                       ca_certificate = local.talosconfig.ca
@@ -421,6 +433,7 @@ spec:
                               "listen-metrics-urls" = "http://0.0.0.0:2381"
                               "election-timeout" = "5000"
                               "heartbeat-interval" = "1000"
+                              "snapshot-count" = "50000"
                             }
                             advertisedSubnets = [
                               {{- range $index, $network := .observed.composite.resource.spec.networks }}
@@ -551,6 +564,12 @@ spec:
                       })
                     ]
                   }
+
+                  {{- if $.observed.composite.resource.spec.watchdog.enabled }}
+                  output "watchdog" {
+                    value = local.watchdog-conf
+                  }
+                  {{- end }}
             {{ end }}
             `}}
                   
