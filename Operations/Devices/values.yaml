@@ -5,3 +5,61 @@ nvidia-device-plugin:
     gpu-node: 'true'
 
   runtimeClassName: nvidia
+
+amd-gpu:
+  nfd:
+    enabled: false
+
+  labeller:
+    enabled: false
+
+  dp:
+    resources: {}
+    # Set daemonsets updateStrategy for device plugin
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+
+  lbl:
+    serviceAccount:
+      annotations: {}
+    securityContext:
+      privileged: true # Needed for /dev
+      capabilities:
+        drop:
+          - ALL
+        add:
+          - CAP_SYS_ADMIN
+      readOnlyRootFilesystem: false # true if -logtostderr flag set in labeller
+    # If you do want to specify resources, uncomment the following lines, 
+    # adjust them as necessary, and remove the curly braces after 'resources:'.
+    resources: {}
+      # limits:
+      #   memory: 20Mi
+      #   cpu: 100m
+      # requests:
+      #   memory: 30Mi
+      #   cpu: 150m
+    # Set daemonsets updateStrategy for labeller
+    updateStrategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 1
+
+  imagePullSecrets: []
+
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+
+  tolerations:
+    - key: CriticalAddonsOnly
+      operator: Exists
+
+  node_selector_enabled: false
+  node_selector:
+    feature.node.kubernetes.io/pci-0300_1002.present: "true"
+    kubernetes.io/arch: amd64
