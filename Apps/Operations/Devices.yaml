@@ -76,6 +76,18 @@ spec:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      kind: DaemonSet
+                      name: {{ .values.clusterName }}-ops-devices-{{ .values.environment }}-node-feature-discovery-worker 
+
+                    patch: |
+                      $patch: delete
+                      kind: DaemonSet
+                      metadata:
+                        name: DOES NOT MATTER
       destination:
         server: '{{ .server }}'
         namespace: kube-system
