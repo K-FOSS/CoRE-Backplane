@@ -7,26 +7,27 @@ spec:
     level:
       default: error
   mergeGateways: false
+
   provider:
     kubernetes:
       envoyDeployment:
         container:
           resources:
             limits:
-              cpu: 6312m
-              memory: 5603M
+              cpu: '4'
+              memory: '4Gi'
             requests:
               cpu: 58m
               memory: 118M
         pod:
-          nodeSelector:
-            fast: 'true'
           labels:
             logs: loki-myloginspace
         replicas: 2
+
       envoyService:
         externalTrafficPolicy: Local
         type: LoadBalancer
+
     type: Kubernetes
 #   telemetry:
 #     accessLog:
