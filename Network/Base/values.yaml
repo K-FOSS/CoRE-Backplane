@@ -840,6 +840,7 @@ purelb:
 envoy-gw:
   enabled: true
   deployment:
+    replicas: 2
     pod:
       annotations:
         prometheus.io/scrape: 'true'
@@ -848,6 +849,9 @@ envoy-gw:
     envoyGateway:
       provider:
         type: Kubernetes
+
+        kubernetes:
+          leaderElection: true
       extensionApis:
         enableEnvoyPatchPolicy: true
         enableBackend: true
