@@ -2,6 +2,17 @@ nvidia-device-plugin:
   nodeSelector:
     gpu-node: 'true'
 
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+            # On discrete-GPU based systems NFD adds the following label where 10de is the NVIDIA PCI vendor ID
+              - key: feature.node.kubernetes.io/pci-0300_10de.present
+                operator: In
+                values:
+                  - "true"
+
   nfd:
     enabled: false
 
