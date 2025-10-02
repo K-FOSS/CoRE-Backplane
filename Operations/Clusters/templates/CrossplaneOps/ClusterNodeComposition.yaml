@@ -428,6 +428,10 @@ spec:
                     config_patches = [
                       yamlencode({
                         cluster = {
+                          controlPlane = {	
+                            endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"	
+                          }
+
                           etcd = {
                             extraArgs = {
                               "listen-metrics-urls" = "http://0.0.0.0:2381"
@@ -449,6 +453,8 @@ spec:
                             extraArgs = {
                               feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
                             }
+
+                            image = "registry.k8s.io/kube-apiserver:{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.kubernetes }}"
                           }
                           controllerManager = {
                             extraArgs = {
