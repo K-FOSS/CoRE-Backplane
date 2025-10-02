@@ -386,7 +386,32 @@ spec:
                               items:
                                 type: string
 
+                    kernel:
+                      type: object
+                      description: Override Linux kerenel configuration
 
+                      properties:
+                        parameters:
+                          type: array
+                          description: Configure Kernel params at boot for the Compute Node
+
+                          items:
+                            type: object
+
+                            properties:
+                              name:
+                                type: string
+
+                                description: Linux kernel param to configure
+
+                              value:
+                                type: string
+
+                                description: Value to set
+
+                            required:
+                              - name
+                              - value
                     pxe:
                       type: object
                       description: Override the automated iPXE Settings
