@@ -26,18 +26,28 @@ spec:
         kind: GoTemplate
         source: Inline
         inline:
-          template: > # yaml
+          template: > # yaml {{`
 
-            {{`{{ $xr := getCompositeResource . }}
-            {{ $clusterResourceName := "cluster" }}
-            {{ $tinkclusterResourceName := "tinkcluster" }}
-            {{ $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
-            {{ $talosConfigResourceName := "talosconfig" }}
-            {{ $tinkTemplateResourceName := "tinktemplate" }}
-            {{ $clusterCustomResource := "crossplaneResource" }}
-            {{ $clusterArgoCDSecretResource := "argocd-cluster-secret" }}
-            {{ $kubernetesProviderResourceName := "k8s-provider" }}
-            {{ $networks := $xr.spec.networks }}
+            {{- $xr := getCompositeResource . }}
+            
+            {{- $clusterResourceName := "cluster" }}
+            
+            {{- $tinkclusterResourceName := "tinkcluster" }}            
+            
+            {{- $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
+            
+            {{- $talosConfigResourceName := "talosconfig" }}
+            
+            {{- $tinkTemplateResourceName := "tinktemplate" }}
+            
+            {{- $clusterCustomResource := "crossplaneResource" }}
+            
+            {{- $clusterArgoCDSecretResource := "argocd-cluster-secret" }}
+            
+            {{- $kubernetesProviderResourceName := "k8s-provider" }}
+            
+            {{- $networks := $xr.spec.networks }}
+
 
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
