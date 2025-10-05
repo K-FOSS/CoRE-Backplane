@@ -26,8 +26,7 @@ spec:
         kind: GoTemplate
         source: Inline
         inline:
-          template: |
-            {{`
+          template: |{{`
             {{ $tfTalosImageName := "tf-talos-factory" }}
             {{ $clusterCustomResourceName := "custom-cluster" }}
             {{ $tinkHardwareResourceName := "tink-hardware" }}
@@ -154,7 +153,7 @@ spec:
                   output "subnetmask" {
                     value = flatten([for ipAddress in var.ipAddresses : [cidrnetmask(ipAddress)]])
                   }
-            {{ end }} 
+            {{- end }} 
             ---
             {{ $talosImageFactory := getComposedResource . $tfTalosImageName }}
             {{ if $clusterCustomResource.status.atProvider }}
@@ -255,8 +254,8 @@ spec:
                           {{ end }}
                           {{ end }}
                       {{ end }}
-                      {{ end }}
-            {{ end }}
+                      {{- end }}
+            {{- end }}
             ---
             {{ if $clusterCustomResource.status.atProvider }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
@@ -582,5 +581,4 @@ spec:
                     value = local.watchdog-conf
                   }
                   {{- end }}
-            {{ end }}
-            `}}
+            {{- end }}`}}
