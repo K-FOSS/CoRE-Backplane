@@ -2,14 +2,14 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  name: ssd
+  name: ssd-bench
 provisioner: driver.longhorn.io
 allowVolumeExpansion: true
 parameters:
   dataEngine: v1
-  datalocality: strict-local
+  dataLocality: strict-local
   numberOfReplicas: '1'
   fsType: 'xfs'
-  nodeSelector: 'fast'
+  diskSelector: 'ssd'
   stalereplicatimeout: '30'
 {{- end -}}
