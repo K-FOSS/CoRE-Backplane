@@ -18,12 +18,12 @@ data:
 
     backend_hostname0 = 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
     backend_port0 = 5432
-    backend_weight0 = 25
+    backend_weight0 = 50
 
     {{- $replicas := (include "psql.mylogin.space/replicas" $) }}
     {{- range $index, $id := untilStep (int 0) (int $replicas) 1 -}}
     {{ $backendID := add 1 $index }}
-    backend_hostname{{ $backendID }} = 'psql-main-{{ $index }}.psql-main.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
+    backend_hostname{{ $backendID }} = 'psql-main-{{ $index }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
     backend_port{{ $backendID }} = 5432
     backend_weight{{ $backendID }} = 25
     {{- end }}
