@@ -20,21 +20,20 @@ data:
     backend_port0 = 5432
     backend_weight0 = 25
 
-    {{ $replicas := (include "psql.mylogin.space/replicas" $) }}
+    {{- $replicas := (include "psql.mylogin.space/replicas" $) }}
     {{- range $index, $id := untilStep (int 0) (int $replicas) 1 -}}
     {{ $backendID := add 1 $index }}
     backend_hostname{{ $backendID }} = 'psql-main-{{ $index }}.psql-main.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
     backend_port{{ $backendID }} = 5432
     backend_weight{{ $backendID }} = 25
+    {{- end }}
 
-    {{ end }}
-
-    {{ range $index, $pooler := .Values.pooler.peers }}
-    {{ $backendID := add (len (untilStep (int 0) (int $replicas) 1)) (add $index 1) }}
+    {{- range $index, $pooler := .Values.pooler.peers }}
+    {{- $backendID := add (len (untilStep (int 0) (int $replicas) 1)) (add $index 1) }}
     backend_hostname{{ $backendID }} = '{{ $pooler.hostname }}'
     backend_port{{ $backendID }} = {{ default 5432 $pooler.port }}
     backend_weight{{ $backendID }} = 1
-    {{ end }}
+    {{- end }}
 
     backend_clustering_mode = 'streaming_replication'
 
@@ -42,21 +41,21 @@ data:
     health_check_user = '{{ .Username }}'
     health_check_password = 'TEXT{{ .Password }}'
     health_check_period = 30
-    health_check_timeout = 60
+    health_check_timeout = 10
     health_check_max_retries = 3
 
 
     sr_check_user = '{{ .Username }}'
     sr_check_password = 'TEXT{{ .Password }}'
-    sr_check_period = 5
+    sr_check_period = 30
     `}}
     enable_pool_hba = on
-    num_init_children = 32
-    max_pool = 16
+    num_init_children = 60
+    max_pool = 4
     child_life_time = 300
     child_max_connections = 0
     connection_life_time = 300
-    connection_cache = false 
+    connection_cache = on
 
     client_idle_limit = 900
 
@@ -101,7 +100,7 @@ data:
                                       # If off, SQL comments effectively prevent the judgment
                                       # (pre 3.4 behavior).
 
-    disable_load_balance_on_write = 'dml_adaptive'
+    disable_load_balance_on_write = 'transaction'
                                       # Load balance behavior when write query is issued
                                       # in an explicit transaction.
                                       #
@@ -140,7 +139,7 @@ data:
                                       # the write_function_list
                                       # only valid for disable_load_balance_on_write = 'dml_adaptive'.
 
-    statement_level_load_balance = on
+    statement_level_load_balance = off
                                       # Enables statement level load balancing
     failover_on_backend_error = on
     failover_on_backend_shutdown = on
@@ -182,7 +181,7 @@ data:
     host    all    all        ::1/128      trust
     host    all    {{ .AAAUsername }} 0.0.0.0/0    password
     host    all    {{ .OPSUsername }} 0.0.0.0/0    password
-    host    all    all        0.0.0.0/0    ldap ldapserver=ldap.mylogin.space ldapport=636 ldapscheme=ldaps ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn" backend_use_passwd=1
+    host    all    all        0.0.0.0/0    ldap ldapserver=ldap-home1.mylogin.space ldapport=636 ldapscheme=ldaps ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn" backend_use_passwd=1
     `}}
   pool_passwd: |{{`
     {{ .AAAUsername }}:{{ .AAAPassword }}
