@@ -54,14 +54,14 @@ alloy:
 
         //
         // SysLog Collector
-        // 
+        //
         loki.source.syslog "syslog" {
           listener {
             address  = "0.0.0.0:1514"
-            labels   = { 
-              component = "loki.source.syslog", 
+            labels   = {
+              component = "loki.source.syslog",
               protocol = "tcp",
-              job = "syslog", 
+              job = "syslog",
             }
           }
 
@@ -213,8 +213,8 @@ alloy:
             listen_port = 9999
           }
 
-          labels = { 
-            component = "loki.source.api", 
+          labels = {
+            component = "loki.source.api",
           }
 
           forward_to = [loki.write.loki.receiver]
@@ -229,7 +229,7 @@ alloy:
         //
         // Metrics
         //
-        
+
         // Monitor Self https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.self/
         prometheus.exporter.self "self_metrics" {
         }
