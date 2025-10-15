@@ -417,31 +417,6 @@ alloy:
           }
         }
 
-        prometheus.exporter.unix "default" {
-
-        }
-
-        prometheus.scrape "node_exporter" {
-          targets = prometheus.exporter.unix.default.targets
-          forward_to = [prometheus.relabel.node_exporter.receiver]
-
-          job_name = "node-exporter"
-        }
-
-        prometheus.relabel "node_exporter" {
-          forward_to = [prometheus.remote_write.mimir.receiver]
-
-          rule {
-            replacement = env("HOSTNAME")
-            target_label = "nodename"
-          }
-
-          rule {
-            replacement = "node-exporter"
-            target_label = "job"
-          }
-        }
-
         prometheus.exporter.cadvisor "integrations_cadvisor" {
           store_container_labels = false
         }
