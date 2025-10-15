@@ -493,6 +493,11 @@ alloy:
         prometheus.remote_write "mimir" {
           endpoint {
             url = "http://10.44.4.77:8080/api/v1/push"
+
+            capacity = 250000
+            max_shards           = 8
+            max_samples_per_send = 5000
+            sample_age_limit = "24h"
           }
           external_labels = {
             cluster = sys.env("CLUSTER"),
@@ -742,10 +747,10 @@ alloy:
     parallelRollout: true
 
     # -- Configures Pods to use the host network. When set to true, the ports that will be used must be specified.
-    hostNetwork: false
+    hostNetwork: true
 
     # -- Configures Pods to use the host PID namespace.
-    hostPID: false
+    hostPID: true
 
     # -- Configures the DNS policy for the pod. https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
     dnsPolicy: ClusterFirst
