@@ -1,0 +1,24 @@
+{{- if and .Values.s3.secrets.enabled .Values.prometheus.enabled }}
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ .Release.Name }}-prometheus
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+
+spec:
+  {{- with .Values.s3.secrets.secretStoreRef }}
+  secretStoreRef:
+    {{ toYaml . | nindent 4  }}
+  {{- end }}
+
+  target:
+    name: {{ .Release.Name }}-prometheus
+
+  data:
+    - secretKey: Token
+      remoteRef:
+        key: {{ .Values.s3.secrets.rootPrefix }}/{{ .Values.cluster.name }}/Prometheus
+        property: Token
+{{- end }}
