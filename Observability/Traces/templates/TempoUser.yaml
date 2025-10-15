@@ -6,7 +6,24 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
-  name: Tempp
+  name: Tempo {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
+
+  s3:
+    enabled: true
+
+    createBuckets: true
+
+    createUserBucket: true
+
+    createCredentials: true
+
+    crossplane:
+      terraformProvider: s3-yvr-home1-core
+      crossplaneProvider: s3-yvr-home1-core
+
+    writeCredentialsSecretRef:
+      name: {{ .Release.Name }}-s3-creds
+      namespace: {{ .Release.Namespace }}
 
   groups:
     - LDAPService
