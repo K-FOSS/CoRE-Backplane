@@ -32,6 +32,8 @@ spec:
             {{- $xr := getCompositeResource . }}
             
             {{- $clusterResourceName := "cluster" }}
+
+            {{- $workerMachineDeploymentResourceName := "workermachinetemplate" }}
             
             {{- $tinkclusterResourceName := "tinkcluster" }}            
             
@@ -553,6 +555,64 @@ spec:
                       kind: TinkerbellCluster
                       name: {{ $tinkCluster.status.atProvider.manifest.metadata.name }}
                       namespace: {{ $tinkCluster.status.atProvider.manifest.metadata.namespace }} 
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $workerMachineDeploymentResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              readiness:
+                policy: SuccessfulCreate
+
+              managementPolicies:
+                - Create
+                - Observe
+                - Update
+
+              forProvider:
+                manifest:
+                  {{ $tinkWorkerTemplate := getComposedResource . $tinkWorkerTemplateResourceName }}
+                  {{ $talosWorkerTemplate := getComposedResource . $talosWorkerTemplateResourceName }}
+                  {{ $clusterAPIResource := getComposedResource . $clusterResourceName }}
+                  apiVersion: cluster.x-k8s.io/v1beta1
+                  kind: MachineDeployment
+                  metadata:
+                    labels:
+                      cluster.x-k8s.io/cluster-name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+
+                  spec:
+                    replicas: 1
+                    clusterName: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+                    selector:
+                      matchLabels:
+                        cluster.x-k8s.io/cluster-name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+
+                    template:
+                      metadata:
+                        labels:
+                          cluster.x-k8s.io/cluster-name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+
+                      spec:
+                        version: {{ .observed.composite.resource.spec.versions.kubernetes }}
+                        clusterName: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
+                        bootstrap:
+                          configRef:
+                            apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+                            kind: TalosConfigTemplate
+                            name: {{ $talosWorkerTemplate.status.atProvider.manifest.metadata.name }}
+                            namespace: {{ $talosWorkerTemplate.status.atProvider.manifest.metadata.namespace }}
+                        infrastructureRef:
+                          apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+                          kind: TinkerbellMachineTemplate
+                          name: {{ $tinkWorkerTemplate.status.atProvider.manifest.metadata.name }}
+                          namespace: {{ $tinkWorkerTemplate.status.atProvider.manifest.metadata.namespace }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
