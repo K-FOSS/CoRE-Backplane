@@ -116,13 +116,11 @@ spec:
                       spec:
                         hardwareAffinity:
                           required:
-                            - weight: 100
-                              hardwareAffinityTerm:
-                                labelSelector:
-                                  matchLabels:
-                                    resolvemy.host/nodetype: infra
-                                    resolvemy.host/nodemode: controlplane
-                                    cluster.x-k8s.io/cluster-name: {{ .observed.composite.resource.spec.claimRef.name }}
+                            - labelSelector:
+                                matchLabels:
+                                  resolvemy.host/nodetype: infra
+                                  resolvemy.host/nodemode: controlplane
+                                  cluster.x-k8s.io/cluster-name: {{ .observed.composite.resource.spec.claimRef.name }}
                         templateOverride: | # yaml
                           version: "0.1"
                           name: kub-poc-control-plane-flatcar-arm64
@@ -171,13 +169,11 @@ spec:
                       spec:
                         hardwareAffinity:
                           required:
-                            - weight: 100
-                              hardwareAffinityTerm:
-                                labelSelector:
-                                  matchLabels:
-                                    resolvemy.host/nodetype: infra
-                                    resolvemy.host/nodemode: worker
-                                    cluster.x-k8s.io/cluster-name: {{ .observed.composite.resource.spec.claimRef.name }}
+                            - labelSelector:
+                                matchLabels:
+                                  resolvemy.host/nodetype: infra
+                                  resolvemy.host/nodemode: worker
+                                  cluster.x-k8s.io/cluster-name: {{ .observed.composite.resource.spec.claimRef.name }}
                         templateOverride: | # yaml
                           version: "0.1"
                           name: bmps-worker-talos
