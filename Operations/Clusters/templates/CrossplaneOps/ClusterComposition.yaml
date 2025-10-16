@@ -36,6 +36,8 @@ spec:
             {{- $tinkclusterResourceName := "tinkcluster" }}            
             
             {{- $talosCNTRLPlaneResourceName := "taloscntrlplane" }}
+
+            {{- $talosWorkerTemplateResourceName := "talosworkertemplate" }}
             
             {{- $talosConfigResourceName := "talosconfig" }}
             
@@ -387,6 +389,40 @@ spec:
                         generateType: controlplane
                         talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
                       
+                        configPatches:
+                        {{- include "talos-params" $ | nindent 12 }}
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $talosWorkerTemplateResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+
+              readiness:
+                policy: SuccessfulCreate
+
+              managementPolicies:
+                - Create
+                - Observe
+                - Update
+
+              forProvider:
+                manifest:
+                  apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+                  kind: TalosConfigTemplate
+                  metadata:
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+                  spec:
+                    template:
+                      spec:
+                        generateType: worker
+                        talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
                         configPatches:
                         {{- include "talos-params" $ | nindent 12 }}
             ---
