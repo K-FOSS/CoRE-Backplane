@@ -583,7 +583,9 @@ spec:
                   {{ $clusterAPIResource := getComposedResource . $clusterResourceName }}
                   apiVersion: cluster.x-k8s.io/v1beta1
                   kind: MachineDeployment
+                  
                   metadata:
+                    namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                     labels:
                       cluster.x-k8s.io/cluster-name: {{ $clusterAPIResource.status.atProvider.manifest.metadata.name }}
 
