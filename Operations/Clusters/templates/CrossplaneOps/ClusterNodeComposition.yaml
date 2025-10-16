@@ -189,6 +189,7 @@ spec:
                     labels:
                       resolvemy.host/nodetype: {{ $clusterCustomResource.status.atProvider.manifest.spec.clustertype }}
                       cluster.x-k8s.io/cluster-name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}
+                      resolvemy.host/nodemode: '{{ $.observed.composite.resource.spec.type }}'
 
                     ownerReferences:
                       - apiVersion: {{ $clusterCustomResource.status.atProvider.manifest.apiVersion }}
@@ -285,6 +286,7 @@ spec:
                     labels:
                       topology.kubernetes.io/region: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}'
                       topology.kubernetes.io/zone: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.datacenter }}'
+                      resolvemy.host/nodemode: '{{ $.observed.composite.resource.spec.type }}'
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
             {{ end }}
