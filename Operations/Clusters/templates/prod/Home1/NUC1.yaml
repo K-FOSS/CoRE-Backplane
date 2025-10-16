@@ -13,6 +13,8 @@ spec:
 
   description: Main home1 cluster
 
+  type: worker
+
   danger:
     warningdonotdounlessyouknowwhatyouaredoing:
       wipeOnReboot: false
@@ -61,7 +63,7 @@ spec:
 
         - network: 0.0.0.0/0
           gateway: 172.31.192.2
-          metric: 1022
+          metric: 1025
 
       mtu: 1500
 
@@ -72,14 +74,19 @@ spec:
         - 8.8.8.8
 
   overrides:
-    pxe:
-      script: |
-        #!ipxe
+    talos:
+      extensions:
+        system:
+          - intel-ucode
+          - i915
+  #   pxe:
+  #     script: |
+  #       #!ipxe
 
-        imgfree
+  #       imgfree
 
-        kernel tftp://10.44.5.76/talos/kernel-amd64 reboot=hard talos.platform=metal init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.config=http://172.20.53.166:50061/2009-04-04/user-data
+  #       kernel tftp://10.44.5.76/talos/kernel-amd64 reboot=hard talos.platform=metal init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.config=http://172.20.53.166:50061/2009-04-04/user-data
 
-        initrd tftp://10.44.5.76/talos/initramfs-amd64.xz
+  #       initrd tftp://10.44.5.76/talos/initramfs-amd64.xz
 
-        boot
+  #       boot

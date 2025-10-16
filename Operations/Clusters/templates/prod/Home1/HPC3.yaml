@@ -13,6 +13,8 @@ spec:
 
   description: home1.yvr.resolvemy.host iMac Virtual Machine in UTM
 
+  type: worker
+
   danger:
     warningdonotdounlessyouknowwhatyouaredoing:
       wipeOnReboot: false
@@ -51,6 +53,8 @@ spec:
   networks:
     - macAddress: 0e:fc:06:82:ee:4e
       bridge: true
+
+      vip: 172.31.192.10
       addresses:
         - 172.31.192.15/24
 
@@ -68,22 +72,8 @@ spec:
         - 8.8.8.8
 
   overrides:
-    pxe:
-      script: >
-        #!ipxe
-
-
-        imgfree
-
-
-        kernel tftp://10.44.5.76/talos/kernel-amd64 reboot=hard
-        talos.platform=metal init_on_alloc=1 slab_nomerge pti=on consoleblank=0
-        nvme_core.io_timeout=4294967295 printk.devkmsg=on
-        talos.device.settle_time=2m
-        talos.config=http://172.20.53.165:50061/2009-04-04/user-data
-
-
-        initrd tftp://10.44.5.76/talos/initramfs-amd64.xz
-
-
-        boot
+    talos:
+      extensions:
+        system:
+          - intel-ucode
+          - qemu-guest-agent

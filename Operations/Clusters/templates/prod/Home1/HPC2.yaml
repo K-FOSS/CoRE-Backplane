@@ -13,6 +13,8 @@ spec:
 
   description: home1.yvr.resolvemy.host Desktop PC Gaming Desktop
 
+  type: controlplane
+
   danger:
     warningdonotdounlessyouknowwhatyouaredoing:
       wipeOnReboot: false
@@ -49,14 +51,14 @@ spec:
             name: cpe-sw1.home1.yvr.resolvemy.host
 
   networks:
-    - macAddress: 00:15:5d:f1:fc:01
+    - macAddress: e0:d5:5e:65:02:d7
       bridge: false
       addresses:
-        - 172.31.192.14/24
+        - 172.31.192.12/24
 
       routes:
         - network: 0.0.0.0/0
-          gateway: 172.31.192.2
+          gateway: 172.31.192.1
           metric: 1024
 
       mtu: 1500
@@ -68,6 +70,11 @@ spec:
         - 8.8.8.8
 
   overrides:
+    kernel:
+      parameters:
+        - name: cpufreq.default_governor
+          value: performance
+
     talos:
       extensions:
         system:

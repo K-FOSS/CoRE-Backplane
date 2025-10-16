@@ -13,6 +13,8 @@ spec:
 
   description: home1.yvr.resolvemy.host Desktop PC
 
+  type: controlplane
+
   danger:
     warningdonotdounlessyouknowwhatyouaredoing:
       wipeOnReboot: false
@@ -54,7 +56,6 @@ spec:
       vip: 172.31.192.9
       addresses:
         - 172.31.192.10/24
-        - 2a0c:b642:a05:169e:a45c:2000:0:10/83
 
       routes:
         - network: 0.0.0.0/0
@@ -87,8 +88,14 @@ spec:
         - 8.8.8.8
 
   overrides:
+    kernel:
+      parameters:
+        - name: cpufreq.default_governor
+          value: performance
+
     talos:
       extensions:
         system:
           - amd-ucode
           - realtek-firmware
+          - amdgpu
