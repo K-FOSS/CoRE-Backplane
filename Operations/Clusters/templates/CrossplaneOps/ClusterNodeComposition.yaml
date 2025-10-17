@@ -506,7 +506,7 @@ spec:
                                 {{- range $index, $network := .observed.composite.resource.spec.networks }}
                                 {{- range $addrIndex, $address := $network.addresses }}
                                 {{- if . }}
-                                "{{ $address }}",
+                                "{{ regexReplaceAll "(.*)/[1-3][0-9]" $address "${1}" }}/32",
                                 {{- end }}
                                 {{- end }}
                                 {{- end }}
