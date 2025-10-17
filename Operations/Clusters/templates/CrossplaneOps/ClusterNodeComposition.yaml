@@ -433,6 +433,7 @@ spec:
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
                           }
 
+                          {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                           etcd = {
                             extraArgs = {
                               "listen-metrics-urls" = "http://0.0.0.0:2381"
@@ -450,6 +451,7 @@ spec:
                               {{- end }}
                             ]
                           }
+
                           apiServer = {
                             extraArgs = {
                               feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
@@ -462,6 +464,7 @@ spec:
                               node-cidr-mask-size-ipv6 = "119"
                             }
                           }
+                          {{- end }}
                         }
                         machine = {
                           sysctls = {
