@@ -286,18 +286,6 @@ spec:
                           - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
                             message: 'username cannot used reserved system: prefix'
 
-            - op: add
-              path: /cluster/apiServer/extraVolumes
-              value:
-                - hostPath: /var/kubernetes/auth-config.yaml
-                  mountPath: /var/kubernetes/auth-config.yaml
-                  readonly: true
-
-            - op: add
-              path: /cluster/apiServer/extraArgs
-              value:
-                authentication-config: /var/kubernetes/auth-config.yaml
-
             #
             # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
             #
@@ -392,7 +380,18 @@ spec:
                         talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
                       
                         configPatches:
-                        {{- include "talos-params" $ | nindent 12 }}
+                          - op: add
+                            path: /cluster/apiServer/extraVolumes
+                            value:
+                              - hostPath: /var/kubernetes/auth-config.yaml
+                                mountPath: /var/kubernetes/auth-config.yaml
+                                readonly: true
+
+                          - op: add
+                            path: /cluster/apiServer/extraArgs
+                            value:
+                              authentication-config: /var/kubernetes/auth-config.yaml
+                          {{- include "talos-params" $ | nindent 14 }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
