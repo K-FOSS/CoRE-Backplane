@@ -200,13 +200,6 @@ spec:
               path: /debug
               value: `}}{{ .Values.debug }}{{`
 
-            #
-            # By Default Talos doesn't allow scheduling on control planes
-            #
-            - op: add
-              path: /cluster/allowSchedulingOnControlPlanes
-              value: true
-
             - op: replace
               path: /machine/install/diskSelector
               value:
@@ -287,27 +280,11 @@ spec:
                             message: 'username cannot used reserved system: prefix'
 
             #
-            # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
-            #
-            - op: replace
-              path: /cluster/network/cni
-              value:
-                name: none
-
-            #
             # KubeDNS
             #
             - op: replace
               path: /machine/features/hostDNS/forwardKubeDNSToHost
               value: false
-
-
-            #
-            # Cilium from the network base stack is running in KubeProxy replacement mode
-            #
-            - op: replace
-              path: /cluster/proxy/disabled
-              value: true
 
             #
             # Setup Logging 
@@ -386,6 +363,29 @@ spec:
                               - hostPath: /var/kubernetes/auth-config.yaml
                                 mountPath: /var/kubernetes/auth-config.yaml
                                 readonly: true
+
+                          #
+                          # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
+                          #
+                          - op: replace
+                            path: /cluster/network/cni
+                            value:
+                              name: none
+
+                          #
+                          # By Default Talos doesn't allow scheduling on control planes
+                          #
+                          - op: add
+                            path: /cluster/allowSchedulingOnControlPlanes
+                            value: true
+
+
+                          #
+                          # Cilium from the network base stack is running in KubeProxy replacement mode
+                          #
+                          - op: replace
+                            path: /cluster/proxy/disabled
+                            value: true
 
                           - op: add
                             path: /cluster/apiServer/extraArgs
