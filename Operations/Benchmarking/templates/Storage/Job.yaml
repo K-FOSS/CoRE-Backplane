@@ -12,7 +12,7 @@ spec:
         kbench: fio
     spec:
       nodeSelector:
-        kubernetes.io/hostname: 'hpc2'
+        kubernetes.io/hostname: 'srv1'
       containers:
       - name: kbench
         image: yasker/kbench:latest
@@ -61,8 +61,13 @@ spec:
       restartPolicy: Never
       volumes:
         - name: vol
+          {{- if eq $.Values.storage.mode "HostPath" }}
           hostPath:
             path: /var/lib/benchmark
             type: DirectoryOrCreate
+          {{- else if eq $.Values.storage.mode "Volume" }}
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}
+          {{- end }}
   backoffLimit: 0
 {{- end -}}
