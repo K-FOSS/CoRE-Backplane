@@ -885,10 +885,10 @@ gitlab:
       create: true
 
     ## https://docs.gitlab.com/charts/charts/globals/#tracing
-    tracing:
-      connection:
-        string: opentracing://jaeger?http_endpoint=http%3A%2F%2Fdc1%2Dk3s%2Dnode1%2Dcollectors%2Dalloy%2Ecore%2Dprod%2Esvc%2Ecluster%2Elocal%3A14268%2Fapi%2Ftraces&sampler=const&sampler_param=0.1
-      urlTemplate: ""
+    #tracing:
+      #connection:
+      #  string: opentracing://jaeger?http_endpoint=http%3A%2F%2Fdc1%2Dk3s%2Dnode1%2Dcollectors%2Dalloy%2Ecore%2Dprod%2Esvc%2Ecluster%2Elocal%3A14268%2Fapi%2Ftraces&sampler=const&sampler_param=0.1
+      #urlTemplate: ""
 
     zoekt:
       gateway:
@@ -1015,8 +1015,8 @@ gitlab:
         maxReplicas: 3
       puma:
         threads:
-          min: 2
-          max: 2
+          min: 4
+          max: 8
 
       resources:
         requests:
@@ -1035,15 +1035,15 @@ gitlab:
 
     sidekiq:
       concurrency: 10
-      maxReplicas: 1
+      maxReplicas: 2
       minReplicas: 1
       resources:
         requests:
           cpu: 48m
           memory: 1239M
         limits:
-          cpu: '1'
-          memory: 2G
+          cpu: '4'
+          memory: 6G
 
     gitlab-shell:
       enabled: false
