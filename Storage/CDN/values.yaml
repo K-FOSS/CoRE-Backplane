@@ -1,4 +1,4 @@
-serena-meowmeow:
+idle:
   # Default values for s3-proxy.
   # This is a YAML-formatted file.
   # Declare variables to be passed into your templates.
@@ -37,7 +37,7 @@ serena-meowmeow:
 
   # Existing secret
   # Will be mounted in /proxy/secret-files
-  existingSecret: cdn-serena-meowmeow
+  existingSecret: cdn-idle
 
   # Secret files for secrets declaration
   # Each key will be mounted in /proxy/secret-files
@@ -75,8 +75,8 @@ serena-meowmeow:
 
       authproviders:
         basic:
-          serena-meowmeow:
-            realm: meowmeow.snd.fyi
+          idle:
+            realm: idle.snd.fyi
 
       server:
         timeouts:
@@ -90,13 +90,18 @@ serena-meowmeow:
           mount:
             path:
               - /
+          actions:
+            GET:
+              enabled: true
+              config:
+                indexDocument: index.html
           resources:
             - path: /*
               # HTTP Methods authorized (Must be in HEAD, GET, PUT or DELETE)
               methods:
                 - GET
               # A authentication provider declared in section before, here is the key name
-              provider: serena-meowmeow
+              provider: idle
               # Basic authentication section
               basic:
                 credentials:
