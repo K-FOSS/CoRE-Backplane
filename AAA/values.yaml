@@ -719,14 +719,15 @@ authentik:
     #     - echo init
 
     # -- Additional volumeMounts to the authentik worker main container
-    volumeMounts: []
-      # - name: custom
-      #   mountPath: /custom
+    volumeMounts:
+      - name: tls-certs
+        mountPath: /certs
 
     # -- Additional volumes to the authentik worker pod
-    volumes: []
-      # - name: custom
-      #   emptyDir: {}
+    volumes:
+      - name: tls-certs
+        secret:
+          secretName: myloginspace-default-certificates
 
     # -- Annotations to be added to the authentik worker Deployment
     deploymentAnnotations: {}
