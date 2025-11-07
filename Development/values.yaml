@@ -443,11 +443,11 @@ gitlab:
 
     ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
-      host: psql-int.mylogin.space
+      host: psql.mylogin.space
       load_balancing:
         hosts:
           - psql.mylogin.space
-          - psql-int-rep.mylogin.space
+          - psql-int.mylogin.space
 
       database: gl-core
 
@@ -458,8 +458,8 @@ gitlab:
       keepalivesInterval: 3
       keepalivesCount: 3
       tcpUserTimeout: 13000
-      connectTimeout: 5
-      preparedStatements: true
+      connectTimeout: 10
+      preparedStatements: false
 
 
 
@@ -511,7 +511,7 @@ gitlab:
       autoMigrate: true
 
       psql:
-        host: psql-int.mylogin.space
+        host: psql.mylogin.space
         port: 5432
 
         dbName: gl-repos
