@@ -19,7 +19,7 @@ spec:
                   values:
                     hub: false
 
-                    tenant: augy
+                    mediatenant: augy
           - clusters:
               selector:
                 matchLabels:
@@ -40,7 +40,7 @@ spec:
 
   template:
     metadata:
-      name: '{{ .values.clusterName }}-media-common-{{ .values.tenant }}-{{ .values.environment }}'
+      name: '{{ .values.clusterName }}-media-common-{{ .values.mediatenant }}-{{ .values.environment }}'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -70,7 +70,7 @@ spec:
                 hub: {{ .values.hub }}
 
                 tenant:
-                  name: {{ .values.tenant }}
+                  name: {{ .values.mediatenant }}
 
                 cluster:
                   name: {{ .values.clusterName }}
