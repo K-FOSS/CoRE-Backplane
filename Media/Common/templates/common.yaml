@@ -17,7 +17,18 @@ persistence:
     type: persistentVolumeClaim 
 
     forceRename: true
-    volumeName: {{ .tenant.name }}
+    volumeName: {{ .tenant.name }}-media
+    accessMode: ReadWriteMany
+    size: {{ .Values.volumes.media.size }}
+  {{- end }}
+
+  {{- if and .Values.volumes.enabled .Values.volumes.downloads.enabled }}
+  downloads:
+    enabled: true
+    type: persistentVolumeClaim 
+
+    forceRename: true
+    volumeName: {{ .tenant.name }}-downloads
     accessMode: ReadWriteMany
     size: {{ .Values.volumes.media.size }}
   {{- end }}
