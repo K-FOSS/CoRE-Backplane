@@ -2,13 +2,9 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
-{{ if not .Values.global.nameOverride }}
-global:
-  nameOverride: "{{ .Release.Name }}"
 
+global:
   fullnameOverride: core-media
-{{ end }}
 
 persistence:
   {{- if and .Values.volumes.enabled .Values.volumes.media.enabled }}
