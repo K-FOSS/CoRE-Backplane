@@ -17,13 +17,15 @@ controllers:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
-    strategy: RollingUpdate
+    strategy: Recreate
 
     name: radarr
 
     pod:
       securityContext:
-        fsGroup: 1000
+        fsGroup: 911
+        runAsUser: 911
+        runAsGroup: 911
 
     containers:
       radarr:
