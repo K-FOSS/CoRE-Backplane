@@ -50,6 +50,19 @@ persistence:
           - path: /config
   {{- end }}
 
+  {{- if .Values.sabnzbd.volumes.downloads.enabled }}
+  downloads:
+    enabled: true
+    type: persistentVolumeClaim
+
+    existingClaim: {{ .Values.tenant.name }}-downloads
+
+    advancedMounts:
+      main: # the controller with the "main" identifier
+        main: # the container with the "main" identifier
+          - path: /downloads
+  {{- end }}
+
 service:
   {{- if $.Values.sabnzbd.enabled }}
   sabnzbd:
