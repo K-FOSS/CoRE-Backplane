@@ -14,7 +14,7 @@ defaultPodOptions:
 
 controllers:
   #
-  # Pelican
+  # SABnzbd
   #
   {{- if $.Values.sabnzbd.enabled }}
   sabnzbd:
@@ -37,9 +37,30 @@ controllers:
             containerPort: 8080
   {{- end }}
 
+  {{- if $.Values.prowlarr.enabled }}
+  prowlarr:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    name: prowlarr
+
+    containers:
+      prowlarr:
+        image:
+          repository: {{ $.Values.prowlarr.image }}
+          tag: {{ default "latest" $.Values.prowlarr.tag }}
+          pullPolicy: IfNotPresent
+
+        ports:
+          - name: http
+            containerPort: 9696
+  {{- end }}
+
 persistence:
   {{- if .Values.sabnzbd.volumes.config.enabled }}
-  config:
+  sabnzbd-config:
     enabled: true
     type: persistentVolumeClaim 
     accessMode: ReadWriteOnce
@@ -47,6 +68,18 @@ persistence:
     advancedMounts:
       sabnzbd:
         sabnzbd:
+          - path: /config
+  {{- end }}
+
+  {{- if .Values.prowlarr.volumes.config.enabled }}
+  prowlarr-config:
+    enabled: true
+    type: persistentVolumeClaim 
+    accessMode: ReadWriteOnce
+    size: 2G
+    advancedMounts:
+      prowlarr:
+        prowlarr:
           - path: /config
   {{- end }}
 
