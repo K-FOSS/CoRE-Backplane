@@ -8,6 +8,27 @@ global:
 
   fullnameOverride: core-media
 
+
+controllers:
+  sabnzbd:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: RollingUpdate
+
+    name: sabnzbd
+
+    containers:
+      sabnzbd:
+        image:
+          repository: linuxserver/sabnzbd
+          tag: latest
+          pullPolicy: IfNotPresent
+
+        ports:
+          - name: http
+            containerPort: 8080
+
 persistence:
   {{- if and .Values.volumes.enabled .Values.volumes.media.enabled }}
   media:
