@@ -49,12 +49,40 @@ controllers:
           tag: {{ default "latest" $.Values.flaresolverr.tag }}
           pullPolicy: IfNotPresent
 
+        env:
+          - name: LOG_LEVEL
+            value: 'info'
+
+          - name: LOG_FILE
+            value: 'none'
+
+          - name: LOG_HTML
+            value: 'none'
+
+          - name: TZ
+            value: 'America/Vancouver'
+
+          - name: CAPTCHA_SOLVER
+            value: 'none'
+
         ports:
           - name: http
             containerPort: 8191
   {{- end }}
 
 persistence:
+  {{- if .Values.flaresolverr.volumes.config.enabled }}
+  flaresolverr-config:
+    enabled: true
+    type: persistentVolumeClaim 
+    accessMode: ReadWriteOnce
+    size: {{ .Values.flaresolverr.volumes.config.size }}
+    advancedMounts:
+      flaresolverr:
+        flaresolverr:
+          - path: /config
+  {{- end }}
+
   {{- if and .Values.volumes.enabled .Values.volumes.media.enabled }}
   media:
     enabled: true
