@@ -1797,10 +1797,6 @@ kube-prometheus-stack:
   ##
   nodeExporter:
     enabled: true
-    extraArgs:
-      - --collector.netdev.device-exclude='^lxc.*'
-      - --collector.arp.device-exclude='^lxc.*'
-      - --collector.ethtool.device-exclude='^lxc.*'
     operatingSystems:
       linux:
         enabled: true
@@ -1825,6 +1821,9 @@ kube-prometheus-stack:
     extraArgs:
       - --collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
       - --collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+      - --collector.netdev.device-exclude='^lxc.*'
+      - --collector.arp.device-exclude='^lxc.*'
+      - --collector.ethtool.device-exclude='^lxc.*'
     service:
       portName: http-metrics
       ipDualStack:
