@@ -1797,6 +1797,10 @@ kube-prometheus-stack:
   ##
   nodeExporter:
     enabled: true
+    extraArgs:
+      - --collector.netdev.device-exclude='^lxc.*'
+      - --collector.arp.device-exclude='^lxc.*'
+      - --collector.ethtool.device-exclude='^lxc.*'
     operatingSystems:
       linux:
         enabled: true
