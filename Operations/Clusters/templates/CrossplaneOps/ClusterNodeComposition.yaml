@@ -530,15 +530,42 @@ spec:
                               {
                                 interface = "enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"
 
+                                {{- if $network.vlans }}
+                                vlans = [
+                                  {{- range $vlanIndex, $vlan := $network.vlans }}
+                                  {
+                                    vlanId = {{ $vlan.vlanID }}
+                                  },
+                                  {{- end }}
+                                ]
+                                {{- end }}
+
                                 {{ if $network.bridge }}
                                 mtu = {{ $network.mtu }}
                               },
                               {
                                 interface = "br{{ $netIndex }}"
+
+                                {{- if $network.vlans }}
+                                vlans = [
+                                  {{- range $vlanIndex, $vlan := $network.vlans }}
+                                  {
+                                    vlanId = {{ $vlan.vlanID }}
+                                  },
+                                  {{- end }}
+                                ]
+                                {{- end }}
+                                
                                 bridge = {
                                   stp = {
                                     enabled = true
                                   }
+
+                                  {{- if $network.vlans }}
+                                  vlan = {
+                                    vlanFiltering = true
+                                  }
+                                  {{- end }}
 
                                   interfaces = ["enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"]
                                 }
