@@ -37,6 +37,43 @@ controllers:
             type: udp
   {{- end }}
 
+  #
+  # Stash
+  #
+  {{- if $.Values.stash.enabled }}
+  stash:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: Recreate
+
+    name: stash
+
+    pod:
+      {{- with $.Values.stash.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+    containers:
+      whisparr:
+        image:
+          repository: {{ $.Values.stash.image }}
+          tag: {{ default "latest" $.Values.stash.tag }}
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: PUID
+            value: '{{ $.Values.stash.userId }}'
+
+          - name: PGID
+            value: '{{ $.Values.stash.groupId }}'
+
+        ports:
+          - name: http
+            containerPort: 9999
+  {{- end }}
+
 persistence:
   {{- if .Values.jellyfin.volumes.config.enabled }}
   jellyfin-config:
@@ -50,7 +87,18 @@ persistence:
           - path: /config
   {{- end }}
 
-  {{- if .Values.jellyfin.volumes.media.enabled }}
+  {{- if .Values.stash.volumes.config.enabled }}
+  stash-config:
+    enabled: true
+    type: persistentVolumeClaim 
+    accessMode: ReadWriteOnce
+    size: 10G
+    advancedMounts:
+      stash:
+        stash:
+          - path: /config
+  {{- end }}
+
   media:
     enabled: true
     type: persistentVolumeClaim
@@ -58,10 +106,17 @@ persistence:
     existingClaim: {{ .Values.tenant.name }}-media
 
     advancedMounts:
+      {{- if .Values.stash.volumes.media.enabled }}
+      stash:
+        stash:
+          - path: /Media
+      {{- end }}
+
+      {{- if .Values.jellyfin.volumes.media.enabled }}
       jellyfin:
         jellyfin:
           - path: /Media
-  {{- end }}
+      {{- end }}
 
 service:
   {{- if $.Values.jellyfin.enabled }}
