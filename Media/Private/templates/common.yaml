@@ -78,6 +78,19 @@ persistence:
           - path: /downloads
   {{- end }}
 
+  {{- if .Values.whisparr.volumes.media.enabled }}
+  media:
+    enabled: true
+    type: persistentVolumeClaim
+
+    existingClaim: {{ .Values.tenant.name }}-media
+
+    advancedMounts:
+      whisparr:
+        whisparr:
+          - path: /Media
+  {{- end }}
+
 service:
   {{- if $.Values.whisparr.enabled }}
   whisparr:
