@@ -22,12 +22,6 @@ controllers:
     name: whisparr
 
     pod:
-      securityContext:
-        fsGroup: {{ $.Values.whisparr.groupId }}
-        runAsUser: {{ $.Values.whisparr.userId }}
-        runAsGroup: {{ $.Values.whisparr.groupId }}
-        fsGroupChangePolicy: "OnRootMismatch"
-
       {{- with $.Values.whisparr.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
