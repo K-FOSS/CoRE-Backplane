@@ -1,0 +1,31 @@
+tenant:
+  name: example-tenant
+
+pubgateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: mylogin-https
+
+whisparr:
+  enabled: true
+
+  image: ghcr.io/hotio/whisparr
+
+  tag: v3
+
+  nodeSelector:
+    kubernetes.io/hostname: 'srv1'
+
+  userId: 911
+  groupId: 911
+
+  volumes:
+    config:
+      enabled: true
+
+      size: 5G
+
+    downloads:
+      enabled: true
+
+      external: true

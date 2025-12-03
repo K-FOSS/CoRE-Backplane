@@ -1,0 +1,144 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+# Set the nameOverride based on the release name if no override has been set
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: "{{ .Release.Name }}"
+{{ end }}
+
+controllers:
+  #
+  # whisparr
+  #
+  {{- if $.Values.whisparr.enabled }}
+  whisparr:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: Recreate
+
+    name: whisparr
+
+    pod:
+      securityContext:
+        fsGroup: {{ $.Values.whisparr.groupId }}
+        runAsUser: {{ $.Values.whisparr.userId }}
+        runAsGroup: {{ $.Values.whisparr.groupId }}
+        fsGroupChangePolicy: "OnRootMismatch"
+
+      {{- with $.Values.whisparr.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+    containers:
+      whisparr:
+        image:
+          repository: {{ $.Values.whisparr.image }}
+          tag: {{ default "latest" $.Values.whisparr.tag }}
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: PUID
+            value: '{{ $.Values.whisparr.userId }}'
+
+          - name: PGID
+            value: '{{ $.Values.whisparr.groupId }}'
+
+        ports:
+          - name: http
+            containerPort: 6969
+  {{- end }}
+
+persistence:
+  {{- if .Values.whisparr.volumes.config.enabled }}
+  whisparr-config:
+    enabled: true
+    type: persistentVolumeClaim 
+    accessMode: ReadWriteOnce
+    size: 2G
+    advancedMounts:
+      whisparr:
+        whisparr:
+          - path: /config
+  {{- end }}
+
+  {{- if .Values.whisparr.volumes.downloads.enabled }}
+  downloads:
+    enabled: true
+    type: persistentVolumeClaim
+
+    existingClaim: {{ .Values.tenant.name }}-downloads
+
+    advancedMounts:
+      whisparr:
+        whisparr:
+          - path: /downloads
+  {{- end }}
+
+service:
+  {{- if $.Values.whisparr.enabled }}
+  whisparr:
+    # -- Enables or disables the service
+    enabled: true
+
+    # -- Configure which controller this service should target
+    controller: whisparr
+
+    # -- Make this the primary service for this controller (used in probes, notes, etc...).
+    # If there is more than 1 service targeting the controller, make sure that only 1 service is
+    # marked as primary.
+    primary: true
+
+    # -- Set the service type
+    type: ClusterIP
+
+    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
+    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
+    #externalTrafficPolicy: Local
+
+    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
+    ipFamilyPolicy:
+    # -- The ip families that should be used. Options: IPv4, IPv6
+    ipFamilies: []
+
+    # -- Provide additional annotations which may be required.
+    #annotations:
+
+    # -- Provide additional labels which may be required.
+    labels: {}
+
+    # -- Allow adding additional match labels
+    extraSelectorLabels: {}
+
+    ports:
+      http:
+        # -- Enables or disables the port
+        enabled: true
+
+        # -- Make this the primary port (used in probes, notes, etc...)
+        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        primary: true
+
+        # -- The port number
+        port: 80
+
+        targetPort: http
+
+        # -- Port protocol.
+        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
+        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        protocol: TCP
+
+        # -- Specify the appProtocol value for the Service.
+        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
+        appProtocol:  
+  {{- end }}
+
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{/* Render the templates */}}
+{{ include "bjw-s.common.loader.generate" . }}
