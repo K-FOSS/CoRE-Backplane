@@ -46,6 +46,44 @@ controllers:
             containerPort: 6969
   {{- end }}
 
+  #
+  # MeTube
+  #
+  {{- if $.Values.metube.enabled }}
+  metube:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: Recreate
+
+    name: metube
+
+    pod:
+      {{- with $.Values.metube.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+    containers:
+      metube:
+        image:
+          repository: {{ $.Values.metube.image }}
+          tag: {{ default "latest" $.Values.metube.tag }}
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: UID
+            value: '{{ $.Values.metube.userId }}'
+
+          - name: GID
+            value: '{{ $.Values.metube.groupId }}'
+
+        ports:
+          - name: http
+            containerPort: 8081
+  {{- end }}
+
+
 persistence:
   {{- if .Values.whisparr.volumes.config.enabled }}
   whisparr-config:
@@ -59,7 +97,19 @@ persistence:
           - path: /config
   {{- end }}
 
-  {{- if .Values.whisparr.volumes.downloads.enabled }}
+  {{- if .Values.metube.volumes.config.enabled }}
+  metube-config:
+    enabled: true
+    type: persistentVolumeClaim 
+    accessMode: ReadWriteOnce
+    size: 2G
+    advancedMounts:
+      metube:
+        metube:
+          - path: /config
+  {{- end }}
+
+
   downloads:
     enabled: true
     type: persistentVolumeClaim
@@ -67,12 +117,19 @@ persistence:
     existingClaim: {{ .Values.tenant.name }}-downloads
 
     advancedMounts:
+      {{- if .Values.whisparr.volumes.downloads.enabled }}
       whisparr:
         whisparr:
           - path: /downloads
-  {{- end }}
+      {{- end }}
 
-  {{- if .Values.whisparr.volumes.media.enabled }}
+      {{- if .Values.metube.volumes.downloads.enabled }}
+      metube:
+        metube:
+          - path: /downloads
+      {{- end }}
+
+
   media:
     enabled: true
     type: persistentVolumeClaim
@@ -80,10 +137,17 @@ persistence:
     existingClaim: {{ .Values.tenant.name }}-media
 
     advancedMounts:
+      {{- if .Values.whisparr.volumes.media.enabled }}
       whisparr:
         whisparr:
           - path: /Media
-  {{- end }}
+      {{- end }}
+
+      {{- if .Values.metube.volumes.downloads.enabled }}
+      metube:
+        metube:
+          - path: /Media
+      {{- end }}
 
 service:
   {{- if $.Values.whisparr.enabled }}
