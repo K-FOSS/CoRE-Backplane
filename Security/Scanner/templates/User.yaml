@@ -8,8 +8,21 @@ spec:
 
   username: sys-scanner
 
-  buckets:
-    - core-security-scans
+  s3:
+    enabled: true
+
+    createBuckets: true
+
+    crossplane:
+      terraformProvider: s3-yvr-home1-core
+      crossplaneProvider: s3-yvr-home1-core
+
+    buckets:
+      - core-security-scans
+
+    writeCredentialsSecretRef:
+      name: core-security-scanner-s3-creds
+      namespace: {{ .Release.Namespace }}
 
   writeConnectionSecretToRef:
     name: core-security-creds

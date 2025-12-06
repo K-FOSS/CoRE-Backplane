@@ -60,7 +60,12 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- # yaml
+                operator:
+                  s3:
+                    endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
       destination:
         server: '{{ .server }}'
         namespace: securecodebox-system
