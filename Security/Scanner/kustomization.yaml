@@ -10,3 +10,12 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/args/0
         value: '--leader-elect=false'
+
+      - op: add
+        path: /spec/template/spec/containers/0/env
+        value:
+          - name: AWS_SESSION_TOKEN
+            valueFrom:
+              secretKeyRef:
+                key: SessionToken
+                name: core-security-scanner-s3-creds
