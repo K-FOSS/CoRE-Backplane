@@ -1,0 +1,31 @@
+{{ if and .Values.creds.secretSync.enabled .Values.hub }}
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: {{ .Release.Name }}-creds
+
+spec:
+  refreshInterval: 1h
+
+  secretStoreRefs:
+  {{- with .Values.creds.secretSync.secretStoreRefs }}
+    {{ toYaml . | nindent 4  }}
+  {{- end }}
+
+  selector:
+    secret:
+      name: {{ .Release.Name }}-creds
+
+  data:
+    - match:
+        secretKey: Username
+        remoteRef:
+          remoteKey: {{ .Values.creds.secretSync.secretStorePath }}
+          property: username
+
+    - match:
+        secretKey: Password
+        remoteRef:
+          remoteKey: {{ .Values.creds.secretSync.secretStorePath }}
+          property: password
+{{- end }}
