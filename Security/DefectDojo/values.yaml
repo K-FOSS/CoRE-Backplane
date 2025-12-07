@@ -1,9 +1,26 @@
 env: prod
 
+cluster:
+  name: k8s
+  domain: cluster.local
+
+hub: true
+
 gateway:
   name: main-gw
   namespace: core-prod
   sectionName: https-myloginspace
+
+oidc:
+  enabled: true
+
+  autocreate: true
+
+  secretStorePath: Security/DefectDojo/Authentik
+
+  secretStoreRefs:
+    - kind: ClusterSecretStore
+      name: mainvault-core
 
 defectdojo:
   enabled: true
