@@ -19,3 +19,12 @@ patches:
             secretKeyRef:
               key: SessionToken
               name: core-security-scanner-s3-creds
+
+      - op: add
+        path: /spec/template/spec/containers/0/env/0
+        value:
+          name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: AccessKey
+              name: core-security-scanner-s3-creds
