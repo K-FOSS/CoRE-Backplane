@@ -508,25 +508,25 @@ spec:
                   {{- if $hasPrev }}
                   - name: TF_VAR_prev_accesskey
                     secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
                       key: AccessKey
 
                   - name: TF_VAR_prev_secretkey
                     secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
                       key: SecretAccessKey
 
                   - name: TF_VAR_prev_sessiontoken
                     secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
                       key: SessionToken
 
                   - name: TF_VAR_cred_expiry
                     secretKeyRef:
-                      namespace: {{ .observed.composite.resource.spec.writeConnectionSecretToRef.namespace }}
+                      namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                       name: {{ .observed.composite.resource.metadata.uid }}-s3-creds
                       key: Expiry
                   {{- end }}
