@@ -28,3 +28,12 @@ patches:
             secretKeyRef:
               key: AccessKey
               name: core-security-scanner-s3-creds
+
+      - op: add
+        path: /spec/template/spec/containers/0/env/0
+        value:
+          name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: SecretAccessKey
+              name: core-security-scanner-s3-creds
