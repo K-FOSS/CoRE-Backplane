@@ -75,6 +75,11 @@ spec:
                   host: {{ .values.domain }}
                   domain: {{ .values.domain }}
 
+                  celery:
+                    broker: redis
+                    # To use an external celery broker, set the hostname here
+                    brokerHost: 'redis.mylogin.space'
+
                   postgresql:
                     auth:
                       username: defectdojo-{{ .values.environment }}
