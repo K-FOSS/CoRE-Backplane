@@ -1,0 +1,22 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: {{ .Release.Name }}-dd
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: core-security-dd-creds
+
+  data:
+    - secretKey: Username
+      remoteRef:
+        key: Security/DefectDojo/Credentials
+        property: User
+
+    - secretKey: APIKey
+      remoteRef:
+        key: Security/DefectDojo/Credentials
+        property: APIKey

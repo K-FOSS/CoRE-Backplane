@@ -108,3 +108,19 @@ operator:
 
 nmap:
   enabled: true
+
+persistence-defectdojo:
+  enabled: true
+
+  defectdojo:
+    url: https://defectdojo.int.mylogin.space
+
+    authentication:
+      # -- Link a pre-existing generic secret with `username` and `apikey` key / value pairs
+      userSecret: core-security-dd-creds
+      # -- Name of the username key in the `userSecret` secret. Use this if you already have a secret with different key / value pairs
+      usernameKey: Username
+      # -- Name of the apikey key in the `userSecret` secret. Use this if you already have a secret with different key / value pairs
+      apiKeyKey: APIKey
+      # -- Set the userId explicitly. When not set the configured username is used to look up the userId via the DefectDojo API (which is only available for privileged users.)
+      userId: null
