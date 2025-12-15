@@ -63,11 +63,18 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
-        #   env:
-        #     - name: LOVELY_HELM_MERGE
-        #       value: |- 
-        #         s3-operator:
-        #           kubernetesClusterDomain: {{clusterDomain}}
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |- 
+                env: {{ .values.environment }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
+
+                datacenter: {{ .values.datacenter }}
+
+                region: {{ .values.region }}
 
 
       destination:
