@@ -3,13 +3,18 @@ kind: FRRConfiguration
 metadata:
   name: main
 spec:
+  nodeSelector:
+    labelSelector:
+      kubernetes.io/hostname: 'hpc2'
   bgp:
     routers:
       - asn: 64512
         neighbors:
           - address: 127.0.0.1
-            asn: 64512
+            asn: 64599
             port: 180
+            interface: lo
+            sourceaddress: 127.0.0.1
             toAdvertise:
               allowed:
                 mode: all
