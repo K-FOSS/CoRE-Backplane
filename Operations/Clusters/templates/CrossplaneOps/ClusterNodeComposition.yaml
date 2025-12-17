@@ -32,6 +32,7 @@ spec:
             {{ $tinkHardwareResourceName := "tink-hardware" }}
             {{ $tinkMachineResourceName := "tink-workmachine" }}
             {{ $ciliumBGPResourceName := "cilium-bgp" }}
+            {{ $ciliumNodeResourceName := "cilium-node" }}
             {{ $frrConfigResourceName := "frr-config" }}
             {{ $talosTFTest := "talos-tf-test" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
@@ -293,6 +294,29 @@ spec:
             {{ end }}
             ---
             {{ if $clusterCustomResource.status.atProvider }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $ciliumNodeResourceName }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
+
+              managementPolicies:
+                - Observe
+
+              readiness:
+                policy: SuccessfulCreate
+
+              forProvider:
+                manifest:
+                  apiVersion: cilium.io/v2
+                  kind: CiliumNode
+                  metadata:
+                    name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+            ---
             {{ if .observed.composite.resource.spec.bgp.instances }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -347,6 +371,7 @@ spec:
                           {{ end }}
                       {{ end }}
             ---
+            {{ $ciliumNode := getComposedResource . $ciliumNodeResourceName }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -369,6 +394,7 @@ spec:
                   kind: FRRConfiguration
                   metadata:
                     name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                    namespace: kube-system
                   spec:
                     nodeSelector:
                       matchLabels:
