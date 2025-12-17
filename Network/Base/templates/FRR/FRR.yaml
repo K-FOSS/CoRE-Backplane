@@ -3,21 +3,14 @@ kind: FRRConfiguration
 metadata:
   name: main
 spec:
-  nodeSelector:
-    matchLabels:
-      kubernetes.io/hostname: 'hpc2'
-  bgp:
-    routers:
-      - asn: 64512
-        neighbors:
-          - address: 127.0.0.1
-            asn: 64599
-            port: 180
-            interface: lo
-            sourceaddress: 127.0.0.1
-            toAdvertise:
-              allowed:
-                mode: all
-            toReceive:
-              allowed:
-                mode: all
+  raw:
+    rawConfig: |-
+      bgp no-rib
+      router bgp 64512
+        neighbor 127.0.0.1 remote-as 64599
+        neighbor 127.0.0.1 port 1180
+        neighbor 127.0.0.1 update-source lo
+        bgp allow-martian-nexthop
+        address-family ipv4 unicast
+          neighbor 127.0.0.1 soft-reconfiguration inbound
+        exit-address-family
