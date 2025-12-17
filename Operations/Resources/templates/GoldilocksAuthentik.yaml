@@ -1,4 +1,4 @@
-{{ if .Values.hub }}
+{{- if .Values.authentik.autoconfigure }}
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
@@ -7,9 +7,11 @@ metadata:
 spec:
   providerConfigRef:
     name: authentik
+
   writeConnectionSecretToRef:
     namespace: {{ .Release.Namespace }}
     name: '{{ include "goldilocks.fullname" $.Subcharts.goldilocks }}-sso'
+
   forProvider:
     source: Inline
     module: | # hcl
@@ -21,18 +23,17 @@ spec:
         slug = "default-provider-invalidation-flow"
       }
 
-
       resource "authentik_provider_proxy" "golidlocks" {
         name               = "goldilocks"
         mode               = "forward_single"
-        external_host      = "https://resources.int.mylogin.space"
+        external_host      = "https://goldilocks.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}"
         authorization_flow = data.authentik_flow.default-authorization-flow.id
         invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
       }
 
       resource "authentik_application" "name" {
-        name              = "Goldilocks"
-        slug              = "goldilocks"
+        name              = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }} {{ .Values.datacenter }} Goldilocks"
+        slug              = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }}-{{ .Values.datacenter }}-goldilocks"
         group             = "Observability"
         protocol_provider = authentik_provider_proxy.golidlocks.id
       }

@@ -13,6 +13,32 @@ datacenter: dc1
 
 region: yxl
 
+authentik:
+  autoconfigure: true
+
+  route:
+    enabled: true
+
+tenant:
+  name: core
+
+oidc:
+  enabled: true
+
+  indexKey: argocd-dev
+
+  scopes:
+    - openid
+    - profile
+    - email
+
+  groups:
+    - Server Admins
+    - Developers
+
+  authentik:
+    urlBase: https://idp.mylogin.space
+
 goldilocks:
   vpa:
     # vpa.enabled -- If true, the vpa will be installed as a sub-chart
@@ -174,6 +200,8 @@ goldilocks:
     affinity: {}
     # dashboard.topologySpreadConstraints -- Topology spread constraints for the dashboard pods
     topologySpreadConstraints: []
+
+
 
 
 descheduler:
