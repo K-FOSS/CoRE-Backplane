@@ -32,6 +32,7 @@ spec:
             {{ $tinkHardwareResourceName := "tink-hardware" }}
             {{ $tinkMachineResourceName := "tink-workmachine" }}
             {{ $ciliumBGPResourceName := "cilium-bgp" }}
+            {{ $frrConfigResourceName := "frr-config" }}
             {{ $talosTFTest := "talos-tf-test" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             ---
@@ -345,6 +346,47 @@ spec:
                               name: default
                           {{ end }}
                       {{ end }}
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $frrConfigResourceName }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
+
+              managementPolicies:
+                - Observe
+                - Update
+
+              forProvider:
+                manifest:
+                  apiVersion: frrk8s.metallb.io/v1beta1
+                  kind: FRRConfiguration
+                  metadata:
+                    name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                  spec:
+                    nodeSelector:
+                      matchLabels:
+                        kubernetes.io/hostname: '{{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}'
+                    raw:
+                      rawConfig: |-
+                        {{- range $index, $prefix := $clusterCustomResource.status.atProvider.manifest.spec.networks.pod.ipv4 }}
+                        ip prefix-list CILIUM seq 1{{ $index }} permit {{ $prefix }} ge {{ regexReplaceAll ".*/([1-3][0-9])" $prefix "${1}" }}
+                        {{- end }}
+                        router bgp 64512
+                          neighbor 127.0.0.1 remote-as 64599
+                          neighbor 127.0.0.1 port 1180
+                          neighbor 127.0.0.1 update-source lo
+                          bgp allow-martian-nexthop
+                          address-family ipv4 unicast
+                            neighbor 127.0.0.1 soft-reconfiguration inbound
+                            neighbor 127.0.0.1 prefix-list CILIUM in
+                          exit-address-family
             {{ end }}
             {{ end }}
             ---
