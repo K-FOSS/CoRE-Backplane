@@ -317,6 +317,16 @@ spec:
                     name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
                   spec:
                     bgpInstances:
+                      - name: local
+                        localASN: 64599
+                        localPort: 1180
+                        peers:
+                          - name: frr
+                            localAddress: 127.0.0.1
+                            peerAddress: 127.0.0.1
+                            peerConfigRef:
+                              name: local-peer
+                        
                       {{ $bgpInstances := concat .observed.composite.resource.spec.bgp.instances $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances  }}
                       {{ range $index, $bgpInstance := $bgpInstances }}
                       - localASN: {{ $bgpInstance.asn }}
@@ -530,31 +540,11 @@ spec:
                               {
                                 interface = "enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"
 
-                                {{- if $network.vlans }}
-                                vlans = [
-                                  {{- range $vlanIndex, $vlan := $network.vlans }}
-                                  {
-                                    vlanId = {{ $vlan.vlanID }}
-                                  },
-                                  {{- end }}
-                                ]
-                                {{- end }}
-
                                 {{ if $network.bridge }}
                                 mtu = {{ $network.mtu }}
                               },
                               {
                                 interface = "br{{ $netIndex }}"
-
-                                {{- if $network.vlans }}
-                                vlans = [
-                                  {{- range $vlanIndex, $vlan := $network.vlans }}
-                                  {
-                                    vlanId = {{ $vlan.vlanID }}
-                                  },
-                                  {{- end }}
-                                ]
-                                {{- end }}
                                 
                                 bridge = {
                                   stp = {
