@@ -489,7 +489,7 @@ alloy:
           }
 
           output {
-            traces = [otelcol.exporter.otlp.tempo.input]
+            traces = [otelcol.processor.batch.default.input]
             logs   = [otelcol.exporter.loki.default.input]
           }
         }
@@ -504,6 +504,12 @@ alloy:
           }
 
           output {
+            traces = [otelcol.processor.batch.default.input]
+          }
+        }
+
+        otelcol.processor.batch "default" {
+          output {
             traces = [otelcol.exporter.otlp.tempo.input]
           }
         }
@@ -513,8 +519,7 @@ alloy:
             endpoint = "10.44.5.232:4317"
 
             tls {
-              insecure             = true
-              insecure_skip_verify = true
+              insecure = true
             }
           }
         }
@@ -602,6 +607,7 @@ alloy:
         port: 4317
         targetPort: 4317
         protocol: 'TCP'
+        appProtocol: 'syslog'
 
       - name: 'otel-http'
         port: 4318
@@ -612,6 +618,7 @@ alloy:
         port: 14250
         targetPort: 14250
         protocol: 'TCP'
+        appProtocol: 'syslog'
 
       - name: 'jaeger-http'
         port: 14268
