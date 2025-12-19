@@ -1,3 +1,4 @@
+{{- if ne .Values.mimir.enabled true }}
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
@@ -17,18 +18,6 @@ spec:
   hostnames:
     - metrics.mylogin.space
   rules:
-    {{- if .Values.mimir.enabled }}
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-mimir'
-          port: 80
-          weight: 1
-      matches:
-        - path:
-            type: PathPrefix
-            value: /
-    {{- else }}
     {{ $chart := index $.Subcharts "mimir-distributed" }}
     {{ $values := index .Values "mimir-distributed" }}
     {{ range $v, $t := $values.ingress.paths }}
@@ -45,4 +34,4 @@ spec:
             value: {{ $path.path }}
         {{ end }}
     {{- end -}}
-    {{- end }}
+{{- end }}
