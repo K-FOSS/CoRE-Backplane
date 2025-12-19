@@ -50,6 +50,7 @@ spec:
                   resolvemy.host/env: 'prod'
               values:
                 clusterName: '{{ .name }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
 
@@ -82,6 +83,10 @@ spec:
                 env: {{ .values.environment }}
 
                 tenant: {{ .values.tenant }}
+
+                cluster:
+                  name: {{ .values.clusterName }}
+                  domain: {{ .values.clusterDomain }}
 
                 gateway:
                   service:
