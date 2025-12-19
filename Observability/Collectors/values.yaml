@@ -447,7 +447,7 @@ alloy:
         }
 
         prometheus.relabel "metrics_service" {
-          forward_to = [prometheus.remote_write.mimir.receiver]
+          forward_to = [otelcol.receiver.prometheus.default.receiver]
         }
 
         // PSQL monitoring
@@ -462,7 +462,7 @@ alloy:
           scrape_interval = "10s"
           scrape_timeout  = "10s"
 
-          forward_to = [otelcol.receiver.prometheus.default.receiver]
+          forward_to = []
         }
 
         prometheus.remote_write "mimir" {
@@ -878,7 +878,7 @@ alloy:
     internalTrafficPolicy: Cluster
 
   serviceMonitor:
-    enabled: false
+    enabled: true
     # -- Additional labels for the service monitor.
     additionalLabels: {}
     # -- Scrape interval. If not set, the Prometheus default scrape interval is used.
