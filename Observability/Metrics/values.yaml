@@ -187,15 +187,18 @@ mimir-distributed:
           bucket_name: mimir-alertmanager
       
       ruler_storage:
+        backend: local
+        local:
+          directory: /rules
         s3:
           bucket_name: mimir-ruler
 
       limits:
-        max_global_series_per_user: 1500000
+        max_global_series_per_user: 5000000
         max_global_series_per_metric: 200000
-        ingestion_burst_size: 500000	
-        ingestion_rate: 250000
-        compactor_blocks_retention_period: 48h
+        ingestion_burst_size: 1550000
+        ingestion_rate: 500000
+        compactor_blocks_retention_period: 24h
         ruler_max_rules_per_rule_group: 0
         ruler_max_rule_groups_per_tenant: 0
 
