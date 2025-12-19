@@ -478,7 +478,7 @@ alloy:
         }
 
         //
-        // Tracing
+        // OTEL
         //
         otelcol.receiver.otlp "default" {
           http {
@@ -488,9 +488,9 @@ alloy:
             endpoint = "0.0.0.0:4317"
           }
 
-
           output {
-            traces  = [otelcol.processor.k8sattributes.default.input]
+            traces = [otelcol.exporter.otlp.tempo.input]
+            logs   = [otelcol.exporter.loki.default.input]
           }
         }
 
@@ -519,6 +519,9 @@ alloy:
           }
         }
 
+        otelcol.exporter.loki "default" {
+          forward_to = [loki.write.loki.receiver]
+        }
 
         otelcol.receiver.jaeger "local" {
           protocols {
@@ -537,7 +540,7 @@ alloy:
           }
 
           output {
-            traces  = [otelcol.processor.k8sattributes.default.input]
+            traces = [otelcol.processor.k8sattributes.default.input]
           }
         }
 
