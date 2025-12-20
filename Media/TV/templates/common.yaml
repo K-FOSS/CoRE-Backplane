@@ -40,6 +40,37 @@ controllers:
             containerPort: 8989
   {{- end }}
 
+  {{- if .Values.prefetcharr.enabled }}
+  prefetcharr:
+    # For Deployments, valid values are Recreate (default) and RollingUpdate.
+    # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
+    # DaemonSets/CronJobs ignore this.
+    strategy: Recreate
+
+    name: prefetcharr
+
+    pod:
+      securityContext:
+        fsGroup: 911
+        runAsUser: 911
+        runAsGroup: 911
+        fsGroupChangePolicy: "OnRootMismatch"
+
+    containers:
+      prefetcharr:
+        image:
+          repository: {{ $.Values.prefetcharr.image }}
+          tag: {{ default "latest" $.Values.prefetcharr.tag }}
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: PREFETCHARR_CONFIG
+            valueFrom:
+              configMapKeyRef:
+                identifier: prefetcharr-config
+                key: config.toml
+  {{- end }}
+
 persistence:
   {{- if .Values.sonarr.volumes.config.enabled }}
   sonarr-config:
@@ -77,6 +108,64 @@ persistence:
       sonarr:
         sonarr:
           - path: /downloads
+  {{- end }}
+
+configMaps:
+  {{- if $.Values.sonarr.enabled }}
+  sonarr-config:
+    enabled: true
+    data:
+      config.xml: |
+        <Config>
+          <BindAddress>*</BindAddress>
+          <Port>8989</Port>
+          <SslPort>9898</SslPort>
+          <EnableSsl>False</EnableSsl>
+          <LaunchBrowser>True</LaunchBrowser>
+          <ApiKey>{{`{{ .APIKey }}`}}</ApiKey>
+          <AuthenticationMethod>Forms</AuthenticationMethod>
+          <AuthenticationRequired>Enabled</AuthenticationRequired>
+          <Branch>main</Branch>
+          <LogLevel>debug</LogLevel>
+          <SslCertPath></SslCertPath>
+          <SslCertPassword></SslCertPassword>
+          <UrlBase></UrlBase>
+          <InstanceName>Sonarr</InstanceName>
+          <UpdateMechanism>Docker</UpdateMechanism>
+        </Config>
+  {{- end }}
+
+  {{- if .Values.prefetcharr.enabled }}
+  prefetcharr-config:
+    # -- Enables or disables the configMap
+    enabled: true
+    # -- Labels to add to the configMap
+    labels: {}
+    # -- Annotations to add to the configMap
+    annotations: {}
+    # -- configMap data content. Helm template enabled.
+    data:
+      config.toml: |
+        # Start of the configuration in TOML format.
+       
+        interval = 300           # Polling interval in seconds
+        log_dir = "/log"         # Logging directory
+        log_level = "Debug"      # `Trace`, `Debug`, `Info`, `Warn` or `Error`
+        prefetch_num = 2         # Number of episodes to make available in advance
+        request_seasons = true   # Always request full seasons to prefer season packs
+        connection_retries = 6   # Number of retries for the initial connection probing
+
+        [media_server]
+        type = "Jellyfin"                       # `Jellyfin`, `Emby`, `Plex` or `Tautulli`
+        url = "https://stream.mylogin.space"    # Jellyfin/Emby/Plex/Tautulli baseurl
+        api_key = "{{`{{ .JellyfinAPIKey }}`}}"             # Jellyfin/Emby/Tautulli API key or plex server token
+        # users = [ "John", "12345", "Axel F" ] # Optional: Only monitor sessions for specific user IDs or names
+        libraries = [ "TV Shows"]   # Optional: Only monitor sessions for specific libraries
+
+        [sonarr]
+        url = "http://example.com/sonarr" # Sonarr baseurl
+        api_key = "<YOUR KEY HERE>"       # Sonarr API key
+        # exclude_tag = "no_prefetch"     # Optional: Exclude series by tag
   {{- end }}
 
 service:
@@ -180,6 +269,8 @@ route:
             identifier: sonarr
             weight: 1
   {{- end }}
+
+
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
