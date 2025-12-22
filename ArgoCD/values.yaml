@@ -331,7 +331,7 @@ argo-cd:
   controller:
     name: application-controller
 
-    replicas: 1
+    replicas: 2
 
     resources:
       requests:
@@ -375,7 +375,7 @@ argo-cd:
       enabled: false
 
       serviceMonitor:
-        enabled: false
+        enabled: true
 
         interval: 5m
     
@@ -384,6 +384,8 @@ argo-cd:
 
   repoServer:
     replicas: 2
+
+
 
     resources:
       requests:
@@ -401,7 +403,7 @@ argo-cd:
       enabled: false
 
       serviceMonitor:
-        enabled: false
+        enabled: true
 
         interval: 1m
     
@@ -410,6 +412,11 @@ argo-cd:
 
   server:
     replicas: 2
+
+    pdb:
+      enabled: true
+
+      minAvailable: '50%'
 
     env:
       - name: ARGOCD_API_SERVER_REPLICAS
