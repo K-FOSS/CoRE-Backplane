@@ -86,6 +86,17 @@ spec:
                 datacenter: {{ .values.datacenter }}
                 region: {{ .values.region }}
 
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      kind: Secret
+                      name: {{ .values.clusterName }}-status-cachet
+
+                    patch: |
+                      - op: remove
+                        path: /data/PASSWORD
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
