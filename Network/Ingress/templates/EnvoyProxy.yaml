@@ -24,6 +24,9 @@ spec:
             logs: loki-myloginspace
         replicas: 3
 
+      envoyPDB:
+        minAvailable: 2
+        maxUnavailable: 1
       envoyService:
         externalTrafficPolicy: Local
         type: LoadBalancer
@@ -31,25 +34,23 @@ spec:
     type: Kubernetes
 
   telemetry:
-#     accessLog:
-#       disable: true
-#       settings:
-#         - format:
-#             json:
-#               message: '%LOCAL_REPLY_BODY%'
-#               status: '%RESPONSE_CODE%'
-#             type: JSON
-#           sinks:
-#             - openTelemetry:
-#                 backendRefs:
-#                   - group: ''
-#                     kind: Service
-#                     name: {{ .Values.cluster.name }}-collectors-alloy
-#                     namespace: core-prod
-#                     port: 4317
-#                 resources:
-#                   k8s.cluster.name: {{ .Values.cluster.name }}
-#               type: OpenTelemetry
+    accessLog:
+      disable: false
+      settings:
+        - format:
+            json:
+              message: '%LOCAL_REPLY_BODY%'
+              status: '%RESPONSE_CODE%'
+            type: JSON
+          sinks:
+            - openTelemetry:
+                backendRefs:
+                  - group: ''
+                    kind: Service
+                    name: {{ .Values.cluster.name }}-collectors-alloy
+                    namespace: core-prod
+                    port: 4317
+              type: OpenTelemetry
     tracing:
       provider:
         backendRefs:
