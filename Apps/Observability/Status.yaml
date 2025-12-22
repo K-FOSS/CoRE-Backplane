@@ -100,6 +100,17 @@ spec:
                         path: /data/DB_PASSWORD
 
                   - target:
+                      kind: ConfigMap
+                      name: {{ .values.clusterName }}-status-cachet
+
+                    patch: |
+                      - op: remove
+                        path: /data/DB_DATABASE
+
+                      - op: remove
+                        path: /data/DB_USERNAME
+
+                  - target:
                       kind: Deployment
                       name: {{ .values.clusterName }}-status-cachet
 
