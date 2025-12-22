@@ -1,0 +1,13 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ .Release.Name }}
+
+spec:
+  name: cachet {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
+
+  groups:
+    - LDAPService
+
+  writeConnectionSecretToRef:
+    name: {{ .Release.Name }}-creds
