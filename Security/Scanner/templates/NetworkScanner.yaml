@@ -1,0 +1,17 @@
+apiVersion: "execution.securecodebox.io/v1"
+kind: ScheduledScan
+metadata:
+  name: network-scan-5m
+
+  annotations:
+    defectdojo.securecodebox.io/product-type-name: "Test"
+spec:
+  interval: 5m
+  scanSpec:
+    scanType: nmap
+    parameters:
+      - '-sV'
+      - '172.31.192.0/24'
+
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
