@@ -16,6 +16,11 @@ controllers:
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
     strategy: RollingUpdate
+
+    podDisruptionBudget:
+      minAvailable: 3
+      # maxUnavailable: 1
+  
     pod:
       affinity:
         podAntiAffinity:
@@ -45,7 +50,6 @@ controllers:
         ports:
           - name: http
             containerPort: 8080
-
 
 
         args:
