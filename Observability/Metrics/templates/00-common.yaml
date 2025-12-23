@@ -272,10 +272,11 @@ configMaps:
         no_auth_tenant: core
 
         limits:
-          max_global_series_per_user: 1000000
-          ingestion_rate: 20000
-          ingestion_burst_size: 50000
+          max_global_series_per_user: 5000000
+          ingestion_rate: 500000
+          ingestion_burst_size: 1550000
           out_of_order_time_window: 24h
+          compactor_blocks_retention_period: 24h
 
         # Configure Mimir to use Minio as object storage backend.
         common:
@@ -308,6 +309,9 @@ configMaps:
             bucket_name: mimir-alertmanager
         
         ruler_storage:
+          backend: local
+          local:
+            directory: /rules
           s3:
             bucket_name: mimir-ruler
 
