@@ -1,0 +1,15 @@
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+spec:
+  serviceSelector:
+    matchLabels:
+      app.kubernetes.io/instance:  '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+  nodeSelector:
+    matchLabels:
+      kubernetes.io/hostname: 'hpc1'
+  interfaces:
+    - br1
+  externalIPs: true
+  loadBalancerIPs: false
