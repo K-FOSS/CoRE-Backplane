@@ -522,6 +522,14 @@ spec:
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
                           }
 
+                          network = {
+                            serviceSubnets = [
+                              {{- range $index, $network := $clusterCustomResource.status.atProvider.manifest.spec.networks.service }}
+                              "{{ $network }}"
+                              {{- end }}
+                            ]
+                          }
+
                           {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                           etcd = {
                             extraArgs = {
