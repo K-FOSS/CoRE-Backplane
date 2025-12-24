@@ -67,6 +67,8 @@ spec:
         property_mappings  = concat([data.authentik_property_mapping_provider_scope.logscope.id], tolist(data.authentik_property_mapping_provider_scope.scopes.ids))
         authorization_flow = data.authentik_flow.default-authorization-flow.id
         invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+        access_token_validity = "hours=8"
+        refresh_token_threshold = "hours=1"
       }
 
       resource "authentik_application" "application" {
