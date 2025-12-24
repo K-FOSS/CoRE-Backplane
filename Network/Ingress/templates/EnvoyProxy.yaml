@@ -29,6 +29,15 @@ spec:
       envoyService:
         externalTrafficPolicy: Local
         type: LoadBalancer
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              sessionAffinity: ClientIP
+              sessionAffinityConfig:
+                clientIP:
+                  timeoutSeconds: 1080
+
 
     type: Kubernetes
 
