@@ -77,6 +77,10 @@ spec:
                     live:
                       ha_engine_address: redis.{{ .values.datacenter }}.mylogin.space:6379
 
+                    tracing.opentelemetry.otlp:
+                      address: {{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4317
+                      propagation: w3c
+
                   ldap:
                     enabled: true
                     # `existingSecret` is a reference to an existing secret containing the ldap configuration
