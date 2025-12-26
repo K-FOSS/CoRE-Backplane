@@ -197,6 +197,49 @@ spec:
 
                   default: cluster.local
 
+                
+                routing:
+                  type: object
+
+                  description: BGP, OSPF, ISIS, and related configurations
+
+                  properties:
+                    ospf:
+                      type: object
+
+                      description: Configure OSPF on the deployed cluster
+
+                      properties:
+                        enabled:
+                          type: boolean
+
+                          description: Enable OSPF on the cluster
+
+                          default: false
+
+                        referenceBandwidth:
+                          type: integer
+
+                          description: Autocost reference bandwith
+                          default: 100000
+
+                        redistribute:
+                          type: object
+
+                          description: Other routes to redistribute into OSPF
+
+                          properties:
+                            bgp:
+                              type: object
+
+                              properties:
+                                enabled:
+                                  type: boolean
+
+                                  description: Redistribute BGP into OSPF
+
+                                  default: true  
+                
                 networks:
                   type: object
 
