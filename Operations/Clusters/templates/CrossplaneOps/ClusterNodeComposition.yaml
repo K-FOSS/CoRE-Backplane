@@ -414,6 +414,23 @@ spec:
                           set ip next-hop {{ (index $ciliumNode.status.atProvider.manifest.spec.addresses 1).ip }}
                         exit
                         {{- end }}
+
+                        {{- if and $clusterCustomResource.status.atProvider.manifest.spec.routing $clusterCustomResource.status.atProvider.manifest.spec.routing.ospf $clusterCustomResource.status.atProvider.manifest.spec.routing.ospf.enabled }}
+                        {{- with $clusterCustomResource.status.atProvider.manifest.spec.routing.ospf }}
+                        router ospf
+                          auto-cost reference-bandwidth {{ .referenceBandwidth }}
+
+                          {{- if and .redistribute .redistribute.bgp .redistribute.bgp.enabled }}
+                          redistribute bgp
+                          {{- end }}
+
+                          graceful-restart
+                          graceful-restart helper enable
+                          capability opaque
+                        exit
+                        {{- end }}
+                        {{- end }}
+
                         router bgp 64512
                           neighbor 127.0.0.1 remote-as 64599
                           neighbor 127.0.0.1 port 1180
