@@ -373,6 +373,18 @@ spec:
                       {{ end }}
             ---
             {{ $ciliumNode := getComposedResource . $ciliumNodeResourceName }}
+            {{- define "cilium-ip" -}}
+            {{- if $ciliumNode.status.atProvider }}
+            {{- range $ciliumNode.status.atProvider.manifest.spec.addresses }}
+            {{- if and (eq .type "CiliumInternalIP") (not (contains ":" .ip)) }}
+            {{ .ip }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+
+            {{ $vals := .observed.composite.resource.spec }}
+
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -411,7 +423,7 @@ spec:
                         {{- if $ciliumNode.status.atProvider }}
                         route-map TEST permit 10
                           match ip address prefix-list CILIUM
-                          set ip next-hop {{ (index $ciliumNode.status.atProvider.manifest.spec.addresses 1).ip }}
+                          set ip next-hop {{ include "cilium-ip" $vals }}
                         exit
                         {{- end }}
 
