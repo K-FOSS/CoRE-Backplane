@@ -373,7 +373,7 @@ spec:
                       {{ end }}
             ---
             {{ $ciliumNode := getComposedResource . $ciliumNodeResourceName }}
-            {{- define "cilium-ip" -}}
+            {{ define "cilium-ip" }}
             {{- if $ciliumNode.status.atProvider }}
             {{- range $ciliumNode.status.atProvider.manifest.spec.addresses }}
             {{- if and (eq .type "CiliumInternalIP") (not (contains ":" .ip)) }}
@@ -381,7 +381,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
-            {{- end }}
+            {{ end }}
 
             {{ $vals := .observed.composite.resource.spec }}
 
