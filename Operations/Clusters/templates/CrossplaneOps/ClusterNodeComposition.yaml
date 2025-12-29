@@ -418,7 +418,11 @@ spec:
                         ip prefix-list CILIUM seq 1{{ $index }} permit {{ $prefix }} ge {{ regexReplaceAll ".*/([1-3][0-9])" $prefix "${1}" }}
                         {{- end }}
                         {{- range $index, $prefix := $clusterCustomResource.status.atProvider.manifest.spec.networks.service }}
+                        {{- if (not (contains ":" $prefix)) }}
                         ip prefix-list CILIUM seq 2{{ $index }} permit {{ $prefix }} ge {{ regexReplaceAll ".*/([1-3][0-9])" $prefix "${1}" }}
+                        {{- else }}
+                        ipv6 prefix-list CILIUM seq 2{{ $index }} permit {{ $prefix }} ge {{ regexReplaceAll ".*/([1-3][0-9])" $prefix "${1}" }}
+                        {{- end }}
                         {{- end }}
                         {{- if $ciliumNode.status.atProvider }}
                         route-map TEST permit 10
