@@ -20,8 +20,8 @@ spec:
       description: "Common SLO based on availability for HTTP request responses."
       sli:
         events:
-          errorQuery: sum(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name="httproute/core-prod/cdn-static/rule/0",envoy_response_code_class=~"4|5"}[{{.window}}]))
-          totalQuery: sum(rate(envoy_cluster_upstream_rq_total{ envoy_cluster_name="httproute/core-prod/cdn-static/rule/0"}[{{.window}}]))
+          errorQuery: sum(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name="httproute/core-prod/cdn-static/rule/0",envoy_response_code_class=~"4|5"}[{{`{{.window}}`}}]))
+          totalQuery: sum(rate(envoy_cluster_upstream_rq_total{ envoy_cluster_name="httproute/core-prod/cdn-static/rule/0"}[{{`{{.window}}`}}]))
       alerting:
         name: MyServiceHighErrorRate
         labels:
