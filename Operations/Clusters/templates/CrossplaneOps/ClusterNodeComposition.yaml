@@ -373,15 +373,6 @@ spec:
                       {{ end }}
             ---
             {{ $ciliumNode := getComposedResource . $ciliumNodeResourceName }}
-            {{ define "cilium-ip" }}
-            {{- if $ciliumNode.status.atProvider }}
-            {{- range $ciliumNode.status.atProvider.manifest.spec.addresses }}
-            {{- if and (eq .type "CiliumInternalIP") (not (contains ":" .ip)) }}
-            {{ .ip }}
-            {{- end }}
-            {{- end }}
-            {{- end }}
-            {{ end }}
 
             {{ $vals := .observed.composite.resource.spec }}
 
@@ -427,7 +418,13 @@ spec:
                         {{- if $ciliumNode.status.atProvider }}
                         route-map TEST permit 10
                           match ip address prefix-list CILIUM
-                          set ip next-hop {{ include "cilium-ip" $vals }}
+                          {{- if $ciliumNode.status.atProvider }}
+                          {{- range $ciliumNode.status.atProvider.manifest.spec.addresses }}
+                          {{- if and (eq .type "CiliumInternalIP") (not (contains ":" .ip)) }}
+                          set ip next-hop {{ .ip }}
+                          {{- end }}
+                          {{- end }}
+                          {{- end }}
                         exit
                         {{- end }}
 
