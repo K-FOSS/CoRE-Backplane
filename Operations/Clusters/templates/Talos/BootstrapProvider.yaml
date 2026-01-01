@@ -6,6 +6,15 @@ spec:
   version: {{ .Values.providers.talos.bootstrap.version }}
   manager:
     verbosity: 7
+  manifestPatches:
+    - |
+      apiVersion: apps/v1
+      kind: Deployment
+      spec:
+        template:
+          metadata:
+            labels:
+              logs: loki-myloginspace
   deployment:
     containers:
       - name: manager
