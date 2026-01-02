@@ -14,6 +14,9 @@ controllers:
       main:
         image:
           repository: powerdns/pdns-auth-48
+          #
+          # TODO: Automate this with Renovate or similar
+          #
           tag: 4.8.4
           pullPolicy: IfNotPresent
 
@@ -286,19 +289,22 @@ controllers:
           # @default -- See below
           liveness:
             # -- Enable the liveness probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own livenessProbe
-            custom: false
+            enabled: true
+            
             # -- sets the probe type when not using a custom probe
             # @default -- "TCP"
-            type: TCP
+            type: HTTP
+
+            port: 80
+
+            path: /
             # -- The spec field contains the values for the default livenessProbe.
             # If you selected `custom: true`, this field holds the definition of the livenessProbe.
             # @default -- See below
             spec:
               initialDelaySeconds: 0
               periodSeconds: 10
-              timeoutSeconds: 1
+              timeoutSeconds: 2
               failureThreshold: 3
 
           # -- Redainess probe configuration
