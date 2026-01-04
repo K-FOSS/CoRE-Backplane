@@ -1,7 +1,8 @@
+
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-storage-dragonfly-operator
+  name: core-backplane-storage-dragonfly-core
   namespace: argocd
 
 spec:
@@ -24,7 +25,7 @@ spec:
 
   template:
     metadata:
-      name: '{{ .values.clusterName }}-core-storage-dragonfly-op'
+      name: '{{ .values.clusterName }}-core-storage-dragonfly-core'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -38,7 +39,7 @@ spec:
           - CreateNamespace=true
 
       source:
-        path: Storage/Dragonfly/Operator
+        path: Storage/Dragonfly/CoRE
         repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
         targetRevision: HEAD
         plugin:
@@ -46,4 +47,4 @@ spec:
 
       destination:
         server: '{{ .server }}'
-        namespace: dragonfly-operator-system
+        namespace: core-{{ .values.environment }}
