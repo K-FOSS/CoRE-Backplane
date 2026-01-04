@@ -1,0 +1,30 @@
+{{ if .Values.terraform.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: tf-dragonfly
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+spec:
+  configuration: |
+    provider "redis" {
+      redis_url = "redis://dragonfly-core.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}:6379"
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-dragonfly"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        redis = {
+          source = "xiwenc/redis"
+          version = "0.2.1"
+        }
+      }
+    }
+{{- end }}
