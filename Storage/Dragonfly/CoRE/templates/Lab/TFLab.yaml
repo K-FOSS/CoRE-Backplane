@@ -1,0 +1,22 @@
+{{- if .Values.terraform.lab.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: tf-dragonfly-lab
+spec:
+  providerConfigRef:
+    name: tf-dragonfly
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: tf-dragonfly-lab
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "redis_user" "app_user" {
+        username = "testuser1"
+        password = "secure_password"
+        enabled  = true
+      }
+{{- end }}
