@@ -5,6 +5,16 @@ metadata:
 spec:
   replicas: 2
 
+  serviceSpec:
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: dragonfly.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
+    labels:
+      wan-mode: public
+
+  tlsSecretRef:
+    name: myloginspace-default-certificates
+    namespace: core-prod
+
   resources:
     requests:
       cpu: 500m
