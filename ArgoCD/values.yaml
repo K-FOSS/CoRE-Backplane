@@ -50,6 +50,10 @@ argo-cd:
 
 
   global:
+    deploymentAnnotations:
+      secret.reloader.stakater.com/reload: argocd-redis-password
+
+    
     logging:
       # -- Set the global logging format. Either: `text` or `json`
       format: json
@@ -329,6 +333,9 @@ argo-cd:
 
   controller:
     name: application-controller
+
+    statefulsetAnnotations:
+      secret.reloader.stakater.com/reload: argocd-redis-password
 
     replicas: 2
 
