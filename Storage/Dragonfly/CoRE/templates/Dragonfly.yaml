@@ -44,6 +44,10 @@ spec:
     - --lock_on_hashtags
     - --s3_endpoint=s3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
 
+  snapshot:
+    cron: '*/5 * * * *'
+    dir: 's3://dragonfly-core-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/core'
+
   resources:
     requests:
       cpu: 500m
