@@ -1,0 +1,19 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: argocd-redis
+
+spec:
+  refreshInterval: '1h'
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+
+  target:
+    name: argocd-redis-password
+
+  data:
+    - secretKey: password
+      remoteRef:
+        key: Storage/DragonFly/CoRE/Creds
+        property: Password
