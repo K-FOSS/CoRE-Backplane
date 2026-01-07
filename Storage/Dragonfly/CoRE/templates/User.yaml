@@ -1,0 +1,29 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: dragonfly-core
+
+spec:
+  name: Dragonfly {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
+
+  s3:
+    enabled: true
+
+    createBuckets: true
+
+    createCredentials: true
+
+    crossplane:
+      terraformProvider: s3-yvr-home1-core
+      crossplaneProvider: s3-yvr-home1-core
+
+    buckets:
+      - dragonfly-core-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
+
+
+    writeCredentialsSecretRef:
+      name: dragonfly-core-s3-creds
+      namespace: {{ .Release.Namespace }}
+
+  writeConnectionSecretToRef:
+    name: dragonfly-core-creds
