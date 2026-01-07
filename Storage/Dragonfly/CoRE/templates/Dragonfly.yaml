@@ -5,6 +5,11 @@ metadata:
 spec:
   replicas: 2
 
+  authentication:
+    passwordFromSecret:
+      key: password
+      name: dragonfly-core-password
+
   serviceSpec:
     annotations:
       external-dns.alpha.kubernetes.io/hostname: dragonfly.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
@@ -15,11 +20,35 @@ spec:
     name: myloginspace-default-certificates
     namespace: core-prod
 
+  env:
+    - name: AWS_ACCESS_KEY_ID
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-core-s3-creds
+          key: AccessKey
+
+    - name: AWS_SECRET_ACCESS_KEY
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-core-s3-creds
+          key: SecretAccessKey
+
+    - name: AWS_SESSION_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: dragonfly-core-s3-creds
+          key: SessionToken
+
+  args:
+    - --proactor_threads=2
+    - --lock_on_hashtags
+    - --s3_endpoint=s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+
   resources:
     requests:
       cpu: 500m
       memory: 500Mi
 
     limits:
-      cpu: 600m
+      cpu: '2'
       memory: 750Mi
