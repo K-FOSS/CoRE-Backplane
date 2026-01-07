@@ -60,7 +60,7 @@ authentik:
       logs: loki-myloginspace
 
     # -- Add Prometheus scrape annotations to all metrics services. This can be used as an alternative to the ServiceMonitors.
-    addPrometheusAnnotations: true
+    addPrometheusAnnotations: false
 
     # -- Toggle and define pod-level security context.
     # @default -- `{}` (See [values.yaml])
@@ -313,17 +313,17 @@ authentik:
     ## Ref: https://kubernetes.io/docs/tasks/run-application/configure-pdb/
     pdb:
       # -- Deploy a [PodDistrubtionBudget] for the authentik server
-      enabled: false
+      enabled: true
       # -- Labels to be added to the authentik server pdb
       labels: {}
       # -- Annotations to be added to the authentik server pdb
       annotations: {}
       # -- Number of pods that are available after eviction as number or percentage (eg.: 50%)
       # @default -- `""` (defaults to 0 if not specified)
-      minAvailable: ""
+      minAvailable: 1
       # -- Number of pods that are unavailable after eviction as number or percentage (eg.: 50%)
       ## Has higher precedence over `server.pdb.minAvailable`
-      maxUnavailable: ""
+      maxUnavailable: ''
 
     ## authentik server image
     ## This should match what is deployed in the worker. Prefer using global.image
@@ -471,7 +471,6 @@ authentik:
     service:
       # -- authentik server service annotations
       annotations:
-        external-dns.alpha.kubernetes.io/hostname: redis.mylogin.space
       # -- authentik server service labels
       labels:
         wan-mode: public
@@ -874,7 +873,7 @@ authentik:
 
   prometheus:
     rules:
-      enabled: false
+      enabled: true
       # -- PrometheusRule namespace
       namespace: ""
       # -- PrometheusRule selector
@@ -924,6 +923,12 @@ authentik:
     replicas: 1
     ipAddresses:
       - 10.1.1.18
+
+  proxy:
+    enabled: true
+    replicas: 1
+    ipAddresses:
+      - 10.1.1.17
 
   priorityClassName: ''
 

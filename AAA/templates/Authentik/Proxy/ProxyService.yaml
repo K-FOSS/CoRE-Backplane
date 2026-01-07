@@ -1,0 +1,30 @@
+{{- if .Values.authentik.radius.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: myloginspace-proxy
+    lan-mode: 'private'
+    wan-mode: 'public'
+
+  name: aaa-myloginspace-proxy
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app.kubernetes.io/name: myloginspace-proxy
+
+  ports:
+    # Plaintext HTTP
+    - name: http
+      protocol: TCP
+      appProtocol: http
+      targetPort: http
+      port: 80
+
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+{{- end }}
