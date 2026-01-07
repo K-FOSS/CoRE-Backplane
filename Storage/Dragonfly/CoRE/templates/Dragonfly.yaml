@@ -44,6 +44,9 @@ spec:
     - --lock_on_hashtags
     - --s3_endpoint=s3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
 
+  annotations:
+    secret.reloader.stakater.com/reload: 'dragonfly-core-s3-creds,dragonfly-core-password'
+
   snapshot:
     cron: '*/5 * * * *'
     dir: 's3://dragonfly-core-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/core'
