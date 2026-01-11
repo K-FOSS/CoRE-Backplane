@@ -11,21 +11,42 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '5'
 spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
-            primary: 'true'
-            standby: 'false'
-            environment: 'prod'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-home1-talos-prod
+                  values:
+                    primary: true
+
+                    restoreCluster: dc1-k3s-node1
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/env: 'prod'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
   template:
     metadata:
-      name: '{{cluster}}-db-mongo-{{ environment }}'
+      name: '{{ .values.clusterName }}-db-mongo-{{ .values.environment }}'
 
       labels:
-        resolvemy.host/env: '{{ environment }}'
+        resolvemy.host/env: '{{ .values.environment }}'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -42,30 +63,29 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
-                env: {{ environment }}
+                env: {{ .values.environment }}
                 psmdb-db:
                   replsets:
                     rs0:
                       volumeSpec:
                         pvc:
                           labels:
-                            resolvemy.host/env: '{{ environment }}'
+                            resolvemy.host/env: '{{ .values.environment }}'
                   backup:
                     annotations:
-                      argocd.argoproj.io/tracking-id: {{cluster}}-db-mongo-{{ environment }}:psmdb.percona.com/PerconaServerMongoDB:core-{{ environment }}/{{cluster}}-db-mong
+                      argocd.argoproj.io/tracking-id: {{ .values.clusterName }}-db-mongo-{{ .values.environment }}:psmdb.percona.com/PerconaServerMongoDB:core-{{ .values.environment }}/{{ .values.clusterName }}-db-mong
                     labels:
-                      argocd.argoproj.io/instance: {{cluster}}-db-mongo-{{ environment }}
+                      argocd.argoproj.io/instance: {{ .values.clusterName }}-db-mongo-{{ .values.environment }}
                     storages:
                       core-minio:
                         type: s3
                         s3:
                           bucket: mongodb-backups
                           region: us-east-1
-                          credentialsSecret: {{cluster}}-db-mong-s3
+                          credentialsSecret: {{ .values.environment }}-db-mong-s3
                           endpointUrl: https://s3.mylogin.space
-                          prefix: '{{ environment }}/{{cluster}}'
+                          prefix: '{{ .values.environment }}/{{ .values.restoreCluster }}'
 
       destination:
-        server: '{{url}}'
-        namespace: core-{{ environment }}
-
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
