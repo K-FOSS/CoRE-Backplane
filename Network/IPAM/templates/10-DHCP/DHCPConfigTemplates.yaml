@@ -435,56 +435,39 @@ data:
         "Dhcp4": {
           "authoritative": false,
           "client-classes": [
+          `}}
             {
               "name": "tinkerbell",
               "test": "substring(option[77].hex,0,10) == 'Tinkerbell'",
-              "boot-file-name": "http://10.1.1.66:7171/auto.ipxe"
+              "boot-file-name": "http://{{ .Values.dhcp.bmps.tinkerbell.address.private }}:7171/auto.ipxe"
             },
             {
               "name": "ipxe",
-              "test": "option[77].hex == 'iPXE'",
-              "boot-file-name": "http://pxe.example.com/menu.ipxe",
+              "test": "not member('tinkerbell') and option[77].hex == 'iPXE'",
+              "boot-file-name": "images/ipxe.efi",
+              "tftp-server-name": "{{ .Values.dhcp.bmps.tftp.address }}",
+              "next-server": "{{ .Values.dhcp.bmps.tftp.address }}",
               "option-data": [
                 {
-                  "name": "tftp-server-name",
-                  "data": "10.1.1.66"
+                  "name": "dhcp-server-identifier",
+                  "data": "{{ .Values.dhcp.bmps.tftp.address }}" 
                 }
               ]
             },
             {
               "name": "pxe-legacy",
-              "test": "not member('ipxe') and option[93].hex == 0x0000",
-              "next-server": "66.165.222.115",
-              "option-data": [
-                {
-                  "name": "tftp-server-name",
-                  "data": "66.165.222.115"
-                },
-                {
-                  "name": "boot-file-name",
-                  "data": "undionly.kpxe"
-                }
-              ]
+              "test": "not member('tinkerbell') and not member('ipxe') and option[93].hex == 0x0000",
+              "next-server": "{{ .Values.dhcp.bmps.tinkerbell.address.public }}",
+              "tftp-server-name": "{{ .Values.dhcp.bmps.tinkerbell.address.public }}",
+              "boot-file-name": "undionly.kpxe"
             },
             {
               "name": "pxe-uefi",
-              "test": "not member('ipxe') and not member('pxe-legacy')",
-              "next-server": "10.44.5.76",
-              "option-data": [
-                {
-                  "name": "tftp-server-name",
-                  "data": "10.44.5.76"
-                },
-                {
-                  "name": "boot-file-name",
-                  "data": "images/ipxe.efi"
-                },
-                {
-                  "name": "dhcp-server-identifier",
-                  "data": "10.44.5.76" 
-                }
-              ]
-            },
+              "test": "not member('tinkerbell') and not member('ipxe') and not member('pxe-legacy')",
+              "next-server": "{{ .Values.dhcp.bmps.tftp.address }}",
+              "tftp-server-name": "{{ .Values.dhcp.bmps.tftp.address }}",
+              "boot-file-name": "images/ipxe.efi"
+            }, {{`
             {
               "name": "ubnt",
               "test": "substring(option[60].hex,0,4) == 'ubnt'",
