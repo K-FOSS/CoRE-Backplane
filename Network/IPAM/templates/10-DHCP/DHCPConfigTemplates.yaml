@@ -706,7 +706,9 @@ data:
           "lease-database": {
             "type": "postgresql",
             "name": "hRCyPUlFYx",
-            "host": "{{ .Hostname }}",
+            `}}
+            "host": "psql.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space",
+            {{`
             "port": {{ .Port }},
             "user": "{{ .Username }}",
 
@@ -1114,10 +1116,9 @@ data:
 
               "relay": {
                 "ip-addresses": [
-                  "172.31.192.1",
+                  "172.31.192.16",
                   "172.31.192.2",
-                  "192.168.2.1",
-                  "192.168.2.2",
+                  "172.31.192.254",
                   "70.71.188.245"
                 ]
               },
@@ -1126,32 +1127,6 @@ data:
 
               "store-extended-info": true,
               "subnet4": [
-                {
-                  "id": 195,
-                  "match-client-id": false,
-                  "server-hostname": "dhcp.resolvemy.host",
-                  "option-data": [
-                    {
-                      "name": "domain-name-servers",
-                      "data": "1.1.1.1,1.0.0.1"
-                    },
-                    {
-                      "name": "routers",
-                      "data": "192.168.2.1"
-                    }
-                  ],
-                  "rebind-timer": 10800,
-                  "reservations": [
-                    {
-                      "hw-address": "c8:e3:06:c0:af:a1",
-                      "hostname": "eero",
-                      "ip-address": "192.168.2.6"
-                    }
-                  ],
-                  "renew-timer": 1800,
-                  "subnet": "192.168.2.0/29",
-                  "valid-lifetime": 3600
-                },
                 {
                   "id": 100,
                   "match-client-id": false,
@@ -1174,11 +1149,6 @@ data:
                   "rebind-timer": 10800,
                   "reservations": [
                     {
-                      "hw-address": "b8:ae:ed:79:5e:1d",
-                      "hostname": "nuc1",
-                      "ip-address": "172.31.192.11"
-                    },
-                    {
                       "hw-address": "74:d4:35:07:9e:d9",
                       "hostname": "hpc1",
                       "ip-address": "172.31.192.10"
@@ -1189,26 +1159,6 @@ data:
                       "ip-address": "172.31.192.12"
                     },
                     {
-                      "hw-address": "00:15:5d:f1:fc:01",
-                      "hostname": "hpc2-vm",
-                      "ip-address": "172.31.192.14"
-                    },
-                    {
-                      "hw-address": "0e:fc:06:82:ee:4e",
-                      "hostname": "hpc3",
-                      "ip-address": "172.31.192.15"
-                    },
-                    {
-                      "hw-address": "10:02:b5:86:17:65",
-                      "hostname": "sbc2",
-                      "ip-address": "172.31.192.13"
-                    },
-                    {
-                      "hw-address": "4c:cc:6a:dc:14:4c",
-                      "hostname": "laptop1",
-                      "ip-address": "172.31.192.17"
-                    },
-                    {
                       "hw-address": "f8:0f:41:f4:d2:81",
                       "hostname": "srv1",
                       "ip-address": "172.31.192.31"
@@ -1217,16 +1167,9 @@ data:
                       "hw-address": "f8:0f:41:f4:d2:82",
                       "hostname": "srv1-eth1",
                       "ip-address": "172.31.192.34"
-                    },
-                    {
-                      "hw-address": "00:e0:4c:79:61:d1",
-                      "hostname": "laptop2",
-                      "ip-address": "172.31.192.32"
                     }
                   ],
-                  "renew-timer": 1800,
-                  "subnet": "172.31.192.0/24",
-                  "valid-lifetime": 3600
+                  "subnet": "172.31.192.0/24"
                 }
               ],
               "valid-lifetime": 3600
