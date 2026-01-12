@@ -1,0 +1,105 @@
+{{- range $vmIndex, $vm := .Values.vms -}}
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: {{ $vm.name }}
+spec:
+  running: true
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: {{ $vm.name }}
+    spec:
+      networks:
+        - name: default
+          pod: {} # Stock pod network
+
+        {{- range $networkIndex, $network := $vm.networks -}}
+        {{- range $networkInterfaceIndex, $networkNIC := $network.nics }}
+        - name: {{ $networkNIC }}-{{ $network.name }}
+          multus:
+            networkName: {{ $networkNIC }}-{{ $network.name }}
+        {{- end }}
+        {{- end }}
+
+      priorityClassName: system-cluster-critical
+
+      domain:
+        machine:
+          type: q35
+        features:
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: false
+        devices:
+          autoattachPodInterface: true
+          disks:
+            {{- if $vm.installing }}
+            - name: vyos-install-cd
+              bootOrder: 1
+              cdrom:
+                bus: sata
+            {{ end }}
+
+            - name: data-disk
+              bootOrder: {{ if $vm.installing }}2{{ else }}1{{ end }}
+              disk:
+                bus: virtio
+
+          interfaces:
+            {{- range $networkIndex, $network := $vm.networks -}}
+            {{- range $networkInterfaceIndex, $networkNIC := $network.nics }}
+            - bridge: {}
+              name: {{ $networkNIC }}-{{ $network.name }}
+            {{- end }}
+            {{- end }}
+
+
+            - name: default
+              masquerade: {}
+              {{- if $vm.ports }}
+              ports:
+                {{- range $portIndex, $port := $vm.ports }}
+                - name: {{ $port.name }}
+                  port: {{ $port.port }}
+                  {{- with $port.protocol }}
+                  protocol: {{ . }}
+                  {{- end }}
+                {{- end }}
+              {{- end }}
+
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: '100m'
+          limits:
+            memory: 4Gi
+            cpu: 2
+      volumes:
+        {{- if $vm.installing }}
+        - name: vyos-install-cd
+          dataVolume:
+            name: vyos-iso
+        {{- end }}
+
+        - dataVolume:
+            name: rootdisk-template
+          name: data-disk
+
+  dataVolumeTemplates:
+    - metadata:
+        name: rootdisk-template
+      spec:
+        pvc:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
+        source:
+          blank: {}
+---
+{{- end }}

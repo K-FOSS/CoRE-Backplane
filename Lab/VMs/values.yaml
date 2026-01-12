@@ -9,3 +9,39 @@ networks:
       - br0
       - br1
       - br3
+
+vms:
+  - name: wan-rt1
+    installing: false
+    disk:
+      enabled: true
+
+      size: 5Gi
+
+    networks:
+      - name: wan-home
+        nics:
+          - br0
+          - br1
+
+  - name: wan-rt2
+    installing: true
+
+    podNetwork:
+      enabled: true
+
+    ports:
+      - name: wg-2011
+        port: 64763
+        protocol: UDP
+        expose: true
+    
+    disk:
+      enabled: true
+
+      size: 5Gi
+
+    networks:
+      - name: wan-home
+        nics:
+          - br0
