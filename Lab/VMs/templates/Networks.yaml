@@ -1,0 +1,23 @@
+{{- range $networkIndex, $network := .Values.networks }}
+{{- range $nicIndex, $nic := $network.nics }}
+apiVersion: "k8s.cni.cncf.io/v1"
+kind: NetworkAttachmentDefinition
+metadata:
+  name: '{{ $nic }}-{{ $network.name }}'
+spec:
+  config: '{
+      "cniVersion": "1.0.0",
+      "name": "{{ $nic }}-{{ $network.name }}",
+      "plugins": [
+        {
+          "type": "bridge",
+          "bridge": "{{ $nic }}",
+          "disableContainerInterface": true,
+          "macspoofchk": false{{ with $network.vlan }},
+          "vlan": {{ . }}
+          {{- end }}
+        }
+      ]
+    }'
+{{- end }}
+{{- end }}
