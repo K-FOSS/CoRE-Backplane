@@ -417,7 +417,7 @@ spec:
                         {{- end }}
 
                         {{- range $index, $lbNet := $clusterCustomResource.status.atProvider.manifest.spec.networks.loadbalancer.networks }}
-                        {{- range $poolIndex, $pool := $lbNet.pools -}}
+                        {{- range $poolIndex, $pool := $lbNet.pools }}
                         ip prefix-list CILIUM seq 2{{ $index }}{{ $poolIndex }} permit {{ $pool.subnet }} ge {{ regexReplaceAll ".*/([1-3][0-9])" $pool.subnet "${1}" }}
                         {{- end }}
                         {{- end }}
