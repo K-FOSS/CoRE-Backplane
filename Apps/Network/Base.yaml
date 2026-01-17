@@ -18,12 +18,14 @@ spec:
               elements:
                 - name: core-dc1-talos-prod
                   values:
+                    clusterId: 2
                     peers:
                       - name: core-home1-talos-prod
                         address: 10.44.5.101
 
                 - name: core-home1-talos-prod
                   values:
+                    clusterId: 1
                     peers:
                       - name: core-dc1-talos-prod
                         address: 10.44.3.141
@@ -95,7 +97,7 @@ spec:
                     # -- (int) Unique ID of the cluster. Must be unique across all connected
                     # clusters and in the range of 1 to 255. Only required for Cluster Mesh,
                     # may be 0 if Cluster Mesh is not used.
-                    id: 0
+                    id: {{ .values.clusterId }}
 
                 envoy-gw:
                   config:
