@@ -245,6 +245,10 @@ alloy:
         	forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
+        prometheus.operator.scrapeconfigs "scrapeconfigs" {
+            forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
         prometheus.operator.podmonitors "pods" {
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
