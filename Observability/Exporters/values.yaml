@@ -2111,3 +2111,18 @@ prometheus-smartctl-exporter:
 
 prometheus-ipmi-exporter:
   enabled: true
+
+  modules:
+    default:
+      # These settings are used if no module is specified, the
+      # specified module doesn't exist, or of course if
+      # module=default is specified.
+      user: "default_user"
+      pass: "example_pw"
+
+  scrapeConfig:
+    enabled: true
+    mode: remote  # Uses /ipmi endpoint with target relabeling
+    staticConfigs:
+      - targets:
+          - 172.31.193.100
