@@ -20,14 +20,17 @@ spec:
         generators:
           - list:
               elements:
-                # - name: core-dc1-talos-prod
-                #   values:
-                #     IPv4Address: '66.165.222.105'
-                #     hub: false
-                #     nameserver:
-                #       domain: 'ns1.resolvemy.host'
-                #       address:
-                #         ipv4: 66.165.222.105
+                - name: core-dc1-talos-prod
+                  values:
+                    hub: false
+                    gateway:
+                      address:
+                        ipv4: 66.165.222.101
+                        serviceGroup: core-public
+                        sharedIP:
+                          enabled: true
+
+                          key: main-gw.resolvemy.host
                       
                 - name: core-home1-talos-prod
                   values:
