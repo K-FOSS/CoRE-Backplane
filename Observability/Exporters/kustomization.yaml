@@ -9,3 +9,12 @@ patches:
       - op: replace
         path: /metadata/namespace
         value: kube-system
+
+  - target:
+      kind: ServiceMonitor
+      labelSelector: 'app.kubernetes.io/name=prometheus-smartctl-exporter'
+      
+    patch: |
+      - op: replace
+        path: /spec/namespaceSelector/matchNames/0
+        value: kube-system
