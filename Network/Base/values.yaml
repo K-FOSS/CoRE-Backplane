@@ -791,6 +791,21 @@ cilium:
   # -- Enable LoadBalancer IP Address Management
   enableLBIPAM: true
 
+  clustermesh:
+    # -- Deploy clustermesh-apiserver for clustermesh. This option is typically
+    # used with ``clustermesh.config.enabled=true``. Refer to the
+    # ``clustermesh.config.enabled=true``documentation for more information.
+    useAPIServer: false
+    # -- The maximum number of clusters to support in a ClusterMesh. This value
+    # cannot be changed on running clusters, and all clusters in a ClusterMesh
+    # must be configured with the same value. Values > 255 will decrease the
+    # maximum allocatable cluster-local identities.
+    # Supported values are 255 and 511.
+    maxConnectedClusters: 255
+
+    config:
+      enabled: true
+
 cf-dns:
   enabled: true
 
