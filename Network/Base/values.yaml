@@ -795,7 +795,7 @@ cilium:
     # -- Deploy clustermesh-apiserver for clustermesh. This option is typically
     # used with ``clustermesh.config.enabled=true``. Refer to the
     # ``clustermesh.config.enabled=true``documentation for more information.
-    useAPIServer: false
+    useAPIServer: true
     # -- The maximum number of clusters to support in a ClusterMesh. This value
     # cannot be changed on running clusters, and all clusters in a ClusterMesh
     # must be configured with the same value. Values > 255 will decrease the
@@ -807,6 +807,10 @@ cilium:
 
     config:
       enabled: true
+
+    apiserver:
+      service:
+        type: ClusterIP
 
     mcsapi:
       enabled: true
