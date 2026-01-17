@@ -283,3 +283,19 @@ route:
 
 {{/* Render the templates */}}
 {{ include "bjw-s.common.loader.generate" . }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+
+  compression: []
+  
+  connection:
+    bufferLimit: 0
+    socketBufferLimit: 0
