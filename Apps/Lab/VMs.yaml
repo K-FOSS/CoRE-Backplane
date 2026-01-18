@@ -17,11 +17,15 @@ spec:
         generators:
           - list:
               elements:
-                # - name: core-dc1-talos-prod
-                #   values:
-                #     installing: false
+                - name: core-dc1-talos-prod
+                  values:
+                    installing: true
 
-                #     wan: false
+                    networks:
+                      - name: pwan
+                        vlan: 15
+                        nics:
+                          - br0
 
                 - name: core-home1-talos-prod
                   values:
@@ -73,7 +77,7 @@ spec:
                 installing: {{ .values.installing }}
                 
                 networks:
-                  wan: {{ .values.wan }}
+                  {{ .values.networks }}
 
       destination:
         server: '{{ .server }}'
