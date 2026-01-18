@@ -70,6 +70,45 @@ spec:
         path: Network/Backplane
         repoURL: https://github.com/K-FOSS/node1-k3s.dc1.resolvemy.host.git
         targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      kind: ConfigMap
+                      name: multus-daemon-config
+                    patch: |
+                      - op: replace
+                        path: /data
+                        value:
+                          daemon-config.json: |
+                            {
+                                "chrootDir": "/hostroot",
+                                "cniVersion": "0.3.1",
+                                "logLevel": "verbose",
+                                "logToStderr": true,
+                                "cniConfigDir": "/host/etc/cni/net.d",
+                                "multusAutoconfigDir": "/host/etc/cni/net.d",
+                                "multusConfigFile": "auto",
+                                "delegates": [
+                                  {
+                                    "cniVersion": "0.3.1",
+                                    "name": "cilium",
+                                    "plugins": [
+                                      {
+                                        "type": "cilium-cni",
+                                        "log-file": "/var/run/cilium/cilium-cni.log"
+                                      },
+                                      {
+                                        "type": "loopback"
+                                      }
+                                    ]
+                                  }
+                                ],
+                                "socketDir": "/host/run/multus/"
+                            }
 
       destination:
         server: '{{url}}'
