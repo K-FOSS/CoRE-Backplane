@@ -439,7 +439,13 @@ data:
             {
               "name": "tinkerbell",
               "test": "substring(option[77].hex,0,10) == 'Tinkerbell'",
-              "boot-file-name": "http://{{ .Values.dhcp.bmps.tinkerbell.address.private }}:7171/auto.ipxe"
+              "boot-file-name": "http://{{ .Values.dhcp.bmps.tinkerbell.address.private }}:7171/auto.ipxe",
+              "option-data": [
+                {
+                  "name": "boot-file-name",
+                  "data": "http://{{ .Values.dhcp.bmps.tinkerbell.address.private }}:7171/auto.ipxe" 
+                }
+              ]
             },
             {
               "name": "ipxe",
@@ -1116,23 +1122,21 @@ data:
             "lease-checks": "warn"
           },
 
-          "shared-networks": [
+          "shared-networks": [ 
             {
               "authoritative": false,
-              "name": "spine0.home1.resolvemy.host",
+              "name": "spine0-legacy.dc1.yxl.resolvemy.host",
 
               "match-client-id": false,
               "option-data": [],
               "rebind-timer": 10800,
 
-              "ddns-qualifying-suffix": "home1.resolvemy.host.",
+              "ddns-qualifying-suffix": "dc1.yxl.resolvemy.host.",
 
               "relay": {
                 "ip-addresses": [
-                  "172.31.192.16",
-                  "172.31.192.2",
-                  "172.31.192.254",
-                  "70.71.188.245"
+                  "172.31.190.2",
+                  "172.16.51.201"
                 ]
               },
               // Timer values can be overridden here.
@@ -1151,43 +1155,23 @@ data:
                     },
                     {
                       "name": "routers",
-                      "data": "172.31.192.254"
+                      "data": "172.31.190.2"
                     }
                   ],
                   "pools": [
                     {
-                      "pool": "172.31.192.100 - 172.31.192.200"
+                      "pool": "172.31.190.100 - 172.31.190.200"
                     }
                   ],
                   "rebind-timer": 10800,
                   "reservations": [
                     {
-                      "hw-address": "74:d4:35:07:9e:d9",
-                      "hostname": "br0.hpc1",
-                      "ip-address": "172.31.192.10"
+                      "hw-address": "f8:bc:12:4b:50:6b",
+                      "hostname": "compute1",
+                      "ip-address": "172.31.190.11"
                     },
-                    {
-                      "hw-address": "bc:07:1d:dd:5a:08",
-                      "hostname": "br1.hpc1",
-                      "ip-address": "172.31.192.33"
-                    },
-                    {
-                      "hw-address": "e0:d5:5e:65:02:d7",
-                      "hostname": "br0.hpc2",
-                      "ip-address": "172.31.192.12"
-                    },
-                    {
-                      "hw-address": "f8:0f:41:f4:d2:81",
-                      "hostname": "eth0.srv1",
-                      "ip-address": "172.31.192.31"
-                    },
-                    {
-                      "hw-address": "f8:0f:41:f4:d2:82",
-                      "hostname": "eth1.srv1",
-                      "ip-address": "172.31.192.34"
-                    }
                   ],
-                  "subnet": "172.31.192.0/24"
+                  "subnet": "172.31.190.0/24"
                 }
               ],
               "valid-lifetime": 3600
