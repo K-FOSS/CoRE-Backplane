@@ -1,0 +1,67 @@
+apiVersion: resolvemy.host/v1alpha1
+kind: ClusterNode
+metadata:
+  name: compute1.dc1.resolvemy.host
+
+  namespace: core-prod
+
+  labels:
+    argocd.argoproj.io/instance: dc1-k3s-node1-ops-cluster
+
+spec:
+  name: compute1.dc1.resolvemy.host
+
+  description: Main cluster
+
+  type: worker
+
+  danger:
+    warningdonotdounlessyouknowwhatyouaredoing:
+      wipeOnReboot: false
+
+  clusterRef:
+    group: resolvemy.host
+    kind: Cluster
+    name: core-dc1-talos
+    namespace: core-prod
+
+  tenantRef:
+    group: mylogin.space
+    kind: Tenant
+    name: core.mylogin.space
+    namespace: core-prod
+
+  environment: prod
+
+  bgp:
+    instances:
+      - asn: 64512
+        name: main
+        peers:
+          - address: 172.31.241.89
+            localAddress: 172.31.241.90
+            asn: 64567
+            name: wan-gw1.dc1.resolvemy.host
+
+          - address: 192.168.0.4
+            asn: 64567
+            localAddress: 192.168.0.5
+            name: vyos-lab1.dc1.resolvemy.host
+
+  networks:
+    - macAddress: f8:bc:12:4b:50:6b
+      bridge: true
+      addresses:
+        - 172.31.190.11/24
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.190.2
+          metric: 1024
+
+      mtu: 1500
+      static: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
