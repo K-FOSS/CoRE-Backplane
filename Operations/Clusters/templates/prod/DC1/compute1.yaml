@@ -33,6 +33,19 @@ spec:
 
   environment: prod
 
+  overrides:
+    pxe:
+      script: |
+        #!ipxe
+
+        imgfree
+
+        kernel https://pxe.factory.talos.dev/image/d4c325ed0b72e8387f056c6704f6d52c647e4d93106b32ef4b4a3cd589b147c1/v1.12.1/kernel-amd64 reboot=hard talos.platform=metal init_on_alloc=1 slab_nomerge pti=on consoleblank=0 nvme_core.io_timeout=4294967295 printk.devkmsg=on talos.device.settle_time=2m talos.config=http://10.1.1.66:50061/2009-04-04/user-data
+
+        initrd https://pxe.factory.talos.dev/image/d4c325ed0b72e8387f056c6704f6d52c647e4d93106b32ef4b4a3cd589b147c1/v1.12.1/initramfs-amd64.xz
+
+        boot
+
   bgp:
     instances:
       - asn: 64512
@@ -49,7 +62,59 @@ spec:
             name: vyos-lab1.dc1.resolvemy.host
 
   networks:
-    - macAddress: f8:bc:12:4b:50:6b
+    - macAddress: 14:fe:b5:d8:6c:e1
+      bridge: true
+      addresses:
+        - 172.31.190.12/24
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.190.2
+          metric: 1024
+
+      mtu: 1500
+      static: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+
+    - macAddress: 14:fe:b5:d8:6c:e3
+      bridge: true
+      addresses:
+        - 172.31.190.13/24
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.190.2
+          metric: 1024
+
+      mtu: 1500
+      static: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+
+    - macAddress: 14:fe:b5:d8:6c:e5
+      bridge: true
+      addresses:
+        - 172.31.190.14/24
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.190.2
+          metric: 1024
+
+      mtu: 1500
+      static: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+
+
+    - macAddress: 14:fe:b5:d8:6c:e7
       bridge: true
       addresses:
         - 172.31.190.11/24
