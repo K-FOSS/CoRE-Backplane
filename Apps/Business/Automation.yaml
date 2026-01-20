@@ -48,6 +48,13 @@ spec:
         repoURL: https://github.com/K-FOSS/CoRE-Business.git
         targetRevision: HEAD
 
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                env: {{ .values.environment }}
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
