@@ -95,6 +95,9 @@ spec:
                     port: 443
 
                   name: {{ .observed.composite.resource.spec.name }}
+                  {{- if .observed.composite.resource.spec.username }}
+                  username: {{ .observed.composite.resource.spec.username }}
+                  {{- end }}
                   serviceAccount: true
                   groups:
                     - LDAPService
