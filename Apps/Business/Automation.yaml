@@ -11,21 +11,32 @@ spec:
   goTemplate: true
 
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-            topology.kubernetes.io/region: 'yvr'
-        values:
-          clusterName: '{{ .name }}'
-          environment: 'prod'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
-          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
-          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
-          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-home1-talos-prod
+                  values:
+                    hub: true
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+                  topology.kubernetes.io/region: 'yvr'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'prod'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
 
   syncPolicy:
@@ -66,9 +77,21 @@ spec:
 
                 hub: {{ .values.hub }}
 
+                secrets:
+                  rootPrefix: Automation/n8n/{{ .values.region }}/{{ .values.datacenter }}/{{ .values.clusterName }}/{{ .values.environment }}
+
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+
+                n8n:
+                  externalPostgresql:
+                    host: psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                    username: n8n-{{ .values.environment }}-{{ .values.region }}-{{ .values.datacenter }}-{{ .values.clusterName }}
+                    database: n8n-{{ .values.environment }}-{{ .values.region }}-{{ .values.datacenter }}-{{ .values.clusterName }}
+
+                  externalRedis:
+                    host: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
 
       destination:
         server: '{{ .server }}'
