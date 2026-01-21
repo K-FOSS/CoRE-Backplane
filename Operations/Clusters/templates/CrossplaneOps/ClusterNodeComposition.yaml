@@ -83,7 +83,9 @@ spec:
                   ipAddresses:
                     {{- range .observed.composite.resource.spec.networks }}
                     {{- range $addrIndex, $address := .addresses }}
+                    {{- if (not (contains ":" $address)) }}
                     - {{ $address }}
+                    {{- end }}
                     {{- end }}
                     {{ end }}
                   talos:
@@ -289,6 +291,23 @@ spec:
                       topology.kubernetes.io/region: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}'
                       topology.kubernetes.io/zone: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.datacenter }}'
                       resolvemy.host/nodemode: '{{ $.observed.composite.resource.spec.type }}'
+                      {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                        {{- /* pick a stable "nic name" */ -}}
+                        {{- $nic := "" -}}
+                        {{- if $network.bridge -}}
+                          {{- $nic = printf "br%d" $netIndex -}}
+                        {{- else -}}
+                          {{- $nic = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") -}}
+                        {{- end -}}
+
+                        {{- /* emit one label per vlan */ -}}
+                        {{- if $network.vlans -}}
+                          {{- range $v := $network.vlans -}}
+                      {{ printf "%s.net.resolvemy.host/vlan-%v" $nic $v.vlanID }}: "true"
+                          {{- end -}}
+                        {{- end -}}
+
+                      {{- end }}
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
             {{ end }}
@@ -568,6 +587,7 @@ spec:
                     endpoint = var.nodeIP
                     config_patches = [
                       yamlencode({
+                        {{- $clusterK8sVersion := $clusterCustomResource.status.atProvider.manifest.spec.versions.kubernetes }}
                         cluster = {
                           controlPlane = {
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
@@ -605,12 +625,18 @@ spec:
                               feature-gates = "UserNamespacesSupport=true,UserNamespacesPodSecurityStandards=true"
                             }
 
-                            image = "registry.k8s.io/kube-apiserver:{{ $clusterCustomResource.status.atProvider.manifest.spec.versions.kubernetes }}"
+                            image = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"
                           }
                           controllerManager = {
                             extraArgs = {
                               node-cidr-mask-size-ipv6 = "119"
                             }
+
+                            image = "registry.k8s.io/kube-controller-manager:{{ $clusterK8sVersion }}"
+                          }
+
+                          scheduler = {
+                            image = "registry.k8s.io/kube-scheduler:{{ $clusterK8sVersion }}"
                           }
                           {{- end }}
                         }
@@ -652,6 +678,7 @@ spec:
                           }
 
                           kubelet = {
+                            image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
                             nodeIP = {
                               validSubnets = [
                                 {{- range $index, $network := .observed.composite.resource.spec.networks }}
@@ -665,7 +692,7 @@ spec:
                             }
 
                             extraConfig = {
-                              maxPods = 512
+                              maxPods = 256
                               featureGates = {
                                 UserNamespacesSupport = true
                                 UserNamespacesPodSecurityStandards = true
