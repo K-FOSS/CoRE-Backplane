@@ -128,10 +128,10 @@ spec:
                       {
                         customization = {
                           extraKernelArgs = [
-                          "talos.config=http://`}}{{ .Values.tinkerbell.ip }}{{`:50061/2009-04-04/user-data",
+                          "talos.config=http://`}}{{ .Values.tinkerbell.ip }}:50061/2009-04-04/user-data",
                           {{- if .Values.logging.talos.kernel.enabled }}
                           "talos.logging.kernel={{ .Values.logging.talos.kernel.endpoint }}",
-                          {{- end }}
+                          {{- end }}{{`
                           ]
 
                           systemExtensions = {
