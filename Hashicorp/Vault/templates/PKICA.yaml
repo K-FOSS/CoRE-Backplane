@@ -1,0 +1,15 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: PKISecretBackendRootCert
+metadata:
+  name: pki-int-root
+spec:
+  providerConfigRef:
+    name: vault-provider
+
+  forProvider:
+    backend: pki_int
+    type: internal
+    commonName: "CoRE Internal Root (TEMP)"
+    ttl: "87600h"   # 10 years
+    keyType: rsa
+    keyBits: 4096

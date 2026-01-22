@@ -1,0 +1,22 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: PKISecretBackendRole
+metadata:
+  name: pki-int-role-core
+spec:
+  providerConfigRef:
+    name: vault-provider
+
+  forProvider:
+    backend: pki_int
+    name: core
+    allowedDomains:
+      - "resolvemy.host"
+      - "mylogin.space"
+    allowSubdomains: true
+    allowGlobDomains: false
+    allowBareDomains: true
+    enforceHostnames: true
+    maxTtl: "720h"     # cert-manager cert lifetime ceiling (30d)
+    ttl: "168h"        # default 7d if not specified
+    keyType: rsa
+    keyBits: 2048
