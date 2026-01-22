@@ -133,7 +133,7 @@ spec:
                           "talos.logging.kernel={{ .Values.logging.talos.kernel.endpoint }}",
                           {{- end }}
                           ]
-                          
+
                           systemExtensions = {
                             officialExtensions = data.talos_image_factory_extensions_versions.this.extensions_info.*.name
                           }
@@ -299,20 +299,18 @@ spec:
                       topology.kubernetes.io/zone: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.datacenter }}'
                       resolvemy.host/nodemode: '{{ $.observed.composite.resource.spec.type }}'
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
-                        {{- /* pick a stable "nic name" */ -}}
-                        {{- $nic := "" -}}
-                        {{- if $network.bridge -}}
-                          {{- $nic = printf "br%d" $netIndex -}}
-                        {{- else -}}
-                          {{- $nic = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") -}}
-                        {{- end -}}
+                        {{- $nic := "" }}
+                        {{- if $network.bridge }}
+                          {{- $nic = printf "br%d" $netIndex }}
+                        {{- else }}
+                          {{- $nic = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") }}
+                        {{- end }}
 
-                        {{- /* emit one label per vlan */ -}}
-                        {{- if $network.vlans -}}
-                          {{- range $v := $network.vlans -}}
+                        {{- if $network.vlans }}
+                          {{- range $v := $network.vlans }}
                       {{ printf "%s.net.resolvemy.host/vlan-%v" $nic $v.vlanID }}: "true"
-                          {{- end -}}
-                        {{- end -}}
+                          {{- end }}
+                        {{- end }}
 
                       {{- end }}
                   spec:
