@@ -1,0 +1,18 @@
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: vault-token-sync
+
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: corevault-rootsecrets
+  
+  target:
+    name: certmanager-tls-vault-token
+  
+  data:
+    - secretKey: token
+      remoteRef:
+        key: CoRE/TLS/CertManager/Vault
+        property: Token
