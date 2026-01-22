@@ -127,6 +127,13 @@ spec:
                     schematic = yamlencode(
                       {
                         customization = {
+                          extraKernelArgs = [
+                          "talos.config=http://`}}{{ .Values.tinkerbell.ip }}{{`:50061/2009-04-04/user-data",
+                          {{- if .Values.logging.talos.kernel.enabled }}
+                          "talos.logging.kernel={{ .Values.logging.talos.kernel.endpoint }}",
+                          {{- end }}
+                          ]
+                          
                           systemExtensions = {
                             officialExtensions = data.talos_image_factory_extensions_versions.this.extensions_info.*.name
                           }
