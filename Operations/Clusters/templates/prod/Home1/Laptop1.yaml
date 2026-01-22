@@ -33,53 +33,31 @@ spec:
 
   environment: prod
 
+  type: worker
+
   bgp:
     instances:
       - asn: 64512
         name: wan-gw
         peers:
-          - address: 172.31.192.1
+          - address: 172.31.193.20
             asn: 64567
-            name: sbc1.home1.yvr.resolvemy.host
-
-          - address: 172.31.192.2
-            asn: 64567
-            name: wan-gw1.home1.yvr.resolvemy.host
-
-          - address: 172.31.192.16
-            asn: 64567
-            name: cpe-sw1.home1.yvr.resolvemy.host
+            name: spine0-sw1.home1.yvr.resolvemy.host
 
   networks:
     - macAddress: 4c:cc:6a:dc:14:4c
       bridge: true
-      vip: 172.31.192.9
       addresses:
-        - 172.31.192.17/24
+        - 172.31.193.17/24
 
       routes:
         - network: 0.0.0.0/0
-          gateway: 172.31.192.1
+          gateway: 172.31.193.254
           metric: 600
 
       mtu: 1500
 
       static: true
-      dns:
-        - 1.1.1.1
-        - 1.0.0.1
-        - 8.8.8.8
-
-    - macAddress: 00:e0:4c:0c:1c:59
-      bridge: false
-      addresses:
-        - 172.31.192.100/24
-
-      routes: []
-
-      mtu: 1500
-
-      static: false
       dns:
         - 1.1.1.1
         - 1.0.0.1
