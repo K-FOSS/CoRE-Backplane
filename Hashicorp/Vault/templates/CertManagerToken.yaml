@@ -1,0 +1,18 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Token
+metadata:
+  name: cert-manager-tls-token
+spec:
+  providerConfigRef:
+    name: vault-provider
+
+  forProvider:
+    policies:
+      - cert-manager
+    renewable: true
+    ttl: "720h"          # 30 days (pick something you’re comfortable rotating)
+    orphan: true
+
+  writeConnectionSecretToRef:
+    name: cert-manager-vault-token
+    namespace: {{ .Release.Namespace }}

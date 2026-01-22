@@ -1,0 +1,15 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: cert-manager
+spec:
+  providerConfigRef:
+    name: vault-provider
+
+  forProvider:
+    name: cert-manager
+    policy: |
+      # List available secrets engines to retrieve accessor ID
+      path "pki_int/sign/core" {
+        capabilities = [ "create", "update" ]
+      }
