@@ -59,7 +59,7 @@ spec:
     - macAddress: e0:d5:5e:65:02:d7
       bridge: true
       addresses:
-        - 172.31.192.12/24
+        - 172.31.193.11/24
         - 2604:3D08:D174:2000:100::12/118
 
       routing:
@@ -80,6 +80,26 @@ spec:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
+
+    - addresses:
+        - 172.31.193.12/24
+      bridge: true
+      dns:
+        - 1.1.1.1
+        - 8.8.8.8
+      macAddress: e0:d5:5e:65:02:d9
+      mtu: 1500
+      routes:
+        - gateway: 172.31.193.254
+          metric: 600
+          network: 0.0.0.0/0
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: true
+      static: true
+      vlans:
+        - vlanID: 150
 
   overrides:
     kernel:
