@@ -809,6 +809,16 @@ cilium:
       enabled: true
 
     apiserver:
+      tls:
+        auto:
+          enabled: true
+
+          method: certmanager
+
+          certManagerIssuerRef:
+            group: cert-manager.io
+            kind: ClusterIssuer
+            name: ca-issuer
       service:
         type: ClusterIP
 
