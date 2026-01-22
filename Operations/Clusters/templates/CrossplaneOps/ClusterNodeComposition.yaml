@@ -553,7 +553,7 @@ spec:
                 varmap:
                   talosConfig: |
             {{ indent 8 $talosHardware.status.atProvider.manifest.spec.userData }}
-                  nodeIP: {{ (index $tinkMachineResource.status.atProvider.manifest.status.addresses 0).address }}
+                  nodeIP: {{ (index (index .observed.composite.resource.spec.networks 0).addresses 0) }}
                 module: | # hcl
                   variable "talosConfig" {
                     description = "Talos Config"
