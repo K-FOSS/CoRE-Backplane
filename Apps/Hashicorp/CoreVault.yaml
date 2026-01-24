@@ -45,6 +45,7 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
                 vault:
+                  fullnameOverride: core-corevault-{{ .values.environment }}
                   server:
                     ha:
                       replicas: {{ .values.replicas }}
@@ -54,7 +55,7 @@ spec:
                 patches:
                   - target:
                       kind: Service
-                      name: {{ .values.clusterName }}-core-corevault-{{ .values.environment }}
+                      name: core-corevault-{{ .values.environment }}
 
                     patch: |
                       - op: add
