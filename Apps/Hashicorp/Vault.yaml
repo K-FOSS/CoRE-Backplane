@@ -11,18 +11,33 @@ spec:
   # goTemplateOptions:
   #   - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-        values:
-          clusterName: '{{ .name }}'
-          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
-          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
-          domain: '{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
-          replicas: '1'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    hub: false
+
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+                domain: '{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
+                replicas: '1'
 
   template:
     metadata:
@@ -43,6 +58,10 @@ spec:
           name: argocd-lovely-plugin
 
           env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                hub: {{ .values.hub }}
+
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:

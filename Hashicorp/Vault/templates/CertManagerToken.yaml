@@ -1,3 +1,4 @@
+{{- if .Values.hub }}
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Token
 metadata:
@@ -16,3 +17,4 @@ spec:
   writeConnectionSecretToRef:
     name: cert-manager-vault-token
     namespace: {{ .Release.Namespace }}
+{{- end }}
