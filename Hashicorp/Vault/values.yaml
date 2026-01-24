@@ -1,5 +1,10 @@
 hub: true
 
+global:
+  corevault:
+    address: ''
+
+
 vault:
   global:
     # enabled is the master enabled switch. Setting this to true or false
@@ -405,7 +410,7 @@ vault:
         service_registration "kubernetes" {}
 
         seal "transit" {
-          address = "http://corevault.dc1.resolvemy.host:8200"
+          address = "{{ .Values.global.corevault.address }}"
           disable_renewal = "false"
           key_name = "autounseal"
           mount_path = "transit/"
