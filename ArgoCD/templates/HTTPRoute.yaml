@@ -14,9 +14,10 @@ spec:
       namespace: {{ .Values.gateway.namespace }}
       name: {{ .Values.gateway.name }}
       sectionName: {{ .Values.gateway.sectionName }}
-{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
+
   hostnames:
-    - argocd.
+    - argocd.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
+
 
   rules:
     - backendRefs:
