@@ -1,0 +1,26 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: kubevirt-manager
+
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: kubevirt-manager
+
+  extAuth:
+    failOpen: false
+
+    headersToExtAuth:
+      - cookie
+
+    http:
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: aaa-myloginspace-proxy
+          namespace: core-prod
+          port: 80
+
+      path: /outpost.goauthentik.io/auth/envoy
