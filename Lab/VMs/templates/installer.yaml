@@ -1,0 +1,17 @@
+{{- range $installerIndex, $installer := .Values.installers }}
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: {{ $installer.name }}
+
+spec:
+  pvc:
+    accessModes:
+      - ReadOnlyMany
+    resources:
+      requests:
+        storage: {{ $installer.size }}
+  source:
+    http:
+      url: {{ $installer.url }}
+{{- end }}
