@@ -35,9 +35,13 @@ spec:
         firmware:
           bootloader:
             efi:
-              secureBoot: false
+              secureBoot: true
         devices:
           autoattachPodInterface: true
+          {{- if and $vm.tpm $vm.tmp.enabled }}
+          tpm: {}
+          {{- end }}
+
           disks:
             {{- if $vm.installing }}
             - name: installer
