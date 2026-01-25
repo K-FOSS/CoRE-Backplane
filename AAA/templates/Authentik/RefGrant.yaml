@@ -13,7 +13,15 @@ spec:
     - group: gateway.envoyproxy.io
       kind: SecurityPolicy
       namespace: securecodebox-system
+
+    - group: gateway.envoyproxy.io
+      kind: SecurityPolicy
+      namespace: kubevirt-manager
   to:
     - group: ''
       kind: Service
       name: {{ include "authentik.server.fullname" $.Subcharts.authentik }}
+
+    - group: ''
+      kind: Service
+      name: aaa-myloginspace-proxy
