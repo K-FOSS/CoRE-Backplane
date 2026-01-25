@@ -40,7 +40,7 @@ spec:
           autoattachPodInterface: true
           disks:
             {{- if $vm.installing }}
-            - name: {{ $vm.installer }}
+            - name: installer
               bootOrder: 1
               cdrom:
                 bus: sata
@@ -83,9 +83,9 @@ spec:
             cpu: 2
       volumes:
         {{- if $vm.installing }}
-        - name: vyos-install-cd
+        - name: installer
           dataVolume:
-            name: vyos-iso
+            name: {{ $vm.installer }}
         {{- end }}
 
         - dataVolume:
