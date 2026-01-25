@@ -21,6 +21,28 @@ networks:
       - br3
 
 vms:
+  - name: windows-lab
+    installing: true
+
+    installer: windows-11
+    uefi: true
+
+    tpm:
+      enabled: true
+
+    nodeSelector:
+      kubernetes.io/hostname: 'hpc3'
+
+    disk:
+      enabled: true
+
+      size: 128Gi
+
+    networks:
+      - name: wan-home
+        nics:
+          - br0
+
   - name: wan-rt1
     installing: false
     disk:
