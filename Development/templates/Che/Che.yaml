@@ -131,6 +131,13 @@ spec:
       gateway:
         deployment:
           containers:
+            - name: oauth-proxy
+              env:
+                - name: OAUTH2_PROXY_COOKIE_CSRF_PER_REQUEST
+                  value: 'true'
+                - name: OAUTH2_PROXY_BACKEND_LOGOUT_URL
+                  value: https://idp.mylogin.space/application/o/che/end-session/
+
             - name: gateway
               resources:
                 request:
