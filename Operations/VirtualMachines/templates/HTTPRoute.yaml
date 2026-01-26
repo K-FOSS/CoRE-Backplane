@@ -25,24 +25,6 @@ spec:
         - name: kubevirt-manager
           port: 8080
       matches:
-        - headers:
-            - name: Content-Type
-              type: RegularExpression
-              value: .+
-          path:
-            type: PathPrefix
-            value: /
-
-    - backendRefs:
-        - name: kubevirt-manager
-          port: 8080
-      filters:
-        - responseHeaderModifier:
-            add:
-              - name: content-type
-                value: text/html; charset=utf-8
-          type: ResponseHeaderModifier
-      matches:
         - path:
             type: PathPrefix
             value: /
