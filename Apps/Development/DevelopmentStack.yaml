@@ -138,6 +138,14 @@ spec:
 
                   enabled: {{ .values.harbor.enabled }}
 
+                  database:
+                    external:
+                      host: psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+
+                  redis:
+                    external:
+                      addr: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+
                 crddocs:
                   enabled: {{ .values.crddocs.enabled }}
 
