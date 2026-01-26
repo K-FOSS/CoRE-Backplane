@@ -1,3 +1,4 @@
+# {{ if .Values.che.enabled }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -25,3 +26,4 @@ data:
 
     # User specific environment and startup programs
     alias getArgoPass='kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d'
+{{- end }}
