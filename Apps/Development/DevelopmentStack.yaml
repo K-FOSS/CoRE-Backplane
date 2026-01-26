@@ -138,6 +138,11 @@ spec:
 
                   enabled: {{ .values.harbor.enabled }}
 
+                  persistence:
+                    imageChartStorage:
+                      s3:
+                        regionendpoint: https://s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+
                   database:
                     external:
                       host: psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
