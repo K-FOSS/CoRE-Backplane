@@ -1683,11 +1683,11 @@ harbor:
 
     # The maximum number of connections in the idle connection pool per pod (core+exporter).
     # If it <=0, no idle connections are retained.
-    maxIdleConns: 100
+    maxIdleConns: 10
     # The maximum number of open connections to the database per pod (core+exporter).
     # If it <= 0, then there is no limit on the number of open connections.
     # Note: the default number of connections is 1024 for harbor's postgres.
-    maxOpenConns: 900
+    maxOpenConns: 64
     ## Additional deployment annotations
     podAnnotations: {}
     ## Additional deployment labels
@@ -1714,6 +1714,8 @@ harbor:
       registryDatabaseIndex: '8'
       chartmuseumDatabaseIndex: '9'
       trivyAdapterIndex: '14'
+      tlsOptions:
+        enable: true
       #harborDatabaseIndex: "6"
       # cacheLayerDatabaseIndex: "7"
       # username field can be an empty string, and it will be authenticated against the default user
