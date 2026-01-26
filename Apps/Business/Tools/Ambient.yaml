@@ -20,17 +20,19 @@ spec:
         generators:
           - list:
               elements:
-                - name: core-home1-talos-prod
+                - name: core-dc1-talos-prod
                   values:
                     hub: false
 
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
           - clusters:
               selector:
                 matchLabels:
                   mylogin.space/tenant: 'core.mylogin.space'
                   resolvemy.host/computetype: 'baremetal'
                   resolvemy.host/nodetype: 'infra'
-                  topology.kubernetes.io/region: 'yvr'
               values:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
