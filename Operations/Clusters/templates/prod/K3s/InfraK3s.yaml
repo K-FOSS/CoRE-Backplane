@@ -15,6 +15,9 @@ spec:
     # Please refer to vcluster documentation for the extensive explanation of the features,
     # and the appropriate Helm values that need to be set for your use case - https://www.vcluster.com/docs
     values: |-
+      syncer:
+        extraArgs:
+          - --tls-san=k3s-legacy.resolvemy.host
       # controlPlane:
       #   distro:
       #     k8s:
@@ -39,5 +42,5 @@ spec:
   #
   # This field, and all it's sub-fields, are optional.
   controlPlaneEndpoint:
-    host: k3s.resolvemy.host
+    host: k3s-legacy.resolvemy.host
     port: 443
