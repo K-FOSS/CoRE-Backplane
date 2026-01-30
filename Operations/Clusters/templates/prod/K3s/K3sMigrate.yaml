@@ -1,0 +1,20 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: k3s-legacy
+
+  namespace: core-prod
+
+spec:
+  # Two *Ref fields below must reference VCluster CR by name
+  # in order to conform to the CAPI contract   
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: VCluster
+    # name field must match .metadata.name of the VCluster CR
+    name: k3s-legacy
+  controlPlaneRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: VCluster
+    # name field must match .metadata.name of the VCluster CR
+    name: k3s-legacy

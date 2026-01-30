@@ -1,0 +1,43 @@
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: VCluster
+metadata:
+  name: k3s-legacy
+
+  namespace: core-prod
+spec:
+  # We are using vcluster Helm charts for the installation and upgrade.
+  # The helmRelease sub-fields allow you to set Helm values and chart repo, name and version.
+  # Sources of the charts can be found here - https://github.com/loft-sh/vcluster/tree/main/charts 
+  #
+  # This field, and all it's sub-fields, are optional.
+  helmRelease:
+    # The values field must contain a string with contents that would make a valid YAML file.
+    # Please refer to vcluster documentation for the extensive explanation of the features,
+    # and the appropriate Helm values that need to be set for your use case - https://www.vcluster.com/docs
+    values: |-
+      # controlPlane:
+      #   distro:
+      #     k8s:
+      #       enabled: true
+      #   backingStore:
+      #     etcd:
+      #       deploy:
+      #         enabled: true
+
+  # controlPlaneEndpoint represents the endpoint used to communicate with the control plane.
+  # You may leave this field empty, and then CAPVC will try to fill in this information based
+  # on the network resources created by the chart (Service, Ingress).
+  # The vcluster chart provides options to create a service of LoadBalancer type by setting
+  # Helm value - `.service.type: "LoadBalancer"`, or creating an Ingress by setting Helm value
+  # `.ingress.enabled: true` and `.ingress.host`. You can explore all options in the charts
+  # folder of our vcluster repo - https://github.com/loft-sh/vcluster/tree/main/charts
+  #
+  # We also recommend reading official vcluster documentation page on this topic:
+  # https://www.vcluster.com/docs/operator/external-access
+  # this page outlines additional Helm values that you will need to set in certain cases, e.g.
+  # `.syncer.extraArgs: ["--tls-san=myvcluster.mydns.abc"]`
+  #
+  # This field, and all it's sub-fields, are optional.
+  controlPlaneEndpoint:
+    host: k3s.resolvemy.host
+    port: '443'
