@@ -4,3 +4,15 @@ kind: Kustomization
 
 resources:
   -  https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset-thick.yml
+
+
+patches:
+  - target:
+      kind: CustomResourceDefinition
+      name: network-attachment-definitions.k8s.cni.cncf.io 
+
+    patch: |
+      $patch: delete
+      kind: CustomResourceDefinition
+      metadata:
+        name: DOES NOT MATTER
