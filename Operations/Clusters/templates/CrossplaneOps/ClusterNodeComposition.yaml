@@ -457,6 +457,10 @@ spec:
                           {{- end }}
                           {{- end }}
                         exit
+
+                        route-map TEST-TER permit 10
+                          match ip address prefix-list CILIUM
+                        exit
                         {{- end }}
 
                         {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
@@ -481,8 +485,8 @@ spec:
                           redistribute bgp metric-type 1
                           {{- end }}
 
-                          redistribute connected
-                          redistribute local metric-type 1
+                          redistribute connected metric-type 1 route-map TEST-TER
+                          redistribute local metric-type 1 route-map TEST-TER
 
                           graceful-restart
                           graceful-restart helper enable
