@@ -53,16 +53,17 @@ spec:
       bridge: true
       addresses:
         - 172.31.241.90/30
-        - 192.168.0.5/24
 
       routes:
         - network: 0.0.0.0/0
           gateway: 172.31.241.89
           metric: 1024
 
-        - network: 0.0.0.0/0
-          gateway: 192.168.0.1
-          metric: 500
+      routing:
+        ospf:
+          enabled: true
+
+          area: '0.0.0.0'
 
       mtu: 9000
       static: true
