@@ -477,10 +477,11 @@ spec:
                           auto-cost reference-bandwidth {{ .referenceBandwidth }}
 
                           {{- if and .redistribute .redistribute.bgp .redistribute.bgp.enabled }}
-                          redistribute bgp
+                          redistribute bgp metric-type 1
                           {{- end }}
 
                           redistribute connected
+                          redistribute local metric-type 1
 
                           graceful-restart
                           graceful-restart helper enable
