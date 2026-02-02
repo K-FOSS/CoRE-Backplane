@@ -605,6 +605,14 @@ spec:
                           }
 
                           network = {
+                            podSubnets = [
+                              {{- range $index, $network := $clusterCustomResource.status.atProvider.manifest.spec.networks.pod.ipv4 }}
+                              "{{ $network }}",
+                              {{- end }}
+                              {{- range $index, $network := $clusterCustomResource.status.atProvider.manifest.spec.networks.pod.ipv6 }}
+                              "{{ $network }}",
+                              {{- end }}                            
+                            ]
                             serviceSubnets = [
                               {{- range $index, $network := $clusterCustomResource.status.atProvider.manifest.spec.networks.service }}
                               "{{ $network }}",
