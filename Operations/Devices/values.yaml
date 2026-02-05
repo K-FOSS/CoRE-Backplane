@@ -19,7 +19,8 @@ nvidia-device-plugin:
   runtimeClassName: nvidia
 
 nvidia-dra-driver-gpu:
-  gpuResourcesEnabledOverride: true
+  nvidiaDriverRoot: /usr/local/glibc/lib
+  
   kubeletPlugin:
     affinity:
       nodeAffinity:
@@ -27,6 +28,20 @@ nvidia-dra-driver-gpu:
           nodeSelectorTerms:
             - matchExpressions:
                 - key: feature.node.kubernetes.io/pci-0300_10de.present
+                  operator: In
+                  values:
+                    - 'true'
+
+            - matchExpressions:
+              # On some Tegra-based systems NFD detects the CPU vendor ID as NVIDIA
+                - key: feature.node.kubernetes.io/cpu-model.vendor_id
+                  operator: In
+                  values:
+                    - 'NVIDIA'
+
+            - matchExpressions:
+                # We allow a GPU deployment to be forced by setting the following label to "true"
+                - key: "nvidia.com/gpu.present"
                   operator: In
                   values:
                     - 'true'
