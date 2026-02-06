@@ -4,19 +4,31 @@ metadata:
   name: core-backplane-business-vaultwarden
   namespace: argocd
 spec:
+  goTemplate: true
+  # goTemplateOptions:
+  #   - 'missingkey=error'
+  
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
-            ingress: passwords.mylogin.space
-            environment: 'prod'
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+        values:
+          clusterName: '{{ .name }}'
+          environment: 'prod'
+          domain: passwords.mylogin.space
+
   template:
     metadata:
-      name: '{{cluster}}-business-passwords-vaultwarden'
+      name: '{{ .values.clusterName }}-business-passwords-vaultwarden'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
 
     spec:
       project: core
@@ -32,16 +44,10 @@ spec:
               value: |- 
                 vaultwarden:
                   database:
-                    # -- Database type,
-                    # must be one of: 'sqlite', 'mysql' or 'postgresql'.
                     type: postgresql
-                    # -- Enable DB Write-Ahead-Log for SQLite,
-                    # disabled for other databases. https://github.com/dani-garcia/bitwarden_rs/wiki/Running-without-WAL-enabled
                     wal: false
-                    ## URL for external databases (mysql://user:pass@host:port or postgresql://user:pass@host:port).
-                    # url: ""
                     ## Set the size of the database connection pool.
-                    # maxConnections: 10
+                    maxConnections: 10
                     ## Connection retries during startup, 0 for infinite. 1 second between retries.
                     # retries: 15
 
@@ -51,7 +57,7 @@ spec:
                   env:
                   # -- Config dir
                     DATA_FOLDER: "/tmp"
-                    DOMAIN: https://{{ ingress }}
+                    DOMAIN: https://{{ .values.domain }}
 
                     SMTP_FROM_NAME: 'Vaultwarden'
                     SMTP_SECURITY: 'off'
@@ -64,37 +70,37 @@ spec:
                       valueFrom:
                         secretKeyRef:
                           key: Hostname
-                          name: business-vaultwarden-mail-{{ environment }}
+                          name: business-vaultwarden-mail-{{ .values.environment }}
 
                     SMTP_FROM:
                       valueFrom:
                         secretKeyRef:
                           key: Username
-                          name: business-vaultwarden-mail-{{ environment }}
+                          name: business-vaultwarden-mail-{{ .values.environment }}
 
                     SMTP_PORT:
                       valueFrom:
                         secretKeyRef:
                           key: Port
-                          name: business-vaultwarden-mail-{{ environment }}
+                          name: business-vaultwarden-mail-{{ .values.environment }}
 
                     SMTP_USERNAME:
                       valueFrom:
                         secretKeyRef:
                           key: Username
-                          name: business-vaultwarden-mail-{{ environment }}
+                          name: business-vaultwarden-mail-{{ .values.environment }}
 
                     SMTP_PASSWORD:
                       valueFrom:
                         secretKeyRef:
                           key: Password
-                          name: business-vaultwarden-mail-{{ environment }}
+                          name: business-vaultwarden-mail-{{ .values.environment }}
 
 
                     DATABASE_URL:
                       valueFrom:
                         secretKeyRef:
-                          name: {{ cluster }}-business-passwords-vaultwarden-core-business-pass
+                          name: {{ .values.clusterName }}-business-passwords-vaultwarden-core-business-pass
                           key: psqlURI
 
 
@@ -105,5 +111,5 @@ spec:
                       enabled: false
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
+        server: '{{ .server }}'
+        namespace: core-{{ .values.environment }}
