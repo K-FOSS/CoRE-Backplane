@@ -2,6 +2,10 @@ apiVersion: "acid.zalan.do/v1"
 kind: postgresql
 metadata:
   name: psql-{{ .Values.datacenter }}-{{ .Values.region }}
+
+  annotations:
+    acid.zalan.do/controller: '{{ .Values.psql.controllerID }}'
+
 spec:
   teamId: psql-site-{{ .Values.datacenter }}-{{ .Values.region }}
   volume:
