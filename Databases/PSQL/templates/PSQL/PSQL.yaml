@@ -1,0 +1,13 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: psql-{{ .Values.datacenter }}-{{ .Values.region }}
+spec:
+  teamId: psql-site-{{ .Values.datacenter }}-{{ .Values.region }}
+  volume:
+    size: 10Gi
+
+  numberOfInstances: 2
+
+  postgresql:
+    version: '17'
