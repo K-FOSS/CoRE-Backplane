@@ -15,11 +15,11 @@ spec:
         generators:
           - list:
               elements:
-                # - name: core-dc1-talos-prod
-                #   values:
-                #     processors:
-                #       status: 40
-                #       operations: 20
+                - name: core-dc1-talos-prod
+                  values:
+                    processors:
+                      status: 40
+                      operations: 20
 
                 - name: core-home1-talos-prod
                   values:
@@ -90,6 +90,31 @@ spec:
                     # -- The name of an existing secret with Redis (must contain key `redis-password`. And should contain `redis-username` if username is not `default`) and Sentinel credentials.
                     # When it's set, the `externalRedis.username` and `externalRedis.password` parameters are ignored
                     existingSecret: argocd-redis-password
+
+                  server:
+                    httproute:
+                      enabled: true
+
+                      hostnames:
+                        - argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
+
+                      parentRefs:
+                        - group: gateway.networking.k8s.io
+                          kind: Gateway
+                          namespace: core-{{ .values.environment }}
+                          name: main-gw
+                          sectionName: https-myloginspace
+                        
+                    grpcroute:
+                      parentRefs:
+                        - group: gateway.networking.k8s.io
+                          kind: Gateway
+                          namespace: core-{{ .values.environment }}
+                          name: main-gw
+                          sectionName: https-myloginspace
+
+                      hostnames:
+                        - argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
 
                   global:
                     domain: argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
