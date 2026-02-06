@@ -414,7 +414,7 @@ argo-cd:
         value: 60s
 
     metrics:
-      enabled: false
+      enabled: true
 
       serviceMonitor:
         enabled: true
@@ -434,6 +434,19 @@ argo-cd:
       enabled: true
 
       minAvailable: '50%'
+
+    httproute:
+      # -- Enable HTTPRoute resource for Argo CD server (Gateway API)
+      enabled: true
+
+      labels:
+        wan-mode: 'public'
+
+    grpcroute:
+      enabled: true
+
+      labels:
+        wan-mode: 'public'
 
     env:
       - name: ARGOCD_API_SERVER_REPLICAS
