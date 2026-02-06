@@ -7,6 +7,9 @@ spec:
     spec:
       containers:
         - name: lovely-plugin
+          #
+          # TODO: Get renovate or similar auto updating this
+          #
           image: ghcr.io/crumbhole/lovely-vault-plugin:1811db12cc26d4dce72420cef26ff9da6398b8c5
 
           envFrom:
@@ -18,7 +21,7 @@ spec:
               value: argocd-lovely-plugin
 
             - name: ARGOCD_EXEC_TIMEOUT
-              value: 900s
+              value: 60s
 
           securityContext:
             runAsNonRoot: true
@@ -26,8 +29,8 @@ spec:
 
           resources:
             limits:
-              cpu: '3'
-              memory: 4Gi
+              cpu: '4'
+              memory: 8Gi
             requests:
               cpu: '800m'
               memory: 2Gi
