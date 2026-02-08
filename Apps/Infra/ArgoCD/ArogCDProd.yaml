@@ -20,13 +20,17 @@ spec:
                     processors:
                       status: 40
                       operations: 20
+                    reposerver:
+                      parallelism: 4
+
 
                 - name: core-home1-talos-prod
                   values:
                     processors:
                       status: 10
-                      operations: 5
-
+                      operations: 2
+                    reposerver:
+                      parallelism: 2
 
           - clusters:
               selector:
@@ -124,6 +128,8 @@ spec:
                       controller.operation.processors: {{ .values.processors.operations }}
 
                       repo.server: 'argocd-repo-server.argocd.svc.{{ .values.clusterDomain }}:8081'
+
+                      reposerver.parallelism.limit: "{{ .values.reposerver.parallelism }}"
 
                     cm:
                       url: https://argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
