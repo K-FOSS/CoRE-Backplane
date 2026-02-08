@@ -1,7 +1,7 @@
 {{ if .Values.psql.standby  }}
 {{ range $index, $username := .Values.psql.pushUsers }}
 {{ $VaultKey := ($username | title) }}
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: pqsl-{{ $username | lower }}-sync
