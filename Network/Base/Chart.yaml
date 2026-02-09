@@ -4,7 +4,7 @@ name: core-backplane-network-base
 
 dependencies:
   - name: cilium
-    version: '1.19.0-rc.0'
+    version: '1.19.0'
     repository: https://helm.cilium.io/
 
   - name: sriov-network-operator-chart
@@ -27,10 +27,16 @@ dependencies:
   - name: gateway-helm
     alias: envoy-gw
     condition: envoy-gw.enabled
-    version: v0.0.0-latest
+    #
+    # TODO: Automate this with Renovate or similar
+    #
+    version: v1.7.0
     repository: oci://registry-1.docker.io/envoyproxy
 
   - name: frr-k8s
     condition: frr-k8s.enabled
+    #
+    # TODO: Automate this with Renovate or similar
+    #
     version: '0.0.21'
     repository: https://metallb.github.io/frr-k8s
