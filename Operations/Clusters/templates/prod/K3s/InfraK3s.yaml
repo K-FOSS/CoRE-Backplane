@@ -10,6 +10,12 @@ spec:
       version: '0.32.0-next.0'
     values: |-
       controlPlane:
+        statefulSet:
+          labels:
+            argocd.argoproj.io/instance: {{ $.Release.Name }}
+          annotations:
+            argocd.argoproj.io/tracking-id: {{ $.Release.Name }}:infrastructure.cluster.x-k8s.io/VCluster:core-prod/k3s-legacy
+
         proxy:
           # ExtraSANs are extra hostnames to sign the vCluster proxy certificate for.
           extraSANs:
