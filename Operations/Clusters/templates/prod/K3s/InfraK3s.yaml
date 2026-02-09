@@ -10,9 +10,10 @@ spec:
       version: '0.32.0-next.0'
     values: |-
       controlPlane:
-        statefulSet:
-          extraArgs:
-            - --tls-san=k3s-legacy.resolvemy.host          
+        proxy:
+          # ExtraSANs are extra hostnames to sign the vCluster proxy certificate for.
+          extraSANs:
+            - k3s-legacy.resolvemy.host
         service:
           # Enabled defines if the control plane service should be enabled
           enabled: true
