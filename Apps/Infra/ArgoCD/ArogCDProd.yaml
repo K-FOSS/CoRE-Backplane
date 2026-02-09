@@ -22,6 +22,8 @@ spec:
                       operations: 20
                     reposerver:
                       parallelism: 4
+                    controllerCache:
+                      interval: 200ms
 
 
                 - name: core-home1-talos-prod
@@ -31,6 +33,8 @@ spec:
                       operations: 2
                     reposerver:
                       parallelism: 2
+                    controllerCache:
+                      interval: 200ms
 
           - clusters:
               selector:
@@ -130,6 +134,7 @@ spec:
                       repo.server: 'argocd-repo-server.argocd.svc.{{ .values.clusterDomain }}:8081'
 
                       reposerver.parallelism.limit: "{{ .values.reposerver.parallelism }}"
+                      controller.cluster.cache.events.processing.interval: "{{ .values.controllerCache.interval }}"
 
                     cm:
                       url: https://argocd.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes
