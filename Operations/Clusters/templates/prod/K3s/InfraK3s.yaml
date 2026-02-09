@@ -31,7 +31,19 @@ spec:
           {{- include "argocd-index" $ | nindent 10 }}
 
           highAvailability:
-            replicas: 2
+            replicas: 1
+          
+          scheduling:
+            affinity:
+              nodeAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: kubernetes.io/hostname
+                          operator: In
+                          values:
+                            - infra1
+                            - infra2
 
         proxy:
           # ExtraSANs are extra hostnames to sign the vCluster proxy certificate for.
