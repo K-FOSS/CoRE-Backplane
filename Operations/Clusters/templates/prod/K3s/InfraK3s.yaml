@@ -8,9 +8,9 @@ argocd.argoproj.io/tracking-id: {{ $.Release.Name }}:infrastructure.cluster.x-k8
 
 {{- define "argocd-index" }}
 labels:
-  {{- include "argocd-label" $ | indent 2 }}
+{{- include "argocd-label" $ | indent 2 }}
 annotations:
-  {{- include "argocd-annotation" $ | indent 2 }}
+{{- include "argocd-annotation" $ | indent 2 }}
 {{- end }}
 
 
@@ -29,6 +29,9 @@ spec:
         statefulSet:
           enableServiceLinks: false
           {{- include "argocd-index" $ | nindent 10 }}
+
+          highAvailability:
+            replicas: 2
 
         proxy:
           # ExtraSANs are extra hostnames to sign the vCluster proxy certificate for.
