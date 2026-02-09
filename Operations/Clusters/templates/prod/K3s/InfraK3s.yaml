@@ -9,10 +9,10 @@ spec:
     chart:
       version: '0.32.0-next.0'
     values: |-
-      syncer:
-        extraArgs:
-          - --tls-san=k3s-legacy.resolvemy.host
       controlPlane:
+        statefulSet:
+          extraArgs:
+            - --tls-san=k3s-legacy.resolvemy.host          
         service:
           # Enabled defines if the control plane service should be enabled
           enabled: true
