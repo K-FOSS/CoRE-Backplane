@@ -1,3 +1,19 @@
+{{- define "argocd-label" }}
+argocd.argoproj.io/instance: {{ $.Release.Name }}
+{{- end }}
+
+{{- define "argocd-annotation" }}
+argocd.argoproj.io/tracking-id: {{ $.Release.Name }}:infrastructure.cluster.x-k8s.io/VCluster:core-prod/k3s-legacy
+{{- end }}
+
+{{- define "argocd-index" }}
+labels:
+  {{- include "argocd-label" $ | indent 2 }}
+annotations:
+  {{- include "argocd-annotation" $ | indent 2 }}
+{{- end }}
+
+
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: VCluster
 metadata:
@@ -11,10 +27,8 @@ spec:
     values: |-
       controlPlane:
         statefulSet:
-          labels:
-            argocd.argoproj.io/instance: {{ $.Release.Name }}
-          annotations:
-            argocd.argoproj.io/tracking-id: {{ $.Release.Name }}:infrastructure.cluster.x-k8s.io/VCluster:core-prod/k3s-legacy
+          enableServiceLinks: false
+          {{- include "argocd-index" $ | nindent 10 }}
 
         proxy:
           # ExtraSANs are extra hostnames to sign the vCluster proxy certificate for.
@@ -25,10 +39,17 @@ spec:
           enabled: true
           labels:
             wan-mode: 'public'
-            argocd.argoproj.io/instance: {{ $.Release.Name }}
+            {{- include "argocd-label" $ | indent 12 }}
           annotations:
             external-dns.alpha.kubernetes.io/hostname: 'k3s-legacy.resolvemy.host'
-            argocd.argoproj.io/tracking-id: {{ $.Release.Name }}:infrastructure.cluster.x-k8s.io/VCluster:core-prod/k3s-legacy
+            {{- include "argocd-annotation" $ | indent 12 }}
+
+        advanced:
+          serviceAccount:
+            # Enabled specifies if the service account should get deployed.
+            enabled: true
+            {{- include "argocd-index" $ | nindent 12 }}
+
 
       deploy:
         # LocalPathProvisioner holds dedicated local path provisioner configuration.
