@@ -923,5 +923,15 @@ frr-k8s:
 
 
   frrk8s:
+    livenessProbe:
+      failureThreshold: 6
+      initialDelaySeconds: 10
+      periodSeconds: 30
+
+    readinessProbe:
+      failureThreshold: 12
+      initialDelaySeconds: 10
+      periodSeconds: 30
+
     frr:
       acceptIncomingBGPConnections: true
