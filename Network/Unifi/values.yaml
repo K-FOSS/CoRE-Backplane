@@ -56,11 +56,7 @@ service:
 
     controller: unifi
 
-    type: LoadBalancer
-
-    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
-    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
-    externalTrafficPolicy: Local
+    type: ClusterIP
 
     # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
     ipFamilyPolicy:
@@ -69,10 +65,6 @@ service:
 
     # # -- Provide additional annotations which may be required.
     annotations:
-      purelb.io/allow-shared-ip: main-gw.resolvemy.host
-      purelb.io/service-group: main-public
-      purelb.io/allow-local: 'true'
-      purelb.io/addresses: '66.165.222.102'
       external-dns.alpha.kubernetes.io/hostname: 'unifi.int.mylogin.space'
 
     # -- Provide additional labels which may be required.
