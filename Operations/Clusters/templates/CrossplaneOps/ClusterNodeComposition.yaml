@@ -500,9 +500,14 @@ spec:
                         {{- end }}
 
                         router bgp 64512
+                          bgp graceful-restart
+                          bgp graceful-restart restart-time 300
+                          bgp graceful-restart stalepath-time 360
+                          bgp graceful-restart rib-stale-time 360
                           neighbor 127.0.0.1 remote-as 64599
                           neighbor 127.0.0.1 port 1180
                           neighbor 127.0.0.1 update-source lo
+                          neighbor 127.0.0.1 graceful-restart-helper
                           bgp allow-martian-nexthop
                           address-family ipv4 unicast
                             neighbor 127.0.0.1 soft-reconfiguration inbound
