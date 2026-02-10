@@ -22,6 +22,44 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+
+                    networking:
+                      multus:
+                        enabled: false
+
+                    bgp:
+                      enabled: true
+
+                    peers:
+                      - port: '54764'
+                        name: sbc1.home2.yvr.resolvemy.host
+                        address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
+                        publicKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#PublicKey>
+                        server:
+                          address: 66.165.222.101
+
+                          privateKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Server#PrivateKey>
+
+                          service:
+                            enabled: true
+
+                            type: ClusterIP
+
+                            annotations:
+                              purelb.io/allow-shared-ip: main-gw.resolvemy.host
+                              purelb.io/service-group: core-public
+                              purelb.io/allow-local: 'true'
+
+                        network:
+                          localAddress: 172.31.243.2/30
+                          remoteAddress: 172.31.243.1/30
+                          allowedIPs: 0.0.0.0/0
+                          remotePort: '54764'
+
+
+                    network:
+                      publicAddress: 66.165.222.101
+
           - clusters:
               selector:
                 matchLabels:
@@ -71,10 +109,25 @@ spec:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
+                peers:
+                {{ nindent 2 (toYaml .values.peers) }}
 
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
+
+                frr:
+                  bgp:
+                    enabled: {{ .values.bgp.enabled }}
+                  
+                  ospf:
+                    enabled: true
+
+                networking:
+                  publicAddress: {{ .values.network.publicAddress }}
+
+                  routeserver:
+                    ipv4Address: 10.1.1.140
 
       destination:
         server: '{{ .server }}'
