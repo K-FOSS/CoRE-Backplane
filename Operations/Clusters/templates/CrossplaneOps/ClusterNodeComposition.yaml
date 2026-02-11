@@ -380,6 +380,12 @@ spec:
                             peerConfigRef:
                               name: local-peer
                         
+                          - name: frr
+                            localAddress: ::1
+                            peerAddress: ::1
+                            peerASN: 64512
+                            peerConfigRef:
+                              name: local-peer
                       {{ $bgpInstances := concat .observed.composite.resource.spec.bgp.instances $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances  }}
                       {{ range $index, $bgpInstance := $bgpInstances }}
                       - localASN: {{ $bgpInstance.asn }}
@@ -461,6 +467,17 @@ spec:
                           {{- end }}
                         exit
 
+                        route-map TEST-v6 permit 10
+                          match ipv6 address prefix-list CILIUM
+                          {{- if $ciliumNode.status.atProvider }}
+                          {{- range $ciliumNode.status.atProvider.manifest.spec.addresses }}
+                          {{- if and (eq .type "CiliumInternalIP") (contains ":" .ip)  }}
+                          set ipv6 next-hop {{ .ip }}
+                          {{- end }}
+                          {{- end }}
+                          {{- end }}
+                        exit
+
                         route-map TEST-TER permit 10
                           match ip address prefix-list CILIUM
                         exit
@@ -508,6 +525,10 @@ spec:
                           neighbor 127.0.0.1 port 1180
                           neighbor 127.0.0.1 update-source lo
                           neighbor 127.0.0.1 graceful-restart-helper
+                          neighbor ::1 remote-as 64599
+                          neighbor ::1 port 1180
+                          neighbor ::1 update-source lo
+                          neighbor ::1 graceful-restart-helper
                           bgp allow-martian-nexthop
                           address-family ipv4 unicast
                             neighbor 127.0.0.1 soft-reconfiguration inbound
@@ -712,7 +733,9 @@ spec:
                                 {{- range $index, $network := .observed.composite.resource.spec.networks }}
                                 {{- range $addrIndex, $address := $network.addresses }}
                                 {{- if . }}
+                                {{- if (not (contains ":" $address)) }}
                                 "{{ regexReplaceAll "(.*)/[1-3][0-9]" $address "${1}" }}/32",
+                                {{- end }}
                                 {{- end }}
                                 {{- end }}
                                 {{- end }}
