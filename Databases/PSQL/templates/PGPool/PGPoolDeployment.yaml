@@ -83,6 +83,9 @@ spec:
             - name: PGPOOL_INSTALL_DIR
               value: /opt/pgpool-II
 
+            - name: PCPPASSFILE
+              value: /config/pcppass
+
             - name: CHECK_PGCONNECT_TIMEOUT
               value: '2'
 
@@ -110,6 +113,14 @@ spec:
                   key: password
                   name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
 
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - /bin/sh
+                  - '-ec'
+                  - |
+                    /opt/pgpool-II/bin/pcp_stop_pgpool -m smart
 
           readinessProbe:
             tcpSocket:
