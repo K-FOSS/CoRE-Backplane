@@ -37,6 +37,22 @@ spec:
         - name: config-vol
           secret:
             secretName: 'pgpool-config'
+            defaultMode: 420
+            items:
+              - key: pgpool.conf
+                path: pgpool.conf
+                mode: 420
+
+              - key: pool_hba.conf
+                path: pool_hba.conf
+                mode: 420
+
+              - key: pool_passwd
+                path: pool_passwd
+
+              - key: pcppass
+                path: pcppass
+                mode: 384
 
         - name: tls
           secret:
@@ -120,7 +136,7 @@ spec:
                   - /bin/sh
                   - '-ec'
                   - |
-                    /opt/pgpool-II/bin/pcp_stop_pgpool -m smart
+                    /opt/pgpool-II/bin/pcp_stop_pgpool -m smart --host localhost
 
           readinessProbe:
             tcpSocket:
