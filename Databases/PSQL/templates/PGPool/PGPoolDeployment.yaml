@@ -95,9 +95,6 @@ spec:
             - name: PGPOOL_INSTALL_DIR
               value: /opt/pgpool-II
 
-            - name: PCPPASSFILE
-              value: /config/pcppass
-
             - name: CHECK_PGCONNECT_TIMEOUT
               value: '2'
 
@@ -120,6 +117,18 @@ spec:
                   name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
 
             - name: CHECK_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+
+            - name: PGPOOL_PCP_USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+
+            - name: PGPOOL_PCP_PASSWORD
               valueFrom:
                 secretKeyRef:
                   key: password
