@@ -24,8 +24,25 @@ spec:
   postgresql:
     version: '17'
 
+  users:
+    opsadmin:
+      - superuser
+      - createdb
+      - LOGIN
+
   patroni:
     synchronous_mode: false
+
+    pg_hba:
+      - local all         all                  trust
+      - local replication standby              md5
+      - host replication  replicator 0.0.0.0/0 md5
+      - host replication  standby    0.0.0.0/0 md5
+      - host all          postgres   0.0.0.0/0 md5
+      - host all          pooler     0.0.0.0/0 md5
+      - host all          opsadmin   0.0.0.0/0 md5
+      - host all          all        0.0.0.0/0 ldap ldapserver=ldap-home1.mylogin.space ldapport=389 ldapbasedn="ou=users,dc=ldap,dc=mylogin,dc=space" ldapbinddn="cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="cn"
+
 
   tls:
     secretName: 'myloginspace-default-certificates'
