@@ -1,0 +1,33 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: ops-psql-{{ .Values.datacenter }}-{{ .Values.region }}-crossplane
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+
+  target:
+    name: ops-psql-{{ .Values.datacenter }}-{{ .Values.region }}-crossplane
+    template:
+      engineVersion: v2
+      data:
+        endpoint: psql-local.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
+        port: '5432'
+        username: '{{`{{ .Username }}'
+        password: '{{ .Password }}`}}'
+          
+  data:
+    - secretKey: Username
+      remoteRef:
+        key: PSQL/Local/{{ .Values.region }}/{{ .Values.datacenter }}/Operations
+        property: username
+
+    - secretKey: Password
+      remoteRef:
+        key: PSQL/Local/{{ .Values.region }}/{{ .Values.datacenter }}/Operations
+        property: password
