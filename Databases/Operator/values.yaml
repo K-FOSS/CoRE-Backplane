@@ -16,7 +16,7 @@ postgres-operator:
   configTarget: 'OperatorConfigurationCRD'
 
   # JSON logging format
-  enableJsonLogging: false
+  enableJsonLogging: true
 
   # general configuration parameters
   configGeneral:
@@ -45,7 +45,8 @@ postgres-operator:
     etcd_host: ''
     
     # Spilo docker image
-    docker_image: ghcr.io/zalando/spilo-16:3.3-p1
+    # TODO: Automatically update this image
+    docker_image: ghcr.io/zalando/spilo-18-dev:6a722f01
 
     # key name for annotation to ignore globally configured instance limits
     # ignore_instance_limits_annotation_key: ''
@@ -56,7 +57,7 @@ postgres-operator:
     # min number of instances in Postgres cluster. -1 = no limit
     min_instances: -1
     # max number of instances in Postgres cluster. -1 = no limit
-    max_instances: -1
+    max_instances: 3
     # period between consecutive repair requests
     repair_period: 5m
     # period between consecutive sync requests
@@ -101,9 +102,9 @@ postgres-operator:
     # - acid
 
     # minimal Postgres major version that will not automatically be upgraded
-    minimal_major_version: "12"
+    minimal_major_version: '12'
     # target Postgres major version when upgrading clusters automatically
-    target_major_version: "16"
+    target_major_version: '16'
 
   configKubernetes:
     # list of additional capabilities for postgres container
@@ -226,7 +227,7 @@ postgres-operator:
     pod_environment_secret: psql-ops-s3-backup
 
     # specify the pod management policy of stateful sets of Postgres clusters
-    pod_management_policy: 'ordered_ready'
+    pod_management_policy: 'parallel'
 
     # label assigned to the Postgres pods (and services/endpoints)
     pod_role_label: spilo-role
@@ -353,7 +354,7 @@ postgres-operator:
   # options to aid debugging of the operator itself
   configDebug:
     # toggles verbose debug logs from the operator
-    debug_logging: true
+    debug_logging: false
     # toggles operator functionality that require access to the postgres database
     enable_database_access: true
 
