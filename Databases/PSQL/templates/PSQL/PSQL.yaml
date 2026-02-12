@@ -1,7 +1,10 @@
-apiVersion: "acid.zalan.do/v1"
+apiVersion: acid.zalan.do/v1
 kind: postgresql
 metadata:
   name: psql-{{ .Values.datacenter }}-{{ .Values.region }}
+
+  labels:
+    wan-mode: public
 
   annotations:
     acid.zalan.do/controller: '{{ .Values.psql.controllerID }}'
@@ -13,7 +16,15 @@ spec:
 
     storageClass: nvme-nonredundant
 
-  numberOfInstances: 2
+  numberOfInstances: 1
+
+  masterServiceAnnotations:
+    external-dns.alpha.kubernetes.io/hostname: 'psql-local.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
 
   postgresql:
     version: '17'
+
+  tls:
+    secretName: 'myloginspace-default-certificates'
+    certificateFile: 'tls.crt'
+    privateKeyFile: 'tls.key'
