@@ -1,0 +1,14 @@
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: psql-{{ .Values.datacenter }}-{{ .Values.region }}
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+
+spec:
+  credentials:
+    source: PostgreSQLConnectionSecret
+    connectionSecretRef:
+      namespace: {{ .Release.Namespace }}
+      name: ops-psql-{{ .Values.datacenter }}-{{ .Values.region }}-crossplane

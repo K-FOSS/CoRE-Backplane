@@ -1,0 +1,50 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: psql-{{ .Values.datacenter }}-{{ .Values.region }}
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '50'
+
+spec:
+  credentials:
+    - filename: psql-username
+      source: Secret
+      secretRef:
+        namespace: core-prod
+        name: opsadmin.psql-{{ .Values.datacenter }}-{{ .Values.region }}.credentials.postgresql.acid.zalan.do
+        key: username
+
+    - filename: psql-password
+      source: Secret
+      secretRef:
+        namespace: core-prod
+        name: opsadmin.psql-{{ .Values.datacenter }}-{{ .Values.region }}.credentials.postgresql.acid.zalan.do
+        key: password
+  configuration: | # hcl
+    provider "postgresql" {
+      host            = "psql-local.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space"
+      port            = 5432
+      database        = "postgres"
+      username        = file("${path.module}/psql-username")
+      password        = file("${path.module}/psql-password")
+      sslmode         = "require"
+      connect_timeout = 15
+    }
+
+    // Modules _must_ use remote state. The provider does not persist state.
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-psql-{{ .Values.datacenter }}-{{ .Values.region }}"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        postgresql = {
+          source = "cyrilgdn/postgresql"
+          // TODO: Automate this updating
+          version = "1.21.1-beta.1"
+        }
+      }
+    }
