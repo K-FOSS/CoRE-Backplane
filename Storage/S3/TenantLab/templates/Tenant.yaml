@@ -346,6 +346,22 @@ spec:
       kind: HTTPRoute
       name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}
 
+  retry:
+    numRetries: 2
+    perRetry:
+      timeout: 500ms
+      backOff:
+        baseInterval: 100ms
+        maxInterval: 2s
+    retryOn:
+      triggers:
+        - connect-failure
+        - reset
+      httpStatusCodes:
+        - 502
+        - 503
+        - 504
+
   timeout:
     http:
       requestTimeout: 1800s
