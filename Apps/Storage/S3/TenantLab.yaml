@@ -20,10 +20,12 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     replicas: 1
+                    node: infra1
 
                 - name: core-home1-talos-prod
                   values:
                     replicas: 1
+                    node: hpc1
           - clusters:
               selector:
                 matchLabels:
@@ -80,6 +82,9 @@ spec:
 
                 s3:
                   replicas: {{ .values.replicas }}
+
+                  nodeSelector:
+                    kubernetes.io/hostname: {{ .values.node }}
 
       destination:
         server: '{{ .server }}'
