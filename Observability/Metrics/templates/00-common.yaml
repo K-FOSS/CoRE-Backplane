@@ -1,4 +1,9 @@
 ---
+{{- define "core.promRulefilesConfigMapName" -}}
+{{- $base := printf "prometheus-%s" .Values.cluster.name -}}
+{{- printf "%s-%s" $base "export-prometheus-rulefiles" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
@@ -370,7 +375,7 @@ persistence:
 
     type: configMap
 
-    name: 'prometheus-{{ $.Values.cluster.name }}-export-prometheus-rulefiles-0'
+    name: '{{ include "core.promRulefilesConfigMapName" $ }}'
 
     defaultMode: 0755
 
