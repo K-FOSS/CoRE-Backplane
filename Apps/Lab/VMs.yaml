@@ -60,36 +60,79 @@ spec:
                             nics:
                               - br0
 
+                      - name: wan-rt1
+                        installing: true
+
+                        podNetwork:
+                          enabled: false
+
+                        ports:
+                          - name: wg-2012
+                            port: 64764
+                            protocol: UDP
+                            expose: false
+                        
+                        disk:
+                          enabled: true
+
+                          size: 5Gi
+
+                        networks:
+                          - name: pwan
+                            nics:
+                              - br1
+
+                          - name: backend951
+                            nics:
+                              - br1
+
+                          - name: backend952
+                            nics:
+                              - br1
+
+                          - name: backend953
+                            nics:
+                              - br1
+
+                          - name: backend954
+                            nics:
+                              - br1
+
                     networks:
                       - name: pwan
                         vlan: 15
                         mtu: 1500
                         nics:
                           - br0
+                          - br1
 
                       - name: backend951
                         vlan: 951
                         mtu: 9000
                         nics:
                           - br0
+                          - br1
 
                       - name: backend952
                         vlan: 952
                         mtu: 9000
                         nics:
                           - br0
+                          - br1
 
                       - name: backend953
                         vlan: 953
                         mtu: 9000
                         nics:
                           - br0
+                          - br1
 
                       - name: backend954
                         vlan: 954
                         mtu: 9000
                         nics:
                           - br0
+                          - br1
 
                 - name: core-home1-talos-prod
                   values:
