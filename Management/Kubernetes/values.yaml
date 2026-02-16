@@ -49,6 +49,19 @@ headlamp:
         - name: headlamp-plugins
           mountPath: /build/plugins
 
+    - name: install-kubevirt-plugin
+      #
+      # TODO: Automate this version update
+      #
+      image: ghcr.io/buttahtoast/headlamp-plugins/kubevirt:v0.0.1-beta7
+      command: ["/bin/sh", "-c", "cp -r /plugins/* /headlamp/plugins/"]
+      volumeMounts:
+        - name: headlamp-plugins
+          mountPath: /headlamp/plugins
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
+
   config:
     # -- base url path at which headlamp should run
     baseURL: ''
