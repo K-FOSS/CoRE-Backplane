@@ -66,6 +66,9 @@ spec:
                         path: /metadata/annotations
                         value:
                           external-dns.alpha.kubernetes.io/hostname: corevault.{{ .values.domain }}{{ if .values.hub }},corevault.{{ .values.datacenter }}.mylogin.space{{ end }}
+                          service.cilium.io/global: 'true'
+                          service.cilium.io/global-sync-endpoint-slices: 'true'
+
 
       destination:
         server: '{{ .server }}'
