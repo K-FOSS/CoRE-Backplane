@@ -11,6 +11,14 @@ cilium:
   annotations:
     argocd.argoproj.io/sync-wave: '-5'
 
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # @schema
+      # type: [integer, string]
+      # @schema
+      maxUnavailable: 1
+
   podLabels:
     logs: loki-myloginspace
 
