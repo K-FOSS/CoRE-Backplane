@@ -484,6 +484,32 @@ spec:
 
                           description: iPXE Script provided to the client
 
+                    pci:
+                      type: object
+                      description: Override PCIe devices and rebinds
+                      properties:
+                        rebinds:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: string
+                                description: PCI Device ID
+
+                              driver:
+                                type: string
+                                description: Driver to rebind the PCI device to
+
+                              description:
+                                type: string
+                                description: Description of bind
+
+                            required:
+                              - id
+                              - driver
+
+                    
                     talos:
                       type: object
 
@@ -492,7 +518,6 @@ spec:
                       properties:
                         kernel:
                           type: object
-
                           description: Kernel configuration applied to the talos node
 
                           properties:
@@ -523,6 +548,10 @@ spec:
 
                               items:
                                 type: string
+              
+              
+                  
+              
               required:
                 - name
                 - networks
