@@ -65,10 +65,16 @@ spec:
     - macAddress: 00:30:93:0c:05:12
       bridge: true
 
+      vlans:
+        - vlanID: 150
+
       addresses:
         - 172.31.193.22/24
 
-      routes: []
+      routes:
+        - gateway: 172.31.193.254
+          metric: 1024
+          network: 0.0.0.0/0
 
       mtu: 9000
 
@@ -88,6 +94,9 @@ spec:
       kernel:
         modules:
           - name: vfio-pci
+          - name: dm_multipath
+          - name: dm_round-robin
+          - name: snd-usb-audio
 
       extensions:
         system:
