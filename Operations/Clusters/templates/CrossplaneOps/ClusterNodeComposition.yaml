@@ -605,8 +605,8 @@ spec:
                     value = true
                   }
 
-                  {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                   locals {
+                    {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                     watchdog-conf = <<-EOT
                       ---
                       apiVersion: v1alpha1
@@ -614,8 +614,21 @@ spec:
                       device: {{ $.observed.composite.resource.spec.watchdog.devicePath }}
                       timeout: {{ $.observed.composite.resource.spec.watchdog.timeout }}
                     EOT
+                    {{- end }}
+
+                    {{- if $.observed.composite.resource.spec.overrides.pci }}
+                    pci-conf = <<-EOT
+                      {{- range $pciIndex, $pciDevice := $.observed.composite.resource.spec.overrides.pci.rebinds -}}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: PCIDriverRebindConfig
+                      pciID: "{{ $pciDevice.id }}"
+                      targetDriver: {{ $pciDevice.driver }}
+                      {{- end }}
+                    EOT
+                    {{- end }}
                   }
-                  {{- end }}
+
 
                   resource "talos_machine_configuration_apply" "node-apply" {
                     client_configuration = {
@@ -816,6 +829,9 @@ spec:
                       }),
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
+                      {{- end }}
+                      {{- if $.observed.composite.resource.spec.overrides.pci }}
+                      local.pci-conf,
                       {{- end }}
                     ]
                   }
