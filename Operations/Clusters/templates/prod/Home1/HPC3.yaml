@@ -70,7 +70,7 @@ spec:
 
       routes: []
 
-      mtu: 1500
+      mtu: 9000
 
       static: true
       dns:
@@ -79,7 +79,16 @@ spec:
         - 8.8.8.8
 
   overrides:
+    kernel:
+      parameters:
+        - name: intel_iommu
+          value: 'on'
+
     talos:
+      kernel:
+        modules:
+          - name: vfio-pci
+
       extensions:
         system:
           - intel-ucode
