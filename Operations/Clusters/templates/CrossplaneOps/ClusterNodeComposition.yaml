@@ -625,11 +625,11 @@ spec:
 
                     {{- if $.observed.composite.resource.spec.overrides.pci }}
                     pci-conf = <<-EOT
-                      {{- range $pciIndex, $pciDevice := $.observed.composite.resource.spec.overrides.pci.rebinds -}}
+                      {{- range $pciIndex, $pciDevice := $.observed.composite.resource.spec.overrides.pci.rebinds }}
                       ---
                       apiVersion: v1alpha1
                       kind: PCIDriverRebindConfig
-                      pciID: "{{ $pciDevice.id }}"
+                      name: {{ $pciDevice.id }}
                       targetDriver: {{ $pciDevice.driver }}
                       {{- end }}
                     EOT
