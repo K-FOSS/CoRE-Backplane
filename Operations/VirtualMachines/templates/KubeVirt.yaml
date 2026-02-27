@@ -5,6 +5,12 @@ metadata:
   namespace: kubevirt
 spec:
   configuration:
+    permittedHostDevices:
+      pciHostDevices:
+        - pciVendorSelector: '1002:6920'
+          resourceName: 'amd.com/amethyst-gpu'
+        - pciVendorSelector: '1002:aad8'
+          resourceName: 'amd.com/amethyst-audio'
     developerConfiguration:
       featureGates:
         - LiveMigration
@@ -17,4 +23,4 @@ spec:
       family: "ccio"
   workloadUpdateStrategy:
     workloadUpdateMethods:
-    - LiveMigrate # enable if you have deployed either Longhorn or NFS-CSI for shared storage.
+      - LiveMigrate
