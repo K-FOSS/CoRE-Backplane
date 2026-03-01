@@ -80,6 +80,20 @@ spec:
     timeout: 5m
 
   overrides:
+    kernel:
+      parameters:
+        - name: intel_iommu
+          value: 'on'
+
+        - name: iommu
+          value: 'pt'
+
+        - name: i915.enable_guc
+          value: '3'
+
+        - name: i915.max_vfs
+          value: '7'
+
     talos:
       extensions:
         system:
