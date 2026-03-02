@@ -390,6 +390,9 @@ spec:
                       {{ range $index, $bgpInstance := $bgpInstances }}
                       - localASN: {{ $bgpInstance.asn }}
                         name: {{ $bgpInstance.name }}
+                        {{- if $bgpInstance.port }}
+                        localPort: {{ $bgpInstance.port }}
+                        {{- end }}
                         peers:
                           {{ range $peerIndex, $peer := $bgpInstance.peers }}
                           - name: {{ $peer.name }}
