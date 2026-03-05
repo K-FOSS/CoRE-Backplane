@@ -1,0 +1,61 @@
+{{- if .Values.authentik.autoconfigure }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: 'aaa-longhorn-ui'
+
+spec:
+  providerConfigRef:
+    name: authentik
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: 'longhorn-ui-sso'
+
+  forProvider:
+    source: Inline
+    module: | # hcl
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      resource "authentik_provider_proxy" "app" {
+        name               = "longhorn-{{ .Values.tenant.name}}-{{ .Values.cluster.name }}-{{ .Values.datacenter }}"
+        mode               = "forward_single"
+        external_host      = "https://longhorn.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}"
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+      }
+
+      resource "authentik_application" "name" {
+        name = "Longhorn"
+        slug = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }}-{{ .Values.datacenter }}-longhorn"
+        group = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        protocol_provider = authentik_provider_proxy.app.id
+      }
+
+      resource "authentik_application_entitlement" "ent" {
+        name        = "servers-ent"
+        application = authentik_application.name.uuid
+      }
+
+      data "authentik_group" "group" {
+        name = "Server Admins"
+      }
+
+      resource "authentik_policy_binding" "test-ent-access" {
+        target = authentik_application_entitlement.ent.id
+        group  = data.authentik_group.group.id
+        order  = 0
+      }
+
+      resource "authentik_policy_binding" "app-access" {
+        target = authentik_application.name.uuid
+        group  = data.authentik_group.group.id
+        order  = 0
+      }
+{{- end }}
