@@ -4,11 +4,14 @@ metadata:
   name: ssd-storage
 
 provisioner: driver.longhorn.io
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
 allowVolumeExpansion: true
+
 parameters:
   dataEngine: v1
-  dataLocality: strict-local
+  datalocality: strict-local
+  diskSelector: ssd
+  fsType: xfs
   numberOfReplicas: '1'
-  fsType: 'xfs'
-  diskSelector: 'ssd'
   stalereplicatimeout: '30'
