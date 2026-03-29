@@ -626,6 +626,48 @@ spec:
                     EOT
                     {{- end }}
 
+                    ethernet-conf = <<-EOT
+                      {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                      {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
+                      {{- if $network.bridge }}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: BridgeConfig
+                      name: br{{ $netIndex }}
+
+                      links:
+                        - enx{{ $nicMAC }}
+                      
+                      stp:
+                        enabled: true
+
+                      {{- if $network.vlans }}
+                      vlan:
+                        filtering: true
+                      {{- end }}
+                      {{- else }}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: LinkConfig
+                      name: enx{{ $nicMAC }}
+                      {{- end }}
+                      up: true
+                      mtu: {{ $network.mtu }}
+                      
+                      addresses:
+                        {{- range $addrIndex, $address := $network.addresses }}
+                        - address: {{ $address }}
+                        {{- end }}
+
+                      routes:
+                        {{- range $routeIndex, $route := $network.routes }}
+                        - destination: {{ $route.network }}
+                          gateway: {{ $route.gateway }}
+                          metric: {{ $route.metric }}
+                        {{- end }}
+                      {{- end }}
+                    EOT
+
                     {{- if $.observed.composite.resource.spec.overrides.pci }}
                     pci-conf = <<-EOT
                       {{- range $pciIndex, $pciDevice := $.observed.composite.resource.spec.overrides.pci.rebinds }}
