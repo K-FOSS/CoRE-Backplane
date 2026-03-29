@@ -1,0 +1,74 @@
+apiVersion: resolvemy.host/v1alpha1
+kind: ClusterNode
+metadata:
+  name: srv2.home1.yvr.resolvemy.host
+
+  namespace: core-prod
+
+spec:
+  name: srv2.home1.yvr.resolvemy.host
+
+  description: home2.yvr.resolvemy.host Rack mount server2
+
+  type: worker
+
+  danger:
+    warningdonotdounlessyouknowwhatyouaredoing:
+      wipeOnReboot: false
+
+  clusterRef:
+    group: resolvemy.host
+    kind: Cluster
+    name: core-home1-talos
+    namespace: core-prod
+
+  tenantRef:
+    group: mylogin.space
+    kind: Tenant
+    name: core.mylogin.space
+    namespace: core-prod
+
+  environment: prod
+
+  bgp:
+    instances:
+      - asn: 64512
+        name: wan-gw
+        peers: []
+
+  networks:
+    - macAddress: 24:6e:96:38:84:60
+      bridge: true
+      addresses:
+        - 172.31.193.36/24
+
+      routing:
+        ospf:
+          enabled: true
+
+          area: '0.0.0.0'
+
+      routes:
+        - network: 0.0.0.0/0
+          gateway: 172.31.193.254
+          metric: 1024
+
+      mtu: 1500
+
+      static: true
+      dns:
+        - 172.31.193.254
+        - 172.31.193.2
+        - 172.31.193.3
+
+  overrides:
+    kernel:
+      parameters:
+        - name: cpufreq.default_governor
+          value: performance
+
+    talos:
+      extensions:
+        system:
+          - intel-ucode
+          - nfsd
