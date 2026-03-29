@@ -38,11 +38,8 @@ spec:
       - asn: 64512
         name: wan-gw
         peers:
-          - address: 172.31.192.1
-            asn: 64567
-            name: sbc1.home1.yvr.resolvemy.host
 
-          - address: 172.31.192.2
+          - address: 172.31.193.2
             asn: 64567
             name: wan-gw1.home1.yvr.resolvemy.host
 
@@ -113,6 +110,16 @@ spec:
       vlans:
         - vlanID: 150
 
+  sysctls:
+    - name: net.core.bpf_jit_harden
+      value: '1'
+
+    - name: net.ipv6.conf.br2.accept_ra_defrtr
+      value: '0'
+
+    - name: net.ipv6.conf.br0.accept_ra
+      value: '2'
+
   overrides:
     kernel:
       parameters:
@@ -124,11 +131,18 @@ spec:
         system:
           - intel-ucode
           - i915
-          - nvidia-container-toolkit-production
-          - nonfree-kmod-nvidia-production
+          - nvidia-container-toolkit-lts
+          - nonfree-kmod-nvidia-lts
           - thunderbolt
           - intel-ice-firmware
           - nfsd
+          - multipath-tools
+          - mdadm
+          - ctr
+          - nfsrahead
+          - uinput
+          - nvme-cli
+          - usb-audio-drivers
       kernel:
         modules:
           - name: nvidia
@@ -138,3 +152,6 @@ spec:
           - name: nvidia_drm
 
           - name: nvidia_modeset
+
+          - name: dm_multipath
+          - name: dm_round-robin
