@@ -37,20 +37,17 @@ spec:
     instances:
       - asn: 64512
         name: wan-gw
+        port: 1176
+        type: cilium
         peers:
-
           - address: 172.31.193.2
             asn: 64567
             name: wan-gw1.home1.yvr.resolvemy.host
 
-          - address: 2604:3d08:d174:2000:100::1
+          - address: 2604:3d08:d174:2000::2
             asn: 64567
-            localAddress: 2604:3d08:d174:2000:100::10
+            localAddress: 2604:3d08:d174:2000::12
             name: ipv6.vyos-lab1.home1.yvr.resolvemy.host
-
-          - address: 172.31.192.16
-            asn: 64567
-            name: cpe-sw1.home1.yvr.resolvemy.host
 
   networks:
     - macAddress: e0:d5:5e:65:02:d7
@@ -70,7 +67,7 @@ spec:
           gateway: 2604:3d08:d174:2000:100::1
           metric: 600
 
-      mtu: 1500
+      mtu: 9000
 
       static: true
       dns:
@@ -85,7 +82,7 @@ spec:
         - 1.1.1.1
         - 8.8.8.8
       macAddress: e0:d5:5e:65:02:d9
-      mtu: 1500
+      mtu: 9000
       routes:
         - gateway: 172.31.193.254
           metric: 600
@@ -105,7 +102,7 @@ spec:
         - 1.1.1.1
         - 8.8.8.8
       macAddress: 00:e0:ed:9d:b8:02
-      mtu: 1500
+      mtu: 9000
       static: true
       vlans:
         - vlanID: 150
