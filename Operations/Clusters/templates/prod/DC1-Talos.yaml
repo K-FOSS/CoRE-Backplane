@@ -20,6 +20,12 @@ spec:
 
   nodes: 1
 
+  replicas:
+    controlplane:
+      mode: manual
+
+      count: 1
+
   tenantRef:
     group: mylogin.space
     kind: Tenant
@@ -79,6 +85,10 @@ spec:
               pool: 66.165.222.101/32
               aggregation: default
 
+            - aggregation: default
+              pool: 66.165.222.113/32
+              subnet: 66.165.222.113/32
+
             - subnet: 66.165.222.103/32
               pool: 66.165.222.103/32
               aggregation: default
@@ -98,9 +108,6 @@ spec:
               pool: 66.165.222.105/32
               aggregation: default
 
-            - subnet: 66.165.222.113/32
-              pool: 66.165.222.113/32
-              aggregation: default
 
   controlplane:
     ipAddress: kubernetes.default.svc.k3s.dc1.resolvemy.host
