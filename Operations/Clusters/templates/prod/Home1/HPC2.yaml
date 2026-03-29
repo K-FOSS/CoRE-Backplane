@@ -56,15 +56,20 @@ spec:
         - 172.31.193.11/24
         - 2604:3d08:d174:2000::11/122
 
+      vlans:
+        - vlanID: 150
+
       routing:
         ospf:
           enabled: true
 
           area: '0.0.0.0'
 
+          type: broadcast
+
       routes:
-        - network: ::/0
-          gateway: 2604:3d08:d174:2000:100::1
+        - network: 0.0.0.0/0
+          gateway: 172.31.193.254
           metric: 600
 
       mtu: 9000
@@ -77,6 +82,7 @@ spec:
 
     - addresses:
         - 172.31.193.12/24
+        - 2604:3d08:d174:2000::12/122
       bridge: true
       dns:
         - 1.1.1.1
@@ -91,6 +97,7 @@ spec:
         ospf:
           area: 0.0.0.0
           enabled: true
+          type: broadcast
       static: true
       vlans:
         - vlanID: 150
