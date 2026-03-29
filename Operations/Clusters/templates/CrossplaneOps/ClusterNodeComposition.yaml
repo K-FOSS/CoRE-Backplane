@@ -505,7 +505,7 @@ spec:
                           auto-cost reference-bandwidth {{ .referenceBandwidth }}
 
                           {{- if and .redistribute .redistribute.bgp .redistribute.bgp.enabled }}
-                          redistribute bgp metric-type 1
+                          redistribute bgp metric-type 1 route-map TEST-TER
                           {{- end }}
 
                           redistribute connected metric-type 1 route-map TEST-TER
@@ -674,7 +674,7 @@ spec:
                       ---
                       apiVersion: v1alpha1
                       kind: PCIDriverRebindConfig
-                      name: {{ $pciDevice.id }}
+                      name: "{{ $pciDevice.id }}"
                       targetDriver: {{ $pciDevice.driver }}
                       {{- end }}
                     EOT

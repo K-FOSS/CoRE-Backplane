@@ -86,6 +86,39 @@ spec:
                   type: string
                   description: env of the deployed cluster
 
+                replicas:
+                  type: object
+
+                  description: How many of each node type
+
+                  properties:
+                    controlplane:
+                      type: object
+
+                      description: Configure the number of replicas used in scaling the control plane cluster
+
+                      properties:
+                        mode:
+                          type: string
+
+                          description: Configure the scaling mode for the control plane cluster, currently only manual is supported but eventually there will be auto scaling
+
+                          enum:
+                            - manual
+
+                        count:
+                          type: integer
+
+                          description: Staticly configure the number of control plane replicas when in manual mode
+
+                          default: 1
+
+                          maximum: 64
+                          minimum: 1
+                      
+
+
+
                 nodes:
                   type: integer
 
