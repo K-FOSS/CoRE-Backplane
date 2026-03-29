@@ -38,18 +38,13 @@ spec:
       - asn: 64512
         name: wan-gw
         peers:
-          - address: 2604:3d08:d174:2000:100::1
+          - address: 172.31.193.2
             asn: 64567
-            localAddress: 2604:3d08:d174:2000:100::10
-            name: ipv6.vyos-lab1.home1.yvr.resolvemy.host
+            name: eth1.vyos-lab1.home2.yvr.resolvemy.host
 
-          - address: 172.31.192.2
+          - address: 172.31.193.16
             asn: 64567
-            name: vyos-lab1.home1.yvr.resolvemy.host
-
-          - address: 172.31.192.16
-            asn: 64567
-            name: cpe-sw1.home1.yvr.resolvemy.host
+            name: vlan1.cpe-sw1.home2.yvr.resolvemy.host
 
   networks:
     - macAddress: f8:0f:41:f4:d2:81
@@ -57,18 +52,18 @@ spec:
       vip: 172.31.192.9
       addresses:
         - 172.31.192.31/24
-        - 2604:3D08:D174:2000:100::31/118
-
       routing:
         ospf:
           enabled: true
 
           area: '0.0.0.0'
 
+          type: broadcast
+
       routes:
-        - network: ::/0
-          gateway: 2604:3d08:d174:2000:100::1
+        - gateway: 172.31.193.254
           metric: 600
+          network: 0.0.0.0/0
 
       mtu: 1500
 
@@ -80,7 +75,6 @@ spec:
 
     - addresses:
         - 172.31.192.34/24
-        - 2604:3D08:D174:2000:100::34/118
       bridge: true
       routing:
         ospf:
@@ -88,16 +82,18 @@ spec:
 
           area: '0.0.0.0'
 
+          type: broadcast
+
       dns:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
       macAddress: f8:0f:41:f4:d2:82
-      mtu: 1500
+      mtu: 9000
       routes:
-        - network: ::/0
-          gateway: 2604:3d08:d174:2000:100::1
+        - gateway: 172.31.193.254
           metric: 600
+          network: 0.0.0.0/0
       static: true
 
     - macAddress: f8:0f:41:f4:d2:83
@@ -111,7 +107,9 @@ spec:
 
           area: '0.0.0.0'
 
-      mtu: 1500
+          type: broadcast
+
+      mtu: 9000
 
       static: true
       dns:
@@ -120,14 +118,20 @@ spec:
         - 8.8.8.8
 
   overrides:
-    kernel:
-      parameters:
-        - name: cpufreq.default_governor
-          value: performance
-
     talos:
       extensions:
         system:
           - intel-ucode
           - realtek-firmware
           - nfsd
+          - multipath-tools
+          - nfs-utils
+          - mdadm
+          - ctr
+          - nfsrahead
+          - uinput
+          - nvme-cli
+      kernel:
+        modules:
+          - name: dm_multipath
+          - name: dm_round-robin

@@ -37,6 +37,7 @@ spec:
     instances:
       - asn: 64512
         name: wan-gw
+        type: cilium
         peers:
           - address: 172.31.193.16
             asn: 64567
@@ -54,13 +55,20 @@ spec:
           gateway: 172.31.193.254
           metric: 1024
 
-      mtu: 1500
+      mtu: 9000
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: true
+          type: broadcast
 
       static: true
       dns:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
+      vlans:
+        - vlanID: 150
 
     - macAddress: 00:30:93:0c:05:12
       bridge: true
@@ -77,12 +85,35 @@ spec:
           network: 0.0.0.0/0
 
       mtu: 9000
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: true
+          type: broadcast
+
+      vlans:
+        - vlanID: 150
 
       static: true
       dns:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
+
+    - addresses:
+        - 172.31.241.26/30
+      bridge: true
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+      macAddress: 00:30:93:0c:05:13
+      mtu: 9000
+      routes: []
+      static: true
+      routing:
+        bgp:
+          enabled: true
 
   overrides:
     kernel:
@@ -98,6 +129,10 @@ spec:
 
         - description: AMD GPU
           id: 0000:01:00.1
+          driver: vfio-pci
+
+        - description: WiFi Card
+          id: 0000:03:00.0
           driver: vfio-pci
 
     talos:
