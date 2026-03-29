@@ -458,6 +458,8 @@ spec:
                         {{- end }}
                         {{- end }}
 
+                        ip prefix-list ALLOW_ALL seq 10 permit 0.0.0.0/0 ge 1
+
                         {{- if $ciliumNode.status.atProvider }}
                         route-map TEST permit 10
                           match ip address prefix-list CILIUM
@@ -532,8 +534,35 @@ spec:
                           neighbor ::1 port 1180
                           neighbor ::1 update-source lo
                           neighbor ::1 graceful-restart-helper
+                          {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                          {{- if and $network.routing $network.routing.bgp $network.routing.bgp.enabled }}
+                          
+                          {{- $nicName := "" -}}
+                          {{- if $network.bridge -}}
+                            {{- $nicName = printf "br%d" $netIndex }}
+                          {{- else }}
+                            {{- $nicName = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") }}
+                          {{- end }}
+                          neighbor {{ $nicName }} interface v6only remote-as 64567
+                          {{- end }}
+                          {{- end }}
+
                           bgp allow-martian-nexthop
                           address-family ipv4 unicast
+                            {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                            {{- if and $network.routing $network.routing.bgp $network.routing.bgp.enabled }}
+                            
+                            {{- $nicName := "" -}}
+                            {{- if $network.bridge -}}
+                              {{- $nicName = printf "br%d" $netIndex }}
+                            {{- else }}
+                              {{- $nicName = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") }}
+                            {{- end }}
+                            neighbor {{ $nicName }} prefix-list ALLOW_ALL in
+                            neighbor {{ $nicName }} prefix-list CILIUM out
+                            {{- end }}
+                            {{- end }}
+
                             neighbor 127.0.0.1 soft-reconfiguration inbound
                             neighbor 127.0.0.1 prefix-list CILIUM in
                             {{- if $ciliumNode.status.atProvider }}
