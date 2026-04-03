@@ -22,6 +22,15 @@ spec:
                     dhcp:
                       enabled: true
 
+                      unifi:
+                        address: 24.86.197.63
+
+                      bmps:
+                        tftp:
+                          efi:
+                            address: 66.165.222.115
+                            path: ipxe.efi
+
                     netbox:
                       hub: false
 
@@ -33,6 +42,15 @@ spec:
 
                     dhcp:
                       enabled: true
+
+                      unifi:
+                        address: 24.86.197.63
+
+                      bmps:
+                        tftp:
+                          efi:
+                            address: 10.44.5.76
+                            path: images/ipxe.efi
 
                     netbox:
                       hub: false
@@ -88,6 +106,16 @@ spec:
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+
+                dhcp:
+                  unifi:
+                    address: {{ .values.dhcp.unifi.address }}
+
+                  bmps:
+                    tftp:
+                      efi:
+                        address: {{ .values.dhcp.bmps.tftp.efi.address }}
+                        path: {{ .values.dhcp.bmps.tftp.efi.path }}
 
                 persistence:
                   configs:
