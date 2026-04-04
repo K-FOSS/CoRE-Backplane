@@ -722,7 +722,7 @@ spec:
                       client_key =  local.talosconfig.key
                     }
                     node = var.nodeIP
-                    selector = "transport = == 'sas'"
+                    selector = "disk.transport == 'sas'"
                   }
 
                   resource "talos_machine_configuration_apply" "node-apply" {
@@ -931,13 +931,13 @@ spec:
                     ]
                   }
 
+                  output "sas_drives" {
+                    value = data.talos_machine_disks.sasdrives.disks
+                  }
+
                   {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                   output "watchdog" {
                     value = local.watchdog-conf
-                  }
-
-                  output "sas_drives" {
-                    value = data.talos_machine_disks.sasdrives.disks
                   }
                   {{- end }}
             {{- end }}`}}
