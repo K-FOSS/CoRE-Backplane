@@ -22,6 +22,12 @@ networks:
       - br2
       - br3
 
+  - name: wan-home-augy
+    vlan: 151
+    nics:
+      - br0
+      - br1
+
   - name: lab-vxlan
     vlan: 666
     nics:
@@ -92,6 +98,10 @@ vms:
       size: 5Gi
 
     networks:
+      - name: wan-home
+        nics:
+          - br1
+
       - name: wan-home
         nics:
           - br1
