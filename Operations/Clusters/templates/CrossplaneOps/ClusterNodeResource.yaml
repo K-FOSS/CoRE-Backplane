@@ -156,6 +156,32 @@ spec:
                 #   properties:
                 #     systemDisk:
 
+                nics:
+                  type: array
+
+                  description: Configuration of physical network interfaces
+
+                  items:
+                    type: object
+
+                    oneOf:
+                      - required:
+                          - macAddress
+                          
+                      - required:
+                          - name
+
+                    properties:
+                      macAddress:
+                        type: string
+
+                        description: MAC Address of the physical interface
+                      
+                      name:
+                        type: string
+
+                        description: Name of the physical interface
+
                 networks:
                   type: array
 
@@ -177,6 +203,15 @@ spec:
                         type: string
                         description: MAC Address to assign to the DHCP server configuration
                         nullable: false
+
+                      model:
+                        type: string
+
+                        default: legacy
+
+                        enum:
+                          - legacy
+                          - new
 
                       #
                       # TODO: Figure out a better layout for this
@@ -575,10 +610,7 @@ spec:
 
                               items:
                                 type: string
-              
-              
-                  
-              
+
               required:
                 - name
                 - networks
