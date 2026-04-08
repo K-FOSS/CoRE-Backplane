@@ -657,6 +657,7 @@ spec:
 
                     ethernet-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                      {{- if eq $network.model "new" }}
                       {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
                       ---
                       apiVersion: v1alpha1
@@ -698,6 +699,7 @@ spec:
                           gateway: {{ $route.gateway }}
                           metric: {{ $route.metric }}
                         {{- end }}
+                      {{- end }}
                       {{- end }}
                       {{- end }}
                     EOT
