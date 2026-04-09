@@ -645,26 +645,18 @@ spec:
                   }
 
                   data "local_command" "filter_fruit" {
-                    command = "jq"
-                    stdin = jsonencode(
-                              [
-                                { 
-                                  name = "apple"
-                                },
-                                { 
-                                  name = "lemon"
-                                },
-                                { 
-                                  name = "apricot"
-                                }
-                              ])
+                    command = "/usr/bin/talosctl"
                     arguments = [
-                      ".[:2] | [.[].name]"
+                      "-n=${var.nodeIP}",
+                      "--talosconfig=./talos-config",
+                      "get",
+                      "linkstatus",
+                      "-o='jsonpath={.spec}'"
                     ]
                   }
 
                   output "testingcli" {
-                    value = jsondecode(data.local_command.filter_fruit.stdout)
+                    value = data.local_command.filter_fruit.stdout
                   }
 
                   locals {
