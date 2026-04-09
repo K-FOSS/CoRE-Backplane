@@ -654,6 +654,22 @@ spec:
                       timeout: {{ $.observed.composite.resource.spec.watchdog.timeout }}
                     EOT
                     {{- end }}
+                    
+                    {{- if $.observed.composite.resource.spec.nics }}
+                    nic-conf = <<-EOT
+                      apiVersion: v1alpha1
+                      kind: EthernetConfig
+                      name: enp0s2
+                      features:
+                        tx-tcp-segmentation: false
+
+                      rings:
+                        rx: 256
+                      
+                      channels:
+                        rx: 4
+                    EOT
+                    {{- end }}
 
                     ethernet-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
@@ -930,6 +946,7 @@ spec:
                       {{- if $.observed.composite.resource.spec.overrides.pci }}
                       local.pci-conf,
                       {{- end }}
+                      ethernet-conf,
                     ]
                   }
 
