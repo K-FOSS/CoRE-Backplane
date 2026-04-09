@@ -713,7 +713,7 @@ spec:
                         {{- range $routeIndex, $route := $network.routes }}
                         - {{- if ne $route.network "0.0.0.0/0" -}}
                           destination: {{ $route.network }}
-                          {{- end }}
+                          {{- end -}}
                           gateway: {{ $route.gateway }}
                           metric: {{ $route.metric }}
                         {{- end }}
@@ -882,6 +882,7 @@ spec:
 
                             interfaces = [
                               {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                              {{- if eq $network.model "legacy" }}
                               {{ if $network.static }}
                               {
                                 interface = "enx{{ regexReplaceAll ":" ($network.macAddress) ""  }}"
@@ -932,6 +933,7 @@ spec:
                                   {{- end }}
                                 ]
                               },
+                              {{- end }}
                               {{- end }}
                               {{- end }}
                               {
