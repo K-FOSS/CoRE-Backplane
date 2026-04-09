@@ -545,8 +545,8 @@ spec:
                             {{- $targetMAC := $network.macAddress | lower -}}
                             {{- $match := dict "name" (printf "enx%s" (regexReplaceAll ":" $network.macAddress "")) -}}
 
-                            {{- if and $tfTalosNode $tfTalosNode.resource $tfTalosNode.resource.status $tfTalosNode.resource.status.atProvider $tfTalosNode.resource.status.atProvider.outputs $tfTalosNode.resource.status.atProvider.outputs.testingcli  }}
-                            {{- range $nic := $tfTalosNode.resource.status.atProvider.outputs.testingcli }}
+                            {{- if and $tfTalosNode $tfTalosNode.status $tfTalosNode.status.atProvider $tfTalosNode.status.atProvider.outputs $tfTalosNode.status.atProvider.outputs.testingcli  }}
+                            {{- range $nic := $tfTalosNode.status.atProvider.outputs.testingcli }}
                               {{- if eq (lower (default "" $nic.spec.hardwareAddr)) $targetMAC }}
                                 {{- $_ := set $match "name" $nic.metadata.id -}}
                               {{- end }}
@@ -570,8 +570,8 @@ spec:
                               {{- $targetMAC := $network.macAddress | lower -}}
                               {{- $match := dict "name" (printf "enx%s" (regexReplaceAll ":" $network.macAddress "")) -}}
 
-                              {{- if and $tfTalosNode $tfTalosNode.resource $tfTalosNode.resource.status $tfTalosNode.resource.status.atProvider $tfTalosNode.resource.status.atProvider.outputs $tfTalosNode.resource.status.atProvider.outputs.testingcli  }}
-                              {{- range $nic := $tfTalosNode.resource.status.atProvider.outputs.testingcli }}
+                              {{- if and $tfTalosNode $tfTalosNode.status $tfTalosNode.status.atProvider $tfTalosNode.status.atProvider.outputs $tfTalosNode.status.atProvider.outputs.testingcli  }}
+                              {{- range $nic := $tfTalosNode.status.atProvider.outputs.testingcli }}
                                 {{- if eq (lower (default "" $nic.spec.hardwareAddr)) $targetMAC }}
                                   {{- $_ := set $match "name" $nic.metadata.id -}}
                                 {{- end }}
