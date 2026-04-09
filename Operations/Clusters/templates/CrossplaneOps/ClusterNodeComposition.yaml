@@ -409,6 +409,7 @@ spec:
                       {{ end }}
             ---
             {{ $ciliumNode := getComposedResource . $ciliumNodeResourceName }}
+            {{ $tfTalosNode := getComposedResource . $talosTFTest }}
 
             {{ $vals := .observed.composite.resource.spec }}
 
@@ -648,8 +649,7 @@ spec:
 
                   locals {
                     link-script = <<-EOT
-                      talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -o'jsonpath={.spec}' | \ 
-                        jq 'select(.kind == "bridge" or .kind == "bond" or (.type == "ether" and (.kind == "" or .kind == null)))'
+                      talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -ojson | jq -cr 'select(.spec.kind == "bridge" or .spec.kind == "bond" or (.spec.type == "ether" and (.spec.kind == "" or .spec.kind == null)))'
                     EOT
 
                     {{- if $.observed.composite.resource.spec.watchdog.enabled }}
@@ -678,9 +678,12 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{ $newNetworkUsed := false }}
+
                     ethernet-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                       {{- if eq $network.model "new" }}
+                      {{- $newNetworkUsed = true }}
                       {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
                       ---
                       apiVersion: v1alpha1
@@ -751,7 +754,11 @@ spec:
                   }
 
                   output "testingcli" {
-                    value = data.local_command.filter_fruit.stdout
+                    value = [
+                      for line in split("\n", trimspace(data.local_command.filter_fruit.stdout)) :
+                      jsondecode(line)
+                      if trimspace(line) != ""
+                    ]
                   }
 
                   data "talos_machine_disks" "sasdrives" {
@@ -969,7 +976,9 @@ spec:
                       {{- if $.observed.composite.resource.spec.overrides.pci }}
                       local.pci-conf,
                       {{- end }}
+                      {{- if eq $newNetworkUsed true }}
                       local.ethernet-conf,
+                      {{- end }}
                     ]
                   }
 
