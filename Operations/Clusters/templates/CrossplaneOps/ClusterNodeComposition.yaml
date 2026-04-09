@@ -646,22 +646,12 @@ spec:
                     value = true
                   }
 
-                  data "local_command" "filter_fruit" {
-                    command = "/usr/bin/talosctl"
-                    arguments = [
-                      "-n=${var.nodeIP}",
-                      "--talosconfig=./talos-config",
-                      "get",
-                      "linkstatus",
-                      "-o='jsonpath={.spec}'"
-                    ]
-                  }
-
-                  output "testingcli" {
-                    value = data.local_command.filter_fruit.stdout
-                  }
-
                   locals {
+                    link-script = <<-EOT
+                      talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -o'jsonpath={.spec}' | \ 
+                        jq 'select(.kind == "bridge" or .kind == "bond" or (.type == "ether" and (.kind == "" or .kind == null)))'
+                    EOT
+
                     {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                     watchdog-conf = <<-EOT
                       ---
@@ -750,6 +740,18 @@ spec:
                       {{- end }}
                     EOT
                     {{- end }}
+                  }
+
+                  data "local_command" "filter_fruit" {
+                    command = "bash"
+                    arguments = [
+                      "-c",
+                      local.link-script
+                    ]
+                  }
+
+                  output "testingcli" {
+                    value = data.local_command.filter_fruit.stdout
                   }
 
                   data "talos_machine_disks" "sasdrives" {
