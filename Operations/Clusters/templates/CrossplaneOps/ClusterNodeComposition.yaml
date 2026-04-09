@@ -542,7 +542,17 @@ spec:
                           {{- if $network.bridge -}}
                             {{- $nicName = printf "br%d" $netIndex }}
                           {{- else }}
-                            {{- $nicName = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") }}
+                            {{- $targetMAC := $network.macAddress | lower -}}
+                            {{- $match := dict "name" (printf "enx%s" (regexReplaceAll ":" $network.macAddress "")) -}}
+
+                            {{- if and $tfTalosNode $tfTalosNode.resource $tfTalosNode.resource.status $tfTalosNode.resource.status.atProvider $tfTalosNode.resource.status.atProvider.outputs $tfTalosNode.resource.status.atProvider.outputs.testingcli  }}
+                            {{- range $nic := $tfTalosNode.resource.status.atProvider.outputs.testingcli }}
+                              {{- if eq (lower (default "" $nic.spec.hardwareAddr)) $targetMAC }}
+                                {{- $_ := set $match "name" $nic.metadata.id -}}
+                              {{- end }}
+                            {{- end }}
+                            {{- end }}
+                            {{- $nicName = $match.name }}
                           {{- end }}
                           neighbor {{ $nicName }} interface v6only remote-as 64567
                           {{- end }}
@@ -557,7 +567,18 @@ spec:
                             {{- if $network.bridge -}}
                               {{- $nicName = printf "br%d" $netIndex }}
                             {{- else }}
-                              {{- $nicName = printf "enx%s" (regexReplaceAll ":" $network.macAddress "") }}
+                              {{- $targetMAC := $network.macAddress | lower -}}
+                              {{- $match := dict "name" (printf "enx%s" (regexReplaceAll ":" $network.macAddress "")) -}}
+
+                              {{- if and $tfTalosNode $tfTalosNode.resource $tfTalosNode.resource.status $tfTalosNode.resource.status.atProvider $tfTalosNode.resource.status.atProvider.outputs $tfTalosNode.resource.status.atProvider.outputs.testingcli  }}
+                              {{- range $nic := $tfTalosNode.resource.status.atProvider.outputs.testingcli }}
+                                {{- if eq (lower (default "" $nic.spec.hardwareAddr)) $targetMAC }}
+                                  {{- $_ := set $match "name" $nic.metadata.id -}}
+                                {{- end }}
+                              {{- end }}
+                              {{- end }}
+
+                              {{- $nicName = $match.name }}
                             {{- end }}
                             neighbor {{ $nicName }} prefix-list ALLOW_ALL in
                             neighbor {{ $nicName }} prefix-list CILIUM out
