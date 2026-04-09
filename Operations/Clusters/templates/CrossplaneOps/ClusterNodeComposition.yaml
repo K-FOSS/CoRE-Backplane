@@ -711,7 +711,7 @@ spec:
                       {{- if $network.routes }}
                       routes:
                         {{- range $routeIndex, $route := $network.routes }}
-                        - {{- if ne $route.network "0.0.0.0/0" -}}
+                        - {{ if ne $route.network "0.0.0.0/0" }}
                           destination: {{ $route.network }}
                           {{- end -}}
                           gateway: {{ $route.gateway }}
