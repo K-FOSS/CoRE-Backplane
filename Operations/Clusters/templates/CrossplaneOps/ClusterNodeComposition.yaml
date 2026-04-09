@@ -644,6 +644,29 @@ spec:
                     value = true
                   }
 
+                  data "local_command" "filter_fruit" {
+                    command = "jq"
+                    stdin = jsonencode(
+                              [
+                                { 
+                                  name = "apple"
+                                },
+                                { 
+                                  name = "lemon"
+                                },
+                                { 
+                                  name = "apricot"
+                                }
+                              ])
+                    arguments = [
+                      ".[:2] | [.[].name]"
+                    ]
+                  }
+
+                  output "testingcli" {
+                    value = jsondecode(data.local_command.filter_fruit.stdout)
+                  }
+
                   locals {
                     {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                     watchdog-conf = <<-EOT
