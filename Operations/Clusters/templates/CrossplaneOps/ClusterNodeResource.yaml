@@ -156,6 +156,45 @@ spec:
                 #   properties:
                 #     systemDisk:
 
+                networking:
+                  type: object
+
+                  description: Configure compute node networking
+
+                  properties:
+                    bridges:
+                      type: array
+
+                      items:
+                        type: object
+
+                        properties:
+                          name:
+                            type: string
+
+                          stp:
+                            type: object
+
+                            properties:
+                              enabled:
+                                type: boolean
+
+                                description: Enable spanning tree on this bridge
+
+                              mode:
+                                type: string
+
+                                description: Mode of spanning tree support on this bridge
+
+                                enum:
+                                  - stp
+
+                                  #
+                                  # TODO: Roll out MSTPD System containers
+                                  #
+                                  - rstp
+
+
                 nics:
                   type: array
 
