@@ -39,7 +39,9 @@ spec:
         firmware:
           bootloader:
             efi:
+              {{- if and $vm.boot $vm.boot.secureBoot }}
               secureBoot: true
+              {{- end }}
         devices:
           autoattachPodInterface: true
           {{- if and $vm.tpm $vm.tpm.enabled }}
