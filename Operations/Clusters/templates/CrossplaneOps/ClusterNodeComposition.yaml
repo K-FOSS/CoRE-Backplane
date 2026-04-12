@@ -699,6 +699,40 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{ $newBridgeUsed := false }}
+
+                    bridge-conf = <<-EOT
+                      {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                      {{- if and (eq $network.model "new") (eq $network.type "bridge") }}
+                      {{- $newBridgeUsed = true }}
+                      apiVersion: v1alpha1
+                      kind: BridgeConfig
+                      name: br{{ $netIndex }}
+
+                      up: true
+                      mtu: {{ $network.mtu }}
+
+                      links:
+                        {{- range $linkIndex, $link := $network.members }}
+                        {{- $member := "" }}
+
+                        {{- if $link.macAddress }}
+                          {{- $member = printf "enx%s" ($link.macAddress | lower | replace ":" "") }}
+                        {{- else if $link.name }}
+                          {{- $member = $link.name }}
+                        {{- end }}
+                        - {{ $member }}
+                        {{- end }}
+                      
+                      {{- if and $network.stp $network.stp.enabled }}
+                      stp:
+                        enabled: true
+                      {{- end }}
+
+                      {{- end }}
+                      {{- end }}
+                    EOT
+
                     {{ $newNetworkUsed := false }}
 
                     ethernet-conf = <<-EOT
