@@ -36,12 +36,13 @@ spec:
         features:
           smm:
             enabled: true
+        {{- if and $vm.boot $vm.boot.secureBoot }}
         firmware:
           bootloader:
             efi:
-              {{- if and $vm.boot $vm.boot.secureBoot }}
+              
               secureBoot: true
-              {{- end }}
+        {{- end }}
         devices:
           autoattachPodInterface: true
           {{- if and $vm.tpm $vm.tpm.enabled }}
