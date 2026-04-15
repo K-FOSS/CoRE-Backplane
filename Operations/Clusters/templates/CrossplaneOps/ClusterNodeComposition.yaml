@@ -685,32 +685,34 @@ spec:
                     
                     {{- if $.observed.composite.resource.spec.nics }}
                     nic-conf = <<-EOT
+                      {{- range $nicIndex, $nic := $.observed.composite.resource.spec.nics }}
                       apiVersion: v1alpha1
                       kind: EthernetConfig
-                      name: enp0s2
-                      features:
-                        tx-tcp-segmentation: false
+                      name: {{ printf "enx%s" ($nic.macAddress | lower | replace ":" "") }}
 
+                      {{- if $nic.rings }}
                       rings:
-                        rx: 256
-                      
-                      channels:
-                        rx: 4
+                        rx: {{ $nic.rings.rx }}
+                      {{- end }}
+                      {{- end }}
                     EOT
                     {{- end }}
 
-                    {{ $newBridgeUsed := false }}
-
-                    bridge-conf = <<-EOT
+                    network-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
-                      {{- if and (eq $network.model "new") (eq $network.type "bridge") }}
-                      {{- $newBridgeUsed = true }}
+                      {{- if eq $network.model "new" }}
+                      ---
                       apiVersion: v1alpha1
+                      
+                      {{- if eq $network.type "link" }}
+                      {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
+
+                      kind: LinkConfig
+                      name: enx{{ $nicMAC }}
+
+                      {{- else if eq $network.type "bridge" }}
                       kind: BridgeConfig
                       name: br{{ $netIndex }}
-
-                      up: true
-                      mtu: {{ $network.mtu }}
 
                       links:
                         {{- range $linkIndex, $link := $network.members }}
@@ -727,6 +729,27 @@ spec:
                       {{- if and $network.stp $network.stp.enabled }}
                       stp:
                         enabled: true
+                      {{- end }}
+
+                      {{- end }}
+
+                      up: true
+                      mtu: {{ $network.mtu }}
+
+                      addresses:
+                        {{- range $addrIndex, $address := $network.addresses }}
+                        - address: {{ $address }}
+                        {{- end }}
+
+                      {{- if $network.routes }}
+                      routes:
+                        {{- range $routeIndex, $route := $network.routes }}
+                        - {{ if and (ne $route.network "0.0.0.0/0") (ne $route.network "::/0") }}
+                          destination: {{ $route.network }}
+                          {{- end -}}
+                          gateway: {{ $route.gateway }}
+                          metric: {{ $route.metric }}
+                        {{- end }}
                       {{- end }}
 
                       {{- end }}
