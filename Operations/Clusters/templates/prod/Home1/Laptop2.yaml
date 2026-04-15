@@ -51,14 +51,22 @@ spec:
 
           - address: 2604:3d08:d174:2000::2
             asn: 64567
-            localAddress: 2604:3d08:d174:2000::14
+            localAddress: 2604:3d08:d174:2000::15
             name: ipv6.vyos-lab1.home1.yvr.resolvemy.host
 
+          - address: 2604:3d08:d174:2000::3
+            asn: 64567
+            localAddress: 2604:3d08:d174:2000::15
+            name: ipv6.wan-gw2.home2.yvr.resolvemy.host
+
   nics:
-    - macAddress: 00:e0:4c:79:61:d1
+    - macAddress: f4:4d:ad:03:fb:0d
+      rings:
+        rx: 4096
+      
 
   networks:
-    - macAddress: 00:e0:4c:79:61:d1
+    - macAddress: f4:4d:ad:03:fb:0d
       bridge: true
 
       type: bridge
@@ -67,14 +75,18 @@ spec:
         enabled: false
 
       members:
-        - macAddress: 00:e0:4c:79:61:d1
+        - macAddress: f4:4d:ad:03:fb:0d
       
       addresses:
-        - 172.31.193.14/24
-        - 2604:3d08:d174:2000::14/122
+        - 172.31.193.15/24
+        - 2604:3d08:d174:2000::15/122
 
       routes:
         - network: 0.0.0.0/0
+          gateway: 172.31.193.254
+          metric: 600
+
+        - network: ::/0
           gateway: 172.31.193.254
           metric: 600
 
