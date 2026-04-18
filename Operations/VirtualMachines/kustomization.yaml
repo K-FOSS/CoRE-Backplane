@@ -9,7 +9,6 @@ resources:
 
 
 patches:
-
   - target:
       group: apps
       version: v1
@@ -17,10 +16,9 @@ patches:
       name: virt-operator
       namespace: kubevirt
 
-    patch: |-
-
+    patch: |
       - op: add
-        path: /spec/template/spec/tolerations/-
+        path: /spec/template/spec/tolerations/0
         value:
           key: load
           operator: Equal
