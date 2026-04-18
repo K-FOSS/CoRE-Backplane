@@ -923,11 +923,15 @@ spec:
                         }
                         machine = {
                           sysctls = {
-                            "user.max_user_namespaces"           = "11255"
-                            "net.core.somaxconn"                 = "65535"
-                            "net.core.netdev_max_backlog"        = "16384"
-                            "net.ipv4.fib_multipath_hash_policy" = "1"
-                            "net.ipv4.fib_multipath_hash_fields" = "0xfff"
+                            "user.max_user_namespaces"            = "11255"
+                            "net.core.somaxconn"                  = "65535"
+                            "net.core.netdev_max_backlog"         = "16384"
+                            "net.ipv4.fib_multipath_hash_policy"  = "1"
+                            "net.ipv4.fib_multipath_hash_fields". = "0xfff"
+                            "net.bridge.bridge-nf-call-iptables"  = "0"
+                            "net.bridge.bridge-nf-call-ip6tables" = "0"
+                            "net.bridge.bridge-nf-call-arptables" = "0"
+                            "net.ipv4.tcp_ecn" = "1"
 
                             {{- range $sysctlIndex, $sysctl := $.observed.composite.resource.spec.sysctls }}
                             "{{ $sysctl.name }}" = "{{ $sysctl.value }}"
