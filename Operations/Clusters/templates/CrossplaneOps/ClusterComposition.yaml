@@ -54,8 +54,6 @@ spec:
             {{- $kubernetesProviderResourceName := "k8s-provider" }}
             
             {{- $networks := $xr.spec.networks }}
-
-
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -340,7 +338,7 @@ spec:
                     namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
                   spec:
                     version: {{ .observed.composite.resource.spec.versions.kubernetes }}
-                    replicas: {{ .observed.composite.resource.spec.nodes }}
+                    replicas: {{ .observed.composite.resource.spec.replicas.controlplane.count }}
 
                     rolloutStrategy:
                       type: OnDelete
