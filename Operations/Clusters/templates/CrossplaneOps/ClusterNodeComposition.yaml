@@ -859,7 +859,7 @@ spec:
 
                   output "ethtool" {
                     value = [
-                      for line in split("\n", trimspace(data.local_command.ethtool.stdout)) :
+                      for line in split("\n", trimspace(coalesce(data.local_command.ethtool.stdout, ""))) :
                       jsondecode(line)
                       if trimspace(line) != ""
                     ]
@@ -867,7 +867,7 @@ spec:
 
                   output "testingcli" {
                     value = [
-                      for line in split("\n", trimspace(data.local_command.filter_fruit.stdout)) :
+                      for line in split("\n", trimspace(coalesce(data.local_command.filter_fruit.stdout, ""))) :
                       jsondecode(line)
                       if trimspace(line) != ""
                     ]
