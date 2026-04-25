@@ -857,6 +857,14 @@ spec:
                     ]
                   }
 
+                  output "debugteststdout" {
+                    value = data.local_command.ethtool.stdout
+                  }
+
+                  output "debugteststerr" {
+                    value = data.local_command.ethtool.stderr
+                  }
+
                   output "ethtool" {
                     value = [
                       for line in split("\n", trimspace(coalesce(data.local_command.ethtool.stdout, ""))) :
