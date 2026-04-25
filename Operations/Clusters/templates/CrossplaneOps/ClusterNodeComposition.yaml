@@ -673,6 +673,10 @@ spec:
                       talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -ojson | jq -cr 'select(.spec.kind == "bridge" or .spec.kind == "bond" or (.spec.type == "ether" and (.spec.kind == "" or .spec.kind == null)))'
                     EOT
 
+                    ethtool-script = <<-EOT
+                      talosctl get --talosconfig=./talos-config -n ${var.nodeIP} ethtool -ojson | jq -cr
+                    EOT
+
                     {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                     watchdog-conf = <<-EOT
                       ---
@@ -842,6 +846,22 @@ spec:
                     arguments = [
                       "-c",
                       local.link-script
+                    ]
+                  }
+
+                  data "local_command" "ethtool" {
+                    command = "bash"
+                    arguments = [
+                      "-c",
+                      local.ethtool-script
+                    ]
+                  }
+
+                  output "ethtool" {
+                    value = [
+                      for line in split("\n", trimspace(data.local_command.ethtool.stdout)) :
+                      jsondecode(line)
+                      if trimspace(line) != ""
                     ]
                   }
 
