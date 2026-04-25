@@ -106,6 +106,11 @@ spec:
       routing:
         bgp:
           enabled: true
+  
+  sysctls:
+    - name: net.ipv4.tcp_max_syn_backlog
+      value: '262144'
+
 
   overrides:
     kernel:
@@ -114,23 +119,15 @@ spec:
           value: 'on'
         - name: iommu
           value: pt
-        - name: video
-          value: efifb:off
         - name: vfio-pci.ids
-          value: 1002:6920,1002:aad8
+          value: 1002:aad8
         - name: cpufreq.default_governor
           value: performance
+        - name: intel_idle.max_cstate
+          value: '0'
 
     pci:
       rebinds:
-        - description: AMD GPU
-          id: 0000:01:00.0
-          driver: vfio-pci
-
-        - description: AMD GPU
-          id: 0000:01:00.1
-          driver: vfio-pci
-
         - description: WiFi Card
           id: 0000:03:00.0
           driver: vfio-pci
