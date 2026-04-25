@@ -698,6 +698,17 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{- if and $.observed.composite.resource.spec.networking $.observed.composite.resource.spec.networking.dns $.observed.composite.resource.spec.networking.dns.servers }}
+                    dns-conf = <<-EOT
+                      apiVersion: v1alpha1
+                      kind: ResolverConfig
+                      nameservers:
+                        {{- range $dnsIndex, $dnsServer := $.observed.composite.resource.spec.networking.dns.servers }}
+                        - address: {{ $dnsServer }}
+                        {{- end }}
+                    EOT
+                    {{- end }}
+
                     network-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                       {{- if eq $network.model "new" }}
