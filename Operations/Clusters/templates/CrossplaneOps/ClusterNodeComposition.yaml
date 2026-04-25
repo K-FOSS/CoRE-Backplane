@@ -964,6 +964,17 @@ spec:
                           {{- end }}
                         }
                         machine = {
+                          baseRuntimeSpecOverrides = {
+                            process = {
+                              rlimits = [
+                                {
+                                  type = "RLIMIT_NOFILE"
+                                  soft = 1048576
+                                  hard = 1048576
+                                }
+                              ]
+                            }
+                          }
                           sysctls = {
                             "user.max_user_namespaces"            = "11255"
                             "net.core.somaxconn"                  = "65535"
