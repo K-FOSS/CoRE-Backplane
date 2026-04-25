@@ -682,10 +682,13 @@ spec:
                       timeout: {{ $.observed.composite.resource.spec.watchdog.timeout }}
                     EOT
                     {{- end }}
+
+                    {{ $nicConfUsed := false }}
                     
                     {{- if $.observed.composite.resource.spec.nics }}
                     nic-conf = <<-EOT
                       {{- range $nicIndex, $nic := $.observed.composite.resource.spec.nics }}
+                      {{- $nicConfUsed = true }}
                       apiVersion: v1alpha1
                       kind: EthernetConfig
                       name: {{ printf "enx%s" ($nic.macAddress | lower | replace ":" "") }}
@@ -1074,6 +1077,9 @@ spec:
                       {{- end }}
                       {{- if and $.observed.composite.resource.spec.networking $.observed.composite.resource.spec.networking.dns $.observed.composite.resource.spec.networking.dns.servers }}
                       local.dns-conf,
+                      {{- end }}
+                      {{- if eq $nicConfUsed true }}
+                      local.nic-conf,
                       {{- end }}
                     ]
                   }
