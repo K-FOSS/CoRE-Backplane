@@ -1072,6 +1072,9 @@ spec:
                       {{- if eq $newNetworkUsed true }}
                       local.ethernet-conf,
                       {{- end }}
+                      {{- if and $.observed.composite.resource.spec.networking $.observed.composite.resource.spec.networking.dns $.observed.composite.resource.spec.networking.dns.servers }}
+                      local.dns-conf,
+                      {{- end }}
                     ]
                   }
 
