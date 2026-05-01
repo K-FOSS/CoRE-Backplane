@@ -720,15 +720,35 @@ spec:
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                       {{- if eq $network.model "new" }}
                       ---
-                      apiVersion: v1alpha1
-                      
                       {{- if eq $network.type "link" }}
                       {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
-
+                      apiVersion: v1alpha1
                       kind: LinkConfig
                       name: enx{{ $nicMAC }}
 
                       {{- else if eq $network.type "bridge" }}
+
+                      {{- range $linkIndex, $link := $network.members }}
+                      {{- $member := "" }}
+                      {{- if $link.macAddress }}
+                        {{- $member = printf "enx%s" ($link.macAddress | lower | replace ":" "") }}
+                      {{- else if $link.name }}
+                        {{- $member = $link.name }}
+                      {{- end }}
+                      apiVersion: v1alpha1
+                      kind: LinkConfig
+                      name: {{ $member }}
+
+                      up: true
+                      {{ $memberMTU := $network.mtu }}
+                      {{- if $link.mtu }}
+                        {{ $memberMTU = $link.mtu }}
+                      {{- end }}
+                      mtu: {{ $memberMTU }}
+                      ---
+                      {{- end }}
+
+                      apiVersion: v1alpha1
                       kind: BridgeConfig
                       name: br{{ $netIndex }}
 
