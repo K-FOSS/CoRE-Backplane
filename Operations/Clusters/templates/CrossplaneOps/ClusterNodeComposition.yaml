@@ -754,10 +754,12 @@ spec:
                       up: true
                       mtu: {{ $network.mtu }}
 
+                      {{- if $network.addresses }}
                       addresses:
                         {{- range $addrIndex, $address := $network.addresses }}
                         - address: {{ $address }}
                         {{- end }}
+                      {{- end }}
 
                       {{- if $network.routes }}
                       routes:
