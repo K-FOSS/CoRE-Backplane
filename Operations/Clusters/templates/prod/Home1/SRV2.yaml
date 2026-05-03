@@ -35,14 +35,15 @@ spec:
       - asn: 64512
         name: wan-gw
         peers:
-          - address: 2604:3d08:d174:2000::2
+          - address: 2604:3d08:d174:2000::1C
             asn: 64567
             localAddress: 2604:3d08:d174:2000::26
-            name: ipv6.vyos-lab1.home1.yvr.resolvemy.host
+            name: ipv6.cpe-sw1.home2.yvr.resolvemy.host
 
   networks:
     - macAddress: 24:6e:96:38:84:60
       bridge: true
+      model: legacy
       addresses:
         - 172.31.193.36/24
         - 2604:3d08:d174:2000::26/122
@@ -60,6 +61,10 @@ spec:
           gateway: 172.31.193.254
           metric: 1024
 
+        - network: '::/0'
+          gateway: 2604:3d08:d174:2000::1C
+          metric: 1024
+
       mtu: 9000
 
       static: true
@@ -67,6 +72,20 @@ spec:
         - 172.31.193.254
         - 172.31.193.2
         - 172.31.193.3
+
+    - addresses:
+        - 172.31.241.34/30
+      bridge: false
+      dns:
+        - 172.31.193.254
+      macAddress: 7c:fe:90:ae:46:40
+      model: legacy
+      mtu: 9000
+      routing:
+        bgp:
+          enabled: true
+      static: true
+      type: link
 
   sysctls:
     - name: net.ipv6.conf.br0.accept_ra
