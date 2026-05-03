@@ -19,12 +19,16 @@ spec:
     interval: 15s
     probes: 9
 
-  compression:
-    - type: Brotli
+  timeout:
+    tcp:
+      connectTimeout: 3s
+    http:
+      connectionIdleTimeout: 120s
+      maxConnectionDuration: 0s
 
   http2:
     initialConnectionWindowSize: 32Mi
-    initialStreamWindowSize: 64Ki
+    initialStreamWindowSize: 4Mi
     maxConcurrentStreams: 200
     onInvalidMessage: TerminateStream
   
