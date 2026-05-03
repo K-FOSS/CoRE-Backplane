@@ -40,14 +40,10 @@ spec:
         port: 1176
         type: cilium
         peers:
-          - address: 172.31.193.2
-            asn: 64567
-            name: wan-gw1.home1.yvr.resolvemy.host
-
-          - address: 2604:3d08:d174:2000::2
+          - address: 2604:3d08:d174:2000::1C
             asn: 64567
             localAddress: 2604:3d08:d174:2000::12
-            name: ipv6.vyos-lab1.home1.yvr.resolvemy.host
+            name: ipv6.cpe-sw1.home2.yvr.resolvemy.host
 
   networking:
     dns:
@@ -145,9 +141,26 @@ spec:
         - name: cpufreq.default_governor
           value: performance
 
+        - name: intel_iommu
+          value: 'on'
+
+        - name: iommu
+          value: pt
+
+        - name: intel_pstate
+          value: active
+
+        - name: pcie_aspm
+          value: 'off'
+
+        - name: nvme_core.default_ps_max_latency_us
+          value: '0'
+
         - name: intel_idle.max_cstate
           value: '0'
-    
+
+        - name: processor.max_cstate
+          value: '1'
     talos:
       extensions:
         system:
