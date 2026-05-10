@@ -37,18 +37,6 @@ spec:
 
     parameters:
       fsync: 'off'
-      max_connections: '8096'
-      max_prepared_transactions: '1000'
-      max_locks_per_transaction: '512'
-      max_wal_size: '32GB'
-      min_wal_size: '512MB'
-      shared_buffers: '1024MB'
-      work_mem: 5592kB
-      effective_cache_size: 4022MB
-      effective_io_concurrency: '200'
-      maintenance_work_mem: 2047MB
-      max_parallel_workers: '32'
-      max_parallel_workers_per_gather: '16'
 
   volume:
     size: 25Gi
@@ -68,12 +56,6 @@ spec:
       encoding: 'UTF8'
       locale: 'en_US.UTF-8'
       data-checksums: 'true'
-
-    pg_hba:
-      - local all         all                  trust
-      - local replication standby              md5
-      - host replication  replicator 0.0.0.0/0 md5
-      - host replication  standby    0.0.0.0/0 md5
 
     ttl: 30
 
