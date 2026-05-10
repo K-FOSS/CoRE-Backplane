@@ -716,9 +716,12 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{ $newNetworkUsed := false }}
+
                     network-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                       {{- if eq $network.model "new" }}
+                      {{- $newNetworkUsed = true }}
                       ---
                       {{- if eq $network.type "link" }}
                       {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
@@ -791,62 +794,6 @@ spec:
                         {{- end }}
                       {{- end }}
 
-                      {{- end }}
-                      {{- end }}
-                    EOT
-
-                    {{ $newNetworkUsed := false }}
-
-                    ethernet-conf = <<-EOT
-                      {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
-                      {{- if eq $network.model "new" }}
-                      {{- $newNetworkUsed = true }}
-                      {{- $nicMAC := regexReplaceAll ":" ($network.macAddress) "" }}
-                      ---
-                      apiVersion: v1alpha1
-                      kind: LinkConfig
-                      name: enx{{ $nicMAC }}
-
-                      up: true
-                      mtu: {{ $network.mtu }}
-                      {{- if $network.bridge }}
-                      ---
-                      apiVersion: v1alpha1
-                      kind: BridgeConfig
-                      name: br{{ $netIndex }}
-
-                      up: true
-                      mtu: {{ $network.mtu }}
-
-                      links:
-                        - enx{{ $nicMAC }}
-                      
-                      stp:
-                        enabled: true
-
-                      {{- if $network.vlans }}
-                      vlan:
-                        filtering: true
-                      {{- end }}
-                      {{- end }}
-
-                      {{- if $network.addresses }}
-                      addresses:
-                        {{- range $addrIndex, $address := $network.addresses }}
-                        - address: {{ $address }}
-                        {{- end }}
-                      {{- end }}
-
-                      {{- if $network.routes }}
-                      routes:
-                        {{- range $routeIndex, $route := $network.routes }}
-                        - {{ if and (ne $route.network "0.0.0.0/0") (ne $route.network "::/0") }}
-                          destination: {{ $route.network }}
-                          {{- end -}}
-                          gateway: {{ $route.gateway }}
-                          metric: {{ $route.metric }}
-                        {{- end }}
-                      {{- end }}
                       {{- end }}
                       {{- end }}
                     EOT
@@ -1143,7 +1090,7 @@ spec:
                       local.pci-conf,
                       {{- end }}
                       {{- if eq $newNetworkUsed true }}
-                      local.ethernet-conf,
+                      local.network-conf,
                       {{- end }}
                       {{- if and $.observed.composite.resource.spec.networking $.observed.composite.resource.spec.networking.dns $.observed.composite.resource.spec.networking.dns.servers }}
                       local.dns-conf,
