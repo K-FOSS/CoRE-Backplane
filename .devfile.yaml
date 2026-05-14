@@ -3,34 +3,7 @@ metadata:
   name: core-backplane-prod
 
 components:
-  - name: var-run
-    volume:
-      ephemeral: true
-      size: 1G
-
-  - name: client-certs
-    volume:
-      ephemeral: true
-      size: 1G
-
   - name: devtools
     container:
       image: quay.io/devfile/universal-developer-image:latest
       memoryLimit: 4G
-      volumeMounts:
-        - name: var-run
-          path: /var/run
-
-        - name: client-certs
-          path: /certs/client
-      env:
-        - name: KUBEDOCK_ENABLED
-          value: 'true'
-
-        - name: DOCKER_CERT_PATH
-          value: '/certs/client/'
-
-        - name: DOCKER_TLS_VERIFY
-          value: '1'
-
-
