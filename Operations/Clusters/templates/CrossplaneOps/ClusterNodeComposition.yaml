@@ -687,6 +687,22 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{ $timeConfigUsed := false }}
+
+                    {{- if and $clusterCustomResource.status.atProvider.manifest.spec.time $clusterCustomResource.status.atProvider.manifest.spec.time.ntp $clusterCustomResource.status.atProvider.manifest.spec.time.ntp.servers }}
+                    {{- $timeConfigUsed = true }}
+                    time-conf = <<-EOT
+                      ---
+                      apiVersion: v1alpha1
+                      kind: TimeSyncConfig
+                      ntp:
+                        servers:
+                          {{- range $ntpServerIndex, $ntpServer := $clusterCustomResource.status.atProvider.manifest.spec.time.ntp.servers }}
+                          - {{ $ntpServer }}
+                          {{- end }}
+                    EOT
+                    {{- end }}
+
                     {{ $nicConfUsed := false }}
                     
                     {{- if $.observed.composite.resource.spec.nics }}
