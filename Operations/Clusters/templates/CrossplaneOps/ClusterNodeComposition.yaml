@@ -732,8 +732,7 @@ spec:
                     EOT
                     {{- end }}
 
-                    {{ $newNetworkUsed := false }}
-
+                    {{- $newNetworkUsed := false }}
                     network-conf = <<-EOT
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                       {{- if eq $network.model "new" }}
@@ -1113,6 +1112,9 @@ spec:
                       {{- end }}
                       {{- if eq $nicConfUsed true }}
                       local.nic-conf,
+                      {{- end }}
+                      {{- if eq $timeConfigUsed true }}
+                      local.time-conf,
                       {{- end }}
                     ]
                   }
