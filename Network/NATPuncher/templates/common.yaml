@@ -23,18 +23,14 @@ controllers:
 
     pod:
       annotations:
-        k8s.v1.cni.cncf.io/networks: >-
+        k8s.v1.cni.cncf.io/default-network: >-
           [
             {
               "name": "{{ .Values.UPNP.network.name }}",
               "namespace": "{{ .Values.UPNP.network.namespace }}",
-              "interface": "{{ .Values.UPNP.network.interface }}",
+              "mac": "02:03:04:05:06:07",
               "ips": [
-                "10.0.0.10"
-              ],
-              "dns": {},
-              "default-route": [
-                 "10.0.0.1"
+                "10.0.0.10/24"
               ]
             }
           ]
