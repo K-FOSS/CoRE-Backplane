@@ -37,6 +37,7 @@ spec:
     instances:
       - asn: 64512
         name: main
+        type: cilium
         peers:
           - address: 172.31.241.89
             localAddress: 172.31.241.90
@@ -51,6 +52,8 @@ spec:
   networks:
     - macAddress: f0:4d:a2:09:60:ba
       bridge: true
+      model: legacy
+      type: link
       addresses:
         - 172.31.241.90/30
 
@@ -71,7 +74,38 @@ spec:
       static: true
       vlans:
         - vlanID: 15
+        - vlanID: 951	
+        - vlanID: 952	
+        - vlanID: 953	
+        - vlanID: 954
       dns:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
+
+  overrides:
+    talos:
+      extensions:
+        system:
+          - intel-ucode
+          - bnx2-bnx2x
+
+    kernel:
+      parameters:
+        - name: cpufreq.default_governor
+          value: performance
+
+        - name: numa_balancing
+          value: enable
+
+        - name: console
+          value: tty0
+
+        - name: console
+          value: ttyS0,115200n8
+
+        - name: processor.max_cstate
+          value: '1'
+
+        - name: intel_idle.max_cstate
+          value: '1'
