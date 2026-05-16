@@ -212,8 +212,8 @@ persistence:
         name: 'natpuncher-config'
 
     advancedMounts:
-      main: # the controller with the "main" identifier
-        main: # the container with the "main" identifier
+      main:
+        main:
           - path: /etc/turnserver.conf
             readOnly: true
             subPath: turnserver.conf
@@ -228,8 +228,8 @@ persistence:
     defaultMode: 0755
 
     advancedMounts:
-      tunneler: # the controller with the "main" identifier
-        main: # the container with the "main" identifier
+      tunneler:
+        main:
           - path: /config/wg_confs/wg0.conf
             readOnly: true
             subPath: wg-home1.conf
@@ -238,7 +238,13 @@ persistence:
     enabled: true
     type: secret
     name: myloginspace-default-certificates
-    mountPath: /etc/tls
+
+    advancedMounts:
+      main:
+        main:
+          - path: /etc/tls
+            readOnly: true
+
 
 configMaps:
   tunnelerconfig:
