@@ -28,7 +28,14 @@ controllers:
             {
               "name": "{{ .Values.UPNP.network.name }}",
               "namespace": "{{ .Values.UPNP.network.namespace }}",
-              "interface": "{{ .Values.UPNP.network.interface }}"
+              "interface": "{{ .Values.UPNP.network.interface }}",
+              "ips": [
+                "10.0.0.10"
+              ],
+              "dns": {},
+              "default-route": [
+                 "10.0.0.1"
+              ]
             }
           ]
 
@@ -48,48 +55,6 @@ controllers:
             set -eu
 
             IFACE="{{ .Values.UPNP.network.interface }}"
-            DHCP_TIMEOUT="{{ default 30 .Values.UPNP.dhcp.timeoutSeconds }}"
-
-            echo "Waiting for interface ${IFACE} to exist..."
-
-            i=0
-            while ! ip link show dev "${IFACE}" >/dev/null 2>&1; do
-              i=$((i + 1))
-              if [ "$i" -ge "$DHCP_TIMEOUT" ]; then
-                echo "Timed out waiting for ${IFACE} to exist"
-                exit 1
-              fi
-              sleep 1
-            done
-
-            echo "Interface ${IFACE} exists"
-
-            if ! ip -4 addr show dev "${IFACE}" scope global | grep -q 'inet '; then
-              echo "No IPv4 address on ${IFACE}; attempting DHCP"
-
-              if command -v udhcpc >/dev/null 2>&1; then
-                udhcpc -i "${IFACE}" -n -q -t 10 -T 3
-              elif command -v dhclient >/dev/null 2>&1; then
-                dhclient -4 -v "${IFACE}"
-              else
-                echo "No DHCP client found: need udhcpc or dhclient in the image"
-                exit 1
-              fi
-            fi
-
-            echo "Waiting for DHCP IPv4 address on ${IFACE}..."
-
-            i=0
-            while ! ip -4 addr show dev "${IFACE}" scope global | grep -q 'inet '; do
-              i=$((i + 1))
-              if [ "$i" -ge "$DHCP_TIMEOUT" ]; then
-                echo "Timed out waiting for DHCP address on ${IFACE}"
-                ip addr show dev "${IFACE}" || true
-                exit 1
-              fi
-              sleep 1
-            done
-
             IP_ADDR="$(ip -4 -o addr show dev "${IFACE}" scope global | awk '{print $4}' | cut -d/ -f1 | head -n1)"
 
             echo "Using ${IFACE} with IPv4 address ${IP_ADDR}"
