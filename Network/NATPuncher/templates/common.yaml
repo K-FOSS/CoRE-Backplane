@@ -9,6 +9,55 @@ global:
 {{ end }}
 
 
+{{- if .Values.UPNP.enabled }}
+controllers:
+  upnp:
+    type: cronjob
+    cronjob:
+      timeZone: UTC
+      schedule: '*/5 * * * *'
+      concurrencyPolicy: Forbid
+      successfulJobsHistory: 1
+      failedJobsHistory: 3
+      ttlSecondsAfterFinished: 300
+
+    pod:
+      annotations:
+        k8s.v1.cni.cncf.io/networks: >-
+          [
+            {
+              "name": "{{ .Values.UPNP.network.name }}",
+              "namespace": "{{ .Values.UPNP.network.namespace }}",
+              "interface": "{{ .Values.UPNP.network.interface }}"
+            }
+          ]
+
+    containers:
+      main:
+        image:
+          repository: kristianfjones/upnp
+          tag: jobs
+          pullPolicy: IfNotPresent
+
+        command:
+          - /bin/sh
+          - -ec
+
+        args:
+          - |
+            set -eu
+
+            IFACE="{{ .Values.UPNP.network.interface }}"
+
+            {{- range $port := .Values.UPNP.ports }}
+            echo "Ensuring UPnP {{ $port.protocol | upper }} {{ $port.externalPort }} -> {{ $port.target }}:{{ $port.internalPort }} via ${IFACE}"
+
+            upnpc \
+              -m "${IFACE}" \
+              -e "{{ $.Release.Name }} {{ $port.externalPort }}/{{ $port.protocol | upper }}" \
+              -a "{{ $port.target }}" "{{ $port.internalPort }}" "{{ $port.externalPort }}" "{{ $port.protocol | upper }}" {{ default 600 $port.duration }}
+            {{- end }}
+{{- end }}
 
 service:
   main:

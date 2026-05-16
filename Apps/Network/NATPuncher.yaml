@@ -22,6 +22,37 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    UPNP:
+                      enabled: false
+                    CoTurn:
+                      hub: false
+                    Tunneler:
+                      hub: true
+
+                - name: core-home1-talos-prod
+                  values:
+                    hub: false
+                    UPNP:
+                      enabled: true
+
+                      network:
+                        namespace: core-testing
+                        name: br0-wan-home
+                        interface: eth1
+
+                      ports:
+                        - target: 10.0.0.19
+                          internalPort: 80
+                          externalPort: 80
+                          protocol: TCP
+                          duration: 8600
+
+                        - target: 10.0.0.19
+                          internalPort: 443
+                          externalPort: 443
+                          protocol: TCP
+                          duration: 8600
+
                     CoTurn:
                       hub: false
                     Tunneler:
@@ -32,7 +63,6 @@ spec:
                   mylogin.space/tenant: 'core.mylogin.space'
                   resolvemy.host/computetype: 'baremetal'
                   resolvemy.host/nodetype: 'infra'
-                  topology.kubernetes.io/region: 'yxl'
               values:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
@@ -75,6 +105,8 @@ spec:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
+                UPNP:
+                  {{ nindent 2 (toYaml .values.UPNP) }}
 
                 datacenter: {{ .values.datacenter }}
 
