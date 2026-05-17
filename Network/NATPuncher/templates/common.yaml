@@ -23,17 +23,7 @@ controllers:
 
     pod:
       annotations:
-        k8s.v1.cni.cncf.io/networks: >-
-          [
-            {
-              "name": "{{ .Values.UPNP.network.name }}",
-              "namespace": "{{ .Values.UPNP.network.namespace }}",
-              "mac": "02:03:04:05:06:07",
-              "ips": [
-                "10.0.0.10/24"
-              ]
-            }
-          ]
+        v1.multus-cni.io/default-network: core-media/rogers-network
 
     containers:
       main:
@@ -50,7 +40,9 @@ controllers:
           - |
             set -eu
 
-            IFACE="{{ .Values.UPNP.network.interface }}"
+            sleep 60
+
+            IFACE="eth0"
             IP_ADDR="$(ip -4 -o addr show dev "${IFACE}" scope global | awk '{print $4}' | cut -d/ -f1 | head -n1)"
 
             echo "Using ${IFACE} with IPv4 address ${IP_ADDR}"
