@@ -35,6 +35,7 @@ spec:
             {{ $ciliumNodeResourceName := "cilium-node" }}
             {{ $frrConfigResourceName := "frr-config" }}
             {{ $talosTFTest := "talos-tf-test" }}
+            {{ $bridgeDSResourceName := "bridge-ds" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
@@ -272,6 +273,7 @@ spec:
             {{- end }}
             ---
             {{ if $clusterCustomResource.status.atProvider }}
+            {{ $bridgeVLANsUsed := false }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -310,6 +312,7 @@ spec:
 
                         {{- if $network.vlans }}
                           {{- range $v := $network.vlans }}
+                          {{- $bridgeVLANsUsed = true }}
                       {{ printf "%s.net.resolvemy.host/vlan-%v" $nic $v.vlanID }}: "true"
                           {{- end }}
                         {{- end }}
@@ -317,6 +320,160 @@ spec:
                       {{- end }}
                   spec:
                     providerID: tinkerbell://core-prod/{{ .observed.composite.resource.spec.claimRef.name }}
+            {{- if eq $bridgeVLANsUsed true }}
+            ---
+            #
+            # VLAN Daemonset here
+            #
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                #
+                # TODO: Actually make this check status
+                gotemplating.fn.crossplane.io/ready: 'True'
+
+                {{ setResourceNameAnnotation $bridgeDSResourceName }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
+
+              managementPolicies:
+                - Observe
+                - Update
+                - Create
+
+              forProvider:
+                manifest:
+                  apiVersion: apps/v1
+                  kind: DaemonSet
+                  metadata:
+                    name: bridge-vlan-permit-{{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                    namespace: kube-system
+                    labels:
+                      app.kubernetes.io/name: bridge-vlan-permit
+                      resolvemy.host/node: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                  spec:
+                    selector:
+                      matchLabels:
+                        app.kubernetes.io/name: bridge-vlan-permit
+                        resolvemy.host/node: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+
+                    updateStrategy:
+                      type: RollingUpdate
+
+                    template:
+                      metadata:
+                        labels:
+                          app.kubernetes.io/name: bridge-vlan-permit
+                          resolvemy.host/node: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+
+                      spec:
+                        hostNetwork: true
+                        hostPID: true
+                        dnsPolicy: ClusterFirstWithHostNet
+
+                        nodeSelector:
+                          kubernetes.io/hostname: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+
+                        tolerations:
+                          - operator: Exists
+
+                        containers:
+                          - name: bridge-vlan-permit
+                            image: nicolaka/netshoot:latest
+                            imagePullPolicy: IfNotPresent
+
+                            securityContext:
+                              privileged: true
+                              capabilities:
+                                add:
+                                  - NET_ADMIN
+
+                            env:
+                              - name: RECONCILE_INTERVAL_SECONDS
+                                value: "30"
+
+                              - name: TARGETS
+                                value: |-
+                                  {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
+                                  {{- if and $network.bridge $network.vlans }}
+                                  br{{ $netIndex }} enx{{ regexReplaceAll ":" ($network.macAddress) "" }}{{- range $v := $network.vlans }} {{ $v.vlanID }}{{- end }}
+                                  {{- end }}
+                                  {{- end }}
+
+                            command:
+                              - /bin/sh
+                              - -ceu
+                              - |
+
+                                ensure_vlan_self() {
+                                  bridge="$1"
+                                  vid="$2"
+
+                                  echo "Ensuring VLAN $vid is permitted on bridge $bridge self"
+
+                                  if bridge vlan add dev "$bridge" vid "$vid" self 2>/tmp/bridge-vlan-self.err; then
+                                    return 0
+                                  fi
+
+                                  if grep -qi "File exists" /tmp/bridge-vlan-self.err; then
+                                    return 0
+                                  fi
+
+                                  echo "WARN: failed to add VLAN $vid to bridge $bridge self"
+                                  cat /tmp/bridge-vlan-self.err
+                                  return 0
+                                }
+
+                                ensure_vlan_port() {
+                                  port="$1"
+                                  vid="$2"
+
+                                  if ! ip link show dev "$port" >/dev/null 2>&1; then
+                                    echo "WARN: bridge member $port does not exist yet"
+                                    return 1
+                                  fi
+
+                                  echo "Ensuring VLAN $vid is permitted on bridge port $port"
+
+                                  if bridge vlan add dev "$port" vid "$vid" 2>/tmp/bridge-vlan-port.err; then
+                                    return 0
+                                  fi
+
+                                  if grep -qi "File exists" /tmp/bridge-vlan-port.err; then
+                                    return 0
+                                  fi
+
+                                  echo "WARN: failed to add VLAN $vid to bridge port $port"
+                                  cat /tmp/bridge-vlan-port.err
+                                  return 0
+                                }
+
+                                reconcile_once() {
+                                  echo "$TARGETS" | while read -r bridge port vlans; do
+                                    [ -z "${bridge:-}" ] && continue
+                                    [ -z "${port:-}" ] && continue
+                                    [ -z "${vlans:-}" ] && continue
+
+                                    for vid in $vlans; do
+                                      ensure_vlan_self "$bridge" "$vid"
+                                      ensure_vlan_port "$port" "$vid"
+                                    done
+
+                                    echo "Current VLAN state for $bridge:"
+                                    bridge vlan show dev "$bridge" || true
+
+                                    echo "Current VLAN state for $port:"
+                                    bridge vlan show dev "$port" || true
+                                  done
+                                }
+
+                                while true; do
+                                  reconcile_once
+                                  sleep "${RECONCILE_INTERVAL_SECONDS}"
+                                done
+            {{- end }}
             {{ end }}
             ---
             {{ if $clusterCustomResource.status.atProvider }}
