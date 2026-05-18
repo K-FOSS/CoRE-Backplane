@@ -19,19 +19,8 @@ gateway:
   namespace: core-prod
 
 authentik:
-
-
-
   ## Globally shared configuration for authentik components.
   global:
-    # -- Provide a name in place of `authentik`
-    nameOverride: ""
-    # -- String to fully override `"authentik.fullname"`
-    fullnameOverride: ""
-    # -- Common labels for all resources.
-    additionalLabels: {}
-      # app: authentik
-
     # Number of old deployment ReplicaSets to retain. The rest will be garbage collected.
     revisionHistoryLimit: 3
 
@@ -69,20 +58,8 @@ authentik:
       # runAsGroup: 1000
       # fsGroup: 1000
 
-    # -- Mapping between IP and hostnames that will be injected as entries in the pod's hosts files
-    hostAliases: []
-      # - ip: 10.20.30.40
-      #   hostnames:
-      #     - my.hostname
-
     # -- Default priority class for all components
     priorityClassName: 'tier2-priority'
-
-    # -- Default node selector for all components
-    nodeSelector: {}
-
-    # -- Default tolerations for all components
-    tolerations: []
 
     # Default affinity preset for all components
     affinity:
@@ -119,10 +96,10 @@ authentik:
     # @default -- `[]` (See [values.yaml])
     env:
       - name: AUTHENTIK_WEB__WORKERS
-        value: '4'
+        value: '2'
 
       - name: AUTHENTIK_WEB__THREADS
-        value: '8'
+        value: '2'
       
       - name: AUTHENTIK_REDIS__DB
         value: '1'
@@ -277,7 +254,7 @@ authentik:
     name: server
 
     # -- The number of server pods to run
-    replicas: 2
+    replicas: 4
 
     ## authentik server Horizontal Pod Autoscaler
     autoscaling:
