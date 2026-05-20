@@ -64,9 +64,11 @@ spec:
             memory: 4Gi
             cpu: 2
       volumes:
+        {{ if .Values.installing }}
         - name: vyos-install-cd
           dataVolume:
             name: vyos-iso
+        {{- end }}
 
         - dataVolume:
             name: rootdisk-template
