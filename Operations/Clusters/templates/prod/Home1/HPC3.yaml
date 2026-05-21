@@ -82,7 +82,17 @@ spec:
         - vlanID: 150
         - vlanID: 20
 
-    - macAddress: 00:30:93:0c:05:12
+    - type: bridge
+
+      model: new
+
+      stp:
+        enabled: false
+
+      members:
+        - macAddress: 00:30:93:0c:05:12
+
+      macAddress: 00:30:93:0c:05:12
       bridge: true
 
       addresses:
@@ -112,8 +122,18 @@ spec:
         - 1.0.0.1
         - 8.8.8.8
 
-    - addresses:
+    - type: bridge
+      
+      stp:
+        enabled: false
+
+      members:
+        - macAddress: 00:30:93:0c:05:13
+
+      addresses:
         - 172.31.241.26/30
+
+      model: new
       bridge: true
       dns:
         - 1.1.1.1
@@ -124,8 +144,10 @@ spec:
       routes: []
       static: true
       routing:
-        bgp:
+        ospf:
+          area: 0.0.0.0
           enabled: true
+          type: point-to-point
   
   sysctls:
     - name: net.ipv4.tcp_max_syn_backlog
@@ -158,7 +180,6 @@ spec:
           - name: vfio-pci
           - name: dm_multipath
           - name: dm_round-robin
-          - name: snd-usb-audio
 
       extensions:
         system:
