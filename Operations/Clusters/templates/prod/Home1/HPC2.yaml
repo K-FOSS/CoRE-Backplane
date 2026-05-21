@@ -83,22 +83,36 @@ spec:
         enabled: false
       type: bridge
 
-    - addresses:
+    - macAddress: e0:d5:5e:65:02:d9
+      type: bridge
+      bridge: true
+
+      stp:
+        enabled: false
+
+      members:
+        - macAddress: e0:d5:5e:65:02:d9
+
+      addresses:
         - 172.31.193.12/24
         - 2604:3d08:d174:2000::12/122
-      bridge: true
-      model: legacy
+
+      model: new
+
       dns:
         - 1.1.1.1
         - 8.8.8.8
-      macAddress: e0:d5:5e:65:02:d9
+
       mtu: 9000
+
       routes: []
+
       routing:
         ospf:
           area: 0.0.0.0
           enabled: true
           type: broadcast
+
       static: true
       vlans:
         - vlanID: 150
