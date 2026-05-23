@@ -843,6 +843,26 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{- if and $.observed.composite.resource.spec.storage $.observed.composite.resource.spec.storage.longhornDisks }}
+                    longhorn-disk-conf = <<-EOT
+                      {{- range $longhornDiskIndex, $longhornDisk := $.observed.composite.resource.spec.storage.longhornDisks -}}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: UserVolumeConfig
+                      name: longhorn-{{ $longhornDiskIndex }}
+                      provisioning:
+                        diskSelector:
+                          {{- $selectorParts := list }}
+                          {{- range $selectorKey, $selectorValue := $longhornDisk.selector }}
+                            {{- $selectorParts = append $selectorParts (printf "disk.%s == %s" $selectorKey ($selectorValue | toJson)) }}
+                          {{- end }}
+                          match: {{ join " && " $selectorParts | quote }}
+                        grow: false
+                        maxSize: {{ default "50GB" $longhornDisk.maxSize }}
+                      {{- end }}
+                    EOT
+                    {{- end }}
+
                     {{ $timeConfigUsed := false }}
 
                     {{- if and $clusterCustomResource.status.atProvider.manifest.spec.time $clusterCustomResource.status.atProvider.manifest.spec.time.ntp $clusterCustomResource.status.atProvider.manifest.spec.time.ntp.servers }}
