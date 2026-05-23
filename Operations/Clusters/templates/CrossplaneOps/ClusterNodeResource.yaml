@@ -148,13 +148,27 @@ spec:
 
                                   description: ASN of the peer
 
-                # storage:
-                #   type: object
+                storage:
+                  type: object
+                  description: Configure Compute Node Storage
 
-                #   description: Configure Compute Node Storage
+                  properties:
+                    longhornDisks:
+                      type: object
 
-                #   properties:
-                #     systemDisk:
+                      description: Configure Longhorn storage disks
+
+                      properties:
+                        selector:
+                          type: object
+
+                          oneOf:
+                            - required:
+                                - wwid
+
+                          properties:
+                            wwid:
+                              type: string
 
                 networking:
                   type: object
