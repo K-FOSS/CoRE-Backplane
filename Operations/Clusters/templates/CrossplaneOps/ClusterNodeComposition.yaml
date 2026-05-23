@@ -1188,6 +1188,38 @@ spec:
 
                           kubelet = {
                             image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
+
+                            extraMounts = [
+                              {
+                                type = "bind"
+                                
+                                destination = "/var/lib/longhorn"
+                                source = "/var/lib/longhorn"
+
+                                options = [
+                                  "bind",
+                                  "rshared",
+                                  "rw"
+                                ]
+                              },
+                              {{- if and $.observed.composite.resource.spec.storage $.observed.composite.resource.spec.storage.longhornDisks }}
+                              {{- range $longhornDiskIndex, $longhornDisk := $.observed.composite.resource.spec.storage.longhornDisks }}
+                              {
+                                type = "bind"
+                                
+                                destination = "/var/mnt/longhorn-{{ $longhornDiskIndex }}"
+                                source = "/var/mnt/longhorn-{{ $longhornDiskIndex }}"
+
+                                options = [
+                                  "bind",
+                                  "rshared",
+                                  "rw"
+                                ]
+                              },
+                              {{- end }}
+                              {{- end }}
+                            ]
+
                             nodeIP = {
                               validSubnets = [
                                 {{- range $index, $network := .observed.composite.resource.spec.networks }}
