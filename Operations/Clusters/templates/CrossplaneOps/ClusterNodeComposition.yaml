@@ -843,9 +843,11 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{ $longhornDiskConfigUsed := false }}
                     {{- if and $.observed.composite.resource.spec.storage $.observed.composite.resource.spec.storage.longhornDisks }}
                     longhorn-disk-conf = <<-EOT
                       {{- range $longhornDiskIndex, $longhornDisk := $.observed.composite.resource.spec.storage.longhornDisks }}
+                      {{- $longhornDiskConfigUsed = true }}
                       ---
                       apiVersion: v1alpha1
                       kind: UserVolumeConfig
@@ -1291,6 +1293,9 @@ spec:
                       {{- end }}
                       {{- if eq $timeConfigUsed true }}
                       local.time-conf,
+                      {{- end }}
+                      {{- if eq $longhornDiskConfigUsed true }}
+                      local.longhorn-disk-conf,
                       {{- end }}
                     ]
                   }
