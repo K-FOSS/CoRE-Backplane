@@ -151,24 +151,26 @@ spec:
                 storage:
                   type: object
                   description: Configure Compute Node Storage
-
                   properties:
                     longhornDisks:
-                      type: object
-
+                      type: array
                       description: Configure Longhorn storage disks
+                      items:
+                        type: object
+                        properties:
+                          maxSize:
+                            type: string
+                          
+                          selector:
+                            type: object
 
-                      properties:
-                        selector:
-                          type: object
+                            oneOf:
+                              - required:
+                                  - wwid
 
-                          oneOf:
-                            - required:
-                                - wwid
-
-                          properties:
-                            wwid:
-                              type: string
+                            properties:
+                              wwid:
+                                type: string
 
                 networking:
                   type: object
