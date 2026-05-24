@@ -544,6 +544,7 @@ spec:
                               name: local-peer
                       {{ $bgpInstances := concat .observed.composite.resource.spec.bgp.instances $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances  }}
                       {{ range $index, $bgpInstance := $bgpInstances }}
+                      {{- if eq $bgpInstance.type "cilium" }}
                       - localASN: {{ $bgpInstance.asn }}
                         name: {{ $bgpInstance.name }}
                         {{- if $bgpInstance.port }}
@@ -562,7 +563,8 @@ spec:
                             peerConfigRef:
                               name: default
                           {{ end }}
-                      {{ end }}
+                      {{- end }}
+                      {{- end }}
             ---
             {{ $ciliumNode := getComposedResource . $ciliumNodeResourceName }}
             {{ $tfTalosNode := getComposedResource . $talosTFTest }}
