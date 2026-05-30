@@ -1197,18 +1197,6 @@ spec:
                             image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
 
                             extraMounts = [
-                              {
-                                type = "bind"
-                                
-                                destination = "/var/lib/longhorn"
-                                source = "/var/lib/longhorn"
-
-                                options = [
-                                  "bind",
-                                  "rshared",
-                                  "rw"
-                                ]
-                              },
                               {{- if and $.observed.composite.resource.spec.storage $.observed.composite.resource.spec.storage.longhornDisks }}
                               {{- range $longhornDiskIndex, $longhornDisk := $.observed.composite.resource.spec.storage.longhornDisks }}
                               {
