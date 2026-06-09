@@ -1078,12 +1078,21 @@ data:
           
           // Global value for the rebind timer, i.e. the time after which the
           // DHCP client enters rebind state if it fails to renew the lease.
-          "rebind-timer": 40,
+          "rebind-timer": 64800,
           
           // Global value for the renew timer, i.e. the timer after which the
           // DHCP client renews the lease.
-          "renew-timer": 30,
+          "renew-timer": 21600,
           
+          // Global valid (default) lifetime value.
+          "valid-lifetime": 86400,
+
+          // Global min valid lifetime value.
+          "min-valid-lifetime": 3600,
+
+          // Global max valid lifetime value.
+          "max-valid-lifetime": 86400,
+
           // Global value to store extended information (e.g. relay agent
           // information) with each lease.
           "store-extended-info": true,
@@ -1137,7 +1146,6 @@ data:
 
               "match-client-id": false,
               "option-data": [],
-              "rebind-timer": 10800,
 
               "ddns-qualifying-suffix": "home2.resolvemy.host.",
 
@@ -1147,13 +1155,12 @@ data:
                   "172.31.193.254"
                 ]
               },
-              // Timer values can be overridden here.
-              "renew-timer": 1800,
 
               "store-extended-info": true,
               "subnet4": [
                 {
                   "id": 2001,
+                  "subnet": "172.31.193.0/24",
                   "match-client-id": false,
                   "server-hostname": "dhcp.resolvemy.host",
                   "option-data": [
@@ -1183,7 +1190,6 @@ data:
                       "pool": "172.31.193.100 - 172.31.193.200"
                     }
                   ],
-                  "rebind-timer": 75600,
                   "reservations": [
                     {
                       "hw-address": "bc:07:1d:dd:5a:08",
@@ -1234,14 +1240,15 @@ data:
                       "hw-address": "00:e0:4c:79:61:d1",
                       "hostname": "laptop2",
                       "ip-address": "172.31.193.14"
+                    },
+                    {	
+                      "hw-address": "74:ac:b9:a4:f9:45",	
+                      "hostname": "cpe-sw2",	
+                      "ip-address": "172.31.193.38"	
                     }
-                  ],
-                  "renew-timer": 43200,
-                  "subnet": "172.31.193.0/24",
-                  "valid-lifetime": 86400
+                  ]
                 }
-              ],
-              "valid-lifetime": 3600
+              ]
             },
             {
               "authoritative": false,
@@ -1249,7 +1256,6 @@ data:
 
               "match-client-id": false,
               "option-data": [],
-              "rebind-timer": 10800,
 
               "ddns-qualifying-suffix": "manage.resolvemy.host.",
 
@@ -1259,13 +1265,11 @@ data:
                 ]
               },
 
-              // Timer values can be overridden here.
-              "renew-timer": 1800,
-
               "store-extended-info": true,
               "subnet4": [
                 {
                   "id": 200,
+                  "subnet": "172.16.20.0/24",
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1290,15 +1294,10 @@ data:
                       "data": "172.16.20.254"
                     }
                   ],
-                  "rebind-timer": 10800,
                   "reservations": [
-                  ],
-                  "renew-timer": 1800,
-                  "subnet": "172.16.20.0/24",
-                  "valid-lifetime": 3600
+                  ]
                 }
-              ],
-              "valid-lifetime": 3600
+              ]
             },
             {
               "authoritative": false,
@@ -1307,7 +1306,6 @@ data:
 
               "match-client-id": false,
               "option-data": [],
-              "rebind-timer": 10800,
 
               "ddns-qualifying-suffix": "srv3.dc1.yxl.resolvemy.host.",
 
@@ -1316,12 +1314,12 @@ data:
                   "172.31.241.89"
                 ]
               },
-              "renew-timer": 1800,
 
               "store-extended-info": true,
               "subnet4": [
                 {
                   "id": 114,
+                  "subnet": "172.31.241.88/30",
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1350,20 +1348,15 @@ data:
                       "data": "162.159.200.123"
                     }
                   ],
-                  "rebind-timer": 10800,
                   "reservations": [
                     {
                       "hw-address": "b8:ca:3a:6c:33:68",
                       "hostname": "srv3",
                       "ip-address": "172.31.241.90"
                     }
-                  ],
-                  "renew-timer": 1800,
-                  "subnet": "172.31.241.88/30",
-                  "valid-lifetime": 3600
-                },
-              ],
-              "valid-lifetime": 3600
+                  ]
+                }
+              ]
             },
             {
               "authoritative": false,
@@ -1372,7 +1365,6 @@ data:
 
               "match-client-id": false,
               "option-data": [],
-              "rebind-timer": 10800,
 
               "ddns-qualifying-suffix": "srv1.dc1.yxl.resolvemy.host.",
 
@@ -1381,12 +1373,12 @@ data:
                   "172.31.241.93"
                 ]
               },
-              "renew-timer": 1800,
 
               "store-extended-info": true,
               "subnet4": [
                 {
                   "id": 1011,
+                  "subnet": "172.31.241.92/30",
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1415,20 +1407,15 @@ data:
                       "data": "162.159.200.123"
                     }
                   ],
-                  "rebind-timer": 10800,
                   "reservations": [
                     {
                       "hw-address": "b8:ca:3a:6e:f3:b8",
                       "hostname": "srv1",
                       "ip-address": "172.31.241.94"
                     }
-                  ],
-                  "renew-timer": 1800,
-                  "subnet": "172.31.241.92/30",
-                  "valid-lifetime": 3600
+                  ]
                 }
-              ],
-              "valid-lifetime": 3600
+              ]
             },
             {
               "authoritative": false,
@@ -1437,7 +1424,6 @@ data:
 
               "match-client-id": false,
               "option-data": [],
-              "rebind-timer": 10800,
 
               "ddns-qualifying-suffix": "srv2.dc1.yxl.resolvemy.host.",
 
@@ -1446,12 +1432,12 @@ data:
                   "172.31.241.21"
                 ]
               },
-              "renew-timer": 1800,
 
               "store-extended-info": true,
               "subnet4": [
                 {
                   "id": 2021,
+                  "subnet": "172.31.241.20/30",
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1480,20 +1466,15 @@ data:
                       "data": "162.159.200.123"
                     }
                   ],
-                  "rebind-timer": 10800,
                   "reservations": [
                     {
                       "hw-address": "b8:CA:3A:F6:51:3E",
                       "hostname": "srv2",
                       "ip-address": "172.31.241.22"
                     }
-                  ],
-                  "renew-timer": 1800,
-                  "subnet": "172.31.241.20/30",
-                  "valid-lifetime": 3600
+                  ]
                 }
-              ],
-              "valid-lifetime": 3600
+              ]
             },
             {
               "authoritative": false,
@@ -1502,7 +1483,6 @@ data:
 
               "match-client-id": false,
               "option-data": [],
-              "rebind-timer": 10800,
 
               "ddns-qualifying-suffix": "srv7.dc1.yxl.resolvemy.host.",
 
@@ -1511,12 +1491,12 @@ data:
                   "172.31.241.69"
                 ]
               },
-              "renew-timer": 1800,
 
               "store-extended-info": true,
               "subnet4": [
                 {
                   "id": 2070,
+                  "subnet": "172.31.241.68/30",
                   "match-client-id": false,
                   "server-hostname": "dhcp.service.kjdev",
                   "option-data": [
@@ -1545,32 +1525,23 @@ data:
                       "data": "162.159.200.123"
                     }
                   ],
-                  "rebind-timer": 10800,
                   "reservations": [
                     {
                       "hw-address": "B8:CA:3A:60:00:28",
                       "hostname": "srv7",
                       "ip-address": "172.31.241.70"
                     }
-                  ],
-                  "renew-timer": 1800,
-                  "subnet": "172.31.241.68/30",
-                  "valid-lifetime": 3600
+                  ]
                 }
-              ],
-              "valid-lifetime": 3600
+              ]
             }
           ],
           "server-hostname": "core0.site1.kristianjones.dev",
           // List of IPv4 subnets which don't belong to any shared network.
           "subnet4": [],
-          // Global valid (default) lifetime value.
-          "valid-lifetime": 1800,
-          // Global min valid lifetime value.
-          "min-valid-lifetime": 900,
-          // Global max valid lifetime value.
-          "max-valid-lifetime": 86400,
+  
           "reservations": [],
+
           // DHCP queue control parameters.
           "dhcp-queue-control": {
             // Enable queue is mandatory.
