@@ -1169,6 +1169,12 @@ spec:
                             {{- end }}
                           }
 
+                          sysfs = {
+                            {{- range $sysfsIndex, $sysfs := $.observed.composite.resource.spec.sysfs }}
+                            "{{ $sysfs.name }}" = "{{ $sysfs.value }}"
+                            {{- end }}
+                          }
+
                           {{- if $.observed.composite.resource.spec.overrides.talos.kernel.modules }}
                           kernel = {
                             modules = [
