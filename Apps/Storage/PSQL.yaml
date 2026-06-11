@@ -22,6 +22,17 @@ spec:
         generators:
           - list:
               elements:
+                - name: dc1-k3s-node1
+                  values:
+                    hub: true
+
+                    standby: true
+
+                    pooler:
+                      peers:
+                        - hostname: psql-int.core-home1-talos-prod.home1.yvr.mylogin.space
+                          port: 5432
+
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
