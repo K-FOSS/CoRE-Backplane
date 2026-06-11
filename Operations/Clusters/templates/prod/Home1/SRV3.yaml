@@ -82,40 +82,22 @@ spec:
       vlans:
         - vlanID: 150
 
-    - macAddress: ec:f4:bb:ef:58:ea
+    - addresses: []
       bridge: true
-      
-      stp:
-        enabled: false
-
-      members:
-        - macAddress: ec:f4:bb:ef:58:ea
-
-      addresses:
-        - 172.31.193.38/24
-        - 2604:3d08:d174:2000::28/122
-
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+      macAddress: ec:f4:bb:ef:58:ea
+      model: new
+      mtu: 9000
       routing:
         ospf:
-          enabled: true
-
-          area: '0.0.0.0'
-
+          area: 0.0.0.0
+          enabled: false
           type: broadcast
-
-      routes:
-        - network: 0.0.0.0/0
-          gateway: 172.31.193.254
-          metric: 1024
-
-      mtu: 9000
-
       static: true
-      dns:
-        - 172.31.193.254
-
-      vlans:
-        - vlanID: 150
+      type: link
 
   overrides:
     kernel:
