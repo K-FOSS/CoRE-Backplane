@@ -17,6 +17,59 @@ spec:
         generators:
           - list:
               elements:
+                - name: dc1-k3s-node1
+                  values:
+                    installing: true
+                    networks:
+                      - name: pwan
+                        nics:
+                          - br1
+                          - br2
+                        vlan: 15
+                      - mtu: 9000
+                        name: backend951
+                        nics:
+                          - br1
+                        vlan: 951
+                      - mtu: 9000
+                        name: backend952
+                        nics:
+                          - br1
+                        vlan: 952
+                      - mtu: 9000
+                        name: backend953
+                        nics:
+                          - br1
+                          - br3
+                        vlan: 953
+                      - mtu: 9000
+                        name: backend954
+                        nics:
+                          - br1
+                          - br3
+                        vlan: 954
+                    vms:
+                      - disk:
+                          enabled: true
+                          size: 5Gi
+                        installing: true
+                        name: wan-rt1
+                        networks:
+                          - name: pwan
+                            nics:
+                              - br1
+                              - br2
+                          - name: backend953
+                            nics:
+                              - br3
+                        podNetwork:
+                          enabled: false
+                        ports:
+                          - expose: false
+                            name: wg-2011
+                            port: 64763
+                            protocol: UDP
+
                 - name: core-dc1-talos-prod
                   values:
                     installing: true
