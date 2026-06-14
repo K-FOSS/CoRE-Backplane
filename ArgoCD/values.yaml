@@ -409,6 +409,26 @@ argo-cd:
         cpu: '1500m'
         memory: '2Gi'
 
+    existingVolumes:
+      gpgKeyring:
+        emptyDir:
+          sizeLimit: 500Mi
+          medium: Memory
+
+      helmWorkingDir:
+        emptyDir:
+          sizeLimit: 8Gi
+          medium: Memory
+
+      tmp:
+        emptyDir:
+          sizeLimit: 4Gi
+          medium: Memory
+
+      varFiles:
+        emptyDir:
+          sizeLimit: 500Mi
+          medium: Memory
     env:
       - name: ARGOCD_EXEC_TIMEOUT
         value: 300s
