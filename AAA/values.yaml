@@ -100,18 +100,15 @@ authentik:
 
       - name: AUTHENTIK_WEB__THREADS
         value: '2'
-      
-      - name: AUTHENTIK_REDIS__DB
-        value: '1'
 
       - name: AUTHENTIK_OUTPOSTS__DISCOVER
         value: 'false'
 
       - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
-        value: 'true'
+        value: 'false'
 
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-        value: '30'
+        value: '3600'
 
       - name: AUTHENTIK_POSTGRESQL__CONN_HEALTH_CHECKS
         value: 'true'
@@ -233,10 +230,6 @@ authentik:
       # @default -- `{{ .Release.Name }}-postgresql`
       host: psql-int.mylogin.space
       port: 5432
-
-    redis:
-      host: redis.home1.mylogin.space
-      password: ""
 
 
   blueprints:
@@ -851,41 +844,15 @@ authentik:
   prometheus:
     rules:
       enabled: true
-      # -- PrometheusRule namespace
-      namespace: ""
-      # -- PrometheusRule selector
-      selector: {}
-        # prometheus: kube-prometheus
-
-      # -- PrometheusRule labels
-      labels: {}
-      # -- PrometheusRule annotations
-      annotations: {}
 
 
   postgresql:
     # -- enable the Bitnami PostgreSQL chart. Refer to https://github.com/bitnami/charts/blob/main/bitnami/postgresql/ for possible values.
     enabled: false
-    auth:
-      username: ''
-      database: ''
-      # password: ""
-    primary:
-      extendedConfiguration: |
-        max_connections = 500
-      # persistence:
-      #   enabled: true
-      #   storageClass:
-      #   accessModes:
-      #     - ReadWriteOnce
-
 
   redis:
     # -- enable the Bitnami Redis chart. Refer to https://github.com/bitnami/charts/blob/main/bitnami/redis/ for possible values.
     enabled: false
-    architecture: standalone
-    auth:
-      enabled: false
 
 
   # -- additional resources to deploy. Those objects are templated.
