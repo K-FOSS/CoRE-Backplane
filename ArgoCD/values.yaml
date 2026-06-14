@@ -53,7 +53,15 @@ argo-cd:
     deploymentAnnotations:
       secret.reloader.stakater.com/reload: argocd-redis-password
 
-    
+    affinity:
+      nodeAffinity:
+        type: hard          # hard = requiredDuringScheduling; soft = preferred
+        matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: NotIn
+            values:
+              - hpc3
+
     logging:
       # -- Set the global logging format. Either: `text` or `json`
       format: json
