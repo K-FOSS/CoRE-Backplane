@@ -1,0 +1,20 @@
+{{- if .Values.authentik.proxy.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: authentik-outpost
+spec:
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /outpost.goauthentik.io
+      backendRefs:
+        - name: aaa-myloginspace-proxy
+          port: 80
+      sessionPersistence:
+        sessionName: ak_outpost
+        type: Cookie
+        cookieConfig:
+          lifetimeType: Session
+{{- end }}
