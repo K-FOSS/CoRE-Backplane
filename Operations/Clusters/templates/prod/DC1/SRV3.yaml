@@ -44,10 +44,10 @@ spec:
             asn: 64567
             name: eth1-29.lf-sw1.dc1.yxl.resolvemy.host#
 
-#   nics:
-#     - macAddress: f0:4d:a2:03:cd:ea
-#       rings:
-#         rx: 4096
+  nics:
+    - macAddress: b8:ca:3a:6c:33:69
+      rings:
+        rx: 2048
 
 #   storage:
 #     longhornDisks:
@@ -56,107 +56,45 @@ spec:
 #           wwid: naa.5000cca072403d08
 
   networks:
-    - macAddress: b8:ca:3a:6c:33:68
-      bridge: true
-      addresses:
+    - addresses:
         - 172.31.241.90/30
-
-      routes:
-        - network: 0.0.0.0/0
-          gateway: 172.31.241.89
-          metric: 1024
-
-      mtu: 9000
-
-      routing:
-        ospf:
-          enabled: true
-
-          type: point-to-point
-
-          area: '0.0.0.0'
-
-      static: true
+      bridge: true
       dns:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
+      macAddress: b8:ca:3a:6c:33:68
+      model: new
+      mtu: 9000
+      routes:
+        - gateway: 172.31.241.89
+          metric: 1024
+          network: 0.0.0.0/0
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: false
+          type: point-to-point
+      static: true
+      type: link
 
-      vlans:
-        - vlanID: 15
-        - vlanID: 951
-        
-
-    # - macAddress: f0:4d:a2:03:cd:ec
-    #   bridge: true
-    #   addresses:
-    #     - 172.31.241.78/30
-
-    #   routes:
-    #     - network: 0.0.0.0/0
-    #       gateway: 172.31.241.77
-    #       metric: 1024
-
-    #   routing:
-    #     ospf:
-    #       enabled: true
-
-    #       type: point-to-point
-
-    #       area: '0.0.0.0'
-
-    #   mtu: 9000
-    #   static: true
-    #   dns:
-    #     - 1.1.1.1
-    #     - 1.0.0.1
-    #     - 8.8.8.8
-    #   vlans:
-    #     - vlanID: 15
-    #     - vlanID: 951
-    #     - vlanID: 952
-    #     - vlanID: 953
-    #     - vlanID: 954
-
-    # - macAddress: f0:4d:a2:03:cd:ea
-    #   bridge: false
-    #   addresses:
-    #     - 172.31.241.82/30
-
-    #   routes:
-    #     - network: 0.0.0.0/0
-    #       gateway: 172.31.241.81
-    #       metric: 1024
-
-    #   mtu: 9000
-    #   static: true
-    #   dns:
-    #     - 1.1.1.1
-    #     - 1.0.0.1
-    #     - 8.8.8.8
-
-    #   vlans:
-    #     - vlanID: 15
-    #     - vlanID: 951
-    #     - vlanID: 952
-    #     - vlanID: 953
-
-    # - addresses:
-    #     - 172.31.241.86/30
-    #   bridge: true
-    #   dns:
-    #     - 1.1.1.1
-    #     - 1.0.0.1
-    #     - 8.8.8.8
-    #   macAddress: f0:4d:a2:03:cd:e8
-    #   model: legacy
-    #   mtu: 9000
-    #   routes: []
-    #   static: true
-    #   type: link
-    #   vlans:
-    #     - vlanID: 15
-    #     - vlanID: 954
+    - addresses: []
+      bridge: false
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+      macAddress: b8:ca:3a:6c:33:69
+      model: new
+      mtu: 9216
+      routes: []
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: false
+          type: point-to-point
+      static: true
+      type: link
 
   overrides:
     pci:
