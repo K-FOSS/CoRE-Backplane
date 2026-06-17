@@ -895,8 +895,12 @@ spec:
 
                       {{- if $nic.rings }}
                       rings:
-                        rx: {{ $nic.rings.rx }}
-                        tx: {{ $nic.rings.tx }}
+                        {{- with .rx }}
+                        rx: {{ . }}
+                        {{- end }}
+                        {{- with .tx }}
+                        tx: {{ . }}
+                        {{- end }}
                       {{- end }}
                       {{- end }}
                     EOT
