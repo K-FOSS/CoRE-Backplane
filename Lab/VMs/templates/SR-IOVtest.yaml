@@ -1,13 +1,15 @@
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: sriov-vlan953
+  name: sriov-vlan951
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_xxv710_vfio
 spec:
   config: |
     {
       "cniVersion": "1.0.0",
-      "name": "sriov-vlan953",
-      "type": "host-device",
-      "device": "enp5s0f1np1v0",
+      "name": "wanrt-vlan953",
+      "type": "sriov",
+      "vlan": 951,
       "ipam": {}
     }
