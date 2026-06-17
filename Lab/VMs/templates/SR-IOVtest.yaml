@@ -3,13 +3,15 @@ kind: NetworkAttachmentDefinition
 metadata:
   name: sriov-vlan951
   annotations:
-    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_xxv710_vfio
+    k8s.v1.cni.cncf.io/resourceName: mellanox.com/mlx4_cx3_vfio
 spec:
   config: |
     {
       "cniVersion": "1.0.0",
       "name": "wanrt-vlan951",
       "type": "sriov",
+      "spoofchk": "off",
+      "trust": "on",
       "vlan": 951,
       "ipam": {}
     }
