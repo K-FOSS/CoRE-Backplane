@@ -893,14 +893,8 @@ spec:
                       kind: EthernetConfig
                       name: {{ printf "enx%s" ($nic.macAddress | lower | replace ":" "") }}
 
-                      {{- if $nic.rings }}
-                      rings:
-                        {{- with .rx }}
-                        rx: {{ . }}
-                        {{- end }}
-                        {{- with .tx }}
-                        tx: {{ . }}
-                        {{- end }}
+                      {{- with $nic.rings }}
+                      rings:{{ toYaml . | nindent 4 }}
                       {{- end }}
                       {{- end }}
                     EOT
