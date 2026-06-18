@@ -40,6 +40,7 @@ spec:
         type: cilium
         peers:
           - address: 172.31.193.16
+            localAddress: 172.31.193.21
             asn: 64567
             name: cpe-sw1.home1.yvr.resolvemy.host
 
@@ -88,7 +89,7 @@ spec:
       model: new
 
       macAddress: 00:30:93:0c:05:12
-      bridge: true
+      bridge: false
 
       addresses:
         - 172.31.193.22/24
@@ -141,6 +142,9 @@ spec:
     - name: net.ipv4.tcp_max_syn_backlog
       value: '262144'
 
+  sysfs:
+    - name: class.net.enp34s0f0.device.sriov_numvfs
+      value: '2'
 
   overrides:
     version:
@@ -150,12 +154,30 @@ spec:
       parameters:
         - name: intel_iommu
           value: 'on'
+
         - name: iommu
           value: pt
-        - name: cpufreq.default_governor
-          value: performance
-        - name: intel_idle.max_cstate
-          value: '0'
+
+        - name: console
+          value: tty0
+
+        - name: pci
+          value: realloc
+
+        - name: loglevel
+          value: '7'
+
+        - name: ignore_loglevel
+          value: ''
+
+        - name: nomodeset
+          value: ''
+
+        - name: intel_iommu
+          value: 'off'
+
+        - name: iommu
+          value: pt
 
     pci:
       rebinds:
