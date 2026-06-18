@@ -90,7 +90,11 @@ spec:
                     {{- end }}
                     {{ end }}
                   talos:
-                    version: {{ $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}
+                    {{ $talosVersion := $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}
+                    {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.version .observed.composite.resource.spec.overrides.version.talos }}
+                    {{ $talosVersion = .observed.composite.resource.spec.overrides.version.talos }}
+                    {{- end }}
+                    version: {{ $talosVersion }}
                 module: | # hcl
                   variable "talos" {
                     description = "Talos Configuration"
