@@ -60,7 +60,7 @@ spec:
     - addresses:
         - 172.31.193.11/24
         - 2604:3d08:d174:2000::11/122
-      bridge: true
+      bridge: false
       dns:
         - 1.1.1.1
         - 1.0.0.1
@@ -79,23 +79,16 @@ spec:
       routing:
         ospf:
           area: 0.0.0.0
-          enabled: true
+          enabled: false
           type: broadcast
       static: true
       type: link
 
     - macAddress: e0:d5:5e:65:02:d9
-      type: bridge
-      bridge: true
-
-      stp:
-        enabled: false
-
-      members:
-        - macAddress: e0:d5:5e:65:02:d9
+      type: link
+      bridge: false
 
       addresses:
-        - 172.31.193.12/24
         - 2604:3d08:d174:2000::12/122
 
       model: new
@@ -115,8 +108,6 @@ spec:
           type: broadcast
 
       static: true
-      vlans:
-        - vlanID: 150
 
   nics:
     - macAddress: e0:d5:5e:65:02:d7
@@ -128,10 +119,16 @@ spec:
     - name: net.core.bpf_jit_harden
       value: '1'
 
-    - name: net.ipv6.conf.br2.accept_ra_defrtr
-      value: '0'
+    - name: net.core.rmem_default
+      value: '1048576'
 
-    - name: net.ipv6.conf.br0.accept_ra
+    - name: net.core.wmem_default
+      value: '1048576'
+
+    - name: net.ipv6.conf.br2.accept_ra_defrtr
+      value: '1'
+
+    - name: net.ipv6.conf.eno1.accept_ra
       value: '2'
 
     - name: net.ipv6.conf.br1.accept_ra
@@ -165,8 +162,6 @@ spec:
         system:
           - intel-ucode
           - i915
-          - nvidia-container-toolkit-lts
-          - nonfree-kmod-nvidia-lts
           - thunderbolt
           - intel-ice-firmware
           - nfsd
@@ -181,5 +176,4 @@ spec:
         modules:
           - name: dm_multipath
           - name: dm_round-robin
-
           - name: it87
