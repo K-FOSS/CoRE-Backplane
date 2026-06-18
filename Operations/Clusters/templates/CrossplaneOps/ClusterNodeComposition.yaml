@@ -893,6 +893,7 @@ spec:
                     nic-conf = <<-EOT
                       {{- range $nicIndex, $nic := $.observed.composite.resource.spec.nics }}
                       {{- $nicConfUsed = true }}
+                      ---
                       apiVersion: v1alpha1
                       kind: EthernetConfig
                       name: {{ printf "enx%s" ($nic.macAddress | lower | replace ":" "") }}
