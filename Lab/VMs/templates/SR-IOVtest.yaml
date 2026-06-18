@@ -3,7 +3,7 @@ kind: NetworkAttachmentDefinition
 metadata:
   name: sriov-vlan20
   annotations:
-    k8s.v1.cni.cncf.io/resourceName: mellanox.com/mlx4_cx3_vfio
+    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_x540_netdevice
 spec:
   config: |
     {
@@ -12,6 +12,26 @@ spec:
       "type": "sriov",
       "spoofchk": "off",
       "trust": "on",
+      "mtu": 9000,
       "vlan": 20,
+      "ipam": {}
+    }
+---
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: sriov-vlan150
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: intel.com/intel_x540_netdevice
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "wanrt-vlan150",
+      "type": "sriov",
+      "spoofchk": "off",
+      "trust": "on",
+      "mtu": 1500,
+      "vlan": 150,
       "ipam": {}
     }
