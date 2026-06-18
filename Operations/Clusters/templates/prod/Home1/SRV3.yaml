@@ -36,6 +36,11 @@ spec:
         name: wan-gw
         type: cilium
         peers:
+          - address: 172.31.193.16
+            asn: 64567
+            localAddress: 172.31.193.37
+            name: cpe-sw1.home1.yvr.resolvemy.host
+
           - address: 2604:3d08:d174:2000::1C
             asn: 64567
             localAddress: 2604:3d08:d174:2000::25
@@ -43,15 +48,9 @@ spec:
 
   networks:
     - macAddress: ec:f4:bb:ef:58:e8
-      bridge: true
+      bridge: false
       model: new
-      type: bridge
-      
-      stp:
-        enabled: false
-
-      members:
-        - macAddress: ec:f4:bb:ef:58:e8
+      type: link
 
 
       addresses:
@@ -60,7 +59,7 @@ spec:
 
       routing:
         ospf:
-          enabled: true
+          enabled: false
 
           area: '0.0.0.0'
 
@@ -79,9 +78,6 @@ spec:
         - 172.31.193.2
         - 172.31.193.3
 
-      vlans:
-        - vlanID: 150
-
     - addresses: []
       bridge: true
       dns:
@@ -98,6 +94,12 @@ spec:
           type: broadcast
       static: true
       type: link
+
+  nics:
+    - macAddress: ec:f4:bb:ef:58:e8
+      rings:
+        rx: 4096
+        tx: 4096
 
   overrides:
     pci:
@@ -117,8 +119,14 @@ spec:
         - name: cpufreq.default_governor
           value: performance
 
+        - name: numa_balancing
+          value: enable
     talos:
       extensions:
         system:
           - intel-ucode
           - nfsd
+
+  sysfs:
+    - name: class.net.eno2.device.sriov_numvfs
+      value: '4'
