@@ -40,6 +40,11 @@ spec:
         port: 1176
         type: cilium
         peers:
+          - address: 172.31.193.16
+            asn: 64567
+            localAddress: 172.31.193.11
+            name: cpe-sw1.home1.yvr.resolvemy.host
+
           - address: 2604:3D08:D174:2000::1C
             asn: 64567
             localAddress: 2604:3d08:d174:2000::11
@@ -61,8 +66,6 @@ spec:
         - 1.0.0.1
         - 8.8.8.8
       macAddress: e0:d5:5e:65:02:d7
-      members:
-        - macAddress: e0:d5:5e:65:02:d7
       model: new
       mtu: 9000
       routes:
@@ -79,11 +82,7 @@ spec:
           enabled: true
           type: broadcast
       static: true
-      stp:
-        enabled: false
-      type: bridge
-      vlans:
-        - vlanID: 150
+      type: link
 
     - macAddress: e0:d5:5e:65:02:d9
       type: bridge
@@ -118,6 +117,12 @@ spec:
       static: true
       vlans:
         - vlanID: 150
+
+  nics:
+    - macAddress: e0:d5:5e:65:02:d7
+      rings:
+        rx: 2048
+        tx: 2048
 
   sysctls:
     - name: net.core.bpf_jit_harden
@@ -155,12 +160,6 @@ spec:
 
         - name: nvme_core.default_ps_max_latency_us
           value: '0'
-
-        - name: intel_idle.max_cstate
-          value: '0'
-
-        - name: processor.max_cstate
-          value: '1'
     talos:
       extensions:
         system:

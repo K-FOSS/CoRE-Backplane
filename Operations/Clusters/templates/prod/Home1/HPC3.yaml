@@ -49,19 +49,19 @@ spec:
             name: ipv6.cpe-sw1.home2.yvr.resolvemy.host
   
   nics:
+    - macAddress: 38:c9:86:42:ff:90
+      rings:
+        rx: 400
+
     - macAddress: 00:30:93:0c:05:12
       rings:
         rx: 4096
-
-    - macAddress: 00:30:93:0c:05:13
-      rings:
-        rx: 4096
-
+        tx: 4096
   networks:
     - macAddress: 38:c9:86:42:ff:90
-      bridge: true
+      bridge: false
 
-      model: legacy
+      model: new
 
       addresses:
         - 172.31.193.21/24
@@ -71,15 +71,11 @@ spec:
           metric: 1024
           network: 0.0.0.0/0
 
-        - gateway: 2604:3D08:D174:2000::1C
-          metric: 1024
-          network: ::/0
-
       mtu: 9000
       routing:
         ospf:
           area: 0.0.0.0
-          enabled: true
+          enabled: false
           type: broadcast
 
       type: link
@@ -87,19 +83,9 @@ spec:
       static: true
       dns:
         - 1.1.1.1
-      vlans:
-        - vlanID: 150
-        - vlanID: 20
 
-    - type: bridge
-
+    - type: link
       model: new
-
-      stp:
-        enabled: false
-
-      members:
-        - macAddress: 00:30:93:0c:05:12
 
       macAddress: 00:30:93:0c:05:12
       bridge: true
@@ -109,22 +95,17 @@ spec:
         - 2604:3d08:d174:2000::22/122
 
       routes:
-        - gateway: 172.31.193.254
+        - gateway: 2604:3D08:D174:2000::1C
           metric: 1024
-          network: 0.0.0.0/0
+          network: ::/0
+
 
       mtu: 9000
       routing:
         ospf:
           area: 0.0.0.0
-          enabled: true
+          enabled: false
           type: broadcast
-
-      vlans:
-        - vlanID: 150
-        - vlanID: 151
-        - vlanID: 21
-
       static: true
       dns:
         - 1.1.1.1
@@ -162,14 +143,15 @@ spec:
 
 
   overrides:
+    version:
+      talos: v1.12.7
+
     kernel:
       parameters:
         - name: intel_iommu
           value: 'on'
         - name: iommu
           value: pt
-        - name: vfio-pci.ids
-          value: 1002:aad8
         - name: cpufreq.default_governor
           value: performance
         - name: intel_idle.max_cstate
