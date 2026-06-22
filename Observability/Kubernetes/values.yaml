@@ -1,67 +1,4 @@
 metrics-server:
-  # Default values for metrics-server.
-  # This is a YAML-formatted file.
-  # Declare variables to be passed into your templates.
-
-  image:
-    repository: registry.k8s.io/metrics-server/metrics-server
-    pullPolicy: IfNotPresent
-
-  imagePullSecrets: []
-  # - name: registrySecretName
-
-  nameOverride: ""
-  fullnameOverride: ""
-
-  serviceAccount:
-    # Specifies whether a service account should be created
-    create: true
-    # Annotations to add to the service account
-    annotations: {}
-    # The name of the service account to use.
-    # If not set and create is true, a name is generated using the fullname template
-    name: ""
-    # The list of secrets mountable by this service account.
-    # See https://kubernetes.io/docs/reference/labels-annotations-taints/#enforce-mountable-secrets
-    secrets: []
-
-  rbac:
-    # Specifies whether RBAC resources should be created
-    create: true
-    # Note: PodSecurityPolicy will not be created when Kubernetes version is 1.25 or later.
-    pspEnabled: false
-
-  apiService:
-    # Specifies if the v1beta1.metrics.k8s.io API service should be created.
-    #
-    # You typically want this enabled! If you disable API service creation you have to
-    # manage it outside of this chart for e.g horizontal pod autoscaling to
-    # work with this release.
-    create: true
-    # Annotations to add to the API service
-    annotations: {}
-    # Specifies whether to skip TLS verification
-    insecureSkipTLSVerify: true
-    # The PEM encoded CA bundle for TLS verification
-    caBundle: ""
-
-  commonLabels: {}
-  podLabels: {}
-  podAnnotations: {}
-
-  podSecurityContext: {}
-
-  securityContext:
-    allowPrivilegeEscalation: false
-    readOnlyRootFilesystem: true
-    runAsNonRoot: true
-    runAsUser: 1000
-    seccompProfile:
-      type: RuntimeDefault
-    capabilities:
-      drop:
-        - ALL
-
   priorityClassName: system-cluster-critical
 
   containerPort: 10250
@@ -75,14 +12,6 @@ metrics-server:
     enabled: false
 
   replicas: 1
-
-  revisionHistoryLimit:
-
-  updateStrategy: {}
-  #   type: RollingUpdate
-  #   rollingUpdate:
-  #     maxSurge: 0
-  #     maxUnavailable: 1
 
   podDisruptionBudget:
     # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
@@ -162,11 +91,6 @@ metrics-server:
 
   serviceMonitor:
     enabled: false
-    additionalLabels: {}
-    interval: 1m
-    scrapeTimeout: 10s
-    metricRelabelings: []
-    relabelings: []
 
   # See https://github.com/kubernetes-sigs/metrics-server#scaling
   resources:
@@ -177,24 +101,8 @@ metrics-server:
       #   cpu:
       #   memory:
 
-  extraVolumeMounts: []
-
-  extraVolumes: []
-
-  nodeSelector: {}
-
-  tolerations: []
-
-  affinity: {}
-
-  topologySpreadConstraints: []
-
   dnsConfig: {}
 
-  # Annotations to add to the deployment
-  deploymentAnnotations: {}
-
-  schedulerName: ""
 
   tmpVolume:
     emptyDir: {}
@@ -230,15 +138,3 @@ metrics-server:
       annotations: {}
       # Add extra labels to the Certificate resource
       labels: {}
-
-    helm:
-      # Use helm lookup function to reuse Secret created in previous helm install
-      lookup: true
-      # Cert validity duration in days
-      certDurationDays: 365
-
-    existingSecret:
-      # Name of the existing Secret to use for TLS
-      name: ""
-      # Use helm lookup function to provision `apiService.caBundle`
-      lookup: true
