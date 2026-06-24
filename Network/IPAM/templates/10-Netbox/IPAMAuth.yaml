@@ -19,6 +19,7 @@ spec:
         issuer: https://idp.mylogin.space/application/o/Netbox/
         remoteJWKS:
           uri: https://idp.mylogin.space/application/o/Netbox/jwks/
+          cacheDuration: 3600s
         claimToHeaders:
           - header: x-username
             claim: preferred_username
@@ -58,8 +59,10 @@ spec:
     scopes:
       - openid
       - profile
+      - offline_access
     clientID: FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b
     forwardAccessToken: true
+    refreshToken: true
     clientSecret:
       name: '{{ include "ipam.fullname" . }}-netbox-oidc'
 {{- end }}
