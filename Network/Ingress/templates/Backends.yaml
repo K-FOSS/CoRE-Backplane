@@ -3,9 +3,13 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: Backend
 metadata:
   name: {{ $backend.name }}
-
 spec:
+  type: Endpoints
+  {{- with $backend.appProtocols }}
+  appProtocols:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   endpoints:
-    - {{ nindent 6 (toYaml $backend.endpoint) | trim }}
+    {{- toYaml (list $backend.endpoint) | nindent 4 }}
 ---
 {{- end }}
