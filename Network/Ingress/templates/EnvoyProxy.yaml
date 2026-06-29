@@ -3,12 +3,16 @@ kind: EnvoyProxy
 metadata:
   name: envoy-{{ .Values.tenant }}
 spec:
+  shutdown:
+    drainTimeout: '120s'
+    minDrainDuration: '30s'
+
   logging:
     level:
       default: error
   mergeGateways: false
 
-  concurrency: 4
+  concurrency: 2
 
   routingType: Service
 
@@ -18,7 +22,7 @@ spec:
         container:
           resources:
             limits:
-              cpu: '4'
+              cpu: '2'
               memory: '4Gi'
             requests:
               cpu: 16m
@@ -30,6 +34,7 @@ spec:
 
       envoyPDB:
         maxUnavailable: 25%
+
       envoyService:
         externalTrafficPolicy: Local
         type: LoadBalancer
@@ -49,28 +54,28 @@ spec:
   telemetry:
     accessLog:
       disable: true
-      settings:
-        - format:
-            json:
-              message: '%LOCAL_REPLY_BODY%'
-              status: '%RESPONSE_CODE%'
-            type: JSON
-          sinks:
-            - openTelemetry:
-                backendRefs:
-                  - group: ''
-                    kind: Service
-                    name: {{ .Values.cluster.name }}-collectors-alloy
-                    namespace: core-prod
-                    port: 4317
-              type: OpenTelemetry
-    tracing:
-      provider:
-        backendRefs:
-          - group: ''
-            kind: Service
-            name: {{ .Values.cluster.name }}-collectors-alloy
-            namespace: core-prod
-            port: 4317
-        type: OpenTelemetry
-      samplingRate: 10
+    #   settings:
+    #     - format:
+    #         json:
+    #           message: '%LOCAL_REPLY_BODY%'
+    #           status: '%RESPONSE_CODE%'
+    #         type: JSON
+    #       sinks:
+    #         - openTelemetry:
+    #             backendRefs:
+    #               - group: ''
+    #                 kind: Service
+    #                 name: {{ .Values.cluster.name }}-collectors-alloy
+    #                 namespace: core-prod
+    #                 port: 4317
+    #           type: OpenTelemetry
+    # tracing:
+    #   provider:
+    #     backendRefs:
+    #       - group: ''
+    #         kind: Service
+    #         name: {{ .Values.cluster.name }}-collectors-alloy
+    #         namespace: core-prod
+    #         port: 4317
+    #     type: OpenTelemetry
+    #   samplingRate: 10
