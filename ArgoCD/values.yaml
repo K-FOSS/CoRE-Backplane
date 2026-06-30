@@ -370,19 +370,19 @@ argo-cd:
         value: '60s'
 
       - name: ARGOCD_K8S_CLIENT_BURST
-        value: '300'
+        value: '100'
 
       - name: ARGOCD_K8S_CLIENT_QPS
-        value: '300'
+        value: '50'
 
       - name: WORKQUEUE_BUCKET_SIZE
-        value: '500'
+        value: '200'
 
       - name: ARGOCD_CLUSTER_CACHE_LIST_PAGE_SIZE
         value: '500'
       
       - name: ARGOCD_CLUSTER_CACHE_LIST_PAGE_BUFFER_SIZE
-        value: '5'
+        value: '2'
 
       - name: ARGOCD_APPLICATION_TREE_SHARD_SIZE
         value: '250'
@@ -447,7 +447,7 @@ argo-cd:
       serviceMonitor:
         enabled: true
 
-        interval: 1m
+        interval: 10m
     
         additionalLabels:
           resolvemy.host/metrics: mimir
@@ -499,7 +499,7 @@ argo-cd:
         additionalLabels:
           resolvemy.host/metrics: mimir
 
-        interval: 1m
+        interval: 10m
 
     route:
       enabled: false
