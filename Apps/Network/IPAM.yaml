@@ -36,6 +36,27 @@ spec:
 
                       enabled: true
 
+                - name: dc1-k3s-node1
+                  values:
+                    hub: false
+
+                    dhcp:
+                      enabled: true
+
+                      unifi:
+                        address: 24.86.197.63
+
+                      bmps:
+                        tftp:
+                          efi:
+                            address: 66.165.222.115
+                            path: ipxe.efi
+
+                    netbox:
+                      hub: false
+
+                      enabled: true
+
                 - name: core-home1-talos-prod
                   values:
                     hub: false
@@ -61,7 +82,6 @@ spec:
                 matchLabels:
                   mylogin.space/tenant: 'core.mylogin.space'
                   resolvemy.host/computetype: 'baremetal'
-                  resolvemy.host/nodetype: 'infra'
               values:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
