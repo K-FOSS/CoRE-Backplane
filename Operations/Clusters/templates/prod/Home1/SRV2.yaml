@@ -46,28 +46,26 @@ spec:
             localAddress: 2604:3d08:d174:2000::26
             name: ipv6.cpe-sw1.home2.yvr.resolvemy.host
 
+  nics:
+    - macAddress: 24:6e:96:38:84:60
+      rings:
+        rx: 4096
+        tx: 4096
+      offloads:
+        rx-udp-gro-forwarding: true
+
   networks:
     - macAddress: 24:6e:96:38:84:60
-      bridge: true
+      bridge: false
       model: new
-      type: bridge
-
-      stp:
-        enabled: false
-
-      members:
-        - macAddress: 24:6e:96:38:84:60
+      type: link
       addresses:
         - 172.31.193.36/24
         - 2604:3d08:d174:2000::26/122
 
       routing:
         ospf:
-          enabled: true
-
-          area: '0.0.0.0'
-
-          type: broadcast
+          enabled: false
 
       routes:
         - network: 0.0.0.0/0
@@ -115,29 +113,17 @@ spec:
   overrides:
     kernel:
       parameters:
-        - name: cpufreq.default_governor
-          value: performance
-
         - name: intel_iommu
           value: 'on'
 
         - name: iommu
           value: pt
 
-        - name: intel_pstate
-          value: active
-
         - name: pcie_aspm
           value: 'off'
 
         - name: nvme_core.default_ps_max_latency_us
           value: '0'
-
-        - name: intel_idle.max_cstate
-          value: '0'
-
-        - name: processor.max_cstate
-          value: '1'
     talos:
       extensions:
         system:
