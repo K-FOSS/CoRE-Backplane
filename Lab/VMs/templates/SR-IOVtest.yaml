@@ -95,6 +95,24 @@ spec:
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
+  name: sriov-vlan953-srv7
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: mellanox.com/mlx4_cx3_vfio
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "wanrt-vlan953",
+      "type": "sriov",
+      "spoofchk": "off",
+      "mtu": 9216,
+      "vlan": 953,
+      "ipam": {}
+    }
+---
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
   name: sriov-vlan150
   annotations:
     k8s.v1.cni.cncf.io/resourceName: intel.com/intel_x540_dpdk
