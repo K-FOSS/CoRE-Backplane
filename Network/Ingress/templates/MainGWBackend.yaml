@@ -11,8 +11,29 @@ spec:
         resolvemy.host/security: 'public'
         resolvemy.host/env: 'prod'
 
+  compressor:
+    - type: Zstd
+      zstd: {}
+      minContentLength: 1024
+    - type: Brotli
+      brotli: {}
+      minContentLength: 1024
+    - type: Gzip
+      gzip: {}
+      minContentLength: 1024
+
   connection:
-    bufferLimit: 100M
+    bufferLimit: 32Mi
+
+  dns:
+    dnsRefreshRate: 3m
+    respectDnsTtl: true
+
+  http2:
+    initialConnectionWindowSize: 8Mi
+    initialStreamWindowSize: 1Mi
+    maxConcurrentStreams: 200
+    onInvalidMessage: TerminateStream
 
   tcpKeepalive:
     idleTime: 5m
@@ -24,21 +45,4 @@ spec:
       connectTimeout: 3s
     http:
       connectionIdleTimeout: 120s
-      maxConnectionDuration: 0s
-
-  http2:
-    initialConnectionWindowSize: 32Mi
-    initialStreamWindowSize: 4Mi
-    maxConcurrentStreams: 200
-    onInvalidMessage: TerminateStream
-  
-  loadBalancer:
-    type: ConsistentHash
-    
-    consistentHash:
-      tableSize: 65537
-      type: SourceIP
-
-  dns:
-    dnsRefreshRate: 1m
-    respectDnsTtl: true
+      maxConnectionDuration: 3600s
