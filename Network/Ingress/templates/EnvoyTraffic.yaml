@@ -13,10 +13,18 @@ spec:
         resolvemy.host/security: 'public'
         resolvemy.host/env: 'prod'
 
+  connection:
+    connectionLimit:
+      value: 10000
+      closeDelay: 1s
+    bufferLimit: 1Mi
+
   http2:
     initialConnectionWindowSize: 64Mi
     initialStreamWindowSize: 8Mi
     maxConcurrentStreams: 200
+
+  http3: {}
 
   tls:
     alpnProtocols:
@@ -34,7 +42,11 @@ spec:
     disableMergeSlashes: true
     escapedSlashesAction: KeepUnchanged
 
+  tcpKeepalive:
+    idleTime: 5m
+    interval: 15s
+    probes: 9
+
   timeout:
     http:
-      streamIdleTimeout: 3600s
-      idleTimeout: 0s
+      idleTimeout: 1800s
