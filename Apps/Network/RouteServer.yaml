@@ -16,39 +16,26 @@ spec:
         generators:
           - list:
               elements:
-                # - name: core-dc1-talos-prod
-                #   values:
-                #     hub: false
-                #     routeservers:
-                #       rs0:
-                #         ipAddress: 10.1.1.179
+                - name: core-dc1-talos-prod
+                  values:
+                    hub: false
+                    routeservers:
+                      rs0:
+                        ipAddress: 10.1.1.180
 
-                #         bgp:
-                #           enabled: true
+                        bgp:
+                          enabled: true
 
-                #           peers:
-                #             - address: 172.31.241.237
-                #               # remoteASN: ''
+                          peers:
+                            - address: 172.31.255.1
+                              softReconfiguration: true
+                              peerGroup: WAN-RT
 
-                #               #eBGPMultihop: 6
-
-                #               softReconfiguration: true
-
-                #               peerGroup: WAN-RT
-
-                #           peerGroups:
-                #             - name: cilium
-                #               asn: 64512
-                #               ebgpmultihop: 6
-
-                #             - name: tunneler
-                #               asn: 64513
-                #               ebgpmultihop: 6
-
-                #             - name: WAN-RT
-                #               asn: 64567
-                #         frr:
-                #           version: v8.3.1
+                          peerGroups:
+                            - name: spine-sw1
+                              asn: 6456
+                        frr:
+                          version: v10.5
 
                 - name:  core-home1-talos-prod
                   values:
@@ -66,49 +53,48 @@ spec:
                             ipv4:
                               unicast:
                                 maximum-paths:
-                                  base: 64
-                                  ibgp: 64
+                                  base: 4
+                                  ibgp: 4
 
                                 neighbor:
                                   - name: cpe-sw
                                     action: activate
-
-                                  - name: vyos
-                                    action: activate
-
                           peers:
-                            - address: 172.31.192.16
-                              # remoteASN: ''
-
-                              #eBGPMultihop: 6
-
+                            - address: 172.29.255.3
                               softReconfiguration: true
-
                               peerGroup: cpe-sw
-
-                            - address: 100.64.92.38
-                              # remoteASN: ''
-
-                              #eBGPMultihop: 6
-
-                              softReconfiguration: true
-
-                              peerGroup: vyos
 
                           peerGroups:
                             - name: cpe-sw
                               asn: 64567
-                            - name: vyos
-                              asn: 64567
 
                         frr:
-                          version: v8.3.1
+                          version: v10.5
+
+                - name: dc1-k3s-node1
+                  values:
+                    hub: false
+                    routeservers:
+                      rs0:
+                        ipAddress: 10.1.1.179
+                        bgp:
+                          enabled: true
+                          peers:
+                            - address: 172.31.255.1
+                              softReconfiguration: true
+                              peerGroup: spine-sw1
+
+                          peerGroups:
+                            - name: spine-sw1
+                              asn: 64567
+                        frr:
+                          version: v10.5
+
           - clusters:
               selector:
                 matchLabels:
                   mylogin.space/tenant: 'core.mylogin.space'
                   resolvemy.host/computetype: 'baremetal'
-                  resolvemy.host/nodetype: 'infra'
               values:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
