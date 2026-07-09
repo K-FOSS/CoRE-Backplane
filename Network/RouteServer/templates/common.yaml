@@ -39,6 +39,12 @@ controllers:
           tag: {{ if and $rs.frr $rs.frr.version }}{{ $rs.frr.version }}{{ else }}{{ $.Values.frr.defaultVersion }}{{ end }}
           pullPolicy: IfNotPresent
 
+        {{- if and $rs.networking $rs.networking.sriov $rs.networking.sriov $rs.networking.sriov.enabled }}
+        resources:
+          limits:
+            {{ $rs.networking.sriov.device }}: '1' 
+        {{- end }}
+
         securityContext:
           privileged: false
           allowPrivilegeEscalation: false
