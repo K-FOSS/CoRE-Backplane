@@ -199,7 +199,7 @@ configMaps:
         # The watchfrr, zebra and staticd daemons are always started.
         #
         bgpd={{ if and $rs.bgp $rs.bgp.enabled }}{{ $rs.bgp.enabled }}{{ else }}false{{ end }}
-        ospfd=no
+        ospfd={{ if and $rs.ospf $rs.ospf.enabled }}{{ $rs.ospf.enabled }}{{ else }}false{{ end }}
         ospf6d=no
         ripd=no
         ripngd=no
