@@ -23,6 +23,12 @@ controllers:
 
     nameOverride: {{ $name }}
 
+    {{- if .Values.frr.multus.enabled }}
+    pod:
+      annotations:
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/{{ $name }}'
+    {{- end }}
+
     containers:
       frr:
         image:
