@@ -256,6 +256,18 @@ configMaps:
           match ip address prefix-list ADV
         exit
         !
+        {{- if and $rs.ospf $rs.ospf.enabled }}
+        router ospf
+          router-id {{ $rs.ipAddress }}
+
+          {{ with $rs.ospf.autocost.refBandwidth }}
+          auto-cost reference-bandwidth {{ . }}
+          {{- end }}
+
+          match ip address prefix-list ADV
+        exit
+        !
+        {{- end }}
         router bgp {{ $rs.bgp.asn }}
           bgp router-id {{ $rs.ipAddress }}
           no bgp ebgp-requires-policy
