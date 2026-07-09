@@ -26,7 +26,7 @@ controllers:
     containers:
       frr:
         image:
-          repository: frrouting/frr
+          repository: quay.io/frrouting/frr
           #
           # TODO: Get Renovate or similar managing this
           #
@@ -34,17 +34,12 @@ controllers:
           pullPolicy: IfNotPresent
 
         securityContext:
-          seLinuxOptions: {}
           privileged: false
           allowPrivilegeEscalation: false
           runAsNonRoot: false
           readOnlyRootFilesystem: false
           seccompProfile:
             type: "RuntimeDefault"
-          capabilities:
-            add: 
-              - 'NET_ADMIN'
-              - 'SYS_ADMIN'
 
         # -- Probe configuration
         # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
@@ -216,7 +211,7 @@ configMaps:
         #
         vtysh_enable=yes
         zebra_options="  -A 127.0.0.1 -s 90000000"
-        bgpd_options="--no_kernel -A 127.0.0.1"
+        bgpd_options="--no_kernel --skip_runas -A 127.0.0.1"
         ospfd_options="  -A 127.0.0.1"
         ospf6d_options=" -A ::1"
         ripd_options="   -A 127.0.0.1"
