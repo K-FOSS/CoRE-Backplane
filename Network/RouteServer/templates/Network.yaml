@@ -1,18 +1,22 @@
+{{- range $name, $rs := .Values.routeservers }}
+{{- if and $rs.networking $rs.networking.sriov $rs.networking.sriov $rs.networking.sriov.enabled }}
+{{- with  }}
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
+  name: routeserver-{{ $rs.name }}
+
   annotations:
-    k8s.v1.cni.cncf.io/resourceName: mellanox.com/mlx4_cx3_netdevice
-  name: routeserver-srv7
+    k8s.v1.cni.cncf.io/resourceName: {{ $rs.networking.sriov.device }}
 spec:
   config: |
     {
       "cniVersion": "1.0.0",
-      "name": "vlan666",
+      "name": "vlan{{ $rs.networking.sriov.device }}",
       "type": "sriov",
       "spoofchk": "off",
       "mtu": 1500,
-      "vlan": 666,
+      "vlan": {{ $rs.networking.sriov.vlan }},
       "ipam": {
         "type": "static",
         "routes": [
@@ -20,9 +24,10 @@ spec:
         ],
         "addresses": [
           {
-            "address": "10.7.7.68/24",
+            "address": "{{ $rs.networking.sriov.address }}/24",
             "gateway": "10.7.7.1"
           }
         ]
       }
     }
+{{- end }}
