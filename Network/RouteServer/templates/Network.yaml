@@ -3,7 +3,7 @@
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: routeserver-{{ $rs.name }}
+  name: routeserver-{{ $name }}
 
   annotations:
     k8s.v1.cni.cncf.io/resourceName: {{ $rs.networking.sriov.device }}
@@ -11,7 +11,7 @@ spec:
   config: |
     {
       "cniVersion": "1.0.0",
-      "name": "vlan{{ $rs.networking.sriov.device }}",
+      "name": "vlan{{ $rs.networking.sriov.vlan }}",
       "type": "sriov",
       "spoofchk": "off",
       "mtu": 1500,
