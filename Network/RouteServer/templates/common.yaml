@@ -25,6 +25,14 @@ controllers:
 
     {{- if and $rs.networking $rs.networking.sriov $rs.networking.sriov $rs.networking.sriov.enabled }}
     pod:
+      dnsPolicy: None
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+        options:
+          - name: ndots
+            value: '0'
+          - name: edns0
       annotations:
         v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/routeserver-{{ $name }}'
     {{- end }}
