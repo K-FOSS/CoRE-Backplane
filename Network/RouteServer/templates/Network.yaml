@@ -1,0 +1,28 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: mellanox.com/mlx4_cx3_netdevice
+  name: routeserver-srv7
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "vlan666",
+      "type": "sriov",
+      "spoofchk": "off",
+      "mtu": 1500,
+      "vlan": 666,
+      "ipam": {
+        "type": "static",
+        "routes": [
+          { "dst": "0.0.0.0/0", "gw": "10.7.7.1" }
+        ],
+        "addresses": [
+          {
+            "address": "10.7.7.68/24",
+            "gateway": "10.7.7.1"
+          }
+        ]
+      }
+    }
