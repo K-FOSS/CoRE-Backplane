@@ -260,11 +260,9 @@ configMaps:
         router ospf
           router-id {{ $rs.ipAddress }}
 
-          {{ with $rs.ospf.autocost.refBandwidth }}
+          {{- with $rs.ospf.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
           {{- end }}
-
-          match ip address prefix-list ADV
         exit
         !
         {{- end }}
