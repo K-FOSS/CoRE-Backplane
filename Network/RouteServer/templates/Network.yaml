@@ -1,6 +1,5 @@
 {{- range $name, $rs := .Values.routeservers }}
 {{- if and $rs.networking $rs.networking.sriov $rs.networking.sriov $rs.networking.sriov.enabled }}
-{{- with  }}
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
@@ -30,4 +29,5 @@ spec:
         ]
       }
     }
+{{- end }}
 {{- end }}
