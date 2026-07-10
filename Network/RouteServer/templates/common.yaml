@@ -255,22 +255,6 @@ configMaps:
 
     data:
       daemons: |
-        # This file tells the frr package which daemons to start.
-        #
-        # Sample configurations for these daemons can be found in
-        # /usr/share/doc/frr/examples/.
-        #
-        # ATTENTION:
-        #
-        # When activating a daemon for the first time, a config file, even if it is
-        # empty, has to be present *and* be owned by the user and group "frr", else
-        # the daemon will not be started by /etc/init.d/frr. The permissions should
-        # be u=rw,g=r,o=.
-        # When using "vtysh" such a config file is also needed. It should be owned by
-        # group "frrvty" and set to ug=rw,o= though. Check /etc/pam.d/frr, too.
-        #
-        # The watchfrr, zebra and staticd daemons are always started.
-        #
         bgpd={{ if and $rs.bgp $rs.bgp.enabled }}{{ $rs.bgp.enabled }}{{ else }}false{{ end }}
         ospfd={{ if and $rs.ospf $rs.ospf.enabled }}{{ $rs.ospf.enabled }}{{ else }}false{{ end }}
         ospf6d=no
@@ -321,24 +305,37 @@ configMaps:
       frr.conf: |
         log syslog informational
         !
-        ip prefix-list ADV seq 1 permit any
-        !
         debug bgp neighbor-events
         !
         ip nht resolve-via-default
         !
         router-id {{ $rs.ipAddress }}
         !
-        route-map OUT permit 10
-          match ip address prefix-list ADV
-        exit
         {{- range $netID, $netInterface := $rs.networking.interfaces }}
         {{- if $netInterface.routing }}
         !
         interface eth{{ $netID }}
-          {{- if and $netInterface.routing.ospf $netInterface.routing.ospf.enabled }}
-          ip ospf area {{ $netInterface.routing.ospf.area }}
-          ip ospf network {{ default "broadcast" $netInterface.routing.ospf.type }}
+          {{- with $ospf := $netInterface.routing.ospf }}
+          {{- if $ospf.enabled }}
+          ip ospf area {{ $ospf.area }}
+          ip ospf network {{ default "broadcast" $ospf.type }}
+          
+          {{- with $ospf.priority }}
+          ip ospf priority {{ . }}
+          {{- end }}
+
+          {{- with $ospf.hello }}
+          ip ospf hello-interval {{ . }}
+          {{- end }}
+
+          {{- with $ospf.dead }}
+          ip ospf dead-interval {{ . }}
+          {{- end }}
+
+          {{- if $ospf.passive }}
+          ip ospf passive
+          {{- end }}
+          {{- end }}
           {{- end }}
         exit
         {{- end }}
