@@ -40,14 +40,32 @@ spec:
                         bgp:
                           enabled: true
                           clusterId: 172.31.255.255
+                          afi:
+                            ipv4:
+                              vpn:
+                                maximum-paths:
+                                  base: 4
+                                  ibgp: 4
+
+                                neighbor:
+                                  - name: yvr-rrs
+                                    action: activate
+                                  - name: yvr-rrs
+                                    action: route-reflector-client
                           peers:
-                            - address: 172.31.255.1
+                            - address: spine-sw1
                               softReconfiguration: true
                               peerGroup: WAN-RT
 
+                            - address: 172.31.245.2
+                              softReconfiguration: true
+                              peerGroup: yvr-rrs
+
                           peerGroups:
                             - name: spine-sw1
-                              asn: 6456
+                              asn: 64567
+                            - name: yvr-rrs
+                              asn: 64567
                         frr:
                           version: '10.6.0'
 
