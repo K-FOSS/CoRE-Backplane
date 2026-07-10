@@ -21,16 +21,15 @@ spec:
                     hub: false
                     routeservers:
                       rs0:
-                        ipAddress: 10.1.1.180
+                        ipAddress: 172.31.255.111
 
                         networking:
                           interfaces:
                             - type: sriov
                               ipam:
-                                address: 10.7.7.61/24
-                                gateway: 10.7.7.1
+                                address: 172.16.51.111/24
                               sriov:
-                                vlan: 666
+                                vlan: 951
                                 device: mellanox.com/mlx4_cx3_netdevice
                         bgp:
                           enabled: true
@@ -51,14 +50,16 @@ spec:
                     hub: false
                     routeservers:
                       rs0:
-                        ipAddress: 10.1.1.181
+                        ipAddress: 172.29.255.100
 
                         networking:
                           interfaces:
                             - type: sriov
                               ipam:
                                 address: 172.31.245.2/29
-                                gateway: 172.31.245.1
+                                routes:
+                                  - dst: 0.0.0.0/0
+                                    gw: 172.31.245.1
                               sriov:
                                 vlan: 50
                                 device: intel.com/intel_x540_netdevice
@@ -98,16 +99,15 @@ spec:
                     hub: false
                     routeservers:
                       rs0:
-                        ipAddress: 10.1.1.179
+                        ipAddress: 172.31.255.100
 
                         networking:
                           interfaces:
                             - type: sriov
                               ipam:
-                                address: 10.7.7.33/24
-                                gateway: 10.7.7.1
+                                address: 172.16.51.100/24
                               sriov:
-                                vlan: 666
+                                vlan: 951
                                 device: intel.com/intel_xxv710_port0
 
                         bgp:

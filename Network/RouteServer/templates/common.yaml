@@ -386,13 +386,12 @@ spec:
       {{- if $netInterface.ipam }}
       "ipam": {
         "type": "static",
-        "routes": [
-          { "dst": "0.0.0.0/0", "gw": "{{ $netInterface.ipam.gateway }}" }
-        ],
+        {{- if $netInterface.ipam.routes }}
+        "routes": {{ toJson $netInterface.ipam.routes }},
+        {{- end }}
         "addresses": [
           {
-            "address": "{{ $netInterface.ipam.address }}",
-            "gateway": "{{ $netInterface.ipam.gateway }}"
+            "address": "{{ $netInterface.ipam.address }}"
           }
         ]
       }
