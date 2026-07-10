@@ -276,7 +276,7 @@ configMaps:
         interface eth{{ $netID }}
           {{- if and $netInterface.routing.ospf $netInterface.routing.ospf.enabled }}
           ip ospf area {{ $netInterface.routing.ospf.area }}
-          ospf network {{ default "broadcast" $netInterface.routing.ospf.type }}
+          ip ospf network {{ default "broadcast" $netInterface.routing.ospf.type }}
           {{- end }}
         exit
         {{- end }}
