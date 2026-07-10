@@ -266,6 +266,17 @@ configMaps:
         route-map OUT permit 10
           match ip address prefix-list ADV
         exit
+        {{- range $netID, $netInterface := $rs.networking.interfaces }}
+        {{- if $netInterface.routing }}
+        !
+        interface eth{{ $netID }}
+          {{- if and $netInterface.routing.ospf $netInterface.routing.ospf.enabled }}
+          ip ospf area {{ $netInterface.routing.ospf.area }}
+          ospf network {{ default "broadcast" $netInterface.routing.ospf.type }}
+          {{- end }}
+        exit
+        {{- end }}
+        {{- end }}
         !
         {{- if and $rs.ospf $rs.ospf.enabled }}
         router ospf
