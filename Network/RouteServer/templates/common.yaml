@@ -254,6 +254,8 @@ configMaps:
         pathd_options="  -A 127.0.0.1"
         frr_profile="datacenter"
         MAX_FDS=64
+      vtysh.conf: |
+        service integrated-vtysh-config
       frr.conf: |
         log syslog informational
         !
@@ -356,6 +358,10 @@ persistence:
           - path: /etc/frr/frr.conf
             readOnly: true
             subPath: frr.conf
+
+          - path: /etc/frr/vtysh.conf
+            readonly: true
+            subPath: vtysh.conf
 
           - path: /etc/frr/daemons
             readOnly: true
