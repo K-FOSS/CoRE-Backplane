@@ -343,6 +343,12 @@ configMaps:
         !
         {{- if and $rs.ospf $rs.ospf.enabled }}
         router ospf
+          {{- with $gr := $rs.ospf.gracefulRestart }}
+          {{- if $gr.enabled }}
+          graceful-restart
+          {{- end }}
+          {{- end }}
+
           {{- with $rs.ospf.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
           {{- end }}
