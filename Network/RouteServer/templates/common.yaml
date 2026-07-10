@@ -24,9 +24,21 @@ controllers:
     nameOverride: {{ $name }}
 
     {{- $mtuUsed := false -}}
+    {{- $sriovUsed := false -}}
+    {{- $sriovResources := dict -}}
     {{- range $netID, $netInterface := $rs.networking.interfaces }}
-    {{ if $netInterface.mtu }}
+    {{ if .mtu }}
     {{- $mtuUsed = true }}
+    {{- end }}
+    {{- if eq $netInterface.type "sriov" }}
+    {{ $sriovUsed = true }}
+    {{- 
+      $device := required
+          (printf "routeservers.%s.interfaces.%d: sriov.device is required for SR-IOV interfaces" $name $netID)
+          $netInterface.sriov.device
+    }}
+    {{- $currentCount := get $sriovResources $device | default 0 }}
+    {{- $_ := set $sriovResources $device (add $currentCount 1) }}
     {{- end }}
     {{- end }}
 
@@ -90,10 +102,12 @@ controllers:
           tag: {{ if and $rs.frr $rs.frr.version }}{{ $rs.frr.version }}{{ else }}{{ $.Values.frr.defaultVersion }}{{ end }}
           pullPolicy: IfNotPresent
 
-        {{- if and $rs.networking $rs.networking.sriov $rs.networking.sriov $rs.networking.sriov.enabled }}
+        {{- if $sriovUsed }}
         resources:
           limits:
-            {{ $rs.networking.sriov.device }}: '1' 
+            {{- range $device, $count := $sriovResources }}
+            {{ $device }}: {{ $count | quote }}
+            {{- end }}
         {{- end }}
 
         securityContext:
@@ -487,6 +501,7 @@ spec:
       }
       {{- end }}
     }
+---
 {{- end }}
 {{- end }}
 {{- end }}
