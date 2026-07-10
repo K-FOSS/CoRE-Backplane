@@ -68,7 +68,7 @@ controllers:
           - |
             {{- range $netID, $netInterface := $rs.networking.interfaces }}
             {{- if $netInterface.mtu }}
-            ip link set dev eth{{ $netID }} mtu 9000
+            ip link set dev eth{{ $netID }} mtu {{ $netInterface.mtu }}
             ip link show eth{{ $netID }}
             {{- end }}
             {{- end }}
