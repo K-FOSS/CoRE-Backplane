@@ -50,8 +50,6 @@ spec:
                                 neighbor:
                                   - name: yvr-rrs
                                     action: activate
-                                  - name: yvr-rrs
-                                    action: route-reflector-client
                           peers:
                             - address: spine-sw1
                               softReconfiguration: true
@@ -115,7 +113,8 @@ spec:
                                     action: activate
                                   - name: cpe-sw
                                     action: route-reflector-client
-
+                                  - name: yxl-rrs
+                                    action: activate
                               unicast:
                                 maximum-paths:
                                   base: 4
@@ -131,10 +130,17 @@ spec:
                               softReconfiguration: true
                               peerGroup: cpe-sw
 
+                            - address: 172.16.51.100
+                              peerGroup: yxl-rrs
+
+                            - address: 172.16.51.111
+                              peerGroup: yxl-rrs
                           peerGroups:
                             - name: cpe-sw
                               asn: 64567
 
+                            - name: yxl-rrs
+                              asn: 64567
                         frr:
                           version: '10.6.0'
 
