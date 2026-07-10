@@ -265,6 +265,8 @@ configMaps:
         !
         ip nht resolve-via-default
         !
+        router-id {{ $rs.ipAddress }}
+        !
         route-map OUT permit 10
           match ip address prefix-list ADV
         exit
@@ -282,8 +284,6 @@ configMaps:
         !
         {{- if and $rs.ospf $rs.ospf.enabled }}
         router ospf
-          router-id {{ $rs.ipAddress }}
-
           {{- with $rs.ospf.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
           {{- end }}
@@ -291,8 +291,8 @@ configMaps:
         !
         {{- end }}
         router bgp {{ $rs.bgp.asn }}
-          bgp router-id {{ $rs.ipAddress }}
           no bgp ebgp-requires-policy
+          bgp cluster-id {{ default $rs.ipAddress $rs.bgp.clusterId }}
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
