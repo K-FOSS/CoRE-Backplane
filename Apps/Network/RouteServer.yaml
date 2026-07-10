@@ -24,13 +24,14 @@ spec:
                         ipAddress: 10.1.1.180
 
                         networking:
-                          sriov:
-                            enabled: true
-                            vlan: 666
-                            address: 10.7.7.61
-                            gateway: 10.7.7.1
-                            device: mellanox.com/mlx4_cx3_netdevice
-
+                          interfaces:
+                            - type: sriov
+                              ipam:
+                                address: 10.7.7.61/24
+                                gateway: 10.7.7.1
+                              sriov:
+                                vlan: 666
+                                device: mellanox.com/mlx4_cx3_netdevice
                         bgp:
                           enabled: true
 
@@ -51,13 +52,16 @@ spec:
                     routeservers:
                       rs0:
                         ipAddress: 10.1.1.181
+
                         networking:
-                          sriov:
-                            enabled: true
-                            vlan: 50
-                            address: 172.31.245.2/29
-                            gateway: 172.31.245.1
-                            device: intel.com/intel_x540_netdevice
+                          interfaces:
+                            - type: sriov
+                              ipam:
+                                address: 172.31.245.2/29
+                                gateway: 172.31.245.1
+                              sriov:
+                                vlan: 50
+                                device: intel.com/intel_x540_netdevice
 
                         ospf:
                           enabled: true
@@ -95,13 +99,16 @@ spec:
                     routeservers:
                       rs0:
                         ipAddress: 10.1.1.179
+
                         networking:
-                          sriov:
-                            enabled: true
-                            vlan: 666
-                            address: 10.7.7.33/24
-                            gateway: 10.7.7.1
-                            device: intel.com/intel_xxv710_port0
+                          interfaces:
+                            - type: sriov
+                              ipam:
+                                address: 10.7.7.33/24
+                                gateway: 10.7.7.1
+                              sriov:
+                                vlan: 666
+                                device: intel.com/intel_xxv710_port0
 
                         bgp:
                           enabled: true

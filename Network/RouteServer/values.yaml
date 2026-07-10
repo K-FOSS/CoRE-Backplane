@@ -6,19 +6,17 @@ routeservers:
     ipAddress: 1.1.1.1
 
     networking:
-      sriov:
-        enabled: true
-
-        vlan: 666
-
-        address: 10.7.7.61/24
-
-        gateway: 10.7.7.1
-
-        device: mellanox.com/mlx4_cx3_netdevice
+      interfaces:
+        - type: sriov
+          ipam:
+            address: 10.7.7.61/24
+            gateway: 10.7.7.1
+          sriov:
+            vlan: 666
+            device: mellanox.com/mlx4_cx3_netdevice
 
     ospf:
-      enabled: false
+      enabled: true
 
       autocost:
         refBandwidth: 100000

@@ -23,9 +23,12 @@ controllers:
 
     nameOverride: {{ $name }}
 
-    {{- if and $rs.networking $rs.networking.sriov $rs.networking.sriov $rs.networking.sriov.enabled }}
+    {{- if and $rs.networking $rs.networking.interfaces }}
     pod:
       dnsPolicy: None
+
+      automountServiceAccountToken: false
+      
       dnsConfig:
         nameservers:
           - 1.1.1.1
@@ -354,3 +357,47 @@ persistence:
 
 {{/* Render the templates */}}
 {{ include "bjw-s.common.loader.generate" . }}
+
+---
+{{- range $name, $rs := .Values.routeservers }}
+{{- if and $rs.networking $rs.networking.interfaces }}
+{{- range $netID, $netInterface := $rs.networking.interfaces -}}
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $netID }}
+
+
+  {{- if eq $netInterface.type "sriov" }}
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: {{ $netInterface.sriov.device }}
+  {{- end }}
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "vlan{{ $netInterface.sriov.vlan }}",
+      "type": "{{ $netInterface.type }}",
+      {{- if eq $netInterface.type "sriov" }}
+      "spoofchk": "off",
+      {{- end }}
+      "mtu": 1500,
+      "vlan": {{ $netInterface.sriov.vlan }},
+      {{- if $netInterface.ipam }}
+      "ipam": {
+        "type": "static",
+        "routes": [
+          { "dst": "0.0.0.0/0", "gw": "{{ $netInterface.ipam.gateway }}" }
+        ],
+        "addresses": [
+          {
+            "address": "{{ $netInterface.ipam.address }}",
+            "gateway": "{{ $netInterface.ipam.gateway }}"
+          }
+        ]
+      }
+      {{- end }}
+    }
+{{- end }}
+{{- end }}
+{{- end }}
