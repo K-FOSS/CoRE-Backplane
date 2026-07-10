@@ -23,6 +23,47 @@ controllers:
 
     nameOverride: {{ $name }}
 
+    {{- $mtuUsed := false -}}
+    {{- range $netID, $netInterface := $rs.networking.interfaces }}
+    {{ if $netInterface.mtu }}
+    {{- $mtuUsed = true }}
+    {{- end }}
+    {{- end }}
+
+    {{- if eq $mtuUsed true }}
+    initContainers:
+      linkconf:
+        image:
+          repository: alpine
+          #
+          # TODO: Get Renovate or similar managing this
+          #
+          tag: 3.20
+          pullPolicy: IfNotPresent
+
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - NET_ADMIN
+            runAsUser: 0
+        
+        command:
+          - /bin/sh
+          - -c
+          - |
+            {{- range $netID, $netInterface := $rs.networking.interfaces }}
+            {{- if $netInterface.mtu }}
+            ip link set dev eth{{ $netID }} mtu 9000
+            ip link show eth{{ $netID }}
+            {{- end }}
+            {{- end }}
+    {{- end }}
+
+
     {{- if and $rs.networking $rs.networking.interfaces }}
     pod:
       dnsPolicy: None
@@ -373,11 +414,41 @@ persistence:
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
-{{/* Render the templates */}}
-{{ include "bjw-s.common.loader.generate" . }}
-
----
+{{- $testingGlob := . -}}
 {{- range $name, $rs := .Values.routeservers }}
+{{- if and $rs.networking $rs.networking.egressGW $rs.networking.egressGW.enabled }}
+{{- $controllerName := printf "%s-routeserver" $name }}
+apiVersion: cilium.io/v2
+kind: CiliumEgressGatewayPolicy
+metadata:
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $name }}-ext-traffic
+    
+spec:
+  # Specify which pods should be subject to the current policy.
+  # Multiple pod selectors can be specified.
+  selectors:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: {{ $controllerName }}
+          {{- include "bjw-s.common.lib.metadata.selectorLabels" $ | nindent 10 }}
+
+  # Specify which destination CIDR(s) this policy applies to.
+  # Multiple CIDRs can be specified.
+  destinationCIDRs:
+    - '0.0.0.0/0'
+
+  # Configure the gateway node.
+  egressGateway:
+    # Specify which node should act as gateway for this policy.
+    nodeSelector:
+      matchLabels:
+        kubernetes.io/os: linux
+
+    # Specify the IP address used to SNAT traffic matched by the policy.
+    # It must exist as an IP associated with a network interface on the instance.
+    egressIP: 10.1.1.179
+---
+{{- end }}
 {{- if and $rs.networking $rs.networking.interfaces }}
 {{- range $netID, $netInterface := $rs.networking.interfaces -}}
 apiVersion: k8s.cni.cncf.io/v1
@@ -399,7 +470,9 @@ spec:
       {{- if eq $netInterface.type "sriov" }}
       "spoofchk": "off",
       {{- end }}
-      "mtu": 1500,
+      {{- with $netInterface.mtu }}
+      "mtu": {{ . }},
+      {{- end }}
       "vlan": {{ $netInterface.sriov.vlan }},
       {{- if $netInterface.ipam }}
       "ipam": {
@@ -418,3 +491,10 @@ spec:
 {{- end }}
 {{- end }}
 {{- end }}
+---
+
+
+{{/* Render the templates */}}
+{{ include "bjw-s.common.loader.generate" . }}
+
+---
