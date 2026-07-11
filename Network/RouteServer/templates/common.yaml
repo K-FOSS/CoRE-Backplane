@@ -311,6 +311,25 @@ configMaps:
         !
         router-id {{ $rs.ipAddress }}
         !
+        {{- range $prefixList := ($rs.prefixLists.ipv4 | default list) }}
+        {{- range $entry := ($prefixList.prefixes | default list) }}
+        ip prefix-list {{ required "prefix-list name is required" $prefixList.name }} seq {{ required (printf "seqNum is required for prefix-list %s" $prefixList.name) $entry.seqNum }} {{ default "permit" $entry.action }} {{ required (printf "prefix is required for prefix-list %s" $prefixList.name) $entry.prefix }}{{- with $entry.ge }} ge {{ . }}{{- end }}{{- with $entry.le }} le {{ . }}{{- end }}
+        {{- end }}
+        {{- end }}
+        !
+        {{- range $routeMap := ($rs.routeMaps | default list) }}
+        {{- $routeMapName := required "route-map name is required" $routeMap.name }}
+        {{- range $entry := ($routeMap.entries | default list) }}
+        route-map {{ $routeMapName }} {{ default "permit" $entry.action }} {{ required (printf "seqNum is required for route-map %s" $routeMapName) $entry.seqNum }}
+        {{- with $entry.match }}
+        {{- with .ipv4PrefixList }}
+         match ip address prefix-list {{ . }}
+        {{- end }}
+        {{- end }}
+        exit
+        !
+        {{- end }}
+        {{- end }}
         {{- range $netID, $netInterface := $rs.networking.interfaces }}
         {{- if $netInterface.routing }}
         !
