@@ -749,16 +749,10 @@ spec:
 
                             neighbor 127.0.0.1 soft-reconfiguration inbound
                             neighbor 127.0.0.1 prefix-list CILIUM in
-                            {{- if $ciliumNode.status.atProvider }}
-                            neighbor 127.0.0.1 route-map TEST in
-                            {{- end }}
                           exit-address-family
                           address-family ipv6 unicast
                             neighbor ::1 soft-reconfiguration inbound
                             neighbor ::1 prefix-list CILIUM in
-                            {{- if $ciliumNode.status.atProvider }}
-                            neighbor ::1 route-map TEST-v6 in
-                            {{- end }}
                           exit-address-family
             {{ end }}
             {{ end }}
