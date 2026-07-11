@@ -108,7 +108,7 @@ spec:
                                     action: activate
 
                                   - name: yxl-wan-gw
-                                    action: activate
+                                    action: route-reflector-client
                             ipv4:
                               vpn:
                                 neighbor:
@@ -145,6 +145,8 @@ spec:
                             - address: 172.31.255.5
                               peerGroup: yxl-wan-gw
 
+                            - address: 172.31.255.6
+                              peerGroup: yxl-wan-gw
                           peerGroups:
                             - name: spine-sw
                               asn: 64567
@@ -384,11 +386,20 @@ spec:
                                   - name: lf-sw
                                     action: activate
 
+                                  - name: lf-sw
+                                    action: route-reflector-client
+
                                   - name: yvr-rrs
                                     action: activate
 
                                   - name: yxl-rrs
                                     action: activate
+
+                                  - name: yxl-wan-gw
+                                    action: activate
+
+                                  - name: yxl-wan-gw
+                                    action: route-reflector-client
                             ipv4:
                               vpn:
                                 neighbor:
@@ -400,6 +411,12 @@ spec:
 
                                   - name: yxl-rrs
                                     action: activate
+
+                                  - name: yxl-wan-gw
+                                    action: activate
+
+                                  - name: yxl-wan-gw
+                                    action: route-reflector-client
                           peers:
                             - address: 172.31.255.1
                               peerGroup: spine-sw
@@ -413,11 +430,19 @@ spec:
                             - address: 172.16.51.111
                               peerGroup: yxl-rrs
 
+                            - address: 172.31.255.5
+                              peerGroup: yxl-wan-gw
+
+                            - address: 172.31.255.6
+                              peerGroup: yxl-wan-gw
                           peerGroups:
                             - name: spine-sw
                               asn: 64567
 
                             - name: lf-sw
+                              asn: 64567
+
+                            - name: yxl-wan-gw
                               asn: 64567
 
                             - name: yvr-rrs
