@@ -21,33 +21,23 @@ spec:
                   values:
                     installing: false
                     networks:
-                      - name: pwan
-                        nics:
-                          - br1
-                          - br2
-                        vlan: 15
-                      - mtu: 9000
-                        name: backend951
-                        nics:
-                          - br1
+                      - name: nic1-backend951
                         vlan: 951
-                      - mtu: 9000
-                        name: backend952
-                        nics:
-                          - br1
-                        vlan: 952
-                      - mtu: 9000
-                        name: backend953
-                        nics:
-                          - br1
-                          - br3
+                        mtu: 9216
+                        sriov:
+                          device: intel.com/intel_xxv710
+                      - name: nic2-backend953
+                        type: sriov
                         vlan: 953
-                      - mtu: 9000
-                        name: backend954
-                        nics:
-                          - br1
-                          - br3
-                        vlan: 954
+                        mtu: 9216
+                        sriov:
+                          device: intel.com/intel_xxv710
+                      - name: nic1-conntrack-sync
+                        type: sriov
+                        vlan: 1500
+                        mtu: 1500
+                        sriov:
+                          device: intel.com/intel_xxv710
                     vms:
                       - disk:
                           enabled: true
@@ -55,20 +45,11 @@ spec:
                         installing: false
                         name: wan-rt1
                         networks:
-                          - name: pwan
-                            nics:
-                              - br1
-                              - br2
-                          - name: backend953
-                            nics:
-                              - br3
+                          - name: nic1-backend951
+                          - name: nic2-backend953
+                          - name: nic1-conntrack-sync
                         podNetwork:
                           enabled: false
-                        ports:
-                          - expose: false
-                            name: wg-2011
-                            port: 64763
-                            protocol: UDP
 
                 - name: core-dc1-talos-prod
                   values:
@@ -80,12 +61,6 @@ spec:
 
                         podNetwork:
                           enabled: false
-
-                        ports:
-                          - name: wg-2011
-                            port: 64763
-                            protocol: UDP
-                            expose: false
                         
                         disk:
                           enabled: true
@@ -93,25 +68,11 @@ spec:
                           size: 5Gi
 
                         networks:
-                          - name: pwan
-                            nics:
-                              - br0
+                          - name: intel-nic1-backend951
 
-                          - name: backend951
-                            nics:
-                              - br0
-
-                          - name: backend952
-                            nics:
-                              - br0
-
-                          - name: backend953
-                            nics:
-                              - br0
+                          - name: intel-nic2-backend953
 
                           - name: backend954
-                            nics:
-                              - br0
 
                       - name: wan-rt1
                         installing: false
@@ -133,64 +94,48 @@ spec:
                           size: 5Gi
 
                         networks:
-                          - name: pwan
-                            nics:
-                              - br3
+                          - name: mlx3-nic2-backend951
 
-                          - name: backend951
-                            nics:
-                              - br1
+                          - name: mlx3-nic2-backend953
 
-                          - name: backend952
-                            nics:
-                              - br1
-
-                          - name: backend953
-                            nics:
-                              - br1
-
-                          - name: backend954
-                            nics:
-                              - br1
+                          - name: mlx3-nic2-conntrack-sync
 
                     networks:
-                      - name: pwan
-                        vlan: 15
-                        mtu: 9000
-                        nics:
-                          - br0
-                          - br1
-                          - br3
-
-                      - name: backend951
+                      - name: mlx3-nic2-backend951
                         vlan: 951
-                        mtu: 9000
-                        nics:
-                          - br0
-                          - br1
+                        mtu: 9216
+                        sriov:
+                          device: mellanox.com/mlx4_cx3_vfio
 
-                      - name: backend952
-                        vlan: 952
-                        mtu: 9000
-                        nics:
-                          - br0
-                          - br1
-
-                      - name: backend953
+                      - name: mlx3-nic2-backend953
                         vlan: 953
-                        mtu: 9000
-                        nics:
-                          - br0
-                          - br1
-                          - br3
+                        mtu: 9216
+                        sriov:
+                          device: mellanox.com/mlx4_cx3_vfio
 
-                      - name: backend954
-                        vlan: 954
+                      - name: mlx3-nic2-conntrack-sync
+                        vlan: 1500
                         mtu: 9000
-                        nics:
-                          - br0
-                          - br1
-                          - br3
+                        sriov:
+                          device: mellanox.com/mlx4_cx3_vfio
+
+                      - name: intel-nic1-backend951
+                        vlan: 951
+                        mtu: 9216
+                        sriov:
+                          device: intel.com/intel_i350_vfio
+
+                      - name: intel-nic2-backend953
+                        vlan: 951
+                        mtu: 9216
+                        sriov:
+                          device: intel.com/intel_i350_vfio
+
+                      - name: intel-nic2-conntrack-sync
+                        vlan: 1500
+                        mtu: 9000
+                        sriov:
+                          device: intel.com/intel_i350_vfio
 
                 - name: core-home1-talos-prod
                   values:

@@ -1,4 +1,56 @@
-{{- range $vmIndex, $vm := .Values.vms -}}
+---
+{{ $networks := dict }}
+{{- range $networkIndex, $network := .Values.networks }}
+{{- $nicType := (default "sriov" $network.type) }}
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: '{{ $network.name }}'
+
+  {{- if eq $nicType "sriov" }}
+  {{ $_ := set $networks $network.name (
+      merge
+        (dict "type" $nicType)
+        (deepCopy $network)
+      ) 
+  }}
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: '{{ $network.sriov.device }}'
+  {{- end }}
+spec:
+  config: '{
+      "cniVersion": "1.0.0",
+      "name": "{{ $network.name }}",
+      "plugins": [
+        {
+          "disableContainerInterface": true,
+          {{- if $network.mtu }}
+          "mtu": {{ $network.mtu }},
+          {{- end }}
+
+          {{- with $network.vlan }}
+          "vlan": {{ . }},
+          {{- if eq $nicType "sriov" }}
+          "macspoofchk": false,
+          {{- else if eq $nicType "bridge" -}}
+          "preserveDefaultVlan": false
+          {{- end }}
+          {{- end }}
+
+
+          {{- if eq $nicType "bridge" }}
+          "macspoofchk": false,
+          "bridge": "{{ $network.bridge }}",
+          {{- end }}
+          
+          "type": "{{ $nicType }}",
+        }
+      ]
+    }'
+---
+{{- end }}
+---
+{{- range $vmIndex, $vm := .Values.vms }}
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
@@ -16,12 +68,11 @@ spec:
           pod: {} # Stock pod network
         {{- end }}
 
-        {{- range $networkIndex, $network := $vm.networks -}}
-        {{- range $networkInterfaceIndex, $networkNIC := $network.nics }}
-        - name: {{ $networkNIC }}-{{ $network.name }}
+        {{- range $networkIndex, $vmNetwork := $vm.networks }}
+        {{- $network := index $networks $vmNetwork.name }}
+        - name: {{ $vmNetwork.name }}
           multus:
-            networkName: {{ $networkNIC }}-{{ $network.name }}
-        {{- end }}
+            networkName: {{ $vmNetwork.name }}
         {{- end }}
 
       priorityClassName: system-cluster-critical
@@ -40,7 +91,6 @@ spec:
         firmware:
           bootloader:
             efi:
-              
               secureBoot: true
         {{- end }}
         devices:
@@ -55,7 +105,7 @@ spec:
               bootOrder: 1
               cdrom:
                 bus: sata
-            {{ end }}
+            {{- end }}
 
             - name: data-disk
               bootOrder: {{ if $vm.installing }}2{{ else }}1{{ end }}
@@ -63,12 +113,15 @@ spec:
                 bus: virtio
 
           interfaces:
-            {{- range $networkIndex, $network := $vm.networks -}}
-            {{- range $networkInterfaceIndex, $networkNIC := $network.nics }}
-            - bridge: {}
-              name: {{ $networkNIC }}-{{ $network.name }}
+            {{- range $networkIndex, $vmNetwork := $vm.networks }}
+            {{- $network := index $networks $vmNetwork.name }}
+            - name: {{ $vmNetwork.name }}
+              {{ $network.type }}: {}
+              {{- with $vmNetwork.macAddress }}
+              macAddress: '{{ . }}'
+              {{- end }}
             {{- end }}
-            {{- end }}
+
 
             {{- if and $vm.podNetwork  $vm.podNetwork.enabled }}
             - name: default
@@ -97,8 +150,7 @@ spec:
         - name: installer
           dataVolume:
             name: {{ $vm.installer }}
-        {{- end }}
-
+        {{ end }}
         - dataVolume:
             name: {{ $vm.name }}
           name: data-disk
