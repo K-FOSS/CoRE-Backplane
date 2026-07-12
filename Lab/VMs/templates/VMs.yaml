@@ -18,35 +18,26 @@ metadata:
     k8s.v1.cni.cncf.io/resourceName: '{{ $network.sriov.device }}'
   {{- end }}
 spec:
-  config: '{
+  config: |-
+    {
       "cniVersion": "1.0.0",
-      "name": "{{ $network.name }}",
-      "plugins": [
-        {
-          "disableContainerInterface": true,
-          {{- if $network.mtu }}
-          "mtu": {{ $network.mtu }},
-          {{- end }}
+      {{- if $network.mtu }}
+      "mtu": {{ $network.mtu }},
+      {{- end }}
 
-          {{- with $network.vlan }}
-          "vlan": {{ . }},
-          {{- if eq $nicType "sriov" }}
-          "macspoofchk": false,
-          {{- else if eq $nicType "bridge" }}
-          "preserveDefaultVlan": false
-          {{- end }}
-          {{- end }}
+      {{- with $network.vlan }}
+      "vlan": {{ . }},
+      {{- if eq $nicType "bridge" }}
+      "preserveDefaultVlan": false,
+      {{- end }}
+      {{- end }}
 
-
-          {{- if eq $nicType "bridge" }}
-          "macspoofchk": false,
-          "bridge": "{{ $network.bridge }}",
-          {{- end }}
-          
-          "type": "{{ $nicType }}",
-        }
-      ]
-    }'
+      {{- if eq $nicType "bridge" }}
+      "bridge": "{{ $network.bridge }}",
+      {{- end }}
+      
+      "type": "{{ $nicType }}"
+    }
 ---
 {{- end }}
 ---
