@@ -361,6 +361,21 @@ spec:
 
                               - seqNum: 100
                                 action: permit
+
+                          - name: YVR-RR-OUT
+                            entries:
+                              - seqNum: 10
+                                action: deny
+                                match:
+                                  ipv4PrefixList: KNET-PUB-1
+
+                              - seqNum: 50
+                                action: deny
+                                match:
+                                  ipv4PrefixList: GWv4
+
+                              - seqNum: 100
+                                action: permit
                         networking:
                           interfaces:
                             - type: sriov
@@ -411,6 +426,9 @@ spec:
 
                                   - name: yvr-rrs
                                     action: route-map YVR-RR-IN in
+
+                                  - name: yvr-rrs
+                                    action: route-map YVR-RR-OUT out
 
                                   - name: yxl-rrs
                                     action: activate
