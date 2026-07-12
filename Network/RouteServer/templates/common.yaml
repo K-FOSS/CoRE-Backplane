@@ -378,11 +378,11 @@ configMaps:
           no bgp ebgp-requires-policy
           no bgp default ipv4-unicast
           bgp graceful-restart
-          bgp graceful-restart stalepath-time 30
           bgp cluster-id {{ default $rs.ipAddress $rs.bgp.clusterId }}
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
+          update-delay 30 10
           {{- range $peerGroupIndex, $peerGroup := $rs.bgp.peerGroups }}
           neighbor {{ $peerGroup.name }} peer-group
           {{- with $peerGroup.ebgpmultihop }}
