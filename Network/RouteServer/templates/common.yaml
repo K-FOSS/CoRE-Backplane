@@ -382,13 +382,44 @@ configMaps:
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
-          update-delay 30 10
+          update-delay 60 30
           {{- range $peerGroupIndex, $peerGroup := $rs.bgp.peerGroups }}
+          {{- $peerGroupName := required
+              (printf "routeservers.%s.bgp.peerGroups[%d].name is required" $name $peerGroupIndex)
+              $peerGroup.name
+          }}
           neighbor {{ $peerGroup.name }} peer-group
           {{- with $peerGroup.ebgpmultihop }}
           neighbor {{ $peerGroup.name }} ebgp-multihop {{ . }}
           {{- end }}
-          neighbor {{ $peerGroup.name }} remote-as {{ $peerGroup.asn }}
+          neighbor {{ $peerGroup.name }} remote-as {{ required
+            (printf "routeservers.%s.bgp.peerGroups[%d].asn is required" $name $peerGroupIndex)
+            $peerGroup.asn
+          }}
+
+          {{- with $timers := $peerGroup.timers }}
+          {{- if or $timers.keepalive $timers.holdtime }}
+          neighbor {{ $peerGroupName }} timers {{ required
+                (printf "routeservers.%s.bgp.peerGroups[%d].timers.keepalive is required when holdtime is configured" $name $peerGroupIndex)
+                $timers.keepalive
+            }} {{ required
+                (printf "routeservers.%s.bgp.peerGroups[%d].timers.holdtime is required when keepalive is configured" $name $peerGroupIndex)
+                $timers.holdtime
+            }}
+          {{- end }}
+
+          {{- with $timers.connect }}
+          neighbor {{ $peerGroupName }} timers connect {{ . }}
+          {{- end }}
+
+          {{- with $timers.delayOpen }}
+          neighbor {{ $peerGroupName }} timers delayopen {{ . }}
+          {{- end }}
+
+          {{- with $timers.advertisementInterval }}
+          neighbor {{ $peerGroupName }} advertisement-interval {{ . }}
+          {{- end }}
+          {{- end }}
           {{- end }}
 
           {{- range $peerIndex, $peer := $rs.bgp.peers }}
@@ -403,7 +434,6 @@ configMaps:
           {{- with $peer.peerGroup }}
           neighbor {{ $peer.address }} peer-group {{ . }}
           {{- end }}
-
           {{- end }}
           !
           {{- range $afiIndex, $afi := $rs.bgp.afi }}
