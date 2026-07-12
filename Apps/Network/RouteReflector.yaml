@@ -166,6 +166,9 @@ spec:
                             - address: 172.31.245.2
                               peerGroup: yvr-rrs
 
+                            - address: 172.31.245.3
+                              peerGroup: yvr-rrs
+
                             - address: 172.16.51.100
                               peerGroup: yxl-rrs
 
@@ -286,9 +289,21 @@ spec:
 
                                   - name: yxl-rrs
                                     action: addpath-tx-all-paths
+
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
                             ipv4:
                               vpn:
                                 neighbor:
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
+
                                   - name: cpe-sw
                                     action: activate
 
@@ -330,6 +345,9 @@ spec:
                                   - name: cpe-sw
                                     action: route-reflector-client
                           peers:
+                            - address: 172.31.245.3
+                              peerGroup: yvr-rrs
+
                             - address: 172.29.255.3
                               peerGroup: cpe-sw
 
@@ -349,6 +367,183 @@ spec:
                               asn: 64567
 
                             - name: yvr-wan-gw
+                              asn: 64567
+
+                            - name: yxl-rrs
+                              asn: 64567
+
+                            - name: yvr-rrs
+                              asn: 64567
+                        frr:
+                          version: '10.6.0'
+
+                      rs1:
+                        ipAddress: 172.29.255.99
+
+                        prefixLists:
+                          ipv4:
+                            - name: YVR-WAN
+                              prefixes:
+                                - seqNum: 5
+                                  prefix: 24.86.197.0/24
+                                  action: permit
+                                  ge: 24
+
+                            - name: KNET-PUB-1
+                              prefixes:
+                                - seqNum: 5
+                                  prefix: 66.165.222.96/27
+                                  action: permit
+                                  ge: 27
+
+                            - name: GWv4
+                              prefixes:
+                                - seqNum: 5
+                                  prefix: 0.0.0.0/0
+                                  action: permit
+
+                        routeMaps:
+                          - name: YXL-RR-IN
+                            entries:
+                              - seqNum: 10
+                                action: deny
+                                match:
+                                  ipv4PrefixList: KNET-PUB-1
+
+                              - seqNum: 100
+                                action: permit
+
+                          - name: YXL-RR-OUT
+                            entries:
+                              - seqNum: 10
+                                action: deny
+                                match:
+                                  ipv4PrefixList: YVR-WAN
+
+                              - seqNum: 11
+                                action: deny
+                                match:
+                                  ipv4PrefixList: GWv4
+
+                              - seqNum: 200
+                                action: permit
+                        networking:
+                          interfaces:
+                            - type: sriov
+                              mtu: 9000
+                              routing:
+                                ospf:
+                                  enabled: true
+                                  area: 0.0.0.0
+                                  type: point-to-point
+                              ipam:
+                                address: 172.31.245.3/29
+                                routes:
+                                  - dst: 0.0.0.0/0
+                                    gw: 172.31.245.1
+                              sriov:
+                                vlan: 50
+                                device: intel.com/intel_x540_netdevice_port0
+
+                        ospf:
+                          enabled: true
+                          autocost:
+                            refBandwidth: 100000
+
+                        bgp:
+                          enabled: true
+                          clusterId: 172.29.255.1
+                          asn: 64567
+                          afi:
+                            l2vpn:
+                              evpn:
+                                neighbor:
+                                  - name: yxl-rrs
+                                    action: activate
+
+                                  - name: yxl-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
+                            ipv4:
+                              vpn:
+                                neighbor:
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: cpe-sw
+                                    action: activate
+
+                                  - name: cpe-sw
+                                    action: route-reflector-client
+
+                                  - name: cpe-sw
+                                    action: addpath-tx-all-paths
+
+                                  - name: cpe-sw 
+                                    action: 'allowas-in 10'
+                                  
+                                  - name: yxl-rrs
+                                    action: activate
+
+                                  - name: yxl-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yxl-rrs
+                                    action: route-map YXL-RR-IN in
+
+                                  - name: yvr-wan-gw
+                                    action: activate
+
+                                  - name: yvr-wan-gw
+                                    action: route-reflector-client
+
+                                  - name: yvr-wan-gw
+                                    action: addpath-tx-all-paths
+                              unicast:
+                                maximum-paths:
+                                  base: 4
+                                  ibgp: 4
+
+                                neighbor:
+                                  - name: cpe-sw
+                                    action: activate
+                                  
+                                  - name: cpe-sw
+                                    action: route-reflector-client
+                          peers:
+                            - address: 172.31.245.2
+                              peerGroup: yvr-rrs
+
+                            - address: 172.29.255.3
+                              peerGroup: cpe-sw
+
+                            - address: 172.16.51.100
+                              peerGroup: yxl-rrs
+
+                            - address: 172.16.51.111
+                              peerGroup: yxl-rrs
+
+                            - address: 172.29.255.2
+                              peerGroup: yvr-wan-gw
+
+                            - address: 172.29.255.4
+                              peerGroup: yvr-wan-gw
+                          peerGroups:
+                            - name: cpe-sw
+                              asn: 64567
+
+                            - name: yvr-wan-gw
+                              asn: 64567
+
+                            - name: yvr-rrs
                               asn: 64567
 
                             - name: yxl-rrs
