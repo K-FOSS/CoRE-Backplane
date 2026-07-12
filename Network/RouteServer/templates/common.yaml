@@ -383,6 +383,8 @@ configMaps:
           no bgp hard-administrative-rese
           bgp bestpath peer-type multipath-relax
           bgp graceful-restart stalepath-time 300
+          bgp graceful-restart preserve-fw-state
+          bgp graceful-restart notification
           update-delay 60 30
           {{- range $peerGroupIndex, $peerGroup := $rs.bgp.peerGroups }}
           {{- $peerGroupName := required
