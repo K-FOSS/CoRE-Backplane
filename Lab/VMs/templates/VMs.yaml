@@ -18,7 +18,7 @@ metadata:
     k8s.v1.cni.cncf.io/resourceName: '{{ $network.sriov.device }}'
   {{- end }}
 spec:
-  config: |-
+  config: |
     {
       "cniVersion": "1.0.0",
       {{- if $network.mtu }}
@@ -39,7 +39,7 @@ spec:
       "type": "{{ $nicType }}"
     }
 ---
-{{- end }}
+{{ end }}
 ---
 {{- range $vmIndex, $vm := .Values.vms }}
 apiVersion: kubevirt.io/v1
