@@ -377,6 +377,8 @@ configMaps:
         router bgp {{ $rs.bgp.asn }}
           no bgp ebgp-requires-policy
           no bgp default ipv4-unicast
+          bgp graceful-restart
+          bgp graceful-restart stalepath-time 30
           bgp cluster-id {{ default $rs.ipAddress $rs.bgp.clusterId }}
           bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
