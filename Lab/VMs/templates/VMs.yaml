@@ -106,7 +106,7 @@ spec:
             {{- range $networkIndex, $vmNetwork := $vm.networks }}
             {{- $network := index $networks $vmNetwork.name }}
             - name: {{ $vmNetwork.name }}
-              {{ $network.type }}: {}
+              {{ default "sriov" $network.type }}: {}
               {{- with $vmNetwork.macAddress }}
               macAddress: '{{ . }}'
               {{- end }}
