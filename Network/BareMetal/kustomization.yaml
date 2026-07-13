@@ -10,6 +10,24 @@ patches:
         path: /spec/template/metadata/labels/logs
         value: loki-myloginspace
 
+  - target:
+      kind: Deployment
+      name: tink-stack
+
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/dnsPolicy
+        value: 'None'
+
+      - op: replace
+        path: /spec/template/spec/dnsConfig
+        value:
+          nameservers:
+            - 1.1.1.1
+          options:
+            - name: ndots
+              value: '0'
+            - name: edns0
 
   - target:
       kind: Deployment
