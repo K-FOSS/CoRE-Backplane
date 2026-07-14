@@ -59,32 +59,6 @@ spec:
         rx: 4096
         tx: 4096
   networks:
-    - macAddress: 38:c9:86:42:ff:90
-      bridge: false
-
-      model: new
-
-      addresses:
-        - 172.31.193.21/24
-
-      routes:
-        - gateway: 172.31.193.254
-          metric: 1024
-          network: 0.0.0.0/0
-
-      mtu: 9000
-      routing:
-        ospf:
-          area: 0.0.0.0
-          enabled: false
-          type: broadcast
-
-      type: link
-
-      static: true
-      dns:
-        - 1.1.1.1
-
     - type: link
       model: new
 
@@ -111,19 +85,38 @@ spec:
       dns:
         - 1.1.1.1
 
-    - type: bridge
-      
-      stp:
-        enabled: false
+    - macAddress: 38:c9:86:42:ff:90
+      bridge: false
 
-      members:
-        - macAddress: 00:30:93:0c:05:13
+      model: new
+
+      addresses: []
+
+      routes:
+        - gateway: 172.31.193.254
+          metric: 1024
+          network: 0.0.0.0/0
+
+      mtu: 9000
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: false
+          type: broadcast
+
+      type: link
+
+      static: true
+      dns:
+        - 1.1.1.1
+
+    - type: link
 
       addresses:
         - 172.31.241.26/30
 
       model: new
-      bridge: true
+      bridge: false
       dns:
         - 1.1.1.1
         - 1.0.0.1
@@ -146,6 +139,8 @@ spec:
     - name: class.net.enp34s0f0.device.sriov_numvfs
       value: '8'
 
+    - name: class.net.enp34s0f1.device.sriov_numvfs
+      value: '8'
   overrides:
     version:
       talos: v1.12.7
