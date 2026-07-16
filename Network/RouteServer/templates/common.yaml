@@ -337,6 +337,7 @@ configMaps:
           {{- with $ospf := $netInterface.routing.ospf }}
           {{- if $ospf.enabled }}
           ip ospf area {{ $ospf.area }}
+          ipv6 ospf6 area {{ $ospf.area }}
           ip ospf network {{ default "broadcast" $ospf.type }}
           
           {{- with $ospf.priority }}
