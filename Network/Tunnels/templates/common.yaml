@@ -1,12 +1,13 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
+
 {{- define "app-template.hardcodedValues" -}}
+
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
 global:
   nameOverride: "{{ .Release.Name }}"
-
 {{ end }}
 
 controllers:
@@ -18,21 +19,59 @@ controllers:
 
     nameOverride: tunneler
 
-    {{- if .Values.frr.multus.enabled }}
+    {{- $mtuUsed := false -}}
+    {{- $sriovUsed := false -}}
+    {{- $sriovResources := dict -}}
+    {{- range $netID, $netInterface := .Values.networking.interfaces }}
+    {{ if .mtu }}
+    {{- $mtuUsed = true }}
+    {{- end }}
+    {{- if eq $netInterface.type "sriov" }}
+    {{ $sriovUsed = true }}
+    {{- 
+      $device := required
+          (printf "networking.interfaces.%d: sriov.device is required for SR-IOV interfaces" $netID)
+          $netInterface.sriov.device
+    }}
+    {{- $currentCount := get $sriovResources $device | default 0 }}
+    {{- $_ := set $sriovResources $device (add $currentCount 1) }}
+    {{- end }}
+    {{- end }}
+
+    {{- if and .Values.networking .Values.networking.interfaces }}
     pod:
+      dnsPolicy: None
+
+      automountServiceAccountToken: false
+      
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+        options:
+          - name: ndots
+            value: '0'
+          - name: edns0
       annotations:
-        k8s.v1.cni.cncf.io/networks: {{ .Values.frr.multus.network }}
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ .Release.Name }}-0'
     {{- end }}
 
     containers:
       frr:
         image:
-          repository: frrouting/frr
+          repository: quay.io/frrouting/frr
           #
           # TODO: Get Renovate or similar managing this
           #
           tag: latest
           pullPolicy: IfNotPresent
+
+        {{- if $sriovUsed }}
+        resources:
+          limits:
+            {{- range $device, $count := $sriovResources }}
+            {{ $device }}: {{ $count | quote }}
+            {{- end }}
+        {{- end }}
 
         securityContext:
           seLinuxOptions: {}
@@ -535,6 +574,49 @@ service:
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+---
+{{- range $netID, $netInterface := $.Values.networking.interfaces -}}
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: net-{{ .Release.Name }}-{{ $netID }}
+
+
+  {{- if eq $netInterface.type "sriov" }}
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: {{ $netInterface.sriov.device }}
+  {{- end }}
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "vlan{{ $netInterface.sriov.vlan }}",
+      "type": "{{ $netInterface.type }}",
+      {{- if eq $netInterface.type "sriov" }}
+      "spoofchk": "off",
+      {{- end }}
+      {{- with $netInterface.mtu }}
+      "mtu": {{ . }},
+      {{- end }}
+      "vlan": {{ $netInterface.sriov.vlan }},
+      {{- if $netInterface.ipam }}
+      "ipam": {
+        "type": "static",
+        {{- if $netInterface.ipam.routes }}
+        "routes": {{ toJson $netInterface.ipam.routes }},
+        {{- end }}
+        "addresses": [
+          {
+            "address": "{{ $netInterface.ipam.address }}"
+          }
+        ]
+      }
+      {{- end }}
+    }
+---
+{{- end }}
+
 
 {{/* Render the templates */}}
 {{ include "bjw-s.common.loader.generate" . }}

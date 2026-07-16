@@ -1,10 +1,25 @@
-
-
 networking:
+  interfaces:
+    - type: sriov
+      mtu: 9000
+      routing:
+        ospf:
+          enabled: false
+      ipam:
+        address: 10.7.7.61/24
+        routes:
+          - dst: 0.0.0.0/0
+            gw: 10.7.7.1
+      sriov:
+        vlan: 666
+        device: mellanox.com/mlx4_cx3_netdevice
+
   publicAddress: 66.165.222.101
 
   routeserver:
     ipv4Address: 10.1.1.140
+
+
 
 frr:
   enabled: true
