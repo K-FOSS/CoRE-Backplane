@@ -257,7 +257,7 @@ configMaps:
       daemons: |
         bgpd={{ if and $rs.bgp $rs.bgp.enabled }}{{ $rs.bgp.enabled }}{{ else }}false{{ end }}
         ospfd={{ if and $rs.ospf $rs.ospf.enabled }}{{ $rs.ospf.enabled }}{{ else }}false{{ end }}
-        ospf6d=no
+        ospf6d={{ if and $rs.ospf $rs.ospf.enabled }}{{ $rs.ospf.enabled }}{{ else }}false{{ end }}
         ripd=no
         ripngd=no
         isisd=no
@@ -367,6 +367,14 @@ configMaps:
           graceful-restart
           {{- end }}
           {{- end }}
+
+          {{- with $rs.ospf.autocost.refBandwidth }}
+          auto-cost reference-bandwidth {{ . }}
+          {{- end }}
+        exit
+        !
+        router ospf6
+          ospf6 router-id {{ $rs.ipAddress }}
 
           {{- with $rs.ospf.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
