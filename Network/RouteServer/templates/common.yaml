@@ -377,6 +377,12 @@ configMaps:
         router ospf6
           ospf6 router-id {{ $rs.ipAddress }}
 
+          {{- with $gr := $rs.ospf.gracefulRestart }}
+          {{- if $gr.enabled }}
+          graceful-restart
+          {{- end }}
+          {{- end }}
+
           {{- with $rs.ospf.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
           {{- end }}
