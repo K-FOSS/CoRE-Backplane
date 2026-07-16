@@ -307,14 +307,8 @@ spec:
 
                               labeled-unicast:
                                 neighbor:
-                                  - name: cpe-sw-v6
+                                  - name: yvr-rrs
                                     action: activate
-
-                                  - name: cpe-sw-v6
-                                    action: route-reflector-client
-
-                                  - name: cpe-sw-v6
-                                    action: addpath-tx-all-paths
 
                               vpn:
                                 neighbor:
@@ -532,6 +526,16 @@ spec:
                                   - name: yvr-rrs
                                     action: addpath-tx-all-paths
                             ipv6:
+                              unicast:
+                                neighbor:
+                                  - name: cpe-sw
+                                    action: activate
+
+                              labeled-unicast:
+                                neighbor:
+                                  - name: yvr-rrs
+                                    action: activate
+
                               vpn:
                                 neighbor:
                                   - name: yvr-rrs
@@ -557,6 +561,7 @@ spec:
 
                                   - name: yvr-wan-gw-v6
                                     action: addpath-tx-all-paths
+
                             ipv4:
                               vpn:
                                 neighbor:
@@ -610,7 +615,7 @@ spec:
                             - address: 172.31.245.2
                               peerGroup: yvr-rrs
 
-                            - address: fd31:A5C9:B1B1:18D2::16
+                            - address: fd25:6C73:FC77:27D8::1
                               peerGroup: cpe-sw-v6
 
                             - address: 172.29.255.3
