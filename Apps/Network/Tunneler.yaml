@@ -24,8 +24,19 @@ spec:
                     hub: false
 
                     networking:
-                      multus:
-                        enabled: false
+                      interfaces:
+                        - type: sriov
+                          mtu: 1500
+                          routing:
+                            ospf:
+                              enabled: false
+                          ipam:
+                            address: 100.64.92.37
+                            routes: []
+
+                          sriov:
+                            vlan: 10
+                            device: mellanox.com/mlx4_cx3_netdevice
 
                     bgp:
                       enabled: true
@@ -89,8 +100,19 @@ spec:
                     hub: false
 
                     networking:
-                      multus:
-                        enabled: false
+                      interfaces:
+                        - type: sriov
+                          mtu: 1500
+                          routing:
+                            ospf:
+                              enabled: false
+                          ipam:
+                            address: 10.0.0.20/24
+                            routes: []
+
+                          sriov:
+                            vlan: 150
+                            device: intel.com/intel_x540_netdevice_port0
 
                     bgp:
                       enabled: true
@@ -129,7 +151,6 @@ spec:
                 matchLabels:
                   mylogin.space/tenant: 'core.mylogin.space'
                   resolvemy.host/computetype: 'baremetal'
-                  resolvemy.host/nodetype: 'infra'
               values:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
