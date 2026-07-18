@@ -580,7 +580,7 @@ service:
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: net-{{ $.Release.Name }}-{{ $netID }}
+  name: net-{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $netID }}
 
 
   {{ if eq $netInterface.type "sriov" }}
