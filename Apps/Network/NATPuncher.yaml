@@ -25,7 +25,7 @@ spec:
                     UPNP:
                       enabled: false
                     CoTurn:
-                      hub: false
+                      enabled: true
                     Tunneler:
                       hub: true
 
@@ -151,7 +151,7 @@ spec:
                           protocol: UDP
                           duration: 8600
                     CoTurn:
-                      hub: false
+                      enabled: false
                     Tunneler:
                       hub: true
           - clusters:
@@ -201,6 +201,10 @@ spec:
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+
+                coturn:
+                  {{ nindent 2 (toYaml .values.CoTurn) }}
+
 
                 UPNP:
                   {{ nindent 2 (toYaml .values.UPNP) }}
