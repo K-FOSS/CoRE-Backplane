@@ -120,9 +120,8 @@ spec:
                       enabled: true
 
                     peers:
-                      - port: '54767'
+                      - port: '10010'
                         name: wan-gw2.home1.yvr.resolvemy.host
-                        address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
                         publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
                         server:
                           address: 10.1.1.84
@@ -130,20 +129,11 @@ spec:
                           privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PrivateKey>
 
                           service:
-                            enabled: true
-
-                            type: LoadBalancer
-
-                            annotations:
-                              purelb.io/allow-shared-ip: main-gw.resolvemy.host
-                              purelb.io/service-group: core-public
-                              purelb.io/allow-local: 'true'
-                              purelb.io/addresses: '10.1.1.84'
+                            enabled: false
                         network:
                           localAddress: 172.31.244.9/30
                           remoteAddress: 172.31.244.10/30
                           allowedIPs: 0.0.0.0/0
-                          remotePort: '54767'
 
                     network:
                       publicAddress: 66.165.222.103
