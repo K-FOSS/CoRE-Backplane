@@ -275,20 +275,6 @@ spec:
               path: /machine/features/hostDNS/forwardKubeDNSToHost
               value: false
 
-            #
-            # Configure Remote Pullthrough Registry Cache
-            # `}}
-            # - op: add
-            #   path: /machine/registries
-            #   value:
-            #     mirrors:
-            #       {{- range $registry, $path := .Values.crossplane.clusters.registry.mirror.paths }}
-            #       {{ $registry }}:
-            #         endpoints:
-            #           - {{ $.Values.crossplane.clusters.registry.mirror.base }}/{{ $path }}
-            #         overridePath: true
-            #       {{- end }}
-            {{`
             {{- end }}
             --- 
             apiVersion: kubernetes.crossplane.io/v1alpha2
