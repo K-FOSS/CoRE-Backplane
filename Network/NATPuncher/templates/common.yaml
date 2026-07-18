@@ -22,8 +22,22 @@ controllers:
       ttlSecondsAfterFinished: 300
 
     pod:
+      dnsPolicy: None
+
+      automountServiceAccountToken: false
+      
+      dnsConfig:
+        nameservers:
+          - 1.1.1.1
+        options:
+          - name: ndots
+            value: '0'
+          - name: edns0
+
+    {{- if and .Values.UPNP.network .Values.UPNP.network.interfaces }}
       annotations:
-        v1.multus-cni.io/default-network: sriov-vlan150
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-0'
+    {{- end }}
 
     containers:
       main:
@@ -40,9 +54,12 @@ controllers:
           - |
             set -eu
 
-            sleep 60
+            sleep 10
 
             IFACE="eth0"
+            
+            ip -d addr show $IFACE
+
             IP_ADDR="$(ip -4 -o addr show dev "${IFACE}" scope global | awk '{print $4}' | cut -d/ -f1 | head -n1)"
 
             echo "Using ${IFACE} with IPv4 address ${IP_ADDR}"
@@ -54,7 +71,7 @@ controllers:
               -m "${IFACE}" \
               -e "{{ $.Release.Name }} {{ $port.externalPort }}/{{ $port.protocol | upper }}" \
               -a "{{ $port.target }}" "{{ $port.internalPort }}" "{{ $port.externalPort }}" "{{ $port.protocol | upper }}" {{ default 600 $port.duration }}
-            {{- end }}
+            {{ end }}
 {{- end }}
 
 service:
@@ -204,6 +221,49 @@ service:
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{- if .Values.UPNP.enabled }}
+{{ range $netID, $netInterface := $.Values.networking.interfaces }}
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: net-{{ $.Release.Name }}-{{ $netID }}
+
+
+  {{ if eq $netInterface.type "sriov" }}
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: {{ $netInterface.sriov.device }}
+  {{ end }}
+spec:
+  config: |
+    {
+      "cniVersion": "1.0.0",
+      "name": "vlan{{ $netInterface.sriov.vlan }}",
+      "type": "{{ $netInterface.type }}",
+      {{- if eq $netInterface.type "sriov" }}
+      "spoofchk": "off",
+      {{- end }}
+      {{- with $netInterface.mtu }}
+      "mtu": {{ . }},
+      {{- end }}
+      "vlan": {{ $netInterface.sriov.vlan }},
+      {{- if $netInterface.ipam }}
+      "ipam": {
+        "type": "static",
+        {{- if $netInterface.ipam.routes }}
+        "routes": {{ toJson $netInterface.ipam.routes }},
+        {{- end }}
+        "addresses": [
+          {
+            "address": "{{ $netInterface.ipam.address }}"
+          }
+        ]
+      }
+      {{- end }}
+    }
+---
+{{ end }}
+{{- end }}
 
 {{/* Render the templates */}}
 {{ include "bjw-s.common.loader.generate" . }}

@@ -8,16 +8,27 @@ portRange:
   max: 16000
 
 UPNP:
-  enabled: false
+  enabled: true
 
   dhcp:
     enabled: true
     timeoutSeconds: 30
 
   network:
-    namespace: core-media
-    name: rogers-network
-    interface: eth1
+    interfaces:
+      - type: sriov
+        mtu: 9000
+        routing:
+          ospf:
+            enabled: false
+        ipam:
+          address: 10.7.7.61/24
+          routes:
+            - dst: 0.0.0.0/0
+              gw: 10.7.7.1
+        sriov:
+          vlan: 666
+          device: mellanox.com/mlx4_cx3_netdevice
 
   ports:
     - target: 10.0.0.19
