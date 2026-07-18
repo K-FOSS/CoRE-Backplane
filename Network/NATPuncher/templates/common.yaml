@@ -94,6 +94,28 @@ controllers:
       failedJobsHistory: 3
       ttlSecondsAfterFinished: 300
 
+    {{- $mtuUsed := false -}}
+    {{- $sriovUsed := false -}}
+    {{- $sriovResources := dict -}}
+
+    {{- if and .Values.UPNP.network .Values.UPNP.network.interfaces }}
+    {{- range $netID, $netInterface := .Values.UPNP.network.interfaces }}
+    {{ if .mtu }}
+    {{- $mtuUsed = true }}
+    {{- end }}
+    {{- if eq $netInterface.type "sriov" }}
+    {{ $sriovUsed = true }}
+    {{- 
+      $device := required
+          (printf "UPNP.network.interfaces.%d: sriov.device is required for SR-IOV interfaces" $netID)
+          $netInterface.sriov.device
+    }}
+    {{- $currentCount := get $sriovResources $device | default 0 }}
+    {{- $_ := set $sriovResources $device (add $currentCount 1) }}
+    {{- end }}
+    {{- end }}
+    {{- end }}
+
     pod:
       dnsPolicy: None
 
@@ -118,6 +140,14 @@ controllers:
           repository: kristianfjones/upnp
           tag: jobs
           pullPolicy: IfNotPresent
+
+        {{- if $sriovUsed }}
+        resources:
+          limits:
+            {{- range $device, $count := $sriovResources }}
+            {{ $device }}: {{ $count | quote }}
+            {{- end }}
+        {{- end }}
 
         command:
           - /bin/sh
