@@ -52,7 +52,7 @@ controllers:
             value: '0'
           - name: edns0
       annotations:
-        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-0'
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-0'
     {{- end }}
 
     containers:
@@ -575,12 +575,11 @@ service:
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
----
 {{ range $netID, $netInterface := $.Values.networking.interfaces }}
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: net-{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $netID }}
+  name: net-{{ $.Release.Name }}-{{ $netID }}
 
 
   {{ if eq $netInterface.type "sriov" }}
