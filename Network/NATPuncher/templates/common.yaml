@@ -161,11 +161,13 @@ controllers:
 
             IFACE="eth0"
             
-            ip -d addr show $IFACE
+            ip addr show $IFACE
 
             IP_ADDR="$(ip -4 -o addr show dev "${IFACE}" scope global | awk '{print $4}' | cut -d/ -f1 | head -n1)"
 
             echo "Using ${IFACE} with IPv4 address ${IP_ADDR}"
+
+            upnpc -m "${IFACE}" -l 
 
             {{- range $port := .Values.UPNP.ports }}
             echo "Ensuring UPnP {{ $port.protocol | upper }} {{ $port.externalPort }} -> {{ $port.target }}:{{ $port.internalPort }} via ${IFACE}"
