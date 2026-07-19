@@ -1,58 +1,77 @@
-networking:
-  interfaces:
-    - type: sriov
-      mtu: 9000
-      routing:
-        ospf:
-          enabled: false
-      ipam:
-        address: 10.7.7.61/24
-        routes:
-          - dst: 0.0.0.0/0
-            gw: 10.7.7.1
-      sriov:
-        vlan: 666
-        device: mellanox.com/mlx4_cx3_netdevice
+tunnelers:
+  - name: yvr-tunneler1
+    interfaces:
+      - type: sriov
+        mtu: 9000
+        routing:
+          ospf:
+            enabled: false
+        ipam:
+          address: 10.7.7.61/24
+          routes:
+            - dst: 0.0.0.0/0
+              gw: 10.7.7.1
+        sriov:
+          vlan: 666
+          device: mellanox.com/mlx4_cx3_netdevice
 
-  publicAddress: 66.165.222.101
-
-  routeserver:
-    ipv4Address: 10.1.1.140
-
-
-
-frr:
-  enabled: true
-
-  bgp:
-    enabled: true
-
-  ospf:
-    enabled: true
-
-  multus:
-    network: backend-network
-    enabled: false
-
-peers:
-  - port: '12345'
-    name: example
-    address: 1.1.1.1
-    publicKey: changeme
-    network:
-      localAddress: 10.1.1.1/30
-      remoteAddress: 10.1.1.2/30
-      allowedIPs: 0.0.0.0/0
-      remotePort: '54764'
-
-    server:
-      address: 66.165.222.102
-
-      privateKey: 'inserthere'
-
-      service:
+    frr:
+      enabled: true
+      routerId: 10.7.7.61
+      logLevel: informational
+      image:
+        repository: quay.io/frrouting/frr
+        tag: 10.6.1
+        pullPolicy: IfNotPresent
+      bgp:
         enabled: true
+        asn: 64513
+        maximumPaths: 64
+        redistribute:
+          - connected
+          - ospf
+        networks: []
+        neighbors: []
+      ospf:
+        enabled: true
+        referenceBandwidth: 100
+        redistribute:
+          - connected
+          - bgp
+      ospf6:
+        enabled: false
+      prefixLists: {}
+      rawConfig: ""
 
-        type: ClusterIP
+    tunnels:
+      - name: yvr-tunneler1-gre1
+        type: gre
+        local: 10.7.7.61
+        remote: 10.7.7.62
+        address: 172.31.99.1/30
+        mtu: 1476
+        ttl: 255
+        ospf:
+          area: 0.0.0.0
+          cost: 10
+        routes: []
 
-#        annotations:
+      - name: yvr-tunneler1-vxlan1
+        type: vxlan
+        id: 100
+        local: 10.7.7.61
+        remote: 10.7.7.62
+        dstPort: 4789
+        address: 172.31.100.1/30
+        mtu: 1450
+        learning: true
+        routes: []
+
+      - name: test
+        type: wireguard
+        port: 5123
+        peers:
+          - name: augy-ipad-pro.otg.resolvemy.host
+            publicKey: INSERT_WG_PUBLIC_KEY
+            allowedIPs:
+              - 172.31.98.2/32

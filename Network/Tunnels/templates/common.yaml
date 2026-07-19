@@ -11,18 +11,19 @@ global:
 {{ end }}
 
 controllers:
-  tunneler:
+  {{- range $tunIndex, $tunneler := .Values.tunnelers }}
+  tunneler-{{ $tunneler.name }}:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
     strategy: Recreate
 
-    nameOverride: tunneler
+    forceRename: {{ $.Release.Name }}-{{ $tunneler.name }}
 
     {{- $mtuUsed := false -}}
     {{- $sriovUsed := false -}}
     {{- $sriovResources := dict -}}
-    {{- range $netID, $netInterface := .Values.networking.interfaces }}
+    {{- range $netID, $netInterface := $tunneler.interfaces }}
     {{ if .mtu }}
     {{- $mtuUsed = true }}
     {{- end }}
@@ -30,7 +31,7 @@ controllers:
     {{ $sriovUsed = true }}
     {{- 
       $device := required
-          (printf "networking.interfaces.%d: sriov.device is required for SR-IOV interfaces" $netID)
+          (printf "tunnelers.%s.interfaces.%d: sriov.device is required for SR-IOV interfaces" $tunneler.name $netID)
           $netInterface.sriov.device
     }}
     {{- $currentCount := get $sriovResources $device | default 0 }}
@@ -38,12 +39,11 @@ controllers:
     {{- end }}
     {{- end }}
 
-    {{- if and .Values.networking .Values.networking.interfaces }}
     pod:
       dnsPolicy: None
 
       automountServiceAccountToken: false
-      
+
       dnsConfig:
         nameservers:
           - 1.1.1.1
@@ -51,19 +51,71 @@ controllers:
           - name: ndots
             value: '0'
           - name: edns0
+
+      {{- if $tunneler.interfaces }}
       annotations:
-        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-0'
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $tunneler.name }}-0'
+      {{- end }}
+
+    {{- $ipTunnels := list }}
+    {{- range $tunnel := $tunneler.tunnels }}
+      {{- if or (eq $tunnel.type "gre") (eq $tunnel.type "vxlan") }}
+        {{- $ipTunnels = append $ipTunnels $tunnel }}
+      {{- end }}
+    {{- end }}
+    {{- if $ipTunnels }}
+    initContainers:
+      tunnel-init:
+        image:
+          repository: {{ dig "tunnelInit" "image" "repository" "nicolaka/netshoot" $tunneler }}
+          tag: {{ dig "tunnelInit" "image" "tag" "latest" $tunneler | quote }}
+          pullPolicy: {{ dig "tunnelInit" "image" "pullPolicy" "IfNotPresent" $tunneler }}
+        command:
+          - /bin/sh
+          - -ec
+        args:
+          - |
+            {{- range $tunnel := $ipTunnels }}
+            {{- if eq $tunnel.type "gre" }}
+            ip link add {{ $tunnel.name }} type gre local {{ required (printf "GRE tunnel %q: local is required" $tunnel.name) $tunnel.local }} remote {{ required (printf "GRE tunnel %q: remote is required" $tunnel.name) $tunnel.remote }} ttl {{ default "inherit" $tunnel.ttl }}{{ with $tunnel.key }} key {{ . }}{{ end }}{{ with $tunnel.dev }} dev {{ . }}{{ end }}
+              {{- with $tunnel.address }}
+            ip address add {{ . }} dev {{ $tunnel.name }}
+              {{- end }}
+              {{- with $tunnel.mtu }}
+            ip link set dev {{ $tunnel.name }} mtu {{ . }}
+              {{- end }}
+            ip link set dev {{ $tunnel.name }} up
+            {{- else }}
+            ip link add {{ $tunnel.name }} type vxlan id {{ required (printf "VXLAN tunnel %q: id is required" $tunnel.name) $tunnel.id }} dstport {{ default 4789 $tunnel.dstPort }}{{ with $tunnel.local }} local {{ . }}{{ end }}{{ if $tunnel.remote }} remote {{ $tunnel.remote }}{{ else if $tunnel.group }} group {{ $tunnel.group }}{{ end }}{{ with $tunnel.dev }} dev {{ . }}{{ end }}{{ if and (hasKey $tunnel "learning") (not $tunnel.learning) }} nolearning{{ end }}
+              {{- with $tunnel.address }}
+            ip address add {{ . }} dev {{ $tunnel.name }}
+              {{- end }}
+              {{- with $tunnel.mtu }}
+            ip link set dev {{ $tunnel.name }} mtu {{ . }}
+              {{- end }}
+            ip link set dev {{ $tunnel.name }} up
+            {{- end }}
+            {{- range $route := $tunnel.routes }}
+            ip route replace {{ $route.dst }} dev {{ $tunnel.name }}{{ with $route.via }} via {{ . }}{{ end }}
+            {{- end }}
+            {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - NET_ADMIN
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
     {{- end }}
 
     containers:
+      {{- if not (and (hasKey $tunneler "frr") (hasKey $tunneler.frr "enabled") (not $tunneler.frr.enabled)) }}
       frr:
         image:
-          repository: quay.io/frrouting/frr
-          #
-          # TODO: Get Renovate or similar managing this
-          #
-          tag: '10.6.1'
-          pullPolicy: IfNotPresent
+          repository: {{ dig "frr" "image" "repository" "quay.io/frrouting/frr" $tunneler }}
+          tag: {{ dig "frr" "image" "tag" "10.6.1" $tunneler | quote }}
+          pullPolicy: {{ dig "frr" "image" "pullPolicy" "IfNotPresent" $tunneler }}
 
         {{- if $sriovUsed }}
         resources:
@@ -85,71 +137,16 @@ controllers:
             add: 
               - 'NET_ADMIN'
               - 'SYS_ADMIN'
+      {{- end }}
 
-        # -- Probe configuration
-        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-        # @default -- See below
-        probes:
-          # -- Liveness probe configuration
-          # @default -- See below
-          liveness:
-            # -- Enable the liveness probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own livenessProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default livenessProbe.
-            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              periodSeconds: 10
-              timeoutSeconds: 1
-              failureThreshold: 3
-
-          # -- Redainess probe configuration
-          # @default -- See below
-          readiness:
-            # -- Enable the readiness probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own readinessProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default readinessProbe.
-            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              periodSeconds: 10
-              timeoutSeconds: 1
-              failureThreshold: 3
-
-          # -- Startup probe configuration
-          # @default -- See below
-          startup:
-            # -- Enable the startup probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own startupProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default startupProbe.
-            # If you selected `custom: true`, this field holds the definition of the startupProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              timeoutSeconds: 1
-              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
-              periodSeconds: 5
-              failureThreshold: 30    
-
-        
-      main:
+      {{- $wireguardTunnels := list }}
+      {{- range $tunnel := $tunneler.tunnels }}
+        {{- if eq $tunnel.type "wireguard" }}
+          {{- $wireguardTunnels = append $wireguardTunnels $tunnel }}
+        {{- end }}
+      {{- end }}
+      {{- if $wireguardTunnels }}
+      wireguard:
         image:
           repository: linuxserver/wireguard
           #
@@ -217,35 +214,45 @@ controllers:
           startup:
             # -- Enable the startup probe
             enabled: false
-            # -- Set this to `true` if you wish to specify your own startupProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: TCP
-            # -- The spec field contains the values for the default startupProbe.
-            # If you selected `custom: true`, this field holds the definition of the startupProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              timeoutSeconds: 1
-              ## This means it has a maximum of 5*30=150 seconds to start up before it fails
-              periodSeconds: 5
-              failureThreshold: 30    
+      {{- end }}
+      {{- $frrDisabled := and (hasKey $tunneler "frr") (hasKey $tunneler.frr "enabled") (not $tunneler.frr.enabled) }}
+      {{- if and $ipTunnels $frrDisabled (not $wireguardTunnels) }}
+      tunnel-keeper:
+        image:
+          repository: {{ dig "tunnelInit" "image" "repository" "nicolaka/netshoot" $tunneler }}
+          tag: {{ dig "tunnelInit" "image" "tag" "latest" $tunneler | quote }}
+          pullPolicy: {{ dig "tunnelInit" "image" "pullPolicy" "IfNotPresent" $tunneler }}
+        command:
+          - /bin/sh
+          - -c
+          - exec sleep infinity
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - NET_ADMIN
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
+      {{- end }}
 
+  {{- end }}
 
 
 persistence:
-  frrconfig:
+  {{- range $tunIndex, $tunneler := .Values.tunnelers }}
+  {{- if not (and (hasKey $tunneler "frr") (hasKey $tunneler.frr "enabled") (not $tunneler.frr.enabled)) }}
+  {{ $tunneler.name }}-frrconfig:
     enabled: true
 
     type: configMap
 
-    identifier: 'frrconfig'
+    identifier: {{ $tunneler.name }}-frrconfig
 
     defaultMode: 0755
 
     advancedMounts:
-      tunneler:
+      tunneler-{{ $tunneler.name }}:
         frr:
           - path: /etc/frr/frr.conf
             readOnly: true
@@ -254,29 +261,33 @@ persistence:
           - path: /etc/frr/daemons
             readOnly: true
             subPath: daemons
-
-  tunnelconfig:
+  {{- end }}
+  {{- $wireguardTunnels := list }}
+  {{- range $tunnel := $tunneler.tunnels }}
+    {{- if eq $tunnel.type "wireguard" }}
+      {{- $wireguardTunnels = append $wireguardTunnels $tunnel }}
+    {{- end }}
+  {{- end }}
+  {{- if $wireguardTunnels }}
+  {{ $tunneler.name }}-tunnelconfigs:
     enabled: true
-
     type: configMap
-
-    identifier: 'tunnelerconfig'
-
-    defaultMode: 0755
-
+    identifier: {{ $tunneler.name }}-tunnelconfigs
+    defaultMode: 0600
     advancedMounts:
-      tunneler:
-        main:
-          {{- range $peerIndex, $peer := .Values.peers }}
-          - path: /config/wg_confs/wg-{{ $peerIndex }}.conf
+      tunneler-{{ $tunneler.name }}:
+        wireguard:
+          - path: /config/wg_confs
             readOnly: true
-            subPath: wg-{{ $peerIndex }}.conf
-          {{- end }}
+  {{- end }}
+  {{- end }}
 
 
 configMaps:
-  {{- if .Values.frr.enabled }}
-  frrconfig:
+  {{- range $tunIndex, $tunneler := .Values.tunnelers }}
+
+  {{- if not (and (hasKey $tunneler "frr") (hasKey $tunneler.frr "enabled") (not $tunneler.frr.enabled)) }}
+  {{ $tunneler.name }}-frrconfig:
     enabled: true
 
     data:
@@ -297,9 +308,9 @@ configMaps:
         #
         # The watchfrr, zebra and staticd daemons are always started.
         #
-        bgpd={{ if .Values.frr.bgp.enabled }}yes{{ else }}false{{ end }}
-        ospfd={{ if .Values.frr.ospf.enabled }}yes{{ else }}false{{ end }}
-        ospf6d={{ if .Values.frr.ospf.enabled }}yes{{ else }}false{{ end }}
+        bgpd={{ if dig "frr" "bgp" "enabled" true $tunneler }}yes{{ else }}no{{ end }}
+        ospfd={{ if dig "frr" "ospf" "enabled" true $tunneler }}yes{{ else }}no{{ end }}
+        ospf6d={{ if dig "frr" "ospf6" "enabled" false $tunneler }}yes{{ else }}no{{ end }}
         ripd=no
         ripngd=no
         isisd=no
@@ -370,101 +381,136 @@ configMaps:
         # the normal daemon command is added to this at the end.
 
       frr.conf: |
-        # default to using syslog. /etc/rsyslog.d/45-frr.conf places the log in
-        # /var/log/frr/frr.log
-        #
-        # Note:
-        # FRR's configuration shell, vtysh, dynamically edits the live, in-memory
-        # configuration while FRR is running. When instructed, vtysh will persist the
-        # live configuration to this file, overwriting its contents. If you want to
-        # avoid this, you can edit this file manually before starting FRR, or instruct
-        # vtysh to write configuration to a different file.
-        log syslog informational
+        frr defaults traditional
+        hostname {{ $tunneler.name }}
+        log syslog {{ dig "frr" "logLevel" "informational" $tunneler }}
+        service integrated-vtysh-config
         !
-        ip prefix-list ADV seq 1 permit any
-        ip prefix-list BGP64513-ConnectedAdv seq 10 permit 172.31.242.8/29
-        ip prefix-list PrivateIPSpace seq 10 permit 10.0.0.0/8 ge 8
-        ip prefix-list PrivateIPSpace seq 11 permit 172.16.0.0/12 ge 12
-        ip prefix-list PrivateIPSpace seq 12 permit 192.168.0.0/16 ge 16
+        {{- range $listName, $entries := $tunneler.frr.prefixLists }}
+        {{- range $index, $entry := $entries }}
+        ip prefix-list {{ $listName }} seq {{ default (mul (add $index 1) 10) $entry.seq }} {{ default "permit" $entry.action }} {{ $entry.prefix }}{{ with $entry.ge }} ge {{ . }}{{ end }}{{ with $entry.le }} le {{ . }}{{ end }}
+        {{- end }}
+        {{- end }}
         !
-        debug bgp neighbor-events
-        !
-        ip nht resolve-via-default
-        !
-        route-map OUT permit 10
-          match ip address prefix-list ADV
-        exit
-        !
-        route-map BGP64513-Connected permit 10
-          match ip address prefix-list BGP64513-ConnectedAdv
-        exit
-        !
-        {{- if .Values.frr.ospf.enabled }}
-        {{- range $peerIndex, $peer := .Values.peers }}
-        interface wg-{{ $peerIndex }}
-          ip ospf area 0.0.0.0
+        {{- range $tunnel := $tunneler.tunnels }}
+        {{- if and $tunnel.ospf (not (and (hasKey $tunnel.ospf "enabled") (not $tunnel.ospf.enabled))) }}
+        interface {{ $tunnel.name }}
+          ip ospf area {{ default "0.0.0.0" $tunnel.ospf.area }}
+          {{- with $tunnel.ospf.cost }}
+          ip ospf cost {{ . }}
+          {{- end }}
         exit
         !
         {{- end }}
         {{- end }}
-        !
-        router bgp 64513
-          bgp router-id 10.1.1.140
+        {{- if dig "frr" "bgp" "enabled" true $tunneler }}
+        router bgp {{ dig "frr" "bgp" "asn" 64513 $tunneler }}
+          bgp router-id {{ dig "frr" "routerId" "10.1.1.140" $tunneler }}
           no bgp ebgp-requires-policy
-          bgp disable-ebgp-connected-route-check
           bgp bestpath peer-type multipath-relax
-          bgp graceful-restart stalepath-time 300
+          {{- range $neighbor := $tunneler.frr.bgp.neighbors }}
+          neighbor {{ $neighbor.address }} remote-as {{ $neighbor.asn }}
+          {{- with $neighbor.description }}
+          neighbor {{ $neighbor.address }} description {{ . }}
+          {{- end }}
+          {{- with $neighbor.password }}
+          neighbor {{ $neighbor.address }} password {{ . }}
+          {{- end }}
+          {{- end }}
           !
           address-family ipv4 unicast
-            maximum-paths 64
-            maximum-paths ibgp 64
-            redistribute connected route-map BGP64513-Connected
-            redistribute ospf
+            maximum-paths {{ dig "frr" "bgp" "maximumPaths" 64 $tunneler }}
+            {{- range $protocol := $tunneler.frr.bgp.redistribute }}
+            redistribute {{ $protocol }}
+            {{- end }}
+            {{- range $network := $tunneler.frr.bgp.networks }}
+            network {{ $network }}
+            {{- end }}
+            {{- range $neighbor := $tunneler.frr.bgp.neighbors }}
+            neighbor {{ $neighbor.address }} activate
+            {{- with $neighbor.routeMapIn }}
+            neighbor {{ $neighbor.address }} route-map {{ . }} in
+            {{- end }}
+            {{- with $neighbor.routeMapOut }}
+            neighbor {{ $neighbor.address }} route-map {{ . }} out
+            {{- end }}
+            {{- end }}
           exit-address-family
         exit
         !
-        {{- if .Values.frr.ospf.enabled }}
-        router ospf
-          auto-cost reference-bandwidth 100
-          redistribute static
-          redistribute bgp
-        exit
         {{- end }}
+        {{- if dig "frr" "ospf" "enabled" true $tunneler }}
+        router ospf
+          ospf router-id {{ dig "frr" "routerId" "10.1.1.140" $tunneler }}
+          auto-cost reference-bandwidth {{ dig "frr" "ospf" "referenceBandwidth" 100 $tunneler }}
+          {{- range $protocol := $tunneler.frr.ospf.redistribute }}
+          redistribute {{ $protocol }}
+          {{- end }}
+        exit
         !
+        {{- end }}
+        {{- with $tunneler.frr.rawConfig }}
+        {{ . | nindent 8 }}
+        {{- end }}
         end
   {{- end }}
 
-  tunnelerconfig:
+  {{- $wireguardTunnels := list }}
+  {{- range $tunnel := $tunneler.tunnels }}
+    {{- if eq $tunnel.type "wireguard" }}
+      {{- $wireguardTunnels = append $wireguardTunnels $tunnel }}
+    {{- end }}
+  {{- end }}
+  {{- if $wireguardTunnels }}
+  {{ $tunneler.name }}-tunnelconfigs:
     enabled: true
 
     data:
-      {{- range $peerIndex, $peer := .Values.peers }}
-      wg-{{ $peerIndex }}.conf: |
+      {{- range $tunnelIndex, $tunnel := $wireguardTunnels }}
+      wg-{{ $tunnelIndex }}.conf: |
         [Interface]
-        ListenPort = {{ $peer.port }}
-        Address = {{ $peer.network.localAddress }}
-        PrivateKey = {{ $peer.server.privateKey }}
-        MTU = 1420
-        Table = off
+        ListenPort = {{ required (printf "tunneler %q tunnel %q: port is required" $tunneler.name $tunnel.name) $tunnel.port }}
+        {{- with $tunnel.address }}
+        Address = {{ . }}
+        {{- end }}
+        {{- with $tunnel.privateKey }}
+        PrivateKey = {{ . }}
+        {{- end }}
+        MTU = {{ default 1420 $tunnel.mtu }}
+        Table = {{ default "off" $tunnel.table }}
 
+      {{- range $peerIndex, $peer := $tunnel.peers }}
         [Peer]
         # Name = {{ $peer.name }}
-        PublicKey = {{ $peer.publicKey }}
-        AllowedIPs = {{ $peer.network.remoteAddress }}{{ with $peer.network.allowedIPs }},{{ . }}{{- end }}
-        {{- if and $peer.address }}
-        Endpoint = {{ $peer.address }}:{{ default $peer.port $peer.network.remotePort }}
+        PublicKey = {{ required (printf "tunneler %q tunnel %q peer %d: publicKey is required" $tunneler.name $tunnel.name $peerIndex) $peer.publicKey }}
+        AllowedIPs = {{ required (printf "tunneler %q tunnel %q peer %d: allowedIPs is required" $tunneler.name $tunnel.name $peerIndex) $peer.allowedIPs | join "," }}
+        {{- with $peer.presharedKey }}
+        PresharedKey = {{ . }}
         {{- end }}
+        {{- with $peer.endpoint }}
+        Endpoint = {{ . }}
+        {{- end }}
+        {{- with $peer.persistentKeepalive }}
+        PersistentKeepalive = {{ . }}
+        {{- end }}
+
       {{- end }}
+      {{- end }}
+  {{- end }}
+  {{- end }}
 
 
 service:
-  {{- if and .Values.frr.enabled .Values.frr.bgp.enabled }}
-  bgp:
+  {{- range $tunneler := .Values.tunnelers }}
+  {{- range $tunnel := $tunneler.tunnels }}
+  {{- if and (eq $tunnel.type "wireguard") $tunnel.service $tunnel.service.enabled }}
+  {{ $tunneler.name }}-{{ $tunnel.name }}:
     # -- Enables or disables the service
     enabled: true
+    forceRename: {{ $.Release.Name }}-{{ $tunneler.name }}-{{ $tunnel.name }}
 
     # -- Configure which controller this service should target
-    controller: tunneler
+    controller: tunneler-{{ $tunneler.name }}
 
     # -- Make this the primary service for this controller (used in probes, notes, etc...).
     # If there is more than 1 service targeting the controller, make sure that only 1 service is
@@ -472,75 +518,14 @@ service:
     primary: false
 
     # -- Set the service type
-    type: LoadBalancer
+    type: {{ default "ClusterIP" $tunnel.service.type }}
 
     # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
     # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
-    externalTrafficPolicy:
-
-    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
-    ipFamilyPolicy:
-    # -- The ip families that should be used. Options: IPv4, IPv6
-    ipFamilies: []
-
-    # # -- Provide additional annotations which may be required.
-    annotations:
-      purelb.io/allow-local: 'true'
-      purelb.io/addresses: '{{ $.Values.networking.routeserver.ipv4Address }}'
-
-    # -- Allow adding additional match labels
-    extraSelectorLabels: {}
-
-    ports:
-      bgp:
-        # -- Enables or disables the port
-        enabled: true
-
-        # -- Make this the primary port (used in probes, notes, etc...)
-        # If there is more than 1 service, make sure that only 1 port is marked as primary.
-        primary: false
-
-        # -- The port number
-        port: 179
-
-        # -- Port protocol.
-        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
-        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
-        protocol: TCP
-
-        # -- Specify the appProtocol value for the Service.
-        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
-        appProtocol:
-  {{- end }}
-
-  {{- range $peerIndex, $peer := .Values.peers }}
-  {{- if $peer.server.service.enabled }}
-  wg-{{ $peerIndex }}:
-    # -- Enables or disables the service
-    enabled: true
-
-    # -- Configure which controller this service should target
-    controller: tunneler
-
-    # -- Make this the primary service for this controller (used in probes, notes, etc...).
-    # If there is more than 1 service targeting the controller, make sure that only 1 service is
-    # marked as primary.
-    primary: true
-
-    # -- Set the service type
-    type: LoadBalancer
-
-    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
-    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
-    externalTrafficPolicy:
-
-    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
-    ipFamilyPolicy:
-    # -- The ip families that should be used. Options: IPv4, IPv6
-    ipFamilies: []
-
-    # # -- Provide additional annotations which may be required.
-    {{- with $peer.server.service.annotations }}
+    {{- with $tunnel.service.externalTrafficPolicy }}
+    externalTrafficPolicy: {{ . }}
+    {{- end }}
+    {{- with $tunnel.service.annotations }}
     annotations:
       {{ nindent 6 (toYaml .) }}
     {{- end }}
@@ -558,7 +543,7 @@ service:
         primary: false
 
         # -- The port number
-        port: {{ $peer.port }}
+        port: {{ $tunnel.port }}
 
         # -- Port protocol.
         # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
@@ -570,17 +555,19 @@ service:
         appProtocol:
   {{- end }}
   {{- end }}
+  {{- end }}
 
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
-{{ range $netID, $netInterface := $.Values.networking.interfaces }}
+{{- range $tunIndex, $tunneler := .Values.tunnelers }}
+{{- range $netID, $netInterface := $tunneler.interfaces }}
+---
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: net-{{ $.Release.Name }}-{{ $netID }}
-
+  name: net-{{ $.Release.Name }}-{{ $tunneler.name }}-{{ $netID }}
 
   {{ if eq $netInterface.type "sriov" }}
   annotations:
@@ -614,6 +601,7 @@ spec:
       {{- end }}
     }
 ---
+{{ end }}
 {{ end }}
 
 
