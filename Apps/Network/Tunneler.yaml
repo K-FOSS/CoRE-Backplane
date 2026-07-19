@@ -21,122 +21,111 @@ spec:
               elements:
                 - name: core-dc1-talos-prod
                   values:
-                    hub: false
+                    tunnelers:
+                      - name: yxl-tunneler1
+                        interfaces:
+                          - type: sriov
+                            mtu: 1500
+                            routing:
+                              ospf:
+                                enabled: false
+                            ipam:
+                              address: 100.64.92.37
+                              routes:
+                                - dst: 0.0.0.0/0
+                                  gw: 100.64.92.33
+                            sriov:
+                              vlan: 10
+                              device: mellanox.com/mlx4_cx3_netdevice
 
-                    networking:
-                      interfaces:
-                        - type: sriov
-                          mtu: 1500
-                          routing:
-                            ospf:
-                              enabled: false
-                          ipam:
-                            address: 100.64.92.37
-                            routes: []
+                        frr:
+                          enabled: true
+                          routerId: 10.7.7.61
+                          logLevel: informational
+                          image:
+                            repository: quay.io/frrouting/frr
+                            tag: 10.6.1
+                            pullPolicy: IfNotPresent
+                          bgp:
+                            enabled: false
+                          ospf:
+                            enabled: false
+                          ospf6:
+                            enabled: false
+                          prefixLists: {}
+                          rawConfig: ""
 
-                          sriov:
-                            vlan: 10
-                            device: mellanox.com/mlx4_cx3_netdevice
+                        tunnels:
+                          - name: sbc1-home1
+                            type: wireguard
+                            port: 54764
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Server#PrivateKey>
+                            address: 172.31.243.1/30
+                            peers:
+                              - name: augy-ipad-pro.otg.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#PublicKey>
+                                address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
+                                allowedIPs:
+                                  - 172.31.243.2/32
 
-                    bgp:
-                      enabled: true
-
-                    peers:
-                      - port: '54764'
-                        name: sbc1.home2.yvr.resolvemy.host
-                        address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
-                        publicKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#PublicKey>
-                        server:
-                          address: 66.165.222.103
-
-                          privateKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Server#PrivateKey>
-
-                          service:
-                            enabled: true
-
-                            type: ClusterIP
-
-                            annotations:
-                              purelb.io/allow-shared-ip: tunneler.resolvemy.host
-                              purelb.io/service-group: core-public
-                              purelb.io/allow-local: 'true'
-                              purelb.io/addresses: '66.165.222.103'
-                        network:
-                          localAddress: 172.31.243.1/30
-                          remoteAddress: 172.31.243.2/30
-                          allowedIPs: 0.0.0.0/0
-                          remotePort: '54764'
-
-
-                      - port: '54767'
-                        name: wan-gw2.home1.yvr.resolvemy.host
-                        address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
-                        publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
-                        server:
-                          address: 66.165.222.103
-
-                          privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PrivateKey>
-
-                          service:
-                            enabled: true
-
-                            type: ClusterIP
-
-                            annotations:
-                              purelb.io/allow-shared-ip: tunneler.resolvemy.host
-                              purelb.io/service-group: core-public
-                              purelb.io/allow-local: 'true'
-                              purelb.io/addresses: '66.165.222.103'
-                        network:
-                          localAddress: 172.31.244.9/30
-                          remoteAddress: 172.31.244.10/30
-                          allowedIPs: 0.0.0.0/0
-                          remotePort: '54767'
-                    network:
-                      publicAddress: 66.165.222.103
+                          - name: wan-gw2-yvr-home2
+                            type: wireguard
+                            port: 54767
+                            address: 172.31.244.9
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PrivateKey>
+                            peers:
+                              - name: augy-ipad-pro.otg.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
+                                allowedIPs:
+                                  - 172.31.244.10/32
 
                 - name: core-home1-talos-prod
                   values:
-                    hub: false
+                    tunnelers:
+                      - name: yvr-tunneler1
+                        interfaces:
+                          - type: sriov
+                            mtu: 1500
+                            routing:
+                              ospf:
+                                enabled: false
+                            ipam:
+                              address: 10.0.0.20/24
+                              routes:
+                                - dst: 0.0.0.0/0
+                                  gw: 10.0.0.1
+                            sriov:
+                              vlan: 150
+                              device: intel.com/intel_x540_netdevice_port0
 
-                    networking:
-                      interfaces:
-                        - type: sriov
-                          mtu: 1500
-                          routing:
-                            ospf:
-                              enabled: false
-                          ipam:
-                            address: 10.0.0.20/24
-                            routes:
-                              - dst: 0.0.0.0/0
-                                gw: 10.0.0.1
-
-                          sriov:
-                            vlan: 150
-                            device: intel.com/intel_x540_netdevice_port0
-
-                    bgp:
-                      enabled: true
-
-                    peers:
-                      - port: '10010'
-                        name: wan-gw2.home1.yvr.resolvemy.host
-                        publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
-                        server:
-                          address: 10.1.1.84
-
-                          privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1#PrivateKey>
-
-                          service:
+                        frr:
+                          enabled: true
+                          routerId: 10.7.7.61
+                          logLevel: informational
+                          image:
+                            repository: quay.io/frrouting/frr
+                            tag: 10.6.1
+                            pullPolicy: IfNotPresent
+                          bgp:
                             enabled: false
-                        network:
-                          localAddress: 172.31.244.9/30
-                          remoteAddress: 172.31.244.10/30
-                          allowedIPs: 0.0.0.0/0
+                          ospf:
+                            enabled: false
+                          ospf6:
+                            enabled: false
+                          prefixLists: {}
+                          rawConfig: ""
 
-                    network:
-                      publicAddress: 66.165.222.103
+                        tunnels:
+                          - name: 
+                            type: wireguard
+                            port: 10010
+                            address: 172.31.244.9
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1#PrivateKey>
+                            peers:
+                              - name: augy-ipad-pro.otg.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
+                                allowedIPs:
+                                  - 172.31.244.10/32
 
           - clusters:
               selector:
@@ -179,33 +168,18 @@ spec:
               value: |-
                 env: {{ .values.environment }}
 
-                hub: {{ .values.hub }}
-
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
-                peers:
-                {{ nindent 2 (toYaml .values.peers) }}
+                tunnelers:
+                {{ nindent 2 (toYaml .values.tunnelers) }}
 
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
+                zone: {{ .values.zone }}
 
-                frr:
-                  bgp:
-                    enabled: {{ .values.bgp.enabled }}
-                  
-                  ospf:
-                    enabled: true
-
-                networking:
-                  publicAddress: {{ .values.network.publicAddress }}
-
-                  {{ nindent 2 (toYaml .values.networking) }}
-
-                  routeserver:
-                    ipv4Address: 10.1.1.140
 
       destination:
         server: '{{ .server }}'
