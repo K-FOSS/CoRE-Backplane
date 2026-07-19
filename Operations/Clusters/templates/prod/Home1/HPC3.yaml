@@ -59,78 +59,67 @@ spec:
         rx: 4096
         tx: 4096
   networks:
-    - type: link
-      model: new
-
-      macAddress: 00:30:93:0c:05:12
-      bridge: false
-
-      addresses:
-        - 172.31.193.22/24
+    - addresses:
+        - 172.31.193.21/24
         - 2604:3d08:d174:2000::22/122
-
-      routes:
-        - gateway: 2604:3D08:D174:2000::1C
-          metric: 1024
-          network: ::/0
-
-
-      mtu: 9000
-      routing:
-        ospf:
-          area: 0.0.0.0
-          enabled: false
-          type: broadcast
-      static: true
-      dns:
-        - 1.1.1.1
-
-    - macAddress: 38:c9:86:42:ff:90
-      bridge: false
-
-      model: new
-
-      addresses: []
-
-      routes:
-        - gateway: 172.31.193.254
-          metric: 1024
-          network: 0.0.0.0/0
-
-      mtu: 9000
-      routing:
-        ospf:
-          area: 0.0.0.0
-          enabled: false
-          type: broadcast
-
-      type: link
-
-      static: true
-      dns:
-        - 1.1.1.1
-
-    - type: link
-
-      addresses:
-        - 172.31.241.26/30
-
-      model: new
       bridge: false
       dns:
         - 1.1.1.1
         - 1.0.0.1
         - 8.8.8.8
-      macAddress: 00:30:93:0c:05:13
+      macAddress: 00:30:93:0c:05:12
+      model: new
       mtu: 9000
-      routes: []
-      static: true
+      routes:
+        - gateway: 2604:3D08:D174:2000::1C
+          metric: 1024
+          network: '::/0'
+        - gateway: 172.31.193.254
+          metric: 1024
+          network: 0.0.0.0/0
       routing:
         ospf:
           area: 0.0.0.0
-          enabled: true
-          type: point-to-point
-  
+          enabled: false
+          type: broadcast
+      static: true
+      type: link
+
+    - addresses:
+        - 172.29.241.30/30
+      bridge: false
+      dns:
+        - 1.1.1.1
+        - 1.0.0.1
+        - 8.8.8.8
+      macAddress: 38:c9:86:42:ff:90
+      model: new
+      mtu: 9000
+      routing:
+        ospf:
+          area: 0.0.0.0
+          enabled: false
+          type: broadcast
+      static: true
+      type: link
+
+    - addresses:
+        - 172.31.241.26/30
+      bridge: false
+      dns:
+        - 1.1.1.1
+      macAddress: 00:30:93:0c:05:13
+      model: new
+      mtu: 9000
+      routes: []
+      routing:
+        bgp:
+          enabled: false
+        ospf:
+          enabled: false
+      static: true
+      type: link
+
   sysctls:
     - name: net.ipv4.tcp_max_syn_backlog
       value: '262144'
@@ -190,11 +179,8 @@ spec:
     talos:
       kernel:
         modules:
-          - name: vfio-pci
           - name: dm_multipath
           - name: dm_round-robin
-          - name: mpls_router
-          - name: mpls_iptunnel
           - name: mpls_gso
 
       extensions:
