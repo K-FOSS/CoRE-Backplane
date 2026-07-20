@@ -63,8 +63,26 @@ controllers:
           - name: edns0
 
       {{- if $tunneler.interfaces }}
+      {{- $defaultInterface := index $tunneler.interfaces 0 }}
+      {{- $defaultNetwork := dict "name" (printf "%s/net-%s-%s-0" $.Release.Namespace $.Release.Name $tunneler.name) }}
+      {{- with $defaultInterface.macAddress }}
+      {{- $_ := set $defaultNetwork "mac" . }}
+      {{- end }}
+      {{- $additionalNetworks := list }}
+      {{- range $netID, $netInterface := $tunneler.interfaces }}
+      {{- if gt $netID 0 }}
+      {{- $network := dict "name" (printf "%s/net-%s-%s-%d" $.Release.Namespace $.Release.Name $tunneler.name $netID) }}
+      {{- with $netInterface.macAddress }}
+      {{- $_ := set $network "mac" . }}
+      {{- end }}
+      {{- $additionalNetworks = append $additionalNetworks $network }}
+      {{- end }}
+      {{- end }}
       annotations:
-        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $tunneler.name }}-0'
+        v1.multus-cni.io/default-network: {{ $defaultNetwork | toJson | quote }}
+        {{- if $additionalNetworks }}
+        k8s.v1.cni.cncf.io/networks: {{ $additionalNetworks | toJson | quote }}
+        {{- end }}
       {{- end }}
 
     {{- $ipTunnels := list }}

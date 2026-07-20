@@ -5,6 +5,8 @@ tunnelers:
     affinity: {}
     interfaces:
       - type: sriov
+        # Optional MAC address requested from Multus for the default network.
+        macAddress: 02:00:00:00:00:01
         mtu: 9000
         routing:
           ospf:
@@ -17,6 +19,15 @@ tunnelers:
         sriov:
           vlan: 666
           device: mellanox.com/mlx4_cx3_netdevice
+      # Additional interfaces are attached as Multus secondary networks.
+      # - type: sriov
+      #   macAddress: 02:00:00:00:00:02
+      #   mtu: 9000
+      #   ipam:
+      #     address: 10.7.8.61/24
+      #   sriov:
+      #     vlan: 667
+      #     device: mellanox.com/mlx4_cx3_netdevice
 
     frr:
       enabled: true
