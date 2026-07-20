@@ -88,6 +88,15 @@ spec:
                           labels:
                             tunneler.resolvemy.host/cluster: yvr-home2
                         affinity:
+                          nodeAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                              nodeSelectorTerms:
+                                - matchExpressions:
+                                    - key: kubernetes.io/hostname
+                                      operator: In
+                                      values:
+                                        - hpc3
+                                        - srv2
                           podAntiAffinity:
                             requiredDuringSchedulingIgnoredDuringExecution:
                             - labelSelector:
@@ -155,6 +164,16 @@ spec:
                           labels:
                             tunneler.resolvemy.host/cluster: yvr-home2
                         affinity:
+                          nodeAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                              nodeSelectorTerms:
+                                - matchExpressions:
+                                    - key: kubernetes.io/hostname
+                                      operator: In
+                                      values:
+                                        - hpc3
+                                        - srv2
+
                           podAntiAffinity:
                             requiredDuringSchedulingIgnoredDuringExecution:
                             - labelSelector:
