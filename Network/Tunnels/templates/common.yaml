@@ -440,14 +440,12 @@ configMaps:
           {{- if $ospf.passive }}
           ip ospf passive
           {{- end }}
-
           {{- end }}
-          
           {{- end }}
         exit
         !
-        {{ end }}
-        {{ end }} 
+        {{- end }}
+        {{- end }} 
         !
         {{- range $tunnel := $tunneler.tunnels }}
         {{- if and $tunnel.ospf (not (and (hasKey $tunnel.ospf "enabled") (not $tunnel.ospf.enabled))) }}
