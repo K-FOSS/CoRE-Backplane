@@ -67,24 +67,6 @@ psmdb-db:
 
   tls:
     mode: disabled
-  #   # 90 days in hours
-  #   certValidityDuration: 2160h
-  #   allowInvalidCertificates: true
-  #   issuerConf:
-  #     name: special-selfsigned-issuer
-  #     kind: ClusterIssuer
-  #     group: cert-manager.io
-  secrets:
-    # If you set users secret here the operator will use existing one or generate random values
-    # If not set the operator generates the default secret with name <cluster_name>-secrets
-    # users: my-cluster-name-secrets
-    # encryptionKey: my-cluster-name-mongodb-encryption-key
-    #ssl: myloginspace-default-certificates
-    # sslInternal: my-cluster-name-ssl-internal
-    # keyFile: my-cluster-name-mongodb-keyfile
-    # vault: my-cluster-name-vault
-    #ldapSecret: my-ldap-secret
-    # sse: my-cluster-name-sse
 
   pmm:
     enabled: false
@@ -99,27 +81,7 @@ psmdb-db:
       name: rs0
       size: 3
 
-      affinity: null
-
       priorityClass: 'tier2-priority'
-
-      resources: null
-
-
-      # storage:
-      #   engine: wiredTiger
-      #   wiredTiger:
-      #     engineConfig:
-      #       cacheSizeRatio: 0.5
-      #       directoryForIndexes: false
-      #       journalCompressor: snappy
-      #     collectionConfig:
-      #       blockCompressor: snappy
-      #     indexConfig:
-      #       prefixCompression: true
-      #   inMemory:
-      #     engineConfig:
-      #        inMemorySizeRatio: 0.5
 
       expose:
         enabled: true
@@ -147,71 +109,8 @@ psmdb-db:
     balancer:
       enabled: true
 
-
-  # users:
-  # - name: my-user
-  #   db: admin
-  #   passwordSecretRef:
-  #     name: my-user-password
-  #     key: my-user-password-key
-  #   roles:
-  #     - name: clusterAdmin
-  #       db: admin
-  #     - name: userAdminAnyDatabase
-  #       db: admin
-  # - name: my-usr
-  #   db: admin
-  #   passwordSecretRef:
-  #     name: my-user-pwd
-  #     key: my-user-pwd-key
-  #   roles:
-  #     - name: dbOwner
-  #       db: sometest
-
-  #  roles:
-  #    - role: myClusterwideAdmin
-  #      db: admin
-  #      privileges:
-  #        - resource:
-  #            cluster: true
-  #          actions:
-  #            - addShard
-  #        - resource:
-  #            db: config
-  #            collection: ''
-  #          actions:
-  #            - find
-  #            - update
-  #            - insert
-  #            - remove
-  #      roles:
-  #        - role: read
-  #          db: admin
-  #    - role: my-role
-  #      db: myDb
-  #      privileges:
-  #        - resource:
-  #            db: ''
-  #            collection: ''
-  #          actions:
-  #            - find
-  #      authenticationRestrictions:
-  #        - clientSource:
-  #            - 127.0.0.1
-  #          serverAddress:
-  #            - 127.0.0.1
-
-
   backup:
     enabled: true
-
-    # resources:
-    #   limits:
-    #     cpu: "300m"
-    #     memory: "1.2G"
-    #   requests:
-    #     cpu: "300m"
-    #     memory: "1G"
     storages:
       core-minio:
         type: s3
@@ -224,27 +123,6 @@ psmdb-db:
     pitr:
       enabled: false
       oplogOnly: false
-      # oplogSpanMin: 10
-      # compressionType: gzip
-      # compressionLevel: 6
-    # configuration:
-    #   backupOptions:
-    #     priority:
-    #       "localhost:28019": 2.5
-    #       "localhost:27018": 2.5
-    #     timeouts:
-    #       startingStatus: 33
-    #     oplogSpanMin: 10
-    #   restoreOptions:
-    #     batchSize: 500
-    #     numInsertionWorkers: 10
-    #     numDownloadWorkers: 4
-    #     maxDownloadBufferMb: 0
-    #     downloadChunkMb: 32
-    #     mongodLocation: /usr/bin/mongo
-    #     mongodLocationMap:
-    #       "node01:2017": /usr/bin/mongo
-    #       "node03:27017": /usr/bin/mongo
     tasks:
       - name: daily-s3-minio
         enabled: true
@@ -252,33 +130,3 @@ psmdb-db:
         keep: 3
         storageName: core-minio
         compressionType: gzip
-    # - name: weekly-s3-us-west
-    #   enabled: false
-    #   schedule: "0 0 * * 0"
-    #   keep: 5
-    #   storageName: s3-us-west
-    #   compressionType: gzip
-    # - name: weekly-s3-us-west-physical
-    #   enabled: false
-    #   schedule: "0 5 * * 0"
-    #   keep: 5
-    #   type: physical
-    #   storageName: s3-us-west
-    #   compressionType: gzip
-    #   compressionLevel: 6
-
-  # If you set systemUsers here the secret will be constructed by helm with these values
-  # systemUsers:
-  #   MONGODB_BACKUP_USER: backup
-  #   MONGODB_BACKUP_PASSWORD: backup123456
-  #   MONGODB_DATABASE_ADMIN_USER: databaseAdmin
-  #   MONGODB_DATABASE_ADMIN_PASSWORD: databaseAdmin123456
-  #   MONGODB_CLUSTER_ADMIN_USER: clusterAdmin
-  #   MONGODB_CLUSTER_ADMIN_PASSWORD: clusterAdmin123456
-  #   MONGODB_CLUSTER_MONITOR_USER: clusterMonitor
-  #   MONGODB_CLUSTER_MONITOR_PASSWORD: clusterMonitor123456
-  #   MONGODB_USER_ADMIN_USER: userAdmin
-  #   MONGODB_USER_ADMIN_PASSWORD: userAdmin123456
-  #   PMM_SERVER_API_KEY: apikey
-  #   # PMM_SERVER_USER: admin
-  #   # PMM_SERVER_PASSWORD: admin
