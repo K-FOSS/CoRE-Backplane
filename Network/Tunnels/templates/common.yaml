@@ -111,6 +111,8 @@ controllers:
           - -c
           - |
             ethtool eth0
+            ethtool -k eth0
+            ethtool -K eth0 rx-udp-gro-forwarding on
             {{- if $mtuNics }}
             {{- range $nic := $mtuNics }}
             ip link set dev {{ $nic.interface }} mtu {{ $nic.mtu }}
