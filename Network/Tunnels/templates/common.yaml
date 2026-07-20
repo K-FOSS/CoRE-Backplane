@@ -63,15 +63,10 @@ controllers:
           - name: edns0
 
       {{- if $tunneler.interfaces }}
-      {{- $defaultInterface := index $tunneler.interfaces 0 }}
-      {{- $defaultNetwork := dict "name" (printf "net-%s-%s-0" $.Release.Name $tunneler.name) "namespace" $.Release.Namespace }}
-      {{- with $defaultInterface.macAddress }}
-      {{- $_ := set $defaultNetwork "mac" . }}
-      {{- end }}
       {{- $additionalNetworks := list }}
       {{- range $netID, $netInterface := $tunneler.interfaces }}
       {{- if gt $netID 0 }}
-      {{- $network := dict "name" (printf "net-%s-%s-%d" $.Release.Name $tunneler.name $netID) "namespace" $.Release.Namespace }}
+      {{- $network := dict "name" (printf "net-%s-%s-%d" $.Release.Name $tunneler.name $netID) "interface" (printf "eth%d" $netID) }}
       {{- with $netInterface.macAddress }}
       {{- $_ := set $network "mac" . }}
       {{- end }}
@@ -79,7 +74,7 @@ controllers:
       {{- end }}
       {{- end }}
       annotations:
-        v1.multus-cni.io/default-network: {{ $defaultNetwork | toJson | quote }}
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $tunneler.name }}-0'
         {{- if $additionalNetworks }}
         k8s.v1.cni.cncf.io/networks: {{ $additionalNetworks | toJson | quote }}
         {{- end }}
@@ -419,6 +414,40 @@ configMaps:
         ip prefix-list {{ $listName }} seq {{ default (mul (add $index 1) 10) $entry.seq }} {{ default "permit" $entry.action }} {{ $entry.prefix }}{{ with $entry.ge }} ge {{ . }}{{ end }}{{ with $entry.le }} le {{ . }}{{ end }}
         {{- end }}
         {{- end }}
+        !
+        {{- range $netId, $netInterface := $tunneler.interfaces }}
+        !
+        {{- if $netInterface.routing }}
+        interface eth{{ $netId }}
+          {{- with $ospf := $netInterface.routing.ospf }}
+          {{- if $ospf.enabled }}
+          ip ospf area {{ $ospf.area }}
+          ipv6 ospf6 area {{ $ospf.area }}
+          ip ospf network {{ default "broadcast" $ospf.type }}
+          
+          {{- with $ospf.priority }}
+          ip ospf priority {{ . }}
+          {{- end }}
+
+          {{- with $ospf.hello }}
+          ip ospf hello-interval {{ . }}
+          {{- end }}
+
+          {{- with $ospf.dead }}
+          ip ospf dead-interval {{ . }}
+          {{- end }}
+
+          {{- if $ospf.passive }}
+          ip ospf passive
+          {{- end }}
+
+          {{- end }}
+          
+          {{- end }}
+        exit
+        !
+        {{ end }}
+        {{ end }} 
         !
         {{- range $tunnel := $tunneler.tunnels }}
         {{- if and $tunnel.ospf (not (and (hasKey $tunnel.ospf "enabled") (not $tunnel.ospf.enabled))) }}
