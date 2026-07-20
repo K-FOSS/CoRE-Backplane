@@ -20,13 +20,9 @@ controllers:
 
     forceRename: {{ $.Release.Name }}-{{ $tunneler.name }}
 
-    {{- $mtuUsed := false -}}
     {{- $sriovUsed := false -}}
     {{- $sriovResources := dict -}}
     {{- range $netID, $netInterface := $tunneler.interfaces }}
-    {{ if .mtu }}
-    {{- $mtuUsed = true }}
-    {{- end }}
     {{- if eq $netInterface.type "sriov" }}
     {{ $sriovUsed = true }}
     {{- 
@@ -86,8 +82,43 @@ controllers:
         {{- $ipTunnels = append $ipTunnels $tunnel }}
       {{- end }}
     {{- end }}
-    {{- if $ipTunnels }}
+
+    {{- $mtuNics := list }}
+    {{- range $netID, $interface := $tunneler.interfaces }}
+      {{- if .mtu  }}
+        {{- $mtuNics = append $mtuNics (dict "interface" (printf "eth%d" $netID) "mtu" .mtu) }}
+      {{- end }}
+    {{- end }}
+
     initContainers:
+      nicconfig:
+        image:
+          repository: {{ dig "nicConfig" "image" "repository" "nicolaka/netshoot" $tunneler }}
+          tag: {{ dig "nicConfig" "image" "tag" "latest" $tunneler | quote }}
+          pullPolicy: {{ dig "nicConfig" "image" "pullPolicy" "IfNotPresent" $tunneler }}
+
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            add:
+              - NET_ADMIN
+        
+        command:
+          - /bin/sh
+          - -c
+          - |
+            ethtool eth0
+            {{- if $mtuNics }}
+            {{- range $nic := $mtuNics }}
+            ip link set dev {{ $nic.interface }} mtu {{ $nic.mtu }}
+            ip link show {{ $nic.interface }}
+            {{- end }}
+            {{- end }}
+
+      {{- if $ipTunnels }}
       tunnel-init:
         image:
           repository: {{ dig "tunnelInit" "image" "repository" "nicolaka/netshoot" $tunneler }}
@@ -130,7 +161,7 @@ controllers:
           runAsNonRoot: false
           seccompProfile:
             type: RuntimeDefault
-    {{- end }}
+      {{- end }}
 
     containers:
       {{- if not (and (hasKey $tunneler "frr") (hasKey $tunneler.frr "enabled") (not $tunneler.frr.enabled)) }}
