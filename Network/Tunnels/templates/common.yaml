@@ -508,6 +508,7 @@ configMaps:
         router ospf6
           ospf router-id {{ dig "frr" "routerId" "10.1.1.140" $tunneler }}
           auto-cost reference-bandwidth {{ dig "frr" "ospf6" "referenceBandwidth" 100000 $tunneler }}
+          graceful-restart
           {{- range $protocol := $tunneler.frr.ospf6.redistribute }}
           redistribute {{ $protocol }}
           {{- end }}
