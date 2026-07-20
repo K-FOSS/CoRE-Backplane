@@ -602,6 +602,7 @@ configMaps:
         {{- end }}
         MTU = {{ default 1420 $tunnel.mtu }}
         Table = {{ default "off" $tunnel.table }}
+        PostUp = tc qdisc replace dev %i root fq
 
       {{- range $peerIndex, $peer := $tunnel.peers }}
         [Peer]
