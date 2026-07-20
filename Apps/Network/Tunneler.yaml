@@ -139,7 +139,7 @@ spec:
                           rawConfig: ""
 
                         tunnels:
-                          - name: 
+                          - name: remote-man
                             type: wireguard
                             port: 10010
                             address: 172.31.244.9
@@ -163,6 +163,17 @@ spec:
                               topologyKey: kubernetes.io/hostname
                               namespaceSelector: {}
                         interfaces:
+                          - type: sriov
+                            mtu: 1500
+                            routing:
+                              ospf:
+                                enabled: false
+                            ipam:
+                              address: 10.0.0.21/24
+                            sriov:
+                              vlan: 150
+                              device: intel.com/intel_x540_netdevice_port1
+
                           - type: sriov
                             mtu: 9000
                             routing:
@@ -192,16 +203,16 @@ spec:
                           rawConfig: ""
 
                         tunnels:
-                          - name: 
+                          - name: remote-man
                             type: wireguard
-                            port: 10010
-                            address: 172.31.244.9
+                            port: 10011
+                            address: 172.21.244.9
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1#PrivateKey>
                             peers:
                               - name: augy-ipad-pro.otg.resolvemy.host
                                 publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
                                 allowedIPs:
-                                  - 172.31.244.10/32
+                                  - 172.21.244.10/32
 
           - clusters:
               selector:
