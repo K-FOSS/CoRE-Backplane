@@ -23,6 +23,7 @@ spec:
                   values:
                     tunnelers:
                       - name: yxl-tunneler1
+                        
                         interfaces:
                           - type: sriov
                             mtu: 1500
@@ -83,6 +84,17 @@ spec:
                   values:
                     tunnelers:
                       - name: yvr-tunneler1
+                        pod:
+                          labels:
+                            tunneler.resolvemy.host/cluster: yvr-home2
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchLabels:
+                                  tunneler.resolvemy.host/cluster: yvr-home2
+                              topologyKey: kubernetes.io/hostname
+                              namespaceSelector: {}
                         interfaces:
                           - type: sriov
                             mtu: 1500
@@ -97,6 +109,66 @@ spec:
                             sriov:
                               vlan: 150
                               device: intel.com/intel_x540_netdevice_port0
+
+                          - type: sriov
+                            mtu: 9000
+                            routing:
+                              ospf:
+                                enabled: false
+                            sriov:
+                              vlan: 2126
+                              device: intel.com/intel_x540_netdevice_port1
+
+                        frr:
+                          enabled: true
+                          routerId: 10.7.7.61
+                          logLevel: informational
+                          image:
+                            repository: quay.io/frrouting/frr
+                            tag: 10.6.1
+                            pullPolicy: IfNotPresent
+                          bgp:
+                            enabled: false
+                          ospf:
+                            enabled: false
+                          ospf6:
+                            enabled: false
+                          prefixLists: {}
+                          rawConfig: ""
+
+                        tunnels:
+                          - name: 
+                            type: wireguard
+                            port: 10010
+                            address: 172.31.244.9
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1#PrivateKey>
+                            peers:
+                              - name: augy-ipad-pro.otg.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PublicKey>
+                                allowedIPs:
+                                  - 172.31.244.10/32
+
+                      - name: yvr-tunneler2
+                        pod:
+                          labels:
+                            tunneler.resolvemy.host/cluster: yvr-home2
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchLabels:
+                                  tunneler.resolvemy.host/cluster: yvr-home2
+                              topologyKey: kubernetes.io/hostname
+                              namespaceSelector: {}
+                        interfaces:
+                          - type: sriov
+                            mtu: 9000
+                            routing:
+                              ospf:
+                                enabled: false
+                            sriov:
+                              vlan: 2126
+                              device: intel.com/intel_x540_netdevice_port1
 
                         frr:
                           enabled: true

@@ -44,6 +44,16 @@ controllers:
 
       automountServiceAccountToken: false
 
+      {{- with (dig "pod" "labels" dict $tunneler) }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with $tunneler.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
       dnsConfig:
         nameservers:
           - 1.1.1.1
