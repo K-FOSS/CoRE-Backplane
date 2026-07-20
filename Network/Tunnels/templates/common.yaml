@@ -83,10 +83,20 @@ controllers:
       {{- end }}
     {{- end }}
 
+    
+
     {{- $mtuNics := list }}
+    {{- $offloadNics := list }}
+    {{- $ringNics := list }}
     {{- range $netID, $interface := $tunneler.interfaces }}
       {{- if .mtu  }}
         {{- $mtuNics = append $mtuNics (dict "interface" (printf "eth%d" $netID) "mtu" .mtu) }}
+      {{- end }}
+      {{- if .offload }}
+        {{- $offloadNics = append $offloadNics (dict "interface" (printf "eth%d" $netID) "offload" .offload) }}
+      {{- end }}
+      {{- if .rings }}
+        {{- $ringNics = append $ringNics (dict "interface" (printf "eth%d" $netID) "rings" .rings) }}
       {{- end }}
     {{- end }}
 
@@ -135,12 +145,26 @@ controllers:
           - -c
           - |
             ethtool eth0
-            ethtool -k eth0
-            ethtool -K eth0 rx-udp-gro-forwarding on
+            {{- if $ringNics }}
+            {{- range $nic := $ringNics }}
+            ethtool -g {{ $nic.interface }}
+            {{- range $ring, $ringValue := $nic.rings }}
+            ethtool -G {{ $nic.interface }} {{ $ring }} {{ $ringValue }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
+            {{- if $offloadNics }}
+            {{- range $nic := $offloadNics }}
+            ethtool -k {{ $nic.interface }}
+            {{- range $offload, $offloadValue := $nic.offload }}
+            ethtool -K {{ $nic.interface }} {{ $offload }} {{ $offloadValue }}
+            {{- end }}
+            {{- end }}
+            {{- end }}
             {{- if $mtuNics }}
             {{- range $nic := $mtuNics }}
             ip link set dev {{ $nic.interface }} mtu {{ $nic.mtu }}
-            ip link show {{ $nic.interface }}
+            ip -d link show {{ $nic.interface }}
             {{- end }}
             {{- end }}
 

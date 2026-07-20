@@ -3,11 +3,22 @@ tunnelers:
     pod:
       labels: {}
     affinity: {}
+    # nicconfig:
+    #   image:
+    #     repository: nicolaka/netshoot
+    #     tag: latest
+    #     pullPolicy: IfNotPresent
+      
     interfaces:
       - type: sriov
         # Optional MAC address requested from Multus for the default network.
         macAddress: 02:00:00:00:00:01
         mtu: 9000
+        rings:
+          tx: 1024
+          rx: 1024
+        offload:
+          rx-udp-gro-forwarding: 'on'
         routing:
           ospf:
             enabled: false
@@ -20,14 +31,14 @@ tunnelers:
           vlan: 666
           device: mellanox.com/mlx4_cx3_netdevice
       # Additional interfaces are attached as Multus secondary networks.
-      # - type: sriov
-      #   macAddress: 02:00:00:00:00:02
-      #   mtu: 9000
-      #   ipam:
-      #     address: 10.7.8.61/24
-      #   sriov:
-      #     vlan: 667
-      #     device: mellanox.com/mlx4_cx3_netdevice
+      - type: sriov
+        macAddress: 02:00:00:00:00:02
+        mtu: 9000
+        ipam:
+          address: 10.7.8.61/24
+        sriov:
+          vlan: 667
+          device: mellanox.com/mlx4_cx3_netdevice
 
     frr:
       enabled: true
@@ -53,7 +64,7 @@ tunnelers:
           - connected
           - bgp
       ospf6:
-        enabled: false
+        enabled: true
       prefixLists: {}
       rawConfig: ""
 
@@ -87,5 +98,6 @@ tunnelers:
         peers:
           - name: augy-ipad-pro.otg.resolvemy.host
             publicKey: INSERT_WG_PUBLIC_KEY
+            address: 10.1.1.2
             allowedIPs:
               - 172.31.98.2/32
