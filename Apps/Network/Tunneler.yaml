@@ -63,17 +63,28 @@ spec:
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Server#PrivateKey>
                             address: 172.31.243.1/30
                             peers:
-                              - name: augy-ipad-pro.otg.resolvemy.host
+                              - name: sbc1-home1
                                 publicKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#PublicKey>
-                                address: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#Address>
                                 allowedIPs:
                                   - 172.31.243.2/32
+
+                          - name: yvr-home2-tunneler1
+                            type: wireguard
+                            port: 20011
+                            address: 172.29.10.1/30
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler1#PrivateKey>
+                            peers:
+                              - name: tunneler1.home2.yvr.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1/RemoteManagement#AugyiPADPub>
+                                allowedIPs:
+                                  - 172.29.10.2/32
+                                  - 0.0.0.0/0
 
                           - name: wan-gw2-yvr-home2
                             type: wireguard
                             port: 54767
                             address: 172.31.244.9
-                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/CoRE-Prod/Home1-WANGW2#PrivateKey>
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/Home2-WANGW2#PrivateKey>
                             peers:
                               - name: augy-ipad-pro.otg.resolvemy.host
                                 publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1/RemoteManagement#AugyiPADPub>
@@ -165,6 +176,18 @@ spec:
                                 endpoint: 10.8.2.2:17011
                                 allowedIPs:
                                   - 172.20.1.1/32
+
+                          - name: yxl-dc1-tunneler1
+                            type: wireguard
+                            port: 20011
+                            address: 172.29.10.2/30
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1/YXL-DC1-Tunneler1#PrivateKey>
+                            peers:
+                              - name: tunneler1.home2.yvr.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1/RemoteManagement#AugyiPADPub>
+                                allowedIPs:
+                                  - 172.29.10.1/32
+                                  - 0.0.0.0/0
 
                           - name: remote-man
                             type: wireguard
