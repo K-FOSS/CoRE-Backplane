@@ -209,6 +209,18 @@ spec:
                       rs0:
                         ipAddress: 172.29.255.100
 
+                        pod:
+                          labels:
+                            rs.resolvemy.host/cluster: '172.29.255.1'
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchLabels:
+                                  rs.resolvemy.host/cluster: '172.29.255.1'
+                              topologyKey: kubernetes.io/hostname
+                              namespaceSelector: {}
+
                         prefixLists:
                           ipv4:
                             - name: YVR-WAN
@@ -272,7 +284,7 @@ spec:
                                     gw: 172.31.245.1
                               sriov:
                                 vlan: 50
-                                device: intel.com/intel_x540_netdevice
+                                device: intel.com/intel_x540_netdevice_port0
 
                         ospf:
                           enabled: true
@@ -309,6 +321,15 @@ spec:
 
                                   - name: yvr-rrs
                                     action: activate
+
+                                  - name: yvr-wan-gw
+                                    action: activate
+
+                                  - name: yvr-wan-gw
+                                    action: route-reflector-client
+
+                                  - name: yvr-wan-gw
+                                    action: addpath-tx-all-paths
 
                               vpn:
                                 neighbor:
@@ -426,6 +447,18 @@ spec:
 
                       rs1:
                         ipAddress: 172.29.255.99
+
+                        pod:
+                          labels:
+                            rs.resolvemy.host/cluster: '172.29.255.1'
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                            - labelSelector:
+                                matchLabels:
+                                  rs.resolvemy.host/cluster: '172.29.255.1'
+                              topologyKey: kubernetes.io/hostname
+                              namespaceSelector: {}
 
                         prefixLists:
                           ipv4:

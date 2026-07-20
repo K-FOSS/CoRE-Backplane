@@ -75,7 +75,7 @@ controllers:
     {{- end }}
 
 
-    {{- if and $rs.networking $rs.networking.interfaces }}
+
     pod:
       dnsPolicy: None
 
@@ -83,6 +83,16 @@ controllers:
 
       hostname: '{{ $name }}-routeserver'
       
+      {{- with (dig "pod" "labels" dict $rs) }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with $rs.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
       dnsConfig:
         nameservers:
           - 1.1.1.1
@@ -90,9 +100,11 @@ controllers:
           - name: ndots
             value: '0'
           - name: edns0
+
+      {{- if and $rs.networking $rs.networking.interfaces }}
       annotations:
         v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $name }}-0'
-    {{- end }}
+      {{- end }}
 
     containers:
       frr:
