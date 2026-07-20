@@ -54,6 +54,12 @@ spec:
       offloads:
         rx-udp-gro-forwarding: true
 
+    - macAddress: 24:6e:96:38:84:62
+      rings:
+        rx: 4096
+        tx: 4096
+      offloads:
+        rx-udp-gro-forwarding: true
   networks:
     - macAddress: 24:6e:96:38:84:60
       bridge: false
@@ -70,11 +76,11 @@ spec:
       routes:
         - network: 0.0.0.0/0
           gateway: 172.31.193.254
-          metric: 1024
+          metric: 1020
 
         - network: '::/0'
           gateway: 2604:3d08:d174:2000::1C
-          metric: 1024
+          metric: 1020
 
       mtu: 9000
 
@@ -82,8 +88,7 @@ spec:
       dns:
         - 172.31.193.254
 
-    - addresses:
-        - 172.31.241.25/30
+    - addresses: []
       bridge: false
 
       type: link
@@ -94,21 +99,25 @@ spec:
       macAddress: 24:6e:96:38:84:62
       model: new
 
-      mtu: 9000
+      mtu: 9710
 
       routing:
         ospf:
-          enabled: true
+          enabled: false
 
-          area: '0.0.0.0'
-
-          type: broadcast
-
-      static: true
+      static: false
 
   sysctls:
-    - name: net.ipv6.conf.br0.accept_ra
-      value: '2'
+    - name: net.ipv6.conf.eno2.accept_ra
+      value: '0'
+    - name: net.ipv6.conf.eno2.accept_ra_defrtr
+      value: '0'
+
+  sysfs:
+    - name: class.net.eno1.device.sriov_numvfs
+      value: '12'
+    - name: class.net.eno2.device.sriov_numvfs
+      value: '12'
 
   overrides:
     kernel:
