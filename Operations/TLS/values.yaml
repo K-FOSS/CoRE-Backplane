@@ -7,13 +7,6 @@ cert-manager:
   # This is a YAML-formatted file.
   # Declare variables to be passed into your templates.
   global:
-    # Reference to one or more secrets to be used when pulling images.
-    # For more information, see [Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
-    #
-    # For example:
-    #  imagePullSecrets:
-    #    - name: "image-pull-secret"
-    imagePullSecrets: []
 
     # Labels to apply to all resources.
     # Please note that this does not add labels to the resources created dynamically by the controllers.
@@ -459,7 +452,7 @@ cert-manager:
     # resources. Additionally, a service is created which can be used together
     # with your own ServiceMonitor (managed outside of this Helm chart).
     # Otherwise, a ServiceMonitor/ PodMonitor is created.
-    enabled: true
+    enabled: false
 
     servicemonitor:
       # Create a ServiceMonitor to add cert-manager to Prometheus.
@@ -1327,13 +1320,3 @@ cert-manager:
     # links.
     enableServiceLinks: false
 
-  # Create dynamic manifests via values.
-  #
-  # For example:
-  # extraObjects:
-  #   - |
-  #     apiVersion: v1
-  #     kind: ConfigMap
-  #     metadata:
-  #       name: '{{ template "cert-manager.name" . }}-extra-configmap'
-  extraObjects: []
