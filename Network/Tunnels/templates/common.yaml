@@ -64,14 +64,14 @@ controllers:
 
       {{- if $tunneler.interfaces }}
       {{- $defaultInterface := index $tunneler.interfaces 0 }}
-      {{- $defaultNetwork := dict "name" (printf "%s/net-%s-%s-0" $.Release.Namespace $.Release.Name $tunneler.name) }}
+      {{- $defaultNetwork := dict "name" (printf "net-%s-%s-0" $.Release.Name $tunneler.name) "namespace" $.Release.Namespace }}
       {{- with $defaultInterface.macAddress }}
       {{- $_ := set $defaultNetwork "mac" . }}
       {{- end }}
       {{- $additionalNetworks := list }}
       {{- range $netID, $netInterface := $tunneler.interfaces }}
       {{- if gt $netID 0 }}
-      {{- $network := dict "name" (printf "%s/net-%s-%s-%d" $.Release.Namespace $.Release.Name $tunneler.name $netID) }}
+      {{- $network := dict "name" (printf "net-%s-%s-%d" $.Release.Name $tunneler.name $netID) "namespace" $.Release.Namespace }}
       {{- with $netInterface.macAddress }}
       {{- $_ := set $network "mac" . }}
       {{- end }}
@@ -79,7 +79,7 @@ controllers:
       {{- end }}
       {{- end }}
       annotations:
-        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $tunneler.name }}-0'
+        v1.multus-cni.io/default-network: {{ $defaultNetwork | toJson | quote }}
         {{- if $additionalNetworks }}
         k8s.v1.cni.cncf.io/networks: {{ $additionalNetworks | toJson | quote }}
         {{- end }}
