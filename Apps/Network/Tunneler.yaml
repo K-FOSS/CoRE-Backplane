@@ -166,6 +166,19 @@ spec:
                               vlan: 2126
                               device: intel.com/intel_x540_netdevice_port1
 
+                          - type: sriov
+                            mtu: 9000
+                            routing:
+                              ospf:
+                                enabled: true
+                            ipam:
+                              address: 172.31.245.4/29
+                              routes:
+                                - dst: 0.0.0.0/0
+                                  gw: 10.0.0.1
+                            sriov:
+                              vlan: 50
+                              device: intel.com/intel_x540_netdevice_port0
                         frr:
                           enabled: true
                           routerId: 10.8.2.1
@@ -277,6 +290,21 @@ spec:
                               vlan: 2126
                               device: intel.com/intel_x540_netdevice_port1
 
+                          - type: sriov
+                            mtu: 9000
+                            routing:
+                              ospf:
+                                enabled: true
+                            ipam:
+                              address: 172.31.245.5/29
+                            rings:
+                              tx: 4096
+                              rx: 4096
+                            offload:
+                              rx-udp-gro-forwarding: 'on'
+                            sriov:
+                              vlan: 50
+                              device: intel.com/intel_x540_netdevice_port0
                         frr:
                           enabled: true
                           routerId: 10.8.2.2
