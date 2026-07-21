@@ -94,6 +94,48 @@ spec:
 
                           - name: mlx3-nic2-conntrack-sync
 
+                      - name: transit-lab1
+                        installing: true
+                        installer: vyos
+
+                        cpus:
+                          cores: 2
+                          sockets: 1
+                          threads: 1
+
+                        podNetwork:
+                          enabled: false
+                        
+                        disk:
+                          enabled: true
+
+                          size: 5Gi
+
+                        networks:
+                          - name: mlx3-nic2-backend951
+                            macAddress: 02:09:51:01:01:01
+
+                      - name: transit-lab2
+                        installing: true
+                        installer: vyos
+
+                        cpus:
+                          cores: 2
+                          sockets: 1
+                          threads: 1
+
+                        podNetwork:
+                          enabled: false
+                        
+                        disk:
+                          enabled: true
+
+                          size: 5Gi
+
+                        networks:
+                          - name: mlx3-nic2-backend951
+                            macAddress: 02:09:51:01:02:01
+
                     networks:
                       - name: mlx3-nic2-backend951
                         vlan: 951
