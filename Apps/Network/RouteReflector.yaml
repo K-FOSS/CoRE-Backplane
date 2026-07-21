@@ -136,6 +136,12 @@ spec:
                                   - name: yxl-rrs
                                     action: addpath-tx-all-paths
 
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
+
                                   - name: yxl-wan-gw
                                     action: activate
 
@@ -392,6 +398,31 @@ spec:
                                     action: addpath-tx-all-paths
 
                             ipv4:
+                              labeled-unicast:
+                                neighbor:
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yxl-rrs
+                                    action: activate
+
+                                  - name: yxl-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yxl-rrs
+                                    action: route-map YXL-RR-IN in
+
+                                  - name: yvr-wan-gw
+                                    action: activate
+
+                                  - name: yvr-wan-gw
+                                    action: route-reflector-client
+
+                                  - name: yvr-wan-gw
+                                    action: addpath-tx-all-paths
                               vpn:
                                 neighbor:
                                   - name: yvr-rrs
