@@ -629,7 +629,7 @@ configMaps:
         {{- if dig "frr" "ospf" "enabled" true $tunneler }}
         router ospf
           ospf router-id {{ dig "frr" "routerId" "10.1.1.140" $tunneler }}
-          auto-cost reference-bandwidth {{ dig "frr" "ospf" "referenceBandwidth" 100 $tunneler }}
+          auto-cost reference-bandwidth {{ dig "frr" "ospf" "referenceBandwidth" 100000 $tunneler }}
           {{- range $protocol := $tunneler.frr.ospf.redistribute }}
           redistribute {{ $protocol }}
           {{- end }}
