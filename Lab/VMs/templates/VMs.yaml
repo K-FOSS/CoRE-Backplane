@@ -72,6 +72,7 @@ spec:
           cores: 2
           threads: 2
           sockets: 1
+          model: host-passthrough
         machine:
           type: q35
         features:
@@ -84,7 +85,7 @@ spec:
               secureBoot: true
         {{- end }}
         devices:
-          autoattachPodInterface: true
+          autoattachPodInterface: {{ if and $vm.podNetwork $vm.podNetwork.enabled }}true{{ else }}false{{ end }}
           {{- if and $vm.tpm $vm.tpm.enabled }}
           tpm: {}
           {{- end }}
