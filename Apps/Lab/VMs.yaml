@@ -171,9 +171,105 @@ spec:
 
                 - name: core-home1-talos-prod
                   values:
-                    installing: false
+                    networks:
+                      - name: wan-home
+                        vlan: 150
+                        mtu: 1500
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
 
-                    wan: true
+                      - name: home2-rt2
+                        vlan: 20
+                        mtu: 9000
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
+
+                      - name: home2-rt2-alt1
+                        vlan: 21
+                        mtu: 9000
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
+
+                      - name: home2-rt1
+                        vlan: 30
+                        mtu: 9000
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
+
+                      - name: home2-rt1-alt1
+                        vlan: 31
+                        mtu: 9000
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
+
+                      - name: conntrack-sync
+                        vlan: 1000
+                        mtu: 1500
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
+
+                    installers:
+                      - name: vyos
+                        url: https://github.com/vyos/vyos-nightly-build/releases/download/2026.07.11-0033-rolling/vyos-2026.07.11-0033-rolling-generic-amd64.iso
+                        size: 30Gi
+
+                      - name: windows-11
+                        url: http://10.1.1.84/Win11_25H2_English_x64.iso
+                        size: 30Gi
+
+                      - name: flatcar
+                        url: https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_kubevirt_image.qcow2
+                        size: 30Gi
+                    vms:
+                      - name: windows-lab
+                        uefi: true
+                        boot:
+                          mode: uefi
+                          secureBoot: true
+                        tpm:
+                          enabled: true
+                        nodeSelector:
+                          kubernetes.io/hostname: 'hpc3'
+                        disk:
+                          enabled: true
+                          size: 128Gi
+                        networks:
+                          - name: wan-home
+
+                      - name: wan-rt1
+                        installing: false
+                        disk:
+                          enabled: true
+                          size: 5Gi
+                        networks:
+                          - name: wan-home
+
+                      - name: wan-rt2
+                        installing: false
+                        boot:
+                          mode: uefi
+                          secureBoot: false
+                        podNetwork:
+                          enabled: false
+                        disk:
+                          enabled: true
+                          size: 5Gi
+                        networks:
+                          - name: wan-home
+                            macAddress: '02:01:50:00:02:01'
+                          - name: home2-rt2
 
           - clusters:
               selector:
@@ -215,13 +311,16 @@ spec:
               value: |- # yaml
                 env: {{ .values.environment }}
 
-                installing: {{ .values.installing }}
-
                 {{- if .values.vms }}
                 vms:
                 {{ nindent 2 (toYaml .values.vms) }}
                 {{- end }}
-                
+
+                {{- if .values.installers }}
+                installers:
+                {{ nindent 2 (toYaml .values.installers) }}
+                {{- end }}
+
                 {{- if .values.networks }}
                 networks:
                 {{ nindent 2 (toYaml .values.networks) }}
