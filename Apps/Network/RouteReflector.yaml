@@ -883,6 +883,37 @@ spec:
                                   - name: yxl-wan-gw
                                     action: route-reflector-client
                             ipv4:
+                              labeled-unicast:
+                                neighbor:
+                                  - name: yxl-rrs
+                                    action: activate
+
+                                  - name: yxl-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yvr-rrs
+                                    action: activate
+
+                                  - name: yvr-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yxl-wan-gw
+                                    action: activate
+
+                                  - name: yxl-wan-gw
+                                    action: route-reflector-client
+
+                                  - name: yxl-wan-gw
+                                    action: addpath-tx-all-paths
+
+                                  - name: yxl-transit-lab
+                                    action: activate
+
+                                  - name: yxl-transit-lab
+                                    action: route-reflector-client
+
+                                  - name: yxl-transit-lab
+                                    action: addpath-tx-all-paths
                               vpn:
                                 neighbor:
                                   - name: yvr-rrs
@@ -908,6 +939,15 @@ spec:
 
                                   - name: yxl-wan-gw
                                     action: addpath-tx-all-paths
+
+                                  - name: yxl-transit-lab
+                                    action: activate
+
+                                  - name: yxl-transit-lab
+                                    action: route-reflector-client
+
+                                  - name: yxl-transit-lab
+                                    action: addpath-tx-all-paths
                           peers:
                             - address: 172.31.255.1
                               peerGroup: spine-sw
@@ -932,6 +972,12 @@ spec:
 
                             - address: 172.31.255.6
                               peerGroup: yxl-wan-gw
+
+                            - address: 172.31.255.51
+                              peerGroup: yxl-transit-lab
+
+                            - address: 172.31.255.52
+                              peerGroup: yxl-transit-lab
                           peerGroups:
                             - name: spine-sw
                               asn: 64567
@@ -940,6 +986,9 @@ spec:
                               asn: 64567
 
                             - name: yxl-wan-gw
+                              asn: 64567
+
+                            - name: yxl-transit-lab
                               asn: 64567
 
                             - name: yvr-rrs
