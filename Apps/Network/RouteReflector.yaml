@@ -128,6 +128,22 @@ spec:
                                   - name: yxl-wan-gw
                                     action: addpath-tx-all-paths
                             ipv4:
+                              labeled-unicast:
+                                neighbor:
+                                  - name: yxl-rrs
+                                    action: activate
+
+                                  - name: yxl-rrs
+                                    action: addpath-tx-all-paths
+
+                                  - name: yxl-transit-lab
+                                    action: activate
+
+                                  - name: yxl-transit-lab
+                                    action: route-reflector-client
+
+                                  - name: yxl-transit-lab
+                                    action: addpath-tx-all-paths
                               vpn:
                                 neighbor:
                                   - name: yvr-rrs
