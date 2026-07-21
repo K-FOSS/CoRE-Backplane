@@ -84,6 +84,22 @@ spec:
                                   - 172.29.10.2/32
                                   - 0.0.0.0/0
 
+                          - name: yvr-home2-tunneler2
+                            type: wireguard
+                            port: 20012
+                            mtu: 1440
+                            address: 172.29.12.1/30
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler2#PrivateKey>
+                            ospf:
+                              enabled: true
+                            peers:
+                              - name: tunneler2.home2.yvr.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler1#YVRTunneler1Pub>
+                                endpoint: home.mylogin.space:20012
+                                allowedIPs:
+                                  - 172.29.12.2/32
+                                  - 0.0.0.0/0
+
                           - name: wan-gw2-yvr-home2
                             type: wireguard
                             port: 54767
@@ -291,6 +307,21 @@ spec:
                                 endpoint: 10.8.2.1:17011
                                 allowedIPs:
                                   - 172.20.1.2/32
+                                  - 0.0.0.0/0
+
+                          - name: yxl-dc1-tunneler1
+                            type: wireguard
+                            port: 20012
+                            mtu: 1440
+                            address: 172.29.12.2/30
+                            privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler2/YXLDC1Tunneler1#PrivateKey>
+                            ospf:
+                              enabled: true
+                            peers:
+                              - name: tunneler1.dc1.yxl.resolvemy.host
+                                publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1/YXL-DC1-Tunneler1#YXLDC1TunnelerPub>
+                                allowedIPs:
+                                  - 172.29.12.1/32
                                   - 0.0.0.0/0
 
                           - name: remote-man
