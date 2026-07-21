@@ -503,7 +503,6 @@ configMaps:
           {{- with $ospf := $netInterface.routing.ospf }}
           {{- if $ospf.enabled }}
           ip ospf area {{ default "0.0.0.0" $ospf.area }}
-          ipv6 ospf6 area {{ default "0.0.0.0" $ospf.area }}
           ip ospf network {{ default "broadcast" $ospf.type }}
           
           {{- with $ospf.priority }}
@@ -523,17 +522,53 @@ configMaps:
           {{- end }}
           {{- end }}
           {{- end }}
+          {{- with $ospf6 := $netInterface.routing.ospf6 }}
+          {{- if not (and (hasKey $ospf6 "enabled") (not $ospf6.enabled)) }}
+          ipv6 ospf6 area {{ default "0.0.0.0" $ospf6.area }}
+          {{- with $ospf6.cost }}
+          ipv6 ospf6 cost {{ . }}
+          {{- end }}
+          {{- with $ospf6.hello }}
+          ipv6 ospf6 hello-interval {{ . }}
+          {{- end }}
+          {{- with $ospf6.dead }}
+          ipv6 ospf6 dead-interval {{ . }}
+          {{- end }}
+          {{- if $ospf6.passive }}
+          ipv6 ospf6 passive
+          {{- end }}
+          {{- end }}
+          {{- end }}
         exit
         !
         {{- end }}
         {{- end }} 
         !
+        {{- $wireguardIndex := 0 }}
         {{- range $tunnel := $tunneler.tunnels }}
-        {{- if and $tunnel.ospf (not (and (hasKey $tunnel.ospf "enabled") (not $tunnel.ospf.enabled))) }}
-        interface {{ $tunnel.name }}
+        {{- $interfaceName := $tunnel.name }}
+        {{- if eq $tunnel.type "wireguard" }}
+        {{- $interfaceName = printf "wg-%d" $wireguardIndex }}
+        {{- $wireguardIndex = add1 $wireguardIndex }}
+        {{- end }}
+        {{- if or (and $tunnel.ospf (not (and (hasKey $tunnel.ospf "enabled") (not $tunnel.ospf.enabled)))) (and $tunnel.ospf6 (not (and (hasKey $tunnel.ospf6 "enabled") (not $tunnel.ospf6.enabled)))) }}
+        interface {{ $interfaceName }}
+          {{- with $ospf := $tunnel.ospf }}
+          {{- if not (and (hasKey $ospf "enabled") (not $ospf.enabled)) }}
           ip ospf area {{ default "0.0.0.0" $tunnel.ospf.area }}
-          {{- with $tunnel.ospf.cost }}
+          ip ospf network {{ default "point-to-point" $ospf.type }}
+          {{- with $ospf.cost }}
           ip ospf cost {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with $ospf6 := $tunnel.ospf6 }}
+          {{- if not (and (hasKey $ospf6 "enabled") (not $ospf6.enabled)) }}
+          ipv6 ospf6 area {{ default "0.0.0.0" $ospf6.area }}
+          {{- with $ospf6.cost }}
+          ipv6 ospf6 cost {{ . }}
+          {{- end }}
+          {{- end }}
           {{- end }}
         exit
         !
@@ -544,13 +579,28 @@ configMaps:
           bgp router-id {{ dig "frr" "routerId" "10.1.1.140" $tunneler }}
           no bgp ebgp-requires-policy
           bgp bestpath peer-type multipath-relax
-          {{- range $neighbor := $tunneler.frr.bgp.neighbors }}
-          neighbor {{ $neighbor.address }} remote-as {{ $neighbor.asn }}
+          {{- $bgpNeighbors := default (list) $tunneler.frr.bgp.neighbors }}
+          {{- $wireguardIndex := 0 }}
+          {{- range $tunnel := $tunneler.tunnels }}
+          {{- $interfaceName := $tunnel.name }}
+          {{- if eq $tunnel.type "wireguard" }}
+          {{- $interfaceName = printf "wg-%d" $wireguardIndex }}
+          {{- $wireguardIndex = add1 $wireguardIndex }}
+          {{- end }}
+          {{- with $neighbor := $tunnel.bgp }}
+          {{- if not (and (hasKey $neighbor "enabled") (not $neighbor.enabled)) }}
+          {{- $bgpNeighbors = append $bgpNeighbors (merge (dict "_tunnelInterface" $interfaceName) (deepCopy $neighbor)) }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- range $neighbor := $bgpNeighbors }}
+          {{- $neighborId := default $neighbor._tunnelInterface $neighbor.address }}
+          neighbor {{ $neighborId }}{{ if and $neighbor._tunnelInterface (not $neighbor.address) }} interface{{ end }} remote-as {{ $neighbor.asn }}
           {{- with $neighbor.description }}
-          neighbor {{ $neighbor.address }} description {{ . }}
+          neighbor {{ $neighborId }} description {{ . }}
           {{- end }}
           {{- with $neighbor.password }}
-          neighbor {{ $neighbor.address }} password {{ . }}
+          neighbor {{ $neighborId }} password {{ . }}
           {{- end }}
           {{- end }}
           !
@@ -562,13 +612,14 @@ configMaps:
             {{- range $network := $tunneler.frr.bgp.networks }}
             network {{ $network }}
             {{- end }}
-            {{- range $neighbor := $tunneler.frr.bgp.neighbors }}
-            neighbor {{ $neighbor.address }} activate
+            {{- range $neighbor := $bgpNeighbors }}
+            {{- $neighborId := default $neighbor._tunnelInterface $neighbor.address }}
+            neighbor {{ $neighborId }} activate
             {{- with $neighbor.routeMapIn }}
-            neighbor {{ $neighbor.address }} route-map {{ . }} in
+            neighbor {{ $neighborId }} route-map {{ . }} in
             {{- end }}
             {{- with $neighbor.routeMapOut }}
-            neighbor {{ $neighbor.address }} route-map {{ . }} out
+            neighbor {{ $neighborId }} route-map {{ . }} out
             {{- end }}
             {{- end }}
           exit-address-family
@@ -585,7 +636,7 @@ configMaps:
         exit
         !
         {{- end }}
-        {{- if dig "frr" "ospf6" "enabled" true $tunneler }}
+        {{- if dig "frr" "ospf6" "enabled" false $tunneler }}
         router ospf6
           ospf router-id {{ dig "frr" "routerId" "10.1.1.140" $tunneler }}
           auto-cost reference-bandwidth {{ dig "frr" "ospf6" "referenceBandwidth" 100000 $tunneler }}
