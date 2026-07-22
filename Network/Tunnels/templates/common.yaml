@@ -805,10 +805,13 @@ spec:
           {{- end }}
         ],
         {{- end }}
+        {{- $addresses := default (list $netInterface.ipam.address) $netInterface.ipam.addresses }}
         "addresses": [
-          {
-            "address": "{{ $netInterface.ipam.address }}"
+          {{- range $addressIndex, $address := $addresses }}
+          {{- if $addressIndex }},{{ end }}{
+            "address": {{ required (printf "tunnelers.%s.interfaces.%d: each IPAM address is required" $tunneler.name $netID) $address | toJson }}
           }
+          {{- end }}
         ]
       }
       {{- end }}
