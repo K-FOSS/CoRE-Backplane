@@ -140,7 +140,7 @@ spec:
                           size: 5Gi
 
                         networks:
-                          - name: mlx3-nic2-backend951
+                          - name: intel-nic1-backend951
 
                       - name: debian-lab1
                         installing: true
@@ -297,6 +297,21 @@ spec:
                           - name: wan-home
                             macAddress: '02:01:50:00:02:01'
                           - name: home2-rt2
+
+                      - name: transit-lab1
+                        installing: true
+                        installer: vyos
+                        cpus:
+                          cores: 2
+                          sockets: 1
+                          threads: 1
+                        podNetwork:
+                          enabled: false
+                        disk:
+                          enabled: true
+                          size: 10Gi
+                        networks:
+                          - name: wan-home
 
           - clusters:
               selector:
