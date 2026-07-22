@@ -68,6 +68,9 @@ spec:
                         url: https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_kubevirt_image.qcow2
                         size: 30Gi
 
+                      - name: opnsense
+                        url: https://mirror.mtl2.ca.leaseweb.net/opnsense/releases/mirror/OPNsense-26.7-nano-amd64.img.bz2
+                        size: 2Gi
                     vms:
                       - name: wan-rt2
                         installing: false
@@ -144,24 +147,19 @@ spec:
 
                       - name: debian-lab1
                         installing: false
-
                         cpus:
                           cores: 2
                           sockets: 1
                           threads: 1
-
                         podNetwork:
                           enabled: true
-
                         ports:
                           - name: ssh
                             port: 22
                             protocol: TCP
                             expose: true
-                        
                         disk:
                           enabled: true
-
                           size: 5Gi
 
                     networks:
@@ -264,6 +262,10 @@ spec:
                       - name: flatcar
                         url: https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_kubevirt_image.qcow2
                         size: 30Gi
+
+                      - name: opnsense
+                        url: https://mirror.mtl2.ca.leaseweb.net/opnsense/releases/mirror/OPNsense-26.7-nano-amd64.img.bz2
+                        size: 2Gi
                     vms:
                       - name: windows-lab
                         uefi: true
@@ -317,6 +319,22 @@ spec:
                         networks:
                           - name: wan-home
 
+                      - name: debian-lab1
+                        installing: false
+                        cpus:
+                          cores: 2
+                          sockets: 1
+                          threads: 1
+                        podNetwork:
+                          enabled: true
+                        ports:
+                          - name: ssh
+                            port: 22
+                            protocol: TCP
+                            expose: true
+                        disk:
+                          enabled: true
+                          size: 5Gi
           - clusters:
               selector:
                 matchLabels:
