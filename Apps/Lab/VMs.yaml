@@ -19,7 +19,6 @@ spec:
               elements:
                 - name: dc1-k3s-node1
                   values:
-                    installing: false
                     networks:
                       - name: nic1-backend951
                         vlan: 951
@@ -56,7 +55,18 @@ spec:
 
                 - name: core-dc1-talos-prod
                   values:
-                    installing: true
+                    installers:
+                      - name: vyos
+                        url: https://github.com/vyos/vyos-nightly-build/releases/download/2026.07.11-0033-rolling/vyos-2026.07.11-0033-rolling-generic-amd64.iso
+                        size: 30Gi
+
+                      - name: debian
+                        url: https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.6.0-amd64-netinst.iso
+                        size: 2Gi
+
+                      - name: flatcar
+                        url: https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_kubevirt_image.qcow2
+                        size: 30Gi
 
                     vms:
                       - name: wan-rt2
@@ -131,6 +141,23 @@ spec:
 
                         networks:
                           - name: mlx3-nic2-backend951
+
+                      - name: debian-lab1
+                        installing: true
+                        installer: debian
+
+                        cpus:
+                          cores: 2
+                          sockets: 1
+                          threads: 1
+
+                        podNetwork:
+                          enabled: true
+                        
+                        disk:
+                          enabled: true
+
+                          size: 5Gi
 
                     networks:
                       - name: mlx3-nic2-backend951
