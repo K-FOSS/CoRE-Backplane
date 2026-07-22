@@ -210,6 +210,14 @@ spec:
                           trust: true
                           device: intel.com/intel_x540_dpdk
 
+                      - name: management
+                        vlan: 1
+                        mtu: 9000
+                        type: sriov
+                        sriov:
+                          trust: true
+                          device: intel.com/intel_x540_dpdk
+
                       - name: home2-rt2
                         vlan: 20
                         mtu: 9000
@@ -354,6 +362,9 @@ spec:
                         podNetwork:
                           enabled: true
                           macAddress: '02:01:04:02:02:01'
+                        networks:
+                          - name: management
+                            macAddress: '02:00:01:00:00:01'
                         ports:
                           - name: ssh
                             port: 22
