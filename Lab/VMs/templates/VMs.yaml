@@ -41,6 +41,8 @@ spec:
 ---
 {{ end }}
 {{- range $vmIndex, $vm := .Values.vms }}
+{{- $disk := default (dict) $vm.disk }}
+{{- $diskEnabled := or (not (hasKey $disk "enabled")) $disk.enabled }}
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
@@ -98,10 +100,12 @@ spec:
                 bus: sata
             {{- end }}
 
+            {{- if $diskEnabled }}
             - name: data-disk
               bootOrder: {{ if $vm.installing }}2{{ else }}1{{ end }}
               disk:
-                bus: virtio
+                bus: {{ default "virtio" $disk.bus }}
+            {{- end }}
 
           interfaces:
             {{- range $networkIndex, $vmNetwork := $vm.networks }}
@@ -136,27 +140,66 @@ spec:
           limits:
             memory: 4Gi
             cpu: 4
+      {{- if or $vm.installing $diskEnabled }}
       volumes:
         {{- if $vm.installing }}
         - name: installer
           dataVolume:
             name: {{ $vm.installer }}
         {{ end }}
+        {{- if $diskEnabled }}
         - dataVolume:
             name: {{ $vm.name }}
           name: data-disk
+        {{- end }}
+      {{- end }}
 
+  {{- if $diskEnabled }}
   dataVolumeTemplates:
     - metadata:
         name: {{ $vm.name }}
       spec:
+        {{- with $disk.contentType }}
+        contentType: {{ . }}
+        {{- end }}
+        {{- with $disk.preallocation }}
+        preallocation: {{ . }}
+        {{- end }}
+        {{- with $disk.priorityClassName }}
+        priorityClassName: {{ . }}
+        {{- end }}
         pvc:
-          accessModes:
-            - ReadWriteOnce
+          accessModes: {{ toYaml (default (list "ReadWriteOnce") $disk.accessModes) | nindent 12 }}
+          {{- with $disk.storageClassName }}
+          storageClassName: {{ . | quote }}
+          {{- end }}
+          {{- with $disk.volumeMode }}
+          volumeMode: {{ . }}
+          {{- end }}
           resources:
             requests:
-              storage: 20Gi
+              storage: {{ default "20Gi" $disk.size }}
+        {{- if $disk.sourceRef }}
+        sourceRef: {{ toYaml $disk.sourceRef | nindent 10 }}
+        {{- else if $disk.source }}
+        source: {{ toYaml $disk.source | nindent 10 }}
+        {{- else if $disk.url }}
+        source:
+          http:
+            url: {{ $disk.url }}
+            {{- with $disk.secretRef }}
+            secretRef: {{ . }}
+            {{- end }}
+            {{- with $disk.certConfigMap }}
+            certConfigMap: {{ . }}
+            {{- end }}
+            {{- with $disk.extraHeaders }}
+            extraHeaders: {{ toYaml . | nindent 14 }}
+            {{- end }}
+        {{- else }}
         source:
           blank: {}
+        {{- end }}
+  {{- end }}
 ---
 {{- end }}

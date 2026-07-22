@@ -11,6 +11,22 @@ installers:
     url: https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_kubevirt_image.qcow2
     size: 30Gi
 
+  # CDI archives and non-HTTP sources can be configured without changing the
+  # templates. `url` remains shorthand for source.http.url.
+  # - name: archived-rootfs
+  #   size: 30Gi
+  #   contentType: archive
+  #   preallocation: true
+  #   storageClassName: fast
+  #   source:
+  #     http:
+  #       url: https://images.example.test/rootfs.tar.gz
+  #       secretRef: image-download-credentials
+  #       certConfigMap: image-download-ca
+  #
+  # Other CDI source types (registry, pvc, snapshot, blank, upload, and vddk)
+  # may be supplied under `source`; DataSource references use `sourceRef`.
+
 networks:
   - name: wan-home
     vlan: 150
@@ -81,6 +97,9 @@ vms:
       enabled: true
 
       size: 128Gi
+      # Optional CDI fields supported here include contentType (kubevirt or
+      # archive), preallocation, storageClassName, volumeMode, accessModes,
+      # priorityClassName, source, and sourceRef. `url` is HTTP shorthand.
 
     networks:
       - name: wan-home
