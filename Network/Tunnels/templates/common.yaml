@@ -88,6 +88,7 @@ controllers:
     {{- $mtuNics := list }}
     {{- $offloadNics := list }}
     {{- $ringNics := list }}
+    {{- $sourceRoutes := list }}
     {{- range $netID, $interface := $tunneler.interfaces }}
       {{- if .mtu  }}
         {{- $mtuNics = append $mtuNics (dict "interface" (printf "eth%d" $netID) "mtu" .mtu) }}
@@ -97,6 +98,11 @@ controllers:
       {{- end }}
       {{- if .rings }}
         {{- $ringNics = append $ringNics (dict "interface" (printf "eth%d" $netID) "rings" .rings) }}
+      {{- end }}
+      {{- range $route := dig "ipam" "routes" (list) $interface }}
+        {{- with $route.src }}
+          {{- $sourceRoutes = append $sourceRoutes (dict "interface" (printf "eth%d" $netID) "route" $route) }}
+        {{- end }}
       {{- end }}
     {{- end }}
 
@@ -166,6 +172,9 @@ controllers:
             ip link set dev {{ $nic.interface }} mtu {{ $nic.mtu }}
             ip -d link show {{ $nic.interface }}
             {{- end }}
+            {{- end }}
+            {{- range $sourceRoute := $sourceRoutes }}
+            ip route replace {{ required (printf "interface route on %s: dst is required when src is set" $sourceRoute.interface) $sourceRoute.route.dst }}{{ with $sourceRoute.route.gw }} via {{ . }}{{ end }} dev {{ $sourceRoute.interface }} src {{ $sourceRoute.route.src }}
             {{- end }}
 
       {{- if $ipTunnels }}
@@ -790,7 +799,11 @@ spec:
       "ipam": {
         "type": "static",
         {{- if $netInterface.ipam.routes }}
-        "routes": {{ toJson $netInterface.ipam.routes }},
+        "routes": [
+          {{- range $routeIndex, $route := $netInterface.ipam.routes }}
+          {{- if $routeIndex }},{{ end }}{{ omit $route "src" | toJson }}
+          {{- end }}
+        ],
         {{- end }}
         "addresses": [
           {

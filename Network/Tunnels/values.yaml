@@ -27,6 +27,9 @@ tunnelers:
           routes:
             - dst: 0.0.0.0/0
               gw: 10.7.7.1
+              # Optional. Reapplied by the nicconfig init container because
+              # static CNI IPAM does not support selecting a route source.
+              # src: 10.7.7.61
         sriov:
           vlan: 666
           device: mellanox.com/mlx4_cx3_netdevice
@@ -79,6 +82,16 @@ tunnelers:
         ospf:
           area: 0.0.0.0
           cost: 10
+        # OSPFv3 is configured independently from IPv4 OSPF.
+        # ospf6:
+        #   area: 0.0.0.0
+        #   cost: 10
+        # A tunnel-local BGP neighbor is merged with frr.bgp.neighbors.
+        # Omit address to use interface-based (unnumbered) BGP. WireGuard
+        # interfaces use their generated wg-<index> runtime name.
+        # bgp:
+        #   address: 172.31.99.2
+        #   asn: 64514
         routes: []
 
       - name: yvr-tunneler1-vxlan1
@@ -95,6 +108,9 @@ tunnelers:
       - name: test
         type: wireguard
         port: 5123
+        ospf6:
+          area: 0.0.0.0
+          cost: 10
         peers:
           - name: augy-ipad-pro.otg.resolvemy.host
             publicKey: INSERT_WG_PUBLIC_KEY
