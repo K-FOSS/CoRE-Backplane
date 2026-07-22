@@ -344,10 +344,7 @@ spec:
                           size: 5Gi
 
                       - name: fw-lab1
-                        installing: true
-                        installer: opnsense
-                        boot:
-                          mode: uefi
+                        installing: false
                         cpus:
                           cores: 2
                           sockets: 1
@@ -358,6 +355,16 @@ spec:
                         ports:
                           - name: ssh
                             port: 22
+                            protocol: TCP
+                            expose: true
+
+                          - name: http
+                            port: 80
+                            protocol: TCP
+                            expose: true
+
+                          - name: https
+                            port: 443
                             protocol: TCP
                             expose: true
                         disk:
