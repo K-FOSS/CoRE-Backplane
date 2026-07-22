@@ -31,7 +31,7 @@ spec:
                               ospf:
                                 enabled: false
                             ipam:
-                              address: 100.64.92.37
+                              address: 100.64.92.37/29
                               routes:
                                 - dst: 0.0.0.0/0
                                   gw: 100.64.92.33
@@ -39,6 +39,16 @@ spec:
                               vlan: 10
                               device: mellanox.com/mlx4_cx3_netdevice
 
+                          - type: sriov
+                            mtu: 9216
+                            routing:
+                              ospf:
+                                enabled: true
+                            ipam:
+                              address: 172.16.51.31/24
+                            sriov:
+                              vlan: 951
+                              device: mellanox.com/mlx4_cx3_netdevice
                         frr:
                           enabled: true
                           routerId: 66.165.222.124
@@ -62,6 +72,9 @@ spec:
                             port: 54764
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Server#PrivateKey>
                             address: 172.31.243.1/30
+                            ospf:
+                              enabled: true
+                              cost: 1000
                             peers:
                               - name: sbc1-home1
                                 publicKey: <path:CORE0_SITE1/data/Network/Wireguard/OldTunneler/Home1/SBC1#PublicKey>
@@ -76,6 +89,7 @@ spec:
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler1#PrivateKey>
                             ospf:
                               enabled: true
+                              cost: 500
                             peers:
                               - name: tunneler1.home2.yvr.resolvemy.host
                                 publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler1#YVRTunneler1Pub>
@@ -92,6 +106,7 @@ spec:
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler2#PrivateKey>
                             ospf:
                               enabled: true
+                              cost: 500
                             peers:
                               - name: tunneler2.home2.yvr.resolvemy.host
                                 publicKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler2#YVRTunneler2PublicKey>
