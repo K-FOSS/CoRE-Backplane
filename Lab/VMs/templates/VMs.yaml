@@ -43,6 +43,26 @@ spec:
 {{- range $vmIndex, $vm := .Values.vms }}
 {{- $disk := default (dict) $vm.disk }}
 {{- $diskEnabled := or (not (hasKey $disk "enabled")) $disk.enabled }}
+{{- $diskAttachment := default (dict) $disk.attachment }}
+{{- $diskType := lower (default "disk" $diskAttachment.type) }}
+{{- if not (has $diskType (list "disk" "cdrom" "lun")) }}{{- fail (printf "vms[%d].disk.attachment.type must be disk, cdrom, or lun" $vmIndex) }}{{- end }}
+{{- $diskTarget := deepCopy (default (dict) $diskAttachment.target) }}
+{{- $diskBus := "virtio" }}
+{{- if eq $diskType "cdrom" }}{{- $diskBus = "sata" }}{{- else if eq $diskType "lun" }}{{- $diskBus = "scsi" }}{{- end }}
+{{- if $disk.bus }}{{- $diskBus = lower $disk.bus }}{{- end }}
+{{- if $diskAttachment.bus }}{{- $diskBus = lower $diskAttachment.bus }}{{- end }}
+{{- if not (hasKey $diskTarget "bus") }}{{- $_ := set $diskTarget "bus" $diskBus }}{{- end }}
+{{- $diskBootOrder := 1 }}
+{{- if $vm.installing }}{{- $diskBootOrder = 2 }}{{- end }}
+{{- if $diskAttachment.bootOrder }}{{- $diskBootOrder = $diskAttachment.bootOrder }}{{- end }}
+{{- $installerAttachment := default (dict) $vm.installerAttachment }}
+{{- $installerType := lower (default "cdrom" $installerAttachment.type) }}
+{{- if not (has $installerType (list "disk" "cdrom" "lun")) }}{{- fail (printf "vms[%d].installerAttachment.type must be disk, cdrom, or lun" $vmIndex) }}{{- end }}
+{{- $installerTarget := deepCopy (default (dict) $installerAttachment.target) }}
+{{- $installerBus := "sata" }}
+{{- if eq $installerType "disk" }}{{- $installerBus = "virtio" }}{{- else if eq $installerType "lun" }}{{- $installerBus = "scsi" }}{{- end }}
+{{- if $installerAttachment.bus }}{{- $installerBus = lower $installerAttachment.bus }}{{- end }}
+{{- if not (hasKey $installerTarget "bus") }}{{- $_ := set $installerTarget "bus" $installerBus }}{{- end }}
 apiVersion: kubevirt.io/v1
 kind: VirtualMachine
 metadata:
@@ -95,16 +115,20 @@ spec:
           disks:
             {{- if $vm.installing }}
             - name: installer
-              bootOrder: 1
-              cdrom:
-                bus: sata
+              bootOrder: {{ default 1 $installerAttachment.bootOrder }}
+              {{- with $installerAttachment.options }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+              {{ $installerType }}: {{ toYaml $installerTarget | nindent 16 }}
             {{- end }}
 
             {{- if $diskEnabled }}
             - name: data-disk
-              bootOrder: {{ if $vm.installing }}2{{ else }}1{{ end }}
-              disk:
-                bus: {{ default "virtio" $disk.bus }}
+              bootOrder: {{ $diskBootOrder }}
+              {{- with $diskAttachment.options }}
+              {{- toYaml . | nindent 14 }}
+              {{- end }}
+              {{ $diskType }}: {{ toYaml $diskTarget | nindent 16 }}
             {{- end }}
 
           interfaces:

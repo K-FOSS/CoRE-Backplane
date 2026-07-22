@@ -81,6 +81,17 @@ vms:
     installing: true
 
     installer: windows-11
+    # The installer defaults to a SATA CD-ROM. KubeVirt disk-entry fields can
+    # be customized with `type`, target-specific fields, and common `options`.
+    # installerAttachment:
+    #   type: cdrom                 # disk, cdrom, or lun
+    #   bus: sata                   # shorthand for target.bus
+    #   bootOrder: 1
+    #   target:
+    #     readonly: true
+    #     tray: closed
+    #   options:
+    #     serial: windows-installer
     uefi: true
 
     boot:
@@ -97,6 +108,21 @@ vms:
       enabled: true
 
       size: 128Gi
+      # Attachment defaults to type=disk and bus=virtio. `target` accepts the
+      # selected KubeVirt target's fields; `options` accepts common Disk fields
+      # such as cache, io, serial, dedicatedIOThread, shareable, errorPolicy,
+      # blockSize, and tag. Set `bootOrder` directly under `attachment`.
+      # attachment:
+      #   type: disk                # disk, cdrom, or lun
+      #   bus: virtio               # shorthand for target.bus
+      #   bootOrder: 2
+      #   target:
+      #     readonly: false
+      #     pciAddress: "0000:81:01.0"
+      #   options:
+      #     cache: none
+      #     io: native
+      #     serial: windows-root
       # Optional CDI fields supported here include contentType (kubevirt or
       # archive), preallocation, storageClassName, volumeMode, accessModes,
       # priorityClassName, source, and sourceRef. `url` is HTTP shorthand.
