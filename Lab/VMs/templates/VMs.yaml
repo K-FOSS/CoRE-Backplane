@@ -121,6 +121,9 @@ spec:
             {{- if and $vm.podNetwork  $vm.podNetwork.enabled }}
             - name: default
               masquerade: {}
+              {{- with $vm.podNetwork.macAddress }}
+              macAddress: {{ . | quote }}
+              {{- end }}
               {{- if $vm.ports }}
               ports:
                 {{- range $portIndex, $port := $vm.ports }}
