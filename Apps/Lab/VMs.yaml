@@ -350,11 +350,7 @@ spec:
                           size: 20Gi
 
                       - name: fw-lab1
-                        installing: true
-                        installer: opnsense
-                        installerAttachment:
-                          type: disk
-                          bus: sata
+                        installing: false
                         cpus:
                           cores: 2
                           sockets: 1
@@ -383,6 +379,13 @@ spec:
                         disk:
                           enabled: true
                           size: 20Gi
+                          attachment:
+                            type: disk
+                            bus: sata
+                            bootOrder: 1
+                          source:
+                            pvc:
+                              name: opnsense
           - clusters:
               selector:
                 matchLabels:
