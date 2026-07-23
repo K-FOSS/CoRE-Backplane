@@ -18,6 +18,7 @@ spec:
               elements:
                 - name: core-dc1-talos-prod
                   values:
+                    nodePortNetwork: 172.31.241.0/24
                     clusterId: 2
                     peers:
                       - name: core-home1-talos-prod
@@ -25,6 +26,7 @@ spec:
 
                 - name: core-home1-talos-prod
                   values:
+                    nodePortNetwork: 172.31.193.0/24
                     clusterId: 1
                     peers:
                       - name: core-dc1-talos-prod
@@ -71,6 +73,13 @@ spec:
                 {{- $parts := split ":" .server }}
                 {{- $hostname := split "//" $parts._1 }}
                 cilium:
+                  nodePort:
+                    # -- Enable the Cilium NodePort service implementation.
+                    enabled: false
+                    # -- Port range to use for NodePort services.
+                    # range: "30000,32767"
+                    addresses:
+                      - {{ .values.nodePortNetwork }}
                   clustermesh:
                     config:
                       clusters:
