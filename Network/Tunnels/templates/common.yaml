@@ -2,20 +2,20 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{/*
-Convert the tc-compatible configured bandwidth to the Kbit/s value expected by
+Convert the tc-compatible configured bandwidth to the Mbit/s value expected by
 FRR's interface bandwidth command.
 */}}
-{{- define "core-network-tunneler.bandwidthKbps" -}}
+{{- define "core-network-tunneler.bandwidthMbps" -}}
 {{- $bandwidth := lower (toString .) -}}
 {{- $value := regexFind "^[0-9]+" $bandwidth | int -}}
 {{- if regexMatch "^[0-9]+(g|gbit|gbps)$" $bandwidth -}}
-{{- mul $value 1000000 -}}
-{{- else if regexMatch "^[0-9]+(m|mbit|mbps)$" $bandwidth -}}
 {{- mul $value 1000 -}}
-{{- else if regexMatch "^[0-9]+(k|kbit|kbps)?$" $bandwidth -}}
+{{- else if regexMatch "^[0-9]+(m|mbit|mbps)?$" $bandwidth -}}
 {{- $value -}}
+{{- else if regexMatch "^[0-9]+(k|kbit|kbps)$" $bandwidth -}}
+{{- max 1 (div $value 1000) -}}
 {{- else if regexMatch "^[0-9]+(bit|bps)$" $bandwidth -}}
-{{- div $value 1000 -}}
+{{- max 1 (div $value 1000000) -}}
 {{- else -}}
 {{- fail (printf "unsupported bandwidth %q: use an integer with bit, kbit, mbit, or gbit units" .) -}}
 {{- end -}}
@@ -572,7 +572,7 @@ configMaps:
         {{- if or $netInterface.routing $interfaceBandwidth }}
         interface eth{{ $netId }}
           {{- with $interfaceBandwidth }}
-          bandwidth {{ include "core-network-tunneler.bandwidthKbps" . }}
+          bandwidth {{ include "core-network-tunneler.bandwidthMbps" . }}
           {{- end }}
           {{- with $ospf := $netInterface.routing.ospf }}
           {{- if $ospf.enabled }}
@@ -627,7 +627,7 @@ configMaps:
         {{- end }}
         {{- $tunnelBandwidth := default "250mbit" $tunnel.bandwidth }}
         interface {{ $interfaceName }}
-          bandwidth {{ include "core-network-tunneler.bandwidthKbps" $tunnelBandwidth }}
+          bandwidth {{ include "core-network-tunneler.bandwidthMbps" $tunnelBandwidth }}
           {{- with $ospf := $tunnel.ospf }}
           {{- if not (and (hasKey $ospf "enabled") (not $ospf.enabled)) }}
           ip ospf area {{ default "0.0.0.0" $tunnel.ospf.area }}
