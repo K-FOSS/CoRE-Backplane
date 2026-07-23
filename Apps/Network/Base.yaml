@@ -68,22 +68,16 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
-                {{ $parts := split ":" .server }}
-                {{ $hostname := split "//" $parts._1 }}
-              
+                {{- $parts := split ":" .server }}
+                {{- $hostname := split "//" $parts._1 }}
                 cilium:
                   clustermesh:
                     config:
                       clusters:
                         {{- range $clusterId, $cluster := .values.peers }}
-                        # -- Name of the cluster
                         {{ $cluster.name }}:
-                          # -- Whether to enable this cluster in the mesh. Optional, defaults to true.
                           enabled: true
-                          # -- Address of the cluster, use this if you created DNS records for
-                          # the cluster Clustermesh API server.
                           address: {{ $cluster.address }}
-                          # -- Port of the cluster Clustermesh API server.
                           port: 2379
                         {{- end }}
                   cluster:
