@@ -339,6 +339,13 @@ spec:
               providerConfigRef:
                 name: {{ $.observed.composite.resource.spec.s3.crossplane.crossplaneProvider }}
 
+              deletionPolicy: Orphan
+
+              managementPolicies:
+                - Create
+                - Update
+                - Observe
+
               forProvider:
                 region: {{ $.observed.composite.resource.spec.s3.region }}
                 bucketName: {{ $bucketName }}
@@ -701,6 +708,10 @@ spec:
                 {{ setResourceNameAnnotation $psqlDatabase }}
             spec:
               deletionPolicy: Orphan
+              managementPolicies:
+                - Observe
+                - Create
+                - Update
               providerConfigRef:
                 name: {{ $.observed.composite.resource.spec.psql.crossplane.crossplaneProvider }}
 
