@@ -27,7 +27,20 @@ spec:
                         interfaces:
                           - type: sriov
                             mtu: 1500
-                            bandwidth: 800mbit
+                            qdisc: htb
+                            bandwidth: 600mbit
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 10
+                            priorityQueues:
+                              - parent: "1:"
+                                classid: "1:10"
+                                rate: 600mbit
+                                ceil: 800mbit
+                                burst: 4mb
+                                cburst: 4mb
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
                             rings:
                               tx: 4096
                               rx: 4096

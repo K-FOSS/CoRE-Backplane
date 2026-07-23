@@ -14,8 +14,20 @@ tunnelers:
         # The first SR-IOV CNI interface defaults to fq at 400mbit.
         # Set qdisc and bandwidth on any SR-IOV interface to override it.
         # CAKE uses its native "bandwidth" option instead of fq's "maxrate".
-        qdisc: fq
-        bandwidth: 400mbit
+        qdisc: htb
+        bandwidth: 600mbit
+        qdiscHandle: "1:"
+        qdiscOptions: default 10
+        priorityQueues:
+          - parent: "1:"
+            classid: "1:10"
+            rate: 600mbit
+            ceil: 800mbit
+            burst: 4mb
+            cburst: 4mb
+            handle: "10:"
+            qdisc: fq_codel
+            options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
         # Additional root qdisc arguments, for example:
         # qdiscOptions: diffserv4 triple-isolate nat wash
         #

@@ -271,7 +271,7 @@ controllers:
         args:
           - |
             {{- range $nic := $qdiscNics }}
-            tc qdisc replace dev {{ $nic.interface }} root{{ with $nic.handle }} handle {{ . }}{{ end }} {{ $nic.qdisc }}{{ with $nic.bandwidth }} {{ if eq $nic.qdisc "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $nic.options }} {{ . }}{{ end }}
+            tc qdisc replace dev {{ $nic.interface }} root{{ with $nic.handle }} handle {{ . }}{{ end }} {{ $nic.qdisc }}{{ if and $nic.bandwidth (ne $nic.qdisc "htb") }} {{ if eq $nic.qdisc "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ $nic.bandwidth }}{{ end }}{{ with $nic.options }} {{ . }}{{ end }}
             {{- range $classIndex, $class := $nic.classes }}
             tc class replace dev {{ $nic.interface }} parent {{ required (printf "%s classes[%d]: parent is required" $nic.interface $classIndex) $class.parent }} classid {{ required (printf "%s classes[%d]: classid is required" $nic.interface $classIndex) $class.classid }} {{ default $nic.qdisc $class.qdisc }}{{ with $class.rate }} rate {{ . }}{{ end }}{{ with $class.ceil }} ceil {{ . }}{{ end }}{{ with $class.options }} {{ . }}{{ end }}
             {{- with $child := $class.child }}
@@ -279,7 +279,12 @@ controllers:
             {{- end }}
             {{- end }}
             {{- range $queueIndex, $queue := $nic.priorityQueues }}
+            {{- if $queue.classid }}
+            tc class replace dev {{ $nic.interface }} parent {{ required (printf "%s priorityQueues[%d]: parent is required" $nic.interface $queueIndex) $queue.parent }} classid {{ $queue.classid }} {{ default $nic.qdisc $queue.classQdisc }}{{ with $queue.rate }} rate {{ . }}{{ end }}{{ with $queue.ceil }} ceil {{ . }}{{ end }}{{ with $queue.burst }} burst {{ . }}{{ end }}{{ with $queue.cburst }} cburst {{ . }}{{ end }}{{ with $queue.classOptions }} {{ . }}{{ end }}
+            tc qdisc replace dev {{ $nic.interface }} parent {{ $queue.classid }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.bandwidth }} {{ if eq (default "fq" $queue.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $queue.options }} {{ . }}{{ end }}
+            {{- else }}
             tc qdisc replace dev {{ $nic.interface }} parent {{ required (printf "%s priorityQueues[%d]: parent is required" $nic.interface $queueIndex) $queue.parent }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.bandwidth }} {{ if eq (default "fq" $queue.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $queue.options }} {{ . }}{{ end }}
+            {{- end }}
             {{- end }}
             {{- end }}
             {{- range $tunnel := $ipTunnels }}
