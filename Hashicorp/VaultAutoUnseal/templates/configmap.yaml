@@ -1,11 +1,10 @@
-{{- include "common.values.setup" . -}}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "common.names.fullname" . }}-config
+  name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-config
   labels:
-    {{- include "common.labels" . | nindent 4 }}
+    {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
 data:
   unsealConfig.yaml: |
     ---

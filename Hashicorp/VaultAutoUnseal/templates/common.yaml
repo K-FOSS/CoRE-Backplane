@@ -1,18 +1,2 @@
-{{/* Make sure all variables are set properly */}}
-{{- include "common.values.setup" . }}
-
-{{/* Append the secretVolume volume to the volumes */}}
-{{- define "vault-autounseal.secretVolume" -}}
-enabled: 'true'
-mountPath: /etc/vault-unseal.yaml
-subPath: 'unsealConfig.yaml'
-type: 'custom'
-volumeSpec:
-  secret:
-    defaultMode: 0600
-    secretName: {{ include "common.names.fullname" . }}-config
-{{- end -}}
-{{- $_ := set .Values.persistence "vault-autounseal-config" (include "vault-autounseal.secretVolume" . | fromYaml) -}}
-
-{{/* Render the templates */}}
-{{ include "common.all" . }}
+{{- include "bjw-s.common.loader.init" . }}
+{{ include "bjw-s.common.loader.generate" . }}
