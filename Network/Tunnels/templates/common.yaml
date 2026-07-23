@@ -794,7 +794,9 @@ configMaps:
       {{- range $tunnelIndex, $tunnel := $wireguardTunnels }}
       wg-{{ $tunnelIndex }}.conf: |
         [Interface]
-        ListenPort = {{ required (printf "tunneler %q tunnel %q: port is required" $tunneler.name $tunnel.name) $tunnel.port }}
+        {{- with $tunnel.port }}
+        ListenPort = {{ . }}
+        {{- end }}
         {{- with $tunnel.address }}
         Address = {{ . }}
         {{- end }}
@@ -869,7 +871,7 @@ service:
         primary: false
 
         # -- The port number
-        port: {{ $tunnel.port }}
+        port: {{ required (printf "tunneler %q tunnel %q: port is required when its service is enabled" $tunneler.name $tunnel.name) $tunnel.port }}
 
         # -- Port protocol.
         # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
