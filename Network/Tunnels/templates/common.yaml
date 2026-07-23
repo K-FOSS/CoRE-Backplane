@@ -836,38 +836,38 @@ metadata:
   {{ end }}
 spec:
   config: |
-    {
-      "cniVersion": "1.0.0",
-      "name": "vlan{{ $netInterface.sriov.vlan }}",
-      "type": "{{ $netInterface.type }}",
-      {{- if eq $netInterface.type "sriov" }}
-      "spoofchk": "off",
-      {{- end }}
-      {{- with $netInterface.mtu }}
-      "mtu": {{ . }},
-      {{- end }}
-      "vlan": {{ $netInterface.sriov.vlan }},
-      {{- if $netInterface.ipam }}
-      "ipam": {
-        "type": "static",
-        {{- if $netInterface.ipam.routes }}
-        "routes": [
-          {{- range $routeIndex, $route := $netInterface.ipam.routes }}
-          {{- if $routeIndex }},{{ end }}{{ omit $route "src" | toJson }}
-          {{- end }}
-        ],
-        {{- end }}
-        {{- $addresses := default (list $netInterface.ipam.address) $netInterface.ipam.addresses }}
-        "addresses": [
-          {{- range $addressIndex, $address := $addresses }}
-          {{- if $addressIndex }},{{ end }}{
-            "address": {{ required (printf "tunnelers.%s.interfaces.%d: each IPAM address is required" $tunneler.name $netID) $address | toJson }}
-          }
-          {{- end }}
-        ]
-      }
-      {{- end }}
-    }
+    {{- $plugin := dict "type" $netInterface.type "vlan" $netInterface.sriov.vlan }}
+    {{- if eq $netInterface.type "sriov" }}
+    {{- $_ := set $plugin "spoofchk" "off" }}
+    {{- end }}
+    {{- with $netInterface.mtu }}
+    {{- $_ := set $plugin "mtu" . }}
+    {{- end }}
+    {{- if $netInterface.ipam }}
+    {{- $ipam := dict "type" "static" }}
+    {{- with $netInterface.ipam.routes }}
+    {{- $routes := list }}
+    {{- range $route := . }}
+    {{- $routes = append $routes (omit $route "src") }}
+    {{- end }}
+    {{- $_ := set $ipam "routes" $routes }}
+    {{- end }}
+    {{- $addresses := list }}
+    {{- range $address := default (list $netInterface.ipam.address) $netInterface.ipam.addresses }}
+    {{- $addresses = append $addresses (dict "address" (required (printf "tunnelers.%s.interfaces.%d: each IPAM address is required" $tunneler.name $netID) $address)) }}
+    {{- end }}
+    {{- $_ := set $ipam "addresses" $addresses }}
+    {{- $_ := set $plugin "ipam" $ipam }}
+    {{- end }}
+    {{- $config := dict "cniVersion" "1.0.0" "name" (printf "vlan%v" $netInterface.sriov.vlan) }}
+    {{- with $netInterface.tuning }}
+    {{- $tuning := deepCopy . }}
+    {{- $_ := set $tuning "type" "tuning" }}
+    {{- $_ := set $config "plugins" (list $plugin $tuning) }}
+    {{- else }}
+    {{- $_ := merge $config $plugin }}
+    {{- end }}
+    {{ $config | toJson }}
 ---
 {{ end }}
 {{ end }}

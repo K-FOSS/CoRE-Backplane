@@ -19,6 +19,15 @@ tunnelers:
           rx: 1024
         offload:
           rx-udp-gro-forwarding: 'on'
+        # Optional tuning CNI configuration. When set, the NIC plugin and
+        # tuning plugin are emitted as a chained CNI plugin list.
+        tuning:
+          sysctl:
+            net.core.netdev_max_backlog: "250000"
+            net.core.rmem_max: "268435456"
+            net.core.wmem_max: "268435456"
+            net.ipv4.udp_rmem_min: "8192"
+            net.ipv4.udp_wmem_min: "8192"
         routing:
           ospf:
             enabled: false
