@@ -1150,19 +1150,27 @@ spec:
                             }
                           }
                           sysctls = {
-                            "user.max_user_namespaces"            = "11255"
+                            "user.max_user_namespaces"            = "65536"
                             "net.core.somaxconn"                  = "65535"
                             "net.core.netdev_max_backlog"         = "16384"
-                            "net.ipv4.fib_multipath_hash_policy"  = "1"
-                            "net.ipv4.fib_multipath_hash_fields" = "0xfff"
+                            "net.ipv4.ip_local_port_range"        = "1024 65535"
+                            "net.ipv4.ip_local_reserved_ports"    = "2379-2380,4240,4244-4245,10250,30000-32767,50000-50001"
+                            "net.ipv4.tcp_max_syn_backlog"        = "262144"
+                            "net.ipv4.fib_multipath_hash_policy"  = "2"
+                            "net.ipv6.fib_multipath_hash_policy"  = "2"
                             "net.ipv4.conf.all.accept_local" = "1"
                             "net.ipv4.conf.default.accept_local" = "1"
                             "net.ipv4.conf.all.rp_filter" = "0"
+                            "net.ipv4.conf.default.rp_filter" = "0"
 
                             "net.bridge.bridge-nf-call-iptables"  = "0"
                             "net.bridge.bridge-nf-call-ip6tables" = "0"
                             "net.bridge.bridge-nf-call-arptables" = "0"
-                            "net.ipv4.tcp_ecn" = "1"
+                            "net.ipv4.tcp_ecn" = "2"
+                            "net.ipv4.tcp_slow_start_after_idle"  = "0"
+                            "net.ipv4.tcp_mtu_probing"            = "1"
+                            "net.ipv4.tcp_notsent_lowat"          = "131072"
+                            "net.ipv4.tcp_fastopen"               = "3"
 
                             {{- range $sysctlIndex, $sysctl := $.observed.composite.resource.spec.sysctls }}
                             "{{ $sysctl.name }}" = "{{ $sysctl.value }}"
