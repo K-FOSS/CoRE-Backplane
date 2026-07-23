@@ -11,6 +11,10 @@ tunnelers:
       
     interfaces:
       - type: sriov
+        # The first SR-IOV CNI interface defaults to fq at 400mbit.
+        # Set qdisc and bandwidth on any SR-IOV interface to override it.
+        qdisc: fq
+        bandwidth: 400mbit
         # Optional MAC address requested from Multus for the default network.
         macAddress: 02:00:00:00:00:01
         mtu: 9000
@@ -46,6 +50,9 @@ tunnelers:
           device: mellanox.com/mlx4_cx3_netdevice
       # Additional interfaces are attached as Multus secondary networks.
       - type: sriov
+        # Secondary CNI interfaces have no implicit qdisc or bandwidth.
+        # qdisc: fq
+        # bandwidth: 400mbit
         macAddress: 02:00:00:00:00:02
         mtu: 9000
         ipam:
@@ -85,6 +92,9 @@ tunnelers:
     tunnels:
       - name: yvr-tunneler1-gre1
         type: gre
+        # Tunnel endpoints default to fq at 250mbit.
+        qdisc: fq
+        bandwidth: 250mbit
         local: 10.7.7.61
         remote: 10.7.7.62
         address: 172.31.99.1/30

@@ -1,6 +1,25 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
+{{/*
+Convert the tc-compatible configured bandwidth to the Kbit/s value expected by
+FRR's interface bandwidth command.
+*/}}
+{{- define "core-network-tunneler.bandwidthKbps" -}}
+{{- $bandwidth := lower (toString .) -}}
+{{- $value := regexFind "^[0-9]+" $bandwidth | int -}}
+{{- if regexMatch "^[0-9]+(g|gbit|gbps)$" $bandwidth -}}
+{{- mul $value 1000000 -}}
+{{- else if regexMatch "^[0-9]+(m|mbit|mbps)$" $bandwidth -}}
+{{- mul $value 1000 -}}
+{{- else if regexMatch "^[0-9]+(k|kbit|kbps)?$" $bandwidth -}}
+{{- $value -}}
+{{- else if regexMatch "^[0-9]+(bit|bps)$" $bandwidth -}}
+{{- div $value 1000 -}}
+{{- else -}}
+{{- fail (printf "unsupported bandwidth %q: use an integer with bit, kbit, mbit, or gbit units" .) -}}
+{{- end -}}
+{{- end }}
 
 {{- define "app-template.hardcodedValues" -}}
 
@@ -88,6 +107,7 @@ controllers:
     {{- $mtuNics := list }}
     {{- $offloadNics := list }}
     {{- $ringNics := list }}
+    {{- $qdiscNics := list }}
     {{- $sourceRoutes := list }}
     {{- range $netID, $interface := $tunneler.interfaces }}
       {{- if .mtu  }}
@@ -98,6 +118,16 @@ controllers:
       {{- end }}
       {{- if .rings }}
         {{- $ringNics = append $ringNics (dict "interface" (printf "eth%d" $netID) "rings" .rings) }}
+      {{- end }}
+      {{- if and (eq .type "sriov") (or (eq $netID 0) (hasKey . "bandwidth") (hasKey . "qdisc")) }}
+        {{- $qdisc := default "fq" .qdisc }}
+        {{- $bandwidth := "" }}
+        {{- if hasKey . "bandwidth" }}
+          {{- $bandwidth = .bandwidth }}
+        {{- else if eq $netID 0 }}
+          {{- $bandwidth = "400mbit" }}
+        {{- end }}
+        {{- $qdiscNics = append $qdiscNics (dict "interface" (printf "eth%d" $netID) "qdisc" $qdisc "bandwidth" $bandwidth) }}
       {{- end }}
       {{- range $route := dig "ipam" "routes" (list) $interface }}
         {{- with $route.src }}
@@ -176,7 +206,6 @@ controllers:
             {{- range $sourceRoute := $sourceRoutes }}
             ip route replace {{ required (printf "interface route on %s: dst is required when src is set" $sourceRoute.interface) $sourceRoute.route.dst }}{{ with $sourceRoute.route.gw }} via {{ . }}{{ end }} dev {{ $sourceRoute.interface }} src {{ $sourceRoute.route.src }}
             {{- end }}
-
       {{- if $ipTunnels }}
       tunnel-init:
         image:
@@ -211,6 +240,33 @@ controllers:
             {{- range $route := $tunnel.routes }}
             ip route replace {{ $route.dst }} dev {{ $tunnel.name }}{{ with $route.via }} via {{ . }}{{ end }}
             {{- end }}
+            {{- end }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - NET_ADMIN
+          runAsNonRoot: false
+          seccompProfile:
+            type: RuntimeDefault
+      {{- end }}
+
+      {{- if or $qdiscNics $ipTunnels }}
+      tunnel-qdisc-config:
+        image:
+          repository: {{ dig "nicConfig" "image" "repository" "nicolaka/netshoot" $tunneler }}
+          tag: {{ dig "nicConfig" "image" "tag" "latest" $tunneler | quote }}
+          pullPolicy: {{ dig "nicConfig" "image" "pullPolicy" "IfNotPresent" $tunneler }}
+        command:
+          - /bin/sh
+          - -ec
+        args:
+          - |
+            {{- range $nic := $qdiscNics }}
+            tc qdisc replace dev {{ $nic.interface }} root {{ $nic.qdisc }}{{ with $nic.bandwidth }} maxrate {{ . }}{{ end }}
+            {{- end }}
+            {{- range $tunnel := $ipTunnels }}
+            tc qdisc replace dev {{ $tunnel.name }} root {{ default "fq" $tunnel.qdisc }}{{ if hasKey $tunnel "bandwidth" }} maxrate {{ $tunnel.bandwidth }}{{ else }} maxrate 250mbit{{ end }}
             {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
@@ -506,9 +562,18 @@ configMaps:
         {{- end }}
         !
         {{- range $netId, $netInterface := $tunneler.interfaces }}
+        {{- $interfaceBandwidth := "" }}
+        {{- if hasKey $netInterface "bandwidth" }}
+        {{- $interfaceBandwidth = $netInterface.bandwidth }}
+        {{- else if and (eq $netId 0) (eq $netInterface.type "sriov") }}
+        {{- $interfaceBandwidth = "400mbit" }}
+        {{- end }}
         !
-        {{- if $netInterface.routing }}
+        {{- if or $netInterface.routing $interfaceBandwidth }}
         interface eth{{ $netId }}
+          {{- with $interfaceBandwidth }}
+          bandwidth {{ include "core-network-tunneler.bandwidthKbps" . }}
+          {{- end }}
           {{- with $ospf := $netInterface.routing.ospf }}
           {{- if $ospf.enabled }}
           ip ospf area {{ default "0.0.0.0" $ospf.area }}
@@ -560,8 +625,9 @@ configMaps:
         {{- $interfaceName = printf "wg-%d" $wireguardIndex }}
         {{- $wireguardIndex = add1 $wireguardIndex }}
         {{- end }}
-        {{- if or (and $tunnel.ospf (not (and (hasKey $tunnel.ospf "enabled") (not $tunnel.ospf.enabled)))) (and $tunnel.ospf6 (not (and (hasKey $tunnel.ospf6 "enabled") (not $tunnel.ospf6.enabled)))) }}
+        {{- $tunnelBandwidth := default "250mbit" $tunnel.bandwidth }}
         interface {{ $interfaceName }}
+          bandwidth {{ include "core-network-tunneler.bandwidthKbps" $tunnelBandwidth }}
           {{- with $ospf := $tunnel.ospf }}
           {{- if not (and (hasKey $ospf "enabled") (not $ospf.enabled)) }}
           ip ospf area {{ default "0.0.0.0" $tunnel.ospf.area }}
@@ -633,7 +699,6 @@ configMaps:
           {{- end }}
         exit
         !
-        {{- end }}
         {{- end }}
         {{- if dig "frr" "bgp" "enabled" true $tunneler }}
         router bgp {{ dig "frr" "bgp" "asn" 64513 $tunneler }}
@@ -738,7 +803,7 @@ configMaps:
         {{- end }}
         MTU = {{ default 1420 $tunnel.mtu }}
         Table = {{ default "off" $tunnel.table }}
-        PostUp = tc qdisc replace dev %i root fq
+        PostUp = tc qdisc replace dev %i root {{ default "fq" $tunnel.qdisc }}{{ if hasKey $tunnel "bandwidth" }} maxrate {{ $tunnel.bandwidth }}{{ else }} maxrate 250mbit{{ end }}
 
       {{- range $peerIndex, $peer := $tunnel.peers }}
         [Peer]
