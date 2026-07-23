@@ -119,7 +119,7 @@ controllers:
       {{- if .rings }}
         {{- $ringNics = append $ringNics (dict "interface" (printf "eth%d" $netID) "rings" .rings) }}
       {{- end }}
-      {{- if and (eq .type "sriov") (or (eq $netID 0) (hasKey . "bandwidth") (hasKey . "qdisc")) }}
+      {{- if and (eq .type "sriov") (or (eq $netID 0) (hasKey . "bandwidth") (hasKey . "qdisc") (hasKey . "qdiscOptions") (hasKey . "qdiscHandle") (hasKey . "classes") (hasKey . "priorityQueues")) }}
         {{- $qdisc := default "fq" .qdisc }}
         {{- $bandwidth := "" }}
         {{- if hasKey . "bandwidth" }}
@@ -127,7 +127,15 @@ controllers:
         {{- else if eq $netID 0 }}
           {{- $bandwidth = "400mbit" }}
         {{- end }}
-        {{- $qdiscNics = append $qdiscNics (dict "interface" (printf "eth%d" $netID) "qdisc" $qdisc "bandwidth" $bandwidth) }}
+        {{- $qdiscNics = append $qdiscNics (dict
+          "interface" (printf "eth%d" $netID)
+          "qdisc" $qdisc
+          "bandwidth" $bandwidth
+          "options" (default "" .qdiscOptions)
+          "handle" (default "" .qdiscHandle)
+          "classes" (default (list) .classes)
+          "priorityQueues" (default (list) .priorityQueues)
+        ) }}
       {{- end }}
       {{- range $route := dig "ipam" "routes" (list) $interface }}
         {{- with $route.src }}
@@ -263,7 +271,16 @@ controllers:
         args:
           - |
             {{- range $nic := $qdiscNics }}
-            tc qdisc replace dev {{ $nic.interface }} root {{ $nic.qdisc }}{{ with $nic.bandwidth }} maxrate {{ . }}{{ end }}
+            tc qdisc replace dev {{ $nic.interface }} root{{ with $nic.handle }} handle {{ . }}{{ end }} {{ $nic.qdisc }}{{ with $nic.bandwidth }} {{ if eq $nic.qdisc "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $nic.options }} {{ . }}{{ end }}
+            {{- range $classIndex, $class := $nic.classes }}
+            tc class replace dev {{ $nic.interface }} parent {{ required (printf "%s classes[%d]: parent is required" $nic.interface $classIndex) $class.parent }} classid {{ required (printf "%s classes[%d]: classid is required" $nic.interface $classIndex) $class.classid }} {{ default $nic.qdisc $class.qdisc }}{{ with $class.rate }} rate {{ . }}{{ end }}{{ with $class.ceil }} ceil {{ . }}{{ end }}{{ with $class.options }} {{ . }}{{ end }}
+            {{- with $child := $class.child }}
+            tc qdisc replace dev {{ $nic.interface }} parent {{ $class.classid }}{{ with $child.handle }} handle {{ . }}{{ end }} {{ default "fq" $child.qdisc }}{{ with $child.bandwidth }} {{ if eq (default "fq" $child.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $child.options }} {{ . }}{{ end }}
+            {{- end }}
+            {{- end }}
+            {{- range $queueIndex, $queue := $nic.priorityQueues }}
+            tc qdisc replace dev {{ $nic.interface }} parent {{ required (printf "%s priorityQueues[%d]: parent is required" $nic.interface $queueIndex) $queue.parent }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.bandwidth }} {{ if eq (default "fq" $queue.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $queue.options }} {{ . }}{{ end }}
+            {{- end }}
             {{- end }}
             {{- range $tunnel := $ipTunnels }}
             tc qdisc replace dev {{ $tunnel.name }} root {{ default "fq" $tunnel.qdisc }}{{ if hasKey $tunnel "bandwidth" }} maxrate {{ $tunnel.bandwidth }}{{ else }} maxrate 250mbit{{ end }}

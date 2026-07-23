@@ -172,7 +172,21 @@ spec:
                         interfaces:
                           - type: sriov
                             mtu: 1500
-                            bandwidth: 50mbit
+                            qdisc: htb
+                            bandwidth: null
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 10
+                            classes:
+                              - parent: "1:"
+                                classid: "1:10"
+                                rate: 48mbit
+                                ceil: 48mbit
+                                options: burst 64k cburst 64k
+
+                                child:
+                                  handle: "10:"
+                                  qdisc: fq_codel
+                                  options: limit 10000 flows 1024 target 5ms interval 100ms ecn
                             routing:
                               ospf:
                                 enabled: false

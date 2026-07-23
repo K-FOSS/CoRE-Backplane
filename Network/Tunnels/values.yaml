@@ -13,8 +13,34 @@ tunnelers:
       - type: sriov
         # The first SR-IOV CNI interface defaults to fq at 400mbit.
         # Set qdisc and bandwidth on any SR-IOV interface to override it.
+        # CAKE uses its native "bandwidth" option instead of fq's "maxrate".
         qdisc: fq
         bandwidth: 400mbit
+        # Additional root qdisc arguments, for example:
+        # qdiscOptions: diffserv4 triple-isolate nat wash
+        #
+        # Child qdiscs can be attached to traffic classes created by a root
+        # qdisc such as mqprio. Each child supports qdisc, bandwidth, handle,
+        # and arbitrary options independently:
+        # qdisc: mqprio
+        # bandwidth: null
+        # qdiscHandle: "1:"
+        # qdiscOptions: num_tc 3 map 0 1 2 2 2 2 2 2 queues 1@0 1@1 2@2 hw 1
+        # priorityQueues:
+        #   - parent: "1:1"
+        #     handle: "10:"
+        #     qdisc: cake
+        #     bandwidth: 100mbit
+        #     options: besteffort
+        #   - parent: "1:2"
+        #     handle: "20:"
+        #     qdisc: cake
+        #     bandwidth: 200mbit
+        #     options: diffserv4
+        #
+        # Classful qdiscs such as HTB can define classes and one child qdisc
+        # per class. See the secondary SR-IOV interface below for a complete
+        # renderable example.
         # Optional MAC address requested from Multus for the default network.
         macAddress: 02:00:00:00:00:01
         mtu: 9000
@@ -53,6 +79,21 @@ tunnelers:
         # Secondary CNI interfaces have no implicit qdisc or bandwidth.
         # qdisc: fq
         # bandwidth: 400mbit
+        qdisc: htb
+        bandwidth: null
+        qdiscHandle: "1:"
+        qdiscOptions: default 10
+        classes:
+          - parent: "1:"
+            classid: "1:10"
+            rate: 48mbit
+            ceil: 48mbit
+            options: burst 64k cburst 64k
+
+            child:
+              handle: "10:"
+              qdisc: fq_codel
+              options: limit 10000 flows 1024 target 5ms interval 100ms ecn
         macAddress: 02:00:00:00:00:02
         mtu: 9000
         ipam:
