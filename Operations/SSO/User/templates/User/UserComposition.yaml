@@ -644,6 +644,10 @@ spec:
               name: {{ .observed.composite.resource.spec.s3.writeCredentialsSecretRef.name }}
 
               annotations:
+                #
+                # TODO: Actually make this check status and shit
+                gotemplating.fn.crossplane.io/ready: 'True'
+                
                 {{ setResourceNameAnnotation $s3Creds }}
             type: Opaque
             ---
