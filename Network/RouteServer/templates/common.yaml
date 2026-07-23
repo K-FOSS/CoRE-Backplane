@@ -559,7 +559,8 @@ spec:
 ---
 {{- end }}
 {{- if and $rs.networking $rs.networking.interfaces }}
-{{- range $netID, $netInterface := $rs.networking.interfaces -}}
+{{- range $netID, $netInterface := $rs.networking.interfaces }}
+---
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
@@ -572,31 +573,29 @@ metadata:
   {{- end }}
 spec:
   config: |
-    {
-      "cniVersion": "1.0.0",
-      "name": "vlan{{ $netInterface.sriov.vlan }}",
-      "type": "{{ $netInterface.type }}",
-      {{- if eq $netInterface.type "sriov" }}
-      "spoofchk": "off",
-      {{- end }}
-      {{- with $netInterface.mtu }}
-      "mtu": {{ . }},
-      {{- end }}
-      "vlan": {{ $netInterface.sriov.vlan }},
-      {{- if $netInterface.ipam }}
-      "ipam": {
-        "type": "static",
-        {{- if $netInterface.ipam.routes }}
-        "routes": {{ toJson $netInterface.ipam.routes }},
-        {{- end }}
-        "addresses": [
-          {
-            "address": "{{ $netInterface.ipam.address }}"
-          }
-        ]
-      }
-      {{- end }}
-    }
+    {{- $plugin := dict "type" $netInterface.type "vlan" $netInterface.sriov.vlan }}
+    {{- if eq $netInterface.type "sriov" }}
+    {{- $_ := set $plugin "spoofchk" "off" }}
+    {{- end }}
+    {{- with $netInterface.mtu }}
+    {{- $_ := set $plugin "mtu" . }}
+    {{- end }}
+    {{- if $netInterface.ipam }}
+    {{- $ipam := dict "type" "static" "addresses" (list (dict "address" $netInterface.ipam.address)) }}
+    {{- with $netInterface.ipam.routes }}
+    {{- $_ := set $ipam "routes" . }}
+    {{- end }}
+    {{- $_ := set $plugin "ipam" $ipam }}
+    {{- end }}
+    {{- $config := dict "cniVersion" "1.0.0" "name" (printf "vlan%v" $netInterface.sriov.vlan) }}
+    {{- with $netInterface.tuning }}
+    {{- $tuning := deepCopy . }}
+    {{- $_ := set $tuning "type" "tuning" }}
+    {{- $_ := set $config "plugins" (list $plugin $tuning) }}
+    {{- else }}
+    {{- $_ := merge $config $plugin }}
+    {{- end }}
+    {{ $config | toJson }}
 ---
 {{- end }}
 {{- end }}

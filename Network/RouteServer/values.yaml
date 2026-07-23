@@ -56,6 +56,11 @@ routeservers:
       interfaces:
         - type: sriov
           mtu: 9000
+          # Optional tuning CNI configuration. When set, the interface plugin
+          # and tuning plugin are emitted as a chained CNI plugin list.
+          # tuning:
+          #   sysctl:
+          #     net.core.netdev_max_backlog: "250000"
           routing:
             ospf:
               enabled: false
@@ -122,11 +127,13 @@ routeservers:
       peerGroups:
         - name: frr-gw
           asn: 64567
-          ebgpmultihop: 6
+          timers:
+            keepalive: 10
+            holdtime: 30
           ipv4:
             enabled: true
             softReconfiguration: true
 
 
     frr:
-      version: 10.5.1
+      version: 10.6.1
