@@ -24,50 +24,11 @@ mimir:
   enabled: false
 
 mimir-distributed:
-  # Grafana Enterprise Metrics specific values and features are found after the `enterprise:` key
-  #
-  # The default values specified in this file are enough to deploy all of the
-  # Grafana Mimir or Grafana Enterprise Metrics microservices but are not suitable for
-  # production load.
-  # To configure the resources for production load, refer to the small.yaml or
-  # large.yaml values files.
-
-  # Note: The values in this file are not backward compatible. Copying and pasting the values is discouraged, but if you do so,
-  # make sure to use the values.yaml from the branch or tag that matches the mimir-distributed Helm chart version that you
-  # want to install. You also can see values.yaml for a specific version by running
-  # `helm show values grafana/mimir-distributed --version <version>`
-
-  # If you want to get the values file from Github, build the URL as follows because we git tag every release:
-  # `https://github.com/grafana/mimir/blob/mimir-distributed-<chart-version>/operations/helm/charts/mimir-distributed/values.yaml`.
-  # For example, https://github.com/grafana/mimir/blob/mimir-distributed-3.1.0/operations/helm/charts/mimir-distributed/values.yaml.
-
-  # -- Overrides the version used to determine compatibility of resources with the target Kubernetes cluster.
-  # This is useful when using `helm template`, because then helm will use the client version of kubectl as the Kubernetes version,
-  # which may or may not match your cluster's server version. Example: 'v1.24.4'. Set to null to use the version that helm
-  # devises.
-  kubeVersionOverride: null
-
-  # -- Overrides the chart's name. Used to change mimir/enterprise-metrics infix in the resource names. E.g. myRelease-mimir-ingester-1 to myRelease-nameOverride-ingester-1.
-  # This option is used to align resource names with Cortex, when doing a migration from Cortex to Grafana Mimir.
-  # Note: Grafana provided dashboards rely on the default naming and will need changes.
-  nameOverride: null
-
-  # -- Overrides the chart's computed fullname. Used to change the full prefix of resource names. E.g. myRelease-mimir-ingester-1 to fullnameOverride-ingester-1.
-  # Note: Grafana provided dashboards rely on the default naming and will need changes.
-  fullnameOverride: null
-
   image:
     # -- Grafana Mimir container image repository. Note: for Grafana Enterprise Metrics use the value 'enterprise.image.repository'
     repository: grafana/mimir
-    # -- Grafana Mimir container image tag. Note: for Grafana Enterprise Metrics use the value 'enterprise.image.tag'
-    tag: r327-0c923bb
     # -- Container pull policy - shared between Grafana Mimir and Grafana Enterprise Metrics
     pullPolicy: IfNotPresent
-    # -- Optionally specify an array of imagePullSecrets - shared between Grafana Mimir and Grafana Enterprise Metrics
-    # Secrets must be manually created in the namespace.
-    # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    # pullSecrets:
-    #   - myRegistryKeySecretName
 
   global:
     # -- Definitions to set up nginx resolver
@@ -683,12 +644,6 @@ mimir-distributed:
     # -- Whether to render the manifests related to the ingester component.
     enabled: true
 
-    # -- Allows to override the container image of the ingester component.
-    # When set it takes precedence over what is defined in global "image" or "enterprise.image" sections.
-    image:
-      # repository: grafana/mimir
-      # tag: 2.15.0
-
     # -- Total number of replicas for the ingester across all availability zones
     # If ingester.zoneAwareReplication.enabled=false, this number is taken as is.
     # Otherwise each zone starts `ceil(replicas / number_of_zones)` number of pods.
@@ -1083,12 +1038,6 @@ mimir-distributed:
 
   # -- Only deployed if .Values.ruler.remoteEvaluationDedicatedQueryPath
   ruler_querier:
-    # -- Allows to override the container image of the ruler-querier component.
-    # When set it takes precedence over what is defined in global "image" or "enterprise.image" sections.
-    image:
-      # repository: grafana/mimir
-      # tag: 2.15.0
-
     replicas: 2
 
     # -- [Experimental] Configure autoscaling via KEDA (https://keda.sh). This requires having
@@ -1134,50 +1083,6 @@ mimir-distributed:
         cpu: 100m
         memory: 128Mi
 
-    # Additional ruler-querier container arguments, e.g. log level (debug, info, warn, error)
-    extraArgs: {}
-
-    # Pod Labels
-    podLabels: {}
-
-    # Pod Annotations
-    podAnnotations: {}
-
-    # Pod Disruption Budget
-    podDisruptionBudget:
-      maxUnavailable: 1
-
-    # -- The name of the PriorityClass for ruler-querier pods
-    priorityClassName: null
-
-    nodeSelector: {}
-    affinity: {}
-
-    # -- topologySpreadConstraints allows to customize the default topologySpreadConstraints. This can be either a single dict as shown below or a slice of topologySpreadConstraints.
-    # labelSelector is taken from the constraint itself (if it exists) or is generated by the chart using the same selectors as for services.
-    topologySpreadConstraints:
-      maxSkew: 1
-      topologyKey: kubernetes.io/hostname
-      whenUnsatisfiable: ScheduleAnyway
-      # minDomains: 1
-      # nodeAffinityPolicy: Honor
-      # nodeTaintsPolicy: Honor
-      # matchLabelKeys:
-      #   - pod-template-hash
-
-    annotations: {}
-    persistence:
-      subPath:
-
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: http-metrics
-      initialDelaySeconds: 45
-
-    # -- SecurityContext override for ruler-querier pods
-    securityContext: {}
-
     # -- The SecurityContext for ruler-querier containers
     containerSecurityContext:
       allowPrivilegeEscalation: false
@@ -1192,14 +1097,6 @@ mimir-distributed:
         maxSurge: 15%
 
     terminationGracePeriodSeconds: 180
-
-    tolerations: []
-    initContainers: []
-    extraContainers: []
-    extraVolumes: []
-    extraVolumeMounts: []
-    env: []
-    extraEnvFrom: []
 
     # -- Jaeger reporter queue size
     # Set to 'null' to use the Jaeger client's default value
@@ -1250,46 +1147,6 @@ mimir-distributed:
         cpu: 100m
         memory: 128Mi
 
-    # Additional ruler-query-frontend container arguments, e.g. log level (debug, info, warn, error)
-    extraArgs: {}
-
-    # Pod Labels
-    podLabels: {}
-
-    # Pod Annotations
-    podAnnotations: {}
-
-    # Pod Disruption Budget
-    podDisruptionBudget:
-      maxUnavailable: 1
-
-    # -- The name of the PriorityClass for ruler-query-frontend pods
-    priorityClassName: null
-
-    nodeSelector: {}
-    affinity: {}
-
-    # -- topologySpreadConstraints allows to customize the default topologySpreadConstraints. This can be either a single dict as shown below or a slice of topologySpreadConstraints.
-    # labelSelector is taken from the constraint itself (if it exists) or is generated by the chart using the same selectors as for services.
-    topologySpreadConstraints:
-      maxSkew: 1
-      topologyKey: kubernetes.io/hostname
-      whenUnsatisfiable: ScheduleAnyway
-      # minDomains: 1
-      # nodeAffinityPolicy: Honor
-      # nodeTaintsPolicy: Honor
-      # matchLabelKeys:
-      #   - pod-template-hash
-
-    annotations: {}
-    persistence:
-      subPath:
-
-    readinessProbe:
-      httpGet:
-        path: /ready
-        port: http-metrics
-      initialDelaySeconds: 45
 
     # -- SecurityContext override for query-fronted pods
     securityContext: {}
@@ -1309,26 +1166,12 @@ mimir-distributed:
 
     terminationGracePeriodSeconds: 390
 
-    tolerations: []
-    initContainers: []
-    extraContainers: []
-    extraVolumes: []
-    extraVolumeMounts: []
-    env: []
-    extraEnvFrom: []
-
     # -- Jaeger reporter queue size
     # Set to 'null' to use the Jaeger client's default value
     jaegerReporterMaxQueueSize: 5000
 
   # -- Only deployed if .Values.ruler.remoteEvaluationDedicatedQueryPath
   ruler_query_scheduler:
-    # -- Allows to override the container image of the ruler-query-scheduler component.
-    # When set it takes precedence over what is defined in global "image" or "enterprise.image" sections.
-    image:
-      # repository: grafana/mimir
-      # tag: 2.15.0
-
     replicas: 2
 
     service:
@@ -1342,15 +1185,6 @@ mimir-distributed:
       requests:
         cpu: 100m
         memory: 128Mi
-
-    # Additional ruler-query-scheduler container arguments, e.g. log level (debug, info, warn, error)
-    extraArgs: {}
-
-    # Pod Labels
-    podLabels: {}
-
-    # Pod Annotations
-    podAnnotations: {}
 
     # Pod Disruption Budget
     podDisruptionBudget:
@@ -3337,21 +3171,3 @@ mimir-distributed:
     tolerations: []
     terminationGracePeriodSeconds: 30
 
-  # -- Add dynamic manifests via values. Example:
-  # extraObjects:
-  # - kind: ConfigMap
-  #   apiVersion: v1
-  #   metadata:
-  #     name: extra-cm-{{ .Release.Name }}
-  #   data: |
-  #     extra.yml: "does-my-install-need-extra-info: true"
-  # alternatively, you can use strings, which lets you use the mimir defines:
-  # extraObjects:
-  # - |
-  #   kind: ConfigMap
-  #   apiVersion: v1
-  #   metadata:
-  #     name: extra-cm-{{ .Release.Name }}
-  #   data: |
-  #     extra.yml: "{{ include some-mimir-define }}"
-  extraObjects: []
