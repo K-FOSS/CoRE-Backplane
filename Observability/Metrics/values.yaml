@@ -22,6 +22,33 @@ oidc:
 
 mimir:
   enabled: false
+  replicas: 3
+
+  image:
+    repository: grafana/mimir
+    # Pin releases so a restart cannot silently upgrade the storage engine.
+    tag: 3.0.6
+    pullPolicy: IfNotPresent
+
+  # Monolithic Mimir keeps the TSDB head and query working set in memory. Avoid a
+  # CPU limit so Go can use spare node capacity during compaction and large queries.
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      memory: 4Gi
+
+  # Memory-backed working storage for the WAL, compacted head blocks and index
+  # headers. EmptyDir tmpfs usage counts against the pod's memory limit, so keep
+  # this comfortably below resources.limits.memory. S3 remains durable storage.
+  dataVolume:
+    sizeLimit: 2Gi
+
+  tmpVolume:
+    sizeLimit: 512Mi
+
+  nodeSelector: {}
 
 mimir-distributed:
   image:
@@ -3170,4 +3197,3 @@ mimir-distributed:
 
     tolerations: []
     terminationGracePeriodSeconds: 30
-

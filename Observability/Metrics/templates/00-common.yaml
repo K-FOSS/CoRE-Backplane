@@ -22,40 +22,63 @@ controllers:
     # DaemonSets/CronJobs ignore this.
     strategy: RollingUpdate
 
+    rollingUpdate:
+      unavailable: 1
+      surge: 1
+
     podDisruptionBudget:
-      minAvailable: 3
-      # maxUnavailable: 1
-  
+      maxUnavailable: 1
+
     pod:
+      terminationGracePeriodSeconds: 120
+
       affinity:
         podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            - labelSelector:
-                matchExpressions:
-                  - key: app
-                    operator: In
-                    values:
-                      - '{{ $.Release.Name | lower }}'
-              topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: '{{ $.Release.Name }}'
+                    app.kubernetes.io/controller: mimir
+                topologyKey: kubernetes.io/hostname
+
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
 
       {{- with .Values.mimir.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
       {{- end }}
-    
-    replicas: 3
+
+    replicas: {{ .Values.mimir.replicas }}
 
     containers:
       mimir:
         image:
-          repository: grafana/mimir
-          tag: latest
-          pullPolicy: Always
+          repository: {{ .Values.mimir.image.repository }}
+          tag: {{ .Values.mimir.image.tag | quote }}
+          pullPolicy: {{ .Values.mimir.image.pullPolicy }}
+
+        resources:
+          {{- toYaml .Values.mimir.resources | nindent 10 }}
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
 
         ports:
           - name: http
             containerPort: 8080
-
+          - name: grpc
+            containerPort: 9095
 
         args:
           - -config.file=/etc/mimir.yaml
@@ -86,51 +109,38 @@ controllers:
                 name: {{ $.Release.Name }}-creds
                 key: username
 
-        # -- Probe configuration
-        # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
-        # @default -- See below
         probes:
-          # -- Liveness probe configuration
-          # @default -- See below
-          liveness:
-            # -- Enable the liveness probe
-            enabled: false
-            # -- Set this to `true` if you wish to specify your own livenessProbe
-            custom: false
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
-            type: HTTP
-            # -- The spec field contains the values for the default livenessProbe.
-            # If you selected `custom: true`, this field holds the definition of the livenessProbe.
-            # @default -- See below
-            spec:
-              initialDelaySeconds: 0
-              periodSeconds: 10
-              timeoutSeconds: 1
-              failureThreshold: 3
-
-          # -- Redainess probe configuration
-          # @default -- See below
-          readiness:
-            # -- Enable the readiness probe
+          startup:
             enabled: true
-            # -- Set this to `true` if you wish to specify your own readinessProbe
             custom: false
-
-            path: /ready
-
-            port: http
-            # -- sets the probe type when not using a custom probe
-            # @default -- "TCP"
             type: HTTP
-            # -- The spec field contains the values for the default readinessProbe.
-            # If you selected `custom: true`, this field holds the definition of the readinessProbe.
-            # @default -- See below
+            path: /ready
+            port: http
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 60
+
+          liveness:
+            enabled: true
+            custom: false
+            type: TCP
+            port: http
+            spec:
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 4
+
+          readiness:
+            enabled: true
+            custom: false
+            path: /ready
+            port: http
+            type: HTTP
             spec:
               failureThreshold: 3
-              initialDelaySeconds: 45
-              periodSeconds: 30
-              timeoutSeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 5
 
 service:
   mimir:
@@ -268,10 +278,11 @@ configMaps:
 
     data:
       mimir.yaml: |
-        # Do not use this configuration in production.
-        # It is for demonstration purposes only.
-        # Run Mimir in single process mode, with all components running in 1 process.
+        # Horizontally scaled monolithic mode: each replica runs all components.
         target: all,alertmanager,overrides-exporter
+
+        activity_tracker:
+          filepath: /data/metrics-activity.log
 
         multitenancy_enabled: false
         no_auth_tenant: core
@@ -294,14 +305,31 @@ configMaps:
               session_token: "${AWS_SESSION_TOKEN}"
               insecure: false
               bucket_name: ${S3_BUCKET}
+              http:
+                max_idle_connections: 200
+                max_idle_connections_per_host: 200
 
         # Blocks storage requires a prefix when using a common object storage bucket.
         blocks_storage:
           storage_prefix: blocks
           s3:
             bucket_name: ${S3_BUCKET}
+          bucket_store:
+            sync_dir: /data/tsdb-sync
+            tenant_sync_concurrency: 4
+            block_sync_concurrency: 8
           tsdb:
             dir: /data/ingester
+            ship_concurrency: 20
+
+        querier:
+          max_concurrent: 32
+
+        query_scheduler:
+          max_outstanding_requests_per_tenant: 1024
+
+        compactor:
+          data_dir: /data/compactor
 
         # Use memberlist, a gossip-based protocol, to enable the 3 Mimir replicas to communicate
         memberlist:
@@ -323,10 +351,6 @@ configMaps:
         ruler:
           rule_path: /data/ruler
           alertmanager_url: http://127.0.0.1:8080/alertmanager
-          ring:
-            # Quickly detect unhealthy rulers to speed up the tutorial.
-            heartbeat_period: 2s
-            heartbeat_timeout: 10s
 
         alertmanager:
           data_dir: /data/alertmanager
@@ -335,8 +359,37 @@ configMaps:
 
         server:
           log_level: warn
+          grpc_server_max_concurrent_streams: 1000
 
 persistence:
+  mimir-data:
+    enabled: true
+
+    type: emptyDir
+
+    medium: Memory
+
+    sizeLimit: {{ .Values.mimir.dataVolume.sizeLimit }}
+
+    advancedMounts:
+      mimir:
+        mimir:
+          - path: /data
+
+  mimir-tmp:
+    enabled: true
+
+    type: emptyDir
+
+    medium: Memory
+
+    sizeLimit: {{ .Values.mimir.tmpVolume.sizeLimit }}
+
+    advancedMounts:
+      mimir:
+        mimir:
+          - path: /tmp
+
   mimir-alertmanager:
     enabled: true
 
@@ -414,7 +467,7 @@ spec:
         - group: ''
           kind: Service
           name: '{{ ((include "bjw-s.common.lib.service.getByIdentifier" (dict "rootContext" . "id" "mimir")) | fromYaml).name }}'
-          port: 80
+          port: 8080
           weight: 1
       matches:
         - path:
