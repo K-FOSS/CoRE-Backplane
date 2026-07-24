@@ -55,7 +55,32 @@ routeservers:
         enabled: false
       interfaces:
         - type: sriov
+          # Link and queue configuration is applied inside the pod namespace.
           mtu: 9000
+          # macAddress: 02:00:00:00:00:01
+          # bandwidth: 400mbit
+          # qdisc: fq
+          # qdiscHandle: "1:"
+          # qdiscOptions: ""
+          # rings:
+          #   rx: 1024
+          #   tx: 1024
+          # offload:
+          #   rx-udp-gro-forwarding: "on"
+          # Classful qdiscs can use the same classes/priorityQueues structure
+          # as the Tunneler chart.
+          # classes: []
+          # priorityQueues: []
+          # trafficRules:
+          #   - parent: "1:"
+          #     protocol: ip
+          #     priority: 10
+          #     classifier: flower
+          #     tier: priority
+          #     match:
+          #       dscp: 46
+          #       ipProtocol: tcp
+          #       destinationPort: 179
           # Optional tuning CNI configuration. When set, the interface plugin
           # and tuning plugin are emitted as a chained CNI plugin list.
           # tuning:
@@ -64,11 +89,41 @@ routeservers:
           routing:
             ospf:
               enabled: false
+              area: 0.0.0.0
+              type: point-to-point
+              # cost: 10
+              # hello: 10
+              # dead: 40
+              # retransmit: 5
+              # transmitDelay: 1
+              # mtuIgnore: false
+              # passive: false
+              # rawConfig: ""
+            # ospf6:
+            #   enabled: true
+            #   area: 0.0.0.0
+            #   type: point-to-point
+            # isis:
+            #   enabled: true
+            #   type: point-to-point
+            #   metric: 10
+            # Interface-based BGP provides numbered or unnumbered PtP peers.
+            # Omit address to generate `neighbor ethN interface`.
+            # bgp:
+            #   enabled: true
+            #   asn: 64568
+            #   description: fabric-spine-1
+            #   addressFamilies:
+            #     - ipv4 unicast
+            #     - ipv6 unicast
           ipam:
-            address: 10.7.7.61/24
+            addresses:
+              - 10.7.7.61/24
+              # - 2001:db8:7::61/64
             routes:
               - dst: 0.0.0.0/0
                 gw: 10.7.7.1
+                # src: 10.7.7.61
           sriov:
             vlan: 666
             device: mellanox.com/mlx4_cx3_netdevice
@@ -81,6 +136,25 @@ routeservers:
 
       autocost:
         refBandwidth: 100000
+      redistribute: []
+
+    ospf6:
+      enabled: false
+      gracefulRestart:
+        enabled: true
+      autocost:
+        refBandwidth: 100000
+      redistribute: []
+
+    isis:
+      enabled: false
+      name: CORE
+      # Required when enabled, for example:
+      # net: 49.0001.0100.0700.7061.00
+      level: level-2-only
+      ipv4: true
+      ipv6: true
+      rawConfig: ""
 
     bgp:
       enabled: true
@@ -137,3 +211,35 @@ routeservers:
 
     frr:
       version: 10.6.1
+      rawConfig: ""
+
+    # Optional debugging sidecar sharing the Route Server pod's complete
+    # network namespace, including all Multus CNI interfaces.
+    debugSidecar:
+      enabled: false
+      image:
+        repository: nicolaka/netshoot
+        tag: latest
+        pullPolicy: IfNotPresent
+      command:
+        - /bin/sh
+        - -c
+      args:
+        - sleep infinity
+      env: {}
+      resources: {}
+      securityContext:
+        allowPrivilegeEscalation: false
+        privileged: false
+        readOnlyRootFilesystem: false
+        runAsNonRoot: false
+        seccompProfile:
+          type: RuntimeDefault
+
+      # To run an iPerf3 server continuously, override the process:
+      # command:
+      #   - iperf3
+      # args:
+      #   - --server
+      #   - --interval
+      #   - "1"

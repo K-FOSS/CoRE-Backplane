@@ -1,6 +1,15 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
+{{- define "routeserver.bandwidthMbps" -}}
+{{- $value := regexFind "^[0-9]+" (toString .) -}}
+{{- if hasSuffix "gbit" (toString .) -}}
+{{- mul (int $value) 1000 -}}
+{{- else -}}
+{{- $value -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "app-template.hardcodedValues" -}}
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
@@ -23,13 +32,9 @@ controllers:
 
     nameOverride: {{ $name }}
 
-    {{- $mtuUsed := false -}}
     {{- $sriovUsed := false -}}
     {{- $sriovResources := dict -}}
     {{- range $netID, $netInterface := $rs.networking.interfaces }}
-    {{ if .mtu }}
-    {{- $mtuUsed = true }}
-    {{- end }}
     {{- if eq $netInterface.type "sriov" }}
     {{ $sriovUsed = true }}
     {{- 
@@ -42,36 +47,116 @@ controllers:
     {{- end }}
     {{- end }}
 
-    {{- if eq $mtuUsed true }}
+    {{- $configuredInterfaces := list -}}
+    {{- $qdiscInterfaces := list -}}
+    {{- range $netID, $netInterface := $rs.networking.interfaces }}
+    {{- $configuredInterfaces = append $configuredInterfaces (dict "name" (printf "eth%d" $netID) "config" $netInterface) }}
+    {{- if or (hasKey $netInterface "qdisc") (hasKey $netInterface "bandwidth") (hasKey $netInterface "classes") (hasKey $netInterface "priorityQueues") (hasKey $netInterface "trafficRules") (hasKey $netInterface "filters") }}
+    {{- $qdiscInterfaces = append $qdiscInterfaces (dict "name" (printf "eth%d" $netID) "config" $netInterface) }}
+    {{- end }}
+    {{- end }}
+    {{- if $configuredInterfaces }}
     initContainers:
-      linkconf:
+      nicconfig:
         image:
-          repository: alpine
-          #
-          # TODO: Get Renovate or similar managing this
-          #
-          tag: '3.20'
-          pullPolicy: IfNotPresent
+          repository: {{ dig "nicConfig" "image" "repository" "nicolaka/netshoot" $rs }}
+          tag: {{ dig "nicConfig" "image" "tag" "latest" $rs | quote }}
+          pullPolicy: {{ dig "nicConfig" "image" "pullPolicy" "IfNotPresent" $rs }}
 
         securityContext:
-          privileged: false
-          allowPrivilegeEscalation: false
-          runAsNonRoot: false
-          readOnlyRootFilesystem: false
           capabilities:
             add:
               - NET_ADMIN
-        
+              - NET_RAW
+
         command:
           - /bin/sh
-          - -c
+          - -ec
           - |
-            {{- range $netID, $netInterface := $rs.networking.interfaces }}
-            {{- if $netInterface.mtu }}
-            ip link set dev eth{{ $netID }} mtu {{ $netInterface.mtu }}
-            ip link show eth{{ $netID }}
+            {{- range $interface := $configuredInterfaces }}
+            {{- with $interface.config.mtu }}
+            ip link set dev {{ $interface.name }} mtu {{ . }}
+            {{- end }}
+            {{- range $ring, $value := $interface.config.rings }}
+            ethtool -G {{ $interface.name }} {{ $ring }} {{ $value }}
+            {{- end }}
+            {{- range $feature, $value := $interface.config.offload }}
+            ethtool -K {{ $interface.name }} {{ $feature }} {{ $value }}
+            {{- end }}
+            {{- range $route := dig "ipam" "routes" (list) $interface.config }}
+            {{- with $route.src }}
+            ip route replace {{ required (printf "%s route: dst is required when src is set" $interface.name) $route.dst }}{{ with $route.gw }} via {{ . }}{{ end }} dev {{ $interface.name }} src {{ . }}
             {{- end }}
             {{- end }}
+            ip -d link show {{ $interface.name }}
+            {{- end }}
+      {{- if $qdiscInterfaces }}
+      qdisc-config:
+        image:
+          repository: {{ dig "nicConfig" "image" "repository" "nicolaka/netshoot" $rs }}
+          tag: {{ dig "nicConfig" "image" "tag" "latest" $rs | quote }}
+          pullPolicy: {{ dig "nicConfig" "image" "pullPolicy" "IfNotPresent" $rs }}
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+        command:
+          - /bin/sh
+          - -ec
+          - |
+            {{- range $interface := $qdiscInterfaces }}
+            {{- $qdisc := default "fq" $interface.config.qdisc }}
+            tc qdisc del dev {{ $interface.name }} root 2>/dev/null || true
+            tc qdisc add dev {{ $interface.name }} root{{ with $interface.config.qdiscHandle }} handle {{ . }}{{ end }} {{ $qdisc }}{{ with $interface.config.bandwidth }}{{ if ne $qdisc "htb" }} {{ if eq $qdisc "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ end }}{{ with $interface.config.qdiscOptions }} {{ . }}{{ end }}
+            {{- range $classIndex, $class := $interface.config.classes }}
+            tc class add dev {{ $interface.name }} parent {{ required (printf "%s classes[%d].parent is required" $interface.name $classIndex) $class.parent }} classid {{ required (printf "%s classes[%d].classid is required" $interface.name $classIndex) $class.classid }} {{ default $qdisc $class.qdisc }}{{ with $class.rate }} rate {{ . }}{{ end }}{{ with $class.ceil }} ceil {{ . }}{{ end }}{{ with $class.options }} {{ . }}{{ end }}
+            {{- with $class.child }}
+            tc qdisc add dev {{ $interface.name }} parent {{ $class.classid }}{{ with .handle }} handle {{ . }}{{ end }} {{ default "fq" .qdisc }}{{ with .bandwidth }} {{ if eq (default "fq" .qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with .options }} {{ . }}{{ end }}
+            {{- end }}
+            {{- end }}
+            {{- range $queueIndex, $queue := $interface.config.priorityQueues }}
+            {{- if $queue.classid }}
+            tc class add dev {{ $interface.name }} parent {{ required (printf "%s priorityQueues[%d].parent is required" $interface.name $queueIndex) $queue.parent }} classid {{ $queue.classid }} {{ default $qdisc $queue.classQdisc }}{{ with $queue.rate }} rate {{ . }}{{ end }}{{ with $queue.ceil }} ceil {{ . }}{{ end }}{{ with $queue.burst }} burst {{ . }}{{ end }}{{ with $queue.cburst }} cburst {{ . }}{{ end }}{{ with $queue.classOptions }} {{ . }}{{ end }}
+            tc qdisc add dev {{ $interface.name }} parent {{ $queue.classid }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.bandwidth }} {{ if eq (default "fq" $queue.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $queue.options }} {{ . }}{{ end }}
+            {{- else }}
+            tc qdisc add dev {{ $interface.name }} parent {{ required (printf "%s priorityQueues[%d].parent is required" $interface.name $queueIndex) $queue.parent }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.bandwidth }} {{ if eq (default "fq" $queue.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $queue.options }} {{ . }}{{ end }}
+            {{- end }}
+            {{- end }}
+            {{- range $ruleIndex, $rule := default (default (list) $interface.config.filters) $interface.config.trafficRules }}
+            {{- $ruleContext := printf "%s trafficRules[%d]" $interface.name $ruleIndex }}
+            {{- $classifier := default "flower" $rule.classifier }}
+            {{- if ne $classifier "flower" }}
+            {{- fail (printf "%s: unsupported classifier %q" $ruleContext $classifier) }}
+            {{- end }}
+            {{- $match := default (dict) $rule.match }}
+            {{- $tosConfigured := or (hasKey $match "dscp") (hasKey $match "ecn") }}
+            {{- $tosValue := 0 }}
+            {{- $tosMask := 0 }}
+            {{- if hasKey $match "dscp" }}
+            {{- $dscp := int $match.dscp }}
+            {{- if or (lt $dscp 0) (gt $dscp 63) }}{{- fail (printf "%s: match.dscp must be from 0 through 63" $ruleContext) }}{{- end }}
+            {{- $tosValue = mul $dscp 4 }}
+            {{- $tosMask = 252 }}
+            {{- end }}
+            {{- if hasKey $match "ecn" }}
+            {{- $ecn := int $match.ecn }}
+            {{- if or (lt $ecn 0) (gt $ecn 3) }}{{- fail (printf "%s: match.ecn must be from 0 through 3" $ruleContext) }}{{- end }}
+            {{- $tosValue = add $tosValue $ecn }}
+            {{- $tosMask = add $tosMask 3 }}
+            {{- end }}
+            {{- $flowid := default (default $rule.classid $rule.classId) $rule.flowid }}
+            {{- with $tierName := $rule.tier }}
+            {{- range $queue := $interface.config.priorityQueues }}
+            {{- if eq (default "" $queue.name) $tierName }}
+            {{- $flowid = required (printf "%s: priority queue %q needs classid" $ruleContext $tierName) $queue.classid }}
+            {{- end }}
+            {{- end }}
+            {{- if not $flowid }}{{- fail (printf "%s: tier %q does not name a priorityQueue" $ruleContext $tierName) }}{{- end }}
+            {{- end }}
+            tc filter add dev {{ $interface.name }} parent {{ required (printf "%s: parent is required" $ruleContext) $rule.parent }} protocol {{ required (printf "%s: protocol is required" $ruleContext) $rule.protocol }} pref {{ required (printf "%s: priority is required" $ruleContext) $rule.priority }}{{ with $rule.handle }} handle {{ . }}{{ end }} {{ $classifier }}{{ if or $rule.skipHw $rule.skip_hw }} skip_hw{{ end }}{{ if or $rule.skipSw $rule.skip_sw }} skip_sw{{ end }}{{ with (default $match.sourceMac $match.srcMac) }} src_mac {{ . }}{{ end }}{{ with (default $match.destinationMac $match.dstMac) }} dst_mac {{ . }}{{ end }}{{ with (default $match.sourceIp $match.srcIp) }} src_ip {{ . }}{{ end }}{{ with (default $match.destinationIp $match.dstIp) }} dst_ip {{ . }}{{ end }}{{ with $match.ipProtocol }} ip_proto {{ . }}{{ end }}{{ with (default $match.sourcePort $match.srcPort) }} src_port {{ . }}{{ end }}{{ with (default $match.destinationPort $match.dstPort) }} dst_port {{ . }}{{ end }}{{ if $tosConfigured }} ip_tos {{ printf "0x%02x/0x%02x" $tosValue $tosMask }}{{ end }}{{ with (default $match.vlanPcp $match.vlanPriority) }} vlan_prio {{ . }}{{ end }}{{ with $match.vlanId }} vlan_id {{ . }}{{ end }}{{ with (default $match.firewallMark $match.mark) }} skbmark {{ . }}{{ end }}{{ with $match.raw }} {{ . }}{{ end }}{{ with $flowid }} flowid {{ . }}{{ end }}{{ if $rule.drop }} action drop{{ end }}{{ with $rule.rawActions }} {{ . }}{{ end }}
+            {{- end }}
+            {{- end }}
+      {{- end }}
     {{- end }}
 
 
@@ -102,8 +187,21 @@ controllers:
           - name: edns0
 
       {{- if and $rs.networking $rs.networking.interfaces }}
+      {{- $additionalNetworks := list }}
+      {{- range $netID, $netInterface := $rs.networking.interfaces }}
+      {{- if gt $netID 0 }}
+      {{- $network := dict "name" (printf "net-%s-%s-%d" $.Release.Name $name $netID) "interface" (printf "eth%d" $netID) }}
+      {{- with $netInterface.macAddress }}
+      {{- $_ := set $network "mac" . }}
+      {{- end }}
+      {{- $additionalNetworks = append $additionalNetworks $network }}
+      {{- end }}
+      {{- end }}
       annotations:
-        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $name }}-0'
+        v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $name }}-0'
+        {{- if $additionalNetworks }}
+        k8s.v1.cni.cncf.io/networks: {{ $additionalNetworks | toJson | quote }}
+        {{- end }}
       {{- end }}
 
     containers:
@@ -129,7 +227,7 @@ controllers:
           allowPrivilegeEscalation: false
           runAsNonRoot: false
           readOnlyRootFilesystem: false
-          {{- if $rs.ospf.enabled }}
+          {{- if or (dig "ospf" "enabled" false $rs) (dig "ospf6" "enabled" false $rs) (dig "isis" "enabled" false $rs) }}
           capabilities:
             add:
               - NET_ADMIN
@@ -202,6 +300,38 @@ controllers:
               periodSeconds: 5
               failureThreshold: 30
 
+      {{- if dig "debugSidecar" "enabled" false $rs }}
+      netshoot:
+        image:
+          repository: {{ dig "debugSidecar" "image" "repository" "nicolaka/netshoot" $rs }}
+          tag: {{ dig "debugSidecar" "image" "tag" "latest" $rs | quote }}
+          pullPolicy: {{ dig "debugSidecar" "image" "pullPolicy" "IfNotPresent" $rs }}
+
+        command:
+          {{- toYaml (dig "debugSidecar" "command" (list "/bin/sh" "-c") $rs) | nindent 10 }}
+        args:
+          {{- toYaml (dig "debugSidecar" "args" (list "sleep infinity") $rs) | nindent 10 }}
+
+        {{- with $rs.debugSidecar.env }}
+        env:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        {{- with $rs.debugSidecar.resources }}
+        resources:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+
+        securityContext:
+          {{- toYaml (dig "debugSidecar" "securityContext" (dict
+            "allowPrivilegeEscalation" false
+            "privileged" false
+            "readOnlyRootFilesystem" false
+            "runAsNonRoot" false
+            "seccompProfile" (dict "type" "RuntimeDefault")
+          ) $rs) | nindent 10 }}
+      {{- end }}
+
 {{- end }}
 
 
@@ -270,11 +400,11 @@ configMaps:
     data:
       daemons: |
         bgpd={{ if and $rs.bgp $rs.bgp.enabled }}{{ $rs.bgp.enabled }}{{ else }}false{{ end }}
-        ospfd={{ if and $rs.ospf $rs.ospf.enabled }}{{ $rs.ospf.enabled }}{{ else }}false{{ end }}
-        ospf6d={{ if and $rs.ospf $rs.ospf.enabled }}{{ $rs.ospf.enabled }}{{ else }}false{{ end }}
+        ospfd={{ dig "ospf" "enabled" false $rs }}
+        ospf6d={{ dig "ospf6" "enabled" false $rs }}
         ripd=no
         ripngd=no
-        isisd=no
+        isisd={{ dig "isis" "enabled" false $rs }}
         pimd=no
         ldpd=no
         nhrpd=no
@@ -345,29 +475,99 @@ configMaps:
         {{- end }}
         {{- end }}
         {{- range $netID, $netInterface := $rs.networking.interfaces }}
-        {{- if $netInterface.routing }}
+        {{- $interfaceBandwidth := default "" $netInterface.bandwidth }}
+        {{- if or $netInterface.routing $interfaceBandwidth }}
         !
         interface eth{{ $netID }}
+          {{- with $interfaceBandwidth }}
+          bandwidth {{ include "routeserver.bandwidthMbps" . }}
+          {{- end }}
           {{- with $ospf := $netInterface.routing.ospf }}
-          {{- if $ospf.enabled }}
-          ip ospf area {{ $ospf.area }}
-          ipv6 ospf6 area {{ $ospf.area }}
+          {{- if not (and (hasKey $ospf "enabled") (not $ospf.enabled)) }}
+          ip ospf area {{ default "0.0.0.0" $ospf.area }}
           ip ospf network {{ default "broadcast" $ospf.type }}
-          
+          {{- with $ospf.cost }}
+          ip ospf cost {{ . }}
+          {{- end }}
           {{- with $ospf.priority }}
           ip ospf priority {{ . }}
           {{- end }}
-
           {{- with $ospf.hello }}
           ip ospf hello-interval {{ . }}
           {{- end }}
-
           {{- with $ospf.dead }}
           ip ospf dead-interval {{ . }}
           {{- end }}
-
+          {{- with $ospf.retransmit }}
+          ip ospf retransmit-interval {{ . }}
+          {{- end }}
+          {{- with $ospf.transmitDelay }}
+          ip ospf transmit-delay {{ . }}
+          {{- end }}
+          {{- if $ospf.mtuIgnore }}
+          ip ospf mtu-ignore
+          {{- end }}
           {{- if $ospf.passive }}
           ip ospf passive
+          {{- end }}
+          {{- with $ospf.rawConfig }}
+          {{ . | nindent 10 }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with $ospf6 := $netInterface.routing.ospf6 }}
+          {{- if not (and (hasKey $ospf6 "enabled") (not $ospf6.enabled)) }}
+          ipv6 ospf6 area {{ default "0.0.0.0" $ospf6.area }}
+          ipv6 ospf6 network {{ default "broadcast" $ospf6.type }}
+          {{- with $ospf6.cost }}
+          ipv6 ospf6 cost {{ . }}
+          {{- end }}
+          {{- with $ospf6.priority }}
+          ipv6 ospf6 priority {{ . }}
+          {{- end }}
+          {{- with $ospf6.hello }}
+          ipv6 ospf6 hello-interval {{ . }}
+          {{- end }}
+          {{- with $ospf6.dead }}
+          ipv6 ospf6 dead-interval {{ . }}
+          {{- end }}
+          {{- with $ospf6.retransmit }}
+          ipv6 ospf6 retransmit-interval {{ . }}
+          {{- end }}
+          {{- with $ospf6.transmitDelay }}
+          ipv6 ospf6 transmit-delay {{ . }}
+          {{- end }}
+          {{- with $ospf6.mtu }}
+          ipv6 ospf6 ifmtu {{ . }}
+          {{- end }}
+          {{- if $ospf6.mtuIgnore }}
+          ipv6 ospf6 mtu-ignore
+          {{- end }}
+          {{- if $ospf6.passive }}
+          ipv6 ospf6 passive
+          {{- end }}
+          {{- with $ospf6.rawConfig }}
+          {{ . | nindent 10 }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- with $isis := $netInterface.routing.isis }}
+          {{- if not (and (hasKey $isis "enabled") (not $isis.enabled)) }}
+          {{- if not (and (hasKey $isis "ipv4") (not $isis.ipv4)) }}
+          ip router isis {{ default (dig "isis" "name" "CORE" $rs) $isis.name }}
+          {{- end }}
+          {{- if not (and (hasKey $isis "ipv6") (not $isis.ipv6)) }}
+          ipv6 router isis {{ default (dig "isis" "name" "CORE" $rs) $isis.name }}
+          {{- end }}
+          isis network {{ default "point-to-point" $isis.type }}
+          {{- with $isis.metric }}
+          isis metric {{ . }}
+          {{- end }}
+          {{- if $isis.passive }}
+          isis passive
+          {{- end }}
+          {{- with $isis.rawConfig }}
+          {{ . | nindent 10 }}
           {{- end }}
           {{- end }}
           {{- end }}
@@ -386,19 +586,45 @@ configMaps:
           {{- with $rs.ospf.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
           {{- end }}
+          {{- range $protocol := $rs.ospf.redistribute }}
+          redistribute {{ $protocol }}
+          {{- end }}
         exit
         !
+        {{- end }}
+        {{- if dig "ospf6" "enabled" false $rs }}
         router ospf6
           ospf6 router-id {{ $rs.ipAddress }}
 
-          {{- with $gr := $rs.ospf.gracefulRestart }}
+          {{- with $gr := $rs.ospf6.gracefulRestart }}
           {{- if $gr.enabled }}
           graceful-restart
           {{- end }}
           {{- end }}
 
-          {{- with $rs.ospf.autocost.refBandwidth }}
+          {{- with $rs.ospf6.autocost.refBandwidth }}
           auto-cost reference-bandwidth {{ . }}
+          {{- end }}
+          {{- range $protocol := $rs.ospf6.redistribute }}
+          redistribute {{ $protocol }}
+          {{- end }}
+        exit
+        !
+        {{- end }}
+        {{- if dig "isis" "enabled" false $rs }}
+        router isis {{ dig "isis" "name" "CORE" $rs }}
+          net {{ required (printf "routeservers.%s.isis.net is required when IS-IS is enabled" $name) $rs.isis.net }}
+          is-type {{ dig "isis" "level" "level-2-only" $rs }}
+          {{- if dig "isis" "ipv4" true $rs }}
+          address-family ipv4 unicast
+          exit-address-family
+          {{- end }}
+          {{- if dig "isis" "ipv6" true $rs }}
+          address-family ipv6 unicast
+          exit-address-family
+          {{- end }}
+          {{- with $rs.isis.rawConfig }}
+          {{ . | nindent 10 }}
           {{- end }}
         exit
         !
@@ -468,7 +694,42 @@ configMaps:
           neighbor {{ $peer.address }} peer-group {{ . }}
           {{- end }}
           {{- end }}
+          {{- $interfaceBgpPeers := list }}
+          {{- range $netID, $netInterface := $rs.networking.interfaces }}
+          {{- with $peer := $netInterface.routing.bgp }}
+          {{- if not (and (hasKey $peer "enabled") (not $peer.enabled)) }}
+          {{- $neighborID := default (printf "eth%d" $netID) $peer.address }}
+          {{- $interfaceBgpPeers = append $interfaceBgpPeers (dict "id" $neighborID "interface" (not $peer.address) "config" $peer) }}
+          neighbor {{ $neighborID }}{{ if not $peer.address }} interface{{ end }} remote-as {{ required (printf "routeservers.%s.networking.interfaces.%d.routing.bgp.asn is required" $name $netID) $peer.asn }}
+          {{- with $peer.description }}
+          neighbor {{ $neighborID }} description {{ . }}
+          {{- end }}
+          {{- with $peer.password }}
+          neighbor {{ $neighborID }} password {{ . }}
+          {{- end }}
+          {{- with $peer.ebgpmultihop }}
+          neighbor {{ $neighborID }} ebgp-multihop {{ . }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
+          {{- end }}
           !
+          {{- if $interfaceBgpPeers }}
+          {{- range $peer := $interfaceBgpPeers }}
+          {{- range $addressFamily := default (list "ipv4 unicast") $peer.config.addressFamilies }}
+          address-family {{ $addressFamily }}
+            neighbor {{ $peer.id }} activate
+            {{- with $peer.config.routeMapIn }}
+            neighbor {{ $peer.id }} route-map {{ . }} in
+            {{- end }}
+            {{- with $peer.config.routeMapOut }}
+            neighbor {{ $peer.id }} route-map {{ . }} out
+            {{- end }}
+          exit-address-family
+          !
+          {{- end }}
+          {{- end }}
+          {{- end }}
           {{- range $afiIndex, $afi := $rs.bgp.afi }}
           {{- range $safiIndex, $safi := $afi }}
           address-family {{ $afiIndex }} {{ $safiIndex }}
@@ -489,6 +750,10 @@ configMaps:
           {{- end }}
         exit
         !
+        {{- with $rs.frr.rawConfig }}
+        {{ . | nindent 8 }}
+        !
+        {{- end }}
         end
 {{- end }}
 
@@ -564,7 +829,7 @@ spec:
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
-  name: {{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ $name }}-{{ $netID }}
+  name: net-{{ $.Release.Name }}-{{ $name }}-{{ $netID }}
 
 
   {{- if eq $netInterface.type "sriov" }}
@@ -581,10 +846,19 @@ spec:
     {{- $_ := set $plugin "mtu" . }}
     {{- end }}
     {{- if $netInterface.ipam }}
-    {{- $ipam := dict "type" "static" "addresses" (list (dict "address" $netInterface.ipam.address)) }}
+    {{- $ipam := dict "type" "static" }}
     {{- with $netInterface.ipam.routes }}
-    {{- $_ := set $ipam "routes" . }}
+    {{- $routes := list }}
+    {{- range $route := . }}
+    {{- $routes = append $routes (omit $route "src") }}
     {{- end }}
+    {{- $_ := set $ipam "routes" $routes }}
+    {{- end }}
+    {{- $addresses := list }}
+    {{- range $address := default (list $netInterface.ipam.address) $netInterface.ipam.addresses }}
+    {{- $addresses = append $addresses (dict "address" (required (printf "routeservers.%s.networking.interfaces.%d: each IPAM address is required" $name $netID) $address)) }}
+    {{- end }}
+    {{- $_ := set $ipam "addresses" $addresses }}
     {{- $_ := set $plugin "ipam" $ipam }}
     {{- end }}
     {{- $config := dict "cniVersion" "1.0.0" "name" (printf "vlan%v" $netInterface.sriov.vlan) }}
