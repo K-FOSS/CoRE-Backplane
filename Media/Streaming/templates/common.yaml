@@ -32,9 +32,9 @@ controllers:
           - name: http
             containerPort: 8096
 
-          - name: stream
+          - name: discovery
             containerPort: 7359
-            type: udp
+            protocol: UDP
   {{- end }}
 
   #
@@ -175,6 +175,12 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:  
+
+      discovery:
+        enabled: true
+        port: 7359
+        targetPort: discovery
+        protocol: UDP
   {{- end }}
 
   {{- if $.Values.stash.enabled }}
