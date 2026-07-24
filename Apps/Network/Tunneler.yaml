@@ -30,17 +30,44 @@ spec:
                             qdisc: htb
                             bandwidth: 600mbit
                             qdiscHandle: "1:"
-                            qdiscOptions: default 10
+                            qdiscOptions: default 20
                             priorityQueues:
-                              - parent: "1:"
+                              - name: site-overlay
+                                parent: "1:"
                                 classid: "1:10"
-                                rate: 600mbit
+                                rate: 100mbit
                                 ceil: 800mbit
                                 burst: 4mb
                                 cburst: 4mb
+                                classOptions: prio 0
                                 handle: "10:"
                                 qdisc: fq_codel
                                 options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 500mbit
+                                ceil: 800mbit
+                                burst: 4mb
+                                cburst: 4mb
+                                classOptions: prio 1
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: gre
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             rings:
                               tx: 4096
                               rx: 4096
@@ -190,18 +217,40 @@ spec:
                             qdisc: htb
                             bandwidth: null
                             qdiscHandle: "1:"
-                            qdiscOptions: default 10
-                            classes:
-                              - parent: "1:"
+                            qdiscOptions: default 20
+                            priorityQueues:
+                              - name: site-overlay
+                                parent: "1:"
                                 classid: "1:10"
-                                rate: 48mbit
+                                rate: 8mbit
                                 ceil: 48mbit
-                                options: burst 64k cburst 64k
-
-                                child:
-                                  handle: "10:"
-                                  qdisc: fq_codel
-                                  options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                                classOptions: prio 0 burst 64k cburst 64k
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 40mbit
+                                ceil: 48mbit
+                                classOptions: prio 1 burst 64k cburst 64k
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: gre
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             routing:
                               ospf:
                                 enabled: false
@@ -338,7 +387,43 @@ spec:
                         interfaces:
                           - type: sriov
                             mtu: 1500
-                            bandwidth: 50mbit
+                            qdisc: htb
+                            bandwidth: null
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 20
+                            priorityQueues:
+                              - name: site-overlay
+                                parent: "1:"
+                                classid: "1:10"
+                                rate: 8mbit
+                                ceil: 50mbit
+                                classOptions: prio 0 burst 64k cburst 64k
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 42mbit
+                                ceil: 50mbit
+                                classOptions: prio 1 burst 64k cburst 64k
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: gre
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             rings:
                               tx: 4096
                               rx: 4096

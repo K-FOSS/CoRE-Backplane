@@ -119,7 +119,7 @@ controllers:
       {{- if .rings }}
         {{- $ringNics = append $ringNics (dict "interface" (printf "eth%d" $netID) "rings" .rings) }}
       {{- end }}
-      {{- if and (eq .type "sriov") (or (eq $netID 0) (hasKey . "bandwidth") (hasKey . "qdisc") (hasKey . "qdiscOptions") (hasKey . "qdiscHandle") (hasKey . "classes") (hasKey . "priorityQueues")) }}
+      {{- if and (eq .type "sriov") (or (eq $netID 0) (hasKey . "bandwidth") (hasKey . "qdisc") (hasKey . "qdiscOptions") (hasKey . "qdiscHandle") (hasKey . "classes") (hasKey . "priorityQueues") (hasKey . "trafficRules") (hasKey . "filters")) }}
         {{- $qdisc := default "fq" .qdisc }}
         {{- $bandwidth := "" }}
         {{- if hasKey . "bandwidth" }}
@@ -135,6 +135,7 @@ controllers:
           "handle" (default "" .qdiscHandle)
           "classes" (default (list) .classes)
           "priorityQueues" (default (list) .priorityQueues)
+          "trafficRules" (default (default (list) .filters) .trafficRules)
         ) }}
       {{- end }}
       {{- range $route := dig "ipam" "routes" (list) $interface }}
@@ -285,6 +286,45 @@ controllers:
             {{- else }}
             tc qdisc replace dev {{ $nic.interface }} parent {{ required (printf "%s priorityQueues[%d]: parent is required" $nic.interface $queueIndex) $queue.parent }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.bandwidth }} {{ if eq (default "fq" $queue.qdisc) "cake" }}bandwidth{{ else }}maxrate{{ end }} {{ . }}{{ end }}{{ with $queue.options }} {{ . }}{{ end }}
             {{- end }}
+            {{- end }}
+            {{- range $ruleIndex, $rule := $nic.trafficRules }}
+            {{- $ruleContext := printf "%s trafficRules[%d]" $nic.interface $ruleIndex }}
+            {{- $classifier := default "flower" $rule.classifier }}
+            {{- if ne $classifier "flower" }}
+            {{- fail (printf "%s: unsupported classifier %q (only flower is structured; use raw for an escape hatch)" $ruleContext $classifier) }}
+            {{- end }}
+            {{- $match := default (dict) $rule.match }}
+            {{- $tosConfigured := or (hasKey $match "dscp") (hasKey $match "ecn") }}
+            {{- $tosValue := 0 }}
+            {{- $tosMask := 0 }}
+            {{- if hasKey $match "dscp" }}
+              {{- $dscp := int $match.dscp }}
+              {{- if or (lt $dscp 0) (gt $dscp 63) }}
+                {{- fail (printf "%s: match.dscp must be a DSCP codepoint from 0 through 63" $ruleContext) }}
+              {{- end }}
+              {{- $tosValue = mul $dscp 4 }}
+              {{- $tosMask = 252 }}
+            {{- end }}
+            {{- if hasKey $match "ecn" }}
+              {{- $ecn := int $match.ecn }}
+              {{- if or (lt $ecn 0) (gt $ecn 3) }}
+                {{- fail (printf "%s: match.ecn must be from 0 through 3" $ruleContext) }}
+              {{- end }}
+              {{- $tosValue = add $tosValue $ecn }}
+              {{- $tosMask = add $tosMask 3 }}
+            {{- end }}
+            {{- $flowid := default (default $rule.classid $rule.classId) $rule.flowid }}
+            {{- with $tierName := $rule.tier }}
+              {{- range $queue := $nic.priorityQueues }}
+                {{- if eq (default "" $queue.name) $tierName }}
+                  {{- $flowid = required (printf "%s: priority queue %q needs classid" $ruleContext $tierName) $queue.classid }}
+                {{- end }}
+              {{- end }}
+              {{- if not $flowid }}
+                {{- fail (printf "%s: tier %q does not name a priorityQueue" $ruleContext $tierName) }}
+              {{- end }}
+            {{- end }}
+            tc filter replace dev {{ $nic.interface }} parent {{ required (printf "%s: parent is required" $ruleContext) $rule.parent }} protocol {{ required (printf "%s: protocol is required" $ruleContext) $rule.protocol }} pref {{ required (printf "%s: priority is required" $ruleContext) $rule.priority }}{{ with $rule.handle }} handle {{ . }}{{ end }} {{ $classifier }}{{ if or $rule.skipHw $rule.skip_hw }} skip_hw{{ end }}{{ if or $rule.skipSw $rule.skip_sw }} skip_sw{{ end }}{{ with (default $match.sourceMac $match.srcMac) }} src_mac {{ . }}{{ end }}{{ with (default $match.destinationMac $match.dstMac) }} dst_mac {{ . }}{{ end }}{{ with (default $match.sourceIp $match.srcIp) }} src_ip {{ . }}{{ end }}{{ with (default $match.destinationIp $match.dstIp) }} dst_ip {{ . }}{{ end }}{{ with $match.ipProtocol }} ip_proto {{ . }}{{ end }}{{ with (default $match.sourcePort $match.srcPort) }} src_port {{ . }}{{ end }}{{ with (default $match.destinationPort $match.dstPort) }} dst_port {{ . }}{{ end }}{{ if $tosConfigured }} ip_tos {{ printf "0x%02x/0x%02x" $tosValue $tosMask }}{{ end }}{{ with (default $match.vlanPcp $match.vlanPriority) }} vlan_prio {{ . }}{{ end }}{{ with $match.vlanId }} vlan_id {{ . }}{{ end }}{{ with (default $match.firewallMark $match.mark) }} skbmark {{ . }}{{ end }}{{ with $match.encKeyId }} enc_key_id {{ . }}{{ end }}{{ with $match.encSourceIp }} enc_src_ip {{ . }}{{ end }}{{ with $match.encDestinationIp }} enc_dst_ip {{ . }}{{ end }}{{ with $match.raw }} {{ . }}{{ end }}{{ with $flowid }} flowid {{ . }}{{ end }}{{ if $rule.drop }} action drop{{ end }}{{ with $police := $rule.police }} action police rate {{ required (printf "%s police: rate is required" $ruleContext) $police.rate }}{{ with $police.burst }} burst {{ . }}{{ end }}{{ with $police.mtu }} mtu {{ . }}{{ end }} conform-exceed {{ default "drop" $police.conformExceed }}{{ end }}{{ if hasKey $rule "setMark" }} action skbedit mark {{ $rule.setMark }}{{ end }}{{ if hasKey $rule "setPriority" }} action skbedit priority {{ $rule.setPriority }}{{ end }}{{ with $mirred := $rule.mirred }} action mirred {{ default "egress" $mirred.direction }} {{ default "redirect" $mirred.mode }} dev {{ required (printf "%s mirred: device is required" $ruleContext) $mirred.device }}{{ end }}{{ with $rule.rawActions }} {{ . }}{{ end }}
             {{- end }}
             {{- end }}
             {{- range $tunnel := $ipTunnels }}

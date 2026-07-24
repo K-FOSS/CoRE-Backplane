@@ -19,7 +19,8 @@ tunnelers:
         qdiscHandle: "1:"
         qdiscOptions: default 10
         priorityQueues:
-          - parent: "1:"
+          - name: priority
+            parent: "1:"
             classid: "1:10"
             rate: 600mbit
             ceil: 800mbit
@@ -28,6 +29,27 @@ tunnelers:
             handle: "10:"
             qdisc: fq_codel
             options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
+        # Classify selected traffic into a named priority queue. `classId` may
+        # be used instead of `tier` when the target class is not named.
+        # `filters` is accepted as an alias for `trafficRules`.
+        trafficRules:
+          - parent: "1:"
+            protocol: ip
+            priority: 10
+            classifier: flower
+            tier: priority
+            match:
+              # Standard DSCP codepoint; 46 is Expedited Forwarding (EF).
+              # The generated ip_tos match preserves the packet's ECN bits.
+              dscp: 46
+              ipProtocol: udp
+              destinationPort: 51820
+        # Other supported matches include sourceIp, destinationIp, sourcePort,
+        # sourceMac, destinationMac, ecn, vlanPcp, vlanId, firewallMark,
+        # encKeyId, encSourceIp, encDestinationIp, and raw.
+        # Rules may set drop, police, setMark, setPriority, mirred, or
+        # rawActions. Hardware/software-only classification is opt-in through
+        # skipHw and skipSw.
         # Additional root qdisc arguments, for example:
         # qdiscOptions: diffserv4 triple-isolate nat wash
         #
