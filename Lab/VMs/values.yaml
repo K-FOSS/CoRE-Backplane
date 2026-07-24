@@ -11,6 +11,14 @@ installers:
     url: https://stable.release.flatcar-linux.net/amd64-usr/current/flatcar_production_kubevirt_image.qcow2
     size: 30Gi
 
+  # A bootable disk image can be imported once as a seed and cloned for each
+  # VM. Unlike an ISO installer, this DataVolume is not attached to the VM as
+  # removable installation media.
+  # - name: opnsense-bootdisk-seed
+  #   url: https://images.example.test/OPNsense-nano-amd64.img.bz2
+  #   size: 8Gi
+  #   contentType: kubevirt
+
   # CDI archives and non-HTTP sources can be configured without changing the
   # templates. `url` remains shorthand for source.http.url.
   # - name: archived-rootfs
@@ -148,15 +156,20 @@ vms:
       secureBoot: false
 
     podNetwork:
-      enabled: false
+      enabled: true
       # macAddress: '02:00:00:00:00:01'
 
+    # Ports are forwarded through KubeVirt's masquerade interface. Setting
+    # `expose` creates a Service named <vm>-<port>; servicePort defaults to the
+    # guest port and serviceType defaults to ClusterIP.
     ports:
       - name: wg-2011
         port: 64763
         protocol: UDP
         expose: true
-    
+        # servicePort: 64763
+        # serviceType: LoadBalancer
+
     disk:
       enabled: true
 
@@ -167,3 +180,29 @@ vms:
         macAddress: '02:01:50:00:02:01'
 
       - name: home2-rt2
+
+  # Bootable-image example: CDI first imports the IMG above into the
+  # `opnsense-bootdisk-seed` DataVolume/PVC, then creates this VM's own boot
+  # disk by cloning that PVC. `installing` stays false, so no installer CD-ROM
+  # is attached; the cloned disk is bootOrder 1 and remains writable by the VM.
+  # The source namespace must match the Helm release namespace.
+  # - name: opnsense-fw1
+  #   installing: false
+  #   boot:
+  #     mode: uefi
+  #     secureBoot: false
+  #   disk:
+  #     enabled: true
+  #     size: 16Gi
+  #     attachment:
+  #       type: disk
+  #       bus: sata
+  #       bootOrder: 1
+  #     source:
+  #       pvc:
+  #         namespace: vm-lab
+  #         name: opnsense-bootdisk-seed
+  #   podNetwork:
+  #     enabled: false
+  #   networks:
+  #     - name: wan-home

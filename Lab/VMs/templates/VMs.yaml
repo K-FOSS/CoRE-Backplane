@@ -229,4 +229,27 @@ spec:
         {{- end }}
   {{- end }}
 ---
+{{- range $portIndex, $port := $vm.ports }}
+{{- if $port.expose }}
+{{- if not (and $vm.podNetwork $vm.podNetwork.enabled) }}
+{{- fail (printf "vms[%d].ports[%d] cannot be exposed unless podNetwork.enabled is true" $vmIndex $portIndex) }}
+{{- end }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%s" $vm.name $port.name }}
+spec:
+  selector:
+    kubevirt.io/domain: {{ $vm.name }}
+  ports:
+    - name: {{ $port.name }}
+      port: {{ default $port.port $port.servicePort }}
+      targetPort: {{ $port.port }}
+      protocol: {{ upper (default "TCP" $port.protocol) }}
+  {{- with $port.serviceType }}
+  type: {{ . }}
+  {{- end }}
+---
+{{- end }}
+{{- end }}
 {{- end }}
