@@ -21,11 +21,11 @@ spec:
               elements:
                 - name: dc1-k3s-node1
                   values:
-                    hub: true
+                    hub: false
 
                 - name: core-dc1-talos-prod
                   values:
-                    hub: false
+                    hub: true
 
                 - name: core-home1-talos-prod
                   values:
@@ -108,20 +108,35 @@ spec:
                       resolvemy.host/env: '{{ .values.environment }}'
                       resolvemy.host/priority: 'critical'
 
-                    {{ if .values.hub }}
-                    # -- Additional volumeMounts to all deployed Deployments. Does not apply to GeoIP
-                    # @default -- `[]` (See [values.yaml])
+                  worker:
+                    # Authentik names discovered Kubernetes TLS Secrets after
+                    # the parent directory containing tls.crt and tls.key.
+                    # Use the cluster name except for dc1 Talos, whose
+                    # established Authentik certificate name is "tls".
                     volumeMounts:
                       - name: tls-certs
                         mountPath: /certs
+                        readOnly: true
 
-                    # -- Additional volumes to all deployed Deployments.
-                    # @default -- `[]` (See [values.yaml])
                     volumes:
                       - name: tls-certs
-                        secret:
-                          secretName: myloginspace-default-certificates
-                    {{- end }}
+                        projected:
+                          sources:
+                            - secret:
+                                name: myloginspace-default-certificates
+                                items:
+                                  - key: tls.crt
+                                    {{ if eq .values.clusterName "core-dc1-talos-prod" }}
+                                    path: tls/tls.crt
+                                    {{ else }}
+                                    path: '{{ .values.clusterName }}/tls.crt'
+                                    {{ end }}
+                                  - key: tls.key
+                                    {{ if eq .values.clusterName "core-dc1-talos-prod" }}
+                                    path: tls/tls.key
+                                    {{ else }}
+                                    path: '{{ .values.clusterName }}/tls.key'
+                                    {{ end }}
 
       destination:
         server: '{{ .server }}'

@@ -94,15 +94,6 @@ authentik:
       enabled: true
       minAvailable: 1
 
-    volumeMounts:
-      - name: tls-certs
-        mountPath: /certs
-
-    volumes:
-      - name: tls-certs
-        secret:
-          secretName: myloginspace-default-certificates
-
     service:
       annotations: null
       labels:
@@ -144,15 +135,6 @@ authentik:
 
     startupProbe:
       timeoutSeconds: 6
-
-    volumeMounts:
-      - name: tls-certs
-        mountPath: /certs
-
-    volumes:
-      - name: tls-certs
-        secret:
-          secretName: myloginspace-default-certificates
 
   geoip:
     image:
