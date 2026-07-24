@@ -22,11 +22,19 @@ spec:
                   values:
                     hub: false
                     peers: []
+                    iperf3:
+                      enabled: true
+                    librespeed:
+                      enabled: true
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
                     peers: []
+                    iperf3:
+                      enabled: true
+                    librespeed:
+                      enabled: true
 
           - clusters:
               selector:
@@ -69,6 +77,12 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |- # yaml
                 hub: {{ .values.hub }}
+
+                iperf3:
+                  enabled: {{ .values.iperf3.enabled }}
+
+                librespeed:
+                  enabled: {{ .values.librespeed.enabled }}
 
                 domain: speed.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host
 
