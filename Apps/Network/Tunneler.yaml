@@ -30,44 +30,17 @@ spec:
                             qdisc: htb
                             bandwidth: 600mbit
                             qdiscHandle: "1:"
-                            qdiscOptions: default 20 r2q 500
+                            qdiscOptions: default 10
                             priorityQueues:
-                              - name: site-overlay
-                                parent: "1:"
+                              - parent: "1:"
                                 classid: "1:10"
-                                rate: 100mbit
+                                rate: 600mbit
                                 ceil: 800mbit
                                 burst: 4mb
                                 cburst: 4mb
-                                classOptions: prio 0
                                 handle: "10:"
                                 qdisc: fq_codel
                                 options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
-                              - name: best-effort
-                                parent: "1:"
-                                classid: "1:20"
-                                rate: 500mbit
-                                ceil: 800mbit
-                                burst: 4mb
-                                cburst: 4mb
-                                classOptions: prio 1
-                                handle: "20:"
-                                qdisc: fq_codel
-                                options: limit 10000 flows 1024 quantum 1514 target 5ms interval 100ms ecn
-                            trafficRules:
-                              - parent: "1:"
-                                protocol: ip
-                                priority: 10
-                                tier: site-overlay
-                                match:
-                                  ipProtocol: 47
-                              - parent: "1:"
-                                protocol: ip
-                                priority: 20
-                                tier: site-overlay
-                                match:
-                                  ipProtocol: udp
-                                  destinationPort: 4789
                             rings:
                               tx: 4096
                               rx: 4096
@@ -146,6 +119,42 @@ spec:
                             port: 20011
                             mtu: 1440
                             bandwidth: 500mbit
+                            qdisc: htb
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 20 r2q 500
+                            priorityQueues:
+                              - name: site-overlay
+                                parent: "1:"
+                                classid: "1:10"
+                                rate: 8mbit
+                                ceil: 48mbit
+                                classOptions: prio 0 burst 64k cburst 64k
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 40mbit
+                                ceil: 48mbit
+                                classOptions: prio 1 burst 64k cburst 64k
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: 47
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             address: 172.29.10.1/30
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler1#PrivateKey>
                             ospf:
@@ -164,6 +173,42 @@ spec:
                             port: 20012
                             mtu: 1440
                             bandwidth: 500mbit
+                            qdisc: htb
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 20 r2q 500
+                            priorityQueues:
+                              - name: site-overlay
+                                parent: "1:"
+                                classid: "1:10"
+                                rate: 8mbit
+                                ceil: 50mbit
+                                classOptions: prio 0 burst 64k cburst 64k
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 42mbit
+                                ceil: 50mbit
+                                classOptions: prio 1 burst 64k cburst 64k
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: 47
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             address: 172.29.12.1/30
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YXL/DC1/Tunneler1/YVR-Tunneler2#PrivateKey>
                             ospf:
@@ -217,40 +262,18 @@ spec:
                             qdisc: htb
                             bandwidth: null
                             qdiscHandle: "1:"
-                            qdiscOptions: default 20 r2q 500
-                            priorityQueues:
-                              - name: site-overlay
-                                parent: "1:"
+                            qdiscOptions: default 10
+                            classes:
+                              - parent: "1:"
                                 classid: "1:10"
-                                rate: 8mbit
+                                rate: 48mbit
                                 ceil: 48mbit
-                                classOptions: prio 0 burst 64k cburst 64k
-                                handle: "10:"
-                                qdisc: fq_codel
-                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
-                              - name: best-effort
-                                parent: "1:"
-                                classid: "1:20"
-                                rate: 40mbit
-                                ceil: 48mbit
-                                classOptions: prio 1 burst 64k cburst 64k
-                                handle: "20:"
-                                qdisc: fq_codel
-                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
-                            trafficRules:
-                              - parent: "1:"
-                                protocol: ip
-                                priority: 10
-                                tier: site-overlay
-                                match:
-                                  ipProtocol: 47
-                              - parent: "1:"
-                                protocol: ip
-                                priority: 20
-                                tier: site-overlay
-                                match:
-                                  ipProtocol: udp
-                                  destinationPort: 4789
+                                options: burst 64k cburst 64k
+
+                                child:
+                                  handle: "10:"
+                                  qdisc: fq_codel
+                                  options: limit 10000 flows 1024 target 5ms interval 100ms ecn
                             routing:
                               ospf:
                                 enabled: false
@@ -338,6 +361,42 @@ spec:
                             port: 20011
                             mtu: 1440
                             bandwidth: 500mbit
+                            qdisc: htb
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 20 r2q 500
+                            priorityQueues:
+                              - name: site-overlay
+                                parent: "1:"
+                                classid: "1:10"
+                                rate: 8mbit
+                                ceil: 48mbit
+                                classOptions: prio 0 burst 64k cburst 64k
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 40mbit
+                                ceil: 48mbit
+                                classOptions: prio 1 burst 64k cburst 64k
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: 47
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             address: 172.29.10.2/30
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler1/YXL-DC1-Tunneler1#PrivateKey>
                             ospf:
@@ -387,43 +446,7 @@ spec:
                         interfaces:
                           - type: sriov
                             mtu: 1500
-                            qdisc: htb
-                            bandwidth: null
-                            qdiscHandle: "1:"
-                            qdiscOptions: default 20 r2q 500
-                            priorityQueues:
-                              - name: site-overlay
-                                parent: "1:"
-                                classid: "1:10"
-                                rate: 8mbit
-                                ceil: 50mbit
-                                classOptions: prio 0 burst 64k cburst 64k
-                                handle: "10:"
-                                qdisc: fq_codel
-                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
-                              - name: best-effort
-                                parent: "1:"
-                                classid: "1:20"
-                                rate: 42mbit
-                                ceil: 50mbit
-                                classOptions: prio 1 burst 64k cburst 64k
-                                handle: "20:"
-                                qdisc: fq_codel
-                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
-                            trafficRules:
-                              - parent: "1:"
-                                protocol: ip
-                                priority: 10
-                                tier: site-overlay
-                                match:
-                                  ipProtocol: 47
-                              - parent: "1:"
-                                protocol: ip
-                                priority: 20
-                                tier: site-overlay
-                                match:
-                                  ipProtocol: udp
-                                  destinationPort: 4789
+                            bandwidth: 50mbit
                             rings:
                               tx: 4096
                               rx: 4096
@@ -514,6 +537,42 @@ spec:
                             type: wireguard
                             mtu: 1440
                             bandwidth: 500mbit
+                            qdisc: htb
+                            qdiscHandle: "1:"
+                            qdiscOptions: default 20 r2q 500
+                            priorityQueues:
+                              - name: site-overlay
+                                parent: "1:"
+                                classid: "1:10"
+                                rate: 8mbit
+                                ceil: 50mbit
+                                classOptions: prio 0 burst 64k cburst 64k
+                                handle: "10:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                              - name: best-effort
+                                parent: "1:"
+                                classid: "1:20"
+                                rate: 42mbit
+                                ceil: 50mbit
+                                classOptions: prio 1 burst 64k cburst 64k
+                                handle: "20:"
+                                qdisc: fq_codel
+                                options: limit 10000 flows 1024 target 5ms interval 100ms ecn
+                            trafficRules:
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 10
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: 47
+                              - parent: "1:"
+                                protocol: ip
+                                priority: 20
+                                tier: site-overlay
+                                match:
+                                  ipProtocol: udp
+                                  destinationPort: 4789
                             address: 172.29.12.2/30
                             privateKey: <path:CORE0_SITE1/data/Network/Wireguard/YVR/Tunneler2/YXLDC1Tunneler1#PrivateKey>
                             ospf:

@@ -868,7 +868,31 @@ configMaps:
         {{- end }}
         MTU = {{ default 1420 $tunnel.mtu }}
         Table = {{ default "off" $tunnel.table }}
+        {{- if $tunnel.priorityQueues }}
+        PostUp = tc qdisc del dev %i root 2>/dev/null || true
+        PostUp = tc qdisc add dev %i root{{ with $tunnel.qdiscHandle }} handle {{ . }}{{ end }} {{ default "htb" $tunnel.qdisc }}{{ with $tunnel.qdiscOptions }} {{ . }}{{ end }}
+        {{- range $queueIndex, $queue := $tunnel.priorityQueues }}
+        PostUp = tc class add dev %i parent {{ required (printf "tunnel %q priorityQueues[%d]: parent is required" $tunnel.name $queueIndex) $queue.parent }} classid {{ required (printf "tunnel %q priorityQueues[%d]: classid is required" $tunnel.name $queueIndex) $queue.classid }} {{ default (default "htb" $tunnel.qdisc) $queue.classQdisc }}{{ with $queue.rate }} rate {{ . }}{{ end }}{{ with $queue.ceil }} ceil {{ . }}{{ end }}{{ with $queue.burst }} burst {{ . }}{{ end }}{{ with $queue.cburst }} cburst {{ . }}{{ end }}{{ with $queue.classOptions }} {{ . }}{{ end }}
+        PostUp = tc qdisc add dev %i parent {{ $queue.classid }}{{ with $queue.handle }} handle {{ . }}{{ end }} {{ default "fq" $queue.qdisc }}{{ with $queue.options }} {{ . }}{{ end }}
+        {{- end }}
+        {{- range $ruleIndex, $rule := $tunnel.trafficRules }}
+          {{- $flowid := default (default $rule.classid $rule.classId) $rule.flowid }}
+          {{- with $tierName := $rule.tier }}
+            {{- range $queue := $tunnel.priorityQueues }}
+              {{- if eq (default "" $queue.name) $tierName }}
+                {{- $flowid = required (printf "tunnel %q trafficRules[%d]: priority queue %q needs classid" $tunnel.name $ruleIndex $tierName) $queue.classid }}
+              {{- end }}
+            {{- end }}
+            {{- if not $flowid }}
+              {{- fail (printf "tunnel %q trafficRules[%d]: tier %q does not name a priorityQueue" $tunnel.name $ruleIndex $tierName) }}
+            {{- end }}
+          {{- end }}
+          {{- $match := default (dict) $rule.match }}
+        PostUp = tc filter add dev %i parent {{ required (printf "tunnel %q trafficRules[%d]: parent is required" $tunnel.name $ruleIndex) $rule.parent }} protocol {{ required (printf "tunnel %q trafficRules[%d]: protocol is required" $tunnel.name $ruleIndex) $rule.protocol }} pref {{ required (printf "tunnel %q trafficRules[%d]: priority is required" $tunnel.name $ruleIndex) $rule.priority }} flower{{ with $match.ipProtocol }} ip_proto {{ . }}{{ end }}{{ with (default $match.destinationPort $match.dstPort) }} dst_port {{ . }}{{ end }}{{ with $flowid }} flowid {{ . }}{{ end }}
+        {{- end }}
+        {{- else }}
         PostUp = tc qdisc replace dev %i root {{ default "fq" $tunnel.qdisc }}{{ if hasKey $tunnel "bandwidth" }} maxrate {{ $tunnel.bandwidth }}{{ else }} maxrate 250mbit{{ end }}
+        {{- end }}
 
       {{- range $peerIndex, $peer := $tunnel.peers }}
         [Peer]
