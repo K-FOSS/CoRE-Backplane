@@ -1,3 +1,4 @@
+{{- if or .Values.librespeed.enabled .Values.iperf3.enabled }}
 apiVersion: "cilium.io/v2alpha1"
 kind: CiliumL2AnnouncementPolicy
 metadata:
@@ -13,3 +14,4 @@ spec:
     - br1
   externalIPs: true
   loadBalancerIPs: false
+{{- end }}

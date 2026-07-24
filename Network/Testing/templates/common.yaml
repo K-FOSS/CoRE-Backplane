@@ -9,6 +9,8 @@ global:
 
 controllers:
   main:
+    enabled: {{ .Values.librespeed.enabled }}
+
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
@@ -126,6 +128,53 @@ controllers:
               periodSeconds: 5
               failureThreshold: 30
 
+  iperf3:
+    enabled: {{ .Values.iperf3.enabled }}
+    strategy: RollingUpdate
+
+    containers:
+      main:
+        image:
+          repository: networkstatic/iperf3
+          tag: latest
+          pullPolicy: IfNotPresent
+
+        args:
+          - -s
+
+
+service:
+  main:
+    enabled: {{ .Values.librespeed.enabled }}
+    controller: main
+    primary: true
+    type: ClusterIP
+
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 8080
+        protocol: HTTP
+
+  iperf3:
+    enabled: {{ .Values.iperf3.enabled }}
+    controller: iperf3
+    primary: true
+    type: ClusterIP
+
+    ports:
+      tcp:
+        enabled: true
+        primary: true
+        port: 5201
+        protocol: TCP
+
+      udp:
+        enabled: true
+        port: 5201
+        protocol: UDP
+
 
 # -- Configure the gateway routes for the chart here.
 # Additional routes can be added by adding a dictionary key similar to the 'main' route.
@@ -134,7 +183,7 @@ controllers:
 route:
   default:
     # -- Enables or disables the route
-    enabled: true
+    enabled: {{ .Values.librespeed.enabled }}
 
     # -- Set the route kind
     # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
