@@ -229,27 +229,41 @@ spec:
         {{- end }}
   {{- end }}
 ---
+{{- $services := dict }}
 {{- range $portIndex, $port := $vm.ports }}
 {{- if $port.expose }}
 {{- if not (and $vm.podNetwork $vm.podNetwork.enabled) }}
 {{- fail (printf "vms[%d].ports[%d] cannot be exposed unless podNetwork.enabled is true" $vmIndex $portIndex) }}
 {{- end }}
+{{- $serviceName := default $port.name $port.serviceName }}
+{{- $serviceType := default "ClusterIP" $port.serviceType }}
+{{- if hasKey $services $serviceName }}
+{{- $service := index $services $serviceName }}
+{{- if ne $service.type $serviceType }}
+{{- fail (printf "vms[%d].ports using serviceName %q must use the same serviceType" $vmIndex $serviceName) }}
+{{- end }}
+{{- $_ := set $service "ports" (append $service.ports $port) }}
+{{- else }}
+{{- $_ := set $services $serviceName (dict "type" $serviceType "ports" (list $port)) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- range $serviceName, $service := $services }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ printf "%s-%s" $vm.name $port.name }}
+  name: {{ printf "%s-%s" $vm.name $serviceName }}
 spec:
   selector:
     kubevirt.io/domain: {{ $vm.name }}
   ports:
+    {{- range $portIndex, $port := $service.ports }}
     - name: {{ $port.name }}
       port: {{ default $port.port $port.servicePort }}
       targetPort: {{ $port.port }}
       protocol: {{ upper (default "TCP" $port.protocol) }}
-  {{- with $port.serviceType }}
-  type: {{ . }}
-  {{- end }}
+    {{- end }}
+  type: {{ $service.type }}
 ---
-{{- end }}
 {{- end }}
 {{- end }}

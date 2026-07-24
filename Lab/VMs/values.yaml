@@ -160,13 +160,16 @@ vms:
       # macAddress: '02:00:00:00:00:01'
 
     # Ports are forwarded through KubeVirt's masquerade interface. Setting
-    # `expose` creates a Service named <vm>-<port>; servicePort defaults to the
-    # guest port and serviceType defaults to ClusterIP.
+    # `expose` creates a Service named <vm>-<serviceName>. serviceName defaults
+    # to the port name, so setting the same serviceName on multiple ports groups
+    # them into one Service. servicePort defaults to the guest port and
+    # serviceType defaults to ClusterIP.
     ports:
       - name: wg-2011
         port: 64763
         protocol: UDP
         expose: true
+        # serviceName: wireguard
         # servicePort: 64763
         # serviceType: LoadBalancer
 
