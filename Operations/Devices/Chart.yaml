@@ -8,32 +8,39 @@ dependencies:
   - name: nvidia-device-plugin
     version: '>= 0.18.2'
     repository: https://nvidia.github.io/k8s-device-plugin
+    condition: devices.nvidia.enabled
 
   - name: nvidia-dra-driver-gpu
     version: '25.8.1'
     repository: oci://ghcr.io/hydazz/charts-mirror
+    condition: devices.nvidia.enabled
 
   - name: hami
     version: '2.7.0'
     repository: https://project-hami.github.io/HAMi/
+    condition: devices.hami.enabled
 
   - name: amd-gpu
     version: '0.20.0'
     repository: https://rocm.github.io/k8s-device-plugin/
+    condition: devices.amd.enabled
 
   - name: intel-device-plugins-gpu
     version: '0.34.0'
     repository: https://intel.github.io/helm-charts
+    condition: devices.intel.enabled
 
   - name: intel-device-plugins-operator
     version: '0.34.1-helm.0'
     repository: https://intel.github.io/helm-charts
+    condition: devices.intel.enabled
 
   - name: node-feature-discovery
     version: '0.18.3'
     repository: https://kubernetes-sigs.github.io/node-feature-discovery/charts
+    condition: devices.nodeFeatureDiscovery.enabled
 
   - name: kepler-operator
     version: '0.24.0'
     repository: oci://quay.io/sustainable_computing_io/charts
-
+    condition: devices.kepler.enabled

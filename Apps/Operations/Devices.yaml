@@ -20,14 +20,35 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    devices:
+                      amd: true
+                      hami: false
+                      intel: false
+                      kepler: true
+                      nvidia: false
+                      nodeFeatureDiscovery: true
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    devices:
+                      amd: true
+                      hami: true
+                      intel: true
+                      kepler: true
+                      nvidia: true
+                      nodeFeatureDiscovery: true
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    devices:
+                      amd: true
+                      hami: false
+                      intel: false
+                      kepler: true
+                      nvidia: false
+                      nodeFeatureDiscovery: true
           - clusters:
               selector:
                 matchLabels:
@@ -81,6 +102,20 @@ spec:
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+
+                devices:
+                  amd:
+                    enabled: {{ .values.devices.amd }}
+                  hami:
+                    enabled: {{ .values.devices.hami }}
+                  intel:
+                    enabled: {{ .values.devices.intel }}
+                  kepler:
+                    enabled: {{ .values.devices.kepler }}
+                  nvidia:
+                    enabled: {{ .values.devices.nvidia }}
+                  nodeFeatureDiscovery:
+                    enabled: {{ .values.devices.nodeFeatureDiscovery }}
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
