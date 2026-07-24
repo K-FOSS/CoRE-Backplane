@@ -1,4 +1,3 @@
-
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -10,16 +9,25 @@ spec:
   # goTemplateOptions:
   #   - 'missingkey=error'
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-        values:
-          clusterName: '{{ .name }}'
-          environment: 'prod'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+    - merge:
+        mergeKeys:
+          - name
+
+        generators:
+          - list:
+              elements:
+                - name: core-home1-talos-prod
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: 'prod'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
 
 
   syncPolicy:
