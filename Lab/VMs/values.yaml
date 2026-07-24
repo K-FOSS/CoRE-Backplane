@@ -2,6 +2,25 @@ env: prod
 
 installing: false
 
+# Defaults can be overridden per VM. CPU topology controls the guest-visible
+# vCPUs, while resources controls what Kubernetes reserves and caps on the
+# node. For guaranteed CPU allocation, set dedicatedCpuPlacement: true and
+# request/limit an equal, whole number of CPUs.
+vmDefaults:
+  priorityClassName: system-cluster-critical
+  cpu:
+    cores: 2
+    sockets: 1
+    threads: 2
+    model: host-passthrough
+  resources:
+    requests:
+      cpu: 32m
+      memory: 64Mi
+    limits:
+      cpu: 4
+      memory: 4Gi
+
 installers:
   - name: vyos
     url: https://github.com/vyos/vyos-nightly-build/releases/download/2026.07.11-0033-rolling/vyos-2026.07.11-0033-rolling-generic-amd64.iso
@@ -88,6 +107,38 @@ vms:
   - name: windows-lab
     installing: true
 
+    # Override compute reservations and guest CPU topology per VM.
+    # cpu:
+    #   cores: 4
+    #   sockets: 1
+    #   threads: 1
+    #   model: host-passthrough
+    #   dedicatedCpuPlacement: true
+    #   isolateEmulatorThread: true
+    # resources:
+    #   requests:
+    #     cpu: 4
+    #     memory: 8Gi
+    #     hugepages-2Mi: 8Gi
+    #   limits:
+    #     cpu: 4
+    #     memory: 8Gi
+    #     hugepages-2Mi: 8Gi
+    # memory:
+    #   guest: 8Gi
+    #   hugepages:
+    #     pageSize: 2Mi
+
+    # Arbitrary KubeVirt devices such as GPUs and host devices can be allocated
+    # using their device-plugin resource names.
+    # devices:
+    #   gpus:
+    #     - name: gpu0
+    #       deviceName: nvidia.com/GA102
+    #   hostDevices:
+    #     - name: usb-controller
+    #       deviceName: example.com/usb-controller
+
     installer: windows-11
     # The installer defaults to a SATA CD-ROM. KubeVirt disk-entry fields can
     # be customized with `type`, target-specific fields, and common `options`.
@@ -111,6 +162,8 @@ vms:
 
     nodeSelector:
       kubernetes.io/hostname: 'hpc3'
+    # affinity, tolerations, topologySpreadConstraints, schedulerName, and
+    # evictionStrategy are also passed through to the VM instance template.
 
     disk:
       enabled: true

@@ -41,6 +41,10 @@ spec:
 ---
 {{ end }}
 {{- range $vmIndex, $vm := .Values.vms }}
+{{- $defaults := default (dict) $.Values.vmDefaults }}
+{{- $cpu := mergeOverwrite (dict "cores" 2 "threads" 2 "sockets" 1 "model" "host-passthrough") (deepCopy (default (dict) $defaults.cpu)) (deepCopy (default (dict) $vm.cpu)) }}
+{{- $resources := mergeOverwrite (dict "requests" (dict "memory" "4Gi" "cpu" "100m") "limits" (dict "memory" "4Gi" "cpu" 4)) (deepCopy (default (dict) $defaults.resources)) (deepCopy (default (dict) $vm.resources)) }}
+{{- $devices := mergeOverwrite (deepCopy (default (dict) $defaults.devices)) (deepCopy (default (dict) $vm.devices)) }}
 {{- $disk := default (dict) $vm.disk }}
 {{- $diskEnabled := or (not (hasKey $disk "enabled")) $disk.enabled }}
 {{- $diskAttachment := default (dict) $disk.attachment }}
@@ -74,6 +78,27 @@ spec:
       labels:
         kubevirt.io/domain: {{ $vm.name }}
     spec:
+      {{- with (default $defaults.priorityClassName $vm.priorityClassName) }}
+      priorityClassName: {{ . }}
+      {{- end }}
+      {{- with (default $defaults.nodeSelector $vm.nodeSelector) }}
+      nodeSelector: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default $defaults.affinity $vm.affinity) }}
+      affinity: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default $defaults.tolerations $vm.tolerations) }}
+      tolerations: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default $defaults.topologySpreadConstraints $vm.topologySpreadConstraints) }}
+      topologySpreadConstraints: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with (default $defaults.schedulerName $vm.schedulerName) }}
+      schedulerName: {{ . }}
+      {{- end }}
+      {{- with (default $defaults.evictionStrategy $vm.evictionStrategy) }}
+      evictionStrategy: {{ . }}
+      {{- end }}
       networks:
         {{- if and $vm.podNetwork $vm.podNetwork.enabled }}
         - name: default
@@ -87,14 +112,11 @@ spec:
             networkName: {{ $vmNetwork.name }}
         {{- end }}
 
-      priorityClassName: system-cluster-critical
-
       domain:
-        cpu:
-          cores: 2
-          threads: 2
-          sockets: 1
-          model: host-passthrough
+        cpu: {{ toYaml $cpu | nindent 10 }}
+        {{- with (default $defaults.memory $vm.memory) }}
+        memory: {{ toYaml . | nindent 10 }}
+        {{- end }}
         machine:
           type: q35
         features:
@@ -108,6 +130,9 @@ spec:
         {{- end }}
         devices:
           autoattachPodInterface: {{ if and $vm.podNetwork $vm.podNetwork.enabled }}true{{ else }}false{{ end }}
+          {{- with $devices }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
           {{- if and $vm.tpm $vm.tpm.enabled }}
           tpm: {}
           {{- end }}
@@ -160,13 +185,7 @@ spec:
               {{- end }}
             {{- end }}
 
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: '100m'
-          limits:
-            memory: 4Gi
-            cpu: 4
+        resources: {{ toYaml $resources | nindent 10 }}
       {{- if or $vm.installing $diskEnabled }}
       volumes:
         {{- if $vm.installing }}
