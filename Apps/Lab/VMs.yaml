@@ -264,7 +264,7 @@ spec:
                         type: sriov
                         sriov:
                           trust: true
-                          device: intel.com/intel_x540_dpdk
+                          device: intel.com/x540_vfio_port0_gp3
 
                     installers:
                       - name: vyos
@@ -332,6 +332,17 @@ spec:
                           cores: 2
                           sockets: 1
                           threads: 1
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                              - labelSelector:
+                                  matchExpressions:
+                                    - key: kubevirt.io/domain
+                                      operator: In
+                                      values:
+                                        - transit-lab1
+                                        - transit-lab2
+                                topologyKey: kubernetes.io/hostname
                         podNetwork:
                           enabled: false
                         disk:
@@ -348,6 +359,17 @@ spec:
                           cores: 2
                           sockets: 1
                           threads: 1
+                        affinity:
+                          podAntiAffinity:
+                            requiredDuringSchedulingIgnoredDuringExecution:
+                              - labelSelector:
+                                  matchExpressions:
+                                    - key: kubevirt.io/domain
+                                      operator: In
+                                      values:
+                                        - transit-lab1
+                                        - transit-lab2
+                                topologyKey: kubernetes.io/hostname
                         podNetwork:
                           enabled: false
                         disk:
