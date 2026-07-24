@@ -101,6 +101,15 @@ spec:
 
   nics:
     - macAddress: ec:f4:bb:ef:58:e8
+      offloads:
+        rx-udp-gro-forwarding: true
+      rings:
+        rx: 4096
+        tx: 4096
+
+    - macAddress: ec:f4:bb:ef:58:e8
+      offloads:
+        rx-udp-gro-forwarding: true
       rings:
         rx: 4096
         tx: 4096
@@ -120,9 +129,6 @@ spec:
         - name: iommu
           value: pt
 
-        - name: cpufreq.default_governor
-          value: performance
-
         - name: numa_balancing
           value: enable
     talos:
@@ -132,5 +138,8 @@ spec:
           - nfsd
 
   sysfs:
+    - name: class.net.eno1.device.sriov_numvfs
+      value: '8'
+
     - name: class.net.eno2.device.sriov_numvfs
-      value: '4'
+      value: '8'
