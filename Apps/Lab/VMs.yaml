@@ -450,7 +450,7 @@ spec:
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
-                expose: true
+                expose: 'true'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -483,7 +483,7 @@ spec:
 
                 {{- if .values.vms }}
                 {{- $vms := deepCopy .values.vms }}
-                {{- if .values.expose }}
+                {{- if eq .values.expose "true" }}
                 {{- range $vm := $vms }}
                 {{- range $port := $vm.ports }}
                 {{- if $port.expose }}
