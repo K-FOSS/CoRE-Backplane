@@ -158,9 +158,6 @@ spec:
                             port: 22
                             protocol: TCP
                             expose: true
-                            serviceLabels:
-                              wan-mode: public
-                            externalDNSHostname: 'debian-lab1.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                         disk:
                           enabled: true
                           size: 5Gi
@@ -397,9 +394,6 @@ spec:
                             protocol: TCP
                             expose: true
                             serviceName: debian-lab1
-                            serviceLabels:
-                              wan-mode: public
-                            externalDNSHostname: 'debian-lab1.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                         disk:
                           enabled: true
                           size: 20Gi
@@ -456,6 +450,7 @@ spec:
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                expose: true
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -487,8 +482,23 @@ spec:
                 env: {{ .values.environment }}
 
                 {{- if .values.vms }}
+                {{- $vms := deepCopy .values.vms }}
+                {{- if .values.expose }}
+                {{- range $vm := $vms }}
+                {{- range $port := $vm.ports }}
+                {{- if $port.expose }}
+                {{- $serviceLabels := deepCopy (default (dict) $port.serviceLabels) }}
+                {{- $_ := set $serviceLabels "wan-mode" "public" }}
+                {{- $_ := set $port "serviceLabels" $serviceLabels }}
+                {{- if not $port.externalDNSHostname }}
+                {{- $_ := set $port "externalDNSHostname" (printf "%s.%s.%s.resolvemy.host" $vm.name $.values.datacenter $.values.region) }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
+                {{- end }}
                 vms:
-                {{ nindent 2 (toYaml .values.vms) }}
+                {{ nindent 2 (toYaml $vms) }}
                 {{- end }}
 
                 {{- if .values.installers }}
