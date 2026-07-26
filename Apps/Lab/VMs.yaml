@@ -158,6 +158,9 @@ spec:
                             port: 22
                             protocol: TCP
                             expose: true
+                            serviceLabels:
+                              wan-mode: public
+                            externalDNSHostname: 'debian-lab1.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                         disk:
                           enabled: true
                           size: 5Gi
@@ -394,6 +397,9 @@ spec:
                             protocol: TCP
                             expose: true
                             serviceName: debian-lab1
+                            serviceLabels:
+                              wan-mode: public
+                            externalDNSHostname: 'debian-lab1.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                         disk:
                           enabled: true
                           size: 20Gi
@@ -448,6 +454,8 @@ spec:
                 environment: 'testing'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
 
   syncPolicy:
     preserveResourcesOnDeletion: true

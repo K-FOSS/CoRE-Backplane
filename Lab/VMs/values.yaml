@@ -218,7 +218,10 @@ vms:
     # `expose` creates a Service named <vm>-<serviceName>. serviceName defaults
     # to the port name, so setting the same serviceName on multiple ports groups
     # them into one Service. servicePort defaults to the guest port and
-    # serviceType defaults to ClusterIP.
+    # serviceType defaults to ClusterIP. serviceLabels adds labels to the
+    # generated Service, and externalDNSHostname adds external-dns's hostname
+    # annotation. Ports grouped into one Service must use the same values for
+    # serviceType, serviceLabels, and externalDNSHostname.
     ports:
       - name: wg-2011
         port: 64763
@@ -227,6 +230,9 @@ vms:
         # serviceName: wireguard
         # servicePort: 64763
         # serviceType: LoadBalancer
+        # serviceLabels:
+        #   app.kubernetes.io/component: wireguard
+        # externalDNSHostname: wireguard.example.com
 
     disk:
       enabled: true
