@@ -46,7 +46,9 @@ Git commit
 Argo CD ApplicationSets under `Apps/` are the principal fleet-level entry
 points. They select registered clusters by labels such as tenant, environment,
 region, datacentre, compute type, and node type, then deploy the corresponding
-chart directory.
+Lovely rendering directory. A directory may combine Helm, Kustomize, remote
+HTTP resources and patches; `Chart.yaml` is not necessarily its complete
+resource source.
 
 Crossplane adds a second reconciliation layer for resources that benefit from
 a higher-level API or span multiple providers. The cluster and bare-metal path
@@ -167,8 +169,11 @@ stronger safety contract than it currently provides.
 - [Cluster Operations chart](Operations/Clusters/README.md)
 - [Crossplane](Operations/Crossplane/README.md)
 - [Secrets](Operations/Secrets/README.md)
+- [Network charts](Network/README.md)
 - [Network ingress](Network/Ingress/README.md)
 - [Network IPAM](Network/IPAM/README.md)
+- [Storage charts](Storage/README.md)
+- [Database charts](Databases/README.md)
 - [Observability traces](Observability/Traces/README.md)
 - [PostgreSQL](Databases/PSQL/README.md)
 

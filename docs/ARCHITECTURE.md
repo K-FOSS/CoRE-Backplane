@@ -66,6 +66,26 @@ The selected metadata is injected into chart values, commonly through the
 `argocd-lovely-plugin`. Most applications use server-side apply and many
 preserve generated resources when an ApplicationSet entry disappears.
 
+### Lovely deployment directories
+
+The path selected by an ApplicationSet is a rendering unit, not necessarily a
+conventional standalone Helm chart. A directory may combine:
+
+- A local Helm chart and values.
+- Kustomize resources and patches.
+- Remote manifests fetched over HTTP by Kustomize.
+- Helm output patched through Kustomize.
+- Values and patches injected by the ApplicationSet through Lovely.
+
+For example, `Storage/Dragonfly/Operator` has a minimal `Chart.yaml` but
+installs the operator from a remote manifest referenced by
+`kustomization.yaml`. Inspecting only `templates/` would incorrectly conclude
+that the deployment is empty.
+
+Lovely is therefore part of both the desired-state model and the supply chain.
+Remote mutable resources can change rendered output without a CoRE Backplane
+commit; pin them to immutable revisions where reproducibility matters.
+
 An Application being `Synced` proves only that its rendered Kubernetes objects
 match Git. It does not prove that the workload, operator, Crossplane managed
 resource, physical machine, or external service is healthy.
@@ -179,6 +199,8 @@ to recover a service through a dependency that the service itself must create.
 
 - Multiple reconciliation layers can hide the real failure boundary.
 - Custom rendering is part of the bootstrap chain.
+- Remote Kustomize resources can make a deployment depend on mutable external
+  content and network availability during rendering.
 - Moving Git revisions and image tags reduce reproducibility.
 - Large inline Compositions are difficult to validate as a whole.
 - Hard-coded site details limit portable recovery environments.

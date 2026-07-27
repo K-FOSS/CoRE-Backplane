@@ -1,8 +1,9 @@
 # Repository guide
 
-CoRE Backplane is organized primarily by operational domain. It contains both
-fleet-level Argo CD entry points and the charts/manifests those entry points
-deploy.
+CoRE Backplane is organized primarily by operational domain. It contains
+fleet-level Argo CD entry points and Lovely deployment directories. These
+directories may be Helm charts, Kustomize overlays, raw manifests, or a
+combination of all three.
 
 ## Directory map
 
@@ -31,8 +32,9 @@ For a chart such as `Operations/Clusters`:
 
 1. Search `Apps/` for `path: Operations/Clusters`.
 2. Read the ApplicationSet generators and cluster-label selector.
-3. Read the renderer/plugin values injected by the ApplicationSet.
-4. Inspect the target chart and its dependencies.
+3. Read the renderer/plugin values and patches injected by the ApplicationSet.
+4. Inspect the complete target directory: `Chart.yaml`, `values.yaml`,
+   `templates/`, `kustomization.yaml`, local patches and remote resources.
 5. Follow any Crossplane or operator custom resources to their controller
    installation under `Operations/`.
 
@@ -52,14 +54,20 @@ A rendered resource may be influenced by:
 1. A chart's `values.yaml`.
 2. Values injected by an ApplicationSet.
 3. Helm templates.
-4. Kustomize overlays.
-5. The custom Argo CD renderer.
-6. Crossplane Go templates and observed resource state.
-7. Terraform modules embedded in a Composition.
-8. Admission controllers or operators that default/mutate the resource.
+4. Local or remote Kustomize resources.
+5. Kustomize overlays and patches, including patches applied to Helm output.
+6. The Lovely Argo CD renderer that composes those inputs.
+7. Crossplane Go templates and observed resource state.
+8. Terraform modules embedded in a Composition.
+9. Admission controllers or operators that default/mutate the resource.
 
 When debugging, identify every layer before assuming the source file directly
 matches the live object.
+
+Do not use the presence or absence of files under `templates/` to decide
+whether a directory deploys resources. Check `kustomization.yaml` and the
+Lovely pipeline. Remote URLs must also be reviewed for mutability, availability
+and trust.
 
 ## Repository status categories
 
