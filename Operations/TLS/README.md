@@ -1,8 +1,18 @@
-# Bootstrapping TLS System
+# TLS operations deployment
 
-In order to get Cert-Manager working again after a critical system error/when rebuilding the system you must manually create the CloudFlare token, this is the same token/secret used in the Backplane networking/ExternalDNS
+This deployment installs cert-manager and trust-manager and defines
+Cloudflare/Vault-backed issuers and credentials. It is owned by
+`Apps/Security/TLS.yaml`.
 
-```bash
-kubectl create secret generic -n cert-manager cf-token --from-li
-teral=Token=INSERT_TOKEN_HERE
-```
+## Dependencies
+
+- Vault/External Secrets for issuer credentials.
+- Cloudflare DNS credentials for applicable ACME challenges.
+- Reachable ACME and Vault endpoints.
+- Correct DNS zones, trust bundles and Gateway consumers.
+
+Certificate and issuer changes can affect most platform ingress and internal
+TLS simultaneously. Validate issuer readiness, challenge/order state,
+certificate renewal, secret ownership, served chains and trust-manager bundle
+propagation. Preserve emergency access that does not depend on the certificate
+path being changed.

@@ -1,3 +1,14 @@
-# K-FOSS/CoRE-Backplane Benchmarking Operations Chart
+# Benchmarking deployment
 
-This chart is heavily WIP with the intention of using it presently (2025-03-05) to benchmark my new Longhorn storage and cluster API stuff with Talos and Tinkerbell that I have been building up for a few years now.
+This deployment defines storage benchmark classes, PVCs and Jobs and is owned
+by `Apps/Operations/Benchmarking.yaml`.
+
+Benchmarks are intended to characterize storage classes and node/storage paths,
+not to establish a universal performance number. Record the cluster, node,
+storage class, replica count, volume size, filesystem, test profile, duration
+and concurrent load with every result.
+
+Benchmark jobs can consume disk capacity, IOPS, CPU and network bandwidth and
+can trigger Longhorn replica traffic or backend throttling. Use dedicated test
+volumes, constrain placement, schedule disruptive tests and confirm cleanup.
+Never point a destructive benchmark at a PVC containing application data.

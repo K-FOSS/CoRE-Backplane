@@ -166,6 +166,7 @@ stronger safety contract than it currently provides.
 - [Architecture](docs/ARCHITECTURE.md)
 - [Repository guide](docs/REPOSITORY.md)
 - [Operations and recovery](docs/OPERATIONS.md)
+- [Operations deployments](Operations/README.md)
 - [Cluster Operations chart](Operations/Clusters/README.md)
 - [Crossplane](Operations/Crossplane/README.md)
 - [Secrets](Operations/Secrets/README.md)
