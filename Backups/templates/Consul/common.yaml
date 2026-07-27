@@ -1,0 +1,70 @@
+{{- if .Values.consul.enabled }}
+{{- $commonValues := tpl (`
+global:
+  nameOverride: consul-backup
+  fullnameOverride: consul-backup
+
+controllers:
+  consul-backup:
+    type: deployment
+    replicas: 1
+    strategy: RollingUpdate
+    rollingUpdate:
+      surge: 25%
+      unavailable: 25%
+
+    pod:
+      labels:
+        logs: loki-myloginspace
+      terminationGracePeriodSeconds: 30
+
+    containers:
+      consul-backup:
+        image:
+          repository: ghcr.io/sputnik-systems/consul-backup-s3
+          tag: v0.0.4
+          pullPolicy: IfNotPresent
+
+        args:
+          - --consul.address={{ .Values.consul.address }}
+          - --s3.bucket=$(S3_BUCKET)
+          - --s3.endpoint=$(S3_ENDPOINT)
+          - --s3.region=us-east-1
+
+        env:
+          - name: S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: consul-s3
+                key: Bucket
+          - name: S3_ENDPOINT
+            valueFrom:
+              secretKeyRef:
+                name: consul-s3
+                key: URL
+          - name: HOME
+            value: /home
+
+        resources:
+          requests:
+            cpu: 32m
+            memory: 16M
+
+persistence:
+  credentials:
+    type: secret
+    name: consul-s3
+    items:
+      - key: credentials
+        path: credentials
+    advancedMounts:
+      consul-backup:
+        consul-backup:
+          - path: /home/.aws/credentials
+            subPath: credentials
+            readOnly: true
+`) . | fromYaml }}
+{{- $_ := mergeOverwrite .Values $commonValues }}
+{{- include "bjw-s.common.loader.init" . }}
+{{ include "bjw-s.common.loader.generate" . }}
+{{- end }}
