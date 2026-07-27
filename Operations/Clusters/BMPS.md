@@ -21,6 +21,12 @@ BMPS does not currently provide a complete inventory/IPAM user interface.
 Hardware records, addresses, and labels must already be present and consistent
 with the requested node.
 
+The current physical fleet and network fabric are documented in
+[CoRE deployment environment](ENVIRONMENT.md). BMPS must account for multiple
+PowerEdge generations and for systems with different storage,
+remote-management, and boot capabilities; it should not assume that aggregate
+fleet capacity means every machine is interchangeable.
+
 ## Provisioning lifecycle
 
 1. An operator creates a `ClusterNode` claim with a `clusterRef`.

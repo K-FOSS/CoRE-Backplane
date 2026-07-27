@@ -98,6 +98,19 @@ implementation order.
 
 ## P3: observability and operator experience
 
+- [ ] Generate the compute and switch inventory in `ENVIRONMENT.md` from
+  NetBox/IPAM so production, spare, quarantined, and retired assets cannot
+  silently diverge from documentation.
+- [ ] Report installed, powered, Kubernetes-ready, failover-reserved, and
+  unavailable CPU/memory capacity separately.
+- [ ] Define service-level indicators for Authentik login, Eclipse Che
+  workspace startup, management access, Kubernetes APIs, reconciliation, and
+  bare-metal provisioning.
+- [ ] Define the critical-service behavior expected during a single-site
+  outage, including active/active, active/passive, and restore-on-demand
+  services.
+- [ ] Test and document an emergency access path that does not depend on
+  Authentik, Eclipse Che, or the primary Kubernetes cluster.
 - [ ] Add dashboards and alerts for reconciliation errors, hardware
   availability, workflow duration/failure, PXE failures, and nodes that fail
   to join.

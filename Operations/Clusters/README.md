@@ -45,6 +45,13 @@ Talos resources are managed through Terraform provider workspaces, while
 Kubernetes objects are managed through Crossplane Kubernetes provider
 configurations.
 
+This chart is exercised by a real two-site, multi-province private cloud rather
+than only a virtual test environment. See
+[CoRE deployment environment](ENVIRONMENT.md) for the physical fleet, network
+fabric, operator workflow, availability experience, and intended failure
+domains. Those details describe this deployment and are not chart
+prerequisites.
+
 ## Prerequisites
 
 Before installing this chart, the management cluster must provide:
@@ -157,5 +164,6 @@ Useful failure boundaries are:
    control-plane reachability, time synchronization, and Kubernetes/Talos
    version compatibility.
 
-See [Bare Metal Provisioning](BMPS.md) for the provisioning lifecycle and
+See [CoRE deployment environment](ENVIRONMENT.md) for deployment context,
+[Bare Metal Provisioning](BMPS.md) for the provisioning lifecycle, and
 [TODO](TODO.md) for known gaps.

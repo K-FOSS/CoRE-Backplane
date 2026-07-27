@@ -1,73 +1,176 @@
-# CORE-Backplane
+# CoRE Backplane
 
-This serves as the base defintion for everything CoRE runs, this single repo, allows for the fully autonomous bootstrap of EVERYTHING.
+CoRE Backplane is the declarative source of truth for a solo-operated,
+multi-site private cloud. It contains the Argo CD applications, Helm charts,
+Kustomize overlays, Crossplane APIs, and deployment-specific configuration
+used to run the platform.
 
+The environment spans YVR and YXL in two Canadian provinces. It includes
+enterprise Dell compute, Cisco data-centre switching, Kubernetes and Talos
+clusters, centralized identity, storage, databases, observability, and
+browser-based Eclipse Che development environments. Detailed physical
+inventory and failure-domain context are maintained in
+[Operations/Clusters/ENVIRONMENT.md](Operations/Clusters/ENVIRONMENT.md).
 
-## Initial Bootstrap
+This is a live operations repository. Many manifests contain site-specific
+names, private addresses, domains, and secret-store references. It is not a
+generic Kubernetes distribution and should not be applied to another
+environment without a complete review.
 
+## Platform goals
 
-# UPDATE 2025
+- Describe infrastructure and services as version-controlled desired state.
+- Use Argo CD to select target clusters and reconcile applications.
+- Use Crossplane to expose higher-level APIs for clusters, nodes, identities,
+  databases, object storage, and provider configuration.
+- Provision physical Kubernetes nodes through Tinkerbell and Talos.
+- Centralize human and service identity in Authentik.
+- Keep secret values in Vault and synchronize them at runtime through External
+  Secrets rather than storing them directly in Git.
+- Preserve remote management and recovery access when an individual site
+  fails.
+- Observe and back up the platform as first-class workloads.
 
-As of January 23, 2025 I've started to rebuild my infra using my Dell R620 located within dc1.resolvemy.host see [node1-k3s.dc1.resolvemy.host](https://github.com/K-FOSS/node1-k3s.dc1.resolvemy.host) for more details about the bootstrapping of that system.
+## Control flow
 
+```text
+Git commit
+  -> Argo CD ApplicationSet
+  -> target-cluster selection from labels
+  -> argocd-lovely-plugin / Helm / Kustomize rendering
+  -> Kubernetes resources and operators
+  -> Crossplane, CAPI, or application-specific reconciliation
+  -> physical infrastructure and user-facing services
+```
 
+Argo CD ApplicationSets under `Apps/` are the principal fleet-level entry
+points. They select registered clusters by labels such as tenant, environment,
+region, datacentre, compute type, and node type, then deploy the corresponding
+chart directory.
 
+Crossplane adds a second reconciliation layer for resources that benefit from
+a higher-level API or span multiple providers. The cluster and bare-metal path
+adds Cluster API, Terraform workspaces, Tinkerbell, and Talos reconciliation.
+See [Architecture](docs/ARCHITECTURE.md) for the component and dependency map.
 
-# Introduction
+## Major platform areas
 
-CoRE is the name that I have assigned to my infrastructure and business, this repo serves as the repository where I do most of the work on the base systems that power my operation and business.
+| Area | Repository path | Responsibility |
+| --- | --- | --- |
+| Fleet deployment | `Apps/` | Argo CD ApplicationSets and per-cluster value injection. |
+| Argo CD | `ArgoCD/` | GitOps controller configuration and rendering plugin integration. |
+| Identity and access | `AAA/`, `Operations/SSO/` | Authentik, user/service identities, SSO application APIs, LDAP, RADIUS, and OIDC. |
+| Cluster lifecycle | `Operations/Clusters/` | Crossplane cluster/node APIs, CAPI, Talos, Tinkerbell, and Kamaji. |
+| Crossplane platform | `Operations/Crossplane/` | Crossplane installation, providers, functions, and provider credentials. |
+| Secrets and PKI | `Operations/Secrets/`, `Operations/TLS/`, `Hashicorp/` | External Secrets, Vault, certificate material, and bootstrap secret paths. |
+| Networking | `Network/` | CNI, ingress, DNS, IPAM, bare metal, routing, tunnels, TLS, and network services. |
+| Data services | `Databases/`, `Storage/` | PostgreSQL, MySQL, MongoDB, object storage, caches, and persistent storage. |
+| Observability | `Observability/` | Metrics, logs, traces, dashboards, collectors, exporters, SLOs, and status. |
+| Backup and recovery | `Backups/` | Velero and service-specific backup integration. |
+| Development | `Development/`, `IDE/`, `Lab/` | Eclipse Che, developer services, virtual machines, and experiments. |
+| Policy and security | `Security/`, `QoS/` | Authentication policy, scanning, TLS, and workload priority. |
 
+The [Repository guide](docs/REPOSITORY.md) describes conventions and how to
+tell fleet entry points, implementation charts, examples, and experimental
+areas apart.
 
-This is deployed by [ArgoCD](./ArgoCD/) which handles GitOps and allows me to have a simple web interface to control and handle rolling out new services and applications, currently I do not have auto sync setup as I slowly get my services back online, however this will change.
+## Identity and secrets
 
+Authentik is the primary source of human and service identity. Applications
+integrate through OIDC/OAuth2, LDAP, RADIUS, or gateway-mediated authentication
+as appropriate.
 
-# Authentication
+The secret bootstrap chain is intentionally separate from ordinary
+application reconciliation:
 
-For AAA I have Authentik serving as the root source of truth for user accounts, service accounts, and groups and permisisons, the goal of my infrastructure is to allow users/staff/friends/services to only have a single set of credentials needed to access **EVERYTHING**, this is built up using LDAP, RADIUS, and lots and lots of OAuth2/OIDC (OpenID Connect), some header auth where [Envoy Gateway](https://github.com/envoyproxy/gateway) handles redirecting the user automatically to login and then uses the details obatained from Authentik to allow or deny users/service accounts in.
+1. A CoreVault credential is introduced through an out-of-band bootstrap
+   procedure.
+2. External Secrets reads bootstrap secrets from CoreVault.
+3. Vault uses CoreVault-backed mechanisms for its own initialization/unseal
+   path.
+4. Application credentials are generated or stored in Vault and synchronized
+   to target namespaces.
+5. Crossplane and PushSecret resources generate and publish credentials for
+   databases, S3, identity providers, and other services.
 
-I say service account alot thats because even the end applications (GitLab, OpenProject, NextCloud, Grafana, Authentik) use credentials generated by [Crossplane](./Operations/Crossplane/) during the deployment by ArgoCD and these are what the applications/serviceAccounts use to access their databases and S3 buckets as well. Even the API credentials to access Netbox are generated automatically by Crossplane and stored in Kubernetes secrets which are then automatically picked up at runtime by the applications.
+Secret references in Git are not secret values. Nevertheless, all manifests
+must be reviewed for literal default credentials before deployment. See
+[Operations and recovery](docs/OPERATIONS.md) for bootstrap and emergency
+access principles.
 
+## Cluster and bare-metal lifecycle
 
-See [SSO Users Crossplane Configuration](./Operations/SSO/User/)
+The cluster chart defines `Cluster`, `ClusterNode`, and `Tenant` Crossplane
+APIs. A cluster claim produces Cluster API and provider resources; a node claim
+selects hardware, prepares a Talos image and configuration, and drives a
+Tinkerbell provisioning workflow.
 
-# Databases
+Start with:
 
-## PostgreSQL
+- [Cluster chart documentation](Operations/Clusters/README.md)
+- [Deployment environment](Operations/Clusters/ENVIRONMENT.md)
+- [Bare Metal Provisioning System](Operations/Clusters/BMPS.md)
+- [Cluster and BMPS backlog](Operations/Clusters/TODO.md)
 
-I run a 3 node cluster of [Patroni](https://github.com/patroni/patroni) handled entirely automatically by the [Postgres Operator](https://github.com/zalando/postgres-operator)
+Physical provisioning can erase disks. Never infer safety from a successful
+template render: verify hardware identity, installation disk, workflow state,
+and the destructive options on the node claim.
 
-[PSQL & Related Services Deployment](./Databases/PSQL/)
-[Database Operators](./Databases/Operator/)
+## Working in this repository
 
+Before changing a chart:
 
-# Observability
+1. Identify its owning ApplicationSet under `Apps/` and the clusters selected
+   by that ApplicationSet.
+2. Check for Helm dependency, custom renderer, CRD, operator, and secret-store
+   prerequisites.
+3. Render the chart with representative values.
+4. Validate generated resources against the API versions installed in the
+   target cluster.
+5. Review deletion behavior, sync waves, namespace ownership, and generated
+   secrets.
+6. Apply through Argo CD unless an incident runbook explicitly calls for a
+   direct operation.
+7. Observe both the Argo CD application and any downstream operator or
+   Crossplane conditions.
 
-For observability I use the Grafana [GLTM Stack](https://grafana.com/go/webinar/getting-started-with-grafana-lgtm-stack/) 
+Common local setup utilities can be downloaded by `setup.sh`, but that script
+currently downloads some moving releases and does not verify checksums. Treat
+it as a convenience script, not a reproducible or trusted bootstrap mechanism.
 
-See [Observability Stack](./Observability/)
+## Current maturity
 
+The platform is in active production use and supports the operator's daily
+development workflow. It has also accumulated experimental, legacy, and
+site-specific paths. Current availability experience is described in the
+deployment environment document, but the repository does not yet define a
+formal service-level objective.
 
-# Development
+Important limitations:
 
-I have an [Eclipse Che](https://eclipse.dev/che/) cluster deployed via the [Che Operator](./IDE/Che/) this is deployed by the [Development Stack](./Development/)
+- Automated repository-wide chart rendering and schema validation are not yet
+  present.
+- Some Crossplane Compositions report readiness before checking the real
+  downstream condition.
+- Several bootstrap and recovery procedures still depend on operator knowledge.
+- Active, experimental, and legacy directories are not uniformly marked.
+- Some values and compositions contain unsafe example/default credentials.
 
+These limitations are documented so that the repository does not imply a
+stronger safety contract than it currently provides.
 
-The [.devfile.yaml](./.devfile.yaml) ensures everyone gets the same extensions and confiiguration when working on this repository
+## Documentation
 
+- [Architecture](docs/ARCHITECTURE.md)
+- [Repository guide](docs/REPOSITORY.md)
+- [Operations and recovery](docs/OPERATIONS.md)
+- [Cluster Operations chart](Operations/Clusters/README.md)
+- [Crossplane](Operations/Crossplane/README.md)
+- [Secrets](Operations/Secrets/README.md)
+- [Network ingress](Network/Ingress/README.md)
+- [Network IPAM](Network/IPAM/README.md)
+- [Observability traces](Observability/Traces/README.md)
+- [PostgreSQL](Databases/PSQL/README.md)
 
-# Secrets
-
-For my credential vault for machine and service credentials I use [Hashicorp Vault](https://www.hashicorp.com/products/vault) I have two instances running, one which is called [CoreVault](./Hashicorp/CoreVault/) and then [Vault](./Hashicorp/Vault/) CoreVault has to be manually unsealed, or at least it used to, I eventually got around to setting up a workflow using external secrets and Crossplane to automatically unseal CoREVault and then Vault uses CoreVault Transit seal to unseal. The keys to unlock CoREVault are also stored in the organizations 1Password.
-
-Both CoreVault and Vault use [Consul](./Mesh/Service/Consul/) as their storage to allow for scalability and multi node high availability. This is also done to ensure there is no chicken and egg situation, CoreVault has some secrets that are synced down by [External-Secrets](https://external-secrets.io/latest/) deployed at [Operations/Secrets/](./Operations/Secrets/)
-
-
-# Labels I use
-
-I use various labels across my Kubernetes resources to be able to select things by priorty for backups, monitoring, and to be able to search and filter for various things like auto matic staging environments and the like
-
-| Label                      | Type            |      Options                         | Options |
-|--------------------------- | ----------------| ------------------------------------ | ------- |
-| resolvemy.host/env         | EnvironmentMode | prod, staging, poc, lab              | 
-| mylogin.space/tenant       | String          | core.mylogin.space                   |
-| resolvemy.host/site        | DC Ref          | The datacenter/compute location site |
+Documentation describes both current behavior and intended direction. Where
+the two differ, manifests and observed controller state are authoritative.
