@@ -134,10 +134,15 @@ objects whose hostname and parent Gateway are injected per cluster. The local
 `argocd-webhook-route` exposes only `/api/webhook`, and
 `BackendTrafficPolicy` enables compression for the main HTTP route.
 
-The local webhook route currently contains fixed Gateway, hostname, and
-backend-port values. Verify it against the cluster-specific upstream route
-before relying on it. Argo CD runs with `server.insecure: true`, so TLS is
-expected to terminate at the Gateway.
+The local webhook route uses the same cluster, region, domain, and Gateway
+values as the main route. Argo CD runs with `server.insecure: true`, so TLS is
+terminated at the Gateway and both routes use the Service's cleartext HTTP
+port.
+
+Replicated control-plane components are spread across hostnames when capacity
+allows. The larger `srv2`/`srv3` nodes are a scheduling preference rather than
+a hard dependency, which keeps the chart deployable at sites that use
+different node names.
 
 ## Rendering and validation
 

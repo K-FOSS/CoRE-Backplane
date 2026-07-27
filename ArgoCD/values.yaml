@@ -54,14 +54,24 @@ argo-cd:
       secret.reloader.stakater.com/reload: argocd-redis-password
 
     affinity:
+      # Prefer the larger server tier when it exists, but do not make the
+      # control plane depend on YVR-specific node names.
       nodeAffinity:
-        type: hard          # hard = requiredDuringScheduling; soft = preferred
+        type: soft          # hard = requiredDuringScheduling; soft = preferred
         matchExpressions:
           - key: kubernetes.io/hostname
             operator: In
             values:
               - srv2
               - srv3
+
+    # Keep replicated control-plane components off the same node where the
+    # cluster has enough capacity. ScheduleAnyway preserves availability on
+    # smaller sites.
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
 
     logging:
       # -- Set the global logging format. Either: `text` or `json`
@@ -275,7 +285,7 @@ argo-cd:
       controller.self.heal.timeout.seconds: 300
 
       # -- Repo server RPC call timeout seconds.
-      controller.repo.server.timeout.seconds: '60'
+      controller.repo.server.timeout.seconds: '300'
 
       ## Controller Properties
       #controller.diff.server.side: 'true'
@@ -297,7 +307,7 @@ argo-cd:
       # -- Disable Argo CD RBAC for user authentication
       server.disable.auth: false
 
-      server.repo.server.timeout.seconds: 120
+      server.repo.server.timeout.seconds: '300'
 
       # -- Enable GZIP compression
       server.enable.gzip: false
@@ -326,6 +336,9 @@ argo-cd:
       applicationsetcontroller.namespaces: "*"
 
       applicationsetcontroller.enable.scm.providers: false
+
+      # Remote Git generation and cluster API calls can cross regions.
+      applicationsetcontroller.repo.server.timeout.seconds: '300'
 
       # -- Enables [Applications in any namespace]
       ## List of additional namespaces where applications may be created in and reconciled from.
@@ -384,7 +397,7 @@ argo-cd:
 
     env:
       - name: ARGO_CD_UPDATE_CLUSTER_INFO_TIMEOUT
-        value: '60s'
+        value: '180s'
 
       - name: ARGOCD_K8S_CLIENT_BURST
         value: '100'
@@ -458,7 +471,7 @@ argo-cd:
           medium: Memory
     env:
       - name: ARGOCD_EXEC_TIMEOUT
-        value: 30s
+        value: 300s
 
     metrics:
       enabled: true
@@ -488,6 +501,15 @@ argo-cd:
 
       labels:
         wan-mode: 'public'
+
+      rules:
+        - matches:
+            - path:
+                type: PathPrefix
+                value: /
+          timeouts:
+            request: 300s
+            backendRequest: 300s
 
     grpcroute:
       enabled: true

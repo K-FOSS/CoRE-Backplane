@@ -11,11 +11,14 @@ spec:
   parentRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      namespace: core-prod
-      name: main-gw
+      namespace: {{ .Values.gateway.namespace }}
+      name: {{ .Values.gateway.name }}
+      {{- with .Values.gateway.sectionName }}
+      sectionName: {{ . }}
+      {{- end }}
 
   hostnames:
-    - 'argo.mylogin.space'
+    - 'argocd.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}'
 
   rules:
     - matches:
@@ -26,7 +29,9 @@ spec:
         - group: ''
           kind: Service
           name: argocd-server
-          port: 443
+          # server.insecure terminates TLS at the Gateway; the Service's
+          # cleartext HTTP port is therefore the correct backend.
+          port: 80
           weight: 1
 
       timeouts:
