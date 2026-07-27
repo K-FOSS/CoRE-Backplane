@@ -1,15 +1,25 @@
-# K-FOSS/CoRE-Backplane IPAM Stack
+# IPAM and DCIM chart
 
-This is a helm chart that deploys Netbox the open source DCIM offering, I've been running it for a few years, this chart uses my custom image that is built every day by my [K-FOSS/CoRE-Docker](https://github.com/K-FOSS/Core-Docker) repo
+This chart deploys and integrates CoRE's NetBox-based network and hardware
+inventory. It is owned by `Apps/Network/IPAM.yaml`, which injects datacentre,
+region, DHCP boot paths and cluster metadata.
 
-# Plugins
+## Components
 
-I use a few plugins
+- Optional NetBox chart and the deployment's custom image/plugins.
+- BGP and IP-calculator plugin support.
+- DHCP configuration, templates, identities and secret synchronization.
+- DNS/PowerDNS, Authentik/OIDC, Gateway and S3 integration.
+- Crossplane/Terraform resources and generated service identities.
 
-# Netbox-BGP
+NetBox is intended to become the source of truth for sites, racks, devices,
+interfaces, prefixes, addresses, VLANs, VRFs, BGP sessions, bare-metal
+inventory and DHCP/PXE data. Integration is incomplete; see [TODO](TODO.md).
 
-I really like the [Netbox-BGP](https://github.com/netbox-community/netbox-bgp) plugin, I use it to document all my internal BGP peering between sites and clusters.
+Dependencies include PostgreSQL, Vault/External Secrets, Crossplane,
+Authentik, Gateway API, DNS/certificates and object storage where enabled.
 
-# [Netbox-IP Calculator](https://github.com/PieterL75/netbox_ipcalculator)
-
-In the past I have been using [ipcalc](https://jodies.de/ipcalc) for years, although it's nice to have a calulcator built right into the area **YOU SHOULD** have open while doing any network work anyways hehe.
+Inventory changes can drive automation. Validate prefix overlap, address
+uniqueness, interface/hardware identity, BGP direction, DHCP reservations,
+boot artifacts and generated downstream configuration. Back up NetBox and
+test restoration before treating it as provisioning authority.
