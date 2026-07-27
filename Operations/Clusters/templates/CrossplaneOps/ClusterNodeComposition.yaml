@@ -1190,6 +1190,10 @@ spec:
                             "net.ipv4.tcp_wmem"                   = "4096 262144 67108864"
                             "net.core.optmem_max"                 = "65536"
 
+                            {{- range $sysctlIndex, $sysctl := $clusterCustomResource.status.atProvider.manifest.spec.sysctls }}
+                            "{{ $sysctl.name }}" = "{{ $sysctl.value }}"
+                            {{- end }}
+
                             {{- range $sysctlIndex, $sysctl := $.observed.composite.resource.spec.sysctls }}
                             "{{ $sysctl.name }}" = "{{ $sysctl.value }}"
                             {{- end }}
