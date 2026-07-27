@@ -54,7 +54,7 @@ details into that Secret.
 | Component | Responsibility |
 | --- | --- |
 | Application controller | Reconciles Applications; configured with three replicas and cluster-cache tuning by default. |
-| Repository server | Generates manifests and hosts the Lovely sidecar; configured with three replicas and bounded in-memory work volumes. |
+| Repository server | Generates manifests and hosts the Lovely sidecar; configured with two replicas and bounded in-memory work volumes. |
 | API server | Serves the UI/API through Gateway API HTTPRoute and GRPCRoute resources. |
 | ApplicationSet controller | Generates fleet Applications; applications in any namespace are enabled. |
 | Notifications controller | Enabled by the upstream chart values. |

@@ -429,7 +429,7 @@ argo-cd:
           resolvemy.host/metrics: mimir
 
   repoServer:
-    replicas: 3
+    replicas: 2
 
     extraArgs:
       - --redis-use-tls=true
@@ -446,28 +446,28 @@ argo-cd:
         cpu: '64m'
         memory: '64Mi'
       limits:
-        cpu: '1500m'
-        memory: '20Gi'
+        cpu: '1'
+        memory: '4Gi'
 
     existingVolumes:
       gpgKeyring:
         emptyDir:
-          sizeLimit: 500Mi
+          sizeLimit: 256Mi
           medium: Memory
 
       helmWorkingDir:
         emptyDir:
-          sizeLimit: 8Gi
+          sizeLimit: 2Gi
           medium: Memory
 
       tmp:
         emptyDir:
-          sizeLimit: 4Gi
+          sizeLimit: 1Gi
           medium: Memory
 
       varFiles:
         emptyDir:
-          sizeLimit: 500Mi
+          sizeLimit: 256Mi
           medium: Memory
     env:
       - name: ARGOCD_EXEC_TIMEOUT
