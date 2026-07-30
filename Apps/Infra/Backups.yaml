@@ -20,17 +20,20 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     consul:
-                      enabled: false
+                      enabled: true
+                      address: 'consul.core-dc1-talos-prod.dc1.yxl.mylogin.space'
 
                 - name: core-home1-talos-prod
                   values:
                     consul:
                       enabled: false
+                      address: ''
 
                 - name: dc1-k3s-node1
                   values:
                     consul:
                       enabled: true
+                      address: ''
 
           - clusters:
               selector:
@@ -70,6 +73,7 @@ spec:
               value: |- # yaml
                 consul:
                   enabled: {{ .values.consul.enabled }}
+                  address: {{ default (printf "%s-server.core-%s.svc.cluster.local:8500" .name .values.environment) .values.consul.address }}
 
                 velero:
                   configuration:
