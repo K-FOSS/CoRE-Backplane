@@ -668,7 +668,7 @@ spec:
                     cni:
                       type: object
 
-                      descriptions: Overrides for specific Container Network Interface configurations and parameters at the node level
+                      description: Overrides for specific Container Network Interface configurations and parameters at the node level
 
                       properties:
                         cilium:
@@ -677,6 +677,14 @@ spec:
                           description: Override configurations for the Cilium CNI
 
                           properties:
+                            configOverrides:
+                              type: object
+
+                              description: Cilium agent configuration overrides applied to this node; values take precedence over cluster overrides
+
+                              additionalProperties:
+                                type: string
+
                             networkInterfaces:
                               type: array
 
