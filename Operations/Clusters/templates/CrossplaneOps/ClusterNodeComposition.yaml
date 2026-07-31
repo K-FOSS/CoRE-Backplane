@@ -33,6 +33,7 @@ spec:
             {{ $tinkMachineResourceName := "tink-workmachine" }}
             {{ $ciliumBGPResourceName := "cilium-bgp" }}
             {{ $ciliumNodeResourceName := "cilium-node" }}
+            {{ $ciliumNodeConfigResourceName := "cilium-node-config" }}
             {{ $frrConfigResourceName := "frr-config" }}
             {{ $talosTFTest := "talos-tf-test" }}
             {{ $bridgeDSResourceName := "bridge-ds" }}
@@ -185,6 +186,56 @@ spec:
             ---
             {{ $talosImageFactory := getComposedResource . $tfTalosImageName }}
             {{ if $clusterCustomResource.status.atProvider }}
+            {{- $clusterCiliumOverrides := dict }}
+            {{- if and $clusterCustomResource.status.atProvider.manifest.spec.networks.cni $clusterCustomResource.status.atProvider.manifest.spec.networks.cni.cilium $clusterCustomResource.status.atProvider.manifest.spec.networks.cni.cilium.configOverrides }}
+            {{- $clusterCiliumOverrides = $clusterCustomResource.status.atProvider.manifest.spec.networks.cni.cilium.configOverrides }}
+            {{- end }}
+            {{- $nodeCiliumOverrides := dict }}
+            {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.cni .observed.composite.resource.spec.overrides.cni.cilium .observed.composite.resource.spec.overrides.cni.cilium.configOverrides }}
+            {{- $nodeCiliumOverrides = .observed.composite.resource.spec.overrides.cni.cilium.configOverrides }}
+            {{- end }}
+            {{- $ciliumOverrides := mergeOverwrite (dict) $clusterCiliumOverrides $nodeCiliumOverrides }}
+            {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.cni .observed.composite.resource.spec.overrides.cni.cilium .observed.composite.resource.spec.overrides.cni.cilium.networkInterfaces }}
+            {{- $_ := set $ciliumOverrides "devices" (join "," .observed.composite.resource.spec.overrides.cni.cilium.networkInterfaces) }}
+            {{- end }}
+            {{- if $ciliumOverrides }}
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $ciliumNodeConfigResourceName }}
+            spec:
+              providerConfigRef:
+                name: {{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
+
+              managementPolicies:
+                - Create
+                - Observe
+                - Update
+
+              deletionPolicy: Orphan
+
+              readiness:
+                policy: SuccessfulCreate
+
+              forProvider:
+                manifest:
+                  apiVersion: cilium.io/v2
+                  kind: CiliumNodeConfig
+                  metadata:
+                    name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                    namespace: kube-system
+                  spec:
+                    nodeSelector:
+                      matchLabels:
+                        kubernetes.io/hostname: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
+                    defaults:
+                      {{- range $key, $value := $ciliumOverrides }}
+                      {{ $key | quote }}: {{ $value | quote }}
+                      {{- end }}
+            ---
+            {{- end }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:

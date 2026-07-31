@@ -78,6 +78,12 @@ Where both levels define the same sysctl, the node setting takes precedence:
 built-in defaults < Cluster.spec.sysctls < ClusterNode.spec.sysctls
 ```
 
+Cilium agent configuration follows the same inheritance model:
+
+```text
+Cilium defaults < Cluster.spec.networks.cni.cilium.configOverrides < ClusterNode.spec.overrides.cni.cilium.configOverrides
+```
+
 Version overrides and hardware-specific settings should be used sparingly;
 they make a node different from the rest of its cluster and complicate
 replacement and upgrades.

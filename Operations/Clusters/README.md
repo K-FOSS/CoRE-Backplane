@@ -124,6 +124,14 @@ because that is the format expected by the Talos machine configuration.
 Treat sysctl changes as operating-system changes: validate them against the
 deployed Talos version and test them on a non-critical node first.
 
+Cilium agent configuration can be overridden for a cluster with
+`Cluster.spec.networks.cni.cilium.configOverrides` and for an individual node
+with `ClusterNode.spec.overrides.cni.cilium.configOverrides`. Both fields are
+maps of Cilium configuration keys to string values. The node map is merged on
+top of the cluster map and rendered as a `CiliumNodeConfig` selected by the
+node's `kubernetes.io/hostname` label. `networkInterfaces`, when set on the
+node, is rendered as the Cilium `devices` override.
+
 ## Creating resources
 
 Start with a `Cluster` claim containing its tenant, environment, Talos and
