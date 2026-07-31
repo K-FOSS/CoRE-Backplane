@@ -19,6 +19,25 @@ oauth:
   authentik:
     urlBase: https://idp.mylogin.space
 
+# Inspektor Gadget deploys a daemon on each Linux node. The Headlamp plugin
+# below uses it to run OCI-based inspection tools on demand.
+gadget:
+  enabled: true
+
+  config:
+    operator:
+      oci:
+        # Verify official gadget images before running them.
+        verify-image: true
+
+        # OCI tools are allowed by default. Restrict this list to approved
+        # image references or digests in hardened environments.
+        allowed-gadgets: []
+
+    # Add entries here only for tools that should run continuously. Interactive
+    # tools are fetched and started on demand by the client or Headlamp plugin.
+    gadgetConfigMaps: []
+
 headlamp:
   enabled: true
   # Default values for headlamp.
@@ -36,9 +55,6 @@ headlamp:
   # -- An optional list of init containers to be run before the main containers.
   initContainers:
     - name: headlamp-plugins
-      #
-      # TODO: Automate updates
-      #
       image: ghcr.io/inspektor-gadget/headlamp-plugin:0.1.0-beta.3
       imagePullPolicy: Always
       command:
@@ -50,9 +66,6 @@ headlamp:
           mountPath: /build/plugins
 
     - name: install-kubevirt-plugin
-      #
-      # TODO: Automate this version update
-      #
       image: ghcr.io/buttahtoast/headlamp-plugins/kubevirt:v0.0.1-beta7
       command: ["/bin/sh", "-c", "cp -r /plugins/* /headlamp/plugins/"]
       volumeMounts:

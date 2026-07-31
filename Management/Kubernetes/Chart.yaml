@@ -1,5 +1,5 @@
 apiVersion: v2
-version: 1.0.0
+version: 1.1.0
 
 name: core-management-kubernetes
 
@@ -8,6 +8,14 @@ dependencies:
   # Headlamp
   #
   - name: headlamp
-    version: '>= 0.40.0'
+    version: 0.44.0
     repository: https://kubernetes-sigs.github.io/headlamp/
     condition: headlamp.enabled
+
+  #
+  # Inspektor Gadget daemon and OCI-based debugging tools
+  #
+  - name: gadget
+    version: 0.54.1
+    repository: https://inspektor-gadget.github.io/charts
+    condition: gadget.enabled
