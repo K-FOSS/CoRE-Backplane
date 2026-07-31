@@ -102,12 +102,13 @@ spec:
   nics:
     - macAddress: ec:f4:bb:ef:58:e8
       offloads:
+        l2-fwd-offload: true
         rx-udp-gro-forwarding: true
       rings:
         rx: 4096
         tx: 4096
 
-    - macAddress: ec:f4:bb:ef:58:e8
+    - macAddress: ec:f4:bb:ef:58:ea
       offloads:
         rx-udp-gro-forwarding: true
       rings:
@@ -120,11 +121,56 @@ spec:
         configOverrides:
           devices: eno1
           direct-routing-device: eno1
+
     pci:
       rebinds:
-        - description: eno2
-          id: 0000:01:10.1
+        - description: eno1 VF8 - x540_vfio_port0_gp0
           driver: vfio-pci
+          id: '0000:01:12.0'
+
+        - description: eno1 VF9 - x540_vfio_port0_gp0
+          driver: vfio-pci
+          id: '0000:01:12.2'
+
+        - description: eno1 VF10 - x540_vfio_port0_gp0
+          driver: vfio-pci
+          id: '0000:01:12.4'
+
+        - description: eno1 VF11 - x540_vfio_port0_gp1
+          driver: vfio-pci
+          id: '0000:01:12.6'
+
+        - description: eno1 VF12 - x540_vfio_port0_gp1
+          driver: vfio-pci
+          id: '0000:01:13.0'
+
+        - description: eno1 VF13 - x540_vfio_port0_gp3
+          driver: vfio-pci
+          id: '0000:01:13.2'
+
+        - description: eno1 VF14 - x540_vfio_port0_gp3
+          driver: vfio-pci
+          id: '0000:01:13.4'
+
+        - description: eno1 VF15 - x540_vfio_port0_gp3
+          driver: vfio-pci
+          id: '0000:01:13.6'
+
+        - description: eno2 VF12 - x540_vfio_port1gp0
+          driver: vfio-pci
+          id: '0000:01:13.1'
+
+        - description: eno2 VF13 - x540_vfio_port1gp0
+          driver: vfio-pci
+          id: '0000:01:13.3'
+
+        - description: eno2 VF14 - x540_vfio_port1gp1
+          driver: vfio-pci
+          id: '0000:01:13.5'
+
+        - description: eno2 VF15 - x540_vfio_port1gp1
+          driver: vfio-pci
+          id: '0000:01:13.7'
 
     kernel:
       parameters:
@@ -144,7 +190,7 @@ spec:
 
   sysfs:
     - name: class.net.eno1.device.sriov_numvfs
-      value: '8'
+      value: '16'
 
     - name: class.net.eno2.device.sriov_numvfs
-      value: '8'
+      value: '16'
