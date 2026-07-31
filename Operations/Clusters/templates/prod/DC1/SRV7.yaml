@@ -57,7 +57,7 @@ spec:
 
   networks:
     - macAddress: b8:ca:3a:60:00:28
-      bridge: true
+      bridge: false
       model: new
       type: link
       addresses:
@@ -68,7 +68,7 @@ spec:
           gateway: 172.31.241.69
           metric: 1024
 
-      mtu: 9000
+      mtu: 3000
 
       routing:
         ospf:
@@ -77,8 +77,6 @@ spec:
       static: true
       dns:
         - 1.1.1.1
-        - 1.0.0.1
-        - 8.8.8.8
 
   overrides:
     cni:
@@ -88,9 +86,30 @@ spec:
           direct-routing-device: eno1
     pci:
       rebinds:
-        - description: enp4s0d1
-          id: 0000:04:00.1
+        - description: cx3-vf0
           driver: vfio-pci
+          id: '0000:04:00.1'
+        - description: cx3-vf1
+          driver: vfio-pci
+          id: '0000:04:00.2'
+        - description: cx3-vf2
+          driver: vfio-pci
+          id: '0000:04:00.3'
+        - description: cx3-vf3
+          driver: vfio-pci
+          id: '0000:04:00.4'
+        - description: cx3-vf4
+          driver: vfio-pci
+          id: '0000:04:00.5'
+        - description: cx3-vf5
+          driver: vfio-pci
+          id: '0000:04:00.6'
+        - description: cx3-vf6
+          driver: vfio-pci
+          id: '0000:04:00.7'
+        - description: cx3-vf7
+          driver: vfio-pci
+          id: '0000:04:01.0'
 
     talos:
       extensions:
@@ -110,3 +129,22 @@ spec:
 
         - name: numa_balancing
           value: enable
+
+        - name: mlx4_core.debug_level
+          value: '8'
+        - name: mlx4_core.enable_qos
+          value: '1'
+        - name: mlx4_core.port_type_array
+          value: 2,2
+        - name: mlx4_core.num_vfs
+          value: 0,32,0
+        - name: mlx4_core.probe_vf
+          value: 0,24,0
+        - name: mlx4_core.log_num_mgm_entry_size
+          value: '-1'
+        - name: mlx4_core.enable_4k_uar
+          value: '1'
+        - name: mlx4_en.pfctx
+          value: '0x08'
+        - name: mlx4_en.pfcrx
+          value: '0x08'
