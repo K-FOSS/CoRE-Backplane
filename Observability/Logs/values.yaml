@@ -29,7 +29,7 @@ loki:
     auth_enabled: false
 
     commonConfig:
-      replication_factor: 1
+      replication_factor: 3
 
     podLabels:
       logs: loki-myloginspace
@@ -61,6 +61,7 @@ loki:
         region: us-east-1
         accessKeyId: ${S3_ACCESS_KEY}
         secretAccessKey: ${S3_SECRET_ACCESS_KEY}
+        session_token: ${S3_SESSION_TOKEN}
         s3ForcePathStyle: true
         insecure: false
 
@@ -85,11 +86,12 @@ loki:
       enabled: true
 
   singleBinary:
-    replicas: 1
+    replicas: 3
+    terminationGracePeriodSeconds: 300
+    annotations:
+      reloader.stakater.com/auto: "true"
     extraArgs:
       - -config.expand-env=true
-      - -common.storage.s3.session-token=$(S3_SESSION_TOKEN)
-      - -ruler.storage.s3.session-token=$(S3_SESSION_TOKEN)
     extraEnv:
       - name: S3_ENDPOINT
         valueFrom:
@@ -135,3 +137,6 @@ loki:
 
   resultsCache:
     enabled: false
+
+  podDisruptionBudget:
+    maxUnavailable: 1
