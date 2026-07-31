@@ -20,11 +20,13 @@ spec:
                   values:
                     hub: false
                     debug: false
+                    ldapServer: ldap-home1.mylogin.space
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
                     debug: true
+                    ldapServer: ldap-dc1.mylogin.space
 
           - clusters:
               selector:
@@ -66,7 +68,7 @@ spec:
               value: |- 
                 debug: {{ .values.debug }}
                 ldap:
-                  server: {{ if eq .values.datacenter "dc1" }}ldap-home1.mylogin.space{{ else if eq .values.datacenter "home2" }}ldap-dc1.mylogin.space{{ else }}ldap.mylogin.space{{ end }}
+                  server: {{ .values.ldapServer }}
 
 
       destination:
