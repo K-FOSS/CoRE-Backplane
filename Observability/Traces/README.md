@@ -1,18 +1,31 @@
-# K-FOSS/CoRE-Backplane Traces Obserability Stack
+# Tempo traces stack
 
-This helm chart deployed by [ArgoCD](../../ArgoCD/) into CoRE-Prod deploys [Grafana Tempo](https://grafana.com/oss/tempo/)
+This chart deploys the
+[`TempoMonolithic` custom resource](https://github.com/grafana/tempo-operator/blob/main/docs/tempo/api.md)
+and installs the [Grafana Tempo Operator](https://github.com/grafana/tempo-operator)
+through an OperatorHub `Subscription`. The
+[`core-observability-traces` ApplicationSet](../../Apps/Observability/Traces.yaml)
+currently targets only `core-home1-talos-prod`.
 
-During deployment using the [User Custom Resources](../../Operations/SSO/User/) at [./templates/TempoUser.yaml](./templates/TempoUser.yaml) the S3 bucket and user credentials are created.
+Collectors accept OTLP and Jaeger traffic and forward it to Tempo. Tempo stores
+traces in S3 using credentials synchronized by `core-tempo-s3`. The platform
+`User` resource provisions the bucket identity, while a Terraform Workspace
+creates Authentik groups. `traces.mylogin.space` is published through an
+HTTPRoute protected by an Envoy Gateway SecurityPolicy requiring the `Traces`
+group and forwarding Grafana's `orgID` claim.
 
+The Tempo resource is monolithic and therefore not highly available. The
+operator Subscription follows the mutable `alpha` channel rather than an
+immutable release; review installed CSV changes and migration notes before
+reconciliation. The S3 provider names in `TempoUser.yaml` are currently fixed
+to the home1/YVR provider, matching the only selected cluster.
 
+This stack does not create broad Kubernetes discovery. The Tempo Operator adds
+normal CR watches, while trace Kubernetes metadata enrichment occurs in Alloy
+and contributes to the Collector API traffic.
 
-Access to the [HTTPRoute](./templates/HTTPRoute,.yaml) is handled by the [Envoy Security Policy](https://gateway.envoyproxy.io/contributions/design/security-policy/) at [./templates/SecurityPolicy.yaml](./templates/SecurityPolicy.yaml) which checks for Authentik issued JWTs, mainly passed along from Grafana using cookie passthrough.
-
-
-This allows any user who has the Traces group in their JWT accessing https://traces.mylogin.space to query and push traces
-
-
-In order to deploy Tempo we are using the [Tempo Operator](https://github.com/grafana/tempo-operator) deployed by the [Subscription](./templates/Operator.yaml)
-
-
-Currently it is a single node [TempoMonolithic](https://github.com/grafana/tempo-operator/blob/main/docs/tempomonolithic.md) stack although once I get more servers online I will move that to the distributed model
+Verify Subscription/CSV health, `TempoMonolithic` conditions, generated S3
+Secret readiness, object writes, collector export errors, route attachment,
+JWT authorization, and an end-to-end trace query. Roll back through Git/Argo
+CD. Deleting Tempo or its `User` can affect stored traces and credentials, so
+review finalizers and deletion policies first.

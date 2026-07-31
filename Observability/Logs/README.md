@@ -8,7 +8,7 @@ into the `core-prod` namespace of the selected infrastructure clusters.
 
 ## Current deployment
 
-Loki runs in `SingleBinary` mode with one replica. The chart uses the upstream
+Loki runs in `SingleBinary` mode with three replicas. The chart uses the upstream
 Grafana Loki chart at the version pinned in [`Chart.yaml`](Chart.yaml), while
 [`values.yaml`](values.yaml) contains only deployment-specific overrides.
 
@@ -17,6 +17,10 @@ in the cluster-local S3 service. Local persistent storage remains enabled by
 the upstream chart for working data. The default retention period is 31 days;
 streams matching `{env="testing"}` are retained for 24 hours. The compactor is
 responsible for enforcing retention.
+
+The implementation is based on the component-specific
+[Grafana Loki Helm chart](https://github.com/grafana/helm-charts/tree/main/charts/loki)
+and [Loki documentation](https://grafana.com/docs/loki/latest/).
 
 The ApplicationSet currently selects `core-dc1-talos-prod` and
 `core-home1-talos-prod`. It injects the cluster name, cluster domain,
@@ -97,7 +101,7 @@ directly outside the cluster.
 | `oauth.groups` | Authentik groups bound to the generated application. |
 | `oauth.allowedGroups` | Groups accepted by the Envoy authorization policy. |
 | `loki.deploymentMode` | Upstream Loki topology; currently `SingleBinary`. |
-| `loki.singleBinary.replicas` | Loki instance count; currently one. |
+| `loki.singleBinary.replicas` | Loki instance count; currently three. |
 | `loki.loki.storage` | S3 and bucket configuration interpolated from generated Secrets. |
 | `loki.loki.limits_config` | Query and retention policy. |
 
@@ -128,7 +132,7 @@ helm template logs Observability/Logs \
   --set region=yxl
 ```
 
-Before merging a change, verify that the rendered StatefulSet has one replica,
+Before merging a change, verify that the rendered StatefulSet has three replicas,
 the HTTPRoute targets service port 3100, S3 environment variables reference
 the generated Secrets, and the Authentik issuer and redirect URI use the same
 cluster-specific slug and hostname.
@@ -146,8 +150,7 @@ from Loki/API errors by checking the HTTPRoute and SecurityPolicy conditions.
 Retention changes affect only compactor policy; increasing retention also
 increases object-storage use.
 
-This is currently a single-replica service. A pod restart causes a brief
-availability interruption, and `SingleBinary` should not be treated as a
-high-availability topology. A future move to `SimpleScalable` or `Distributed`
-mode requires explicit replica, routing, cache, and object-storage review; do
-not change only `loki.deploymentMode`.
+This remains a `SingleBinary` topology: every replica runs the full Loki
+process, despite the three-way pod count. A future move to `SimpleScalable` or
+`Distributed` mode requires explicit replica, routing, cache, and
+object-storage review; do not change only `loki.deploymentMode`.

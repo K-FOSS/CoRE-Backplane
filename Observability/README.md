@@ -21,8 +21,11 @@ umbrella chart.
 | [`SLO`](SLO/) | Service-level objective resources. | Helm chart; coverage remains incremental. |
 | [`Status`](Status/) | Publishes service status and related credentials/routes. | Helm and Kustomize resources. |
 
-For component-specific behavior, start with the [Loki logs guide](Logs/README.md),
-[traces guide](Traces/README.md), or [exporters guide](Exporters/README.md).
+Every stack has a component guide: [Collectors](Collectors/README.md),
+[Dashboards](Dashboards/README.md), [Exporters](Exporters/README.md),
+[Kubernetes resource metrics](Kubernetes/README.md), [Logs](Logs/README.md),
+[Metrics](Metrics/README.md), [SLO](SLO/README.md),
+[Status](Status/README.md), and [Traces](Traces/README.md).
 
 ## Telemetry flow
 
@@ -50,6 +53,30 @@ uses Loki's cluster-specific Gateway hostname. Treat that address as an
 operational dependency when moving Loki or changing service networking. A
 service-discovery-based destination would reduce this coupling but is not the
 current implementation.
+
+## Kubernetes API traffic investigation
+
+The former structural multiplier was the Collectors topology, not Mimir: every
+Alloy DaemonSet pod instantiated cluster-wide discovery, Operator resource
+watchers, metadata enrichment, and API-based pod log readers. Collectors is now
+split into node-local agents and a three-replica clustered discovery tier. The
+agents read CRI files locally and do not perform Kubernetes discovery; the HA
+tier owns the bounded cluster-wide watches and shards scrape targets across its
+peers.
+
+Exporters supplies the largest target sets: kubelet and cAdvisor endpoints on
+every node, kube-state-metrics, API-server metrics, node-exporter, and hardware
+exporters. Metrics Server independently watches nodes/pods and polls kubelets
+every 15 seconds on the two infrastructure clusters, but it serves the resource
+metrics API and does not remote-write into Mimir. Grafana's dashboard sidecar
+adds one namespaced ConfigMap watch. Backend storage charts do not perform
+fleet-wide Kubernetes discovery.
+
+Confirm this in live telemetry before changing topology by grouping API-server
+request counts and response bytes by service-account username and user agent.
+For Alloy, also compare request/watch volume with node count and inspect
+component health. Repository analysis identifies the fan-out mechanism; it
+does not substitute for live API-server measurements.
 
 ## Deployment model
 
@@ -106,8 +133,7 @@ Application does not prove every downstream Crossplane resource is ready.
 
 ## Current limitations
 
-- Loki and Tempo currently use single-node deployment models and are not
-  highly available.
+- Loki uses a three-replica `SingleBinary` topology; Tempo is monolithic.
 - The Alloy-to-Loki destination is a fixed network address.
 - Repository-wide rendering and schema validation are not automated.
 - SLO coverage and component runbooks are incomplete.

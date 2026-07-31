@@ -7,23 +7,29 @@ name: core-backplane-observeability-collectors
 dependencies:
   # Grafana Alloy
   - name: alloy
-    version: '>= 1.10.0'
+    version: '1.10.0'
+    repository: https://grafana.github.io/helm-charts
+
+  # Node-local collection is isolated from the HA cluster-discovery Alloy.
+  - name: alloy
+    alias: alloy-agent
+    version: '1.10.0'
     repository: https://grafana.github.io/helm-charts
 
   - name: alloy-mixin
-    version: '>= 0.3.1'
+    version: '0.3.2'
     repository: https://charts.portefaix.xyz/
 
   #
   # Vector because fuck my infra hates properly formatted syslogs
   # 
   - name: vector 
-    version: '>= 0.40.0'
+    version: '0.56.0'
     repository: https://helm.vector.dev
     condition: vector.enabled
 
 
   # Prometheus Operator
   - name: prometheus-operator-crds
-    version: '>= 17.0.2'
+    version: '30.0.1'
     repository: https://prometheus-community.github.io/helm-charts
