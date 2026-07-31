@@ -14,28 +14,19 @@ spec:
         generators:
           - list:
               elements:
-                - name: core-dc1-talos-prod
-                  values:
-                    processors:
-                      status: 40
-                      operations: 20
-                    reposerver:
-                      parallelism: 4
-                    controllerCache:
-                      interval: 200ms
-                    monitoring:
-                      enabled: true
-
-
+                # YVR hosts the fleet control plane for the local cluster and
+                # the two registered remote clusters (about 200 Applications).
                 - name: core-home1-talos-prod
                   values:
                     processors:
-                      status: 15
-                      operations: 20
+                      status: 25
+                      operations: 10
                     reposerver:
-                      parallelism: 3
+                      parallelism: 5
                     controllerCache:
-                      interval: 200ms
+                      # Batch watch events to avoid amplifying API traffic over
+                      # the roughly 100 ms inter-site links.
+                      interval: 500ms
                     monitoring:
                       enabled: true
 
@@ -94,24 +85,69 @@ spec:
 
                 argo-cd:
                   controller:
+                    replicas: 2
+
+                    pdb:
+                      enabled: true
+                      minAvailable: 1
+
+                    resources:
+                      requests:
+                        cpu: 500m
+                        memory: 1Gi
+                      limits:
+                        cpu: '2'
+                        memory: 4Gi
+
                     metrics:
                       enabled: {{ .values.monitoring.enabled }}
                       serviceMonitor:
                         enabled: {{ .values.monitoring.enabled }}
 
                   repoServer:
+                    replicas: 2
+
+                    pdb:
+                      enabled: true
+                      minAvailable: 1
+
+                    resources:
+                      requests:
+                        cpu: 250m
+                        memory: 2Gi
+                      limits:
+                        cpu: '2'
+                        # Production manifest generation has exceeded 8 GiB.
+                        memory: 10Gi
+
                     metrics:
                       enabled: {{ .values.monitoring.enabled }}
                       serviceMonitor:
                         enabled: {{ .values.monitoring.enabled }}
 
                   applicationSet:
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                      limits:
+                        cpu: 500m
+                        memory: 512Mi
+
                     metrics:
                       enabled: {{ .values.monitoring.enabled }}
                       serviceMonitor:
                         enabled: {{ .values.monitoring.enabled }}
 
                   notifications:
+                    resources:
+                      requests:
+                        cpu: 50m
+                        memory: 128Mi
+                      limits:
+                        cpu: 300m
+                        memory: 256Mi
+
                     metrics:
                       enabled: {{ .values.monitoring.enabled }}
                       serviceMonitor:
@@ -127,6 +163,20 @@ spec:
                     existingSecret: argocd-redis-password
 
                   server:
+                    replicas: 2
+
+                    pdb:
+                      enabled: true
+                      minAvailable: 1
+
+                    resources:
+                      requests:
+                        cpu: 100m
+                        memory: 256Mi
+                      limits:
+                        cpu: '1'
+                        memory: 1Gi
+
                     metrics:
                       enabled: {{ .values.monitoring.enabled }}
                       serviceMonitor:
@@ -178,6 +228,28 @@ spec:
                     target:
                       kind: Deployment
                       name: argocd-repo-server
+
+                  - target:
+                      kind: Deployment
+                      name: argocd-repo-server
+
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: argocd-repo-server
+                      spec:
+                        template:
+                          spec:
+                            containers:
+                              - name: lovely-plugin
+                                resources:
+                                  requests:
+                                    cpu: 100m
+                                    memory: 256Mi
+                                  limits:
+                                    cpu: '1'
+                                    memory: 2Gi
 
                   - target:
                       kind: Secret
