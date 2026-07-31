@@ -42,7 +42,7 @@ spec:
           - address: 172.31.241.89
             localAddress: 172.31.241.90
             asn: 64567
-            name: eth1-29.lf-sw1.dc1.yxl.resolvemy.host#
+            name: eth1-29.lf-sw1.dc1.yxl.resolvemy.host
 
   nics:
     - macAddress: b8:ca:3a:6c:33:69
@@ -70,9 +70,7 @@ spec:
           network: 0.0.0.0/0
       routing:
         ospf:
-          area: 0.0.0.0
           enabled: false
-          type: point-to-point
       static: true
       type: link
 
@@ -80,8 +78,6 @@ spec:
       bridge: false
       dns:
         - 1.1.1.1
-        - 1.0.0.1
-        - 8.8.8.8
       macAddress: b8:ca:3a:6c:33:69
       model: new
       mtu: 9216
@@ -102,9 +98,24 @@ spec:
           direct-routing-device: eno1
     pci:
       rebinds:
-        - description: eno2
-          id: 0000:01:10.1
+        - description: eno1-vf0
           driver: vfio-pci
+          id: '0000:01:10.0'
+        - description: eno1-vf1
+          driver: vfio-pci
+          id: '0000:01:10.4'
+        - description: eno1-vf2
+          driver: vfio-pci
+          id: '0000:01:11.0'
+        - description: eno2-vf0
+          driver: vfio-pci
+          id: '0000:01:10.1'
+        - description: eno2-vf1
+          driver: vfio-pci
+          id: '0000:01:10.5'
+        - description: eno2-vf2
+          driver: vfio-pci
+          id: '0000:01:11.1'
 
     talos:
       extensions:
