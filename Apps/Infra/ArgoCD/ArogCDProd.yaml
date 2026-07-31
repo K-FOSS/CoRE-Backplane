@@ -23,6 +23,8 @@ spec:
                       parallelism: 4
                     controllerCache:
                       interval: 200ms
+                    monitoring:
+                      enabled: true
 
 
                 - name: core-home1-talos-prod
@@ -34,6 +36,8 @@ spec:
                       parallelism: 3
                     controllerCache:
                       interval: 200ms
+                    monitoring:
+                      enabled: true
 
           - clusters:
               selector:
@@ -89,6 +93,30 @@ spec:
                 region: {{ .values.region }}
 
                 argo-cd:
+                  controller:
+                    metrics:
+                      enabled: {{ .values.monitoring.enabled }}
+                      serviceMonitor:
+                        enabled: {{ .values.monitoring.enabled }}
+
+                  repoServer:
+                    metrics:
+                      enabled: {{ .values.monitoring.enabled }}
+                      serviceMonitor:
+                        enabled: {{ .values.monitoring.enabled }}
+
+                  applicationSet:
+                    metrics:
+                      enabled: {{ .values.monitoring.enabled }}
+                      serviceMonitor:
+                        enabled: {{ .values.monitoring.enabled }}
+
+                  notifications:
+                    metrics:
+                      enabled: {{ .values.monitoring.enabled }}
+                      serviceMonitor:
+                        enabled: {{ .values.monitoring.enabled }}
+
                   externalRedis:
                     # -- External Redis server host
                     host: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
@@ -99,6 +127,11 @@ spec:
                     existingSecret: argocd-redis-password
 
                   server:
+                    metrics:
+                      enabled: {{ .values.monitoring.enabled }}
+                      serviceMonitor:
+                        enabled: {{ .values.monitoring.enabled }}
+
                     httproute:
                       enabled: true
 

@@ -120,6 +120,12 @@ changes the generated provider or RBAC policy.
   behavior.
 - `argo-cd.controller`, `repoServer`, `server`, and `applicationSet` control
   replicas, PodDisruptionBudgets, resources, affinity, metrics, and arguments.
+- Metrics Services and Prometheus Operator `ServiceMonitor` resources default
+  off. Each cluster opts in through `values.monitoring.enabled` in the
+  production ApplicationSet's list override. Opted-in clusters expose the
+  controller, repository server, API server, ApplicationSet, and notifications
+  metrics; their `ServiceMonitor` resources carry
+  `resolvemy.host/metrics=mimir` for Grafana Alloy discovery.
 - `argo-cd.externalRedis` is injected by the ApplicationSet and refers to the
   externally synchronized password Secret.
 
