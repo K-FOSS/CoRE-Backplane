@@ -79,6 +79,7 @@ spec:
               providerConfigRef:
                 name: tf-talos
 
+              deletionPolicy: Orphan
               forProvider:
                 source: Inline
                 initArgs:
@@ -196,6 +197,8 @@ spec:
               providerConfigRef:
                 name: local-k8s
 
+              deletionPolicy: Orphan
+
               managementPolicies:
                 - Observe
                 - Create
@@ -304,6 +307,8 @@ spec:
               managementPolicies:
                 - Observe
                 - Update
+
+              deletionPolicy: Orphan
 
               forProvider:
                 manifest:
@@ -811,6 +816,7 @@ spec:
               providerConfigRef:
                 name:  tf-talos-{{ $clusterCustomResource.status.atProvider.manifest.metadata.name }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.environment }}-provider
 
+              deletionPolicy: Orphan
               forProvider:
                 source: Inline
                 initArgs:
@@ -1086,6 +1092,12 @@ spec:
                       ca_certificate = local.talosconfig.ca
                       client_certificate = local.talosconfig.crt
                       client_key =  local.talosconfig.key
+                    }
+                    apply_mode = "staged_if_needing_reboot"
+                    on_destroy = {
+                      reset    = false
+                      graceful = false
+                      reboot   = false
                     }
                     machine_configuration_input = var.talosConfig
                     node = var.nodeIP
