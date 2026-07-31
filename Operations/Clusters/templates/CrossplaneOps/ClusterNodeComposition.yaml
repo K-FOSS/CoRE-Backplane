@@ -37,6 +37,7 @@ spec:
             {{ $talosTFTest := "talos-tf-test" }}
             {{ $bridgeDSResourceName := "bridge-ds" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
+            {{ $bootloaderMode := default "uefi" .observed.composite.resource.spec.bootloader.mode }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -97,12 +98,14 @@ spec:
                     {{ $talosVersion = .observed.composite.resource.spec.overrides.version.talos }}
                     {{- end }}
                     version: {{ $talosVersion }}
+                    bootloaderMode: {{ $bootloaderMode }}
                 module: | # hcl
                   variable "talos" {
                     description = "Talos Configuration"
                     type = object(
                       {
-                        version = string
+                        version        = string
+                        bootloaderMode = string
                       }
                     )
                   }
@@ -167,7 +170,11 @@ spec:
                   }
 
                   output "iso_url" {
-                    value = data.talos_image_factory_urls.this.urls.iso
+                    value = var.talos.bootloaderMode == "secureboot" ? data.talos_image_factory_urls.this.urls.iso_secureboot : data.talos_image_factory_urls.this.urls.iso
+                  }
+
+                  output "installer_url" {
+                    value = var.talos.bootloaderMode == "secureboot" ? data.talos_image_factory_urls.this.urls.installer_secureboot : data.talos_image_factory_urls.this.urls.installer
                   }
 
                   output "subnetmask" {
@@ -241,6 +248,7 @@ spec:
 
                           lease_time: 86400
                           mac: {{ $network.macAddress }}
+                          uefi: {{ ne $bootloaderMode "legacy" }}
 
                           name_servers:
                             {{ range $dnsServer := $network.dns }}
@@ -789,7 +797,7 @@ spec:
             {{ end }}
             ---
             {{ $tinkMachineResource := getComposedResource . $tinkMachineResourceName }}
-            {{ if and $clusterCustomResource.status.atProvider $talosHardware.status.atProvider $tinkMachineResource.status.atProvider  }}
+            {{ if and $clusterCustomResource.status.atProvider $talosHardware.status.atProvider $tinkMachineResource.status.atProvider }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
             metadata:
@@ -810,6 +818,7 @@ spec:
                 varmap:
                   talosConfig: |
             {{ indent 8 $talosHardware.status.atProvider.manifest.spec.userData }}
+                  installerImage: {{ $talosImageFactory.status.atProvider.outputs.installer_url }}
                   nodeIP: {{ regexReplaceAll "(.*)/[1-3][0-9]"  (index (index .observed.composite.resource.spec.networks 0).addresses 0) "${1}" }}
                 module: | # hcl
                   variable "talosConfig" {
@@ -819,6 +828,11 @@ spec:
 
                   variable "nodeIP" {
                     description = "Talos Node IP Address"
+                    type        = string
+                  }
+
+                  variable "installerImage" {
+                    description = "Talos installer image selected by the image factory workspace"
                     type        = string
                   }
 
