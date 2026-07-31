@@ -63,6 +63,8 @@ spec:
               providerConfigRef:
                 name: authentik
 
+              deletionPolicy: Orphan
+
               writeConnectionSecretToRef:
                 name: {{ .observed.composite.resource.metadata.uid }}-sso-secret
                 namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
@@ -371,6 +373,8 @@ spec:
                 - Create
                 - Update
 
+              deletionPolicy: Orphan
+
               forProvider:
                 source: Inline
                 varmap:
@@ -439,6 +443,8 @@ spec:
                 - Observe
                 - Create
                 - Update
+
+              deletionPolicy: Orphan
 
               forProvider:
                 source: Inline
@@ -677,6 +683,8 @@ spec:
               providerConfigRef:
                 name: {{ $.observed.composite.resource.spec.psql.crossplane.crossplaneProvider }}
 
+              deletionPolicy: Orphan
+
               forProvider:
                 passwordSecretRef:
                   name: {{ .observed.composite.resource.metadata.uid }}-sso-secret
@@ -750,6 +758,8 @@ spec:
                 - Observe
                 - Create
                 - Update
+
+              deletionPolicy: Orphan
 
               forProvider:
                 source: Inline
