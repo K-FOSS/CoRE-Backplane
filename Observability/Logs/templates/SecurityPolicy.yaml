@@ -2,7 +2,6 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
   name: {{ include "loki.fullname" $.Subcharts.loki }}
-
 spec:
   targetRef:
     group: gateway.networking.k8s.io
@@ -15,6 +14,7 @@ spec:
       - name: grafana
         issuer: https://idp.mylogin.space/application/o/grafana-test/
         remoteJWKS:
+          cacheDuration: 3600s
           uri: https://idp.mylogin.space/application/o/grafana-test/jwks/
         claimToHeaders:
           - header: x-scope-orgid
@@ -25,9 +25,10 @@ spec:
             - core-token
 
       - name: authentik
-        issuer: https://idp.mylogin.space/application/o/loki-test/
+        issuer: {{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/
         remoteJWKS:
-          uri: https://idp.mylogin.space/application/o/loki-test/jwks/
+          cacheDuration: 3600s
+          uri: {{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/jwks/
         claimToHeaders:
           - header: x-scope-orgid
             claim: orgID
@@ -40,9 +41,6 @@ spec:
             - session_access_token
           params:
             - token
-
-
-
   # extAuth:
   #   http:
   #     backendRefs:
@@ -71,10 +69,9 @@ spec:
             claims:
               - name: groups
                 valueType: StringArray
-                values: ["Logs"]
+                values: {{ .Values.oauth.allowedGroups | toJson }}
 
-
-      - name: "allow"
+      - name: "allow-authentik"
         action: Allow
         principal:
           jwt:
@@ -82,4 +79,4 @@ spec:
             claims:
               - name: groups
                 valueType: StringArray
-                values: ["Logs"]
+                values: {{ .Values.oauth.allowedGroups | toJson }}

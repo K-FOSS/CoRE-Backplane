@@ -175,6 +175,8 @@ stronger safety contract than it currently provides.
 - [Network IPAM](Network/IPAM/README.md)
 - [Storage charts](Storage/README.md)
 - [Database charts](Databases/README.md)
+- [Observability stack](Observability/README.md)
+- [Loki logs](Observability/Logs/README.md)
 - [Observability traces](Observability/Traces/README.md)
 - [PostgreSQL](Databases/PSQL/README.md)
 

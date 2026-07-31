@@ -2,7 +2,6 @@ apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
   name: loki-s3
-
 spec:
   name: Loki {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
 
@@ -22,6 +21,7 @@ spec:
 
     buckets:
       - loki-rules-temp
+      - loki-admin
 
     writeCredentialsSecretRef:
       name: {{ include "loki.fullname" $.Subcharts.loki }}-s3-creds

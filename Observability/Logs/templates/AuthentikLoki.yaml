@@ -2,7 +2,6 @@ apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
   name: {{ include "loki.fullname" $.Subcharts.loki }}
-
 spec:
   providerConfigRef:
     name: authentik
@@ -22,9 +21,9 @@ spec:
         slug = "default-provider-invalidation-flow"
       }
 
-      data "authentik_property_mapping_provider_scope" "logscope" {
+      data "authentik_property_mapping_provider_scope" "logs" {
         name = "Logs"
-      }      
+      }
 
       data "authentik_property_mapping_provider_scope" "scopes" {
         managed_list = [
@@ -32,10 +31,6 @@ spec:
           "goauthentik.io/providers/oauth2/scope-openid",
           "goauthentik.io/providers/oauth2/scope-profile"
         ]
-      }
-
-      data "authentik_user" "akadmin" {
-        username = "kjones"
       }
 
       data "authentik_certificate_key_pair" "cert" {
@@ -54,17 +49,17 @@ spec:
         name          = "Loki {{ .Values.cluster.name }} {{ .Values.datacenter }} {{ .Values.region }}"
         client_id     = "{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         client_secret = random_password.client-secret.result
-        signing_key = data.authentik_certificate_key_pair.cert.id
+        signing_key  = data.authentik_certificate_key_pair.cert.id
         allowed_redirect_uris = [
           {
             matching_mode = "regex",
-            url           = "https://logs.{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space/.*",
+            url           = "https://logs.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.externalDomain }}/.*",
           },
         ]
 
-        property_mappings  = concat([data.authentik_property_mapping_provider_scope.logscope.id], tolist(data.authentik_property_mapping_provider_scope.scopes.ids))
+        property_mappings  = concat([data.authentik_property_mapping_provider_scope.logs.id], tolist(data.authentik_property_mapping_provider_scope.scopes.ids))
         authorization_flow = data.authentik_flow.default-authorization-flow.id
-        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+        invalidation_flow  = data.authentik_flow.default-provider-invalidation-flow.id
       }
 
       resource "authentik_application" "application" {
@@ -77,7 +72,7 @@ spec:
       {{ range $index, $group := .Values.oauth.groups }}
       data "authentik_group" "group-{{ $index }}" {
         name = "{{ $group }}"
-      } 
+      }
 
       resource "authentik_application_entitlement" "ent-{{ $index }}" {
         name        = "${data.authentik_group.group-{{ $index }}.id}-ent"
@@ -88,7 +83,7 @@ spec:
         target = authentik_application_entitlement.ent-{{ $index }}.id
         group  = data.authentik_group.group-{{ $index }}.id
         order  = {{ $index }}
-      } 
+      }
 
       resource "authentik_policy_binding" "ent-{{ $index }}-app-access" {
         target = authentik_application.application.uuid

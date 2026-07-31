@@ -1,8 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
-  name:  {{ include "loki.fullname" $.Subcharts.loki }}
-
+  name: {{ include "loki.fullname" $.Subcharts.loki }}
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
@@ -16,14 +15,14 @@ spec:
       sectionName: {{ .Values.gateway.sectionName }}
 
   hostnames:
-    - logs.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
+    - logs.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.externalDomain }}
   rules:
     {{- if eq .Values.loki.deploymentMode "SingleBinary" }}
     - backendRefs:
         - group: ''
           kind: Service
           name: {{ include "loki.fullname" $.Subcharts.loki }}
-          port: 80
+          port: {{ .Values.loki.loki.server.http_listen_port | default 3100 }}
           weight: 1
       matches:
         - path:
@@ -42,7 +41,7 @@ spec:
             type: PathPrefix
             value: /
   
-    {{ range $v, $t := .Values.loki.ingress.paths }}
+    {{- range $v, $t := .Values.loki.ingress.paths }}
     - backendRefs:
         - group: ''
           kind: Service
@@ -56,6 +55,6 @@ spec:
             type: PathPrefix
             value: {{ $path }}
         {{- end -}}
-    {{- end -}}
+    {{- end }}
 
     {{- end }}
