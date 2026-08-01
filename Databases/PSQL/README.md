@@ -15,6 +15,44 @@ plus PGPool, pgAdmin, services and credential automation. It is owned by
 - Crossplane/provider credentials.
 - Optional restore cluster resource.
 
+PGPool discovers every local PostgreSQL pod through a headless per-pod Service
+and appends the site-specific remote peers supplied by the ApplicationSet. Its
+replica count, image, resources, pool sizing and health-check intervals are
+configured under `pooler` in `values.yaml`. The deployment currently consumes
+the custom PGPool image through the mutable `latest` tag; replace it with a
+verified immutable release or digest. See the upstream
+[Pgpool-II backend settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-backend-settings.html),
+[connection pooling settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html),
+and [health-check settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-health-check.html).
+
+The main CoRE PostgreSQL cluster maintenance windows are configured with
+`psql.maintenanceWindows`. The default CRD value is `10:00-12:00`, evaluated
+in UTC by the Zalando Postgres Operator, which corresponds to 02:00-04:00 PST
+(UTC-08:00). This is a fixed UTC schedule and does not shift for Pacific
+daylight time. Use the operator's
+[maintenance window syntax](https://postgres-operator.readthedocs.io/en/latest/reference/cluster_manifest/)
+for daily or weekday-qualified windows; set the list to empty to omit the CRD
+field.
+
+## LDAP configuration
+
+LDAP endpoints and directory search settings are configured under `ldap` in
+`values.yaml`. The core PostgreSQL cluster uses the top-level server; the
+additional PostgreSQL cluster overrides it under `ldap.postgres`. Both use the
+shared port, base DN, bind DN and search attribute. PGPool has its endpoint and
+scheme under `ldap.pooler`, while pgAdmin uses the settings under
+`ldap.pgadmin`.
+
+The owning ApplicationSet selects `ldap-dc1.mylogin.space` for the dc1
+clusters and `ldap-home1.mylogin.space` for the home1 cluster, then injects the
+site endpoint into PostgreSQL, PGPool and pgAdmin through `LOVELY_HELM_MERGE`.
+
+The bind password is still resolved from Vault at render/reconciliation time;
+do not put LDAP credentials in Helm values. PostgreSQL LDAP authentication is
+documented in the [PostgreSQL client authentication documentation](https://www.postgresql.org/docs/17/auth-ldap.html),
+PGPool LDAP parameters in the [PGPool pool_hba documentation](https://www.pgpool.net/docs/latest/en/html/auth-pool-hba-conf.html),
+and pgAdmin LDAP settings in the [pgAdmin LDAP authentication documentation](https://www.pgadmin.org/docs/pgadmin4/latest/ldap.html).
+
 The checked-in `restore` value is operationally significant. Inspect rendered
 output before every reconciliation and ensure restore resources reference the
 intended source. A restore should use a new target/controlled cutover unless

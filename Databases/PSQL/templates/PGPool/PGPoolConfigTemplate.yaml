@@ -16,42 +16,35 @@ data:
     pcp_socket_dir = '/var/run/postgresql'
     pool_passwd = '/config/pool_passwd'
 
-    backend_hostname0 = 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
-    backend_port0 = 5432
-    backend_weight0 = 50
+    {{ $replicas := (include "psql.mylogin.space/replicas" $) }}
+    {{ range $index, $id := untilStep (int 0) (int $replicas) 1 }}
+    backend_hostname{{ $index }} = 'psql-main-{{ $index }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
+    backend_port{{ $index }} = 5432
+    backend_weight{{ $index }} = 25
+    {{ end }}
 
-    {{- $replicas := (include "psql.mylogin.space/replicas" $) }}
-    {{- range $index, $id := untilStep (int 0) (int $replicas) 1 -}}
-    {{ $backendID := add 1 $index }}
-    backend_hostname{{ $backendID }} = 'psql-main-{{ $index }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
-    backend_port{{ $backendID }} = 5432
-    backend_weight{{ $backendID }} = 25
-    {{- end }}
-
-    {{- range $index, $pooler := .Values.pooler.peers }}
-    {{- $backendID := add (len (untilStep (int 0) (int $replicas) 1)) (add $index 1) }}
+    {{ range $index, $pooler := .Values.pooler.peers }}
+    {{ $backendID := add (int $replicas) $index }}
     backend_hostname{{ $backendID }} = '{{ $pooler.hostname }}'
     backend_port{{ $backendID }} = {{ default 5432 $pooler.port }}
     backend_weight{{ $backendID }} = 1
-    {{- end }}
+    {{ end }}
 
     backend_clustering_mode = 'streaming_replication'
 
-    {{`
-    health_check_user = '{{ .Username }}'
-    health_check_password = 'TEXT{{ .Password }}'
-    health_check_period = 30
-    health_check_timeout = 10
-    health_check_max_retries = 3
+    health_check_user = '{{ `{{ .Username }}` }}'
+    health_check_password = 'TEXT{{ `{{ .Password }}` }}'
+    health_check_period = {{ .Values.pooler.healthCheck.period }}
+    health_check_timeout = {{ .Values.pooler.healthCheck.timeout }}
+    health_check_max_retries = {{ .Values.pooler.healthCheck.maxRetries }}
 
 
-    sr_check_user = '{{ .Username }}'
-    sr_check_password = 'TEXT{{ .Password }}'
-    sr_check_period = 30
-    `}}
+    sr_check_user = '{{ `{{ .Username }}` }}'
+    sr_check_password = 'TEXT{{ `{{ .Password }}` }}'
+    sr_check_period = {{ .Values.pooler.streamingReplicationCheck.period }}
     enable_pool_hba = on
-    num_init_children = 60
-    max_pool = 4
+    num_init_children = {{ .Values.pooler.numInitChildren }}
+    max_pool = {{ .Values.pooler.maxPool }}
     child_life_time = 300
     child_max_connections = 0
     connection_life_time = 300

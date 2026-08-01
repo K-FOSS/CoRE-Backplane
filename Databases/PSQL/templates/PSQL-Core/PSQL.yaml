@@ -13,17 +13,22 @@ metadata:
 spec:
   teamId: core
 
-  numberOfInstances: {{ include "psql.mylogin.space/replicas" $ }} 
+  numberOfInstances: {{ include "psql.mylogin.space/replicas" $ }}
 
   podPriorityClassName: 'tier2-priority'
 
   enableConnectionPooler: false
 
+  {{- with .Values.psql.maintenanceWindows }}
+  maintenanceWindows:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
   masterServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ if .Values.psql.hub }},psql-int.{{ .Values.tenant.domain }}{{ end }}'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}{{ if .Values.psql.hub }},psql-int.{{ .Values.tenant.domain }}{{ end }}'
 
   replicaServiceAnnotations:
-    external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ if .Values.psql.hub }},psql-int-rep.{{ .Values.tenant.domain }}{{ end }}'
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}{{ if .Values.psql.hub }},psql-int-rep.{{ .Values.tenant.domain }}{{ end }}'
 
   allowedSourceRanges:
     - 0.0.0.0/0
@@ -109,22 +114,14 @@ spec:
 
     maximum_lag_on_failover: 33554432
 
-  #
-  # TODO Actually setup maintenance windows and sync windows across services within CoRE
-  #
-#  maintenanceWindows:
-#  - 01:00-06:00  #UTC
-#  - Sat:00:00-04:00
-
   {{ if .Values.psql.standby }}
   standby:
-    standby_host: psql-int.mylogin.space
+    standby_host: psql-int.{{ .Values.tenant.domain }}
     standby_port: '5432'
   {{ end }}
 
 
-  # We load a custom TLS certificate created by Cert-Manager
   tls:
-    secretName: 'myloginspace-default-certificates'  # should correspond to a Kubernetes Secret resource to load
+    secretName: 'myloginspace-default-certificates'
     certificateFile: 'tls.crt'
     privateKeyFile: 'tls.key'

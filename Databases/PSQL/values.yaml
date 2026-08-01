@@ -18,6 +18,11 @@ psql:
   #
   standby: false
 
+  # Zalando Postgres Operator maintenance windows are evaluated in UTC.
+  # 10:00-12:00 UTC is 02:00-04:00 PST (UTC-08:00).
+  maintenanceWindows:
+    - '10:00-12:00'
+
   secretStore:
     - name: mainvault-core
       kind: ClusterSecretStore
@@ -83,6 +88,34 @@ ldap:
     searchFilter: (objectclass=user)
 
 pooler:
+  replicas: 3
+
+  image:
+    repository: kristianfjones/pgpool
+    # This mutable tag preserves the current deployment behavior until the
+    # custom image has a published immutable release or digest.
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: 72m
+      memory: 383M
+    limits:
+      cpu: 4019m
+      memory: 4G
+
+  numInitChildren: 60
+  maxPool: 4
+
+  healthCheck:
+    period: 30
+    timeout: 10
+    maxRetries: 3
+
+  streamingReplicationCheck:
+    period: 30
+
   peers:
     - hostname: psql-int-rep.mylogin.space
       port: 5432

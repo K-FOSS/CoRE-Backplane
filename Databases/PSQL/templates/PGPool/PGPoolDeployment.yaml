@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: pgpool
 
 spec:
-  replicas: 3
+  replicas: {{ .Values.pooler.replicas }}
 
   revisionHistoryLimit: 3
 
@@ -30,7 +30,7 @@ spec:
           whenUnsatisfiable: ScheduleAnyway
           labelSelector:
             matchLabels:
-              app.kubernetes.io/name: pgpool   
+              app.kubernetes.io/name: pgpool
 
 
       volumes:
@@ -60,29 +60,19 @@ spec:
         runAsGroup: 70
         fsGroup: 70
 
-      # dnsPolicy: None
-      # dnsConfig:
-      #   nameservers:
-      #     - 10.44.0.10
-      #     - 1.1.1.1
-      #   options:
-      #     - name: edns0
-      #     - name: ndots
-      #       value: '0'
-
-
-
       containers:
         - name: pgpool
-          image: kristianfjones/pgpool:latest
+          image: '{{ .Values.pooler.image.repository }}:{{ .Values.pooler.image.tag }}'
+          imagePullPolicy: {{ .Values.pooler.image.pullPolicy }}
 
           resources:
-            requests:
-              cpu: 72m
-              memory: 383M
-            limits:
-              cpu: 4019m
-              memory: 4G
+            {{- toYaml .Values.pooler.resources | nindent 12 }}
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
 
           ports:
             - name: psql
@@ -154,7 +144,7 @@ spec:
             exec:
               command:
                 - /bin/sh
-                - /opt/pgpool-II/bin/Healthcheck.sh 
+                - /opt/pgpool-II/bin/Healthcheck.sh
             initialDelaySeconds: 30
 
             periodSeconds: 10
@@ -164,7 +154,8 @@ spec:
           volumeMounts:
             - name: tls
               mountPath: /config/tls
+              readOnly: true
 
             - name: config-vol
               mountPath: /config
-
+              readOnly: true

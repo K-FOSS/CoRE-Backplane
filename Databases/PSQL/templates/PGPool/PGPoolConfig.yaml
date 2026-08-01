@@ -20,7 +20,6 @@ spec:
               - key: pgpool.conf
               - key: pool_hba.conf
               - key: pool_passwd
-              - key: pcppass
   data:
     - secretKey: Username
       remoteRef:
@@ -32,29 +31,21 @@ spec:
         key: PSQL/Operator
         property: password
 
-    #
-    # Authentik
-    #
+    # Authentik database credentials.
     - secretKey: AAAUsername
       remoteRef:
         key: AAA/Authentik/Database
         property: Username
-
-
     - secretKey: AAAPassword
       remoteRef:
         key: AAA/Authentik/Database
         property: Password
 
-    #
-    # OPS Admin
-    #
+    # PostgreSQL operator administration credentials.
     - secretKey: OPSUsername
       remoteRef:
         key: PSQL/Operator
         property: username
-
-
     - secretKey: OPSPassword
       remoteRef:
         key: PSQL/Operator
