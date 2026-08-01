@@ -34,7 +34,7 @@ controllers:
       pgpool:
         image:
           repository: kristianfjones/pgpool
-          tag: latest
+          digest: sha256:09b8662e91d012ad77c7041d25d00d7b05dd5a4861e20d36867913446daa731d
           pullPolicy: IfNotPresent
         resources:
           requests:
@@ -95,26 +95,33 @@ controllers:
                 - /opt/pgpool-II/bin/pcp_stop_pgpool -m smart --host localhost --user opsadmin
         probes:
           startup:
-            enabled: false
-          readiness:
             enabled: true
             custom: true
             spec:
               tcpSocket:
                 port: psql
-              initialDelaySeconds: 15
-              periodSeconds: 10
-          liveness:
+              periodSeconds: 2
+              timeoutSeconds: 1
+              failureThreshold: 30
+          readiness:
             enabled: true
             custom: true
             spec:
               exec:
                 command:
                   - /bin/sh
-                  - /opt/pgpool-II/bin/Healthcheck.sh
-              initialDelaySeconds: 30
+                  - /config/readiness.sh
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 3
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              tcpSocket:
+                port: psql
               periodSeconds: 10
-              timeoutSeconds: 5
+              timeoutSeconds: 2
               failureThreshold: 3
 
 service:
@@ -161,14 +168,17 @@ persistence:
   config:
     type: secret
     name: pgpool-config
-    defaultMode: 0420
+    defaultMode: 420
     items:
+      - key: readiness.sh
+        path: readiness.sh
+        mode: 420
       - key: pgpool.conf
         path: pgpool.conf
-        mode: 0420
+        mode: 420
       - key: pool_hba.conf
         path: pool_hba.conf
-        mode: 0420
+        mode: 420
       - key: pool_passwd
         path: pool_passwd
     advancedMounts:
@@ -183,7 +193,7 @@ persistence:
   tls:
     type: secret
     name: myloginspace-default-certificates
-    defaultMode: 0416
+    defaultMode: 416
     advancedMounts:
       main:
         pgpool:

@@ -29,11 +29,20 @@ and appends the site-specific remote peers supplied by the ApplicationSet. Its
 workload shape, image, resources and memory volumes are embedded in
 `templates/PGPool/PGPoolDeployment.yaml`; operational pool sizing, health
 checks and site-specific peers remain under `pooler` in `values.yaml`. The
-deployment currently consumes the custom PGPool image through the mutable
-`latest` tag; replace it with a verified immutable release or digest. See the upstream
+deployment pins the inspected custom PGPool image by digest so its binaries and
+shell behavior remain reproducible. See the upstream
 [Pgpool-II backend settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-backend-settings.html),
 [connection pooling settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html),
 and [health-check settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-health-check.html).
+
+PGPool uses three probe levels. A TCP startup probe allows up to one minute for
+the listener to appear. The TCP liveness probe checks only that PGPool still
+accepts connections, so a PostgreSQL outage does not create a PGPool restart
+loop. The readiness script runs `SHOW POOL_NODES` with psql startup files
+disabled, strict error handling and a bounded connection timeout; the pod
+receives Service traffic only when an attached primary is reported. This
+chart-owned script replaces the image's non-POSIX `grep | wc` check and is
+delivered through the existing externally rendered `pgpool-config` Secret.
 
 The default PGPool capacity is 64 children with four cached connection pools
 across three PGPool replicas. This gives a worst-case pooled backend budget of
@@ -57,8 +66,8 @@ documents this behavior under
 PGPool also has a dedicated memory-backed `/tmp/pgpool` runtime volume for its
 PID, status, OID metadata and password-file mount. Query caching is enabled
 with the `shmem` method, so cached query contents use shared memory rather than
-files. The runtime volume is pod-local, bounded by
-by the workload template, charged against pod memory and
+files. The runtime volume is pod-local, bounded by the workload template,
+charged against pod memory and
 discarded whenever the pod is replaced. See the upstream
 [Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html).
 

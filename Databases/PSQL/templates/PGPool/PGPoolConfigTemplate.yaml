@@ -7,6 +7,44 @@ metadata:
     app.kubernetes.io/name: pgpool
 
 data:
+  readiness.sh: |
+    #!/bin/sh
+    set -eu
+
+    : "${CHECK_USER:?CHECK_USER is required}"
+    : "${CHECK_PASSWORD:?CHECK_PASSWORD is required}"
+
+    nodes="$({
+      PGCONNECT_TIMEOUT="${CHECK_PGCONNECT_TIMEOUT:-2}" \
+      PGPASSWORD="${CHECK_PASSWORD}" \
+        psql \
+          --no-password \
+          --no-psqlrc \
+          --quiet \
+          --tuples-only \
+          --no-align \
+          --set=ON_ERROR_STOP=1 \
+          --host=127.0.0.1 \
+          --port=5432 \
+          --username="${CHECK_USER}" \
+          --dbname=template1 \
+          --command='SHOW pool_nodes'
+    } 2>/dev/null)" || exit 1
+
+    # SHOW POOL_NODES returns pipe-delimited, unaligned fields. Require an
+    # attached primary instead of accepting any incidental "primary" text.
+    printf '%s\n' "${nodes}" | awk -F '|' '
+      {
+        for (field = 1; field <= NF; field++) {
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "", $field)
+        }
+        if ($4 == "up" && $7 == "primary") {
+          found = 1
+        }
+      }
+      END { exit(found ? 0 : 1) }
+    '
+
   pgpool.conf: |
     listen_addresses = '*'
     port = 5432
