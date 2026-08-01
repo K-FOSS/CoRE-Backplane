@@ -14,7 +14,10 @@ data:
     pcp_listen_addresses = '*'
     pcp_port = 9898
     pcp_socket_dir = '/var/run/postgresql'
-    pool_passwd = '/config/pool_passwd'
+    pool_passwd = '/tmp/pgpool/pool_passwd'
+    logdir = '/tmp/pgpool'
+    status_file_dir = '/tmp/pgpool'
+    pid_file_name = '/tmp/pgpool/pgpool.pid'
 
     # Emit application logs only to the container's stderr stream. Kubernetes
     # and the cluster log collector own persistence and retention.
@@ -62,6 +65,12 @@ data:
     connection_life_time = {{ .Values.pooler.connections.connectionLifeTime }}
     connection_cache = on
     client_idle_limit = 0
+
+    # Shared-memory query cache. Runtime metadata remains under the dedicated
+    # PGPool runtime directory; cached query data is held in shared memory.
+    memory_cache_enabled = on
+    memqcache_method = 'shmem'
+    memqcache_oiddir = '/tmp/pgpool/oiddir'
 
     # Query routing in streaming-replication mode.
     load_balance_mode = on

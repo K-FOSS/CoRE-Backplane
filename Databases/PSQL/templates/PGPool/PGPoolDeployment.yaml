@@ -34,6 +34,11 @@ spec:
 
 
       volumes:
+        - name: pgpool-runtime
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.pooler.memoryVolumes.pgpoolRuntime.sizeLimit }}
+
         - name: tmp
           emptyDir:
             medium: Memory
@@ -167,6 +172,9 @@ spec:
             failureThreshold: 3
 
           volumeMounts:
+            - name: pgpool-runtime
+              mountPath: /tmp/pgpool
+
             - name: tmp
               mountPath: /tmp
 
@@ -182,4 +190,9 @@ spec:
 
             - name: config-vol
               mountPath: /config
+              readOnly: true
+
+            - name: config-vol
+              mountPath: /tmp/pgpool/pool_passwd
+              subPath: pool_passwd
               readOnly: true

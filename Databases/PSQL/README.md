@@ -44,6 +44,14 @@ include it when adjusting the PGPool memory request and limit. Kubernetes
 documents this behavior under
 [memory-backed `emptyDir` volumes](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir).
 
+PGPool also has a dedicated memory-backed `/tmp/pgpool` runtime volume for its
+PID, status, OID metadata and password-file mount. Query caching is enabled
+with the `shmem` method, so cached query contents use shared memory rather than
+files. The runtime volume is pod-local, bounded by
+`pooler.memoryVolumes.pgpoolRuntime.sizeLimit`, charged against pod memory and
+discarded whenever the pod is replaced. See the upstream
+[Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html).
+
 PGPool sends application logs exclusively to `stderr` and has its internal
 logging collector disabled, so it does not create or rotate log files in the
 container. Kubernetes exposes that stream to the cluster logging pipeline;
