@@ -25,6 +25,12 @@ verified immutable release or digest. See the upstream
 [connection pooling settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html),
 and [health-check settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-health-check.html).
 
+The ApplicationSet connects the k3s node1 and Home1 PGPool deployments to
+their local `psql-main` pods and to the remote DC1 Talos PostgreSQL service.
+The DC1 Talos PGPool uses k3s node1 as its remote peer. Local pods are generated
+by the chart and must not also be repeated in `pooler.peers`, because duplicate
+backend entries can route multiple PGPool node IDs to the same PostgreSQL pod.
+
 The main CoRE PostgreSQL cluster maintenance windows are configured with
 `psql.maintenanceWindows`. The default CRD value is `10:00-12:00`, evaluated
 in UTC by the Zalando Postgres Operator, which corresponds to 02:00-04:00 PST
