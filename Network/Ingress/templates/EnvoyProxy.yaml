@@ -10,15 +10,15 @@ spec:
   logging:
     level:
       default: error
-  mergeGateways: false
 
-  concurrency: 2
+  mergeGateways: false
 
   routingType: Service
 
   provider:
     kubernetes:
       envoyDeployment:
+        replicas: 3
         container:
           resources:
             limits:
@@ -28,9 +28,20 @@ spec:
               cpu: 16m
               memory: 256Mi
         pod:
+          affinity:
+            podAntiAffinity:
+              preferredDuringSchedulingIgnoredDuringExecution:
+                - weight: 100
+                  podAffinityTerm:
+                    labelSelector:
+                      matchExpressions:
+                        - key: app.kubernetes.io/name
+                          operator: In
+                          values:
+                            - envoy
+                    topologyKey: kubernetes.io/hostname
           labels:
             logs: loki-myloginspace
-        replicas: 3
 
       envoyPDB:
         maxUnavailable: 25%
@@ -46,7 +57,7 @@ spec:
               sessionAffinity: ClientIP
               sessionAffinityConfig:
                 clientIP:
-                  timeoutSeconds: 1080
+                  timeoutSeconds: 21600
 
 
     type: Kubernetes
