@@ -85,9 +85,14 @@ registered Argo CD cluster labels
 ```
 
 Inspektor Gadget runs its daemon on every Linux node. Its OCI-based tools are
-started on demand through the Headlamp plugin or `kubectl gadget`; no tracing
-tools run continuously by default. Long-running tools can be declared under
-`gadget.config.gadgetConfigMaps`.
+started on demand through the Headlamp plugin or `kubectl gadget`, while
+long-running tools are declared under `gadget.config.gadgetConfigMaps`.
+
+The deployment currently runs two continuous Gadget instances on all eligible
+nodes: `trace_oomkill` records out-of-memory kill events, and `trace_tcp`
+records TCP connect, accept, and close events. Both OCI images are pinned to
+the deployed Inspektor Gadget `v0.54.1` release and are verified by the Gadget
+operator's configured image-verification policy.
 
 Lovely passes the Helm output through the local `kustomization.yaml`. The
 Kustomize patches select resources labeled
