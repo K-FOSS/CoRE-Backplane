@@ -64,12 +64,26 @@ documents this behavior under
 [memory-backed `emptyDir` volumes](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir).
 
 PGPool also has a dedicated memory-backed `/tmp/pgpool` runtime volume for its
-PID, status, OID metadata and password-file mount. Query caching is enabled
-with the `shmem` method, so cached query contents use shared memory rather than
-files. The runtime volume is pod-local, bounded by the workload template,
-charged against pod memory and
-discarded whenever the pod is replaced. See the upstream
-[Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html).
+PID, status, OID metadata and password-file mount. Query caching uses PGPool's
+memcached client and Dragonfly on port 11211, so the three PGPool replicas at a
+site share cached results. The PSQL ApplicationSet overrides the chart default
+with the same site-specific public Dragonfly hostname pattern used by Argo CD:
+`dragonfly.<cluster>.<datacenter>.<region>.mylogin.space`. The runtime volume
+remains pod-local, bounded by the workload template, charged against pod memory
+and discarded whenever the pod is replaced. See the upstream
+[Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html)
+and Dragonfly's
+[Memcached compatibility documentation](https://www.dragonflydb.io/blog/memcached-to-dragonfly-stop-serializing-start-simplifying).
+
+Dragonfly's Memcached listener does not provide PGPool with the password and
+TLS authentication path used by Redis clients. The Dragonfly chart therefore
+restricts port 11211 to same-namespace pods labelled
+`app.kubernetes.io/name: pgpool`. The public hostname is used for site-specific
+service discovery, but the NetworkPolicy remains the authorization boundary.
+If the Dragonfly Service is unavailable, PGPool query-cache operations fail and
+the pooler may need to be restarted after the cache recovers. Roll back by setting
+`pooler.queryCache.method` to `shmem`, rendering, and reconciling the PSQL
+ApplicationSet.
 
 PGPool sends application logs exclusively to `stderr` and has its internal
 logging collector disabled, so it does not create or rotate log files in the

@@ -5,6 +5,10 @@ metadata:
 spec:
   replicas: 2
 
+  # PGPool uses Dragonfly's Memcached-compatible API for its shared query
+  # cache. The chart NetworkPolicy restricts this port to local PGPool pods.
+  memcachedPort: 11211
+
   authentication:
     passwordFromSecret:
       key: password

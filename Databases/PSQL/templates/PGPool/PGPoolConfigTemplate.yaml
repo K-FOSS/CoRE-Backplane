@@ -104,10 +104,14 @@ data:
     connection_cache = on
     client_idle_limit = 0
 
-    # Shared-memory query cache. Runtime metadata remains under the dedicated
-    # PGPool runtime directory; cached query data is held in shared memory.
+    # Query-cache metadata remains pod-local while cached results are shared by
+    # the site's PGPool replicas through the local Dragonfly Service.
     memory_cache_enabled = on
-    memqcache_method = 'shmem'
+    memqcache_method = '{{ .Values.pooler.queryCache.method }}'
+    {{- if eq .Values.pooler.queryCache.method "memcached" }}
+    memqcache_memcached_host = '{{ .Values.pooler.queryCache.host }}'
+    memqcache_memcached_port = {{ .Values.pooler.queryCache.port }}
+    {{- end }}
     memqcache_oiddir = '/tmp/pgpool/oiddir'
 
     # Query routing in streaming-replication mode.
