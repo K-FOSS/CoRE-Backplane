@@ -16,6 +16,11 @@ data:
     pcp_socket_dir = '/var/run/postgresql'
     pool_passwd = '/config/pool_passwd'
 
+    # Emit application logs only to the container's stderr stream. Kubernetes
+    # and the cluster log collector own persistence and retention.
+    log_destination = 'stderr'
+    logging_collector = off
+
     {{ $replicas := (include "psql.mylogin.space/replicas" $) }}
     {{ range $index, $id := untilStep (int 0) (int $replicas) 1 }}
     backend_hostname{{ $index }} = 'psql-main-{{ $index }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
