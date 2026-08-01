@@ -35,6 +35,33 @@ workers per parallel query. Recalculate the connection budget whenever
 `pooler.replicas`, `numInitChildren`, `maxPool` or
 `psql.tuning.maxConnections` changes.
 
+PGPool mounts memory-backed `emptyDir` volumes at `/tmp`, `/dev/shm`, and
+`/var/run/postgresql`. Their size limits are configured under
+`pooler.memoryVolumes`. `/dev/shm` supports the pre-forked PGPool processes and
+shared caches, while the runtime volume holds the PostgreSQL and PCP sockets.
+Memory-backed `emptyDir` usage counts toward the pod's memory consumption, so
+include it when adjusting the PGPool memory request and limit. Kubernetes
+documents this behavior under
+[memory-backed `emptyDir` volumes](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir).
+
+PGPool sends application logs exclusively to `stderr` and has its internal
+logging collector disabled, so it does not create or rotate log files in the
+container. Kubernetes exposes that stream to the cluster logging pipeline;
+node-level container-runtime buffering and the external logging system retain
+logs according to their own policies. See the upstream
+[Pgpool-II logging destinations](https://www.pgpool.net/docs/latest/en/html/runtime-config-logging.html).
+
+The pooler rejects excess clients before all 64 children are occupied, uses a
+256-entry listen backlog, serializes `accept()` calls to avoid waking every
+pre-forked child, and recycles a child after 1000 accepted connections. Backend
+health and streaming-replication checks run every 10 seconds. Node detachment
+is health-check driven: ordinary backend errors and terminated sessions do not
+trigger failover. Automatic standby reattachment is rate-limited to five
+minutes. Relation metadata expires after five minutes and unlogged-table
+checks remain enabled so read routing does not send unsafe queries to replicas.
+See the upstream [Pgpool-II connection settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection.html)
+and [failover behavior](https://www.pgpool.net/docs/latest/en/html/runtime-config-failover.html).
+
 The ApplicationSet connects the k3s node1 and Home1 PGPool deployments to
 their local `psql-main` pods and to the remote DC1 Talos PostgreSQL service.
 The DC1 Talos PGPool uses k3s node1 as its remote peer. Local pods are generated

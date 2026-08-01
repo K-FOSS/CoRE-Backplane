@@ -105,8 +105,8 @@ pooler:
 
   resources:
     requests:
-      cpu: 72m
-      memory: 383M
+      cpu: 128m
+      memory: 256Mi
     limits:
       cpu: 4019m
       memory: 4G
@@ -124,20 +124,37 @@ pooler:
   numInitChildren: 64
   maxPool: 4
 
+  connections:
+    listenBacklogMultiplier: 4
+    reservedConnections: 4
+    childLifeTime: 0
+    childMaxConnections: 1000
+    connectionLifeTime: 300
+
   healthCheck:
-    period: 30
-    timeout: 10
+    period: 10
+    timeout: 5
     maxRetries: 3
+    connectTimeout: 5000
 
   streamingReplicationCheck:
-    period: 30
+    period: 10
+
+  failover:
+    autoFailback: true
+    autoFailbackInterval: 300
+    searchPrimaryNodeTimeout: 60
+
+  relationCache:
+    expire: 300
+    size: 1024
 
   peers:
     - hostname: psql-int-rep.mylogin.space
       port: 5432
 
   logs:
-    level: DEBUG
+    level: warning
 
 pgadmin4:
   # Default values for pgAdmin4.
