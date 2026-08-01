@@ -56,6 +56,32 @@ datacenter: dc1
 
 region: yxl
 
+#
+# LDAP connection settings shared by PostgreSQL and its supporting services.
+# Credentials remain sourced from Vault and are not configured here.
+#
+ldap:
+  server: ldap.mylogin.space
+  port: 389
+  baseDN: ou=users,dc=ldap,dc=mylogin,dc=space
+  bindDN: cn=<path:CORE0_SITE1/data/PSQL/LDAP#Username>,ou=users,dc=ldap,dc=mylogin,dc=space
+  searchAttribute: cn
+
+  postgres:
+    server: ldap-home1.mylogin.space
+
+  pooler:
+    server: ldap-home1.mylogin.space
+    port: 636
+    scheme: ldaps
+
+  pgadmin:
+    serverURI: ldap://ldap.mylogin.space:389
+    baseDN: dc=ldap,dc=mylogin,dc=space
+    searchBaseDN: dc=ldap,dc=mylogin,dc=space
+    usernameAttribute: cn
+    searchFilter: (objectclass=user)
+
 pooler:
   peers:
     - hostname: psql-int-rep.mylogin.space

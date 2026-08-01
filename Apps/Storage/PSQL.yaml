@@ -28,6 +28,8 @@ spec:
 
                     standby: true
 
+                    ldapServer: ldap-dc1.mylogin.space
+
                     pooler:
                       peers:
                         - hostname: psql-int.core-home1-talos-prod.home1.yvr.mylogin.space
@@ -39,6 +41,8 @@ spec:
 
                     standby: false
 
+                    ldapServer: ldap-dc1.mylogin.space
+
                     pooler:
                       peers:
                         - hostname: psql-int.core-home1-talos-prod.home1.yvr.mylogin.space
@@ -49,6 +53,8 @@ spec:
                     hub: false
 
                     standby: false
+
+                    ldapServer: ldap-home1.mylogin.space
 
                     pooler:
                       peers:
@@ -104,6 +110,18 @@ spec:
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
+
+                ldap:
+                  server: {{ .values.ldapServer }}
+
+                  postgres:
+                    server: {{ .values.ldapServer }}
+
+                  pooler:
+                    server: {{ .values.ldapServer }}
+
+                  pgadmin:
+                    serverURI: ldap://{{ .values.ldapServer }}:389
 
                 psql:
                   controllerID: psql.{{ .values.tenant }}/{{ .values.environment }}
