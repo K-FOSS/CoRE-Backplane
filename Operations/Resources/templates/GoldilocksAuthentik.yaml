@@ -29,7 +29,7 @@ spec:
       }
 
       resource "authentik_provider_proxy" "goldilocks" {
-        name               = "goldilocks"
+        name               = "goldilocks-{{ .Values.env }}-{{ .Values.region }}-{{ .Values.cluster.name }}"
         mode               = "forward_single"
         external_host      = "https://goldilocks.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}"
         authorization_flow = data.authentik_flow.default-authorization-flow.id

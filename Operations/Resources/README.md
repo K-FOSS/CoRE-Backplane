@@ -12,7 +12,8 @@ through a Crossplane `Workspace`. The application is filed under the
 the cluster identity, so reconciliation remains scoped to that cluster. The
 ApplicationSet supplies `cluster.domain` for in-cluster DNS and separately sets
 the public `domain` to `resolvemy.host` for the Goldilocks route and Authentik
-proxy provider.
+proxy provider. The proxy provider name is scoped by environment, region, and
+cluster, while the application display name remains `Goldilocks`.
 
 The Goldilocks `HTTPRoute` is protected by an Envoy Gateway
 [`SecurityPolicy` external-authorization check](https://gateway.envoyproxy.io/v1.8/tasks/security/ext-auth/)
