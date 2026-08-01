@@ -35,7 +35,8 @@ spec:
   selector:
     {{- include "vector.selectorLabels" $.Subcharts.vector | nindent 4 }}
 
-  internalTrafficPolicy: Local
+  externalTrafficPolicy: Local
+  internalTrafficPolicy: Cluster
   sessionAffinity: None
   type: LoadBalancer
 {{- end }}

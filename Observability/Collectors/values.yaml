@@ -1,7 +1,8 @@
-alloy-agent:
+alloy-logs:
   crds:
     create: false
   alloy:
+    stabilityLevel: public-preview
     configMap:
       content: |
         logging {
@@ -9,60 +10,46 @@ alloy-agent:
           format = "json"
         }
 
-        local.file_match "pod_logs" {
-          path_targets = [{
-            __path__ = "/var/log/pods/*/*/*.log",
-            job      = "kubernetes-pods",
-          }]
-        }
+        otelcol.storage.file "offsets" {}
 
-        loki.source.file "pod_logs" {
-          targets    = local.file_match.pod_logs.targets
-          forward_to = [loki.process.pod_logs.receiver]
-        }
-
-        loki.process "pod_logs" {
-          stage.cri {}
-          stage.regex {
-            source     = "filename"
-            expression = "/var/log/pods/(?P<namespace>[^_]+)_(?P<pod>[^_]+)_[^/]+/(?P<container>[^/]+)/.*\\.log"
-          }
-          stage.labels {
-            values = {
-              namespace = "",
-              pod       = "",
-              container = "",
-            }
-          }
-          stage.static_labels {
-            values = {
-              cluster = sys.env("CLUSTER"),
-              dc      = sys.env("DC"),
-            }
-          }
-          forward_to = [loki.write.loki.receiver]
-        }
-
-        loki.write "loki" {
-          endpoint {
-            url = "http://10.44.0.196:3100/loki/api/v1/push"
-          }
-        }
-
-        prometheus.exporter.self "self_metrics" {}
-
-        prometheus.scrape "local" {
-          targets    = prometheus.exporter.self.self_metrics.targets
-          forward_to = [prometheus.remote_write.mimir.receiver]
-        }
-
-        prometheus.remote_write "mimir" {
-          endpoint {
-            url = "http://10.44.2.101:8080/api/v1/push"
-          }
-          external_labels = {
+        otelcol.receiver.filelog "pod_logs" {
+          include = ["/var/log/pods/*/*/*.log"]
+          include_file_path = true
+          start_at          = "end"
+          storage           = otelcol.storage.file.offsets.handler
+          attributes = {
             cluster = sys.env("CLUSTER"),
             dc      = sys.env("DC"),
+            job     = "kubernetes-pods",
+          }
+          operators = [{
+            type = "container",
+          }]
+          retry_on_failure {
+            enabled          = true
+            max_elapsed_time = "0s"
+          }
+          output {
+            logs = [otelcol.processor.batch.logs.input]
+          }
+        }
+
+        otelcol.processor.batch "logs" {
+          output {
+            logs = [otelcol.exporter.otlp.gateway.input]
+          }
+        }
+
+        otelcol.exporter.otlp "gateway" {
+          client {
+            endpoint = sys.env("OTLP_ENDPOINT")
+            tls {
+              insecure = true
+            }
+          }
+          retry_on_failure {
+            enabled          = true
+            max_elapsed_time = "0s"
           }
         }
     mounts:
@@ -78,6 +65,165 @@ alloy-agent:
     automountServiceAccountToken: false
   service:
     enabled: false
+
+alloy-metrics:
+  crds:
+    create: false
+  alloy:
+    configMap:
+      content: |
+        logging {
+          level  = "info"
+          format = "json"
+        }
+
+        prometheus.exporter.unix "node" {
+          procfs_path = "/host/proc"
+          sysfs_path  = "/host/sys"
+          rootfs_path = "/host/root"
+        }
+        prometheus.exporter.self "alloy" {}
+
+        prometheus.scrape "node" {
+          targets = array.concat(
+            prometheus.exporter.unix.node.targets,
+            prometheus.exporter.self.alloy.targets,
+          )
+          forward_to = [prometheus.relabel.node.receiver]
+        }
+
+        prometheus.relabel "node" {
+          rule {
+            target_label = "cluster"
+            replacement  = sys.env("CLUSTER")
+          }
+          rule {
+            target_label = "dc"
+            replacement  = sys.env("DC")
+          }
+          forward_to = [otelcol.receiver.prometheus.node.receiver]
+        }
+
+        otelcol.receiver.prometheus "node" {
+          output {
+            metrics = [otelcol.processor.batch.metrics.input]
+          }
+        }
+
+        otelcol.processor.batch "metrics" {
+          output {
+            metrics = [otelcol.exporter.otlp.gateway.input]
+          }
+        }
+
+        otelcol.exporter.otlp "gateway" {
+          client {
+            endpoint = sys.env("OTLP_ENDPOINT")
+            tls {
+              insecure = true
+            }
+          }
+          retry_on_failure {
+            enabled          = true
+            max_elapsed_time = "0s"
+          }
+        }
+    extraEnv:
+    - name: DC
+      value: dc1
+    - name: CLUSTER
+      value: k8s
+    mounts:
+      extra:
+      - name: host-root
+        mountPath: /host/root
+        readOnly: true
+      - name: host-proc
+        mountPath: /host/proc
+        readOnly: true
+      - name: host-sys
+        mountPath: /host/sys
+        readOnly: true
+  controller:
+    volumes:
+      extra:
+      - name: host-root
+        hostPath:
+          path: /
+      - name: host-proc
+        hostPath:
+          path: /proc
+      - name: host-sys
+        hostPath:
+          path: /sys
+  rbac:
+    create: false
+  serviceAccount:
+    automountServiceAccountToken: false
+  service:
+    enabled: false
+
+alloy-otlp:
+  crds:
+    create: false
+  alloy:
+    configMap:
+      content: |
+        logging {
+          level  = "info"
+          format = "json"
+        }
+
+        otelcol.receiver.otlp "node" {
+          grpc {
+            endpoint = "0.0.0.0:4317"
+          }
+          http {
+            endpoint = "0.0.0.0:4318"
+          }
+          output {
+            traces  = [otelcol.processor.batch.forward.input]
+            metrics = [otelcol.processor.batch.forward.input]
+            logs    = [otelcol.processor.batch.forward.input]
+          }
+        }
+
+        otelcol.processor.batch "forward" {
+          output {
+            traces  = [otelcol.exporter.otlp.gateway.input]
+            metrics = [otelcol.exporter.otlp.gateway.input]
+            logs    = [otelcol.exporter.otlp.gateway.input]
+          }
+        }
+
+        otelcol.exporter.otlp "gateway" {
+          client {
+            endpoint = sys.env("OTLP_ENDPOINT")
+            tls {
+              insecure = true
+            }
+          }
+          retry_on_failure {
+            enabled          = true
+            max_elapsed_time = "0s"
+          }
+        }
+    extraPorts:
+    - name: otel-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+      appProtocol: grpc
+    - name: otel-http
+      port: 4318
+      targetPort: 4318
+      protocol: TCP
+  rbac:
+    create: false
+  serviceAccount:
+    automountServiceAccountToken: false
+  service:
+    internalTrafficPolicy: Local
 alloy:
   alloy:
     configMap:
@@ -147,20 +293,14 @@ alloy:
           }
         }
 
-        // Begin Auto Discovery Configuration
-
-        // discovery.kubernetes allows you to find scrape targets from Kubernetes resources.
-        // It watches cluster state and ensures targets are continually synced with what is currently running in your cluster.
+        // Kubernetes discovery is retained only for annotation-based metrics.
         discovery.kubernetes "pod" {
           role = "pod"
         }
 
-        // discover all services, to be used later in this config
         discovery.kubernetes "services" {
           role = "service"
         }
-
-        // End Auto Discovery
 
         // Setup a reciever specifically for Vector
         loki.source.api "listener" {
@@ -187,19 +327,7 @@ alloy:
         //
 
         // Monitor Self https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.self/
-        prometheus.exporter.self "self_metrics" {
-        }
-
-        prometheus.relabel "tagged" {
-        	rule {
-        		source_labels = ["__address__"]
-        		regex         = ".*"
-        		replacement   = sys.env("CLUSTER")
-        		target_label  = "cluster"
-        	}
-
-        	forward_to = [prometheus.remote_write.mimir.receiver]
-        }
+        prometheus.exporter.self "self_metrics" {}
 
         prometheus.operator.scrapeconfigs "scrapeconfigs" {
           forward_to = [prometheus.remote_write.mimir.receiver]
@@ -396,15 +524,8 @@ alloy:
           clustering {
             enabled = true
           }
-          forward_to = [prometheus.relabel.metrics_service.receiver]
+          forward_to = [prometheus.remote_write.mimir.receiver]
         }
-
-        prometheus.relabel "metrics_service" {
-          forward_to = [otelcol.receiver.prometheus.default.receiver]
-        }
-
-        // PSQL monitoring
-        // read the credentials secret for remote_write authorization
 
         prometheus.scrape "exporters" {
           targets = prometheus.exporter.self.self_metrics.targets
@@ -432,22 +553,6 @@ alloy:
         // OTEL
         //
 
-        otelcol.processor.batch "metrics" {
-          send_batch_max_size = 1000
-          timeout = "15s"
-          send_batch_size = 800
-
-          output {
-            metrics = [otelcol.processor.k8sattributes.default.input]
-          }
-        }
-
-        otelcol.receiver.prometheus "default" {
-          output {
-            metrics = [otelcol.processor.k8sattributes.default.input]
-          }
-        }
-
         otelcol.exporter.prometheus "default" {
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
@@ -463,7 +568,19 @@ alloy:
           output {
             traces  = [otelcol.processor.k8sattributes.default.input]
             logs    = [otelcol.processor.k8sattributes.default.input]
-            metrics = [otelcol.processor.batch.metrics.input]
+            metrics = [otelcol.processor.k8sattributes.default.input]
+          }
+        }
+
+        // Vector has already enriched infrastructure logs. Keep them out of
+        // k8sattributes so they are not associated with the Vector pod.
+        otelcol.receiver.otlp "infrastructure" {
+          http {
+            endpoint = "0.0.0.0:4328"
+          }
+
+          output {
+            logs = [otelcol.processor.batch.default.input]
           }
         }
 
@@ -474,6 +591,13 @@ alloy:
               "k8s.pod.name",
               "k8s.container.name",
             ]
+          }
+
+          pod_association {
+            source {
+              from = "resource_attribute"
+              name = "k8s.pod.uid"
+            }
           }
 
           pod_association {
@@ -547,6 +671,10 @@ alloy:
     - name: otel-http
       port: 4318
       targetPort: 4318
+      protocol: TCP
+    - name: infra-otel-http
+      port: 4328
+      targetPort: 4328
       protocol: TCP
     - name: jaeger-grpc
       port: 14250
@@ -684,12 +812,20 @@ vector:
     api:
       enabled: false
       address: 127.0.0.1:8686
-      playground: false
     sources:
-      syslog:
+      network_syslog_udp:
         type: socket
         address: 0.0.0.0:1514
         mode: udp
+        max_length: 102400
+        host_key: source_address
+
+      network_syslog_tcp:
+        type: socket
+        address: 0.0.0.0:1514
+        mode: tcp
+        max_length: 102400
+        host_key: source_address
 
       talos_kernel_logs:
         type: socket
@@ -710,77 +846,152 @@ vector:
         host_key: __host
 
     transforms:
-      cisco_parser:
+      tag_network_syslog_udp:
         type: remap
         inputs:
-          - syslog
-        source: |
-          . = parse_grok!(.message, "^<%{NUMBER:syslog_pri}>%{NUMBER:seq_num}: %{DATA:device}: %{MONTH:month} %{NUMBER:day} %{TIME:time}: %%{DATA:log_identifier}: %{GREEDYDATA:message}")
+          - network_syslog_udp
+        source: '.network_transport = "udp"'
 
-      talos_kernel_logs_xform:
+      tag_network_syslog_tcp:
+        type: remap
+        inputs:
+          - network_syslog_tcp
+        source: '.network_transport = "tcp"'
+
+      normalize_network_syslog:
+        type: remap
+        inputs:
+          - tag_network_syslog_udp
+          - tag_network_syslog_tcp
+        source: |-
+          raw = string!(.message)
+          transport = string!(.network_transport)
+
+          cisco, cisco_error = parse_grok(
+            raw,
+            "^<%{NUMBER:syslog_pri}>%{NUMBER:sequence}: %{DATA:device}: %{MONTH:month} %{NUMBER:day} %{TIME:time}: %%{DATA:message_id}: %{GREEDYDATA:message}",
+          )
+
+          if cisco_error == null {
+            .message = cisco.message
+            .device_name = cisco.device
+            .event_code = cisco.message_id
+            .observer_vendor = "Cisco"
+            .service_name = "cisco.syslog"
+          } else {
+            parsed, syslog_error = parse_syslog(raw)
+            if syslog_error == null {
+              . = merge(., parsed)
+            }
+
+            app = downcase(to_string(.appname) ?? "")
+            body = downcase(to_string(.message) ?? raw)
+            is_idrac = contains(app, "idrac") || contains(body, "idrac") || match(body, r'\brac\d{3,}\b')
+            .observer_vendor = if is_idrac { "Dell" } else { "unknown" }
+            .service_name = if is_idrac { "dell.idrac" } else { "network.syslog" }
+            .device_name = to_string(.hostname) ?? to_string(.host) ?? to_string(.source_address) ?? "unknown"
+            .event_code = to_string(.msgid) ?? to_string(.appname) ?? "syslog"
+          }
+
+          .event_dataset = .service_name
+          .event_timestamp = to_timestamp(.timestamp) ?? now()
+          .network_transport = transport
+          .syslog_facility = to_string(.facility) ?? "unknown"
+          .syslog_severity = to_string(.severity) ?? "unknown"
+
+      normalize_talos_kernel:
         type: remap
         inputs:
           - talos_kernel_logs
         source: |-
           .__host = replace!(.__host, r'172\.16\.20\..+', "infra2")
           .__host = replace!(.__host, r'172\.31\.241\..+', "node2")
+          .device_name = to_string(.__host) ?? "unknown"
+          .event_code = "kernel"
+          .event_dataset = "talos.kernel"
+          .event_timestamp = to_timestamp(.timestamp) ?? now()
+          .network_transport = "udp"
+          .observer_vendor = "Sidero Labs"
+          .service_name = "talos.kernel"
+          .syslog_facility = to_string(.facility) ?? "kernel"
+          .syslog_severity = to_string(.level) ?? "unknown"
 
-      talos_service_logs_xform:
+      normalize_talos_service:
         type: remap
         inputs:
           - talos_service_logs
         source: |-
           .__host = replace!(.__host, r'172\.16\.20\..+', "infra2")
-          .__host = replace(.__host, r'172\.31\.241\..+', "node2")
+          .__host = replace!(.__host, r'172\.31\.241\..+', "node2")
+          .device_name = to_string(.__host) ?? "unknown"
+          .event_code = to_string(.service) ?? "service"
+          .event_dataset = "talos.service"
+          .event_timestamp = to_timestamp(.timestamp) ?? now()
+          .network_transport = "udp"
+          .observer_vendor = "Sidero Labs"
+          .service_name = "talos.service"
+          .syslog_facility = to_string(.facility) ?? "daemon"
+          .syslog_severity = to_string(.level) ?? "unknown"
 
+      encode_otlp_logs:
+        type: remap
+        inputs:
+          - normalize_network_syslog
+          - normalize_talos_kernel
+          - normalize_talos_service
+        source: |-
+          body = to_string(.message) ?? encode_json(.)
+          cluster = get_env_var!("VECTOR_CLUSTER")
+          dc = get_env_var!("VECTOR_DC")
+
+          . = {
+            "resourceLogs": [{
+              "resource": {
+                "attributes": [
+                  { "key": "service.name", "value": { "stringValue": string!(.service_name) } },
+                  { "key": "service.namespace", "value": { "stringValue": "infrastructure" } },
+                  { "key": "host.name", "value": { "stringValue": string!(.device_name) } },
+                  { "key": "observer.vendor", "value": { "stringValue": string!(.observer_vendor) } },
+                  { "key": "cluster", "value": { "stringValue": cluster } },
+                  { "key": "dc", "value": { "stringValue": dc } },
+                  { "key": "loki.resource.labels", "value": { "stringValue": "service.name,service.namespace,host.name,observer.vendor,cluster,dc" } }
+                ]
+              },
+              "scopeLogs": [{
+                "scope": { "name": "vector.syslog" },
+                "logRecords": [{
+                  "timeUnixNano": to_unix_timestamp!(.event_timestamp, unit: "nanoseconds"),
+                  "body": { "stringValue": body },
+                  "severityText": upcase(string!(.syslog_severity)),
+                  "attributes": [
+                    { "key": "event.code", "value": { "stringValue": string!(.event_code) } },
+                    { "key": "event.dataset", "value": { "stringValue": string!(.event_dataset) } },
+                    { "key": "network.transport", "value": { "stringValue": string!(.network_transport) } },
+                    { "key": "source.address", "value": { "stringValue": to_string(.source_address) ?? "unknown" } },
+                    { "key": "syslog.facility", "value": { "stringValue": string!(.syslog_facility) } }
+                  ]
+                }]
+              }]
+            }]
+          }
 
     sinks:
-      loki:
-        type: loki
+      otlp_logs:
+        type: opentelemetry
         inputs:
-          - cisco_parser
-        compression: snappy
-        endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
-        encoding:
-          codec: json
-        labels:
-          job: syslog
-
-      talos_kernel:
-        type: loki
-        inputs:
-          - talos_kernel_logs_xform
-        endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
-        encoding:
-          codec: json
-          except_fields:
-            - __host
+          - encode_otlp_logs
         batch:
-          max_bytes: 1048576
-        out_of_order_action: rewrite_timestamp
-        labels:
-          hostname: >-
-                    {{`{{ __host }}`}}
-          facility: >-
-                    {{`{{ facility }}`}}
-
-      talos_service:
-        type: loki
-        inputs:
-          - talos_service_logs_xform
-        endpoint: http://dc1-k3s-node1-collectors-alloy.core-prod.svc.cluster.local:9999
-        encoding:
-          codec: json
-          except_fields:
-            - __host
-        batch:
-          max_bytes: 400000
-        out_of_order_action: rewrite_timestamp
-        labels:
-          hostname: >-
-                    {{`{{ __host }}`}}
-          service: >-
-                    {{`{{ "talos-service" }}`}}
+          max_events: 1000
+          timeout_secs: 1
+        buffer:
+          type: memory
+          max_events: 5000
+          when_full: block
+        protocol:
+          type: http
+          uri: ${VECTOR_OTLP_LOGS_ENDPOINT}
+          encoding:
+            codec: otlp
 
   # defaultVolumes -- Default volumes that are mounted into pods. In most cases, these should not be changed.
   # Use `extraVolumes`/`extraVolumeMounts` for additional custom volumes.

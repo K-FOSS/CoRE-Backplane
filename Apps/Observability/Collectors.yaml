@@ -19,14 +19,20 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    collectorReplicas: 3
+                    vectorEnabled: false
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    collectorReplicas: 3
+                    vectorEnabled: false
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    collectorReplicas: 3
+                    vectorEnabled: true
           - clusters:
               selector:
                 matchLabels:
@@ -75,6 +81,9 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |-
                 alloy:
+                  controller:
+                    replicas: {{ .values.collectorReplicas }}
+
                   alloy:
                     clustering:
                       # -- Deploy Alloy in a cluster to allow for load distribution.
@@ -92,7 +101,7 @@ spec:
                       - name: CLUSTER
                         value: '{{ .values.clusterName }}'
 
-                alloy-agent:
+                alloy-logs:
                   alloy:
                     extraEnv:
                       - name: DC
@@ -100,6 +109,40 @@ spec:
 
                       - name: CLUSTER
                         value: '{{ .values.clusterName }}'
+
+                      - name: OTLP_ENDPOINT
+                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                alloy-metrics:
+                  alloy:
+                    extraEnv:
+                      - name: DC
+                        value: '{{ .values.datacenter }}'
+
+                      - name: CLUSTER
+                        value: '{{ .values.clusterName }}'
+
+                      - name: OTLP_ENDPOINT
+                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                alloy-otlp:
+                  alloy:
+                    extraEnv:
+                      - name: OTLP_ENDPOINT
+                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                vector:
+                  enabled: {{ .values.vectorEnabled }}
+
+                  env:
+                    - name: VECTOR_CLUSTER
+                      value: '{{ .values.clusterName }}'
+
+                    - name: VECTOR_DC
+                      value: '{{ .values.datacenter }}'
+
+                    - name: VECTOR_OTLP_LOGS_ENDPOINT
+                      value: 'http://{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4328/v1/logs'
 
       destination:
         server: '{{ .server }}'

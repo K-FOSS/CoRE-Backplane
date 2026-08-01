@@ -10,9 +10,19 @@ dependencies:
     version: '1.10.0'
     repository: https://grafana.github.io/helm-charts
 
-  # Node-local collection is isolated from the HA cluster-discovery Alloy.
+  # Node-local collection is split by signal and isolated from the HA gateway.
   - name: alloy
-    alias: alloy-agent
+    alias: alloy-logs
+    version: '1.10.0'
+    repository: https://grafana.github.io/helm-charts
+
+  - name: alloy
+    alias: alloy-metrics
+    version: '1.10.0'
+    repository: https://grafana.github.io/helm-charts
+
+  - name: alloy
+    alias: alloy-otlp
     version: '1.10.0'
     repository: https://grafana.github.io/helm-charts
 
@@ -20,9 +30,7 @@ dependencies:
     version: '0.3.2'
     repository: https://charts.portefaix.xyz/
 
-  #
-  # Vector because fuck my infra hates properly formatted syslogs
-  # 
+  # Vector normalizes device and Talos syslog before OTLP ingestion by Alloy.
   - name: vector 
     version: '0.56.0'
     repository: https://helm.vector.dev
