@@ -25,6 +25,16 @@ verified immutable release or digest. See the upstream
 [connection pooling settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html),
 and [health-check settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-health-check.html).
 
+The default PGPool capacity is 64 children with four cached connection pools
+across three PGPool replicas. This gives a worst-case pooled backend budget of
+768 connections, or 18.75% of the main cluster's 4096 connections. The
+remaining capacity is reserved for replication, operator activity and direct
+clients. PostgreSQL worker limits are configured under `psql.tuning`; the
+defaults allow eight worker processes, four parallel workers globally and two
+workers per parallel query. Recalculate the connection budget whenever
+`pooler.replicas`, `numInitChildren`, `maxPool` or
+`psql.tuning.maxConnections` changes.
+
 The ApplicationSet connects the k3s node1 and Home1 PGPool deployments to
 their local `psql-main` pods and to the remote DC1 Talos PostgreSQL service.
 The DC1 Talos PGPool uses k3s node1 as its remote peer. Local pods are generated

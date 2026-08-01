@@ -23,6 +23,12 @@ psql:
   maintenanceWindows:
     - '10:00-12:00'
 
+  tuning:
+    maxConnections: 4096
+    maxWorkerProcesses: 8
+    maxParallelWorkers: 4
+    maxParallelWorkersPerGather: 2
+
   secretStore:
     - name: mainvault-core
       kind: ClusterSecretStore
@@ -105,7 +111,9 @@ pooler:
       cpu: 4019m
       memory: 4G
 
-  numInitChildren: 60
+  # 64 children x 4 pools x 3 PGPool replicas allows up to 768 pooled
+  # backend connections: 18.75% of PostgreSQL's 4096 connection capacity.
+  numInitChildren: 64
   maxPool: 4
 
   healthCheck:

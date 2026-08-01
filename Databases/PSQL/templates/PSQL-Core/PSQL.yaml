@@ -46,7 +46,7 @@ spec:
     version: '17'
 
     parameters:
-      max_connections: '4096'
+      max_connections: {{ .Values.psql.tuning.maxConnections | quote }}
       max_prepared_transactions: '1000'
       max_locks_per_transaction: '256'
       max_wal_size: '32GB'
@@ -56,8 +56,9 @@ spec:
       effective_cache_size: 4022MB
       effective_io_concurrency: '2'
       maintenance_work_mem: 2047MB
-      max_parallel_workers: '4'
-      max_parallel_workers_per_gather: '1'
+      max_worker_processes: {{ .Values.psql.tuning.maxWorkerProcesses | quote }}
+      max_parallel_workers: {{ .Values.psql.tuning.maxParallelWorkers | quote }}
+      max_parallel_workers_per_gather: {{ .Values.psql.tuning.maxParallelWorkersPerGather | quote }}
 
   volume:
     size: 50Gi
