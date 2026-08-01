@@ -1,15 +1,253 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
-{{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
-{{ if not .Values.global.nameOverride }}
+{{- define "core-network-nameserver.commonValues" -}}
 global:
-  nameOverride: "{{ .Release.Name }}"
-{{ end }}
+  nameOverride: {{ default .Release.Name .Values.global.nameOverride | quote }}
+  fullnameOverride: {{ .Values.global.fullnameOverride | quote }}
 
+controllers:
+  main:
+    strategy: RollingUpdate
+    containers:
+      main:
+        image:
+          repository: {{ .Values.images.powerdns.repository | quote }}
+          tag: {{ .Values.images.powerdns.tag | quote }}
+          pullPolicy: {{ .Values.images.powerdns.pullPolicy }}
+        command:
+          - /usr/local/sbin/pdns_server
+        args:
+          - --config-dir=/etc/pdns
+          - --disable-syslog=yes
+          - --socket-dir=/tmp
+          - --gpgsql-host=$(PSQL_HOSTNAME)
+          - --gpgsql-port=$(PSQL_PORT)
+          - --gpgsql-dbname={{ .Values.powerdns.databaseName }}
+          - --gpgsql-user=$(USERNAME)
+          - --gpgsql-password=$(PASSWORD)
+        env:
+          - name: PSQL_HOSTNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: psqlHostname
+          - name: PSQL_PORT
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: psqlPort
+          - name: USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: username
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: password
+        workingDir: /etc/pdns
+        probes:
+          liveness:
+            enabled: false
+          readiness:
+            enabled: false
+          startup:
+            enabled: false
+
+  nsadmin:
+    type: deployment
+    replicas: 1
+    revisionHistoryLimit: 3
+    strategy: RollingUpdate
+    pod:
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "0"
+    containers:
+      main:
+        image:
+          repository: {{ .Values.images.powerdnsAdmin.repository | quote }}
+          tag: {{ .Values.images.powerdnsAdmin.tag | quote }}
+          pullPolicy: {{ .Values.images.powerdnsAdmin.pullPolicy }}
+        env:
+          - name: PDNS_API_URL
+            value: 'http://{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice:8081'
+          - name: PDNS_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-api'
+                key: APIKey
+          - name: LDAP_ENABLED
+            value: {{ .Values.powerdnsAdmin.ldap.enabled | quote }}
+          - name: LDAP_BASE_DN
+            value: {{ .Values.powerdnsAdmin.ldap.baseDN | quote }}
+          - name: LDAP_SG_ENABLED
+            value: {{ .Values.powerdnsAdmin.ldap.searchGroups | quote }}
+          - name: LDAP_FILTER_USERNAME
+            value: {{ .Values.powerdnsAdmin.ldap.filters.username | quote }}
+          - name: LDAP_FILTER_GROUP
+            value: {{ .Values.powerdnsAdmin.ldap.filters.group | quote }}
+          - name: LDAP_FILTER_BASIC
+            value: {{ .Values.powerdnsAdmin.ldap.filters.basic | quote }}
+          - name: LDAP_FILTER_GROUPNAME
+            value: {{ .Values.powerdnsAdmin.ldap.filters.groupName | quote }}
+          - name: LDAP_USER_GROUP
+            value: {{ .Values.powerdnsAdmin.ldap.userGroup | quote }}
+          - name: LDAP_ADMIN_GROUP
+            value: {{ .Values.powerdnsAdmin.ldap.adminGroup | quote }}
+          - name: LDAP_URI
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: ldapsURI
+          - name: LDAP_ADMIN_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: ldapsBIND
+          - name: LDAP_ADMIN_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: password
+          - name: GUNICORN_LOGLEVEL
+            value: {{ .Values.powerdnsAdmin.gunicorn.logLevel | quote }}
+          - name: GUNICORN_TIMEOUT
+            value: {{ .Values.powerdnsAdmin.gunicorn.timeout | quote }}
+          - name: GUNICORN_WORKERS
+            value: {{ .Values.powerdnsAdmin.gunicorn.workers | quote }}
+          - name: SQLALCHEMY_POOL_TIMEOUT
+            value: {{ .Values.powerdnsAdmin.sqlalchemy.poolTimeout | quote }}
+          - name: SQLALCHEMY_POOL_SIZE
+            value: {{ .Values.powerdnsAdmin.sqlalchemy.poolSize | quote }}
+          - name: SQLALCHEMY_POOL_RECYCLE
+            value: {{ .Values.powerdnsAdmin.sqlalchemy.poolRecycle | quote }}
+          - name: SQLALCHEMY_DATABASE_URI
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
+                key: psqlURI
+        probes:
+          liveness:
+            enabled: true
+            type: HTTP
+            port: 80
+            path: /
+            spec:
+              initialDelaySeconds: 0
+              periodSeconds: 10
+              timeoutSeconds: 2
+              failureThreshold: 3
+          readiness:
+            enabled: false
+          startup:
+            enabled: false
+        resources:
+{{ toYaml .Values.powerdnsAdmin.resources | nindent 10 }}
+
+service:
+  nsadmin:
+    controller: nsadmin
+    type: ClusterIP
+    primary: false
+    ports:
+      http:
+        primary: true
+        port: 80
+        protocol: HTTP
+        appProtocol: http
+  webservice:
+    controller: main
+    type: ClusterIP
+    clusterIP: None
+    ports:
+      http:
+        primary: false
+        port: 8081
+        protocol: HTTP
+  main:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+    controller: main
+    primary: true
+    type: LoadBalancer
+    loadBalancerClass: purelb.io/purelb
+    externalTrafficPolicy: Local
+    labels:
+      wan-mode: public
+      lan-mode: private
+    ports:
+      dns-udp:
+        primary: true
+        port: 53
+        protocol: UDP
+      dns-tcp:
+        primary: false
+        port: 53
+        protocol: TCP
+
+route:
+  nsadmin:
+    kind: HTTPRoute
+    labels:
+      wan-mode: public
+      lan-mode: private
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: {{ .Values.powerdnsAdmin.route.gateway.name }}
+        namespace: {{ .Values.powerdnsAdmin.route.gateway.namespace }}
+        sectionName: {{ .Values.powerdnsAdmin.route.gateway.sectionName }}
+    hostnames:
+{{ toYaml .Values.powerdnsAdmin.route.hostnames | nindent 6 }}
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - kind: Service
+            name: nsadmin
+            port: 80
+            weight: 1
+
+persistence:
+  config:
+    type: custom
+    volumeSpec:
+      configMap:
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
+    advancedMounts:
+      main:
+        main:
+          - path: /etc/pdns/pdns.conf
+            readOnly: true
+            subPath: pdns.conf
+  configs:
+    type: custom
+    volumeSpec:
+      secret:
+        secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-secrets'
+        items:
+          - key: web.conf
+            path: web.conf
+    advancedMounts:
+      main:
+        main:
+          - path: /etc/pdns/conf.d/web.conf
+            readOnly: true
+            subPath: web.conf
+
+configMaps:
+  config:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
+    data:
+      pdns.conf: |
+{{- .Values.powerdns.config | nindent 8 }}
 {{- end -}}
-{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
-{{/* Render the templates */}}
+{{- $commonValues := include "core-network-nameserver.commonValues" . | fromYaml -}}
+{{- $_ := merge .Values $commonValues -}}
 {{ include "bjw-s.common.loader.generate" . }}
