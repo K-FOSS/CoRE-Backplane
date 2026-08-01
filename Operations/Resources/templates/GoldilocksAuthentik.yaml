@@ -23,7 +23,12 @@ spec:
         slug = "default-provider-invalidation-flow"
       }
 
-      resource "authentik_provider_proxy" "golidlocks" {
+      moved {
+        from = authentik_provider_proxy.golidlocks
+        to   = authentik_provider_proxy.goldilocks
+      }
+
+      resource "authentik_provider_proxy" "goldilocks" {
         name               = "goldilocks"
         mode               = "forward_single"
         external_host      = "https://goldilocks.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}"
@@ -32,10 +37,10 @@ spec:
       }
 
       resource "authentik_application" "name" {
-        name              = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }} {{ .Values.datacenter }} Goldilocks"
+        name              = "Goldilocks"
         slug              = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }}-{{ .Values.datacenter }}-goldilocks"
         group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
-        protocol_provider = authentik_provider_proxy.golidlocks.id
+        protocol_provider = authentik_provider_proxy.goldilocks.id
       }
 
       resource "authentik_application_entitlement" "ent" {
