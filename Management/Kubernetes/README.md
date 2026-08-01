@@ -89,6 +89,22 @@ started on demand through the Headlamp plugin or `kubectl gadget`; no tracing
 tools run continuously by default. Long-running tools can be declared under
 `gadget.config.gadgetConfigMaps`.
 
+Lovely passes the Helm output through the local `kustomization.yaml`. The
+Kustomize patches select resources labeled
+`app.kubernetes.io/part-of=inspektor-gadget` and rewrite the Gadget namespaced
+resources, plus the Gadget ClusterRoleBinding's service-account subject, from
+the Application destination namespace to the dedicated `gadget` namespace.
+Headlamp and the other parent-chart resources remain in `core-<environment>`.
+
+The `gadget` Namespace enables Kubernetes
+[Pod Security Admission](https://kubernetes.io/docs/concepts/security/pod-security-admission/)
+with the `privileged` policy at the `enforce` level, which is required for the
+node-inspection DaemonSet. It is annotated with Argo CD sync wave `-1`; Gadget
+and the other unannotated resources use the default wave `0`. Argo CD therefore
+creates the namespace in an earlier
+[sync wave](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/)
+before it applies resources assigned to that namespace.
+
 The chart also installs these Headlamp plugins:
 
 - [Inspektor Gadget plugin README](https://github.com/inspektor-gadget/headlamp-plugin#readme)
@@ -191,7 +207,8 @@ the public Headlamp URL.
 | `templates/HTTPRoute.yaml` | Routes the public Headlamp hostname to the Headlamp Service through the configured Gateway listener. |
 | `templates/TempRole.yaml` | Grants the Kubernetes group `Server Admins` the `cluster-admin` ClusterRole. |
 | Headlamp dependency | Deploys Headlamp and consumes `core-headlamp-oidc`; also installs the configured UI plugins. |
-| Gadget dependency | Deploys the Inspektor Gadget node daemon used by its Headlamp plugin. |
+| Gadget dependency | Deploys the Inspektor Gadget node daemon used by its Headlamp plugin; Kustomize places its namespaced resources in `gadget`. |
+| `namespace.yaml` and `kustomization.yaml` | Create the privileged-enforce `gadget` namespace at sync wave `-1` and rewrite Gadget resource namespaces and its ClusterRoleBinding subject. |
 
 `TempRole.yaml` currently contains the literal group name `Server Admins`; it
 does not iterate over `oauth.groups`. If that access group changes, update both
@@ -206,7 +223,13 @@ Render changes before deployment and inspect the generated Workspace module:
 helm dependency update .
 helm lint .
 helm template <release> . --namespace <namespace>
+kustomize build .
 ```
+
+The standalone `kustomize build` validates the checked-in Kustomize layer. To
+inspect its namespace rewrites, render the complete Lovely unit in Argo CD or
+run the same Helm-to-Kustomize pipeline configured for the Lovely plugin; a
+plain `helm template` does not apply the Kustomize patches.
 
 After deployment, use the Workspace conditions and controller events as the
 source of truth for reconciliation:
@@ -215,6 +238,8 @@ source of truth for reconciliation:
 kubectl describe workspace headlamp-sso -n <namespace>
 kubectl get secret core-headlamp-oidc -n <namespace>
 kubectl describe httproute headlamp -n <namespace>
+kubectl get namespace gadget --show-labels
+kubectl get daemonset,serviceaccount,role,rolebinding -n gadget
 ```
 
 Do not print or commit the Secret contents. If the Workspace is not ready,
