@@ -36,21 +36,29 @@ ApplicationSet injects the exact central service FQDN, cluster, and datacentre
 values. The DaemonSets do not hold or use direct Loki, Mimir, or Tempo
 destinations.
 
-`alloy` remains a three-replica Deployment with a PodDisruptionBudget. It owns the
-cluster-wide pod and Service discovery, `ScrapeConfig`, `PodMonitor`,
-`ServiceMonitor`, and `Probe` components, and the OTLP, Jaeger, syslog, and Loki
+`alloy` is a three-replica StatefulSet with a PodDisruptionBudget. It owns
+only cluster-wide metrics discovery, backend writers, OTLP gateway processing,
+the Vector-specific infrastructure OTLP receiver, and compatibility Jaeger
 receivers. All cluster-wide scrape components opt into Alloy clustering, so a
 target is assigned to one healthy peer rather than scraped by every replica.
+The StatefulSet gives peers stable identities and follows Grafana's
+[Kubernetes clustering guidance](https://grafana.com/docs/alloy/latest/configure/clustering/).
 The existing `*-collectors-alloy` Service identity is preserved for clients.
 Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
 
-The central Deployment converts received OTLP metrics for remote-write to
-Mimir, received OTLP logs for Loki, and exports traces to Tempo. Those three
-existing backends currently use literal private addresses in
-[`values.yaml`](values.yaml); the addresses are mutable operational
-dependencies, not service discovery.
+The central StatefulSet converts received OTLP metrics for remote-write to
+Mimir, received OTLP logs for Loki, and exports traces to Tempo. These backends
+currently use private addresses; they are mutable operational dependencies,
+not service discovery.
+
+Backend shipping is configured under `alloy.destinations`: `lokiUrl` is the
+Loki push URL, `mimirUrl` is the Prometheus remote-write URL, and
+`tempoEndpoint` is the Tempo OTLP/gRPC `host:port`. The ApplicationSet
+explicitly injects all three current private endpoints into every target
+cluster. Only the central Alloy uses these values; `alloy-logs`,
+`alloy-metrics`, and `alloy-otlp` continue to export exclusively through OTLP.
 
 Central Kubernetes enrichment first associates telemetry by the
 `k8s.pod.uid` resource attribute emitted by the container parser or workload,
@@ -71,6 +79,11 @@ and
 [`opentelemetry` sink](https://vector.dev/docs/reference/configuration/sinks/opentelemetry/)
 documentation.
 
+The main StatefulSet no longer opens syslog port 1514 or the legacy Vector Loki
+API port 9999. Vector owns device/Talos ingestion and uses OTLP exclusively.
+Gateway self-metrics are collected through the chart ServiceMonitor rather
+than a second in-config self-scrape.
+
 The chart also creates External Secrets that synchronize Loki and Mimir client
 credentials. Secret values are controller-managed and must not be placed in
 Git.
@@ -86,8 +99,11 @@ API server; see the
 The split bounds those watches to the three HA discovery replicas and removes
 API log streaming. Some duplicated watch traffic remains intentionally for HA,
 including the three `otelcol.processor.k8sattributes` informers. Scrape work is
-sharded using the component-level clustering described by the
+sharded for `ScrapeConfig`, `PodMonitor`, `ServiceMonitor`, `Probe`, and
+annotation-discovered targets using the component-level clustering described by the
 [ServiceMonitor component](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.operator.servicemonitors/#clustering).
+The node-local `alloy-metrics` scrape deliberately remains unclustered: each
+DaemonSet pod exposes a different node and must scrape its own local exporters.
 
 ## Operations
 
@@ -97,13 +113,18 @@ configs have no `discovery.kubernetes`, `prometheus.operator`, direct
 `prometheus.remote_write`, or direct `loki.write` component. Confirm the OTLP
 DaemonSet Service selects one ready pod on the caller's node, then inspect
 `prometheus_remote_storage_*`, Kubernetes client request, dropped sample, and
-Loki write metrics on the central Deployment, plus exporter queue and send
+Loki write metrics on the central StatefulSet, plus exporter queue and send
 failure metrics on every DaemonSet. Correlate API-server requests by Alloy
 service-account user agent before attributing traffic to Metrics Server or
 Mimir. A rollout can briefly duplicate or miss scrapes while consistent-hash
 ownership converges; watch remote-write and target health during
 reconciliation. The filelog receiver is public preview and may require config
 changes during a future Alloy upgrade.
+
+Changing the central controller from the former Deployment to the StatefulSet
+replaces its workload identity. During the first reconciliation, watch peer
+membership and remote-write health while Argo CD creates the StatefulSet and
+prunes the Deployment; do not force a separate fleet-wide resync.
 
 Render with `helm dependency build Observability/Collectors`, `helm lint`, and
 representative ApplicationSet values. Roll back through Git/Argo CD. Removing
