@@ -1,4 +1,4 @@
-{{ if .Values.hub }}
+{{- if .Values.authentik.route.enabled }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -17,11 +17,26 @@ spec:
       - cookie
 
     http:
+      headersToBackend:
+        - set-cookie
+        - x-authentik-*
+        - authorization
+        - Content-Type
+        - Location
+
+      # Keep a client on the same Authentik proxy replica so its local
+      # authorization/session cache remains effective.
+      backendSettings:
+        loadBalancer:
+          type: ConsistentHash
+          consistentHash:
+            type: SourceIP
+
       backendRefs:
         - group: ''
           kind: Service
           namespace: core-prod
-          name: dc1-k3s-node1-aaa-authentik-server
+          name: aaa-myloginspace-proxy
           port: 80
           
 

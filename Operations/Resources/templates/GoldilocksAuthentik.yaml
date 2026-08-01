@@ -28,13 +28,13 @@ spec:
         mode               = "forward_single"
         external_host      = "https://goldilocks.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}"
         authorization_flow = data.authentik_flow.default-authorization-flow.id
-        invalidation_flow = data.authentik_flow.default-provider-invalidation-flow.id
+        invalidation_flow  = data.authentik_flow.default-provider-invalidation-flow.id
       }
 
       resource "authentik_application" "name" {
         name              = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }} {{ .Values.datacenter }} Goldilocks"
         slug              = "{{ .Values.tenant.name}}-{{ .Values.cluster.name }}-{{ .Values.datacenter }}-goldilocks"
-        group             = "Observability"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         protocol_provider = authentik_provider_proxy.golidlocks.id
       }
 
