@@ -9,6 +9,16 @@ global:
 controllers:
   main:
     strategy: RollingUpdate
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 953
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+        runAsUser: 953
+        runAsGroup: 953
+        seccompProfile:
+          type: RuntimeDefault
     containers:
       main:
         image:
@@ -21,22 +31,12 @@ controllers:
           - --config-dir=/etc/pdns
           - --disable-syslog=yes
           - --socket-dir=/tmp
-          - --gpgsql-host=$(PSQL_HOSTNAME)
-          - --gpgsql-port=$(PSQL_PORT)
-          - --gpgsql-dbname={{ .Values.powerdns.databaseName }}
+          - --gpgsql-host={{ required "powerdns.database.host must be injected by the owning ApplicationSet" .Values.powerdns.database.host }}
+          - --gpgsql-port={{ .Values.powerdns.database.port }}
+          - --gpgsql-dbname={{ .Values.powerdns.database.name }}
           - --gpgsql-user=$(USERNAME)
           - --gpgsql-password=$(PASSWORD)
         env:
-          - name: PSQL_HOSTNAME
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
-                key: psqlHostname
-          - name: PSQL_PORT
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
-                key: psqlPort
           - name: USERNAME
             valueFrom:
               secretKeyRef:
@@ -48,6 +48,18 @@ controllers:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
                 key: password
         workingDir: /etc/pdns
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
+        resources:
+{{ toYaml .Values.powerdns.resources | nindent 10 }}
         probes:
           liveness:
             enabled: false
@@ -214,6 +226,14 @@ route:
             weight: 1
 
 persistence:
+  tmp:
+    type: emptyDir
+    medium: Memory
+    sizeLimit: 32Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /tmp
   config:
     type: custom
     volumeSpec:

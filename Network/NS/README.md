@@ -32,9 +32,16 @@ changes the immutable Deployment selector label from
 `app.kubernetes.io/component` to `app.kubernetes.io/controller`, so the first
 5.x reconciliation requires both Deployments to be deliberately recreated.
 The [v4-to-v5 migration](https://bjw-s-labs.github.io/helm-charts/docs/app-template/upgrades/4-to-5/)
-also creates a dedicated unprivileged ServiceAccount and disables automatic
-service-account token mounts by default; neither workload uses the Kubernetes
-API.
+introduces dedicated ServiceAccount creation by default. This chart opts out,
+so workloads use the namespace's default identity without mounting its API
+token; neither workload uses the Kubernetes API. The authoritative
+PowerDNS container is pinned to the image's `pdns` UID/GID 953, uses the runtime
+default seccomp profile, drops all Linux capabilities, forbids privilege
+escalation, and runs with a read-only root filesystem. Only a size-limited,
+memory-backed `/tmp` volume remains writable for its control socket. Both
+containers have explicit CPU, memory, and ephemeral-storage requests and
+limits so a DNS or administration failure cannot consume unbounded node
+resources.
 
 The public address, ExternalDNS hostname/target,
 [PureLB](https://purelb.gitlab.io/purelb/) sharing key, cluster identity, and
@@ -52,9 +59,11 @@ only when operators or target clusters need to change it.
 
 Argo CD renders Helm and creates the resources in the target cluster. External
 Secrets must populate the referenced Kubernetes Secrets before PowerDNS and
-PowerDNS-Admin can become ready. PowerDNS connects to the shared PostgreSQL
-database; PowerDNS-Admin uses the internal PowerDNS API Service. Envoy Gateway
-calls the Authentik external-auth service before allowing UI traffic.
+PowerDNS-Admin can become ready. PowerDNS connects to the
+[cluster-local Pgpool `psql` Service](../../Databases/PSQL/README.md) using the
+FQDN injected by the ApplicationSet; its database credentials remain
+secret-backed. PowerDNS-Admin uses the internal PowerDNS API Service. Envoy
+Gateway calls the Authentik external-auth service before allowing UI traffic.
 
 The deployment requires the PowerDNS PostgreSQL schema and user, the
 `mainvault-core` and `corevault-rootsecrets` `ClusterSecretStore` objects,
@@ -68,9 +77,12 @@ Resolve dependencies and validate both Helm branches before merging:
 
 ```sh
 helm dependency build .
-helm lint . --set hub=false
-helm template ns-core . --namespace core-prod --set hub=false >/tmp/ns.yaml
-helm template ns-core . --namespace core-prod --set hub=true >/tmp/ns-hub.yaml
+helm lint . --set hub=false \
+  --set powerdns.database.host=psql.core-prod.svc.cluster.local
+helm template ns-core . --namespace core-prod --set hub=false \
+  --set powerdns.database.host=psql.core-prod.svc.cluster.local >/tmp/ns.yaml
+helm template ns-core . --namespace core-prod --set hub=true \
+  --set powerdns.database.host=psql.core-prod.svc.cluster.local >/tmp/ns-hub.yaml
 ```
 
 Use representative ApplicationSet-injected values when reviewing Service

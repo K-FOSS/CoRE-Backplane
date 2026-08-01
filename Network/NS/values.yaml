@@ -1,6 +1,8 @@
 ---
 global:
   fullnameOverride: ns-core
+  # The workloads do not call the Kubernetes API.
+  createDefaultServiceAccount: false
 
 # ApplicationSets override this per target cluster.
 hub: false
@@ -16,7 +18,21 @@ images:
     pullPolicy: IfNotPresent
 
 powerdns:
-  databaseName: DlzcnePHKR
+  database:
+    # Required: the owning ApplicationSet injects the psql.<service domain>
+    # FQDN for the cluster-local Pgpool service on each target.
+    host: ""
+    port: 5432
+    name: DlzcnePHKR
+  resources:
+    limits:
+      cpu: "1"
+      memory: 512Mi
+      ephemeral-storage: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+      ephemeral-storage: 32Mi
 
   # Active PowerDNS settings only. Database credentials and the API key are
   # injected from Secrets and must not be added here.
@@ -89,9 +105,11 @@ powerdnsAdmin:
     limits:
       cpu: 800m
       memory: 512Mi
+      ephemeral-storage: 1Gi
     requests:
       cpu: 100m
       memory: 128Mi
+      ephemeral-storage: 128Mi
   route:
     gateway:
       name: main-gw
