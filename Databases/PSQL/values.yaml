@@ -94,33 +94,6 @@ ldap:
     searchFilter: (objectclass=user)
 
 pooler:
-  replicas: 3
-
-  image:
-    repository: kristianfjones/pgpool
-    # This mutable tag preserves the current deployment behavior until the
-    # custom image has a published immutable release or digest.
-    tag: latest
-    pullPolicy: IfNotPresent
-
-  resources:
-    requests:
-      cpu: 128m
-      memory: 256Mi
-    limits:
-      cpu: 4019m
-      memory: 4G
-
-  memoryVolumes:
-    pgpoolRuntime:
-      sizeLimit: 128Mi
-    tmp:
-      sizeLimit: 256Mi
-    sharedMemory:
-      sizeLimit: 256Mi
-    runtime:
-      sizeLimit: 16Mi
-
   # 64 children x 4 pools x 3 PGPool replicas allows up to 768 pooled
   # backend connections: 18.75% of PostgreSQL's 4096 connection capacity.
   numInitChildren: 64

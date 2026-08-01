@@ -1,198 +1,195 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: pgpool
+---
+{{- include "bjw-s.common.loader.init" . }}
 
+{{- define "db-psql.pgpool.workload" -}}
+global:
+  nameOverride: pgpool
+  fullnameOverride: pgpool
+
+defaultPodOptions:
   labels:
     app.kubernetes.io/name: pgpool
+    logs: loki-myloginspace
+  securityContext:
+    runAsUser: 70
+    runAsGroup: 70
+    fsGroup: 70
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: pgpool
 
-spec:
-  replicas: {{ .Values.pooler.replicas }}
-
-  revisionHistoryLimit: 3
-
-  minReadySeconds: 60
-
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: pgpool
-
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: pgpool
-        logs: loki-myloginspace
-
-    spec:
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: kubernetes.io/hostname
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              app.kubernetes.io/name: pgpool
-
-
-      volumes:
-        - name: pgpool-runtime
-          emptyDir:
-            medium: Memory
-            sizeLimit: {{ .Values.pooler.memoryVolumes.pgpoolRuntime.sizeLimit }}
-
-        - name: tmp
-          emptyDir:
-            medium: Memory
-            sizeLimit: {{ .Values.pooler.memoryVolumes.tmp.sizeLimit }}
-
-        - name: shared-memory
-          emptyDir:
-            medium: Memory
-            sizeLimit: {{ .Values.pooler.memoryVolumes.sharedMemory.sizeLimit }}
-
-        - name: runtime
-          emptyDir:
-            medium: Memory
-            sizeLimit: {{ .Values.pooler.memoryVolumes.runtime.sizeLimit }}
-
-        - name: config-vol
-          secret:
-            secretName: 'pgpool-config'
-            defaultMode: 420
-            items:
-              - key: pgpool.conf
-                path: pgpool.conf
-                mode: 420
-
-              - key: pool_hba.conf
-                path: pool_hba.conf
-                mode: 420
-
-              - key: pool_passwd
-                path: pool_passwd
-
-        - name: tls
-          secret:
-            defaultMode: 416
-            secretName: myloginspace-default-certificates
-
-      securityContext:
-        runAsUser: 70
-        runAsGroup: 70
-        fsGroup: 70
-
-      containers:
-        - name: pgpool
-          image: '{{ .Values.pooler.image.repository }}:{{ .Values.pooler.image.tag }}'
-          imagePullPolicy: {{ .Values.pooler.image.pullPolicy }}
-
-          resources:
-            {{- toYaml .Values.pooler.resources | nindent 12 }}
-
-          securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-
-          ports:
-            - name: psql
-              containerPort: 5432
-
-          env:
-            - name: PGPOOL_CONF_VOLUME
-              value: /config
-
-            - name: PGPOOL_INSTALL_DIR
-              value: /opt/pgpool-II
-
-            - name: CHECK_PGCONNECT_TIMEOUT
-              value: '2'
-
-            - name: POSTGRES_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  key: username
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-            - name: POSTGRES_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-            - name: CHECK_USER
-              valueFrom:
-                secretKeyRef:
-                  key: username
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-            - name: CHECK_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-            - name: PGPOOL_PCP_USER
-              valueFrom:
-                secretKeyRef:
-                  key: username
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-            - name: PGPOOL_PCP_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
-
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - /bin/sh
-                  - '-ec'
-                  - |
-                    /opt/pgpool-II/bin/pcp_stop_pgpool -m smart --host localhost --user opsadmin
-
-          readinessProbe:
-            tcpSocket:
-              port: psql
-
-            initialDelaySeconds: 15
-            periodSeconds: 10
-
-          livenessProbe:
+controllers:
+  main:
+    type: deployment
+    replicas: 3
+    revisionHistoryLimit: 3
+    strategy: RollingUpdate
+    containers:
+      main:
+        enabled: false
+      pgpool:
+        image:
+          repository: kristianfjones/pgpool
+          tag: latest
+          pullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 128m
+            memory: 256Mi
+          limits:
+            cpu: 4019m
+            memory: 4G
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        ports:
+          - name: psql
+            containerPort: 5432
+            protocol: TCP
+        env:
+          PGPOOL_CONF_VOLUME: /config
+          PGPOOL_INSTALL_DIR: /opt/pgpool-II
+          CHECK_PGCONNECT_TIMEOUT: '2'
+          POSTGRES_USERNAME:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: username
+          POSTGRES_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: password
+          CHECK_USER:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: username
+          CHECK_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: password
+          PGPOOL_PCP_USER:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: username
+          PGPOOL_PCP_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: password
+        lifecycle:
+          preStop:
             exec:
               command:
                 - /bin/sh
-                - /opt/pgpool-II/bin/Healthcheck.sh
-            initialDelaySeconds: 30
+                - -ec
+                - /opt/pgpool-II/bin/pcp_stop_pgpool -m smart --host localhost --user opsadmin
+        probes:
+          startup:
+            enabled: false
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              tcpSocket:
+                port: psql
+              initialDelaySeconds: 15
+              periodSeconds: 10
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - /bin/sh
+                  - /opt/pgpool-II/bin/Healthcheck.sh
+              initialDelaySeconds: 30
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
 
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 3
+service:
+  main:
+    enabled: false
 
-          volumeMounts:
-            - name: pgpool-runtime
-              mountPath: /tmp/pgpool
+persistence:
+  pgpool-runtime:
+    type: emptyDir
+    medium: Memory
+    sizeLimit: 128Mi
+    advancedMounts:
+      main:
+        pgpool:
+          - path: /tmp/pgpool
 
-            - name: tmp
-              mountPath: /tmp
+  tmp:
+    type: emptyDir
+    medium: Memory
+    sizeLimit: 256Mi
+    advancedMounts:
+      main:
+        pgpool:
+          - path: /tmp
 
-            - name: shared-memory
-              mountPath: /dev/shm
+  shared-memory:
+    type: emptyDir
+    medium: Memory
+    sizeLimit: 256Mi
+    advancedMounts:
+      main:
+        pgpool:
+          - path: /dev/shm
 
-            - name: runtime
-              mountPath: /var/run/postgresql
+  runtime:
+    type: emptyDir
+    medium: Memory
+    sizeLimit: 16Mi
+    advancedMounts:
+      main:
+        pgpool:
+          - path: /var/run/postgresql
 
-            - name: tls
-              mountPath: /config/tls
-              readOnly: true
+  config:
+    type: secret
+    name: pgpool-config
+    defaultMode: 0420
+    items:
+      - key: pgpool.conf
+        path: pgpool.conf
+        mode: 0420
+      - key: pool_hba.conf
+        path: pool_hba.conf
+        mode: 0420
+      - key: pool_passwd
+        path: pool_passwd
+    advancedMounts:
+      main:
+        pgpool:
+          - path: /config
+            readOnly: true
+          - path: /tmp/pgpool/pool_passwd
+            subPath: pool_passwd
+            readOnly: true
 
-            - name: config-vol
-              mountPath: /config
-              readOnly: true
+  tls:
+    type: secret
+    name: myloginspace-default-certificates
+    defaultMode: 0416
+    advancedMounts:
+      main:
+        pgpool:
+          - path: /config/tls
+            readOnly: true
+{{- end -}}
 
-            - name: config-vol
-              mountPath: /tmp/pgpool/pool_passwd
-              subPath: pool_passwd
-              readOnly: true
+{{- $_ := mergeOverwrite .Values (include "db-psql.pgpool.workload" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}

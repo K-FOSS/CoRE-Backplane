@@ -15,12 +15,22 @@ plus PGPool, pgAdmin, services and credential automation. It is owned by
 - Crossplane/provider credentials.
 - Optional restore cluster resource.
 
+Chart dependencies are pinned to the
+[BJW-S common library 4.6.2](https://github.com/bjw-s-labs/helm-charts/releases/tag/common-4.6.2)
+and the
+[Runix pgAdmin4 chart 1.65.0](https://artifacthub.io/packages/helm/runix/pgadmin4/1.65.0).
+Exact versions keep Lovely dependency resolution and rendered manifests
+deterministic. Common 4.6.2 is the newest v4 release and supports Kubernetes
+1.28 and newer; common 5 requires Kubernetes 1.31 and Helm 3.18 across every
+rendering and target environment.
+
 PGPool discovers every local PostgreSQL pod through a headless per-pod Service
 and appends the site-specific remote peers supplied by the ApplicationSet. Its
-replica count, image, resources, pool sizing and health-check intervals are
-configured under `pooler` in `values.yaml`. The deployment currently consumes
-the custom PGPool image through the mutable `latest` tag; replace it with a
-verified immutable release or digest. See the upstream
+workload shape, image, resources and memory volumes are embedded in
+`templates/PGPool/PGPoolDeployment.yaml`; operational pool sizing, health
+checks and site-specific peers remain under `pooler` in `values.yaml`. The
+deployment currently consumes the custom PGPool image through the mutable
+`latest` tag; replace it with a verified immutable release or digest. See the upstream
 [Pgpool-II backend settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-backend-settings.html),
 [connection pooling settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html),
 and [health-check settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-health-check.html).
@@ -32,12 +42,12 @@ remaining capacity is reserved for replication, operator activity and direct
 clients. PostgreSQL worker limits are configured under `psql.tuning`; the
 defaults allow eight worker processes, four parallel workers globally and two
 workers per parallel query. Recalculate the connection budget whenever
-`pooler.replicas`, `numInitChildren`, `maxPool` or
+the embedded replica count, `numInitChildren`, `maxPool` or
 `psql.tuning.maxConnections` changes.
 
-PGPool mounts memory-backed `emptyDir` volumes at `/tmp`, `/dev/shm`, and
-`/var/run/postgresql`. Their size limits are configured under
-`pooler.memoryVolumes`. `/dev/shm` supports the pre-forked PGPool processes and
+PGPool mounts bounded, memory-backed `emptyDir` volumes at `/tmp`, `/dev/shm`,
+and `/var/run/postgresql`; their size limits live with the workload definition
+in `templates/PGPool/PGPoolDeployment.yaml`. `/dev/shm` supports the pre-forked PGPool processes and
 shared caches, while the runtime volume holds the PostgreSQL and PCP sockets.
 Memory-backed `emptyDir` usage counts toward the pod's memory consumption, so
 include it when adjusting the PGPool memory request and limit. Kubernetes
@@ -48,7 +58,7 @@ PGPool also has a dedicated memory-backed `/tmp/pgpool` runtime volume for its
 PID, status, OID metadata and password-file mount. Query caching is enabled
 with the `shmem` method, so cached query contents use shared memory rather than
 files. The runtime volume is pod-local, bounded by
-`pooler.memoryVolumes.pgpoolRuntime.sizeLimit`, charged against pod memory and
+by the workload template, charged against pod memory and
 discarded whenever the pod is replaced. See the upstream
 [Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html).
 
