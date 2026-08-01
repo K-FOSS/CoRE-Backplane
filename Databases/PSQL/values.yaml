@@ -126,8 +126,19 @@ pooler:
 
   queryCache:
     method: memcached
-    host: dragonfly-core
+    host: dragonfly-pgpool
     port: 11211
+
+    dragonfly:
+      enabled: true
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: '1'
+          memory: 512Mi
 
   peers:
     - hostname: psql-int-rep.mylogin.space

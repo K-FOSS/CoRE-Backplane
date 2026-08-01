@@ -1,0 +1,17 @@
+{{- if and (eq .Values.pooler.queryCache.method "memcached") .Values.pooler.queryCache.dragonfly.enabled }}
+apiVersion: dragonflydb.io/v1alpha1
+kind: Dragonfly
+metadata:
+  name: {{ .Values.pooler.queryCache.host }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  replicas: {{ .Values.pooler.queryCache.dragonfly.replicas }}
+  memcachedPort: {{ .Values.pooler.queryCache.port }}
+  args:
+    - --cache_mode=true
+    - --dbnum=1
+    - --primary_port_http_enabled=false
+  resources:
+{{ toYaml .Values.pooler.queryCache.dragonfly.resources | indent 4 }}
+{{- end }}

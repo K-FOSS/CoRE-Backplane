@@ -65,25 +65,27 @@ documents this behavior under
 
 PGPool also has a dedicated memory-backed `/tmp/pgpool` runtime volume for its
 PID, status, OID metadata and password-file mount. Query caching uses PGPool's
-memcached client and Dragonfly on port 11211, so the three PGPool replicas at a
-site share cached results. The PSQL ApplicationSet overrides the chart default
-with the same site-specific public Dragonfly hostname pattern used by Argo CD:
-`dragonfly.<cluster>.<datacenter>.<region>.mylogin.space`. The runtime volume
-remains pod-local, bounded by the workload template, charged against pod memory
-and discarded whenever the pod is replaced. See the upstream
-[Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html)
-and Dragonfly's
-[Memcached compatibility documentation](https://www.dragonflydb.io/blog/memcached-to-dragonfly-stop-serializing-start-simplifying).
+Memcached client and a chart-owned `dragonfly-pgpool` Dragonfly instance on
+port 11211, so the three PGPool replicas at a site share cached results without
+using the general-purpose `dragonfly-core` service. The cache is deliberately
+ephemeral: it has one replica, cache mode enabled, no snapshot configuration,
+and no public Service annotation. The runtime volume remains pod-local,
+bounded by the workload template, charged against pod memory and discarded
+whenever the pod is replaced. See the upstream
+[Pgpool-II in-memory query cache](https://www.pgpool.net/docs/latest/en/html/runtime-in-memory-query-cache.html),
+[Dragonfly configuration reference](https://github.com/dragonflydb/dragonfly#configuration),
+and [Dragonfly Operator repository](https://github.com/dragonflydb/dragonfly-operator).
 
 Dragonfly's Memcached listener does not provide PGPool with the password and
-TLS authentication path used by Redis clients. The Dragonfly chart therefore
+TLS authentication path used by Redis clients. A NetworkPolicy therefore
 restricts port 11211 to same-namespace pods labelled
-`app.kubernetes.io/name: pgpool`. The public hostname is used for site-specific
-service discovery, but the NetworkPolicy remains the authorization boundary.
-If the Dragonfly Service is unavailable, PGPool query-cache operations fail and
-the pooler may need to be restarted after the cache recovers. Roll back by setting
-`pooler.queryCache.method` to `shmem`, rendering, and reconciling the PSQL
-ApplicationSet.
+`app.kubernetes.io/name: pgpool`; the instance's Redis port is not admitted.
+The Dragonfly CR and policy sync before the PGPool workload and depend on the
+cluster-wide Dragonfly Operator and CRD. If the cache is unavailable, PGPool
+query-cache operations fail and the pooler may need to be restarted after the
+cache recovers. Roll back by setting `pooler.queryCache.method` to `shmem`,
+rendering, and reconciling the PSQL ApplicationSet; that also removes the
+dedicated Dragonfly resources from desired state.
 
 PGPool sends application logs exclusively to `stderr` and has its internal
 logging collector disabled, so it does not create or rotate log files in the
