@@ -34,6 +34,21 @@ spec:
 
 
       volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.pooler.memoryVolumes.tmp.sizeLimit }}
+
+        - name: shared-memory
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.pooler.memoryVolumes.sharedMemory.sizeLimit }}
+
+        - name: runtime
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.pooler.memoryVolumes.runtime.sizeLimit }}
+
         - name: config-vol
           secret:
             secretName: 'pgpool-config'
@@ -152,6 +167,15 @@ spec:
             failureThreshold: 3
 
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+
+            - name: shared-memory
+              mountPath: /dev/shm
+
+            - name: runtime
+              mountPath: /var/run/postgresql
+
             - name: tls
               mountPath: /config/tls
               readOnly: true
