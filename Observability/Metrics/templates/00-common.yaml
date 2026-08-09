@@ -175,7 +175,7 @@ controllers:
             enabled: true
             custom: false
             type: HTTP
-            path: /healthz
+            path: /-/healthy
             port: http
             spec:
               failureThreshold: 3
@@ -185,7 +185,7 @@ controllers:
             enabled: true
             custom: false
             type: HTTP
-            path: /healthz
+            path: /-/healthy
             port: http
             spec:
               failureThreshold: 3
@@ -494,6 +494,13 @@ configMaps:
         server {
             listen 8080;
 
+            location = /-/healthy {
+                access_log off;
+                add_header Content-Type text/plain;
+                return 200 'ready\n';
+            }
+
+            # Compatibility endpoint for existing external checks.
             location = /healthz {
                 access_log off;
                 add_header Content-Type text/plain;

@@ -57,8 +57,9 @@ bridge `/api/v1/query` becomes Mimir `/prometheus/api/v1/query`, and bridge `/`
 becomes Mimir `/prometheus/`. The legacy bridge `/prometheus/...` form remains
 accepted during migration. No Kubernetes
 cluster-domain suffix is generated. The proxy forwards `X-Scope-OrgID`,
-removes the incoming `Authorization` header, and serves `/healthz` locally
-without contacting YXL.
+removes the incoming `Authorization` header, and serves `/-/healthy` locally
+without contacting YXL. Kubernetes readiness and liveness probes use this
+endpoint; `/healthz` remains available as a compatibility alias.
 It uses the maintained
 [`nginxinc/nginx-unprivileged` image](https://github.com/nginx/docker-nginx-unprivileged)
 pinned by version and multi-architecture digest, an unprivileged listener, a
@@ -113,7 +114,7 @@ Verify distributor accepted/rejected samples, active series, ingester WAL/head
 size, block upload duration, compactor deletion markers, S3 throughput, and an
 end-to-end query in Grafana. In YXL, verify `core-mimir` selects the Mimir Pods
 and is exported by Cilium. In Home1, verify its backends are remote. On both
-sites, verify both proxy Pods are ready, `/healthz` remains available during a
+sites, verify both proxy Pods are ready, `/-/healthy` remains available during a
 YXL outage,
 and the Headlamp endpoint returns a Mimir query response with the
 expected tenant. Also confirm proxy logs do not expose credentials. After
