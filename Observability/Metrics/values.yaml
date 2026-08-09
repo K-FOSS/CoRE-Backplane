@@ -33,6 +33,11 @@ mimir:
     name: ''
     annotations: {}
 
+  globalService:
+    enabled: false
+    name: ''
+    annotations: {}
+
   storage:
     s3Endpoint: ''
 
@@ -70,6 +75,28 @@ mimir:
     sizeLimit: 512Mi
 
   nodeSelector: {}
+
+mimirBridge:
+  enabled: false
+  replicas: 2
+
+  image:
+    repository: nginxinc/nginx-unprivileged
+    tag: 1.28.1-alpine3.23
+    digest: sha256:4655ddff4704d6b6c85f5a5862b5d0840941fcc95a4f4668f04b1d6f85858e7c
+    pullPolicy: IfNotPresent
+
+  upstream:
+    service: core-mimir-global
+    port: 8080
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
 
 gateway:
   enabled: false

@@ -22,6 +22,11 @@ spec:
 
                     mode: SingleBinary
 
+                    mimirEnabled: true
+                    mimirBridgeEnabled: false
+                    mimirGlobalAffinity: local
+                    mimirGlobalShared: 'true'
+
                     # YXL is storage-bandwidth constrained. Bound accepted
                     # samples and serialize block uploads at this site only.
                     mimirIngestionRate: 100000
@@ -35,6 +40,11 @@ spec:
                     hub: false
 
                     mode: SingleBinary
+
+                    mimirEnabled: false
+                    mimirBridgeEnabled: true
+                    mimirGlobalAffinity: remote
+                    mimirGlobalShared: 'false'
 
           - clusters:
               selector:
@@ -100,15 +110,29 @@ spec:
                   enabled: false
 
                 mimir:
-                  enabled: true
+                  enabled: {{ .values.mimirEnabled }}
                   tenant: core
                   service:
-                    # Cilium correlates global Services by namespace and name,
-                    # so this must be identical in every target cluster.
-                    name: core-mimir
+                    # The YXL workload-backed Service is rendered by the common
+                    # chart and exported to ClusterMesh under this stable name.
+                    name: core-mimir-global
                     annotations:
+                      service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
                       service.cilium.io/global: 'true'
                       service.cilium.io/global-sync-endpoint-slices: 'true'
+                      service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
+                  globalService:
+                    # Home1 has no Mimir controller, so its remote-only peer is
+                    # rendered separately from the common chart Service.
+                    enabled: {{ .values.mimirBridgeEnabled }}
+                    # Cilium correlates global Services by namespace and name,
+                    # so this must be identical in every target cluster.
+                    name: core-mimir-global
+                    annotations:
+                      service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
+                      service.cilium.io/global: 'true'
+                      service.cilium.io/global-sync-endpoint-slices: 'true'
+                      service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
                   storage:
                     s3Endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443
                   rules:
@@ -123,8 +147,11 @@ spec:
                     shipConcurrency: {{ .values.mimirShipConcurrency }}
                   {{- end }}
 
+                mimirBridge:
+                  enabled: {{ .values.mimirBridgeEnabled }}
+
                 gateway:
-                  enabled: true
+                  enabled: {{ .values.mimirEnabled }}
                   routeName: core-mimir
                   labels:
                     wan-mode: public
@@ -138,7 +165,7 @@ spec:
                     - metrics.mylogin.space
 
                 securityPolicy:
-                  enabled: true
+                  enabled: {{ .values.mimirEnabled }}
                   jwt:
                     optional: false
                     providers:
@@ -171,7 +198,7 @@ spec:
                             - token
 
                 s3User:
-                  enabled: true
+                  enabled: {{ .values.mimirEnabled }}
                 {{ else if eq .values.mode "Distributed" }}
                 mimir-distributed:
                   enabled: true

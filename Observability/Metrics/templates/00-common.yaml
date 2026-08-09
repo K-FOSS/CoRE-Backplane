@@ -8,9 +8,10 @@ global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
 
-{{ if eq .Values.mimir.enabled true }}
+{{ if or .Values.mimir.enabled .Values.mimirBridge.enabled }}
 
 controllers:
+  {{- if .Values.mimir.enabled }}
   mimir:
     annotations:
       secret.reloader.stakater.com/reload: '{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds'
@@ -139,8 +140,70 @@ controllers:
               failureThreshold: 3
               periodSeconds: 10
               timeoutSeconds: 5
+  {{- end }}
+
+  {{- if .Values.mimirBridge.enabled }}
+  mimir-bridge:
+    forceRename: core-mimir-proxy
+    strategy: RollingUpdate
+    podDisruptionBudget:
+      maxUnavailable: 1
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+    replicas: {{ int .Values.mimirBridge.replicas }}
+    containers:
+      proxy:
+        image:
+          repository: {{ .Values.mimirBridge.image.repository }}
+          tag: '{{ .Values.mimirBridge.image.tag }}@{{ .Values.mimirBridge.image.digest }}'
+          pullPolicy: {{ .Values.mimirBridge.image.pullPolicy }}
+        command:
+          - /usr/sbin/nginx
+        args:
+          - -g
+          - 'daemon off;'
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+        probes:
+          liveness:
+            enabled: true
+            custom: false
+            type: HTTP
+            path: /healthz
+            port: http
+            spec:
+              failureThreshold: 3
+              periodSeconds: 10
+              timeoutSeconds: 3
+          readiness:
+            enabled: true
+            custom: false
+            type: HTTP
+            path: /healthz
+            port: http
+            spec:
+              failureThreshold: 3
+              periodSeconds: 10
+              timeoutSeconds: 3
+        resources:
+          {{- toYaml .Values.mimirBridge.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+  {{- end }}
 
 service:
+  {{- if .Values.mimir.enabled }}
   mimir:
     # -- Enables or disables the service
     enabled: true
@@ -159,10 +222,6 @@ service:
 
     # -- Set the service type
     type: ClusterIP
-
-    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
-    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
-    #externalTrafficPolicy: Local
 
     # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
     ipFamilyPolicy:
@@ -184,19 +243,17 @@ service:
         enabled: true
 
         # -- Make this the primary port (used in probes, notes, etc...)
-        # If there is more than 1 service, make sure that only 1 port is marked as primary.
+        # If there is more than 1 port, make sure that only 1 port is marked as primary.
         primary: false
 
         # -- The port number
         port: 8080
 
         # -- Port protocol.
-        # Support values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
-        # HTTP and HTTPS spawn a TCP service and get used for internal URL and name generation
+        # Supported values are `HTTP`, `HTTPS`, `TCP` and `UDP`.
         protocol: TCP
 
         # -- Specify the appProtocol value for the Service.
-        # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:
 
   mimir-gossip:
@@ -260,9 +317,26 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:
+  {{- end }}
 
+  {{- if .Values.mimirBridge.enabled }}
+  mimir-bridge:
+    enabled: true
+    controller: mimir-bridge
+    primary: true
+    forceRename: core-mimir
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 8080
+        protocol: TCP
+        targetPort: http
+  {{- end }}
 
 configMaps:
+  {{- if .Values.mimir.enabled }}
   mimir-alertmanager-fallback:
     enabled: true
 
@@ -360,8 +434,39 @@ configMaps:
         server:
           log_level: warn
           grpc_server_max_concurrent_streams: 1000
+  {{- end }}
+
+  {{- if .Values.mimirBridge.enabled }}
+  mimir-bridge:
+    enabled: true
+    forceRename: core-mimir-proxy
+    data:
+      default.conf: |
+        server {
+            listen 8080;
+
+            location = /healthz {
+                access_log off;
+                add_header Content-Type text/plain;
+                return 200 'ok\n';
+            }
+
+            location / {
+                proxy_http_version 1.1;
+                proxy_connect_timeout 5s;
+                proxy_send_timeout 300s;
+                proxy_read_timeout 300s;
+                proxy_set_header Connection '';
+                proxy_set_header Authorization '';
+                proxy_set_header X-Scope-OrgID $http_x_scope_orgid;
+                proxy_set_header Host {{ .Values.mimirBridge.upstream.service }};
+                proxy_pass http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }};
+            }
+        }
+  {{- end }}
 
 persistence:
+  {{- if .Values.mimir.enabled }}
   mimir-data:
     enabled: true
 
@@ -440,6 +545,29 @@ persistence:
 
 {{- end }}
 
+  {{- if .Values.mimirBridge.enabled }}
+  mimir-bridge-config:
+    enabled: true
+    type: configMap
+    name: core-mimir-proxy
+    advancedMounts:
+      mimir-bridge:
+        proxy:
+          - path: /etc/nginx/conf.d/default.conf
+            readOnly: true
+            subPath: default.conf
+
+  mimir-bridge-tmp:
+    enabled: true
+    type: emptyDir
+    sizeLimit: 64Mi
+    advancedMounts:
+      mimir-bridge:
+        proxy:
+          - path: /tmp
+  {{- end }}
+
+{{- end -}}
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
