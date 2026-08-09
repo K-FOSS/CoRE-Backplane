@@ -64,8 +64,16 @@ headlamp:
       imagePullPolicy: Always
       command:
         - /bin/sh
-        - -c
-        - 'mkdir -p /build/plugins && cp -r /plugins/inspektor-gadget-plugin /build/plugins/inspektor-gadget'
+        - '-ec'
+        - >
+          mkdir -p /build/plugins/inspektor-gadget
+
+          cp -r /plugins/inspektor-gadget-plugin/. /build/plugins/inspektor-gadget/
+
+          sed -i 's#http://localhost:4466/externalproxy#/externalproxy#g' \
+            /build/plugins/inspektor-gadget/main.js
+          grep -o 'fetch("/externalproxy"' \
+            /build/plugins/inspektor-gadget/main.js
       volumeMounts:
         - name: headlamp-plugins
           mountPath: /build/plugins
@@ -112,7 +120,8 @@ headlamp:
     # -- directory to look for plugins
     pluginsDir: '/build/plugins'
     # Extra arguments that can be given to the container. See charts/headlamp/README.md for more information.
-    extraArgs: []
+    extraArgs:
+      - '-proxy-urls=https://artifacthub.io/*'
 
   # -- An optional list of environment variables
   # env:
