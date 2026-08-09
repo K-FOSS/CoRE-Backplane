@@ -16,6 +16,15 @@ receive Prometheus remote write, keep WAL/head working data in memory-backed
 `User`, Authentik workspace and Secret synchronization, HTTPRoute, and Envoy
 SecurityPolicy.
 
+The Mimir Deployment uses [Reloader's targeted Secret annotation](https://github.com/stakater/Reloader#how-to-use-reloader)
+to roll when either generated S3 Secret changes. `*-s3-creds` provides the
+access key, secret key, and session token; `*-creds` provides the bucket name.
+Reloader changes only the Mimir pod template, and the three-replica rolling
+strategy, readiness probe, and PodDisruptionBudget keep serving replicas
+available during credential rotation. The target cluster must run Reloader;
+the operations configuration ApplicationSet provides it on both selected
+Talos production clusters.
+
 Production marks the Mimir HTTP Service as a [Cilium global service with EndpointSlice
 synchronization](https://docs.cilium.io/en/stable/network/clustermesh/global-services/#synchronizing-kubernetes-endpointslice)
 in the ApplicationSet. The Service is explicitly named `core-mimir` in the `core-prod`
@@ -68,7 +77,9 @@ Verify distributor accepted/rejected samples, active series, ingester WAL/head
 size, block upload duration, compactor deletion markers, S3 throughput, and an
 end-to-end query in Grafana. Also verify that the Mimir Service has local and
 remote EndpointSlices and test remote-write delivery while the local Mimir
-endpoints are unavailable. Render both site profiles before merging. Rollback
+endpoints are unavailable. After rotating each S3 Secret, verify that Mimir
+rolls one pod at a time, all replacement pods become ready, and block uploads
+and queries continue without authentication errors. Render both site profiles before merging. Rollback
 through Git/Argo CD; removing the global-service annotations stops new remote
 EndpointSlice synchronization, while increasing retention does not restore
 blocks already deleted and lowering rate limits creates intentional monitoring
