@@ -635,7 +635,35 @@ alloy-mixin:
 
 vector:
   enabled: false
-  role: "Stateless-Aggregator"
+  role: Stateless-Aggregator
+
+  # Vector 0.57 disables configuration environment interpolation by default.
+  # This deployment deliberately retains it for the ApplicationSet-injected
+  # VECTOR_OTLP_LOGS_ENDPOINT; no secret values are interpolated.
+  args:
+    - --config-dir
+    - /etc/vector/
+    - --dangerously-allow-env-var-interpolation
+
+  # Vector does not read Kubernetes resources, so do not create RBAC or mount
+  # API credentials into the pod.
+  rbac:
+    create: false
+  serviceAccount:
+    automountToken: false
+
+  # customConfig replaces the chart defaults, including its API configuration.
+  # Keep the API pod-local to the cluster network and use its gRPC health service
+  # for kubelet probes; it is not exposed by either Service.
+  livenessProbe:
+    grpc:
+      port: 8686
+  readinessProbe:
+    grpc:
+      port: 8686
+  startupProbe:
+    grpc:
+      port: 8686
 
   service:
     enabled: false
@@ -643,8 +671,36 @@ vector:
   serviceHeadless:
     enabled: false
 
+  syslogService:
+    annotations:
+      argocd.argoproj.io/sync-wave: '0'
+      purelb.io/addresses: 10.1.1.14
+      purelb.io/allow-local: 'true'
+      purelb.io/allow-shared-ip: syslog.dc1.mylogin.space
+    ports:
+      - name: syslog-udp
+        port: 514
+        protocol: UDP
+        targetPort: 1514
+      - name: syslog-tcp
+        port: 514
+        protocol: TCP
+        targetPort: 1514
+      - name: talos-kernel
+        port: 6050
+        protocol: UDP
+        targetPort: 6050
+      - name: talos-service
+        port: 6051
+        protocol: UDP
+        targetPort: 6051
+
   customConfig:
     data_dir: /vector-data-dir
+
+    api:
+      enabled: true
+      address: 0.0.0.0:8686
 
     sources:
       network_syslog_udp:

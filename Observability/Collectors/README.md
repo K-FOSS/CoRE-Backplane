@@ -79,6 +79,18 @@ and
 [`opentelemetry` sink](https://vector.dev/docs/reference/configuration/sinks/opentelemetry/)
 documentation.
 
+The Vector chart runs a stateless Deployment without Kubernetes RBAC or a
+mounted service-account token. Its internal API supplies gRPC startup,
+readiness, and liveness checks on pod port `8686`; neither the chart Service nor
+the syslog LoadBalancer exposes that port. Site-specific PureLB annotations and
+listener mappings are configured under `vector.syslogService`.
+
+Vector 0.57 disables configuration-file environment interpolation by default.
+This deployment explicitly opts back in because the ApplicationSet injects the
+non-secret `VECTOR_OTLP_LOGS_ENDPOINT` into the sink URI. Do not use that opt-in
+for credentials or other untrusted values; see the upstream
+[Vector 0.57 upgrade guide](https://vector.dev/highlights/2026-07-14-0-57-0-upgrade-guide/).
+
 The main StatefulSet no longer opens syslog port 1514 or the legacy Vector Loki
 API port 9999. Vector owns device/Talos ingestion and uses OTLP exclusively.
 Gateway self-metrics are collected through the chart ServiceMonitor rather

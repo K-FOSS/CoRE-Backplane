@@ -1,40 +1,15 @@
-{{ if .Values.vector.enabled }}
+{{- if .Values.vector.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
   name: '{{ include "alloy.fullname" $.Subcharts.alloy }}-syslog'
-
   annotations:
-    purelb.io/allow-shared-ip: syslog.dc1.mylogin.space
-    purelb.io/allow-local: 'true'
-    purelb.io/addresses: '10.1.1.14'
-    argocd.argoproj.io/sync-wave: '0'
-
+    {{- toYaml .Values.vector.syslogService.annotations | nindent 4 }}
 spec:
   ports:
-    - name: syslog-udp
-      port: 514
-      protocol: UDP
-      targetPort: 1514
-
-    - name: syslog-tcp
-      port: 514
-      protocol: TCP
-      targetPort: 1514
-
-    - name: talos-kernel
-      port: 6050
-      protocol: UDP
-      targetPort: 6050
-
-    - name: talos-service
-      port: 6051
-      protocol: UDP
-      targetPort: 6051
-
+    {{- toYaml .Values.vector.syslogService.ports | nindent 4 }}
   selector:
     {{- include "vector.selectorLabels" $.Subcharts.vector | nindent 4 }}
-
   externalTrafficPolicy: Local
   internalTrafficPolicy: Cluster
   sessionAffinity: None
