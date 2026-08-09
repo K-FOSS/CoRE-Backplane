@@ -57,6 +57,19 @@ It uses the maintained
 pinned by version and multi-architecture digest, an unprivileged listener, a
 read-only root filesystem, and a size-limited `/tmp` `emptyDir`.
 
+Before a Home1 query leaves the bridge Pod, a pinned
+[`prom-label-proxy` instance](https://github.com/prometheus-community/prom-label-proxy)
+parses the request and enforces `cluster=<cluster.name>`. The value comes from
+the ApplicationSet's cluster identity, not from caller-controlled parameters.
+Label APIs are enabled so discovery
+requests are scoped along with PromQL queries, and a request containing a
+conflicting matcher fails instead of silently replacing its scope. NGINX
+forwards to the loopback-only filter listener before it contacts
+`core-mimir-global`. NGINX removes Mimir's `/prometheus` prefix so the filter
+recognizes the Prometheus API path, and the filter restores that
+prefix in its upstream URL. Disabling `mimirBridge.queryFilter` restores direct
+bridge forwarding.
+
 The chart itself has neutral defaults for Service naming and annotations,
 object-storage endpoints, tenant/rule identity, Gateway routes, and JWT policy.
 The ApplicationSet owns the production Cilium, DNS, Gateway,

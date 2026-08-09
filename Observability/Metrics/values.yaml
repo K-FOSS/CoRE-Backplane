@@ -90,6 +90,21 @@ mimirBridge:
     service: core-mimir-global
     port: 8080
 
+  queryFilter:
+    enabled: true
+    image:
+      repository: quay.io/prometheuscommunity/prom-label-proxy
+      tag: v0.13.0
+      digest: sha256:11ccecc8f08d0ff8f978ada9de7f3a31518c9bb0ce8e15e6cf97dd5251b84f59
+      pullPolicy: IfNotPresent
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
   resources:
     requests:
       cpu: 10m

@@ -200,6 +200,42 @@ controllers:
               - ALL
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+      {{- if .Values.mimirBridge.queryFilter.enabled }}
+      cluster-query-filter:
+        image:
+          repository: {{ .Values.mimirBridge.queryFilter.image.repository }}
+          tag: '{{ .Values.mimirBridge.queryFilter.image.tag }}@{{ .Values.mimirBridge.queryFilter.image.digest }}'
+          pullPolicy: {{ .Values.mimirBridge.queryFilter.image.pullPolicy }}
+        args:
+          - -enable-label-apis
+          - -error-on-replace
+          - -insecure-listen-address=127.0.0.1:8081
+          - -label=cluster
+          - -label-value={{ required "cluster.name is required when the Mimir bridge query filter is enabled" .Values.cluster.name }}
+          - -upstream=http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }}/prometheus
+        ports:
+          - name: filter-cluster
+            containerPort: 8081
+            protocol: TCP
+        probes:
+          liveness:
+            enabled: true
+            type: TCP
+            port: filter-cluster
+          readiness:
+            enabled: true
+            type: TCP
+            port: filter-cluster
+        resources:
+          {{- toYaml .Values.mimirBridge.queryFilter.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+      {{- end }}
   {{- end }}
 
 service:
@@ -478,6 +514,12 @@ configMaps:
             }
 
             location / {
+                {{- if .Values.mimirBridge.queryFilter.enabled }}
+                # prom-label-proxy recognizes the unprefixed Prometheus API.
+                # The final filter restores Mimir's /prometheus prefix through
+                # its upstream URL.
+                rewrite ^/prometheus/?(.*)$ /$1 break;
+                {{- end }}
                 proxy_http_version 1.1;
                 proxy_connect_timeout 5s;
                 proxy_send_timeout 300s;
@@ -486,7 +528,11 @@ configMaps:
                 proxy_set_header Authorization '';
                 proxy_set_header X-Scope-OrgID $http_x_scope_orgid;
                 proxy_set_header Host {{ .Values.mimirBridge.upstream.service }};
+                {{- if .Values.mimirBridge.queryFilter.enabled }}
+                proxy_pass http://127.0.0.1:8081;
+                {{- else }}
                 proxy_pass http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }};
+                {{- end }}
             }
         }
   {{- end }}
