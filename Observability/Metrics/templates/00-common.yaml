@@ -235,6 +235,10 @@ controllers:
               - ALL
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+          # The image declares USER nobody. Kubernetes cannot prove that a
+          # named user is non-root, so preserve that identity numerically.
+          runAsGroup: 65534
+          runAsUser: 65534
       {{- end }}
   {{- end }}
 
