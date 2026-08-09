@@ -1,6 +1,20 @@
 slo:
   enabled: false
 
+cdn:
+  name: idle
+  url: idle.snd.fyi
+  externalSecret:
+    secretStoreRef:
+      kind: ClusterSecretStore
+      name: mainvault-core
+    accessKey:
+      key: Storage/CDN/S3
+      property: AccessKey
+    secretKey:
+      key: Storage/CDN/S3
+      property: SecretKey
+
 idle:
   # Default values for s3-proxy.
   # This is a YAML-formatted file.
@@ -220,13 +234,6 @@ idle:
     minAvailable: 1
     maxUnavailable:
 
-  deploymentStrategy:
-    {}
-    # type: RollingUpdate
-    # rollingUpdate:
-    #   maxSurge: 1
-    #   maxUnavailable: 0
-
   podSecurityContext:
     fsGroup: 1000
 
@@ -241,24 +248,3 @@ idle:
     secrets: /proxy/secret-files
     customTemplates: /proxy/custom-templates
 
-  # This can be used to declare extra volumes.
-  extraVolumes:
-    []
-    # - name: test
-    #   emptyDir: {}
-
-  # This is for extra mounts in the s3-proxy containers only.
-  # Sidecars or init containers have their own declarations.
-  extraVolumesMounts:
-    []
-    # - name: test
-    #   mountPath: "/test"
-
-  # Init containers declarations.
-  initContainers: []
-
-  # Scheduler name
-  schedulerName: ""
-
-  # Priority class name.
-  priorityClassName: ""

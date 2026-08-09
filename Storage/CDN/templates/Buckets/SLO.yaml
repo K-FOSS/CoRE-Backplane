@@ -7,13 +7,13 @@
 apiVersion: sloth.slok.dev/v1
 kind: PrometheusServiceLevel
 metadata:
-  name: cdn-static
+  name: cdn-{{ required "cdn.name is required" .Values.cdn.name }}
 
 spec:
-  service: cdn-static
+  service: cdn-{{ .Values.cdn.name }}
   labels:
     owner: core
-    repo: cdn-static
+    repo: cdn-{{ .Values.cdn.name }}
     tier: '2'
   slos:
     - name: "requests-availability"
@@ -21,8 +21,8 @@ spec:
       description: "Common SLO based on availability for HTTP request responses."
       sli:
         events:
-          errorQuery: sum(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name="httproute/core-prod/cdn-static/rule/0",envoy_response_code_class=~"4|5"}[{{`{{.window}}`}}]))
-          totalQuery: sum(rate(envoy_cluster_upstream_rq_total{ envoy_cluster_name="httproute/core-prod/cdn-static/rule/0"}[{{`{{.window}}`}}]))
+          errorQuery: sum(rate(envoy_cluster_upstream_rq_xx{envoy_cluster_name="httproute/core-prod/cdn-{{ .Values.cdn.name }}/rule/0",envoy_response_code_class=~"4|5"}[{{`{{.window}}`}}]))
+          totalQuery: sum(rate(envoy_cluster_upstream_rq_total{ envoy_cluster_name="httproute/core-prod/cdn-{{ .Values.cdn.name }}/rule/0"}[{{`{{.window}}`}}]))
       alerting:
         name: MyServiceHighErrorRate
         labels:
