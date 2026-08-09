@@ -10,8 +10,9 @@ selected cluster.
 
 The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metrics.yaml)
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
-site identity. YXL enables the monolithic implementation; Home1 enables only
-the Mimir bridge described below. Three YXL Mimir replicas receive Prometheus
+site identity. YXL enables the monolithic implementation, and both sites
+enable the Mimir bridge described below. Three YXL Mimir replicas receive
+Prometheus
 remote write, keep WAL/head working data in memory-backed `emptyDir`, and ship
 blocks to site-local S3. The YXL rendering also creates the S3 `User`,
 HTTPRoute, and Envoy SecurityPolicy.
@@ -25,15 +26,18 @@ available during credential rotation. The target cluster must run Reloader;
 the operations configuration ApplicationSet provides it on both selected
 Talos production clusters.
 
-Production renders both Service roles through the bjw-s common library.
-`core-mimir` is the stable site-local client Service: it selects Mimir Pods in
-YXL and the bridge Pods in Home1. `core-mimir-global` is a [Cilium global service with
+Production renders the global-query and bridge Service roles through the
+bjw-s common library. `core-mimir` is the primary Mimir Service and a
+[Cilium global service with
 EndpointSlice synchronization](https://docs.cilium.io/en/stable/network/clustermesh/global-services/#synchronizing-kubernetes-endpointslice)
 configured by the ApplicationSet. YXL exports the local Mimir backends with
 local affinity and sharing enabled. Home1 declares the same global Service
 identity with remote affinity and sharing disabled. Its common-chart Service
 has a deliberately non-matching selector, so only Cilium-synchronized remote
-EndpointSlices back it and the bridge cannot proxy recursively to itself.
+EndpointSlices back it. The YXL HTTPRoute also uses this Service as its direct
+backend. `core-mimir-proxy` selects the bridge Pods on both
+sites, and each bridge sends filtered requests to `core-mimir`; using a
+separate bridge Service prevents a proxy loop.
 Cilium correlates global Services by namespace and name, while Lovely may
 derive a different Helm release name for each generated Argo CD Application.
 The memberlist gossip Service remains YXL-local and is not part of ClusterMesh.
@@ -41,14 +45,14 @@ This depends on Cluster Mesh connectivity and
 `clustermesh.enableEndpointSliceSynchronization`, which the Network Base
 deployment enables.
 
-Home1 also renders a two-replica `core-mimir-proxy` Deployment and the local
-`core-mimir` ClusterIP Service, along with the NGINX ConfigMap, through
-the bjw-s common library. This preserves Headlamp's KubeVirt plugin endpoint at
-`/api/v1/namespaces/core-prod/services/core-mimir:8080/proxy/prometheus`.
+Both sites also render a two-replica `core-mimir-proxy` Deployment and matching
+ClusterIP Service, along with the NGINX ConfigMap, through
+the bjw-s common library. Headlamp's KubeVirt plugin endpoint is
+`/api/v1/namespaces/core-prod/services/core-mimir-proxy:8080/proxy/prometheus`.
 The Kubernetes API server proxies to a locally visible proxy Pod; the proxy
 then uses [NGINX `proxy_pass` without a URI](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass)
 to forward the complete path and query string to the namespace-local
-`http://core-mimir-global:8080` Service reference. No Kubernetes
+`http://core-mimir:8080` global Service reference. No Kubernetes
 cluster-domain suffix is generated. The proxy forwards `X-Scope-OrgID`,
 removes the incoming `Authorization` header, and serves `/healthz` locally
 without contacting YXL.
@@ -65,7 +69,7 @@ Label APIs are enabled so discovery
 requests are scoped along with PromQL queries, and a request containing a
 conflicting matcher fails instead of silently replacing its scope. NGINX
 forwards to the loopback-only filter listener before it contacts
-`core-mimir-global`. NGINX removes Mimir's `/prometheus` prefix so the filter
+`core-mimir`. NGINX removes Mimir's `/prometheus` prefix so the filter
 recognizes the Prometheus API path, and the filter restores that
 prefix in its upstream URL. Disabling `mimirBridge.queryFilter` restores direct
 bridge forwarding.
@@ -105,15 +109,16 @@ metric sources.
 
 Verify distributor accepted/rejected samples, active series, ingester WAL/head
 size, block upload duration, compactor deletion markers, S3 throughput, and an
-end-to-end query in Grafana. In YXL, verify `core-mimir-global` selects the
-Mimir Pods and is exported by Cilium. In Home1, verify its backends are remote,
-both proxy Pods are ready, `/healthz` remains available during a YXL outage,
-and the unchanged Headlamp endpoint returns a Mimir query response with the
+end-to-end query in Grafana. In YXL, verify `core-mimir` selects the Mimir Pods
+and is exported by Cilium. In Home1, verify its backends are remote. On both
+sites, verify both proxy Pods are ready, `/healthz` remains available during a
+YXL outage,
+and the Headlamp endpoint returns a Mimir query response with the
 expected tenant. Also confirm proxy logs do not expose credentials. After
 rotating each YXL S3 Secret, verify that Mimir rolls one pod at a time, all
 replacement pods become ready, and block uploads and queries continue without
 authentication errors. Render both site profiles before merging. Roll back
-through Git/Argo CD. Disabling the bridge removes the local `core-mimir`
+through Git/Argo CD. Disabling the bridge removes the local `core-mimir-proxy`
 Service and breaks the Headlamp endpoint; removing the global-service
 annotations stops new remote backend synchronization. Increasing retention
 does not restore blocks already deleted, and lowering rate limits creates

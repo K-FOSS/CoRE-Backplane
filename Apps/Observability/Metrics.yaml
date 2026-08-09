@@ -113,14 +113,9 @@ spec:
                   enabled: {{ .values.mimirEnabled }}
                   tenant: core
                   service:
-                    # Keep the direct backend distinct from the bridge and
-                    # the global query Service.
-                    name: core-mimir-backend
-                  globalService:
                     # Cilium correlates global Services by namespace and name.
                     # YXL selects local Mimir Pods; Home1 intentionally has no
                     # local backends and consumes synchronized EndpointSlices.
-                    enabled: true
                     name: core-mimir
                     annotations:
                       service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'

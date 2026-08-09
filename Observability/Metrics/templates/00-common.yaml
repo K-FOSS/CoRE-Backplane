@@ -243,13 +243,12 @@ controllers:
   {{- end }}
 
 service:
-  {{- if .Values.mimir.enabled }}
   mimir:
     # -- Enables or disables the service
     enabled: true
 
     # -- Configure which controller this service should target
-    controller: mimir
+    controller: {{ ternary "mimir" "mimir-bridge" .Values.mimir.enabled }}
 
     # -- Make this the primary service for this controller (used in probes, notes, etc...).
     # If there is more than 1 service targeting the controller, make sure that only 1 service is
@@ -275,7 +274,15 @@ service:
     labels: {}
 
     # -- Allow adding additional match labels
+    {{- if not .Values.mimir.enabled }}
+    # The common chart requires a controller-backed selector. This extra label
+    # intentionally matches no bridge Pod, leaving Cilium's synchronized
+    # remote EndpointSlices as the only backends and preventing a proxy loop.
+    extraSelectorLabels:
+      app.kubernetes.io/global-service-backend: remote
+    {{- else }}
     extraSelectorLabels: {}
+    {{- end }}
 
     ports:
       http:
@@ -296,6 +303,7 @@ service:
         # -- Specify the appProtocol value for the Service.
         appProtocol:
 
+  {{- if .Values.mimir.enabled }}
   mimir-gossip:
     # -- Enables or disables the service
     enabled: true
@@ -374,31 +382,6 @@ service:
         protocol: TCP
         targetPort: http
 
-  {{- end }}
-
-  {{- if .Values.mimir.globalService.enabled }}
-  mimir-global:
-    enabled: true
-    controller: {{ ternary "mimir" "mimir-bridge" .Values.mimir.enabled }}
-    primary: false
-    forceRename: {{ required "mimir.globalService.name is required when the global service is enabled" .Values.mimir.globalService.name | quote }}
-    type: ClusterIP
-    {{- if not .Values.mimir.enabled }}
-    # The common chart requires a controller-backed selector. This extra label
-    # intentionally matches no bridge Pod, leaving Cilium's synchronized
-    # remote EndpointSlices as the only backends and preventing a proxy loop.
-    extraSelectorLabels:
-      app.kubernetes.io/global-service-backend: remote
-    {{- end }}
-    annotations:
-      {{- toYaml .Values.mimir.globalService.annotations | nindent 6 }}
-    ports:
-      http:
-        enabled: true
-        primary: false
-        port: 8080
-        protocol: TCP
-        targetPort: http
   {{- end }}
 
 configMaps:
