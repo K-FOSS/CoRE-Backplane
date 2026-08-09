@@ -83,6 +83,10 @@ spec:
 
                 hub: {{ .values.hub }}
 
+                readReplica:
+                  enabled: {{ .values.hub }}
+                  host: psql-int-rep.core-dc1-talos-prod.dc1.yxl.mylogin.space
+
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
@@ -115,28 +119,17 @@ spec:
                     # established Authentik certificate name is "tls".
                     volumeMounts:
                       - name: tls-certs
-                        mountPath: /certs
+                        {{ if eq .values.clusterName "core-dc1-talos-prod" }}
+                        mountPath: /certs/tls
+                        {{ else }}
+                        mountPath: '/certs/{{ .values.clusterName }}'
+                        {{ end }}
                         readOnly: true
 
                     volumes:
                       - name: tls-certs
-                        projected:
-                          sources:
-                            - secret:
-                                name: myloginspace-default-certificates
-                                items:
-                                  - key: tls.crt
-                                    {{ if eq .values.clusterName "core-dc1-talos-prod" }}
-                                    path: tls/tls.crt
-                                    {{ else }}
-                                    path: '{{ .values.clusterName }}/tls.crt'
-                                    {{ end }}
-                                  - key: tls.key
-                                    {{ if eq .values.clusterName "core-dc1-talos-prod" }}
-                                    path: tls/tls.key
-                                    {{ else }}
-                                    path: '{{ .values.clusterName }}/tls.key'
-                                    {{ end }}
+                        secret:
+                          secretName: myloginspace-default-certificates
 
       destination:
         server: '{{ .server }}'

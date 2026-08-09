@@ -207,6 +207,16 @@ Before syncing, inspect:
 - which cluster is the only hub;
 - every Secret producer, target name, store, and Vault property;
 - PostgreSQL hostname and database credentials;
+- the optional PostgreSQL read replica used by the YXL hub instance, following
+  Authentik's [PostgreSQL read-replica configuration](https://docs.goauthentik.io/install-config/configuration/#read-replicas);
+
+Adding or removing the read replica requires restarting the Authentik server
+and worker pods. Verify the rendered replica host and the
+`aaa-authentik-read-replica` ConfigMap before reconciliation, then confirm read
+traffic reaches the replica while writes continue to use the primary. Replica
+database credentials come directly from the existing
+`aaa-authentik-database` Secret; the ConfigMap contains only the non-secret
+replica hostname.
 - Authentik server/worker images, replicas, PDB, probes, and resources;
 - enabled outpost Deployments, matching Secrets and Services;
 - Route parent references, peer endpoints, timeouts, and policy targets;
