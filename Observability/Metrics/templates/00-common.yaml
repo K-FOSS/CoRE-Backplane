@@ -288,11 +288,11 @@ configMaps:
         no_auth_tenant: core
 
         limits:
-          max_global_series_per_user: 5000000
-          ingestion_rate: 500000
-          ingestion_burst_size: 1550000
-          out_of_order_time_window: 24h
-          compactor_blocks_retention_period: 24h
+          max_global_series_per_user: {{ int .Values.mimir.limits.maxGlobalSeriesPerUser }}
+          ingestion_rate: {{ int .Values.mimir.limits.ingestionRate }}
+          ingestion_burst_size: {{ int .Values.mimir.limits.ingestionBurstSize }}
+          out_of_order_time_window: {{ .Values.mimir.limits.outOfOrderTimeWindow }}
+          compactor_blocks_retention_period: {{ .Values.mimir.limits.compactorBlocksRetentionPeriod }}
 
         # Configure Mimir to use Minio as object storage backend.
         common:
@@ -320,7 +320,7 @@ configMaps:
             block_sync_concurrency: 8
           tsdb:
             dir: /data/ingester
-            ship_concurrency: 20
+            ship_concurrency: {{ int .Values.mimir.blocksStorage.shipConcurrency }}
 
         querier:
           max_concurrent: 32
