@@ -25,13 +25,15 @@ available during credential rotation. The target cluster must run Reloader;
 the operations configuration ApplicationSet provides it on both selected
 Talos production clusters.
 
-Production marks `core-mimir-global` as a [Cilium global service with
+Production renders both Service roles through the bjw-s common library.
+`core-mimir` is the stable site-local client Service: it selects Mimir Pods in
+YXL and the bridge Pods in Home1. `core-mimir-global` is a [Cilium global service with
 EndpointSlice synchronization](https://docs.cilium.io/en/stable/network/clustermesh/global-services/#synchronizing-kubernetes-endpointslice)
-in the ApplicationSet. YXL exports the local Mimir backends with local affinity
-and sharing enabled through the Mimir controller's bjw-s common-library
-Service. Home1 declares the same Service identity with remote affinity and
-sharing disabled through a standalone Service because it has no local Mimir
-controller or matching pods.
+configured by the ApplicationSet. YXL exports the local Mimir backends with
+local affinity and sharing enabled. Home1 declares the same global Service
+identity with remote affinity and sharing disabled. Its common-chart Service
+has a deliberately non-matching selector, so only Cilium-synchronized remote
+EndpointSlices back it and the bridge cannot proxy recursively to itself.
 Cilium correlates global Services by namespace and name, while Lovely may
 derive a different Helm release name for each generated Argo CD Application.
 The memberlist gossip Service remains YXL-local and is not part of ClusterMesh.
@@ -39,8 +41,8 @@ This depends on Cluster Mesh connectivity and
 `clustermesh.enableEndpointSliceSynchronization`, which the Network Base
 deployment enables.
 
-Home1 also renders a two-replica `core-mimir-proxy` Deployment and local
-ClusterIP Service named `core-mimir`, along with the NGINX ConfigMap, through
+Home1 also renders a two-replica `core-mimir-proxy` Deployment and the local
+`core-mimir` ClusterIP Service, along with the NGINX ConfigMap, through
 the bjw-s common library. This preserves Headlamp's KubeVirt plugin endpoint at
 `/api/v1/namespaces/core-prod/services/core-mimir:8080/proxy/prometheus`.
 The Kubernetes API server proxies to a locally visible proxy Pod; the proxy

@@ -113,20 +113,14 @@ spec:
                   enabled: {{ .values.mimirEnabled }}
                   tenant: core
                   service:
-                    # The YXL workload-backed Service is rendered by the common
-                    # chart and exported to ClusterMesh under this stable name.
-                    name: core-mimir-global
-                    annotations:
-                      service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
-                      service.cilium.io/global: 'true'
-                      service.cilium.io/global-sync-endpoint-slices: 'true'
-                      service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
+                    # Site-local clients use the same stable Service name in
+                    # Mimir and bridge clusters.
+                    name: core-mimir
                   globalService:
-                    # Home1 has no Mimir controller, so its remote-only peer is
-                    # rendered separately from the common chart Service.
-                    enabled: {{ .values.mimirBridgeEnabled }}
-                    # Cilium correlates global Services by namespace and name,
-                    # so this must be identical in every target cluster.
+                    # Cilium correlates global Services by namespace and name.
+                    # YXL selects local Mimir Pods; Home1 intentionally has no
+                    # local backends and consumes synchronized EndpointSlices.
+                    enabled: true
                     name: core-mimir-global
                     annotations:
                       service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
