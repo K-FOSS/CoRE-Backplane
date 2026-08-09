@@ -2,29 +2,29 @@
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
-  name: core-mimir-sso
+  name: {{ required "oidc.resourceName is required when OIDC is enabled" .Values.oidc.resourceName }}
 
 spec:
   providerConfigRef:
-    name: authentik
+    name: {{ required "oidc.providerConfigRef is required when OIDC is enabled" .Values.oidc.providerConfigRef }}
 
   writeConnectionSecretToRef:
     namespace: {{ .Release.Namespace }}
-    name: core-mimir-sso
+    name: {{ .Values.oidc.resourceName }}
 
   forProvider:
     source: Inline
     module: |
       data "authentik_flow" "default-authorization-flow" {
-        slug = "default-provider-authorization-explicit-consent"
+        slug = {{ required "oidc.authorizationFlowSlug is required when OIDC is enabled" .Values.oidc.authorizationFlowSlug | quote }}
       }
 
       data "authentik_flow" "default-provider-invalidation-flow" {
-        slug = "default-provider-invalidation-flow"
+        slug = {{ required "oidc.invalidationFlowSlug is required when OIDC is enabled" .Values.oidc.invalidationFlowSlug | quote }}
       }
 
       data "authentik_property_mapping_provider_scope" "scope" {
-        name = "Metrics"
+        name = {{ required "oidc.scopeMappingName is required when OIDC is enabled" .Values.oidc.scopeMappingName | quote }}
       }      
 
       data "authentik_property_mapping_provider_scope" "scopes" {
@@ -36,11 +36,11 @@ spec:
       }
 
       data "authentik_user" "akadmin" {
-        username = "kjones"
+        username = {{ required "oidc.bootstrapUsername is required when OIDC is enabled" .Values.oidc.bootstrapUsername | quote }}
       }
 
       data "authentik_certificate_key_pair" "cert" {
-        name = "tls"
+        name = {{ required "oidc.signingCertificateName is required when OIDC is enabled" .Values.oidc.signingCertificateName | quote }}
       }
 
       resource "random_password" "client-secret" {
@@ -52,14 +52,14 @@ spec:
       }
 
       resource "authentik_provider_oauth2" "auth-provider" {
-        name          = "Mimir Testing"
-        client_id     = "mimir-test"
+        name          = {{ required "oidc.providerName is required when OIDC is enabled" .Values.oidc.providerName | quote }}
+        client_id     = {{ required "oidc.clientId is required when OIDC is enabled" .Values.oidc.clientId | quote }}
         client_secret = random_password.client-secret.result
         signing_key = data.authentik_certificate_key_pair.cert.id
         allowed_redirect_uris = [
           {
             matching_mode = "regex",
-            url           = "https://metrics.mylogin.space/.*",
+            url           = {{ required "oidc.redirectUriRegex is required when OIDC is enabled" .Values.oidc.redirectUriRegex | quote }},
           },
         ]
 
@@ -69,14 +69,14 @@ spec:
       }
 
       resource "authentik_application" "application" {
-        name              = "mimir-test"
-        slug              = "mimir-test"
+        name              = {{ required "oidc.applicationName is required when OIDC is enabled" .Values.oidc.applicationName | quote }}
+        slug              = {{ required "oidc.applicationSlug is required when OIDC is enabled" .Values.oidc.applicationSlug | quote }}
         protocol_provider = authentik_provider_oauth2.auth-provider.id
         meta_launch_url   = "blank://blank"
       }
 
       output "client_id" {
-        value     = "mimir-test"
+        value     = {{ .Values.oidc.clientId | quote }}
         sensitive = true
       }
 

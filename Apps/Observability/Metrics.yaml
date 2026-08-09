@@ -101,6 +101,19 @@ spec:
 
                 mimir:
                   enabled: true
+                  tenant: core
+                  service:
+                    # Cilium correlates global Services by namespace and name,
+                    # so this must be identical in every target cluster.
+                    name: core-mimir
+                    annotations:
+                      service.cilium.io/global: 'true'
+                      service.cilium.io/global-sync-endpoint-slices: 'true'
+                  storage:
+                    s3Endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443
+                  rules:
+                    configMapName: prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles
+                    tenant: core
                   {{- if eq .values.region "yxl" }}
                   limits:
                     ingestionRate: {{ .values.mimirIngestionRate }}
@@ -109,6 +122,56 @@ spec:
                   blocksStorage:
                     shipConcurrency: {{ .values.mimirShipConcurrency }}
                   {{- end }}
+
+                gateway:
+                  enabled: true
+                  routeName: core-mimir
+                  labels:
+                    wan-mode: public
+                    lan-mode: private
+                  parentRefs:
+                    - group: gateway.networking.k8s.io
+                      kind: Gateway
+                      namespace: core-prod
+                      name: main-gw
+                  hostnames:
+                    - metrics.mylogin.space
+
+                securityPolicy:
+                  enabled: true
+                  jwt:
+                    optional: false
+                    providers:
+                      - name: grafana
+                        issuer: https://idp.mylogin.space/application/o/grafana-test/
+                        remoteJWKS:
+                          cacheDuration: 3600s
+                          uri: https://idp.mylogin.space/application/o/grafana-test/jwks/
+                        claimToHeaders:
+                          - header: x-scope-orgid
+                            claim: orgID
+                        extractFrom:
+                          cookies:
+                            - core-token
+                      - name: mimir
+                        issuer: https://idp.mylogin.space/application/o/mimir-test/
+                        remoteJWKS:
+                          cacheDuration: 3600s
+                          uri: https://idp.mylogin.space/application/o/mimir-test/jwks/
+                        claimToHeaders:
+                          - header: x-scope-orgid
+                            claim: orgID
+                        extractFrom:
+                          headers:
+                            - name: Authorization
+                              valuePrefix: 'Bearer '
+                          cookies:
+                            - session_access_token
+                          params:
+                            - token
+
+                s3User:
+                  enabled: true
                 {{ else if eq .values.mode "Distributed" }}
                 mimir-distributed:
                   enabled: true

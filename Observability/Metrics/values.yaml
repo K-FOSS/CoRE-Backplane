@@ -2,17 +2,43 @@ cluster:
   name: k8s
   domain: cluster.local
 
-datacenter: dc1
-region: yxl
+datacenter: ''
+region: ''
 
 global: {}
 
 oidc:
   enabled: false
+  resourceName: ''
+  providerConfigRef: ''
+  secretStoreRef: ''
+  remoteKey: ''
+  authorizationFlowSlug: ''
+  invalidationFlowSlug: ''
+  scopeMappingName: ''
+  bootstrapUsername: ''
+  signingCertificateName: ''
+  providerName: ''
+  clientId: ''
+  redirectUriRegex: ''
+  applicationName: ''
+  applicationSlug: ''
 
 mimir:
   enabled: false
   replicas: 3
+  tenant: anonymous
+
+  service:
+    name: ''
+    annotations: {}
+
+  storage:
+    s3Endpoint: ''
+
+  rules:
+    configMapName: ''
+    tenant: anonymous
 
   limits:
     maxGlobalSeriesPerUser: 5000000
@@ -44,6 +70,20 @@ mimir:
     sizeLimit: 512Mi
 
   nodeSelector: {}
+
+gateway:
+  enabled: false
+  routeName: mimir
+  labels: {}
+  parentRefs: []
+  hostnames: []
+
+securityPolicy:
+  enabled: false
+  jwt: {}
+
+s3User:
+  enabled: false
 
 # No selected cluster currently uses the distributed dependency. Keep its
 # condition explicit without copying thousands of upstream default values.

@@ -1,22 +1,20 @@
-{{- if (index .Values "mimir-distributed" "enabled") }}
+{{- if and (index .Values "mimir-distributed" "enabled") .Values.gateway.enabled }}
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
-  name:  core-mimir
+  name: {{ .Values.gateway.routeName }}
 
+  {{- with .Values.gateway.labels }}
   labels:
-    wan-mode: 'public'
-    lan-mode: 'private'
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 
 spec:
   parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      namespace: core-prod
-      name: main-gw
+    {{- toYaml .Values.gateway.parentRefs | nindent 4 }}
 
   hostnames:
-    - metrics.mylogin.space
+    {{- toYaml .Values.gateway.hostnames | nindent 4 }}
   rules:
     {{ $chart := index $.Subcharts "mimir-distributed" }}
     {{ $values := index .Values "mimir-distributed" }}

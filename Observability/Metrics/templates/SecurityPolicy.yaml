@@ -1,47 +1,17 @@
+{{- if .Values.securityPolicy.enabled }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: core-mimir
+  name: {{ .Values.gateway.routeName }}
 
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: core-mimir
+    name: {{ .Values.gateway.routeName }}
 
   jwt:
-    optional: false
-    providers:
-      - name: grafana
-        issuer: https://idp.mylogin.space/application/o/grafana-test/
-        remoteJWKS:
-          cacheDuration: 3600s
-          uri: https://idp.mylogin.space/application/o/grafana-test/jwks/
-        claimToHeaders:
-          - header: x-scope-orgid
-            claim: orgID
-
-        extractFrom:
-          cookies:
-            - core-token
-
-      - name: mimir
-        issuer: https://idp.mylogin.space/application/o/mimir-test/
-        remoteJWKS:
-          cacheDuration: 3600s
-          uri: https://idp.mylogin.space/application/o/mimir-test/jwks/
-        claimToHeaders:
-          - header: x-scope-orgid
-            claim: orgID
-
-        extractFrom:
-          headers:
-            - name: Authorization
-              valuePrefix: 'Bearer '
-          cookies:
-            - session_access_token
-          params:
-            - token
+    {{- toYaml .Values.securityPolicy.jwt | nindent 4 }}
 
 
 
@@ -85,3 +55,4 @@ spec:
   #             - name: groups
   #               valueType: StringArray
   #               values: ["Metrics"]
+{{- end }}

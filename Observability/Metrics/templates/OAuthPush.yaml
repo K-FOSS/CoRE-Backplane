@@ -2,28 +2,28 @@
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
 metadata:
-  name: core-mimir-sso
+  name: {{ required "oidc.resourceName is required when OIDC is enabled" .Values.oidc.resourceName }}
 
 spec:
   refreshInterval: 6h
   secretStoreRefs:
     - kind: ClusterSecretStore
-      name: mainvault-core
+      name: {{ required "oidc.secretStoreRef is required when OIDC is enabled" .Values.oidc.secretStoreRef }}
 
   selector:
     secret:
-      name: core-mimir-sso
+      name: {{ .Values.oidc.resourceName }}
 
   data:
     - match:
         secretKey: client_id
         remoteRef:
-          remoteKey: Mimir/OAuth
+          remoteKey: {{ required "oidc.remoteKey is required when OIDC is enabled" .Values.oidc.remoteKey }}
           property: ClientID
 
     - match:
         secretKey: client-secret
         remoteRef:
-          remoteKey: Mimir/OAuth
+          remoteKey: {{ .Values.oidc.remoteKey }}
           property: ClientSecret
 {{- end }}
