@@ -13,7 +13,7 @@ region: yxl
 
 oauth:
   indexKey: headlamp
-  scopes: 'openid profile email offline_access'
+  scopes: 'openid,profile,email,offline_access'
   groups:
     - Server Admins
   authentik:
@@ -69,6 +69,9 @@ headlamp:
       volumeMounts:
         - name: headlamp-plugins
           mountPath: /build/plugins
+      securityContext:
+        runAsUser: 100
+        runAsGroup: 101
 
     - name: install-kubevirt-plugin
       image: ghcr.io/buttahtoast/headlamp-plugins/kubevirt:v0.0.1-beta7
