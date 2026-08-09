@@ -501,11 +501,13 @@ configMaps:
             }
 
             location / {
+                # Expose the Prometheus API at the bridge root. Continue to
+                # accept the old /prometheus prefix without sending Mimir a
+                # duplicated /prometheus/prometheus path.
                 {{- if .Values.mimirBridge.queryFilter.enabled }}
-                # prom-label-proxy recognizes the unprefixed Prometheus API.
-                # The final filter restores Mimir's /prometheus prefix through
-                # its upstream URL.
                 rewrite ^/prometheus/?(.*)$ /$1 break;
+                {{- else }}
+                rewrite ^/prometheus/?(.*)$ /$1;
                 {{- end }}
                 proxy_http_version 1.1;
                 proxy_connect_timeout 5s;
@@ -516,8 +518,12 @@ configMaps:
                 proxy_set_header X-Scope-OrgID $http_x_scope_orgid;
                 proxy_set_header Host {{ .Values.mimirBridge.upstream.service }};
                 {{- if .Values.mimirBridge.queryFilter.enabled }}
+                # prom-label-proxy receives the unprefixed API path and adds
+                # /prometheus through its configured upstream URL.
                 proxy_pass http://127.0.0.1:8081;
                 {{- else }}
+                # Without the filter, add Mimir's prefix before forwarding.
+                rewrite ^/(.*)$ /prometheus/$1 break;
                 proxy_pass http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }};
                 {{- end }}
             }

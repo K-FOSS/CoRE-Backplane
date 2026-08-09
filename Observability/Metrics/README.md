@@ -48,11 +48,14 @@ deployment enables.
 Both sites also render a two-replica `core-mimir-proxy` Deployment and matching
 ClusterIP Service, along with the NGINX ConfigMap, through
 the bjw-s common library. Headlamp's KubeVirt plugin endpoint is
-`/api/v1/namespaces/core-prod/services/core-mimir-proxy:8080/proxy/prometheus`.
+`/api/v1/namespaces/core-prod/services/core-mimir-proxy:8080/proxy/`.
 The Kubernetes API server proxies to a locally visible proxy Pod; the proxy
 then uses [NGINX `proxy_pass` without a URI](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass)
-to forward the complete path and query string to the namespace-local
-`http://core-mimir:8080` global Service reference. No Kubernetes
+to map the bridge-root Prometheus API to Mimir's `/prometheus` prefix on the
+namespace-local `http://core-mimir:8080` global Service reference. For example,
+bridge `/api/v1/query` becomes Mimir `/prometheus/api/v1/query`, and bridge `/`
+becomes Mimir `/prometheus/`. The legacy bridge `/prometheus/...` form remains
+accepted during migration. No Kubernetes
 cluster-domain suffix is generated. The proxy forwards `X-Scope-OrgID`,
 removes the incoming `Authorization` header, and serves `/healthz` locally
 without contacting YXL.
@@ -68,11 +71,10 @@ the ApplicationSet's cluster identity, not from caller-controlled parameters.
 Label APIs are enabled so discovery
 requests are scoped along with PromQL queries, and a request containing a
 conflicting matcher fails instead of silently replacing its scope. NGINX
-forwards to the loopback-only filter listener before it contacts
-`core-mimir`. NGINX removes Mimir's `/prometheus` prefix so the filter
-recognizes the Prometheus API path, and the filter restores that
-prefix in its upstream URL. Disabling `mimirBridge.queryFilter` restores direct
-bridge forwarding.
+forwards the unprefixed path to the loopback-only filter listener before it
+contacts `core-mimir`; the filter adds Mimir's `/prometheus` prefix through its
+upstream URL. When `mimirBridge.queryFilter` is disabled, NGINX adds the same
+prefix before forwarding directly.
 
 The chart itself has neutral defaults for Service naming and annotations,
 object-storage endpoints, tenant/rule identity, Gateway routes, and JWT policy.
