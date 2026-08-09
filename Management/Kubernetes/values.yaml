@@ -81,12 +81,14 @@ headlamp:
         runAsUser: 100
         runAsGroup: 101
 
-    - name: install-kubevirt-plugin
-      image: ghcr.io/buttahtoast/headlamp-plugins/kubevirt:v0.0.1-beta7
-      command: ["/bin/sh", "-c", "cp -r /plugins/* /headlamp/plugins/"]
+    - name: headlamp-kubevirt
+      image: ghcr.io/naval-group/headlamp-kubevirt:latest
+      command: ['/bin/sh', '-c']
+      args:
+        - 'cp -r /plugins/kubevirt /headlamp-plugins/'
       volumeMounts:
         - name: headlamp-plugins
-          mountPath: /headlamp/plugins
+          mountPath: /headlamp-plugins
       securityContext:
         runAsUser: 100
         runAsGroup: 101
