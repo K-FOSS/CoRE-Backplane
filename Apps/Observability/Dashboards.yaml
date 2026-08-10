@@ -79,21 +79,10 @@ spec:
                 grafana:
                   replicas: {{ .values.grafanaReplicas }}
 
-                  envValueFrom:
-                    DRAGONFLY_PASSWORD:
-                      secretKeyRef:
-                        name: 'dragonfly-core-password'
-                        key: 'password'
+                  env:
+                    DRAGONFLY_ADDRESS: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379
 
                   grafana.ini:
-                    live:
-                      ha_engine_address: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379
-                      ha_engine_password: '$__env{DRAGONFLY_PASSWORD}'
-
-                    remote_cache:
-                      type: 'redis'
-                      connstr: 'addr=dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379,pool_size=100,db=132,password=$__env{DRAGONFLY_PASSWORD},ssl=true'
-
                     tracing.opentelemetry.otlp:
                       address: {{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4317
                       propagation: w3c

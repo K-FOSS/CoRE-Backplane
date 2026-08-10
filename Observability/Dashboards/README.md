@@ -31,8 +31,14 @@ cluster-specific Grafana settings into [`values.yaml`](values.yaml):
 - Grafana Live and Grafana's remote cache use the site's shared `dragonfly-core`
   Redis-compatible service. The remote cache uses TLS.
 - Grafana reads the Dragonfly password from the existing
-  `dragonfly-core-password` Secret and Reloader restarts the Deployment when
-  that Secret changes.
+  `dragonfly-core-password` Secret. The chart keeps Grafana's `$__env`
+  expansion expressions outside the ApplicationSet plugin environment so Argo
+  CD does not interpolate them during manifest generation. The ApplicationSet
+  injects only the cluster-specific `DRAGONFLY_ADDRESS`, and Reloader restarts
+  the Deployment when the password Secret changes. The ApplicationSet adds the
+  Reloader annotation with a post-render Kustomize patch targeted only at
+  `Deployment/grafana-core`; the annotation is not copied to pods, ConfigMaps,
+  RBAC, or other resources.
 - Grafana exports OpenTelemetry traces to the cluster-local Alloy service.
 - LDAP mounts the existing `grafana-core-ldap` Secret.
 
@@ -90,10 +96,12 @@ describes the current Argo CD deployment.
 
 Grafana reads its administrator username, password, and PostgreSQL URL from
 `core-grafana-creds`. It reads its OIDC client ID and client secret from
-`grafana-core-authentik`. The ApplicationSet also exposes the `password` key
-from `dragonfly-core-password` as `DRAGONFLY_PASSWORD`; Grafana expands that
-environment variable in its Live and remote-cache configuration. Secret values
-are created or synchronized by controllers and are never stored in Git.
+`grafana-core-authentik`. The chart exposes the `password` key from
+`dragonfly-core-password` as `DRAGONFLY_PASSWORD`; the ApplicationSet supplies
+the non-secret, cluster-specific Dragonfly endpoint as `DRAGONFLY_ADDRESS`.
+Grafana expands both environment variables in its Live and remote-cache
+configuration. Secret values are created or synchronized by controllers and
+are never stored in Git.
 
 Requests first pass through the HTTPRoute and SecurityPolicy. Envoy Gateway
 uses Authentik for OIDC, validates JWTs, and forwards selected identity claims
@@ -157,13 +165,7 @@ helm template dashboards . \
   --namespace core-prod \
   --set hub=false \
   --set grafana.replicas=2 \
-  --set-string 'grafana.annotations.secret\.reloader\.stakater\.com/reload=dragonfly-core-password' \
-  --set-string 'grafana.envValueFrom.DRAGONFLY_PASSWORD.secretKeyRef.name=dragonfly-core-password' \
-  --set-string 'grafana.envValueFrom.DRAGONFLY_PASSWORD.secretKeyRef.key=password' \
-  --set-string 'grafana.grafana\.ini.live.ha_engine_address=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
-  --set-string 'grafana.grafana\.ini.live.ha_engine_password=$__env{DRAGONFLY_PASSWORD}' \
-  --set-string 'grafana.grafana\.ini.remote_cache.type=redis' \
-  --set-string 'grafana.grafana\.ini.remote_cache.connstr=addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379\,pool_size=100\,db=132\,password=$__env{DRAGONFLY_PASSWORD}\,ssl=true' \
+  --set-string 'grafana.env.DRAGONFLY_ADDRESS=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
   --set-string 'grafana.grafana\.ini.tracing\.opentelemetry\.otlp.address=core-home1-talos-prod-collectors-alloy.core-prod.svc.cluster.local:4317' \
   --set-string 'grafana.grafana\.ini.tracing\.opentelemetry\.otlp.propagation=w3c' \
   --set grafana.ldap.enabled=true \

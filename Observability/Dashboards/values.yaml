@@ -22,6 +22,10 @@ grafana:
     passwordKey: 'password'
 
   envValueFrom:
+    DRAGONFLY_PASSWORD:
+      secretKeyRef:
+        name: 'dragonfly-core-password'
+        key: 'password'
     GF_DATABASE_URL:
       secretKeyRef:
         name: 'core-grafana-creds'
@@ -41,7 +45,11 @@ grafana:
   grafana.ini:
     live:
       ha_engine: 'redis'
-      ha_engine_address: 'redis.mylogin.space:6379'
+      ha_engine_address: '$__env{DRAGONFLY_ADDRESS}'
+      ha_engine_password: '$__env{DRAGONFLY_PASSWORD}'
+    remote_cache:
+      type: 'redis'
+      connstr: 'addr=$__env{DRAGONFLY_ADDRESS},pool_size=100,db=132,password=$__env{DRAGONFLY_PASSWORD},ssl=true'
     database:
       type: 'postgres'
     server:
