@@ -17,6 +17,18 @@ names. The existing `idle` site retains the legacy Application name to avoid
 replacing its Argo CD ownership record; additional sites also include their
 site name in the Application name.
 
+Each proxy mounts its bucket at `/`. The `/**` resource glob applies Basic
+authentication and permits `GET` requests for objects at every path depth;
+in `s3-proxy` resource globs, `*` matches only one path segment. When a requested
+folder contains `index.html`, the proxy serves that object as the folder index.
+
+The proxy Service is a Cilium global service shared by both target clusters.
+Its [Cilium service affinity](https://docs.cilium.io/en/stable/network/clustermesh/affinity/)
+is `local`, so each cluster sends traffic only to its healthy local proxy
+endpoints while any are available, then fails over to healthy endpoints from
+the other cluster. EndpointSlice synchronization remains enabled because the
+Gateway implementation consumes the Service through Kubernetes discovery.
+
 The SLO is rendered only when `slo.enabled` is `true`; it is enabled for
 `core-home1-talos-prod` and disabled for `core-dc1-talos-prod`. The dependency
 alias remains `idle`, while `fullnameOverride` gives each rendered proxy a
@@ -36,7 +48,14 @@ metrics. Never expose a private bucket merely by adding an HTTP route.
 
 After reconciliation, verify every generated Application, ExternalSecret and
 proxy deployment, then request each configured URL and confirm that the
-expected bucket is served. `preserveResourcesOnDeletion` remains enabled, so
+expected bucket is served. In each cluster, inspect the Cilium service with
+`cilium-dbg service list --clustermesh-affinity` and confirm that local backends
+are preferred and remote backends remain active. Test failover by removing all
+local proxy endpoints in one cluster through a controlled Git/Argo CD change,
+confirming requests continue through the remote cluster, and restoring the
+local replicas. Do not test by disrupting ClusterMesh itself, because an
+unreachable remote cluster can leave last-known remote backends cached.
+`preserveResourcesOnDeletion` remains enabled, so
 removing a cluster or site from the matrix removes its generated Application
 but deliberately leaves previously managed Kubernetes resources behind; delete
 those resources separately only after confirming they are no longer needed.
