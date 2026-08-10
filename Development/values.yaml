@@ -1,5 +1,7 @@
 hub: false
 
+
+# Cluster identity used by local routes, service DNS, and identity resources.
 domain: writemy.codes
 
 cluster:
@@ -12,138 +14,50 @@ gateway:
   sectionName: https-myloginspace
 
 datacenter: dc1
-
 region: yxl
 
 
+# Artifact Hub is disabled by every current fleet override. These values remain
+# as the complete intentional configuration for a future enabled deployment.
 artifact-hub:
   enabled: true
-
-  # Artifact Hub Chart default configuration values
-
-  # Enable dynamic resource name prefix
-  #
-  # Enabling the dynamic resource name prefix ensures that the resources are named dynamically based on the Helm
-  # installation's name. This allows multiple installations of this chart in a single Kubernetes namespace. The prefix
-  # can be defined by using the `fullnameOverride`.
   dynamicResourceNamePrefixEnabled: true
-
-  # Overwrites the installation's fullname generation (used for the dynamic resource name prefix)
   fullnameOverride: artifacthub-prod
 
-  # Enable restricted HTTP client
-  #
-  # Artifact Hub makes external HTTP requests for several purposes, like getting repositories metadata, dispatching
-  # webhooks, etc. When this option is enabled, requests to the private network space as well as to some other special
-  # addresses won't be allowed.
-  restrictedHTTPClient: false
-
-  # Logging configuration
   log:
-    # Log level
-    # Options: "trace", "debug", "info", "warn", "error", "fatal", "panic"
     level: panic
-    # Enable pretty logging
-    pretty: false
 
-  # Database configuration
   db:
-    host: 'psql-int.mylogin.space'
-    port: '5432'
+    host: psql-int.mylogin.space
     database: <path:CORE0_SITE1/data/ArtifactHub/Database#Database>
     user: <path:CORE0_SITE1/data/ArtifactHub/Database#Username>
     password: <path:CORE0_SITE1/data/ArtifactHub/Database#Password>
-    sslmode: prefer
 
-  # Email configuration
   email:
-    # From name used in emails
-    fromName: ""
-    # From address used in emails. This field is required if you want to enable email sending in Artifact Hub
     from: bots@mail.mylogin.space
-    # Reply-to address used in emails
     replyTo: bots@mail.mylogin.space
-    # SMTP server configuration
-    smtp:
-      # Authentication mechanism
-      # Options: "login", "plain"
-      auth: plain
-      # SMTP host. This field is required if you want to enable email sending in Artifact Hub
-      host: mail.mylogin.space
-      # SMTP port. This field is required if you want to enable email sending in Artifact Hub
-      port: 587
-      username: ""
-      password: ""
 
-  # Credentials
+    smtp:
+      host: mail.mylogin.space
+
   creds:
-    # Docker registry username
     dockerUsername: <path:CORE0_SITE1/data/ArtifactHub/Docker#Username>
-    # Docker registry password
     dockerPassword: <path:CORE0_SITE1/data/ArtifactHub/Docker#Password>
 
-  # Images configuration
-  images:
-    # Images store
-    # Options: "pg"
-    store: pg
-
-  # Events configuration
   events:
-    # Enable repository scanning errors events
-    scanningErrors: false
-    # Enable repository tracking errors events
     trackingErrors: true
 
-  # Database migrator configuration
   dbMigrator:
-    job:
-      image:
-        # Database migrator image repository (without the tag)
-        repository: artifacthub/db-migrator
-
-      # Limits the lifetime of the job after it has finished execution
-      ttlSecondsAfterFinished: null
-      securityContext: {}
-      resources: {}
-      # If you do want to specify resources, uncomment the following
-      # lines and adjust them as necessary.
-      #   limits:
-      #     cpu: 100m
-      #     memory: 128Mi
-      #   requests:
-      #     cpu: 100m
-      #     memory: 128Mi
-    # Load demo user and sample repositories
     loadSampleData: false
-    # Directory path where the configuration files should be mounted
-    configDir: "/home/db-migrator/.cfg"
 
-  # Hub configuration
   hub:
     ingress:
       enabled: false
 
     service:
       type: ClusterIP
-      port: 80
 
-    # Service account for Artifact Hub to use
-    serviceAccount:
-      # Enable creation of ServiceAccount for Artifact Hub pod
-      create: true
-
-      # Allows auto mount of ServiceAccountToken on the serviceAccount created
-      automountServiceAccountToken: true
-
-    
-
-    # Create and bind role for service account
-    rbac:
-      # Enable creation and binding of role
-      create: true
     deploy:
-      readinessGates: []
       livenessProbe:
         httpGet:
           path: /api/v1/packages/stats
@@ -151,10 +65,7 @@ artifact-hub:
         initialDelaySeconds: 60
         periodSeconds: 30
       replicaCount: 2
-      image:
-        # Hub image repository (without the tag)
-        repository: artifacthub/hub
-      securityContext: {}
+
       resources:
         requests:
           cpu: 15m
@@ -163,237 +74,35 @@ artifact-hub:
           cpu: 15m
           memory: 127M
 
-      initContainers:
-        checkDbMigrator:
-          image:
-            repository: bitnamilegacy/kubectl
-            # tag: 1.21
-          resources: {}
-          # If you do want to specify resources, uncomment the following
-          # lines and adjust them as necessary.
-          #   limits:
-          #     cpu: 100m
-          #     memory: 128Mi
-          #   requests:
-          #     cpu: 100m
-          #     memory: 128Mi
-        checkDbIsReady:
-          resources: {}
-          # If you do want to specify resources, uncomment the following
-          # lines and adjust them as necessary.
-          #   limits:
-          #     cpu: 100m
-          #     memory: 128Mi
-          #   requests:
-          #     cpu: 100m
-          #     memory: 128Mi
-      # Optionally specify extra list of additional labels for the hub deployment
-      extraDeploymentLabels: {}
-      # Optionally specify extra list of additional labels for hub pods
-      extraPodLabels: {}
-      # Optionally specify extra list of additional volumes for the hub deployment
-      extraVolumes: []
-      # Optionally specify extra list of additional volume mounts for the hub deployment
-      extraVolumeMounts: []
     server:
-      # Allow adding private repositories to the Hub
       allowPrivateRepositories: true
-
-      # Allow new Users to Sign Up
-      allowUserSignUp: true
-
-      # Cache directory path. If set, the cache directory for the Helm client will be explicitly set (otherwise
-      # defaults to $HOME/.cache), and the directory will be mounted as ephemeral volume (emptyDir)
-      cacheDir: ""
-
-      # Directory path where the configuration files should be mounted
-      configDir: "/home/hub/.cfg"
-
-      # Banners configuration file url
-      bannersURL: ""
-
-      # Hub server base url
-      baseURL: 'https://artifacthub.int.mylogin.space'
-
-      # Hub server shutdown timeout
-      shutdownTimeout: 10s
-
-      # Message of the day. The message of the day will be displayed in a banner on the top of the Artifact Hub UI
-      motd: ""
-
-      # Message of the day severity. The color used for the banner will be based on the severity selected
-      # Options: "info", "warning", "error"
-      motdSeverity: info
-
-      basicAuth:
-        # Enable Hub basic auth
-        enabled: false
-        # Hub basic auth username
-        username: hub
-        # Hub basic auth password
-        password: changeme
-      cookie:
-        # Hub cookie hash key
-        hashKey: default-unsafe-key
-
-        # Enable Hub secure cookies
-        secure: false
-
-      csrf:
-        # CSRF authentication key
-        authKey: default-unsafe-key
-        # CSRF secure cookie
-        secure: false
+      baseURL: https://artifacthub.int.mylogin.space
 
       oauth:
-        github:
-          # Enable GitHub OAuth
-          enabled: false
-
-        google:
-          # Enable Google oauth
-          enabled: false
-
         oidc:
-          # Enable OIDC
           enabled: true
-
-          # OpenID connect issuer url
           issuerURL: https://idp.mylogin.space/application/o/k0s-dc1/
-
-          # OpenID connect oauth client id
           clientID: <path:CORE0_SITE1/data/ArtifactHub/OIDC#ClientID>
-
-          # OpenID connect oauth client secret
           clientSecret: <path:CORE0_SITE1/data/ArtifactHub/OIDC#ClientSecret>
-
-          # OpenID connect oauth redirect url
           redirectURL: https://artifacthub.int.mylogin.space/oauth/oidc/callback
-
-          # OpenID connect oauth scopes
-          scopes:
-            - openid
-            - profile
-            - email
-
-          # Skip email verified check
           skipEmailVerifiedCheck: true
 
-      # X-Forwarded-For IP index
-      xffIndex: 0
-
-    analytics:
-      # Google Analytics tracking id
-      gaTrackingID: ""
-
-  # Scanner configuration
   scanner:
     enabled: false
-    cronjob:
-      image:
-        # Scanner image repository (without the tag)
-        repository: artifacthub/scanner
-      securityContext: {}
-      resources: {}
-      # If you do want to specify resources, uncomment the following
-      # lines and adjust them as necessary.
-      #   limits:
-      #     cpu: 100m
-      #     memory: 128Mi
-      #   requests:
-      #     cpu: 100m
-      #     memory: 128Mi
-      # Optionally specify extra list of additional labels for the scanner cronjob
-      extraCronJobLabels: {}
-      # Optionally specify extra list of additional labels for the jobs spawned by the scanner cronjob
-      extraJobLabels: {}
-      # Optionally specify extra list of additional volumes for the scanner cronjob
-      extraVolumes: []
-      # Optionally specify extra list of additional volume mounts for the scanner cronjob
-      extraVolumeMounts: []
-    # Number of snapshots to process concurrently
-    concurrency: 3
-    # Trivy server url. Defaults to the Trivy service's internal URL
-    trivyURL: ""
-    # Cache directory path. If set, the cache directory for the Trivy client will be explicitly set (otherwise defaults
-    # to $HOME/.cache), and the directory will be mounted as ephemeral volume (emptyDir)
-    cacheDir: ""
-    # Directory path where the configuration files should be mounted
-    configDir: "/home/scanner/.cfg"
 
-  # Tracker configuration
   tracker:
-    cronjob:
-      image:
-        # Tracker image repository (without the tag)
-        repository: artifacthub/tracker
-      securityContext: {}
-      resources: {}
-      # If you do want to specify resources, uncomment the following
-      # lines and adjust them as necessary.
-      #   limits:
-      #     cpu: 100m
-      #     memory: 128Mi
-      #   requests:
-      #     cpu: 100m
-      #     memory: 128Mi
-      # Optionally specify extra list of additional labels for the tracker cronjob
-      extraCronJobLabels: {}
-      # Optionally specify extra list of additional labels for the Jobs spawned by the tracker cronjob
-      extraJobLabels: {}
-      # Optionally specify extra list of additional volumes for the tracker cronjob
-      extraVolumes: []
-      # Optionally specify extra list of additional volume mounts for the tracker cronjob
-      extraVolumeMounts: []
-    # Cache directory path. If set, the cache directory for the Helm client will be explicitly set (otherwise defaults
-    # to $HOME/.cache), and the directory will be mounted as ephemeral volume (emptyDir)
-    cacheDir: ""
-    # Directory path where the configuration files should be mounted
-    configDir: "/home/tracker/.cfg"
-    # Number of repositories to process concurrently
     concurrency: 1
-    # Maximum duration for the tracking of a single repository
     repositoryTimeout: 12h
-    # Repositories names to process ([] = all)
-    repositoriesNames: []
-    # Repositories kinds to process ([] = all)
-    repositoriesKinds: []
-    # Bypass digest check. Use this option to force already indexed packages to be reprocessed (use with caution)
-    bypassDigestCheck: false
 
-  # Trivy configuration
   trivy:
     enabled: false
+
     deploy:
       image: aquasec/trivy:0.43.1
-      securityContext: {}
-      resources: {}
-      # If you do want to specify resources, uncomment the following
-      # lines and adjust them as necessary.
-      #   limits:
-      #     cpu: 100m
-      #     memory: 128Mi
-      #   requests:
-      #     cpu: 100m
-      #     memory: 128Mi
-      # Optionally specify extra list of additional labels for the trivy deployment
-      extraDeploymentLabels: {}
-      # Optionally specify extra list of additional labels for trivy pods
-      extraPodLabels: {}
-      # Optionally specify extra list of additional volumes for the trivy deployment
-      extraVolumes: []
-      # Optionally specify extra list of additional volume mounts for the trivy deployment
-      extraVolumeMounts: []
-    persistence:
-      enabled: false
-      size: 10Gi
 
-  # Values for postgresql chart dependency
   postgresql:
     enabled: false
-    image:
-      repository: artifacthub/postgres
-      tag: latest
+
     persistence:
       mountPath: /data
     postgresqlUsername: postgres
@@ -401,58 +110,39 @@ artifact-hub:
     postgresqlDatabase: hub
     postgresqlDataDir: /data/pgdata
 
-  # Extra objects to deploy (value evaluated as a template)
-  extraDeploy: []
 
+# GitLab uses platform PostgreSQL, cache, object storage, LDAP, OIDC, and mail.
+# Only values that differ from gitlab 9.5.1 defaults are kept below.
 gitlab:
   enabled: true
 
-  ## The global properties are used to configure multiple charts at once.
-  ## https://docs.gitlab.com/charts/charts/globals
   global:
-    priorityClassName: 'system-cluster-critical'
+    priorityClassName: system-cluster-critical
 
-    ## Supplemental Pod labels. Will not be used for selectors.
     pod:
       labels:
         logs: loki-myloginspace
-
-    ## https://docs.gitlab.com/charts/installation/deployment#deploy-the-community-edition
     edition: ce
 
     monitoring:
       enabled: true
 
-    ## https://docs.gitlab.com/charts/charts/globals#application-resource
-    application:
-      create: false
-      links: []
-      allowClusterRoles: true
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-host-settings
     hosts:
       domain: git.writemy.codes
 
-      https: true
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-ingress-settings
     ingress:
       enabled: false
-
       configureCertmanager: false
 
-    ## https://docs.gitlab.com/charts/charts/globals#configure-postgresql-settings
     psql:
       host: psql-int.mylogin.space
+
       load_balancing:
         hosts:
           - psql.mylogin.space
           - psql-int-rep.mylogin.space
-
       database: gl-core
-
       username: gl-core
-
       keepalives: 1
       keepalivesIdle: 5
       keepalivesInterval: 3
@@ -461,42 +151,14 @@ gitlab:
       connectTimeout: 10
       preparedStatements: false
 
-
-
       password:
         useSecret: true
-
         secret: gitlab-user
         key: password
 
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-gitaly-settings
-    gitaly:
-      enabled: true
-      authToken: {}
-        # secret:
-        # key:
-      # serviceName:
-      internal:
-        names: [default]
-      external: []
-      service:
-        name: gitaly
-        type: ClusterIP
-        externalPort: 8075
-        internalPort: 8075
-        tls:
-          externalPort: 8076
-          internalPort: 8076
-      tls:
-        enabled: false
-        # secretName:
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-redis-settings
     redis:
       auth:
         enabled: false
-
       host: redis.mylogin.space
       database: 130
       port: 6379
@@ -504,92 +166,29 @@ gitlab:
     praefect:
       enabled: true
 
-      replaceInternalGitaly: true
-
-      authToken: {}
-
-      autoMigrate: true
-
       psql:
         host: psql.mylogin.space
         port: 5432
-
         dbName: gl-repos
-
         user: gl-praefect
 
       dbSecret:
         secret: gl-praefect-creds
         key: password
 
-      virtualStorages:
-        - name: default
-          gitalyReplicas: 3
-          maxUnavailable: 1
-
-
-
-      service:
-        type: ClusterIP
-
-        externalPort: 8075
-        internalPort: 8075
-
-        tls:
-          externalPort: 8076
-          internalPort: 8076
-
-      tls:
-        enabled: false
-        # secretName:
-
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-minio-settings
     minio:
       enabled: false
 
-    ## https://docs.gitlab.com/charts/charts/globals#configure-appconfig-settings
-    ## Rails based portions of this chart share many settings
     appConfig:
-      ## https://docs.gitlab.com/charts/charts/globals#general-application-settings
       enableUsagePing: false
-
-      enableSeatLink: true
-
       applicationSettingsCacheSeconds: 900
-
       defaultCanCreateGroup: true
 
-      usernameChangingEnabled: true
-
       defaultProjectsFeatures:
-        issues: true
-        mergeRequests: true
-        wiki: true
-        snippets: true
-        builds: true
         containerRegistry: false
 
-      webhookTimeout:
-
-      maxRequestDurationSeconds:
-
-      ## https://docs.gitlab.com/charts/charts/globals#cron-jobs-related-settings
-      cron_jobs: {}
-
-      ## https://docs.gitlab.com/charts/charts/globals#content-security-policy
-      contentSecurityPolicy:
-        enabled: false
-        report_only: true
-        # directives: {}
-
-
-      ## https://docs.gitlab.com/charts/charts/globals#lfs-artifacts-uploads-packages-external-mr-diffs-and-dependency-proxy
       object_store:
-        enabled: false
-
         proxy_download: false
-
         connection:
           key: connection
           secret: gitlab-s3-prod
@@ -607,211 +206,74 @@ gitlab:
       uploads:
         enabled: false
         proxy_download: false
-        bucket: gitlab-uploads
 
       packages:
         enabled: false
         proxy_download: false
-        bucket: gitlab-packages
 
       externalDiffs:
-        enabled: false
         proxy_download: false
         bucket: 4781a816-7416-d012-9a2a-6dbe65624e17-ykv7qk
 
       terraformState:
-        enabled: false
         proxy_download: false
         bucket: 29f1e5ee-1b9c-14da-cc79-6ebe911caa7b-p3e18b
 
       ciSecureFiles:
-        enabled: false
         proxy_download: false
-        bucket: gitlab-ci-secure-files
 
       dependencyProxy:
-        enabled: false
         proxy_download: false
         bucket: b5085eee-d81c-6a15-4a33-6a32a2c325d0-9ejn31
 
-      backups:
-        bucket: gitlab-backups
-        tmpBucket: tmp
-
-      ## https://docs.gitlab.com/charts/charts/globals#ldap
       ldap:
-        # prevent the use of LDAP for sign-in via web.
-        preventSignin: false
         servers:
           main:
             label: Authentik LDAP
-
             host: ldap.mylogin.space
             port: 636
-
             bind_dn: cn=gl-core,ou=users,dc=ldap,dc=mylogin,dc=space
-
             password:
               secret: gitlab-user
               key: password
-
             uid: cn
-
             base: ou=users,dc=ldap,dc=mylogin,dc=space
-
             group_base: ou=groups,dc=ldap,dc=mylogin,dc=space
-
             active_directory: false
             attributes:
               username: cn
-
               first_name: name
               last_name: lastname
-
               name: displayName
-
               email: mail
-
             encryption: simple_tls
 
-
-      ## https://docs.gitlab.com/charts/charts/globals#kas-settings
       gitlab_kas:
         enabled: true
         secret: gitlab-kas-prod
         key: kas_shared_secret
 
-      ## https://docs.gitlab.com/charts/charts/globals#omniauth
       omniauth:
         enabled: true
-        autoSignInWithProvider:
-        syncProfileAttributes: [uid]
-        blockAutoCreatedUsers: true
+        syncProfileAttributes:
+          - uid
         autoLinkLdapUser: true
-        autoLinkSamlUser: false
-        autoLinkUser: []
-        externalProviders: []
-        allowBypassTwoFactor: []
-
         allowSingleSignOn:
           - openid_connect
-
         providers:
           - secret: gitlab-oidc-prod
 
-      gitlab_docs:
-        enabled: false
-        host: ""
-
-
-    ## https://docs.gitlab.com/charts/advanced/geo/
-    geo:
-      enabled: false
-
-      registry:
-        replication:
-          enabled: false
-          primaryApiUrl:
-          ## Consumes global.registry.notificationSecret
-
-    ## https://docs.gitlab.com/charts/charts/gitlab/kas/
     kas:
       enabled: false
-      service:
-        apiExternalPort: 8153 # port for connections from the GitLab backend
 
-    ## https://docs.gitlab.com/charts/charts/globals#configure-gitlab-shell
     shell:
       authToken:
         key: shared_secret
         secret: gitlab-shell-prod
 
-      hostKeys: {}
-        # secret:
-      ## https://docs.gitlab.com/charts/charts/globals#tcp-proxy-protocol
-      tcp:
-        proxyProtocol: false
-
-    ## Rails application secrets
-    ## Secret created according to https://docs.gitlab.com/charts/installation/secrets#gitlab-rails-secret
-    ## If allowing shared-secrets generation, this is OPTIONAL.
-    railsSecrets: {}
-      # secret:
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-registry-settings
     registry:
-      bucket: registry
-
-      certificate: {}
-        # secret:
-      httpSecret: {}
-        # secret:
-        # key:
-      notificationSecret: {}
-        # secret:
-        # key:
-      tls:
-        enabled: false
-        # secretName:
-      redis:
-        cache:
-          password: {}
-      # https://docs.docker.com/registry/notifications/#configuration
-      notifications: {}
-        # endpoints:
-        #   - name: FooListener
-        #     url: https://foolistener.com/event
-        #     timeout: 500ms
-        #     threshold: 10
-        #     backoff: 1s
-        #     headers:
-        #       FooBar: ['1', '2']
-        #       Authorization:
-        #         secret: gitlab-registry-authorization-header
-        #       SpecificPassword:
-        #         secret: gitlab-registry-specific-password
-        #         key: password
-        # events: {}
-
-      # Settings utilized by other services referencing registry:
       enabled: false
-      host:
-      # port: 443
-      api:
-        protocol: http
-        serviceName: registry
-        port: 5000
-      tokenIssuer: gitlab-issuer
 
-    pages:
-      enabled: false
-      accessControl: false
-      https: # default true
-      externalHttp: []
-      externalHttps: []
-      artifactsServer: true
-      localStore:
-        enabled: false
-
-      objectStore:
-        enabled: true
-        bucket: gitlab-pages
-        # proxy_download: true
-
-        connection: {}
-          # secret:
-          # key:
-
-
-    ## GitLab Runner
-    ## Secret created according to https://docs.gitlab.com/charts/installation/secrets#gitlab-runner-secret
-    ## If allowing shared-secrets generation, this is OPTIONAL.
-    runner:
-      registrationToken: {}
-        # secret:
-
-    ## https://docs.gitlab.com/charts/charts/globals#outgoing-email
-    ## Outgoing email server settings
     smtp:
       enabled: true
       address: mail.mylogin.space
@@ -819,199 +281,87 @@ gitlab:
       tls: false
       from: gl-core@mail.mylogin.space
       user_name: gl-core
-      ## https://docs.gitlab.com/charts/installation/secrets#smtp-password
+
       password:
         secret: gitlab-user
-        key: password
       domain: mail.mylogin.space
-      authentication: 'login'
-      starttls_auto: false
-      openssl_verify_mode: "peer"
-      open_timeout: 30
-      read_timeout: 60
-      pool: false
+      authentication: login
 
-    ## https://docs.gitlab.com/charts/installation/deployment#outgoing-email
-    ## Email persona used in email sent by GitLab
     email:
       from: gl-core@mail.mylogin.space
-      display_name: GitLab
       reply_to: august@mylogin.space
-      subject_suffix: ""
-      smime:
-        enabled: false
-        secretName: ""
-        keyName: "tls.key"
-        certName: "tls.crt"
 
-
-    ## Timezone for containers.
-    time_zone: UTC
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-workhorse-settings
-    ## Global settings related to Workhorse
     workhorse:
-      ## https://docs.gitlab.com/charts/installation/secrets#gitlab-workhorse-secret
       secret: gitlab-workhorse-prod
       key: shared_secret
 
-      tls: {}
-        # enabled: true
-
-    ## https://docs.gitlab.com/charts/charts/globals#configure-webservice
     webservice:
-      workerTimeout: 60
       extraEnv:
         GITLAB_RAILS_RACK_TIMEOUT: '60'
         GITLAB_RAILS_WAIT_TIMEOUT: '90'
 
-    ## https://docs.gitlab.com/charts/charts/globals#custom-certificate-authorities
-    # configuration of certificates container & custom CA injection
-    certificates:
-      customCAs: []
-
-    gitlabBase:
-      image:
-        repository: registry.gitlab.com/gitlab-org/build/cng/gitlab-base
-        # Default tag is `global.gitlabVersion` or `master` if the former one is undefined.
-        # Charts using this image as init container support further overrides with `init.image.tag`.
-        # tag: master
-        # pullPolicy: IfNotPresent
-        # pullSecrets: []
-
-    ## https://docs.gitlab.com/charts/charts/globals#service-accounts
     serviceAccount:
       enabled: true
-      create: true
-
-    ## https://docs.gitlab.com/charts/charts/globals/#tracing
-    #tracing:
-      #connection:
-      #  string: opentracing://jaeger?http_endpoint=http%3A%2F%2Fdc1%2Dk3s%2Dnode1%2Dcollectors%2Dalloy%2Ecore%2Dprod%2Esvc%2Ecluster%2Elocal%3A14268%2Fapi%2Ftraces&sampler=const&sampler_param=0.1
-      #urlTemplate: ""
-
-    zoekt:
-      gateway:
-        basicAuth: {}
-      indexer:
-        internalApi: {}
-
-  upgradeCheck:
-    enabled: true
-
   installCertmanager: false
 
-  ## Installation & configuration of jetstack/cert-manager
-  ## See requirements.yaml for current version
   certmanager:
     installCRDs: false
-    nameOverride: certmanager
 
-
-  ## https://docs.gitlab.com/charts/charts/nginx/
-  ## https://docs.gitlab.com/charts/architecture/decisions#nginx-ingress
-  ## Installation & configuration of charts/ingress-nginx:
   nginx-ingress:
     enabled: false
 
-
-  ## Installation & configuration of stable/prometheus
-  ## See requirements.yaml for current version
   prometheus:
     install: false
-    rbac:
-      create: true
-    alertmanager:
-      enabled: false
+
     alertmanagerFiles:
       alertmanager.yml: {}
+
     kubeStateMetrics:
       enabled: false
+
     nodeExporter:
       enabled: false
+
     pushgateway:
       enabled: false
-    server:
-      retention: 15d
-      strategy:
-        type: Recreate
 
-  ## Configuration of Redis
-  ## https://docs.gitlab.com/charts/architecture/decisions#redis
-  ## https://docs.gitlab.com/charts/installation/deployment.html#redis
   redis:
     install: false
     existingSecret: gitlab-redis-secret
     existingSecretKey: redis-password
     usePasswordFile: true
-    cluster:
-      enabled: false
-    metrics:
-      enabled: true
 
-  ## Installation & configuration of stable/prostgresql
-  ## See requirements.yaml for current version
   postgresql:
     install: false
     postgresqlDatabase: gitlabhq_production
     usePasswordFile: true
     existingSecret: bogus
 
-    metrics:
-      enabled: true
-
-  ## Installation & configuration charts/registry
-  ## https://docs.gitlab.com/charts/architecture/decisions#registry
-  ## https://docs.gitlab.com/charts/charts/registry/
   registry:
     enabled: false
 
-  ## Automatic shared secret generation
-  ## https://docs.gitlab.com/charts/installation/secrets
-  ## https://docs.gitlab.com/charts/charts/shared-secrets.html
-  shared-secrets:
-    env: production
-
-    resources:
-      requests:
-        cpu: 50m
-
-    securityContext:
-      # in debian/alpine based images, this is `nobody:nogroup`
-      runAsUser: 65534
-      fsGroup: 65534
-    tolerations: []
-    podLabels: {}
-    annotations: {}
-
-  ## Installation & configuration of gitlab/gitlab-runner
-  ## See requirements.yaml for current version
   gitlab-runner:
     install: false
 
-    rbac:
-      create: true
-
     runners:
-      locked: false
-
       cache:
         secretName: gitlab-s3-runner
 
-  ## Settings for individual sub-charts under GitLab
-  ## Note: Many of these settings are configurable via globals
   gitlab:
     migrations:
+
       annotations:
-        "helm.sh/hook": "pre-install"
-        "helm.sh/hook-delete-policy": "before-hook-creation,hook-succeeded"
+        helm.sh/hook: pre-install
+        helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
 
     webservice:
       workerProcesses: 2
       replicaCount: 1
+
       hpa:
         minReplicas: 1
         maxReplicas: 3
+
       puma:
         threads:
           min: 4
@@ -1020,13 +370,14 @@ gitlab:
       resources:
         requests:
           cpu: '1'
-          memory: '4G'
+          memory: 4G
 
     praefect:
       replicas: 1
 
     gitlab-exporter:
       enabled: true
+
       metrics:
         enabled: true
         serviceMonitor:
@@ -1036,6 +387,7 @@ gitlab:
       concurrency: 10
       maxReplicas: 2
       minReplicas: 1
+
       resources:
         requests:
           cpu: 48m
@@ -1046,7 +398,6 @@ gitlab:
 
     gitlab-shell:
       enabled: false
-
       maxReplicas: 1
       minReplicas: 1
       replicaCount: 1
@@ -1059,38 +410,38 @@ gitlab:
           cpu: '1'
           memory: 256M
 
-
     toolbox:
       enabled: true
-      replicas: 1
+
       backups:
         cron:
           enabled: false
           concurrencyPolicy: Replace
           failedJobsHistoryLimit: 1
-          schedule: "0 1 * * *"
+          schedule: 0 1 * * *
           successfulJobsHistoryLimit: 3
           suspend: false
           backoffLimit: 6
-          restartPolicy: "OnFailure"
-          extraArgs: '--maximum-backups=15'
-
+          restartPolicy: OnFailure
+          extraArgs: --maximum-backups=15
           resources:
             requests:
               cpu: 50m
               memory: 350M
-
           persistence:
             enabled: false
-
         objectStorage:
           backend: s3
           config:
             secret: gitlab-s3-backups-prod
             key: config
 
+
 env: prod
 
+
+# Harbor uses platform PostgreSQL, cache, and S3. Fleet values replace the
+# database and object-storage endpoints per target cluster.
 harbor:
   enabled: true
 
@@ -1098,24 +449,9 @@ harbor:
     server: ldap.core-home1-talos-prod.home1.yvr.mylogin.space
 
   expose:
-    # Set how to expose the service. Set the type as "ingress", "clusterIP", "nodePort" or "loadBalancer"
-    # and fill the information in the corresponding section
     type: clusterIP
-    tls:
-      # Enable TLS or not.
-      # Delete the "ssl-redirect" annotations in "expose.ingress.annotations" when TLS is disabled and "expose.type" is "ingress"
-      # Note: if the "expose.type" is "ingress" and TLS is disabled,
-      # the port must be included in the command when pulling/pushing images.
-      # Refer to https://github.com/goharbor/harbor/issues/5291 for details.
-      enabled: true
 
-      # The source of the tls certificate. Set as "auto", "secret"
-      # or "none" and fill the information in the corresponding section
-      # 1) auto: generate the tls certificate automatically
-      # 2) secret: read the tls certificate from the specified secret.
-      # The tls certificate can be generated manually or by cert manager
-      # 3) none: configure no tls certificate for the ingress. If the default
-      # tls certificate is configured in the ingress controller, choose this option
+    tls:
       certSource: secret
 
       secret:
@@ -1124,914 +460,118 @@ harbor:
     ingress:
       hosts:
         core: registry.writemy.codes
-
-      # set to the type of ingress controller if it has specific requirements.
-      # leave as `default` for most ingress controllers.
-      # set to `gce` if using the GCE ingress controller
-      # set to `ncp` if using the NCP (NSX-T Container Plugin) ingress controller
-      # set to `alb` if using the ALB ingress controller
-      # set to `f5-bigip` if using the F5 BIG-IP ingress controller
-      controller: default
-
-      # ingress-specific labels
-      labels: {}
-
-    clusterIP:
-      # The name of ClusterIP service
-      name: harbor
-      # The ip address of the ClusterIP service (leave empty for acquiring dynamic ip)
-      staticClusterIP: ""
-      ports:
-        # The service port Harbor listens on when serving HTTP
-        httpPort: 80
-        # The service port Harbor listens on when serving HTTPS
-        httpsPort: 443
-
-
-  # The external URL for Harbor core service. It is used to
-  # 1) populate the docker/helm commands showed on portal
-  # 2) populate the token service URL returned to docker client
-  #
-  # Format: protocol://domain[:port]. Usually:
-  # 1) if "expose.type" is "ingress", the "domain" should be
-  # the value of "expose.ingress.hosts.core"
-  # 2) if "expose.type" is "clusterIP", the "domain" should be
-  # the value of "expose.clusterIP.name"
-  # 3) if "expose.type" is "nodePort", the "domain" should be
-  # the IP address of k8s node
-  #
-  # If Harbor is deployed behind the proxy, set it as the URL of proxy
   externalURL: https://registry.writemy.codes
 
-  # The persistence is enabled by default and a default StorageClass
-  # is needed in the k8s cluster to provision volumes dynamically.
-  # Specify another StorageClass in the "storageClass" or set "existingClaim"
-  # if you already have existing persistent volumes to use
-  #
-  # For storing images and charts, you can also use "azure", "gcs", "s3",
-  # "swift" or "oss". Set it in the "imageChartStorage" section
   persistence:
     enabled: false
-    # Setting it to "keep" to avoid removing PVCs during a helm delete
-    # operation. Leaving it empty will delete PVCs after the chart deleted
-    # (this does not apply for PVCs that are created for internal database
-    # and redis components, i.e. they are never deleted automatically)
-    resourcePolicy: "keep"
 
-    # Define which storage backend is used for registry to store
-    # images and charts. Refer to
-    # https://github.com/distribution/distribution/blob/release/2.8/docs/configuration.md#storage
-    # for the detail.
     imageChartStorage:
-      # Specify whether to disable `redirect` for images and chart storage, for
-      # backends which not supported it (such as using minio for `s3` storage type), please disable
-      # it. To disable redirects, simply set `disableredirect` to `true` instead.
-      # Refer to
-      # https://github.com/distribution/distribution/blob/release/2.8/docs/configuration.md#redirect
-      # for the detail.
-      disableredirect: false
-      # Specify the "caBundleSecretName" if the storage service uses a self-signed certificate.
-      # The secret must contain keys named "ca.crt" which will be injected into the trust store
-      # of registry's containers.
-      # caBundleSecretName:
-
-      # Specify the type of storage: "filesystem", "azure", "gcs", "s3", "swift",
-      # "oss" and fill the information needed in the corresponding section. The type
-      # must be "filesystem" if you want to use persistent volumes for registry
       type: s3
 
       s3:
-        # Set an existing secret for S3 accesskey and secretkey
-        # keys in the secret should be REGISTRY_STORAGE_S3_ACCESSKEY and REGISTRY_STORAGE_S3_SECRETKEY for registry
         existingSecret: harbor-core-s3
         region: us-east-1
         bucket: harbor-core
         regionendpoint: https://s3.mylogin.space
-
-  # The initial password of Harbor admin. Change it from portal after launching Harbor
-  # or give an existing secret for it
-  # key in secret is given via (default to HARBOR_ADMIN_PASSWORD)
   existingSecretAdminPassword: harbor-user
   existingSecretAdminPasswordKey: password
-
-  # The internal TLS used for harbor components secure communicating. In order to enable https
-  # in each component tls cert files need to provided in advance.
-  internalTLS:
-    # If internal TLS enabled
-    enabled: false
-    # enable strong ssl ciphers (default: false)
-    strong_ssl_ciphers: false
-    # There are three ways to provide tls
-    # 1) "auto" will generate cert automatically
-    # 2) "manual" need provide cert file manually in following value
-    # 3) "secret" internal certificates from secret
-    certSource: "auto"
-
-  ipFamily:
-    # ipv6Enabled set to true if ipv6 is enabled in cluster, currently it affected the nginx related component
-    ipv6:
-      enabled: true
-    # ipv4Enabled set to true if ipv4 is enabled in cluster, currently it affected the nginx related component
-    ipv4:
-      enabled: true
-
-  imagePullPolicy: IfNotPresent
-
-  # Use this set to assign a list of 
-
-  # The update strategy for deployments with persistent volumes(jobservice, registry): "RollingUpdate" or "Recreate"
-  # Set it as "Recreate" when "RWM" for volumes isn't supported
-  updateStrategy:
-    type: RollingUpdate
-
-  # debug, info, warning, error or fatal
-  logLevel: info
-
-  # The name of the secret which contains key named "ca.crt". Setting this enables the
-  # download link on portal to download the CA certificate when the certificate isn't
-  # generated automatically
-  caSecretName: ""
-
-  # If using existingSecretSecretKey, the key must be secretKey
   existingSecretSecretKey: harbor-core
 
-  # The proxy settings for updating trivy vulnerabilities from the Internet and replicating
-  # artifacts from/to the registries that cannot be reached directly
-  proxy:
-    httpProxy:
-    httpsProxy:
-    noProxy: 127.0.0.1,localhost,.local,.internal
-    components:
-      - core
-      - jobservice
-      - trivy
-
-  # Run the migration job via helm hook
-  enableMigrateHelmHook: false
-
-  # The custom ca bundle secret, the secret must contain key named "ca.crt"
-  # which will be injected into the trust store for core, jobservice, registry, trivy components
-  # caBundleSecretName: ""
-
-  ## UAA Authentication Options
-  # If you're using UAA for authentication behind a self-signed
-  # certificate you will need to provide the CA Cert.
-  # Set uaaSecretName below to provide a pre-created secret that
-  # contains a base64 encoded CA Certificate named `ca.crt`.
-  # uaaSecretName:
-
-  metrics:
-    enabled: false
-    core:
-      path: /metrics
-      port: 8001
-    registry:
-      path: /metrics
-      port: 8001
-    jobservice:
-      path: /metrics
-      port: 8001
-    exporter:
-      path: /metrics
-      port: 8001
-    ## Create prometheus serviceMonitor to scrape harbor metrics.
-    ## This requires the monitoring.coreos.com/v1 CRD. Please see
-    ## https://github.com/prometheus-operator/prometheus-operator/blob/main/Documentation/user-guides/getting-started.md
-    ##
-    serviceMonitor:
-      enabled: false
-      additionalLabels: {}
-      # Scrape interval. If not set, the Prometheus default scrape interval is used.
-      interval: ""
-      # Metric relabel configs to apply to samples before ingestion.
-      metricRelabelings:
-        []
-        # - action: keep
-      #   regex: 'kube_(daemonset|deployment|pod|namespace|node|statefulset).+'
-      #   sourceLabels: [__name__]
-      # Relabel configs to apply to samples before ingestion.
-      relabelings:
-        []
-        # - sourceLabels: [__meta_kubernetes_pod_node_name]
-        #   separator: ;
-        #   regex: ^(.*)$
-        #   targetLabel: nodename
-      #   replacement: $1
-      #   action: replace
-
-  trace:
-    enabled: false
-    # trace provider: jaeger or otel
-    # jaeger should be 1.26+
-    provider: jaeger
-    # set sample_rate to 1 if you wanna sampling 100% of trace data; set 0.5 if you wanna sampling 50% of trace data, and so forth
-    sample_rate: 1
-    # namespace used to differentiate different harbor services
-    # namespace:
-    # attributes is a key value dict contains user defined attributes used to initialize trace provider
-    # attributes:
-    #   application: harbor
-    jaeger:
-      # jaeger supports two modes:
-      #   collector mode(uncomment endpoint and uncomment username, password if needed)
-      #   agent mode(uncomment agent_host and agent_port)
-      endpoint: http://hostname:14268/api/traces
-      # username:
-      # password:
-      # agent_host: hostname
-      # export trace data by jaeger.thrift in compact mode
-      # agent_port: 6831
-    otel:
-      endpoint: hostname:4318
-      url_path: /v1/traces
-      compression: false
-      insecure: true
-      # timeout is in seconds
-      timeout: 10
-
-  # cache layer configurations
-  # if this feature enabled, harbor will cache the resource
-  # `project/project_metadata/repository/artifact/manifest` in the redis
-  # which help to improve the performance of high concurrent pulling manifest.
-  cache:
-    # default is not enabled.
-    enabled: false
-    # default keep cache for one day.
-    expireHours: 24
-
-  ## set Container Security Context to comply with PSP restricted policy if necessary
-  ## each of the conatiner will apply the same security context
-  ## containerSecurityContext:{} is initially an empty yaml that you could edit it on demand, we just filled with a common template for convenience
-  containerSecurityContext:
-    privileged: false
-    allowPrivilegeEscalation: false
-    seccompProfile:
-      type: RuntimeDefault
-    runAsNonRoot: true
-    capabilities:
-      drop:
-        - ALL
-
-  # If service exposed via "ingress", the Nginx will not be used
   nginx:
-    # mount the service account token
-    automountServiceAccountToken: false
     replicas: 2
     revisionHistoryLimit: 3
-    # resources:
-    #  requests:
-    #    memory: 256Mi
-    #    cpu: 100m
-    extraEnvVars: []
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    # Spread Pods across failure-domains like regions, availability zones or nodes
-    topologySpreadConstraints: []
-    # - maxSkew: 1
-    #   topologyKey: topology.kubernetes.io/zone
-    #   nodeTaintsPolicy: Honor
-    #   whenUnsatisfiable: DoNotSchedule
-    ## Additional deployment annotations
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
-    ## The priority class to run the pod as
-    priorityClassName:
 
   portal:
-    # mount the service account token
-    automountServiceAccountToken: false
-    replicas: 1
     revisionHistoryLimit: 3
-    # resources:
-    #  requests:
-    #    memory: 256Mi
-    #    cpu: 100m
-    extraEnvVars: []
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    # Spread Pods across failure-domains like regions, availability zones or nodes
-    topologySpreadConstraints: []
-    # - maxSkew: 1
-    #   topologyKey: topology.kubernetes.io/zone
-    #   nodeTaintsPolicy: Honor
-    #   whenUnsatisfiable: DoNotSchedule
-    ## Additional deployment annotations
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
-    ## Additional service annotations
-    serviceAnnotations: {}
-    ## The priority class to run the pod as
-    priorityClassName:
 
   core:
-    replicas: 1
-    secretName: 'writemycodes-default-certificates'
+    secretName: writemycodes-default-certificates
     revisionHistoryLimit: 3
-    ## Startup probe values
-    startupProbe:
-      enabled: true
-      initialDelaySeconds: 10
-    # resources:
-    #  requests:
-    #    memory: 256Mi
-    #    cpu: 100m
-    extraEnvVars: []
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    # Spread Pods across failure-domains like regions, availability zones or nodes
-    topologySpreadConstraints: []
-    # - maxSkew: 1
-    #   topologyKey: topology.kubernetes.io/zone
-    #   nodeTaintsPolicy: Honor
-    #   whenUnsatisfiable: DoNotSchedule
-    ## Additional deployment annotations
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
-    ## Additional service annotations
-    serviceAnnotations: {}
-    ## The priority class to run the pod as
-    priorityClassName:
-    # containers to be run before the controller's container starts.
-    initContainers: []
-    # Example:
-    #
-    # - name: wait
-    #   image: busybox
-    #   command: [ 'sh', '-c', "sleep 20" ]
-    ## User settings configuration json string
-    configureUserSettings:
-    # The provider for updating project quota(usage), there are 2 options, redis or db.
-    # By default it is implemented by db but you can configure it to redis which
-    # can improve the performance of high concurrent pushing to the same project,
-    # and reduce the database connections spike and occupies.
-    # Using redis will bring up some delay for quota usage updation for display, so only
-    # suggest switch provider to redis if you were ran into the db connections spike around
-    # the scenario of high concurrent pushing to same project, no improvment for other scenes.
-    quotaUpdateProvider: db # Or redis
-
-    # Fill in the name of a kubernetes secret if you want to use your own
-    # If using existingSecret, the key must be secret
     existingSecret: harbor-core-core
-
-    # If using existingSecret, the key is defined by core.existingXsrfSecretKey
     existingXsrfSecret: harbor-core-core
-    # If using existingSecret, the key
     existingXsrfSecretKey: XSRFKey
-    # The time duration for async update artifact pull_time and repository
-    # pull_count, the unit is second. Will be 10 seconds if it isn't set.
-    # eg. artifactPullAsyncFlushDuration: 10
-    artifactPullAsyncFlushDuration:
-    gdpr:
-      deleteUser: false
-      auditLogsCompliant: false
 
   jobservice:
-    replicas: 1
     revisionHistoryLimit: 3
 
-    ## The priority class to run the pod as
-    priorityClassName:
-
-    maxJobWorkers: 10
-    # The logger for jobs: "file", "database" or "stdout"
     jobLoggers:
       - stdout
-
-    # The jobLogger sweeper duration (ignored if `jobLogger` is `stdout`)
-    loggerSweeperDuration: 14 #days
-
-    notification:
-      webhook_job_max_retry: 3
-      webhook_job_http_client_timeout: 3 # in seconds
-
-    reaper:
-      # the max time to wait for a task to finish, if unfinished after max_update_hours, the task will be mark as error, but the task will continue to run, default value is 24
-      max_update_hours: 24
-      # the max time for execution in running state without new task created
-      max_dangling_hours: 168
-
-    # Use an existing secret resource
     existingSecret: harbor-core-jobservice
-    # Key within the existing secret for the job service secret
     existingSecretKey: SecretKey
 
   registry:
-    registry:
-      # resources:
-      #  requests:
-      #    memory: 256Mi
-      #    cpu: 100m
-      extraEnvVars: []
-    controller:
-      # resources:
-      #  requests:
-      #    memory: 256Mi
-      #    cpu: 100m
-      extraEnvVars: []
-
-    # mount the service account token
-    automountServiceAccountToken: false
-    replicas: 1
     revisionHistoryLimit: 3
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-
-    ## Additional deployment annotations
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
-    ## The priority class to run the pod as
-    priorityClassName:
-
-    # Use an existing secret resource
     existingSecret: harbor-core-registry
-    # Key within the existing secret for the registry service secret
     existingSecretKey: secret
-    # If true, the registry returns relative URLs in Location headers. The client is responsible for resolving the correct URL.
-    relativeurls: false
-    credentials:
-      username: "harbor_registry_user"
-      password: "harbor_registry_password"
-      # If using existingSecret, the key must be REGISTRY_PASSWD and REGISTRY_HTPASSWD
-      existingSecret: ""
-      # Login and password in htpasswd string format. Excludes `registry.credentials.username`  and `registry.credentials.password`. May come in handy when integrating with tools like argocd or flux. This allows the same line to be generated each time the template is rendered, instead of the `htpasswd` function from helm, which generates different lines each time because of the salt.
-      # htpasswdString: $apr1$XLefHzeG$Xl4.s00sMSCCcMyJljSZb0 # example string
-      htpasswdString: harbor_registry_user:$2y$10$L4LTCe2fG2H42qquClN5.e6L4PnL68.LaRAVfxPW37HAKm2vX9iX.
-    middleware:
-      enabled: false
 
-    # enable purge _upload directories
-    upload_purging:
-      enabled: true
-      # remove files in _upload directories which exist for a period of time, default is one week.
-      age: 168h
-      # the interval of the purge operations
-      interval: 24h
-      dryrun: false
+    credentials:
+      htpasswdString: harbor_registry_user:$2y$10$L4LTCe2fG2H42qquClN5.e6L4PnL68.LaRAVfxPW37HAKm2vX9iX.
 
   trivy:
-    # enabled the flag to enable Trivy scanner
     enabled: false
-
-    # mount the service account token
-    automountServiceAccountToken: false
-    # replicas the number of Pod replicas
-    replicas: 1
-    resources:
-      requests:
-        cpu: 200m
-        memory: 512Mi
-      limits:
-        cpu: 1
-        memory: 1Gi
-    extraEnvVars: []
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    # Spread Pods across failure-domains like regions, availability zones or nodes
-    topologySpreadConstraints: []
-    # - maxSkew: 1
-    #   topologyKey: topology.kubernetes.io/zone
-    #   nodeTaintsPolicy: Honor
-    #   whenUnsatisfiable: DoNotSchedule
-    ## Additional deployment annotations
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
-    ## The priority class to run the pod as
     priorityClassName: ''
 
-
-    # debugMode the flag to enable Trivy debug mode with more verbose scanning log
-    debugMode: false
-    # vulnType a comma-separated list of vulnerability types. Possible values are `os` and `library`.
-    vulnType: "os,library"
-    # severity a comma-separated list of severities to be checked
-    severity: "UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL"
-    # ignoreUnfixed the flag to display only fixed vulnerabilities
-    ignoreUnfixed: false
-    # insecure the flag to skip verifying registry certificate
-    insecure: false
-    # gitHubToken the GitHub access token to download Trivy DB
-    #
-    # Trivy DB contains vulnerability information from NVD, Red Hat, and many other upstream vulnerability databases.
-    # It is downloaded by Trivy from the GitHub release page https://github.com/aquasecurity/trivy-db/releases and cached
-    # in the local file system (`/home/scanner/.cache/trivy/db/trivy.db`). In addition, the database contains the update
-    # timestamp so Trivy can detect whether it should download a newer version from the Internet or use the cached one.
-    # Currently, the database is updated every 12 hours and published as a new release to GitHub.
-    #
-    # Anonymous downloads from GitHub are subject to the limit of 60 requests per hour. Normally such rate limit is enough
-    # for production operations. If, for any reason, it's not enough, you could increase the rate limit to 5000
-    # requests per hour by specifying the GitHub access token. For more details on GitHub rate limiting please consult
-    # https://developer.github.com/v3/#rate-limiting
-    #
-    # You can create a GitHub token by following the instructions in
-    # https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line
-    gitHubToken: ""
-    # skipUpdate the flag to disable Trivy DB downloads from GitHub
-    #
-    # You might want to set the value of this flag to `true` in test or CI/CD environments to avoid GitHub rate limiting issues.
-    # If the value is set to `true` you have to manually download the `trivy.db` file and mount it in the
-    # `/home/scanner/.cache/trivy/db/trivy.db` path.
-    skipUpdate: false
-    # skipJavaDBUpdate If the flag is enabled you have to manually download the `trivy-java.db` file and mount it in the
-    # `/home/scanner/.cache/trivy/java-db/trivy-java.db` path
-    #
-    skipJavaDBUpdate: false
-    # The offlineScan option prevents Trivy from sending API requests to identify dependencies.
-    #
-    # Scanning JAR files and pom.xml may require Internet access for better detection, but this option tries to avoid it.
-    # For example, the offline mode will not try to resolve transitive dependencies in pom.xml when the dependency doesn't
-    # exist in the local repositories. It means a number of detected vulnerabilities might be fewer in offline mode.
-    # It would work if all the dependencies are in local.
-    # This option doesn’t affect DB download. You need to specify skipUpdate as well as offlineScan in an air-gapped environment.
-    offlineScan: false
-    # Comma-separated list of what security issues to detect. Defaults to `vuln`.
-    securityCheck: "vuln"
-    # The duration to wait for scan completion
-    timeout: 5m0s
-
   database:
-    # if external database is used, set "type" to "external"
-    # and fill the connection information in "external" section
     type: external
 
     external:
       host: psql.mylogin.space
-      port: '5432'
       username: harbor-core
-
       coreDatabase: harbor-core
-
-      # if using existing secret, the key must be "password"
       existingSecret: harbor-user
-      # "disable" - No SSL
-      # "require" - Always SSL (skip verification)
-      # "verify-ca" - Always SSL (verify that the certificate presented by the
-      # server was signed by a trusted CA)
-      # "verify-full" - Always SSL (verify that the certification presented by the
-      # server was signed by a trusted CA and the server host name matches the one
-      # in the certificate)
-      sslmode: 'require'
-
-    # The maximum number of connections in the idle connection pool per pod (core+exporter).
-    # If it <=0, no idle connections are retained.
+      sslmode: require
     maxIdleConns: 10
-    # The maximum number of open connections to the database per pod (core+exporter).
-    # If it <= 0, then there is no limit on the number of open connections.
-    # Note: the default number of connections is 1024 for harbor's postgres.
     maxOpenConns: 64
-    ## Additional deployment annotations
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
 
   redis:
-    # if external Redis is used, set "type" to "external"
-    # and fill the connection information in "external" section
     type: external
 
     external:
-      # support redis, redis+sentinel
-      # addr for redis: <host_redis>:<port_redis>
-      # addr for redis+sentinel: <host_sentinel1>:<port_sentinel1>,<host_sentinel2>:<port_sentinel2>,<host_sentinel3>:<port_sentinel3>
-      addr: 'redis.mylogin.space:6379'
-      # The name of the set of Redis instances to monitor, it must be set to support redis+sentinel
-      sentinelMasterSet: ""
-      # The "coreDatabaseIndex" must be "0" as the library Harbor
-      # used doesn't support configuring it
-      # harborDatabaseIndex defaults to "0", but it can be configured to "6", this config is optional
-      # cacheLayerDatabaseIndex defaults to "0", but it can be configured to "7", this config is optional
-      coreDatabaseIndex: "0"
+      addr: redis.mylogin.space:6379
       jobserviceDatabaseIndex: '7'
       registryDatabaseIndex: '8'
       chartmuseumDatabaseIndex: '9'
       trivyAdapterIndex: '14'
-      tlsOptions:
-        enable: false
-      #harborDatabaseIndex: "6"
-      # cacheLayerDatabaseIndex: "7"
-      # username field can be an empty string, and it will be authenticated against the default user
-      username: ""
-      password: ""
-
 
   exporter:
-
-    # mount the service account token
-    automountServiceAccountToken: false
-    replicas: 1
     revisionHistoryLimit: 3
-    # resources:
-    #  requests:
-    #    memory: 256Mi
-    #    cpu: 100m
-    extraEnvVars: []
-    podAnnotations: {}
-    ## Additional deployment labels
-    podLabels: {}
-    nodeSelector: {}
-    tolerations: []
-    affinity: {}
-    # Spread Pods across failure-domains like regions, availability zones or nodes
-    topologySpreadConstraints: []
-    ## The priority class to run the pod as
-    priorityClassName:
-    # - maxSkew: 1
-    #   topologyKey: topology.kubernetes.io/zone
-    #   nodeTaintsPolicy: Honor
-    #   whenUnsatisfiable: DoNotSchedule
-    cacheDuration: 23
-    cacheCleanInterval: 14400
 
 
+# Disabled by default. The local template supplies renovate-config from Vault
+# when this chart is enabled.
 renovate:
   enabled: false
-  global:
-    # -- Additional labels to be set on all renovate resources
-    commonLabels: {}
-
-  # -- Override the name of the chart
-  nameOverride: ''
-  # -- Override the fully qualified app name
-  fullnameOverride: ''
-
-  cronjob:
-    # -- Schedules the job to run using cron notation
-    schedule: '0 1 * * *'  # At 01:00 every day
-    # -- You can specify a time zone for a CronJob by setting timeZone to the name of a valid time zone. (starting with k8s 1.27) <https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/#time-zones>
-    timeZone: ''  # see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid names
-    # -- If it is set to true, all subsequent executions are suspended. This setting does not apply to already started executions.
-    suspend: false
-    # -- Annotations to set on the cronjob
-    annotations: {}
-    # -- Labels to set on the cronjob
-    labels: {}
-    # -- "Allow" to allow concurrent runs, "Forbid" to skip new runs if a previous run is still running or "Replace" to replace the previous run
-    concurrencyPolicy: ''
-    # -- Amount of failed jobs to keep in history
-    failedJobsHistoryLimit: ''
-    # -- Amount of completed jobs to keep in history
-    successfulJobsHistoryLimit: ''
-    # -- Set to Never to restart the job when the pod fails or to OnFailure to restart when a container fails
-    jobRestartPolicy: Never
-    # -- Time to keep the job after it finished before automatically deleting it
-    ttlSecondsAfterFinished: ''
-    # -- Deadline for the job to finish
-    activeDeadlineSeconds: ''
-    # -- Number of times to retry running the pod before considering the job as being failed
-    jobBackoffLimit: ''
-    # -- Deadline to start the job, skips execution if job misses it's configured deadline
-    startingDeadlineSeconds: ''
-    # -- Additional initContainers that can be executed before renovate
-    initContainers: []
-    # initContainers:
-    # - name: INIT_CONTAINER_NAME
-    #   image: INIT_CONTAINER_IMAGE
-
-    # -- Prepend shell commands before renovate runs
-    preCommand: ''
-    # preCommand: |
-    #   echo hello
-    #   echo world
-
-    # -- Append shell commands after renovate runs
-    postCommand: ''
-    # postCommand: |
-    #   echo hello
-    #   echo world
-
-  pod:
-    # -- Annotations to set on the pod
-    annotations: {}
-    # -- Labels to set on the pod
-    labels: {}
-
-  image:
-    # -- Registry to pull image from
-    registry: ghcr.io
-    # -- Image name to pull
-    repository: renovatebot/renovate
-
-    # -- "IfNotPresent" to pull the image if no image with the specified tag exists on the node, "Always" to always pull the image or "Never" to try and use pre-pulled images
-    pullPolicy: IfNotPresent
-
-  # -- Secret to use to pull the image from the repository
-  imagePullSecrets: {}
 
   renovate:
-    # -- Custom exiting global renovate config
     existingConfigFile: renovate-config
-    # -- Inline global renovate config.json
-    config: 'test'
-    # See https://docs.renovatebot.com/self-hosted-configuration
-    # config: |
-    #   {
-    #     "platform": "gitlab",
-    #     "endpoint": "https://gitlab.example.com/api/v4",
-    #     "token": "your-gitlab-renovate-user-token",
-    #     "autodiscover": "false",
-    #     "dryRun": true,
-    #     "printConfig": true,
-    #     "repositories": ["username/repo", "orgname/repo"]
-    #   }
-
-    # -- Use the Helm tpl function on your configuration. See README for how to use this value
-    configEnableHelmTpl: false
-
-    # -- Use this to create the renovate-config as a secret instead of a configmap
+    config: test
     configIsSecret: true
 
-    # -- Renovate Container-level security-context
-    securityContext: {}
-
-    # -- Options related to persistence
-    persistence:
-      cache:
-        # -- Allow the cache to persist between runs
-        enabled: false
-        # -- Storage class of the cache PVC
-        storageClass: ""
-        # -- Storage size of the cache PVC
-        storageSize: "512Mi"
-
-  ssh_config:
-    # -- Whether to enable the use and creation of a secret containing .ssh files
-    enabled: false
-
-    # Provide .ssh config file contents
-    # -- Contents of the id_rsa file
-    id_rsa: ''
-    # -- Contents of the id_rsa_pub file
-    id_rsa_pub: ''
-    # -- Contents of the config file
-    config: ''
-
-    # or provide the name of an existing secret to be read instead.
-    # -- Name of the existing secret containing a valid .ssh configuration
-    existingSecret: ''
-
-  # -- Environment variables that should be referenced from a k8s secret, cannot be used when existingSecret is set
-  secrets: {}
-  # -- k8s secret to reference environment variables from. Overrides secrets if set
-  existingSecret: ''
-
-  # -- Additional configmaps. A generated configMap name is: "renovate.fullname" + "extra" + name(below) e.g. renovate-netrc-config
-  extraConfigmaps: []
-  # extraConfigmaps:
-  #   - name: netrc-config
-  #     data:
-  #       .netrc: |-
-  #         machine gitlab.example.com
-  #         login gitlab-ci-token
-  #         password some-pass
-  #   - name: yet-another-config
-  #     data:
-  #       ya-config.yaml: |-
-  #         "key"="value"
-  #         "key1"="value1"
-
-  # -- Additional volumes to the pod
-  extraVolumes: []
-  # extraVolumes:
-  #   - name: netrc-config
-  #     configMap:
-  #       name: renovate-extra-netrc-config
-
-  # -- Additional volumeMounts to the container
-  extraVolumeMounts: []
-  # extraVolumeMounts:
-  #   - name: netrc-config
-  #     mountPath: /home/ubuntu/.netrc
-  #     subPath: .netrc
-
-  # -- Additional containers to the pod
-  extraContainers: []
-  # extraContainers:
-  #   - name: vault-agent
-  #     image: vault:1.6.2
-  #     args:
-  #     - agent
-  #     - -config
-  #     - /vault/config/config.hcl
-  #     env:
-  #     - name: VAULT_ADDR
-  #       value: https://vault:8200
-  #     - name: VAULT_SKIP_VERIFY
-  #       value: "false"
-  #     - name: VAULT_CACERT
-  #       value: /vault/tls/ca.crt
-
-  serviceAccount:
-    # -- Specifies whether a service account should be created
-    create: false
-    # -- Annotations to add to the service account
-    annotations: {}
-    # -- The name of the service account to use
-    # If not set and create is true, a name is generated using the fullname template
-    name: ''
-
-  # -- Specify resource limits and requests for the renovate container
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #  cpu: 100m
-    #  memory: 128Mi
-    # requests:
-    #  cpu: 100m
-    #  memory: 128Mi
-
-  # -- Environment variables to add from existing secrets/configmaps. Uses the keys as variable name
-  envFrom: []
-  # envFrom:
-  #   - secretRef:
-  #       name: env-secrets
-  #   - configMapRef:
-  #       name: env-configmap
-
-  # -- Environment variables to set on the renovate container
-  env: {}
-  # env:
-  #   VARIABLE_NAME: "value"
-
-  # -- Additional env. Helpful too if you want to use anything other than a `value` source.
-  envList: []
-  # envList:
-  #   - name: POD_NAME
-  #     valueFrom:
-  #       fieldRef:
-  #         fieldPath: metadata.name
-
   redis:
-    # Configuration for a Redis subchart. Additional documentation at
-    # https://github.com/bitnami/charts/tree/master/bitnami/redis
-
-    # -- Enable the Redis subchart?
     enabled: false
-
-    # -- Override the prefix of the redisHost
     nameOverride: ''
-
-    # -- Disable replication by default
     architecture: standalone
 
     auth:
-      # -- Don't require a password by default
       enabled: false
-
-    # -- Override Kubernetes version for redis chart
     kubeVersion: ''
 
-  # Override APIVersions
-  # If you want to template helm charts but cannot access k8s API server
-  # you can set api versions here
   apiVersionOverrides:
-    # -- String to override apiVersion of cronjob rendered by this helm chart
     cronjob: ''
 
-  # -- Override hostname resolution
-  hostAliases: []
-  # See: https://kubernetes.io/docs/tasks/network/customize-hosts-file-for-pods/
-  # hostAliases:
-  #   - ip: "your-ip"
-  #     hostnames:
-  #       - "your-hostname"
 
-  # -- Pod-level security-context
-  securityContext: {}
-
-  # -- Select the node using labels to specify where the cronjob pod should run on
-  nodeSelector: {}
-  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
-  # renovate: true
-
-  # -- Configure the pod(Anti)Affinity and/or node(Anti)Affinity
-  affinity: {}
-  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
-
-  # -- Configure which node taints the pod should tolerate
-  tolerations: []
-  # See: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/
-
-
+# Local-template feature switches.
 che:
   enabled: true
+
 
 mqttx:
   enabled: true
 
+
 global:
   test: test
+
 
 hoppscotch:
   enabled: true
@@ -2040,11 +580,8 @@ hoppscotch:
     limits:
       cpu: 500m
       memory: 512M
-    requests:
-      cpu: 100m
-      memory: 128Mi
+
 
 crddocs:
   enabled: true
-
   hub: true
