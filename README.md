@@ -136,9 +136,22 @@ Before changing a chart:
 7. Observe both the Argo CD application and any downstream operator or
    Crossplane conditions.
 
-Common local setup utilities can be downloaded by `setup.sh`, but that script
-currently downloads some moving releases and does not verify checksums. Treat
-it as a convenience script, not a reproducible or trusted bootstrap mechanism.
+Run `./setup.sh` to download the pinned Linux amd64 tools into `Meta/bin`, or
+set `BIN_DIR` to install them in another directory. The script downloads into a
+temporary directory, verifies fixed SHA-256 checksums, and only then replaces
+the installed files. Update a tool's version and checksum together after
+reviewing its authoritative release notes or downloads:
+
+- [MQTTX CLI releases](https://github.com/emqx/MQTTX/releases)
+- [MinIO Client downloads](https://dl.min.io/client/mc/release/)
+- [Envoy Gateway releases](https://github.com/envoyproxy/gateway/releases)
+- [Talos releases](https://github.com/siderolabs/talos/releases)
+- [Argo CD releases](https://github.com/argoproj/argo-cd/releases)
+- [Longhorn CLI releases](https://github.com/longhorn/cli/releases)
+- [Crossplane CLI documentation](https://docs.crossplane.io/latest/cli/)
+
+The pinned artifacts currently support Linux amd64 only. A failed download or
+checksum validation leaves the previously installed executable intact.
 
 ## Current maturity
 
