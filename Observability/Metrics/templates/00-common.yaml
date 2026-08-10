@@ -140,6 +140,133 @@ controllers:
               failureThreshold: 3
               periodSeconds: 10
               timeoutSeconds: 5
+
+  querier:
+    annotations:
+      secret.reloader.stakater.com/reload: '{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds'
+
+    strategy: RollingUpdate
+
+    rollingUpdate:
+      unavailable: 1
+      surge: 1
+
+    podDisruptionBudget:
+      maxUnavailable: 1
+
+    pod:
+      terminationGracePeriodSeconds: 120
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/instance: '{{ $.Release.Name }}'
+                    app.kubernetes.io/controller: querier
+                topologyKey: kubernetes.io/hostname
+
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+
+      {{- with .Values.mimir.nodeSelector }}
+      nodeSelector:
+        {{ toYaml . | nindent 8 }}
+      {{- end }}
+
+    replicas: {{ .Values.mimir.querier.replicas }}
+
+    containers:
+      querier:
+        image:
+          repository: {{ .Values.mimir.image.repository }}
+          tag: {{ .Values.mimir.image.tag | quote }}
+          pullPolicy: {{ .Values.mimir.image.pullPolicy }}
+
+        resources:
+          {{- toYaml .Values.mimir.querier.resources | nindent 10 }}
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+
+        ports:
+          - name: http
+            containerPort: 8080
+          - name: grpc
+            containerPort: 9095
+
+        args:
+          - -config.file=/etc/mimir.yaml
+          - -config.expand-env=true
+          - -target=querier
+
+        env:
+          - name: AWS_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Release.Name }}-s3-creds
+                key: AccessKey
+
+          - name: AWS_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Release.Name }}-s3-creds
+                key: SecretAccessKey
+
+          - name: AWS_SESSION_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Release.Name }}-s3-creds
+                key: SessionToken
+
+          - name: S3_BUCKET
+            valueFrom:
+              secretKeyRef:
+                name: {{ $.Release.Name }}-creds
+                key: username
+
+        probes:
+          startup:
+            enabled: true
+            custom: false
+            type: HTTP
+            path: /ready
+            port: http
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 60
+
+          liveness:
+            enabled: true
+            custom: false
+            type: TCP
+            port: http
+            spec:
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 4
+
+          readiness:
+            enabled: true
+            custom: false
+            path: /ready
+            port: http
+            type: HTTP
+            spec:
+              failureThreshold: 3
+              periodSeconds: 10
+              timeoutSeconds: 5
   {{- end }}
 
   {{- if .Values.mimirBridge.enabled }}
@@ -405,8 +532,9 @@ configMaps:
 
     data:
       mimir.yaml: |
-        # Horizontally scaled monolithic mode: each replica runs all components.
-        target: all,alertmanager,overrides-exporter
+        # Keep the write path, query frontend/scheduler, storage components,
+        # and optional services together. Queriers run in their own Deployment.
+        target: distributor,ingester,query-frontend,query-scheduler,store-gateway,compactor,ruler,alertmanager,overrides-exporter
 
         activity_tracker:
           filepath: /data/metrics-activity.log
@@ -454,6 +582,12 @@ configMaps:
 
         query_scheduler:
           max_outstanding_requests_per_tenant: 1024
+          # The query frontend/scheduler and querier no longer share a process.
+          # Discover scheduler replicas through the existing memberlist ring.
+          service_discovery_mode: ring
+          ring:
+            kvstore:
+              store: memberlist
 
         compactor:
           data_dir: /data/compactor
@@ -556,6 +690,9 @@ persistence:
       mimir:
         mimir:
           - path: /data
+      querier:
+        querier:
+          - path: /data
 
   mimir-tmp:
     enabled: true
@@ -569,6 +706,9 @@ persistence:
     advancedMounts:
       mimir:
         mimir:
+          - path: /tmp
+      querier:
+        querier:
           - path: /tmp
 
   mimir-alertmanager:
@@ -599,6 +739,11 @@ persistence:
     advancedMounts:
       mimir: # the controller with the "main" identifier
         mimir: # the container with the "main" identifier
+          - path: /etc/mimir.yaml
+            readOnly: true
+            subPath: mimir.yaml
+      querier:
+        querier:
           - path: /etc/mimir.yaml
             readOnly: true
             subPath: mimir.yaml

@@ -1,7 +1,7 @@
 # Mimir metrics store
 
 This chart deploys [Grafana Mimir](https://grafana.com/docs/mimir/latest/) in
-horizontally scaled monolithic mode using the
+a split monolithic mode using the
 [`bjw-s common library`](https://github.com/bjw-s-labs/helm-charts/tree/main/charts/library/common).
 The pinned
 [`mimir-distributed` chart](https://github.com/grafana/helm-charts/tree/main/charts/mimir-distributed)
@@ -11,18 +11,26 @@ selected cluster.
 The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metrics.yaml)
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
 site identity. YXL enables the monolithic implementation, and both sites
-enable the Mimir bridge described below. Three YXL Mimir replicas receive
-Prometheus
-remote write, keep WAL/head working data in memory-backed `emptyDir`, and ship
-blocks to site-local S3. The YXL rendering also creates the S3 `User`,
+enable the Mimir bridge described below. Three YXL main Mimir replicas receive
+Prometheus remote write, keep WAL/head working data in memory-backed
+`emptyDir`, and ship blocks to site-local S3. Three separate querier replicas
+execute PromQL. The main replicas retain the query frontend and query scheduler,
+so `core-mimir` remains the entry point for both reads and writes; the scheduler
+dispatches read work to the querier Deployment. All three components discover
+the schedulers through the existing memberlist-backed query-scheduler ring.
+This follows Mimir's
+[query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
+and documented [query-scheduler ring discovery](https://grafana.com/docs/mimir/latest/references/architecture/components/query-scheduler/),
+and uses its documented [`-target` component selection](https://grafana.com/docs/mimir/latest/configure/about-configurations/).
+The YXL rendering also creates the S3 `User`,
 HTTPRoute, and Envoy SecurityPolicy.
 
-The Mimir Deployment uses [Reloader's targeted Secret annotation](https://github.com/stakater/Reloader#how-to-use-reloader)
+The main Mimir and querier Deployments use [Reloader's targeted Secret annotation](https://github.com/stakater/Reloader#how-to-use-reloader)
 to roll when either generated S3 Secret changes. `*-s3-creds` provides the
 access key, secret key, and session token; `*-creds` provides the bucket name.
-Reloader changes only the Mimir pod template, and the three-replica rolling
-strategy, readiness probe, and PodDisruptionBudget keep serving replicas
-available during credential rotation. The target cluster must run Reloader;
+Reloader changes only the affected pod templates, and each three-replica
+Deployment's rolling strategy, readiness probe, and PodDisruptionBudget keep
+serving replicas available during credential rotation. The target cluster must run Reloader;
 the operations configuration ApplicationSet provides it on both selected
 Talos production clusters.
 
