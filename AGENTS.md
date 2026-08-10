@@ -62,6 +62,40 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   public ingress/DNS, the primary cluster, Vault application credentials, or a
   single site.
 
+## Shared application data services
+
+- Treat the infrastructure PostgreSQL, MySQL, MongoDB, and site-local
+  `dragonfly-core` deployments as shared platform services used by deployed
+  applications, not as chart-private dependencies. Start changes at their
+  fleet owners in `Apps/Storage/PSQL.yaml`,
+  `Apps/Storage/Database/MySQL.yaml`, `Apps/Storage/Database/MongoDB.yaml`, and
+  `Apps/Storage/Dragonfly/CoRE.yaml`, then trace every application consumer.
+- Every deployed application service identity must be declared with the
+  namespaced `User.mylogin.space/v1alpha1` claim provided by the `sso-user`
+  Composition in `Operations/SSO/User`; do not create an unrelated database
+  password or parallel identity path in an application chart. Keep the claim
+  beside the consuming application, use its stable connection Secret, and
+  review identity, database grants, buckets, and secret publication as one
+  lifecycle.
+- Do not infer database provisioning from fields merely accepted by the
+  `User` XRD. The current Composition implements Authentik identity plus
+  optional PostgreSQL and S3 resources; `spec.mysql` and `spec.mongodb` are
+  currently schema-only. Extend and validate the Composition before relying
+  on it to provision MySQL or MongoDB resources, and document current behavior
+  separately from the intended shared model.
+- Treat `Storage/Dragonfly/CoRE/README.md` as the allocation registry for
+  shared Dragonfly logical databases. Every application that uses
+  `dragonfly-core` must declare an explicit, unused database number where the
+  client supports one and add or update the registry in the same change.
+  Database `0` is legacy shared space, not the default allocation for a new
+  consumer. Use a separate Dragonfly instance when credentials, capacity,
+  lifecycle, recovery, or failure isolation must be independent.
+- For application onboarding, changes, and removal, verify the `User` claim
+  and composite, downstream provider resources, stable connection Secret,
+  effective database grants, and any Dragonfly allocation. Removing a claim
+  is not proof that external roles, databases, grants, buckets, or persisted
+  Dragonfly data were deleted; inspect orphan and deletion policies explicitly.
+
 ## Dependency and supply-chain policy
 
 - Pin Helm dependencies, images, remote Kustomize resources, operators, and

@@ -121,6 +121,42 @@ must be reviewed for literal default credentials before deployment. See
 [Operations and recovery](docs/OPERATIONS.md) for bootstrap and emergency
 access principles.
 
+## Shared application databases and identities
+
+Deployed applications consume the platform-owned PostgreSQL, MySQL, MongoDB,
+and Dragonfly services. Their fleet entry points are
+[`Apps/Storage/PSQL.yaml`](Apps/Storage/PSQL.yaml),
+[`Apps/Storage/Database/MySQL.yaml`](Apps/Storage/Database/MySQL.yaml),
+[`Apps/Storage/Database/MongoDB.yaml`](Apps/Storage/Database/MongoDB.yaml), and
+[`Apps/Storage/Dragonfly/CoRE.yaml`](Apps/Storage/Dragonfly/CoRE.yaml).
+Application charts must not silently create a parallel database deployment or
+credential authority.
+
+The common application identity contract is the namespaced
+`User.mylogin.space/v1alpha1` claim installed by
+[`Apps/Infra/Crossplane/User.yaml`](Apps/Infra/Crossplane/User.yaml) and
+implemented by the [`sso-user` Composition](Operations/SSO/User/README.md).
+Each deployed application keeps its `User` claim with the workload and consumes
+the stable connection Secret produced through that claim. This makes the
+Authentik identity, database access, object-storage access, and credential
+publication one reviewable lifecycle.
+
+Current behavior is narrower than that contract: the Composition implements
+the Authentik identity and optional PostgreSQL and S3 resources, while the
+accepted `mysql` and `mongodb` fields do not yet compose database resources or
+connection details. Applications must not treat schema acceptance as successful
+MySQL or MongoDB provisioning. Those paths must be implemented and validated
+in the shared Composition before applications depend on them; existing
+chart-specific behavior remains authoritative until migrated.
+
+The shared `dragonfly-core` service uses numbered logical Redis databases.
+[`Storage/Dragonfly/CoRE/README.md`](Storage/Dragonfly/CoRE/README.md) is the
+allocation registry for every deployed application. A change that adds,
+changes, or removes a Dragonfly consumer must update that registry in the same
+commit. New consumers should use an explicit unused number rather than database
+`0`; workloads needing isolated credentials, capacity, lifecycle, recovery, or
+failure domains require a separate Dragonfly instance.
+
 ## Cluster and bare-metal lifecycle
 
 The cluster chart defines `Cluster`, `ClusterNode`, and `Tenant` Crossplane
@@ -156,6 +192,12 @@ Before changing a chart:
    direct operation.
 7. Observe both the Argo CD application and any downstream operator or
    Crossplane conditions.
+
+For an application that consumes shared data services, also render and inspect
+its `User` claim, verify the resulting composite and provider resources, check
+the stable connection Secret by key name without printing values, validate the
+effective database grants, and confirm any Dragonfly logical database against
+the allocation registry.
 
 Run `./setup.sh` to download the pinned Linux amd64 tools into `Meta/bin`, or
 set `BIN_DIR` to install them in another directory. The script downloads into a
