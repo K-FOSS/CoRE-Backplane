@@ -106,6 +106,47 @@ this is deliberate current behaviour and should be replaced by immutable
 release tags or digests when the site images have a versioned publication
 process.
 
+The complete editable Kea DHCPv4 baseline is under `dhcp.dhcp4` in
+[`values.yaml`](values.yaml). It is native YAML rather than embedded JSONC, so
+networks and assignments can be changed without editing an ExternalSecret
+template. The chart prepends the site-derived Tinkerbell, iPXE, PXE, and UniFi
+client classes and injects the secret-backed PostgreSQL lease configuration;
+[External Secrets templating v2](https://external-secrets.io/latest/guides/templating/)
+JSON-encodes the database name, username, and password before inserting them
+into the configuration. Do not add those generated entries to `dhcp.dhcp4`. A
+typical network is:
+
+```yaml
+dhcp:
+  dhcp4:
+    shared-networks:
+      - name: 'example.dc1.resolvemy.host'
+        relay:
+          ip-addresses:
+            - '192.0.2.1'
+        subnet4:
+          - id: 3001
+            subnet: '192.0.2.0/24'
+            option-data:
+              - name: 'routers'
+                data: '192.0.2.1'
+            pools:
+              - pool: '192.0.2.100 - 192.0.2.199'
+            reservations:
+              - hw-address: '02:00:00:00:00:10'
+                hostname: 'example-host'
+                ip-address: '192.0.2.10'
+```
+
+[`values.schema.json`](values.schema.json) rejects malformed IPv4 addresses,
+CIDRs, MAC addresses, pools, subnet IDs, and incomplete reservations. Helm
+template validation additionally rejects duplicate network names, subnet IDs,
+reservation IPs, reservation MACs, and client-class names. The generated
+configuration is strict JSON, and the container runs Kea 3.2's documented
+[`kea-dhcp4 -t` configuration check](https://kea.readthedocs.io/en/kea-3.2.0/man/kea-dhcp4.8.html)
+before starting an enabled DHCPv4 daemon. This check does not establish the
+lease-database connection; verify that separately after reconciliation.
+
 No credential values belong in Git. `netbox-secret`, `netbox-creds`,
 `dragonfly-core-password`, the DNS secret, pull credentials, OIDC
 configuration, S3 credentials, and Terraform tokens are references to

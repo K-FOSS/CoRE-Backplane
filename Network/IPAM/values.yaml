@@ -49,10 +49,521 @@ dhcp:
       efi:
         address: '10.44.5.76'
         path: 'images/ipxe.efi'
-  networks:
-    - name: 'spine0.dc1.resolvemy.host'
-      domain: 'k0s.dc1.resolvemy.host'
-
+  # Native Kea Dhcp4 configuration. Add shared networks, subnet4 entries,
+  # pools, options, and reservations here. The chart injects site-specific boot
+  # classes and the secret-backed lease database before rendering strict JSON.
+  dhcp4:
+      authoritative: false
+      client-classes:
+        - name: 'vmhost-class1'
+          next-server: '10.1.1.66'
+          option-data: []
+        - name: 'boots'
+          next-server: '10.1.1.66'
+          option-data: []
+        - name: 'kioslab'
+          server-hostname: 'static.mylogin.space'
+        - name: 'onie'
+          test: 'substring(option[60].hex,0,11) == ''onie_vendor'''
+          option-data:
+            - data: '42623'
+              name: 'vivso-suboptions'
+      control-socket:
+        socket-name: 'kea4-ctrl-socket'
+        socket-type: 'unix'
+      ddns-override-client-update: true
+      ddns-override-no-update: true
+      ddns-qualifying-suffix: 'resolvemy.host.'
+      ddns-replace-client-name: 'when-not-present'
+      ddns-send-updates: true
+      ddns-update-on-renew: true
+      ddns-conflict-resolution-mode: 'check-with-dhcid'
+      decline-probation-period: 86400
+      dhcp-ddns:
+        enable-updates: true
+        max-queue-size: 1024
+        ncr-format: 'JSON'
+        ncr-protocol: 'UDP'
+        sender-ip: '127.0.0.1'
+        sender-port: 0
+        server-ip: '127.0.0.1'
+        server-port: 53001
+      echo-client-id: false
+      expired-leases-processing:
+        flush-reclaimed-timer-wait-time: 900
+        hold-reclaimed-time: 3600
+        max-reclaim-leases: 100
+        max-reclaim-time: 250
+        reclaim-timer-wait-time: 900
+        unwarned-reclaim-cycles: 5
+      hooks-libraries:
+        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql.so'
+        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so'
+          parameters: {}
+        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_stat_cmds.so'
+          parameters: {}
+        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_flex_option.so'
+          parameters:
+            options:
+              - code: 67
+                add: 'ifelse(option[host-name].exists,concat(option[host-name].text,''.boot''),'''')'
+      hosts-databases: []
+      host-reservation-identifiers:
+        - 'hw-address'
+        - 'duid'
+        - 'circuit-id'
+        - 'client-id'
+        - 'flex-id'
+      interfaces-config:
+        interfaces:
+          - '*'
+        dhcp-socket-type: 'udp'
+        outbound-interface: 'use-routing'
+        re-detect: false
+      ip-reservations-unique: true
+      option-def:
+        - name: 'unifi-address'
+          code: 1
+          space: 'ubnt'
+          type: 'ipv4-address'
+        - name: 'installer_url'
+          code: 1
+          space: 'vendor-42623'
+          type: 'string'
+        - name: 'updater_url'
+          code: 2
+          space: 'vendor-42623'
+          type: 'string'
+        - name: 'machine'
+          code: 3
+          space: 'vendor-42623'
+          type: 'string'
+        - name: 'arch'
+          code: 4
+          space: 'vendor-42623'
+          type: 'string'
+        - name: 'machine_rev'
+          code: 5
+          space: 'vendor-42623'
+          type: 'string'
+        - name: 'PXEDiscoveryControl'
+          code: 6
+          space: 'vendor-encapsulated-options-space'
+          type: 'uint8'
+          array: false
+        - name: 'PXEMenuPrompt'
+          code: 10
+          space: 'vendor-encapsulated-options-space'
+          type: 'record'
+          array: false
+          record-types: 'uint8,string'
+        - name: 'PXEBootMenu'
+          code: 9
+          space: 'vendor-encapsulated-options-space'
+          type: 'record'
+          array: false
+          record-types: 'uint16,uint8,string'
+        - space: 'dhcp4'
+          name: 'ipxe-encap-opts'
+          code: 175
+          type: 'empty'
+          encapsulate: 'ipxe'
+        - space: 'ipxe'
+          name: 'priority'
+          code: 1
+          type: 'int8'
+        - space: 'ipxe'
+          name: 'keep-san'
+          code: 8
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'skip-san-boot'
+          code: 9
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'syslogs'
+          code: 85
+          type: 'string'
+        - space: 'ipxe'
+          name: 'cert'
+          code: 91
+          type: 'string'
+        - space: 'ipxe'
+          name: 'privkey'
+          code: 92
+          type: 'string'
+        - space: 'ipxe'
+          name: 'crosscert'
+          code: 93
+          type: 'string'
+        - space: 'ipxe'
+          name: 'no-pxedhcp'
+          code: 176
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'bus-id'
+          code: 177
+          type: 'string'
+        - space: 'ipxe'
+          name: 'san-filename'
+          code: 188
+          type: 'string'
+        - space: 'ipxe'
+          name: 'bios-drive'
+          code: 189
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'username'
+          code: 190
+          type: 'string'
+        - space: 'ipxe'
+          name: 'password'
+          code: 191
+          type: 'string'
+        - space: 'ipxe'
+          name: 'reverse-username'
+          code: 192
+          type: 'string'
+        - space: 'ipxe'
+          name: 'reverse-password'
+          code: 193
+          type: 'string'
+        - space: 'ipxe'
+          name: 'version'
+          code: 235
+          type: 'string'
+        - space: 'dhcp4'
+          name: 'iscsi-initiator-iqn'
+          code: 203
+          type: 'string'
+        - space: 'ipxe'
+          name: 'pxeext'
+          code: 16
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'iscsi'
+          code: 17
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'aoe'
+          code: 18
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'http'
+          code: 19
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'https'
+          code: 20
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'tftp'
+          code: 21
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'ftp'
+          code: 22
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'dns'
+          code: 23
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'bzimage'
+          code: 24
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'multiboot'
+          code: 25
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'slam'
+          code: 26
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'srp'
+          code: 27
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'nbi'
+          code: 32
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'pxe'
+          code: 33
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'elf'
+          code: 34
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'comboot'
+          code: 35
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'efi'
+          code: 36
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'fcoe'
+          code: 37
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'vlan'
+          code: 38
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'menu'
+          code: 39
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'sdi'
+          code: 40
+          type: 'uint8'
+        - space: 'ipxe'
+          name: 'nfs'
+          code: 41
+          type: 'uint8'
+      rebind-timer: 64800
+      renew-timer: 21600
+      valid-lifetime: 86400
+      min-valid-lifetime: 3600
+      max-valid-lifetime: 86400
+      store-extended-info: true
+      statistic-default-sample-count: 0
+      statistic-default-sample-age: 60
+      multi-threading:
+        enable-multi-threading: true
+        thread-pool-size: 2
+        packet-queue-size: 88
+      sanity-checks:
+        lease-checks: 'warn'
+      shared-networks:
+        - authoritative: false
+          name: 'spine0.home2.resolvemy.host'
+          match-client-id: false
+          option-data: []
+          ddns-qualifying-suffix: 'home2.resolvemy.host.'
+          relay:
+            ip-addresses:
+              - '172.31.193.16'
+              - '172.31.193.254'
+          store-extended-info: true
+          subnet4:
+            - id: 2001
+              subnet: '172.31.193.0/24'
+              match-client-id: false
+              server-hostname: 'dhcp.resolvemy.host'
+              option-data:
+                - name: 'domain-name-servers'
+                  data: '1.1.1.1,1.0.0.1'
+                - name: 'pcode'
+                  data: 'PST8PDT,M3.2.0/2:00:00,M11.1.0/2:00:00'
+                - name: 'tcode'
+                  data: 'America/Vancouver'
+                - name: 'interface-mtu'
+                  data: '9000'
+                - name: 'routers'
+                  data: '172.31.193.254'
+              pools:
+                - pool: '172.31.193.100 - 172.31.193.200'
+              reservations:
+                - hw-address: 'bc:07:1d:dd:5a:08'
+                  hostname: 'br1.hpc1'
+                  ip-address: '172.31.193.15'
+                - hw-address: 'e0:d5:5e:65:02:d7'
+                  hostname: 'br0.hpc2'
+                  ip-address: '172.31.193.11'
+                - hw-address: 'e0:d5:5e:65:02:d9'
+                  hostname: 'br1.hpc2'
+                  ip-address: '172.31.193.12'
+                - hw-address: '38:c9:86:42:ff:90'
+                  hostname: 'hpc3'
+                  ip-address: '172.31.193.21'
+                - hw-address: 'b8:ae:ed:79:5e:1d'
+                  hostname: 'nuc1'
+                  ip-address: '172.31.193.18'
+                - hw-address: '10:02:b5:86:17:65'
+                  hostname: 'sbc2'
+                  ip-address: '172.31.193.17'
+                - hw-address: '4c:cc:6a:dc:14:4c'
+                  hostname: 'laptop1'
+                  ip-address: '172.31.193.13'
+                - hw-address: '24:6e:96:38:84:60'
+                  hostname: 'br0.srv2'
+                  ip-address: '172.31.193.36'
+                - hw-address: 'ec:f4:bb:ef:58:e8'
+                  hostname: 'srv3'
+                  ip-address: '172.31.193.37'
+                - hw-address: '00:e0:4c:79:61:d1'
+                  hostname: 'laptop2'
+                  ip-address: '172.31.193.14'
+                - hw-address: '74:ac:b9:a4:f9:45'
+                  hostname: 'cpe-sw2'
+                  ip-address: '172.31.193.38'
+        - authoritative: false
+          name: 'management.dc1.yxl.resolvemy.host'
+          match-client-id: false
+          option-data: []
+          ddns-qualifying-suffix: 'manage.resolvemy.host.'
+          relay:
+            ip-addresses:
+              - '172.16.20.254'
+          store-extended-info: true
+          subnet4:
+            - id: 200
+              subnet: '172.16.20.0/24'
+              match-client-id: false
+              server-hostname: 'dhcp.service.kjdev'
+              option-data:
+                - name: 'domain-name-servers'
+                  data: '1.1.1.1'
+                - name: 'pcode'
+                  data: 'CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00'
+                - name: 'tcode'
+                  data: 'America/Winnipeg'
+                - name: 'interface-mtu'
+                  data: '1500'
+                - name: 'routers'
+                  data: '172.16.20.254'
+              reservations: []
+        - authoritative: false
+          name: 'srv3.dc1.yxl.resolvemy.host'
+          match-client-id: false
+          option-data: []
+          ddns-qualifying-suffix: 'srv3.dc1.yxl.resolvemy.host.'
+          relay:
+            ip-addresses:
+              - '172.31.241.89'
+          store-extended-info: true
+          subnet4:
+            - id: 114
+              subnet: '172.31.241.88/30'
+              match-client-id: false
+              server-hostname: 'dhcp.service.kjdev'
+              option-data:
+                - name: 'domain-name-servers'
+                  data: '1.1.1.1'
+                - name: 'pcode'
+                  data: 'CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00'
+                - name: 'tcode'
+                  data: 'America/Winnipeg'
+                - name: 'interface-mtu'
+                  data: '9000'
+                - name: 'routers'
+                  data: '172.31.241.89'
+                - name: 'time-servers'
+                  data: '162.159.200.123'
+              reservations:
+                - hw-address: 'b8:ca:3a:6c:33:68'
+                  hostname: 'srv3'
+                  ip-address: '172.31.241.90'
+        - authoritative: false
+          name: 'srv1.dc1.yxl.resolvemy.host'
+          match-client-id: false
+          option-data: []
+          ddns-qualifying-suffix: 'srv1.dc1.yxl.resolvemy.host.'
+          relay:
+            ip-addresses:
+              - '172.31.241.93'
+          store-extended-info: true
+          subnet4:
+            - id: 1011
+              subnet: '172.31.241.92/30'
+              match-client-id: false
+              server-hostname: 'dhcp.service.kjdev'
+              option-data:
+                - name: 'domain-name-servers'
+                  data: '1.1.1.1'
+                - name: 'pcode'
+                  data: 'CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00'
+                - name: 'tcode'
+                  data: 'America/Winnipeg'
+                - name: 'interface-mtu'
+                  data: '9000'
+                - name: 'routers'
+                  data: '172.31.241.93'
+                - name: 'time-servers'
+                  data: '162.159.200.123'
+              reservations:
+                - hw-address: 'b8:ca:3a:6e:f3:b8'
+                  hostname: 'srv1'
+                  ip-address: '172.31.241.94'
+        - authoritative: false
+          name: 'srv2.dc1.yxl.resolvemy.host'
+          match-client-id: false
+          option-data: []
+          ddns-qualifying-suffix: 'srv2.dc1.yxl.resolvemy.host.'
+          relay:
+            ip-addresses:
+              - '172.31.241.21'
+          store-extended-info: true
+          subnet4:
+            - id: 2021
+              subnet: '172.31.241.20/30'
+              match-client-id: false
+              server-hostname: 'dhcp.service.kjdev'
+              option-data:
+                - name: 'domain-name-servers'
+                  data: '1.1.1.1'
+                - name: 'pcode'
+                  data: 'CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00'
+                - name: 'tcode'
+                  data: 'America/Winnipeg'
+                - name: 'interface-mtu'
+                  data: '9000'
+                - name: 'routers'
+                  data: '172.31.241.21'
+                - name: 'time-servers'
+                  data: '162.159.200.123'
+              reservations:
+                - hw-address: 'b8:CA:3A:F6:51:3E'
+                  hostname: 'srv2'
+                  ip-address: '172.31.241.22'
+        - authoritative: false
+          name: 'srv7.dc1.yxl.resolvemy.host'
+          match-client-id: false
+          option-data: []
+          ddns-qualifying-suffix: 'srv7.dc1.yxl.resolvemy.host.'
+          relay:
+            ip-addresses:
+              - '172.31.241.69'
+          store-extended-info: true
+          subnet4:
+            - id: 2070
+              subnet: '172.31.241.68/30'
+              match-client-id: false
+              server-hostname: 'dhcp.service.kjdev'
+              option-data:
+                - name: 'domain-name-servers'
+                  data: '1.1.1.1'
+                - name: 'pcode'
+                  data: 'CST6CDT,M3.2.0/2:00:00,M11.1.0/2:00:00'
+                - name: 'tcode'
+                  data: 'America/Winnipeg'
+                - name: 'interface-mtu'
+                  data: '9000'
+                - name: 'routers'
+                  data: '172.31.241.69'
+                - name: 'time-servers'
+                  data: '162.159.200.123'
+              reservations:
+                - hw-address: 'B8:CA:3A:60:00:28'
+                  hostname: 'srv7'
+                  ip-address: '172.31.241.70'
+      server-hostname: 'core0.site1.kristianjones.dev'
+      subnet4: []
+      reservations: []
+      dhcp-queue-control:
+        enable-queue: true
+        queue-type: 'kea-ring4'
+        capacity: 64
+      loggers:
+        - name: 'kea-dhcp4'
+          output_options:
+            - output: 'stdout'
+          severity: 'DEBUG'
+          debuglevel: 99
 defaultPodOptions:
   labels:
     logs: 'loki-myloginspace'
@@ -237,6 +748,9 @@ configMaps:
         # Kea runtime artifacts that can incorrectly report a dead daemon as
         # running or prevent its control socket from being rebound.
         rm -f /var/run/kea/*.pid /var/run/kea/*-ctrl-socket
+        if grep -Eq '^dhcp4=yes$' /etc/DHCP/keactrl.conf; then
+          /usr/sbin/kea-dhcp4 -t /etc/DHCP/DHCP4.jsonc
+        fi
         KEA_PIDFILE_DIR=/var/run/kea \
           /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
         exec tail -f /dev/null

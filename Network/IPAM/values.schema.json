@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "dhcp": {
+      "type": "object",
+      "required": ["dhcp4"],
+      "properties": {
+        "dhcp4": {
+          "type": "object",
+          "required": ["shared-networks"],
+          "properties": {
+            "client-classes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": {"type": "string", "minLength": 1}
+                }
+              }
+            },
+            "shared-networks": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "#/definitions/sharedNetwork"}
+            },
+            "subnet4": {
+              "type": "array",
+              "items": {"$ref": "#/definitions/subnet4"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ipv4": {
+      "type": "string",
+      "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+    },
+    "cidr4": {
+      "type": "string",
+      "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/(3[0-2]|[12]?[0-9])$"
+    },
+    "mac": {
+      "type": "string",
+      "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+    },
+    "pool": {
+      "type": "object",
+      "required": ["pool"],
+      "properties": {
+        "pool": {
+          "type": "string",
+          "pattern": "^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)/(3[0-2]|[12]?[0-9])|((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?) - ((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))$"
+        }
+      }
+    },
+    "reservation": {
+      "type": "object",
+      "required": ["ip-address"],
+      "properties": {
+        "ip-address": {"$ref": "#/definitions/ipv4"},
+        "hw-address": {"$ref": "#/definitions/mac"},
+        "hostname": {"type": "string", "minLength": 1},
+        "client-id": {"type": "string", "minLength": 1},
+        "duid": {"type": "string", "minLength": 1},
+        "circuit-id": {"type": "string", "minLength": 1},
+        "flex-id": {"type": "string", "minLength": 1}
+      },
+      "anyOf": [
+        {"required": ["hw-address"]},
+        {"required": ["client-id"]},
+        {"required": ["duid"]},
+        {"required": ["circuit-id"]},
+        {"required": ["flex-id"]}
+      ]
+    },
+    "subnet4": {
+      "type": "object",
+      "required": ["id", "subnet"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+        "subnet": {"$ref": "#/definitions/cidr4"},
+        "pools": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/pool"}
+        },
+        "reservations": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/reservation"}
+        },
+        "option-data": {"type": "array"}
+      }
+    },
+    "sharedNetwork": {
+      "type": "object",
+      "required": ["name", "subnet4"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "subnet4": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/definitions/subnet4"}
+        },
+        "relay": {
+          "type": "object",
+          "properties": {
+            "ip-addresses": {
+              "type": "array",
+              "minItems": 1,
+              "items": {"$ref": "#/definitions/ipv4"}
+            }
+          }
+        },
+        "option-data": {"type": "array"}
+      }
+    }
+  }
+}
