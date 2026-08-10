@@ -137,11 +137,12 @@ report; review those changes as policy changes, not cosmetic tuning.
 
 The upstream chart exposes the Argo CD server through one HTTPRoute whose
 hostname and parent Gateway are injected per cluster. That route carries the
-web UI, HTTP API, and native gRPC traffic on the same hostname. The
-Kustomize layer sets the `argocd-server` Service's cleartext port to
-`appProtocol: kubernetes.io/h2c`, which tells Envoy Gateway to use HTTP/2 to
-the backend. The local `argocd-webhook-route` exposes only `/api/webhook`, and
-`BackendTrafficPolicy` enables compression for the main HTTP route.
+web UI, HTTP API, and gRPC-Web traffic on the same hostname. Its request and
+backend-request timeouts are disabled because log following and UI watches are
+long-lived streams; a gateway deadline would force the client to reconnect and
+can replay recent log entries. The local `argocd-webhook-route` exposes only
+`/api/webhook`, and `BackendTrafficPolicy` enables compression for the main
+HTTP route.
 
 Gateway API requires implementations to reject an HTTPRoute and GRPCRoute
 that attach to the same listener with overlapping hostnames. Consequently,
@@ -190,7 +191,8 @@ plugin. At minimum, inspect:
 - the repo-server sidecar, volumes, and `argocd-vault-config` reference;
 - Redis endpoint, TLS flags, and password Secret;
 - HTTPRoute host and parent Gateway reference, the absence of an overlapping
-  GRPCRoute, and the `argocd-server` HTTP port's h2c `appProtocol`;
+  GRPCRoute, the disabled streaming timeouts, and the absence of an h2c
+  `appProtocol` on the `argocd-server` HTTP port;
 - OIDC issuer, callback URL, Workspace status, and `argocd-secret` keys;
 - RBAC policy, AppProject scope, resource exclusions, and ignore rules; and
 - CRDs/API versions required by every rendered custom resource.
