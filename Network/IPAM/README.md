@@ -50,7 +50,10 @@ and the rendered Argo CD revision must be used together during an audit.
   for the lifetime of the pod, including individual container restarts. On
   every container start, the entry script removes stale Kea PID files and
   control sockets before invoking `keactrl`; this prevents an unclean daemon
-  exit from blocking recovery without deleting unrelated runtime files.
+  exit from blocking recovery without deleting unrelated runtime files. The
+  chart-managed healthcheck overrides Kea 3.2's PID directory with the mounted
+  runtime path and requires every daemon enabled in `keactrl.conf` to report
+  `active`; it does not rely on the image's DHCPv4-only `/Healthcheck.sh`.
 - [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
   serves DNS from the external PostgreSQL backend using the
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md),
@@ -140,7 +143,9 @@ After Argo CD reconciliation, verify all of the following:
    and Tinkerbell boot artifact retrieval on each target network. Also restart
    only the Kea container after an unclean daemon exit and verify it removes
    stale PID and control-socket files and returns ready without replacing the
-   pod.
+   pod. Confirm the healthcheck fails when any enabled DHCPv4, DHCPv6, or
+   DHCP-DDNS process is stopped and succeeds when all enabled processes are
+   active.
 3. Kea lease reads and writes through
    `psql.core-prod.svc.<cluster-domain>`, plus PowerDNS PostgreSQL connectivity
    and authoritative TCP/UDP answers. After a PowerDNS upgrade, also verify a

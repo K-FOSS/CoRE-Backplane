@@ -87,7 +87,7 @@ controllers:
             spec:
               exec:
                 command:
-                  - '/Healthcheck.sh'
+                  - '/usr/local/bin/healthcheck.sh'
               failureThreshold: 6
               initialDelaySeconds: 5
               periodSeconds: 30
@@ -98,7 +98,7 @@ controllers:
             spec:
               exec:
                 command:
-                  - '/Healthcheck.sh'
+                  - '/usr/local/bin/healthcheck.sh'
               failureThreshold: 6
               initialDelaySeconds: 5
               periodSeconds: 30
@@ -109,7 +109,7 @@ controllers:
             spec:
               exec:
                 command:
-                  - '/Healthcheck.sh'
+                  - '/usr/local/bin/healthcheck.sh'
               failureThreshold: 30
               initialDelaySeconds: 15
               periodSeconds: 10
@@ -200,6 +200,9 @@ persistence:
           - path: '/usr/local/bin/entry.sh'
             readOnly: true
             subPath: 'entry.sh'
+          - path: '/usr/local/bin/healthcheck.sh'
+            readOnly: true
+            subPath: 'healthcheck.sh'
   nsconfig:
     enabled: true
     type: 'configMap'
@@ -234,8 +237,29 @@ configMaps:
         # Kea runtime artifacts that can incorrectly report a dead daemon as
         # running or prevent its control socket from being rebound.
         rm -f /var/run/kea/*.pid /var/run/kea/*-ctrl-socket
-        /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
+        KEA_PIDFILE_DIR=/var/run/kea \
+          /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
         exec tail -f /dev/null
+      healthcheck.sh: |
+        #!/bin/sh
+        set -eu
+
+        config='/etc/DHCP/keactrl.conf'
+        status="$(KEA_PIDFILE_DIR=/var/run/kea \
+          /usr/sbin/keactrl status -c "${config}")"
+
+        check_enabled_server() {
+          setting="${1}"
+          label="${2}"
+
+          if grep -Eq "^${setting}=yes$" "${config}"; then
+            printf '%s\n' "${status}" | grep -Fqx "${label}: active"
+          fi
+        }
+
+        check_enabled_server 'dhcp4' 'DHCPv4 server'
+        check_enabled_server 'dhcp6' 'DHCPv6 server'
+        check_enabled_server 'dhcp_ddns' 'DHCP DDNS'
   nsconfig:
     enabled: true
     data:
