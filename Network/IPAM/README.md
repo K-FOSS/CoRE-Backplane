@@ -47,8 +47,14 @@ and the rendered Argo CD revision must be used together during an audit.
   through the site-local `psql` ClusterIP Service, which selects the local
   PGPool replicas in `core-prod`; database credentials and the port remain
   sourced from the secret store.
-- [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/)
-  serves DNS from the external PostgreSQL backend.
+- [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
+  serves DNS from the external PostgreSQL backend using the
+  [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md),
+  pinned to its multi-architecture manifest digest. The upgrade from 4.8.4
+  follows the [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html):
+  PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query,
+  API record representations may be normalized differently, and updates to
+  LUA records remain disabled because this deployment does not enable them.
 - [NetBox chart 5.0.23](https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox)
   deploys the [NetBox](https://netboxlabs.com/docs/netbox/en/stable/) web and
   worker components using the site image and enabled plugins.
@@ -87,9 +93,11 @@ not verify that this complete path works.
 the two pinned dependencies in [`Chart.yaml`](Chart.yaml), while cluster values
 come from the owning ApplicationSet. `dhcp.servers.dhcp4`, `dhcp6`, and
 `dhcpDdns` control the corresponding `keactrl` process flags per target. The
-custom Kea and NetBox image tags are mutable and use `Always`; this is
-deliberate current behaviour and should be replaced by immutable release tags
-or digests when the site images have a versioned publication process.
+PowerDNS sidecar uses the same `dhcpDdns` flag and is omitted when DHCP-DDNS is
+disabled. The custom Kea and NetBox image tags are mutable and use `Always`;
+this is deliberate current behaviour and should be replaced by immutable
+release tags or digests when the site images have a versioned publication
+process.
 
 No credential values belong in Git. `netbox-secret`, `netbox-creds`,
 `dragonfly-core-password`, the DNS secret, pull credentials, OIDC
@@ -128,7 +136,9 @@ After Argo CD reconciliation, verify all of the following:
    and Tinkerbell boot artifact retrieval on each target network.
 3. Kea lease reads and writes through
    `psql.core-prod.svc.<cluster-domain>`, plus PowerDNS PostgreSQL connectivity
-   and authoritative TCP/UDP answers.
+   and authoritative TCP/UDP answers. After a PowerDNS upgrade, also verify a
+   harmless RFC 2136 update and rollback of that test record, TSIG operations,
+   zone transfer/notification flow, and representative API consumers.
 4. NetBox migrations, web and worker health, TLS-authenticated Dragonfly
    connectivity to DBs `80` and `81`, PostgreSQL connectivity, OIDC login and
    group entitlement, API access, plugins, and S3 operations.

@@ -8,6 +8,20 @@ global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
 
+controllers:
+  main:
+    containers:
+      ns:
+        enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+
+configMaps:
+  nsconfig:
+    enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+
+persistence:
+  nsconfig:
+    enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
