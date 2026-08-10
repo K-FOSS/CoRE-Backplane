@@ -223,6 +223,9 @@ configMaps:
     data:
       entry.sh: |
         #!/bin/sh
+        set -eu
+        mkdir -p /var/run/kea
+        chmod 0750 /var/run/kea
         /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
         exec tail -f /dev/null
   nsconfig:

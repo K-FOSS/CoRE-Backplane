@@ -321,7 +321,7 @@ data:
                   "prefix": "2001:db8:abcd::",
                   "prefix-len": 48,
                   "delegated-len": 64,
-                  "excluded-prefix": "2001:db8:abcd:1234::",
+                  "excluded-prefix": "2001:db8:abcd:0:1200::",
                   "excluded-prefix-len": 72,
                   // Another user-context for this PD pool. Again, you can put
                   // anything you want in there as long as it's valid JSON and
@@ -331,7 +331,8 @@ data:
                   }
                 }
               ], // end of pools
-              "subnet": "2001:db8:1::/64"
+              "subnet": "2001:db8:1::/64",
+              "id": 1
             }
           ],
           // The following configures logging. It assumes that messages with at
@@ -351,7 +352,7 @@ data:
                   // kept.
                   "flush": true,
                   "maxsize": 204800,
-                  "maxver": 4,
+                  "maxver": 4
                 }
               ],
               "debuglevel": 0,
@@ -524,12 +525,10 @@ data:
           // is to only update DNS if the DNS information has changed.  It
           // may be specified at the global, shared-network and subnet levels.
           "ddns-update-on-renew": true,
-          // Boolean flag, which is passed to kea-dhcp-ddns with each DDNS
-          // update request to indicate whether or not DNS update conflict
-          // resolution as described in RFC 4703 should be employed for the
-          // given update request.  The default value for this flag is true.
-          // It may be specified at the global, shared-network and subnet levels.
-          "ddns-use-conflict-resolution": true,
+          // Conflict resolution mode passed to kea-dhcp-ddns with each DDNS
+          // update request. "check-with-dhcid" preserves the behavior of the
+          // former ddns-use-conflict-resolution=true setting.
+          "ddns-conflict-resolution-mode": "check-with-dhcid",
           // Time in seconds specifying how long a declined lease should be
           // excluded from DHCP assignments. The default value is 24 hours.
           "decline-probation-period": 86400,
@@ -601,15 +600,15 @@ data:
           },
           "hooks-libraries": [
             {
-              "library": "/usr/lib/kea/hooks/libdhcp_lease_cmds.so",
+              "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so",
               "parameters": {}
             },
             {
-              "library": "/usr/lib/kea/hooks/libdhcp_stat_cmds.so",
+              "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_stat_cmds.so",
               "parameters": {}
             },
             {   
-              "library": "/usr/lib/kea/hooks/libdhcp_flex_option.so",
+              "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_flex_option.so",
               "parameters": {
                 "options": [
                   {
