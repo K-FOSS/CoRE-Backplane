@@ -230,6 +230,10 @@ configMaps:
         set -eu
         mkdir -p /var/run/kea
         chmod 0750 /var/run/kea
+        # emptyDir survives container restarts within the same Pod. Remove only
+        # Kea runtime artifacts that can incorrectly report a dead daemon as
+        # running or prevent its control socket from being rebound.
+        rm -f /var/run/kea/*.pid /var/run/kea/*-ctrl-socket
         /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
         exec tail -f /dev/null
   nsconfig:

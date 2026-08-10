@@ -46,7 +46,11 @@ and the rendered Argo CD revision must be used together during an audit.
   because it is not included in that image. Both DHCPv4 and DHCPv6 store leases
   through the site-local `psql` ClusterIP Service, which selects the local
   PGPool replicas in `core-prod`; database credentials and the port remain
-  sourced from the secret store.
+  sourced from the secret store. The memory-backed Kea runtime directory lasts
+  for the lifetime of the pod, including individual container restarts. On
+  every container start, the entry script removes stale Kea PID files and
+  control sockets before invoking `keactrl`; this prevents an unclean daemon
+  exit from blocking recovery without deleting unrelated runtime files.
 - [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
   serves DNS from the external PostgreSQL backend using the
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md),
@@ -133,7 +137,10 @@ After Argo CD reconciliation, verify all of the following:
 
 1. ExternalSecret and PushSecret conditions, without printing Secret data.
 2. Kea configuration load, lease allocation, PXE for the intended firmware,
-   and Tinkerbell boot artifact retrieval on each target network.
+   and Tinkerbell boot artifact retrieval on each target network. Also restart
+   only the Kea container after an unclean daemon exit and verify it removes
+   stale PID and control-socket files and returns ready without replacing the
+   pod.
 3. Kea lease reads and writes through
    `psql.core-prod.svc.<cluster-domain>`, plus PowerDNS PostgreSQL connectivity
    and authoritative TCP/UDP answers. After a PowerDNS upgrade, also verify a
