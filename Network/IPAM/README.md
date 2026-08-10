@@ -19,8 +19,10 @@ targets:
 Argo CD renders `Network/IPAM` with the
 [Lovely plugin](https://github.com/crumbhole/argocd-lovely-plugin). The
 ApplicationSet injects the environment, cluster identity, topology, EFI boot
-server, DHCP secret volume, NetBox enablement, and per-cluster Dragonfly host.
-It also injects the target cluster domain into Kea's local PGPool Service name.
+server, enabled Kea server types, DHCP secret volume, NetBox enablement, and
+per-cluster Dragonfly host. It also injects the target cluster domain into
+Kea's local PGPool Service name. DHCPv4 and DHCP-DDNS are enabled on all three
+targets; DHCPv6 is disabled on both DC1 targets and enabled on Home1.
 Applications are deployed to `core-prod`; deleting an ApplicationSet-generated
 Application preserves its resources because `preserveResourcesOnDeletion` is
 enabled. The source revision is the mutable `HEAD` reference, so Git history
@@ -83,10 +85,11 @@ not verify that this complete path works.
 
 [`values.yaml`](values.yaml) contains site overrides only. Defaults come from
 the two pinned dependencies in [`Chart.yaml`](Chart.yaml), while cluster values
-come from the owning ApplicationSet. The custom Kea and NetBox image tags are
-mutable and use `Always`; this is deliberate current behaviour and should be
-replaced by immutable release tags or digests when the site images have a
-versioned publication process.
+come from the owning ApplicationSet. `dhcp.servers.dhcp4`, `dhcp6`, and
+`dhcpDdns` control the corresponding `keactrl` process flags per target. The
+custom Kea and NetBox image tags are mutable and use `Always`; this is
+deliberate current behaviour and should be replaced by immutable release tags
+or digests when the site images have a versioned publication process.
 
 No credential values belong in Git. `netbox-secret`, `netbox-creds`,
 `dragonfly-core-password`, the DNS secret, pull credentials, OIDC
