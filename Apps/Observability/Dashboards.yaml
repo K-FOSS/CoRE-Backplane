@@ -20,11 +20,15 @@ spec:
                   values:
                     hub: false
 
+                    grafanaReplicas: '2'
+
                     mode: Distributed
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+
+                    grafanaReplicas: '2'
 
                     mode: SingleBinary
 
@@ -73,9 +77,25 @@ spec:
               value: |- 
                 hub: {{ .values.hub }}
                 grafana:
+                  replicas: {{ .values.grafanaReplicas }}
+
+                  annotations:
+                    secret.reloader.stakater.com/reload: 'dragonfly-core-password'
+
+                  envValueFrom:
+                    DRAGONFLY_PASSWORD:
+                      secretKeyRef:
+                        name: 'dragonfly-core-password'
+                        key: 'password'
+
                   grafana.ini:
                     live:
                       ha_engine_address: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379
+                      ha_engine_password: '$__env{DRAGONFLY_PASSWORD}'
+
+                    remote_cache:
+                      type: 'redis'
+                      connstr: 'network=tcp,addr=dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379,pool_size=100,db=132,password=$__env{DRAGONFLY_PASSWORD},ssl=true'
 
                     tracing.opentelemetry.otlp:
                       address: {{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4317

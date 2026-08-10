@@ -104,7 +104,9 @@ persistence is disabled. Grafana Live and the
 [remote cache](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#remote_cache)
 use the ApplicationSet-injected Dragonfly address. The cache stores temporary
 authentication-related data, not Grafana sessions or authoritative application
-state. Refer to Grafana's [database configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#database)
+state. It is isolated in Dragonfly database `132`; Grafana Live remains on the
+default Redis database because its Redis client does not expose a database
+selector. Refer to Grafana's [database configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#database)
 and [Live HA setup](https://grafana.com/docs/grafana/latest/setup-grafana/set-up-grafana-live/#configure-grafana-live-ha-setup)
 when changing either dependency. Grafana Live's Redis client does not support
 TLS, while the remote-cache client is explicitly configured with `ssl=true`;
@@ -150,7 +152,7 @@ helm template dashboards . \
   --set-string grafana.grafana\.ini.live.ha_engine_address='dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
   --set-string grafana.grafana\.ini.live.ha_engine_password='$__env{DRAGONFLY_PASSWORD}' \
   --set-string grafana.grafana\.ini.remote_cache.type='redis' \
-  --set-string grafana.grafana\.ini.remote_cache.connstr='network=tcp,addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379,pool_size=100,db=0,password=$__env{DRAGONFLY_PASSWORD},ssl=true' \
+  --set-string grafana.grafana\.ini.remote_cache.connstr='network=tcp\,addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379\,pool_size=100\,db=132\,password=$__env{DRAGONFLY_PASSWORD}\,ssl=true' \
   --set-string grafana.grafana\.ini.tracing\.opentelemetry\.otlp.address='core-home1-talos-prod-collectors-alloy.core-prod.svc.cluster.local:4317' \
   --set-string grafana.grafana\.ini.tracing\.opentelemetry\.otlp.propagation='w3c' \
   --set grafana.ldap.enabled=true \

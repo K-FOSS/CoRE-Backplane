@@ -103,6 +103,10 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   escape processing is required or a single-quoted value would be materially
   less clear. Quote numeric-looking identifiers so renderers preserve them as
   strings across YAML, templates, and generated JSON.
+- As an exception to the general quoting rule, do not quote Kubernetes
+  `apiVersion` or `kind` values. In Helm `Chart.yaml` files, do not quote
+  `apiVersion`, `type: application`, the chart `version`, or dependency
+  `version` values.
 - Prefer values-driven templates for environment-specific behavior. Retain a
   literal only for a deliberate compatibility reason and document it.
 - Validate every parser boundary touched by a change, including Helm templates,
