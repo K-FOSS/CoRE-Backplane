@@ -8,7 +8,7 @@ global:
   nameOverride: "{{ .Release.Name }}"
 
 controllers:
-  main:
+  librespeed:
     enabled: {{ .Values.librespeed.enabled }}
 
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
@@ -17,7 +17,7 @@ controllers:
     strategy: RollingUpdate
 
     containers:
-      main:
+      librespeed:
         image:
           repository: ghcr.io/librespeed/speedtest
           tag: latest
@@ -144,9 +144,9 @@ controllers:
 
 
 service:
-  main:
+  librespeed:
     enabled: {{ .Values.librespeed.enabled }}
-    controller: main
+    controller: librespeed
     primary: true
     type: ClusterIP
 
@@ -223,7 +223,7 @@ route:
         backendRefs:
           - kind: Service
             port: 8080
-            name: main
+            identifier: librespeed
             weight: 1
 {{ end }}
 
