@@ -76,6 +76,27 @@ The [Repository guide](docs/REPOSITORY.md) describes conventions and how to
 tell fleet entry points, implementation charts, examples, and experimental
 areas apart.
 
+## Business workload charts
+
+The ApplicationSets in [`Apps/Business/`](Apps/Business/) deploy the
+site-specific workload charts maintained in the
+[K-FOSS/CoRE-Business GitHub repository](https://github.com/K-FOSS/CoRE-Business).
+The currently referenced CoRE-Business chart directories are
+[Automation](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation),
+[Terminal](https://github.com/K-FOSS/CoRE-Business/tree/main/Terminal),
+[AVoIP](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP),
+[ERP](https://github.com/K-FOSS/CoRE-Business/tree/main/ERP),
+[Mail](https://github.com/K-FOSS/CoRE-Business/tree/main/Mail),
+[Projects](https://github.com/K-FOSS/CoRE-Business/tree/main/Projects),
+[AI](https://github.com/K-FOSS/CoRE-Business/tree/main/AI),
+[Ambient](https://github.com/K-FOSS/CoRE-Business/tree/main/Ambient),
+[Browsers](https://github.com/K-FOSS/CoRE-Business/tree/main/Browsers),
+[CyberChef](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/CyberChef),
+[Desktop](https://github.com/K-FOSS/CoRE-Business/tree/main/Desktop),
+[DrawIO](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/DrawIO),
+[Office](https://github.com/K-FOSS/CoRE-Business/tree/main/Office), and
+[VaultWarden](https://github.com/K-FOSS/CoRE-Business/tree/main/Passwords/VaultWarden).
+
 ## Identity and secrets
 
 Authentik is the primary source of human and service identity. Applications
