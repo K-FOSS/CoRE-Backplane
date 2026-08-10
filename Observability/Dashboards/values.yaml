@@ -35,9 +35,8 @@ grafana:
         name: 'grafana-core-authentik'
         key: 'client-secret'
 
-  plugins:
-    - 'grafana-advisor-app'
-    - 'grafana-llm-app'
+  env:
+    GF_PLUGINS_PREINSTALL_SYNC: 'grafana-advisor-app@1.0.2,grafana-llm-app@0.22.1'
 
   grafana.ini:
     live:
@@ -53,7 +52,6 @@ grafana:
       allow_sign_up: true
       config_file: '/etc/grafana/ldap.toml'
     auth:
-      oauth_auto_login: true
       signout_redirect_url: 'https://idp.mylogin.space/flows/-/default/invalidation/'
     auth.proxy:
       enabled: true

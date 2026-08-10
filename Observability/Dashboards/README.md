@@ -128,8 +128,9 @@ Before reconciliation, the target cluster must provide:
   `dragonfly-core-password` Secret in `core-prod`;
 - Alloy at the ApplicationSet-generated in-cluster OTLP address.
 
-The chart also installs `grafana-advisor-app` and `grafana-llm-app` at pod
-startup. Their component documentation is the
+The chart also installs `grafana-advisor-app` version `1.0.2` and
+`grafana-llm-app` version `0.22.1` synchronously at pod startup through
+`GF_PLUGINS_PREINSTALL_SYNC`. Their component documentation is the
 [Grafana Advisor app repository](https://github.com/grafana/grafana-advisor-app)
 and [Grafana LLM app repository](https://github.com/grafana/grafana-llm-app).
 Plugin availability is therefore an external startup dependency.
@@ -152,7 +153,7 @@ helm template dashboards . \
   --set-string grafana.grafana\.ini.live.ha_engine_address='dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
   --set-string grafana.grafana\.ini.live.ha_engine_password='$__env{DRAGONFLY_PASSWORD}' \
   --set-string grafana.grafana\.ini.remote_cache.type='redis' \
-  --set-string grafana.grafana\.ini.remote_cache.connstr='network=tcp\,addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379\,pool_size=100\,db=132\,password=$__env{DRAGONFLY_PASSWORD}\,ssl=true' \
+  --set-string grafana.grafana\.ini.remote_cache.connstr='addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379\,pool_size=100\,db=132\,password=$__env{DRAGONFLY_PASSWORD}\,ssl=true' \
   --set-string grafana.grafana\.ini.tracing\.opentelemetry\.otlp.address='core-home1-talos-prod-collectors-alloy.core-prod.svc.cluster.local:4317' \
   --set-string grafana.grafana\.ini.tracing\.opentelemetry\.otlp.propagation='w3c' \
   --set grafana.ldap.enabled=true \
