@@ -12,66 +12,6 @@ metadata:
     argocd.argoproj.io/sync-wave: '0'
 
 data:
-  KeaCA.jsonc: | #json
-      {{`{
-        // This is a basic configuration for the Kea Control Agent.
-        // RESTful interface to beb8 available at http://0.0.0.0:8000/
-        "Control-agent": {
-          "http-host": "0.0.0.0",
-          "http-port": 8000,
-          // Control sockets to Kea daemons.
-          "control-sockets": {
-            // This is how the Agent can communicate with the DHCPv4 server.
-            "dhcp4": {
-              "comment": "socket to DHCP4 server",
-              "socket-type": "unix",
-              "socket-name": "/var/run/DHCP/kea4-ctrl-socket"
-            },
-            // Location of the D2 command channel socket.
-            "d2": {
-              "socket-type": "unix",
-              "socket-name": "/var/run/DHCP/kea-ddns-ctrl-socket"
-            }
-          },
-          // Specify hooks libraries that are attached to the Control Agent.
-          // Such hooks libraries should support 'control_command_receive'
-          // hook point. This is currently commented out because it has to
-          // point to the existing hooks library. Otherwise the Control
-          // Agent will fail to start.
-          "hooks-libraries": [],
-          // Logging configuration starts here. Kea uses different loggers to log various
-          // activities. For details (e.g. names of loggers), see Chapter 18.
-          "loggers": [
-            {
-              // This specifies the logging for Control Agent daemon.
-              "name": "kea-ctrl-agent",
-              "output_options": [
-                {
-                  // Specifies the output file. There are several special values
-                  // supported:
-                  // - stdout (prints on standard output)
-                  // - stderr (prints on standard error)
-                  // - syslog (logs to syslog)
-                  // - syslog:name (logs to syslog using specified name)
-                  // Any other value is considered a name of a time
-                  "output": "stdout",
-                  // This governs whether the log output is flushed to disk after
-                  // every write.
-                  // "flush": false,
-                  // This specifies the maximum size of the file before it is
-                  // rotated.
-                  // "maxsize": 1048576,
-                  // This specifies the maximum number of rotated files to keep.
-                  // "maxver": 8
-                }
-              ],
-              // This specifies the severity of log messages to keep. Supported values
-              // are: FATAL, ERROR, WARN, INFO, DEBUG
-              "severity": "WARN"
-            }
-          ]
-        }
-      }`}}
   NetConf.jsonc: | #jsonc
     {{`{
         "Netconf": {
@@ -116,11 +56,11 @@ data:
               //   information to the server.
               // - "unix" which uses the local control channel supported by
               //   "dhcp4" and "dhcp6" servers ("d2" support is coming in Kea 1.5)
-              // - "http" which uses the Control Agent (CA) to manage itself or
-              //   to forward commands to "dhcp4" or "dhcp6".
+              // - "http" which connects directly to a Kea server HTTP control
+              //   channel.
               "control-socket": {
                 "socket-type": "unix",
-                "socket-name": "/var/run/DHCP/kea4-ctrl-socket"
+                "socket-name": "kea4-ctrl-socket"
               },
               // Comment is optional. You can put some notes here.
               "comment": "Kea DHCP4 server serving network on floor 13"
@@ -199,9 +139,8 @@ data:
           // Command control socket configuration parameters for Kea DHCP-DDNS server.
           "control-socket": {
             // Location of the unix domain socket file the DHCP-DDNS server uses
-            // to receive control commands from the Kea Control Agent or the
-            // local server administrator.
-            "socket-name": "/var/run/DHCP/kea-ddns-ctrl-socket",
+            // to receive control commands from the local server administrator.
+            "socket-name": "kea-ddns-ctrl-socket",
             // Control socket type used by the Kea DHCP-DDNS server.
             // The 'unix' socket is currently the only supported type.
             "socket-type": "unix"
@@ -285,7 +224,7 @@ data:
           // Guide for list of supported commands.
           "control-socket": {
             "socket-type": "unix",
-            "socket-name": "/var/run/DHCP/kea6-ctrl-socket"
+            "socket-name": "kea6-ctrl-socket"
           },
           // We need to specify the database used to store leases. As of
           // September 2016, four database backends are supported: MySQL,
@@ -540,7 +479,7 @@ data:
             }
           ],
           "control-socket": {
-            "socket-name": "/var/run/DHCP/kea4-ctrl-socket",
+            "socket-name": "kea4-ctrl-socket",
             "socket-type": "unix"
           },
           // Boolean flag indicating that server should ignore DHCP client

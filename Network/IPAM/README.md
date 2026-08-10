@@ -30,12 +30,16 @@ and the rendered Argo CD revision must be used together during an audit.
 
 - [bjw-s common library 3.6.1](https://github.com/bjw-s-labs/helm-charts/tree/common-3.6.1/charts/library/common)
   renders the Kea and PowerDNS workload, Services, ConfigMaps, and volumes.
-- [ISC Kea](https://kea.readthedocs.io/en/latest/) serves DHCP and renders PXE
-  paths for [Tinkerbell](https://tinkerbell.org/docs/). DHCP configuration is
-  assembled by this chart and synchronized through External Secrets. Both
-  DHCPv4 and DHCPv6 store leases through the site-local `psql` ClusterIP
-  Service, which selects the local PGPool replicas in `core-prod`; database
-  credentials and the port remain sourced from the secret store.
+- [ISC Kea 3.2](https://kea.readthedocs.io/en/kea-3.2.0/) serves DHCP and
+  renders PXE paths for [Tinkerbell](https://tinkerbell.org/docs/). DHCP
+  configuration is assembled by this chart and synchronized through External
+  Secrets. DHCPv4, DHCPv6, and DHCP-DDNS use pathless UNIX control-socket names,
+  which Kea resolves beneath its required `/var/run/kea` runtime directory.
+  The removed Kea Control Agent is not configured; local management uses each
+  daemon's control socket. Both DHCPv4 and DHCPv6 store leases through the
+  site-local `psql` ClusterIP Service, which selects the local PGPool replicas
+  in `core-prod`; database credentials and the port remain sourced from the
+  secret store.
 - [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/)
   serves DNS from the external PostgreSQL backend.
 - [NetBox chart 5.0.23](https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox)
@@ -45,8 +49,8 @@ and the rendered Argo CD revision must be used together during an audit.
   runtime credentials from `mainvault-core`; hub-mode `User` and `PushSecret`
   resources create and publish service identities. Home1 is the IPAM hub and
   creates the Kea identity and publishes its username and password. The
-  generated username is also the PostgreSQL role and database name; the
-  site-managed database host and port remain unchanged in Vault. The other
+  generated username is also the PostgreSQL role and database name. Kea reads
+  that database name and the site-managed host and port from Vault. The other
   targets are spokes and consume the published identity.
 - An [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) attaches
   NetBox to the shared Gateway. An [Envoy Gateway SecurityPolicy](https://gateway.envoyproxy.io/latest/api/extension_types/)
