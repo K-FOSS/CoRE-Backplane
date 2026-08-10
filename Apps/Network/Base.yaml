@@ -23,6 +23,45 @@ spec:
                     peers:
                       - name: core-home1-talos-prod
                         address: 10.44.5.101
+                    sriovDevicePluginResourceList:
+                      - resourceName: intel_i350_port0_vfio
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1520']
+                          drivers: [vfio-pci]
+                          pfNames: [eno1]
+                      - resourceName: intel_i350_port1_vfio
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1520']
+                          drivers: [vfio-pci]
+                          pfNames: [eno2]
+                      - resourceName: intel_i350_port0
+                        deviceType: netDevice
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1520']
+                          pfNames: [eno1]
+                      - resourceName: intel_i350_port1
+                        deviceType: netDevice
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1520']
+                          pfNames: [eno2]
+                      - resourceName: mlx4_cx3_vfio
+                        resourcePrefix: mellanox.com
+                        deviceType: netDevice
+                        selectors:
+                          - vendors: ['15b3']
+                            devices: ['1004']
+                            drivers: [vfio-pci]
+                      - resourceName: mlx4_cx3_netdevice
+                        resourcePrefix: mellanox.com
+                        deviceType: netDevice
+                        selectors:
+                          - vendors: ['15b3']
+                            devices: ['1004']
+                            drivers: [mlx4_core]
 
                 - name: core-home1-talos-prod
                   values:
@@ -31,7 +70,73 @@ spec:
                     peers:
                       - name: core-dc1-talos-prod
                         address: 10.44.3.141
-                    
+                    sriovDevicePluginResourceList:
+                      - resourceName: intel_x540_netdevice_port0
+                        resourcePrefix: intel.com
+                        deviceType: netDevice
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [ixgbevf]
+                          pfNames: ['eno1#0-3', 'enp34s0f0#0-3']
+                      - resourceName: x540_port0_vlan50
+                        resourcePrefix: intel.com
+                        deviceType: netDevice
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [ixgbevf]
+                          pfNames: ['eno1#4-7', 'enp34s0f0#4-7']
+                      - resourceName: intel_x540_netdevice_port1
+                        resourcePrefix: intel.com
+                        deviceType: netDevice
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [ixgbevf]
+                          pfNames: [eno2, enp34s0f1]
+                      - resourceName: x540_vfio_port0_gp0
+                        resourcePrefix: intel.com
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [vfio-pci]
+                          pfNames: ['eno1#8-10']
+                      - resourceName: x540_vfio_port0_gp1
+                        resourcePrefix: intel.com
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [vfio-pci]
+                          pfNames: ['eno1#11-12']
+                      - resourceName: x540_vfio_port0_gp3
+                        resourcePrefix: intel.com
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [vfio-pci]
+                          pfNames: ['eno1#13-15']
+                      - resourceName: x540_vfio_port1gp0
+                        resourcePrefix: intel.com
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [vfio-pci]
+                          pfNames: ['eno2#12-13']
+                      - resourceName: x540_vfio_port1gp1
+                        resourcePrefix: intel.com
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1515']
+                          drivers: [vfio-pci]
+                          pfNames: ['eno2#14-15']
+                      - resourceName: intel_i350_vfio
+                        selectors:
+                          vendors: ['8086']
+                          devices: ['1520']
+                          drivers: [vfio-pci]
+                          pfNames: [eno2]
+
           - clusters:
               selector:
                 matchLabels:
@@ -114,6 +219,10 @@ spec:
                   clusterDomain: {{ .values.clusterDomain }}
 
                   txtOwnerId: {{ .values.clusterName }}
+
+                sriovDevicePlugin:
+                  resourceList:
+                    {{ nindent 4 (toYaml .values.sriovDevicePluginResourceList) }}
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
@@ -238,4 +347,3 @@ spec:
       destination:
         server: '{{ .server }}'
         namespace: kube-system
-
