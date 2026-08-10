@@ -42,16 +42,26 @@ self-heal are not configured here.
 
 ## Rendered components
 
-The chart pins the [Grafana Helm chart 10.1.0](https://github.com/grafana/helm-charts/tree/grafana-10.1.0/charts/grafana).
+The chart pins the maintained
+[Grafana Community Helm chart 12.10.4](https://github.com/grafana-community/helm-charts/tree/grafana-12.10.4/charts/grafana),
+which deploys Grafana `13.1.3`.
 The release renders one Grafana replica named `grafana-core`, a ClusterIP
 Service, cluster-scoped dashboard-sidecar RBAC, and an HTTPRoute for
 `grafana.int.mylogin.space` attached to `core-prod/main-gw`. The upstream chart
-provides the [Grafana configuration values](https://github.com/grafana/helm-charts/blob/grafana-10.1.0/charts/grafana/values.yaml)
+provides the [Grafana configuration values](https://github.com/grafana-community/helm-charts/blob/grafana-12.10.4/charts/grafana/values.yaml)
 and container defaults; local values deliberately override its authentication,
 database, routing, plugin, and dashboard-discovery behavior.
 
+Grafana 13 enables unified storage and the chart mounts a disposable
+`emptyDir` at `/var/lib/grafana-search` for each replica's local search index.
+The PostgreSQL database remains the authoritative application store; do not
+treat the per-pod search volume as backup or recovery data. The upgrade
+preserves the names of the Deployment, Service, ServiceAccount, ConfigMap,
+HTTPRoute, ClusterRole, and ClusterRoleBinding. The newer chart no longer
+renders the previous empty namespaced Role and RoleBinding or Helm test hooks.
+
 Dashboard discovery uses the chart's
-[k8s-sidecar integration](https://github.com/grafana/helm-charts/tree/grafana-10.1.0/charts/grafana#sidecar-for-dashboards)
+[k8s-sidecar integration](https://github.com/grafana-community/helm-charts/tree/grafana-12.10.4/charts/grafana#sidecar-for-dashboards)
 to watch ConfigMaps labelled `grafana_dashboard` in the release namespace. This
 is a namespaced dashboard watch, not the source of the cluster-wide telemetry
 traffic described in the [Collectors guide](../Collectors/README.md).
@@ -147,15 +157,15 @@ helm template dashboards . \
   --namespace core-prod \
   --set hub=false \
   --set grafana.replicas=2 \
-  --set-string grafana.annotations.'secret\.reloader\.stakater\.com/reload'='dragonfly-core-password' \
-  --set-string grafana.envValueFrom.DRAGONFLY_PASSWORD.secretKeyRef.name='dragonfly-core-password' \
-  --set-string grafana.envValueFrom.DRAGONFLY_PASSWORD.secretKeyRef.key='password' \
-  --set-string grafana.grafana\.ini.live.ha_engine_address='dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
-  --set-string grafana.grafana\.ini.live.ha_engine_password='$__env{DRAGONFLY_PASSWORD}' \
-  --set-string grafana.grafana\.ini.remote_cache.type='redis' \
-  --set-string grafana.grafana\.ini.remote_cache.connstr='addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379\,pool_size=100\,db=132\,password=$__env{DRAGONFLY_PASSWORD}\,ssl=true' \
-  --set-string grafana.grafana\.ini.tracing\.opentelemetry\.otlp.address='core-home1-talos-prod-collectors-alloy.core-prod.svc.cluster.local:4317' \
-  --set-string grafana.grafana\.ini.tracing\.opentelemetry\.otlp.propagation='w3c' \
+  --set-string 'grafana.annotations.secret\.reloader\.stakater\.com/reload=dragonfly-core-password' \
+  --set-string 'grafana.envValueFrom.DRAGONFLY_PASSWORD.secretKeyRef.name=dragonfly-core-password' \
+  --set-string 'grafana.envValueFrom.DRAGONFLY_PASSWORD.secretKeyRef.key=password' \
+  --set-string 'grafana.grafana\.ini.live.ha_engine_address=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
+  --set-string 'grafana.grafana\.ini.live.ha_engine_password=$__env{DRAGONFLY_PASSWORD}' \
+  --set-string 'grafana.grafana\.ini.remote_cache.type=redis' \
+  --set-string 'grafana.grafana\.ini.remote_cache.connstr=addr=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379\,pool_size=100\,db=132\,password=$__env{DRAGONFLY_PASSWORD}\,ssl=true' \
+  --set-string 'grafana.grafana\.ini.tracing\.opentelemetry\.otlp.address=core-home1-talos-prod-collectors-alloy.core-prod.svc.cluster.local:4317' \
+  --set-string 'grafana.grafana\.ini.tracing\.opentelemetry\.otlp.propagation=w3c' \
   --set grafana.ldap.enabled=true \
   --set-string grafana.ldap.existingSecret='grafana-core-ldap'
 ```
@@ -167,25 +177,33 @@ ConfigMap before merging.
 
 After Argo CD reconciliation, verify more than Application health:
 
-1. Confirm ExternalSecret conditions and the presence of the expected Secret
+1. Before the first Grafana 13 rollout, take and verify a PostgreSQL backup.
+   Grafana 13 migrates dashboards and folders to unified storage, so rollback
+   to Grafana 12 requires restoring the pre-upgrade database backup. See the
+   [Grafana 13 upgrade guide](https://grafana.com/docs/grafana/latest/upgrade-guide/upgrade-v13.0/#unified-storage-for-folders-and-dashboards).
+2. Confirm ExternalSecret conditions and the presence of the expected Secret
    keys, including `dragonfly-core-password/password`, without printing their
    values.
-2. Confirm the HTTPRoute is accepted by `main-gw` and the SecurityPolicy is
+3. Confirm the HTTPRoute is accepted by `main-gw` and the SecurityPolicy is
    attached without errors.
-3. Check the Grafana Deployment rollout and `/api/health` endpoint.
-4. Test OIDC and LDAP login with least-privileged and administrative accounts,
+4. Check the Grafana Deployment rollout, database migration logs, unified
+   storage migration status, and `/api/health` endpoint.
+5. Test OIDC and LDAP login with least-privileged and administrative accounts,
    including logout and refresh behavior.
-5. Check dashboard-sidecar logs and confirm labelled dashboards appear.
-6. Rotate the Dragonfly credential through its owning workflow and verify
+6. Check dashboard-sidecar logs and confirm labelled dashboards appear.
+7. Rotate the Dragonfly credential through its owning workflow and verify
    Reloader rolls both Grafana replicas after the Secret changes.
-7. Verify PostgreSQL connectivity, Grafana Live and remote-cache connectivity,
+8. Verify PostgreSQL connectivity, Grafana Live and remote-cache connectivity,
    and OTLP traces reaching Alloy and the downstream traces backend.
 
 ## Rollback and deletion
 
-Rollback is a Git revert followed by Argo CD reconciliation. Changes to resource
-names, secret targets, redirect URIs, or identity mappings can cause replacement
-or lockout and require an explicit migration plan.
+Rollback is a Git revert followed by Argo CD reconciliation. After Grafana 13
+has migrated folders and dashboards to unified storage, a version rollback also
+requires restoring the pre-upgrade PostgreSQL backup; Grafana 12 otherwise reads
+stale legacy tables. Changes to resource names, secret targets, redirect URIs,
+or identity mappings can cause replacement or lockout and require an explicit
+migration plan.
 
 `preserveResourcesOnDeletion: true` means deleting an Application does not
 remove its managed resources. Conversely, removing a template from Git during
