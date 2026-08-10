@@ -43,8 +43,11 @@ and the rendered Argo CD revision must be used together during an audit.
   worker components using the site image and enabled plugins.
 - [External Secrets Operator](https://external-secrets.io/latest/) reads
   runtime credentials from `mainvault-core`; hub-mode `User` and `PushSecret`
-  resources create and publish service identities. The current targets are
-  spokes (`hub: false`) and consume existing identities.
+  resources create and publish service identities. Home1 is the IPAM hub and
+  creates the Kea identity and publishes its username and password. The
+  generated username is also the PostgreSQL role and database name; the
+  site-managed database host and port remain unchanged in Vault. The other
+  targets are spokes and consume the published identity.
 - An [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) attaches
   NetBox to the shared Gateway. An [Envoy Gateway SecurityPolicy](https://gateway.envoyproxy.io/latest/api/extension_types/)
   applies OIDC credentials synchronized from the secret store.
