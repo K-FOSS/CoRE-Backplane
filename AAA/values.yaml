@@ -82,31 +82,6 @@ authentik:
             name: aaa-authentik-database
             key: Password
 
-      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST
-        valueFrom:
-          configMapKeyRef:
-            name: aaa-authentik-read-replica
-            key: Host
-            optional: true
-
-      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME
-        valueFrom:
-          secretKeyRef:
-            name: aaa-authentik-database
-            key: Database
-
-      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER
-        valueFrom:
-          secretKeyRef:
-            name: aaa-authentik-database
-            key: Username
-
-      - name: AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD
-        valueFrom:
-          secretKeyRef:
-            name: aaa-authentik-database
-            key: Password
-
   authentik:
     email:
       host: mail.mylogin.space
