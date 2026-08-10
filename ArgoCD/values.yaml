@@ -512,7 +512,11 @@ argo-cd:
             backendRequest: 300s
 
     grpcroute:
-      enabled: true
+      # Gateway API rejects GRPCRoute and HTTPRoute resources with overlapping
+      # hostnames on the same listener. The HTTPRoute carries both the web/API
+      # and native gRPC traffic; kustomization.yaml marks its Service backend
+      # as h2c so Envoy uses HTTP/2 upstream.
+      enabled: false
 
       labels:
         wan-mode: 'public'

@@ -55,7 +55,7 @@ details into that Secret.
 | --- | --- |
 | Application controller | Reconciles Applications; configured with three replicas and cluster-cache tuning by default. |
 | Repository server | Generates manifests and hosts the Lovely sidecar; configured with two replicas and bounded in-memory work volumes. |
-| API server | Serves the UI/API through Gateway API HTTPRoute and GRPCRoute resources. |
+| API server | Serves the UI/API and native gRPC through one Gateway API HTTPRoute. |
 | ApplicationSet controller | Generates fleet Applications; applications in any namespace are enabled. |
 | Notifications controller | Enabled by the upstream chart values. |
 | External Redis | Dragonfly endpoint injected by the ApplicationSet; in-chart Redis and Redis HA are disabled. |
@@ -135,10 +135,24 @@ report; review those changes as policy changes, not cosmetic tuning.
 
 ## Networking
 
-The upstream chart exposes the Argo CD server through HTTPRoute and GRPCRoute
-objects whose hostname and parent Gateway are injected per cluster. The local
-`argocd-webhook-route` exposes only `/api/webhook`, and
+The upstream chart exposes the Argo CD server through one HTTPRoute whose
+hostname and parent Gateway are injected per cluster. That route carries the
+web UI, HTTP API, and native gRPC traffic on the same hostname. The
+Kustomize layer sets the `argocd-server` Service's cleartext port to
+`appProtocol: kubernetes.io/h2c`, which tells Envoy Gateway to use HTTP/2 to
+the backend. The local `argocd-webhook-route` exposes only `/api/webhook`, and
 `BackendTrafficPolicy` enables compression for the main HTTP route.
+
+Gateway API requires implementations to reject an HTTPRoute and GRPCRoute
+that attach to the same listener with overlapping hostnames. Consequently,
+the upstream GRPCRoute is deliberately disabled. The supported alternatives
+are a GRPCRoute on a distinct hostname, such as `grpc.argocd.example.com`, or
+using the Argo CD CLI's gRPC-Web mode over the HTTPRoute when native gRPC is
+not required. See the [Gateway API GRPCRoute cross-serving rules](https://gateway-api.sigs.k8s.io/api-types/grpcroute/#cross-serving),
+the [Gateway API backend protocol guide](https://gateway-api.sigs.k8s.io/guides/user-guides/backend-protocol/),
+and [Envoy Gateway gRPC routing documentation](https://gateway.envoyproxy.io/v1.8/tasks/traffic/grpc-routing/).
+Argo CD's [ingress configuration guide](https://argo-cd.readthedocs.io/en/release-3.3/operator-manual/ingress/#gateway-api)
+describes the server's HTTP/gRPC behavior and the CLI's gRPC-Web fallback.
 
 The local webhook route uses the same cluster, region, domain, and Gateway
 values as the main route. Argo CD runs with `server.insecure: true`, so TLS is
@@ -175,7 +189,8 @@ plugin. At minimum, inspect:
 - container images, replicas, PDBs, resource limits, and affinity;
 - the repo-server sidecar, volumes, and `argocd-vault-config` reference;
 - Redis endpoint, TLS flags, and password Secret;
-- HTTPRoute/GRPCRoute hosts and parent Gateway references;
+- HTTPRoute host and parent Gateway reference, the absence of an overlapping
+  GRPCRoute, and the `argocd-server` HTTP port's h2c `appProtocol`;
 - OIDC issuer, callback URL, Workspace status, and `argocd-secret` keys;
 - RBAC policy, AppProject scope, resource exclusions, and ignore rules; and
 - CRDs/API versions required by every rendered custom resource.
@@ -184,6 +199,8 @@ After reconciliation:
 
 ```sh
 kubectl -n argocd get pods,pdb,httproute,grpcroute
+kubectl -n argocd get service argocd-server \
+  -o jsonpath='{.spec.ports[?(@.name=="http")].appProtocol}{"\n"}'
 kubectl -n argocd get externalsecret
 kubectl -n argocd get workspace
 kubectl -n argocd get applications,applicationsets

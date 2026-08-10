@@ -11,6 +11,17 @@ patches:
       kind: Deployment
       name: argocd-repo-server
 
+  # The same HTTPRoute serves the Argo CD UI/API and native gRPC. Explicitly
+  # select cleartext HTTP/2 for the insecure Argo CD backend so Envoy does not
+  # downgrade native gRPC requests to HTTP/1.1.
+  - target:
+      kind: Service
+      name: argocd-server
+    patch: |-
+      - op: add
+        path: /spec/ports/0/appProtocol
+        value: 'kubernetes.io/h2c'
+
 #   - target:
 #       kind: Role
 #       name: automent-manager-role
