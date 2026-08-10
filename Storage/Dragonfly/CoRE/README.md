@@ -4,18 +4,32 @@ This chart deploys a Dragonfly distribution/cache service with two replicas,
 TLS, S3-backed persistent content and generated credentials. It is owned by
 `Apps/Storage/Dragonfly/CoRE.yaml`.
 
-The Dragonfly CR enables its Memcached-compatible listener on port 11211. The
-operator adds that port to the master-selecting `dragonfly-core` Service; each
-site's PGPool deployment uses its site-specific public DNS name as a shared
-query cache.
-The Redis endpoint remains password protected and TLS enabled. PGPool's
-memcached client does not use that Redis authentication path, so the chart's
-NetworkPolicy admits port 11211 only from same-namespace pods labelled
-`app.kubernetes.io/name: pgpool`, while preserving existing port 6379 access.
-See Dragonfly's
-[Memcached compatibility documentation](https://www.dragonflydb.io/blog/memcached-to-dragonfly-stop-serializing-start-simplifying)
-and the
-[Dragonfly Operator repository](https://github.com/dragonflydb/dragonfly-operator).
+The `dragonfly-core` instance serves authenticated, TLS-enabled Redis clients.
+PGPool does not share this service; the PostgreSQL chart owns a separate,
+ephemeral Dragonfly instance with its Memcached-compatible listener enabled.
+The core chart's NetworkPolicy continues to preserve existing port 6379 access.
+See the [Dragonfly configuration reference](https://github.com/dragonflydb/dragonfly#configuration)
+and [Dragonfly Operator repository](https://github.com/dragonflydb/dragonfly-operator).
+
+## Logical database allocations
+
+Each site-local `dragonfly-core` instance is configured with 256 logical Redis
+databases. The allocations below apply independently to every site instance;
+they are not global database numbers across clusters.
+
+| Database | Current consumers | Purpose and ownership |
+| --- | --- | --- |
+| `0` | Argo CD, n8n, Grafana Live | Shared default database used by clients that do not expose a database selector. Do not allocate new explicit consumers here. |
+| `80` | NetBox task workers | Dedicated NetBox RQ task queue. Owned by `Network/IPAM`. |
+| `81` | NetBox web and workers | Dedicated NetBox application cache. Owned by `Network/IPAM`. |
+| `132` | Grafana | Dedicated Grafana remote cache. Owned by `Observability/Dashboards`; Grafana Live remains on DB `0`. |
+
+Numeric databases prevent accidental key collisions but are not a security or
+resource-isolation boundary: all consumers still share the Dragonfly process,
+password, memory limit, persistence, and failure domain. Allocate a documented,
+unused database number for every new client that supports selection. Use a
+separate Dragonfly instance when a workload needs independent credentials,
+capacity, lifecycle, or recovery behavior.
 
 Crossplane user resources create S3 access; ExternalSecret and PushSecret
 resources synchronize credentials; a Terraform provider configuration is

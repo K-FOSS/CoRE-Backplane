@@ -1,25 +1,131 @@
-# IPAM and DCIM chart
+# IPAM and DCIM
 
-This chart deploys and integrates CoRE's NetBox-based network and hardware
-inventory. It is owned by `Apps/Network/IPAM.yaml`, which injects datacentre,
-region, DHCP boot paths and cluster metadata.
+This rendering unit deploys CoRE's site-specific DHCP, authoritative DNS, and
+NetBox IPAM/DCIM integration. NetBox is intended to become the source of truth
+for network and bare-metal inventory, but that automation is not complete; the
+current gaps and desired state are tracked in [TODO](TODO.md).
 
-## Components
+## Ownership and targets
 
-- Optional NetBox chart and the deployment's custom image/plugins.
-- BGP and IP-calculator plugin support.
-- DHCP configuration, templates, identities and secret synchronization.
-- DNS/PowerDNS, Authentik/OIDC, Gateway and S3 integration.
-- Crossplane/Terraform resources and generated service identities.
+The [Network/IPAM ApplicationSet](../../Apps/Network/IPAM.yaml) owns this chart.
+It selects registered Argo CD clusters labelled with tenant
+`core.mylogin.space` and compute type `baremetal`, then merges only these named
+targets:
 
-NetBox is intended to become the source of truth for sites, racks, devices,
-interfaces, prefixes, addresses, VLANs, VRFs, BGP sessions, bare-metal
-inventory and DHCP/PXE data. Integration is incomplete; see [TODO](TODO.md).
+- `core-dc1-talos-prod`
+- `dc1-k3s-node1`
+- `core-home1-talos-prod`
 
-Dependencies include PostgreSQL, Vault/External Secrets, Crossplane,
-Authentik, Gateway API, DNS/certificates and object storage where enabled.
+Argo CD renders `Network/IPAM` with the
+[Lovely plugin](https://github.com/crumbhole/argocd-lovely-plugin). The
+ApplicationSet injects the environment, cluster identity, topology, EFI boot
+server, DHCP secret volume, NetBox enablement, and per-cluster Dragonfly host.
+Applications are deployed to `core-prod`; deleting an ApplicationSet-generated
+Application preserves its resources because `preserveResourcesOnDeletion` is
+enabled. The source revision is the mutable `HEAD` reference, so Git history
+and the rendered Argo CD revision must be used together during an audit.
 
-Inventory changes can drive automation. Validate prefix overlap, address
-uniqueness, interface/hardware identity, BGP direction, DHCP reservations,
-boot artifacts and generated downstream configuration. Back up NetBox and
-test restoration before treating it as provisioning authority.
+## Components and reconciliation flow
+
+- [bjw-s common library 3.6.1](https://github.com/bjw-s-labs/helm-charts/tree/common-3.6.1/charts/library/common)
+  renders the Kea and PowerDNS workload, Services, ConfigMaps, and volumes.
+- [ISC Kea](https://kea.readthedocs.io/en/latest/) serves DHCP and renders PXE
+  paths for [Tinkerbell](https://tinkerbell.org/docs/). DHCP configuration is
+  assembled by this chart and synchronized through External Secrets.
+- [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/)
+  serves DNS from the external PostgreSQL backend.
+- [NetBox chart 5.0.23](https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox)
+  deploys the [NetBox](https://netboxlabs.com/docs/netbox/en/stable/) web and
+  worker components using the site image and enabled plugins.
+- [External Secrets Operator](https://external-secrets.io/latest/) reads
+  runtime credentials from `mainvault-core`; hub-mode `User` and `PushSecret`
+  resources create and publish service identities. The current targets are
+  spokes (`hub: false`) and consume existing identities.
+- An [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) attaches
+  NetBox to the shared Gateway. An [Envoy Gateway SecurityPolicy](https://gateway.envoyproxy.io/latest/api/extension_types/)
+  applies OIDC credentials synchronized from the secret store.
+- External PostgreSQL stores NetBox and PowerDNS data. The cluster's shared
+  authenticated, TLS-enabled `dragonfly-core` supplies two dedicated logical
+  databases: DB `80` for NetBox tasks and DB `81` for NetBox caching; see
+  [Dragonfly compatibility](https://www.dragonflydb.io/docs/category/managing-dragonfly).
+- A Crossplane Terraform `ProviderConfig` configures the
+  [NetBox Terraform provider](https://registry.terraform.io/providers/e-breuninger/netbox/latest/docs).
+  It depends on the
+  [Upbound Terraform provider](https://github.com/upbound/provider-terraform)
+  and a synchronized NetBox token.
+- S3 settings are generated from an ExternalSecret for NetBox object storage.
+  [Django storage configuration](https://netboxlabs.com/docs/netbox/en/stable/configuration/system/#storages)
+  describes the settings consumed by NetBox.
+
+The controller path is Git -> Argo CD/ApplicationSet -> Lovely/Helm ->
+Kubernetes and External Secrets -> Vault-backed secrets -> NetBox, Kea,
+PowerDNS, PostgreSQL, Dragonfly, Gateway/OIDC, S3, and Crossplane/Terraform.
+Argo CD `Synced`, pod readiness, or a Crossplane `Ready` condition alone does
+not verify that this complete path works.
+
+## Values and secrets
+
+[`values.yaml`](values.yaml) contains site overrides only. Defaults come from
+the two pinned dependencies in [`Chart.yaml`](Chart.yaml), while cluster values
+come from the owning ApplicationSet. The custom Kea and NetBox image tags are
+mutable and use `Always`; this is deliberate current behaviour and should be
+replaced by immutable release tags or digests when the site images have a
+versioned publication process.
+
+No credential values belong in Git. `netbox-secret`, `netbox-creds`,
+`dragonfly-core-password`, the DNS secret, pull credentials, OIDC
+configuration, S3 credentials, and Terraform tokens are references to
+controller-managed Secrets. NetBox reads the same generated Dragonfly password
+as other local clients. A password rotation requires the NetBox web and worker
+pods to be restarted after the updated Secret is available. Keep an emergency
+access path independent of NetBox, Authentik, the public Gateway, Vault
+application credentials, and any single cluster.
+
+## Validation and operations
+
+Before merging a change:
+
+```sh
+helm dependency build .
+helm lint . \
+  --set persistence.configs.volumeSpec.emptyDir.medium=Memory
+helm template netbox-ipam . \
+  --namespace core-prod \
+  --set netbox.enabled=true \
+  --set persistence.configs.volumeSpec.secret.secretName=core-dc1-talos-prod-network-ipam-prod-dhcp-config
+git diff --check -- Network/IPAM
+```
+
+Also render each ApplicationSet target with its injected values. Inspect the
+DHCP boot server and artifact paths, IP-address uniqueness and overlap, Gateway
+parent references, secret names and keys, LDAP groups, database endpoints, and
+Crossplane provider configuration. The example secret name above is a literal
+representative value, not a credential.
+
+After Argo CD reconciliation, verify all of the following:
+
+1. ExternalSecret and PushSecret conditions, without printing Secret data.
+2. Kea configuration load, lease allocation, PXE for the intended firmware,
+   and Tinkerbell boot artifact retrieval on each target network.
+3. PowerDNS PostgreSQL connectivity and authoritative TCP/UDP answers.
+4. NetBox migrations, web and worker health, TLS-authenticated Dragonfly
+   connectivity to DBs `80` and `81`, PostgreSQL connectivity, OIDC login and
+   group entitlement, API access, plugins, and S3 operations.
+5. Gateway attachment and policy status, then the user-facing NetBox workflow.
+6. Crossplane provider conditions and a harmless NetBox provider read.
+
+After rotating `dragonfly-core-password`, reconcile or restart both NetBox
+Deployments and verify that task processing and cache access recover. Secret
+volume updates alone do not make the running NetBox processes reconnect with
+the new password.
+
+Inventory changes may eventually drive physical provisioning. Resolve the
+exact site, cluster, machine, hardware identity, install disk, network, and
+workflow state before retrying or applying a provisioning action. Never retry
+an unidentified Tinkerbell/Talos failure.
+
+Rollback through Git and let Argo CD reconcile the prior desired state. A chart
+rollback does not roll back PostgreSQL contents, DHCP leases, Vault records,
+S3 objects, or Terraform-created state. Back up NetBox and test restoration
+before treating it as provisioning authority; explicitly assess those external
+side effects before reverting or deleting resources.
