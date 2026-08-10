@@ -15,8 +15,10 @@ for a hub deployment are not rendered. Argo CD deploys each release to
 
 The chart renders:
 
-- [PowerDNS Authoritative Server 4.9](https://doc.powerdns.com/authoritative/)
-  backed by PostgreSQL, exposed on TCP and UDP port 53 through PureLB.
+- [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
+  backed by PostgreSQL and exposed on TCP and UDP port 53 through PureLB. The
+  [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md)
+  is pinned to its multi-architecture manifest digest.
 - [PowerDNS-Admin 0.4.2](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v0.4.2)
   behind an [Envoy Gateway security policy](https://gateway.envoyproxy.io/docs/api/extension_types/#securitypolicy)
   and fail-closed [Authentik forward authentication](https://docs.goauthentik.io/add-secure-apps/providers/proxy/server_envoy/).
@@ -107,6 +109,15 @@ also delay visibility of database or API changes for up to five minutes. Use
 `pdns_control purge` inside the authoritative-server pod when a verified
 change must be visible immediately; this clears cache state but does not alter
 zone data.
+
+The upgrade from 4.9.14 to 5.1.3 follows the
+[PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html).
+PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query.
+During upgrade verification, test a harmless RFC 2136 update and rollback,
+TSIG operations, zone transfers and notifications, and representative API
+consumers; API record representations can be normalized differently in 5.1.
+Updates to LUA records remain disabled because this deployment does not enable
+them.
 
 Rollback through Git and let Argo CD reconcile the previous render. Removing
 the Application deletes namespaced resources unless Argo CD preservation is
