@@ -245,6 +245,12 @@ data:
             "on-fail": "stop-retry-exit",
             "connect-timeout": 3
           },
+          // Kea 3.2 provides PostgreSQL lease support as a runtime hook.
+          "hooks-libraries": [
+            {
+              "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql.so"
+            }
+          ],
           "sanity-checks": {
             // This parameter determines what to do when a new lease appears in the
             // system (i.e. either is read from disk during memfile startup or is
@@ -599,6 +605,9 @@ data:
             "unwarned-reclaim-cycles": 5
           },
           "hooks-libraries": [
+            {
+              "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql.so"
+            },
             {
               "library": "/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so",
               "parameters": {}

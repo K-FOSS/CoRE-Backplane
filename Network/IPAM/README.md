@@ -39,11 +39,12 @@ and the rendered Argo CD revision must be used together during an audit.
   `0750` before starting Kea, as required by Kea's control-socket checks.
   The removed Kea Control Agent is not configured; local management uses each
   daemon's control socket. Hook libraries use the Debian amd64 multiarch path
-  supplied by the site image. The optional Netconf agent is disabled because
-  it is not included in that image. Both DHCPv4 and DHCPv6 store leases through
-  the site-local `psql` ClusterIP Service, which selects the local PGPool
-  replicas in `core-prod`; database credentials and the port remain sourced
-  from the secret store.
+  supplied by the site image; both DHCP daemons load `libdhcp_pgsql.so` to
+  register the PostgreSQL lease backend. The optional Netconf agent is disabled
+  because it is not included in that image. Both DHCPv4 and DHCPv6 store leases
+  through the site-local `psql` ClusterIP Service, which selects the local
+  PGPool replicas in `core-prod`; database credentials and the port remain
+  sourced from the secret store.
 - [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/)
   serves DNS from the external PostgreSQL backend.
 - [NetBox chart 5.0.23](https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox)
