@@ -98,6 +98,11 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 
 - Keep changes narrowly scoped and preserve unrelated worktree edits. Do not
   reformat, revert, stage, or include another author's changes.
+- In new or touched YAML, use single quotes for string scalars, including
+  strings in flow sequences and mappings. Use double quotes only when YAML
+  escape processing is required or a single-quoted value would be materially
+  less clear. Quote numeric-looking identifiers so renderers preserve them as
+  strings across YAML, templates, and generated JSON.
 - Prefer values-driven templates for environment-specific behavior. Retain a
   literal only for a deliberate compatibility reason and document it.
 - Validate every parser boundary touched by a change, including Helm templates,
@@ -113,4 +118,3 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 - After reconciliation, observe downstream controller conditions and validate
   the user-facing workflow; pod readiness and Argo CD health are supporting
   evidence, not the entire health model.
-
