@@ -11,6 +11,24 @@ resources:
 
 patches:
   - target:
+      kind: DaemonSet
+      name: kube-sriov-device-plugin
+
+    patch: |
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: kube-sriov-device-plugin
+      spec:
+        template:
+          spec:
+            containers:
+              - name: kube-sriovdp
+                resources:
+                  requests:
+                    cpu: 16m
+
+  - target:
       kind: CustomResourceDefinition
       name: network-attachment-definitions.k8s.cni.cncf.io 
       labelSelector: 'app.kubernetes.io/name=prometheus-smartctl-exporter'
