@@ -79,9 +79,6 @@ spec:
                 grafana:
                   replicas: {{ .values.grafanaReplicas }}
 
-                  annotations:
-                    secret.reloader.stakater.com/reload: 'dragonfly-core-password'
-
                   envValueFrom:
                     DRAGONFLY_PASSWORD:
                       secretKeyRef:
@@ -106,6 +103,21 @@ spec:
                     # `existingSecret` is a reference to an existing secret containing the ldap configuration
                     # for Grafana in a key `ldap-toml`.
                     existingSecret: 'grafana-core-ldap'
+
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: grafana-core
+
+                    patch: |-
+                      - op: add
+                        path: /metadata/annotations
+                        value:
+                          secret.reloader.stakater.com/reload: 'dragonfly-core-password'
 
       destination:
         server: '{{ .server }}'
