@@ -290,11 +290,13 @@ data:
           // We need to specify the database used to store leases. As of
           // September 2016, four database backends are supported: MySQL,
           // PostgreSQL, Cassandra, and the in-memory database, Memfile.
-          // We will use memfile  because it doesn't require any prior set up.
+          // Use PostgreSQL through the site-local PGPool Service.
           "lease-database": {
             "type": "postgresql",
             "name": "hRCyPUlFYx",
-            "host": "{{ .Hostname }}",
+            `}}
+            "host": {{ .Values.dhcp.database.host | quote }},
+            {{`
             "port": {{ .Port }},
             "user": "{{ .Username }}",
 
@@ -734,7 +736,7 @@ data:
             "type": "postgresql",
             "name": "hRCyPUlFYx",
             `}}
-            "host": "psql-int.mylogin.space",
+            "host": {{ .Values.dhcp.database.host | quote }},
             {{`
             "port": {{ .Port }},
             "user": "{{ .Username }}",

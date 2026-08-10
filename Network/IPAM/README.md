@@ -20,6 +20,7 @@ Argo CD renders `Network/IPAM` with the
 [Lovely plugin](https://github.com/crumbhole/argocd-lovely-plugin). The
 ApplicationSet injects the environment, cluster identity, topology, EFI boot
 server, DHCP secret volume, NetBox enablement, and per-cluster Dragonfly host.
+It also injects the target cluster domain into Kea's local PGPool Service name.
 Applications are deployed to `core-prod`; deleting an ApplicationSet-generated
 Application preserves its resources because `preserveResourcesOnDeletion` is
 enabled. The source revision is the mutable `HEAD` reference, so Git history
@@ -31,7 +32,10 @@ and the rendered Argo CD revision must be used together during an audit.
   renders the Kea and PowerDNS workload, Services, ConfigMaps, and volumes.
 - [ISC Kea](https://kea.readthedocs.io/en/latest/) serves DHCP and renders PXE
   paths for [Tinkerbell](https://tinkerbell.org/docs/). DHCP configuration is
-  assembled by this chart and synchronized through External Secrets.
+  assembled by this chart and synchronized through External Secrets. Both
+  DHCPv4 and DHCPv6 store leases through the site-local `psql` ClusterIP
+  Service, which selects the local PGPool replicas in `core-prod`; database
+  credentials and the port remain sourced from the secret store.
 - [PowerDNS Authoritative Server](https://doc.powerdns.com/authoritative/)
   serves DNS from the external PostgreSQL backend.
 - [NetBox chart 5.0.23](https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox)
@@ -107,7 +111,9 @@ After Argo CD reconciliation, verify all of the following:
 1. ExternalSecret and PushSecret conditions, without printing Secret data.
 2. Kea configuration load, lease allocation, PXE for the intended firmware,
    and Tinkerbell boot artifact retrieval on each target network.
-3. PowerDNS PostgreSQL connectivity and authoritative TCP/UDP answers.
+3. Kea lease reads and writes through
+   `psql.core-prod.svc.<cluster-domain>`, plus PowerDNS PostgreSQL connectivity
+   and authoritative TCP/UDP answers.
 4. NetBox migrations, web and worker health, TLS-authenticated Dragonfly
    connectivity to DBs `80` and `81`, PostgreSQL connectivity, OIDC login and
    group entitlement, API access, plugins, and S3 operations.
