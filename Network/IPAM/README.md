@@ -78,9 +78,13 @@ and the rendered Argo CD revision must be used together during an audit.
   PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query,
   API record representations may be normalized differently, and updates to
   LUA records remain disabled because this deployment does not enable them.
-- [NetBox chart 5.0.23](https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox)
+- [NetBox chart 8.3.51](https://github.com/netbox-community/netbox-chart/tree/netbox-8.3.51/charts/netbox)
   deploys the [NetBox](https://netboxlabs.com/docs/netbox/en/stable/) web and
-  worker components using the site image and enabled plugins.
+  worker components using the site image and enabled plugins. The chart's
+  bundled Valkey and PostgreSQL dependencies are disabled; chart 8.x renamed
+  the former `redis.enabled` dependency control to `valkey.enabled`. The
+  chart's application version does not select the running NetBox version
+  because this deployment deliberately overrides the image and tag.
 - [External Secrets Operator](https://external-secrets.io/latest/) reads
   runtime credentials from `mainvault-core`; hub-mode `User` and `PushSecret`
   resources create and publish service identities. Home1 is the IPAM hub and
