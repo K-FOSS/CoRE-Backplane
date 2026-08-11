@@ -4,7 +4,7 @@
   "properties": {
     "dhcp": {
       "type": "object",
-      "required": ["dhcp4"],
+      "required": ["dhcp4", "dhcp6"],
       "properties": {
         "dhcp4": {
           "type": "object",
@@ -30,6 +30,16 @@
               "items": {"$ref": "#/definitions/subnet4"}
             }
           }
+        },
+        "dhcp6": {
+          "type": "object",
+          "required": ["subnet6"],
+          "properties": {
+            "subnet6": {
+              "type": "array",
+              "items": {"$ref": "#/definitions/subnet6"}
+            }
+          }
         }
       }
     }
@@ -46,6 +56,10 @@
     "mac": {
       "type": "string",
       "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+    },
+    "cidr6": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f:]+/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$"
     },
     "pool": {
       "type": "object",
@@ -114,6 +128,40 @@
             }
           }
         },
+        "option-data": {"type": "array"}
+      }
+    },
+    "pool6": {
+      "type": "object",
+      "required": ["pool"],
+      "properties": {
+        "pool": {"$ref": "#/definitions/cidr6"}
+      }
+    },
+    "pdPool6": {
+      "type": "object",
+      "required": ["prefix", "prefix-len", "delegated-len"],
+      "properties": {
+        "prefix": {"type": "string", "pattern": "^[0-9A-Fa-f:]+$"},
+        "prefix-len": {"type": "integer", "minimum": 1, "maximum": 127},
+        "delegated-len": {"type": "integer", "minimum": 2, "maximum": 128}
+      }
+    },
+    "subnet6": {
+      "type": "object",
+      "required": ["id", "subnet"],
+      "properties": {
+        "id": {"type": "integer", "minimum": 1, "maximum": 4294967295},
+        "subnet": {"$ref": "#/definitions/cidr6"},
+        "pools": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/pool6"}
+        },
+        "pd-pools": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/pdPool6"}
+        },
+        "reservations": {"type": "array"},
         "option-data": {"type": "array"}
       }
     }

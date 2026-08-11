@@ -2,28 +2,264 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
-{{ if not .Values.global.nameOverride }}
 global:
-  nameOverride: "{{ .Release.Name }}"
-{{ end }}
+  nameOverride: '{{ default .Release.Name .Values.global.nameOverride }}'
+  createDefaultServiceAccount: true
+
+defaultPodOptions:
+  automountServiceAccountToken: false
+  labels:
+    logs: 'loki-myloginspace'
 
 controllers:
   main:
+    suffix: 'kea'
+    strategy: 'Recreate'
     containers:
+      dhcp:
+        image:
+          repository: 'kristianfjones/kea'
+          tag: 'vps1-core@sha256:3d171bc5dae0e940e2996f999ae78140a9d6515ecebeae5c2676b346a8d878a9'
+          pullPolicy: 'IfNotPresent'
+        command:
+          - '/usr/local/bin/entry.sh'
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - '/usr/local/bin/healthcheck.sh'
+              failureThreshold: 3
+              initialDelaySeconds: 5
+              periodSeconds: 30
+              timeoutSeconds: 10
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - '/usr/local/bin/healthcheck.sh'
+              failureThreshold: 2
+              initialDelaySeconds: 5
+              periodSeconds: 15
+              timeoutSeconds: 10
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - '/usr/local/bin/healthcheck.sh'
+              failureThreshold: 30
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              timeoutSeconds: 10
+
       ns:
         enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+        image:
+          repository: 'powerdns/pdns-auth-51'
+          tag: '5.1.3@sha256:f976e753a1de8ec62636203ecb12ae5fa3d1055601be167de53f1f673e0abe59'
+          pullPolicy: 'IfNotPresent'
+        command:
+          - '/usr/local/sbin/pdns_server'
+        args:
+          - '--config-dir=/etc/pdns'
+          - '--disable-syslog=yes'
+          - '--socket-dir=/tmp'
+          - '--gpgsql-host=$(PSQL_HOSTNAME)'
+          - '--gpgsql-port=$(PSQL_PORT)'
+          - '--gpgsql-dbname=DlzcnePHKR'
+          - '--gpgsql-user=$(USERNAME)'
+          - '--gpgsql-password=$(PASSWORD)'
+        env:
+          - name: 'PSQL_HOSTNAME'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
+                key: 'psqlHostname'
+          - name: 'PSQL_PORT'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
+                key: 'psqlPort'
+          - name: 'USERNAME'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
+                key: 'username'
+          - name: 'PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
+                key: 'password'
+        workingDir: '/etc/pdns'
 
-configMaps:
-  nsconfig:
-    enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+service:
+  main:
+    enabled: true
+    controller: 'main'
+    primary: true
+    type: 'LoadBalancer'
+    externalTrafficPolicy: 'Local'
+    annotations:
+      purelb.io/addresses: '10.1.1.67'
+      purelb.io/allow-local: 'true'
+      purelb.io/allow-shared-ip: 'dhcp.resolvemy.host'
+    ports:
+      dhcp-udp:
+        enabled: true
+        primary: true
+        port: 67
+        protocol: 'UDP'
 
 persistence:
+  configs:
+    enabled: true
+    type: 'custom'
+    volumeSpec:
+      secret:
+        secretName: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dhcp-config'
+    advancedMounts:
+      main:
+        dhcp:
+          - path: '/etc/DHCP'
+            readOnly: true
+  scripts:
+    enabled: true
+    type: 'configMap'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-config'
+    defaultMode: 0755
+    advancedMounts:
+      main:
+        dhcp:
+          - path: '/usr/local/bin/entry.sh'
+            readOnly: true
+            subPath: 'entry.sh'
+          - path: '/usr/local/bin/healthcheck.sh'
+            readOnly: true
+            subPath: 'healthcheck.sh'
   nsconfig:
     enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+    type: 'configMap'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsconfig'
+    advancedMounts:
+      main:
+        ns:
+          - path: '/etc/pdns/pdns.conf'
+            readOnly: true
+            subPath: 'pdns.conf'
+  socket:
+    enabled: true
+    type: 'custom'
+    volumeSpec:
+      emptyDir:
+        medium: 'Memory'
+    advancedMounts:
+      main:
+        dhcp:
+          - path: '/var/run/kea'
 
+configMaps:
+  config:
+    enabled: true
+    data:
+      entry.sh: |
+        #!/bin/sh
+        set -eu
+
+        config='/etc/DHCP/keactrl.conf'
+        runtime_dir='/var/run/kea'
+
+        mkdir -p "${runtime_dir}"
+        chmod 0750 "${runtime_dir}"
+        rm -f "${runtime_dir}"/*.pid "${runtime_dir}"/*-ctrl-socket
+
+        validate_enabled_server() {
+          setting="${1}"
+          binary="${2}"
+          server_config="${3}"
+
+          if grep -Eq "^${setting}=yes$" "${config}"; then
+            "${binary}" -t "${server_config}"
+          fi
+        }
+
+        validate_enabled_server 'dhcp4' '/usr/sbin/kea-dhcp4' '/etc/DHCP/DHCP4.jsonc'
+        validate_enabled_server 'dhcp6' '/usr/sbin/kea-dhcp6' '/etc/DHCP/DHCP6.jsonc'
+        validate_enabled_server 'dhcp_ddns' '/usr/sbin/kea-dhcp-ddns' '/etc/DHCP/DDNS.jsonc'
+
+        shutdown() {
+          KEA_PIDFILE_DIR="${runtime_dir}" \
+            /usr/sbin/keactrl stop -c "${config}" || true
+          exit 0
+        }
+
+        trap shutdown INT TERM
+        KEA_PIDFILE_DIR="${runtime_dir}" \
+          /usr/sbin/keactrl start -c "${config}"
+
+        while true; do
+          sleep 86400 &
+          wait "${!}"
+        done
+      healthcheck.sh: |
+        #!/bin/sh
+        set -eu
+
+        config='/etc/DHCP/keactrl.conf'
+        status="$(KEA_PIDFILE_DIR=/var/run/kea \
+          /usr/sbin/keactrl status -c "${config}")"
+
+        check_enabled_server() {
+          setting="${1}"
+          label="${2}"
+
+          if grep -Eq "^${setting}=yes$" "${config}"; then
+            printf '%s\n' "${status}" | grep -Fqx "${label}: active"
+          fi
+        }
+
+        check_enabled_server 'dhcp4' 'DHCPv4 server'
+        check_enabled_server 'dhcp6' 'DHCPv6 server'
+        check_enabled_server 'dhcp_ddns' 'DHCP DDNS'
+  nsconfig:
+    enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+    data:
+      pdns.conf: |
+        cache-ttl=60
+        config-dir=/etc/pdns
+        daemon=no
+        disable-axfr=no
+        distributor-threads=1
+        guardian=yes
+        launch=gpgsql
+        load-modules=libgpgsqlbackend.so
+        local-address=0.0.0.0
+        local-port=1053
+        loglevel=3
+        negquery-cache-ttl=60
+        setgid=pdns
+        setuid=pdns
+        socket-dir=/var/run
+        version-string=anonymous
+        gpgsql-dnssec=
+        allow-axfr-ips=172.16.0.0/12,10.0.0.0/8
+        allow-dnsupdate-from=172.16.0.0/12,10.0.0.0/8,127.0.0.0/8
+        webserver=yes
+        webserver-address=0.0.0.0
+        webserver-allow-from=0.0.0.0/0
+        webserver-port=8081
+        default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
+        dnsupdate=yes
+        expand-alias=yes
+        forward-dnsupdate=yes
+        forward-notify=10.1.1.50,10.1.1.53
+        primary=yes
 {{- end -}}
-{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
-{{/* Render the templates */}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 {{ include "bjw-s.common.loader.generate" . }}

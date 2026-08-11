@@ -19,10 +19,15 @@ targets:
 Argo CD renders `Network/IPAM` with the
 [Lovely plugin](https://github.com/crumbhole/argocd-lovely-plugin). The
 ApplicationSet injects the environment, cluster identity, topology, EFI boot
-server, enabled Kea server types, DHCP secret volume, NetBox enablement, and
-per-cluster Dragonfly host. It also injects the target cluster domain into
+server, enabled Kea server types, NetBox enablement, and per-cluster Dragonfly
+host. It still supplies a legacy `persistence.configs` override; the chart-owned
+bjw-s template now supplies the same Secret volume authoritatively, so that
+legacy input has no rendered effect and should be removed from the
+ApplicationSet. It also injects the target cluster domain into
 Kea's local PGPool Service name. DHCPv4 and DHCP-DDNS are enabled on all three
-targets; DHCPv6 is disabled on both DC1 targets and enabled on Home1.
+targets; DHCPv6 is disabled on both DC1 targets and enabled on Home1. DHCPv6
+currently has no registered `subnet6` allocation, so it starts without serving
+leases instead of deploying the former documentation-only prefixes.
 Applications are deployed to `core-prod`; deleting an ApplicationSet-generated
 Application preserves its resources because `preserveResourcesOnDeletion` is
 enabled. The source revision is the mutable `HEAD` reference, so Git history
@@ -30,8 +35,17 @@ and the rendered Argo CD revision must be used together during an audit.
 
 ## Components and reconciliation flow
 
-- [bjw-s common library 3.6.1](https://github.com/bjw-s-labs/helm-charts/tree/common-3.6.1/charts/library/common)
+- [bjw-s common library 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
   renders the Kea and PowerDNS workload, Services, ConfigMaps, and volumes.
+  The upgrade crosses the documented [3.x to 4.x](https://bjw-s-labs.github.io/helm-charts/docs/app-template/upgrades/3-to-4/)
+  and [4.x to 5.x](https://bjw-s-labs.github.io/helm-charts/docs/app-template/upgrades/4-to-5/)
+  migrations. Its controller selector changes from `app.kubernetes.io/component`
+  to `app.kubernetes.io/controller`. The v5 controller therefore renders as the
+  new `netbox-ipam-kea` Deployment and Argo CD prunes the old immutable
+  `netbox-ipam` Deployment through normal reconciliation. The unchanged
+  LoadBalancer Service selects only the v5 label. Future controller updates use
+  `Recreate` to avoid overlapping DHCP servers. The v5 dedicated ServiceAccount
+  is used without an automounted API token.
 - [ISC Kea 3.2](https://kea.readthedocs.io/en/kea-3.2.0/) serves DHCP and
   renders PXE paths for [Tinkerbell](https://tinkerbell.org/docs/). DHCP
   configuration is assembled by this chart and synchronized through External
@@ -53,7 +67,9 @@ and the rendered Argo CD revision must be used together during an audit.
   exit from blocking recovery without deleting unrelated runtime files. The
   chart-managed healthcheck overrides Kea 3.2's PID directory with the mounted
   runtime path and requires every daemon enabled in `keactrl.conf` to report
-  `active`; it does not rely on the image's DHCPv4-only `/Healthcheck.sh`.
+  `active`; it does not rely on the image's DHCPv4-only `/Healthcheck.sh`. The
+  entry script validates every enabled Kea configuration before startup and
+  stops the daemons cleanly when the container receives a termination signal.
 - [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
   serves DNS from the external PostgreSQL backend using the
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md),
@@ -96,15 +112,15 @@ not verify that this complete path works.
 
 ## Values and secrets
 
-[`values.yaml`](values.yaml) contains site overrides only. Defaults come from
-the two pinned dependencies in [`Chart.yaml`](Chart.yaml), while cluster values
+[`values.yaml`](values.yaml) contains site inputs and dependency overrides only.
+The bjw-s workload definition is intentionally kept in
+[`templates/00-common.yaml`](templates/00-common.yaml), while cluster values
 come from the owning ApplicationSet. `dhcp.servers.dhcp4`, `dhcp6`, and
 `dhcpDdns` control the corresponding `keactrl` process flags per target. The
 PowerDNS sidecar uses the same `dhcpDdns` flag and is omitted when DHCP-DDNS is
-disabled. The custom Kea and NetBox image tags are mutable and use `Always`;
-this is deliberate current behaviour and should be replaced by immutable
-release tags or digests when the site images have a versioned publication
-process.
+disabled. The Kea image is pinned to the inspected `vps1-core` digest. The
+custom NetBox image remains mutable and uses `Always`; it should be pinned when
+that site image has a versioned publication process.
 
 The complete editable Kea DHCPv4 baseline is under `dhcp.dhcp4` in
 [`values.yaml`](values.yaml). It is native YAML rather than embedded JSONC, so
@@ -139,13 +155,30 @@ dhcp:
 ```
 
 [`values.schema.json`](values.schema.json) rejects malformed IPv4 addresses,
-CIDRs, MAC addresses, pools, subnet IDs, and incomplete reservations. Helm
+CIDRs, MAC addresses, pools, subnet IDs, incomplete reservations, and malformed
+DHCPv6 subnet/prefix-delegation entries. Helm
 template validation additionally rejects duplicate network names, subnet IDs,
 reservation IPs, reservation MACs, and client-class names. The generated
 configuration is strict JSON, and the container runs Kea 3.2's documented
 [`kea-dhcp4 -t` configuration check](https://kea.readthedocs.io/en/kea-3.2.0/man/kea-dhcp4.8.html)
 before starting an enabled DHCPv4 daemon. This check does not establish the
 lease-database connection; verify that separately after reconciliation.
+
+DHCPv4 evaluates only the five generated site classes. Each expression first
+checks that its source option exists, and the UEFI fallback now requires PXE
+architecture option 93 so ordinary DHCP clients do not receive boot settings.
+Only the PostgreSQL hook and `hw-address` reservation identifier are loaded,
+matching the actual lease backend and assignments, consistent with Kea's
+[configuration performance guidance](https://kea.readthedocs.io/en/kea-3.2.0/config-examples.html).
+DHCPv6 is configured under
+`dhcp.dhcp6`; add approved `subnet6`, address pools, prefix-delegation pools,
+and reservations there. Documentation prefix `2001:db8::/32` is rejected.
+
+The upstream NetBox chart now uses the distinct `netbox` resource name instead
+of colliding with the release-derived `netbox-ipam` Kea/PowerDNS resources.
+This renames and replaces the stateless NetBox web and worker workloads and
+their Service; PostgreSQL, Dragonfly, and S3 data remain external. The
+HTTPRoute and Terraform provider endpoint are updated to the new Service.
 
 No credential values belong in Git. `netbox-secret`, `netbox-creds`,
 `dragonfly-core-password`, the DNS secret, pull credentials, OIDC
@@ -162,12 +195,10 @@ Before merging a change:
 
 ```sh
 helm dependency build .
-helm lint . \
-  --set persistence.configs.volumeSpec.emptyDir.medium=Memory
+helm lint .
 helm template netbox-ipam . \
   --namespace core-prod \
-  --set netbox.enabled=true \
-  --set persistence.configs.volumeSpec.secret.secretName=core-dc1-talos-prod-network-ipam-prod-dhcp-config
+  --set netbox.enabled=true
 git diff --check -- Network/IPAM
 ```
 
@@ -212,4 +243,7 @@ Rollback through Git and let Argo CD reconcile the prior desired state. A chart
 rollback does not roll back PostgreSQL contents, DHCP leases, Vault records,
 S3 objects, or Terraform-created state. Back up NetBox and test restoration
 before treating it as provisioning authority; explicitly assess those external
-side effects before reverting or deleting resources.
+side effects before reverting or deleting resources. Rolling back this upgrade
+recreates the former `netbox-ipam` bjw-s Deployment and the former
+`netbox-ipam`-named NetBox resources; verify that the Service selectors,
+HTTPRoute backend, and Terraform endpoint return to the same revision together.

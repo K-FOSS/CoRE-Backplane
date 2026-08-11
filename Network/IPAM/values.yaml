@@ -3,8 +3,8 @@
 # ../../Apps/Network/IPAM.yaml
 #
 # Upstream values references:
-# - bjw-s common library 3.6.1:
-#   https://github.com/bjw-s-labs/helm-charts/tree/common-3.6.1/charts/library/common
+# - bjw-s common library 5.0.1:
+#   https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common
 # - NetBox chart 5.0.23:
 #   https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox
 
@@ -23,7 +23,7 @@ cluster:
 # dependency defaults, so it must exist even when it has no site overrides.
 global: {}
 
-# ISC Kea documentation: https://kea.readthedocs.io/en/latest/
+# ISC Kea 3.2 documentation: https://kea.readthedocs.io/en/kea-3.2.0/
 # Tinkerbell iPXE boot flow: https://tinkerbell.org/docs/services/hegel/#ipxe
 dhcp:
   enabled: true
@@ -54,20 +54,7 @@ dhcp:
   # classes and the secret-backed lease database before rendering strict JSON.
   dhcp4:
       authoritative: false
-      client-classes:
-        - name: 'vmhost-class1'
-          next-server: '10.1.1.66'
-          option-data: []
-        - name: 'boots'
-          next-server: '10.1.1.66'
-          option-data: []
-        - name: 'kioslab'
-          server-hostname: 'static.mylogin.space'
-        - name: 'onie'
-          test: 'substring(option[60].hex,0,11) == ''onie_vendor'''
-          option-data:
-            - data: '42623'
-              name: 'vivso-suboptions'
+      client-classes: []
       control-socket:
         socket-name: 'kea4-ctrl-socket'
         socket-type: 'unix'
@@ -98,22 +85,9 @@ dhcp:
         unwarned-reclaim-cycles: 5
       hooks-libraries:
         - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql.so'
-        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_lease_cmds.so'
-          parameters: {}
-        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_stat_cmds.so'
-          parameters: {}
-        - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_flex_option.so'
-          parameters:
-            options:
-              - code: 67
-                add: 'ifelse(option[host-name].exists,concat(option[host-name].text,''.boot''),'''')'
       hosts-databases: []
       host-reservation-identifiers:
         - 'hw-address'
-        - 'duid'
-        - 'circuit-id'
-        - 'client-id'
-        - 'flex-id'
       interfaces-config:
         interfaces:
           - '*'
@@ -126,216 +100,18 @@ dhcp:
           code: 1
           space: 'ubnt'
           type: 'ipv4-address'
-        - name: 'installer_url'
-          code: 1
-          space: 'vendor-42623'
-          type: 'string'
-        - name: 'updater_url'
-          code: 2
-          space: 'vendor-42623'
-          type: 'string'
-        - name: 'machine'
-          code: 3
-          space: 'vendor-42623'
-          type: 'string'
-        - name: 'arch'
-          code: 4
-          space: 'vendor-42623'
-          type: 'string'
-        - name: 'machine_rev'
-          code: 5
-          space: 'vendor-42623'
-          type: 'string'
-        - name: 'PXEDiscoveryControl'
-          code: 6
-          space: 'vendor-encapsulated-options-space'
-          type: 'uint8'
-          array: false
-        - name: 'PXEMenuPrompt'
-          code: 10
-          space: 'vendor-encapsulated-options-space'
-          type: 'record'
-          array: false
-          record-types: 'uint8,string'
-        - name: 'PXEBootMenu'
-          code: 9
-          space: 'vendor-encapsulated-options-space'
-          type: 'record'
-          array: false
-          record-types: 'uint16,uint8,string'
-        - space: 'dhcp4'
-          name: 'ipxe-encap-opts'
-          code: 175
-          type: 'empty'
-          encapsulate: 'ipxe'
-        - space: 'ipxe'
-          name: 'priority'
-          code: 1
-          type: 'int8'
-        - space: 'ipxe'
-          name: 'keep-san'
-          code: 8
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'skip-san-boot'
-          code: 9
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'syslogs'
-          code: 85
-          type: 'string'
-        - space: 'ipxe'
-          name: 'cert'
-          code: 91
-          type: 'string'
-        - space: 'ipxe'
-          name: 'privkey'
-          code: 92
-          type: 'string'
-        - space: 'ipxe'
-          name: 'crosscert'
-          code: 93
-          type: 'string'
-        - space: 'ipxe'
-          name: 'no-pxedhcp'
-          code: 176
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'bus-id'
-          code: 177
-          type: 'string'
-        - space: 'ipxe'
-          name: 'san-filename'
-          code: 188
-          type: 'string'
-        - space: 'ipxe'
-          name: 'bios-drive'
-          code: 189
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'username'
-          code: 190
-          type: 'string'
-        - space: 'ipxe'
-          name: 'password'
-          code: 191
-          type: 'string'
-        - space: 'ipxe'
-          name: 'reverse-username'
-          code: 192
-          type: 'string'
-        - space: 'ipxe'
-          name: 'reverse-password'
-          code: 193
-          type: 'string'
-        - space: 'ipxe'
-          name: 'version'
-          code: 235
-          type: 'string'
-        - space: 'dhcp4'
-          name: 'iscsi-initiator-iqn'
-          code: 203
-          type: 'string'
-        - space: 'ipxe'
-          name: 'pxeext'
-          code: 16
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'iscsi'
-          code: 17
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'aoe'
-          code: 18
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'http'
-          code: 19
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'https'
-          code: 20
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'tftp'
-          code: 21
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'ftp'
-          code: 22
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'dns'
-          code: 23
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'bzimage'
-          code: 24
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'multiboot'
-          code: 25
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'slam'
-          code: 26
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'srp'
-          code: 27
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'nbi'
-          code: 32
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'pxe'
-          code: 33
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'elf'
-          code: 34
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'comboot'
-          code: 35
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'efi'
-          code: 36
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'fcoe'
-          code: 37
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'vlan'
-          code: 38
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'menu'
-          code: 39
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'sdi'
-          code: 40
-          type: 'uint8'
-        - space: 'ipxe'
-          name: 'nfs'
-          code: 41
-          type: 'uint8'
       rebind-timer: 64800
       renew-timer: 21600
       valid-lifetime: 86400
       min-valid-lifetime: 3600
       max-valid-lifetime: 86400
       store-extended-info: true
-      statistic-default-sample-count: 0
+      statistic-default-sample-count: 100
       statistic-default-sample-age: 60
       multi-threading:
         enable-multi-threading: true
         thread-pool-size: 2
-        packet-queue-size: 88
+        packet-queue-size: 64
       sanity-checks:
         lease-checks: 'warn'
       shared-networks:
@@ -414,7 +190,7 @@ dhcp:
             - id: 200
               subnet: '172.16.20.0/24'
               match-client-id: false
-              server-hostname: 'dhcp.service.kjdev'
+              server-hostname: 'dhcp.resolvemy.host'
               option-data:
                 - name: 'domain-name-servers'
                   data: '1.1.1.1'
@@ -440,7 +216,7 @@ dhcp:
             - id: 114
               subnet: '172.31.241.88/30'
               match-client-id: false
-              server-hostname: 'dhcp.service.kjdev'
+              server-hostname: 'dhcp.resolvemy.host'
               option-data:
                 - name: 'domain-name-servers'
                   data: '1.1.1.1'
@@ -471,7 +247,7 @@ dhcp:
             - id: 1011
               subnet: '172.31.241.92/30'
               match-client-id: false
-              server-hostname: 'dhcp.service.kjdev'
+              server-hostname: 'dhcp.resolvemy.host'
               option-data:
                 - name: 'domain-name-servers'
                   data: '1.1.1.1'
@@ -502,7 +278,7 @@ dhcp:
             - id: 2021
               subnet: '172.31.241.20/30'
               match-client-id: false
-              server-hostname: 'dhcp.service.kjdev'
+              server-hostname: 'dhcp.resolvemy.host'
               option-data:
                 - name: 'domain-name-servers'
                   data: '1.1.1.1'
@@ -517,7 +293,7 @@ dhcp:
                 - name: 'time-servers'
                   data: '162.159.200.123'
               reservations:
-                - hw-address: 'b8:CA:3A:F6:51:3E'
+                - hw-address: 'b8:ca:3a:f6:51:3e'
                   hostname: 'srv2'
                   ip-address: '172.31.241.22'
         - authoritative: false
@@ -533,7 +309,7 @@ dhcp:
             - id: 2070
               subnet: '172.31.241.68/30'
               match-client-id: false
-              server-hostname: 'dhcp.service.kjdev'
+              server-hostname: 'dhcp.resolvemy.host'
               option-data:
                 - name: 'domain-name-servers'
                   data: '1.1.1.1'
@@ -548,26 +324,58 @@ dhcp:
                 - name: 'time-servers'
                   data: '162.159.200.123'
               reservations:
-                - hw-address: 'B8:CA:3A:60:00:28'
+                - hw-address: 'b8:ca:3a:60:00:28'
                   hostname: 'srv7'
                   ip-address: '172.31.241.70'
-      server-hostname: 'core0.site1.kristianjones.dev'
+      server-hostname: 'dhcp.resolvemy.host'
       subnet4: []
       reservations: []
-      dhcp-queue-control:
-        enable-queue: true
-        queue-type: 'kea-ring4'
-        capacity: 64
       loggers:
         - name: 'kea-dhcp4'
           output_options:
             - output: 'stdout'
-          severity: 'DEBUG'
-          debuglevel: 99
-defaultPodOptions:
-  labels:
-    logs: 'loki-myloginspace'
+          severity: 'INFO'
+          debuglevel: 0
 
+  # DHCPv6 is values-driven like DHCPv4. No deployable allocation is currently
+  # registered, so subnet6 is intentionally empty rather than using example
+  # documentation prefixes. Add an approved subnet and pools here first.
+  dhcp6:
+    interfaces-config:
+      interfaces:
+        - '*'
+      re-detect: false
+    control-socket:
+      socket-type: 'unix'
+      socket-name: 'kea6-ctrl-socket'
+    hooks-libraries:
+      - library: '/usr/lib/x86_64-linux-gnu/kea/hooks/libdhcp_pgsql.so'
+    sanity-checks:
+      lease-checks: 'warn'
+    preferred-lifetime: 43200
+    valid-lifetime: 86400
+    renew-timer: 21600
+    rebind-timer: 34560
+    multi-threading:
+      enable-multi-threading: true
+      thread-pool-size: 2
+      packet-queue-size: 64
+    dhcp-ddns:
+      enable-updates: true
+      max-queue-size: 1024
+      ncr-format: 'JSON'
+      ncr-protocol: 'UDP'
+      sender-ip: '127.0.0.1'
+      sender-port: 0
+      server-ip: '127.0.0.1'
+      server-port: 53001
+    subnet6: []
+    loggers:
+      - name: 'kea-dhcp6'
+        output_options:
+          - output: 'stdout'
+        severity: 'INFO'
+        debuglevel: 0
 env: 'prod'
 
 # Gateway API HTTPRoute reference:
@@ -577,241 +385,12 @@ gateway:
   namespace: 'core-prod'
   sectionName: 'https-myloginspace'
 
-# Workloads below are rendered by the bjw-s common library.
-controllers:
-  main:
-    strategy: 'RollingUpdate'
-    containers:
-      dhcp:
-        # Site-specific Kea build. The mutable tag and Always policy are
-        # intentional until this image is published with immutable releases.
-        image:
-          repository: 'kristianfjones/kea'
-          tag: 'vps1-core'
-          pullPolicy: 'Always'
-        command:
-          - '/usr/local/bin/entry.sh'
-        probes:
-          liveness:
-            enabled: true
-            custom: true
-            spec:
-              exec:
-                command:
-                  - '/usr/local/bin/healthcheck.sh'
-              failureThreshold: 6
-              initialDelaySeconds: 5
-              periodSeconds: 30
-              timeoutSeconds: 10
-          readiness:
-            enabled: true
-            custom: true
-            spec:
-              exec:
-                command:
-                  - '/usr/local/bin/healthcheck.sh'
-              failureThreshold: 6
-              initialDelaySeconds: 5
-              periodSeconds: 30
-              timeoutSeconds: 10
-          startup:
-            enabled: true
-            custom: true
-            spec:
-              exec:
-                command:
-                  - '/usr/local/bin/healthcheck.sh'
-              failureThreshold: 30
-              initialDelaySeconds: 15
-              periodSeconds: 10
-              timeoutSeconds: 10
-
-      # PowerDNS authoritative server documentation:
-      # https://doc.powerdns.com/authoritative/
-      ns:
-        image:
-          repository: 'powerdns/pdns-auth-51'
-          tag: '5.1.3@sha256:f976e753a1de8ec62636203ecb12ae5fa3d1055601be167de53f1f673e0abe59'
-          pullPolicy: 'IfNotPresent'
-        command:
-          - '/usr/local/sbin/pdns_server'
-        args:
-          - '--config-dir=/etc/pdns'
-          - '--disable-syslog=yes'
-          - '--socket-dir=/tmp'
-          - '--gpgsql-host=psql-int.mylogin.space'
-          - '--gpgsql-port=$(PSQL_PORT)'
-          - '--gpgsql-dbname=DlzcnePHKR'
-          - '--gpgsql-user=$(USERNAME)'
-          - '--gpgsql-password=$(PASSWORD)'
-        env:
-          - name: 'PSQL_HOSTNAME'
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
-                key: 'psqlHostname'
-          - name: 'PSQL_PORT'
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
-                key: 'psqlPort'
-          - name: 'USERNAME'
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
-                key: 'username'
-          - name: 'PASSWORD'
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ns'
-                key: 'password'
-        workingDir: '/etc/pdns'
-
-service:
-  main:
-    enabled: true
-    controller: 'main'
-    primary: true
-    type: 'LoadBalancer'
-    externalTrafficPolicy: 'Local'
-    annotations:
-      purelb.io/addresses: '10.1.1.67'
-      purelb.io/allow-local: 'true'
-      purelb.io/allow-shared-ip: 'dhcp.resolvemy.host'
-    ports:
-      dhcp-tcp:
-        enabled: false
-        port: 67
-        protocol: 'TCP'
-      dhcp-udp:
-        enabled: true
-        primary: true
-        port: 67
-        protocol: 'UDP'
-
-persistence:
-  # The ApplicationSet replaces this custom volume with the cluster-specific
-  # ExternalSecret output generated by templates/10-DHCP/DHCPConfigSecret.yaml.
-  configs:
-    enabled: true
-    mountPath: '/etc/DHCP'
-    type: 'custom'
-    advancedMounts:
-      main:
-        dhcp:
-          - path: '/etc/DHCP'
-  scripts:
-    enabled: true
-    type: 'configMap'
-    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . -}}-config'
-    defaultMode: 0755
-    advancedMounts:
-      main:
-        dhcp:
-          - path: '/usr/local/bin/entry.sh'
-            readOnly: true
-            subPath: 'entry.sh'
-          - path: '/usr/local/bin/healthcheck.sh'
-            readOnly: true
-            subPath: 'healthcheck.sh'
-  nsconfig:
-    enabled: true
-    type: 'configMap'
-    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . -}}-nsconfig'
-    advancedMounts:
-      main:
-        ns:
-          - path: '/etc/pdns/pdns.conf'
-            readOnly: true
-            subPath: 'pdns.conf'
-  socket:
-    enabled: true
-    type: 'custom'
-    volumeSpec:
-      emptyDir:
-        medium: 'Memory'
-    advancedMounts:
-      main:
-        dhcp:
-          - path: '/var/run/kea'
-
-configMaps:
-  config:
-    enabled: true
-    data:
-      entry.sh: |
-        #!/bin/sh
-        set -eu
-        mkdir -p /var/run/kea
-        chmod 0750 /var/run/kea
-        # emptyDir survives container restarts within the same Pod. Remove only
-        # Kea runtime artifacts that can incorrectly report a dead daemon as
-        # running or prevent its control socket from being rebound.
-        rm -f /var/run/kea/*.pid /var/run/kea/*-ctrl-socket
-        if grep -Eq '^dhcp4=yes$' /etc/DHCP/keactrl.conf; then
-          /usr/sbin/kea-dhcp4 -t /etc/DHCP/DHCP4.jsonc
-        fi
-        KEA_PIDFILE_DIR=/var/run/kea \
-          /usr/sbin/keactrl start -c /etc/DHCP/keactrl.conf
-        exec tail -f /dev/null
-      healthcheck.sh: |
-        #!/bin/sh
-        set -eu
-
-        config='/etc/DHCP/keactrl.conf'
-        status="$(KEA_PIDFILE_DIR=/var/run/kea \
-          /usr/sbin/keactrl status -c "${config}")"
-
-        check_enabled_server() {
-          setting="${1}"
-          label="${2}"
-
-          if grep -Eq "^${setting}=yes$" "${config}"; then
-            printf '%s\n' "${status}" | grep -Fqx "${label}: active"
-          fi
-        }
-
-        check_enabled_server 'dhcp4' 'DHCPv4 server'
-        check_enabled_server 'dhcp6' 'DHCPv6 server'
-        check_enabled_server 'dhcp_ddns' 'DHCP DDNS'
-  nsconfig:
-    enabled: true
-    data:
-      pdns.conf: |
-        cache-ttl=60
-        config-dir=/etc/pdns
-        daemon=no
-        disable-axfr=no
-        distributor-threads=1
-        guardian=yes
-        launch=gpgsql
-        load-modules=libgpgsqlbackend.so
-        local-address=0.0.0.0
-        local-port=1053
-        loglevel=3
-        negquery-cache-ttl=60
-        setgid=pdns
-        setuid=pdns
-        socket-dir=/var/run
-        version-string=anonymous
-        gpgsql-dnssec=
-        allow-axfr-ips=172.16.0.0/12,10.0.0.0/8
-        allow-dnsupdate-from=172.16.0.0/12,10.0.0.0/8,127.0.0.0/8
-        webserver=yes
-        webserver-address=0.0.0.0
-        webserver-allow-from=0.0.0.0/0
-        webserver-port=8081
-        default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
-        dnsupdate=yes
-        expand-alias=yes
-        forward-dnsupdate=yes
-        forward-notify=10.1.1.50,10.1.1.53
-        primary=yes
-
 # NetBox documentation: https://netboxlabs.com/docs/netbox/en/stable/
 # Chart documentation: https://github.com/netbox-community/netbox-chart/tree/netbox-5.0.23/charts/netbox
 netbox:
-  fullnameOverride: 'netbox-ipam'
+  # Keep the upstream chart identity separate from the bjw-s Kea/PowerDNS
+  # workload, whose release-derived name remains `netbox-ipam`.
+  fullnameOverride: 'netbox'
 
   # Site image with the plugins below. The mutable tag and Always policy are
   # intentional pending immutable site-image releases.
