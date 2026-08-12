@@ -1,18 +1,22 @@
-{{- if .Values.authentik.ldap.enabled }}
+{{- if and .Values.authentik.ldap.enabled .Values.authentik.ldap.clusterMesh.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/instance: test-ldap
+    app.kubernetes.io/instance: test-ldap-global
     app.kubernetes.io/name: myloginspace-ldap
     lan-mode: 'private'
     wan-mode: 'public'
 
   annotations:
-    consul.hashicorp.com/service-name: ldap
-    external-dns.alpha.kubernetes.io/hostname: 'ldap.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+    {{- with .Values.authentik.ldap.additionalExternalDNSHostname }}
+    external-dns.alpha.kubernetes.io/hostname: '{{ . }}'
+    {{- end }}
+    service.cilium.io/affinity: 'local'
+    service.cilium.io/global: 'true'
+    service.cilium.io/global-sync-endpoint-slices: 'true'
 
-  name: myloginspace-ldap
+  name: myloginspace-ldap-global
 
 spec:
   type: ClusterIP

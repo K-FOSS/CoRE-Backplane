@@ -118,9 +118,9 @@ established `tls` exception for the DC1 Talos cluster.
 
 | Values | Resources and ports |
 | --- | --- |
-| `authentik.ldap.enabled`, `replicas` | LDAP outpost Deployment, token ExternalSecret, and Service exposing TCP/UDP 389, 636, and metrics 9300. |
-| `authentik.ldap.additionalExternalDNSHostname` | Optional additional hostname appended to the LDAP Service's cluster-specific ExternalDNS hostname. |
-| `authentik.ldap.clusterMesh.enabled` | Opts the LDAP Service into Cilium global-service discovery and EndpointSlice synchronization. |
+| `authentik.ldap.enabled`, `replicas` | LDAP outpost Deployment, token ExternalSecret, and cluster-scoped Service exposing TCP/UDP 389, 636, and metrics 9300. |
+| `authentik.ldap.additionalExternalDNSHostname` | Optional comma-separated hostnames published only by the LDAP global Service. |
+| `authentik.ldap.clusterMesh.enabled` | Creates the dedicated LDAP global Service and opts it into Cilium global-service discovery and EndpointSlice synchronization. |
 | `authentik.radius.enabled`, `replicas` | RADIUS outpost Deployment and Service exposing TCP/UDP 1812 and metrics 9300. |
 | `authentik.radius.additionalExternalDNSHostname` | Optional additional hostname appended to the RADIUS Service's cluster-specific ExternalDNS hostname. |
 | `authentik.radius.clusterMesh.enabled` | Opts the RADIUS Service into Cilium global-service discovery and EndpointSlice synchronization. |
@@ -132,8 +132,12 @@ network. Their tokens determine outpost identity and authorization.
 
 The owning ApplicationSet enables [Cilium global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
 for LDAP and RADIUS on the two Talos ClusterMesh peers. It leaves the legacy
-K3s target local. The Services have identical names and namespaces on the mesh
-peers, so Cilium can combine their backends. Both Services use
+K3s target local. LDAP uses a dedicated `myloginspace-ldap-global` Service;
+the existing `myloginspace-ldap` Service remains cluster-scoped and continues
+to publish only
+`ldap.<cluster>.<datacenter>.<region>.mylogin.space`. Global Services have
+identical names and namespaces on the mesh peers, so Cilium can combine their
+backends. Both outposts' global Services use
 [`local` service affinity](https://docs.cilium.io/en/stable/network/clustermesh/affinity/),
 preferring same-cluster endpoints when they are available and failing over to
 remote endpoints when no local endpoint is available. EndpointSlice
@@ -143,10 +147,11 @@ for a cluster before intentionally removing that cluster's backends from the
 global Service.
 
 The [ExternalDNS hostname annotation](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/annotations/#external-dnsalphakubernetesiohostname)
-accepts comma-separated names. Each outpost always publishes its existing
-cluster-specific name and appends `additionalExternalDNSHostname` when it is
-non-empty. The ApplicationSet currently assigns the shared
-`ldap.mylogin.space` and `radius.mylogin.space` aliases only to
+accepts comma-separated names. LDAP publishes its cluster-specific name from
+the cluster-scoped Service and publishes `additionalExternalDNSHostname` only
+from the dedicated global Service. RADIUS continues to append its additional
+hostnames to its existing Service. The ApplicationSet currently assigns the
+shared `ldap.mylogin.space` and `radius.mylogin.space` aliases only to
 `core-dc1-talos-prod`, avoiding multiple cluster-scoped ExternalDNS instances
 claiming ownership of the same records. Per-cluster list-generator values are
 the fleet-level opt-in and alias override points; chart defaults are empty and
