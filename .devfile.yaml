@@ -10,3 +10,17 @@ components:
       memoryRequest: 2G
       cpuLimit: '8'
       cpuRequest: '2'
+
+attributes:
+  pod-overrides:
+    metadata:
+      labels:
+        che-workspace: 'true'
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  che-workspace: 'true'
+              topologyKey: kubernetes.io/hostname
