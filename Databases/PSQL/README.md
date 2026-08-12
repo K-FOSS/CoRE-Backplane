@@ -148,6 +148,21 @@ shared port, base DN, bind DN and search attribute. PGPool has its endpoint and
 scheme under `ldap.pooler`, while pgAdmin uses the settings under
 `ldap.pgadmin`.
 
+The pgAdmin dependency values contain only site-specific overrides. Its
+`pgadmin-envs` ExternalSecret supplies LDAP configuration and the bootstrap
+password expected by the Runix chart, so the rendered chart does not create a
+Secret from the upstream example password. The bootstrap identity is required
+by the container even though pgAdmin is configured to authenticate users only
+through LDAP. Persistent pgAdmin state uses a 10 GiB claim from each target
+cluster's default storage class.
+
+Each pgAdmin HTTPRoute uses `pgadmin.domain`. The owning ApplicationSet injects
+`pgadmin.<cluster>.<datacenter>.<region>.mylogin.space`, giving every target a
+distinct public endpoint instead of sharing `pgadmin.mylogin.space`. For
+example, the DC1 Talos endpoint is
+`pgadmin.core-dc1-talos-prod.dc1.yxl.mylogin.space` and the Home1 endpoint is
+`pgadmin.core-home1-talos-prod.home1.yvr.mylogin.space`.
+
 The owning ApplicationSet selects `ldap-dc1.mylogin.space` for the dc1
 clusters and `ldap-home1.mylogin.space` for the home1 cluster, then injects the
 site endpoint into PostgreSQL, PGPool and pgAdmin through `LOVELY_HELM_MERGE`.

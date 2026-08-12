@@ -18,7 +18,7 @@ spec:
       name: main-gw
 
   hostnames:
-    - 'pgadmin.mylogin.space'
+    - {{ .Values.pgadmin.domain | squote }}
   rules:
     - backendRefs:
         - name: {{ .Release.Name }}-pgadmin4
