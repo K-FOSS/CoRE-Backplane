@@ -10,3 +10,25 @@ patches:
       kind: PodSecurityPolicy
       metadata:
         name: DOES NOT MATTER
+
+  - target:
+      kind: StatefulSet
+
+    patch: |
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata:
+        name: DOES NOT MATTER
+      spec:
+        template:
+          spec:
+            containers:
+              - name: consul
+                volumeMounts:
+                  - name: consul-tmp
+                    mountPath: /tmp
+            volumes:
+              - name: consul-tmp
+                emptyDir:
+                  medium: Memory
+                  sizeLimit: 32Gi
