@@ -12,54 +12,57 @@ metadata:
 
 spec:
   goTemplate: true
-  # goTemplateOptions:
-  #   - 'missingkey=error'
+  goTemplateOptions:
+    - 'missingkey=error'
   generators:
     - merge:
         mergeKeys:
           - name
 
         generators:
-          - list:
-              elements:
-                - name: dc1-k3s-node1
-                  values:
-                    hub: false
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - clusters:
+                          - name: 'dc1-k3s-node1'
+                            values:
+                              hub: false
+                              datacenter: 'dc1'
+                              region: 'yxl'
+                              ldapServer: 'ldap-dc1.mylogin.space'
 
-                    standby: true
+                              pooler:
+                                peers:
+                                  - hostname: 'psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                                    port: 5432
 
-                    ldapServer: ldap-dc1.mylogin.space
+                          - name: 'core-dc1-talos-prod'
+                            values:
+                              hub: true
+                              datacenter: 'dc1'
+                              region: 'yxl'
+                              ldapServer: 'ldap-dc1-talos.mylogin.space'
 
-                    pooler:
-                      peers:
-                        - hostname: psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space
-                          port: 5432
+                              pooler:
+                                peers:
+                                  - hostname: 'psql-int.dc1-k3s-node1.dc1.yxl.mylogin.space'
+                                    port: 5432
 
-                - name: core-dc1-talos-prod
-                  values:
-                    hub: true
+                          - name: 'core-home1-talos-prod'
+                            values:
+                              hub: false
+                              datacenter: 'home1'
+                              region: 'yvr'
+                              ldapServer: 'ldap-home1.mylogin.space'
 
-                    standby: false
+                              pooler:
+                                peers:
+                                  - hostname: 'psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                                    port: 5432
 
-                    ldapServer: ldap-dc1-talos.mylogin.space
-
-                    pooler:
-                      peers:
-                        - hostname: psql-int.dc1-k3s-node1.dc1.yxl.mylogin.space
-                          port: 5432
-
-                - name: core-home1-talos-prod
-                  values:
-                    hub: false
-
-                    standby: true
-
-                    ldapServer: ldap-home1.mylogin.space
-
-                    pooler:
-                      peers:
-                        - hostname: psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space
-                          port: 5432
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
 
           - clusters:
               selector:
@@ -101,34 +104,44 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                env: {{ .values.environment }}
+                {{- $hub := dict }}
+                {{- $hubCount := 0 }}
+                {{- range .clusters }}
+                {{- if .values.hub }}
+                {{- $hub = . }}
+                {{- $hubCount = add1 $hubCount }}
+                {{- end }}
+                {{- end }}
+                {{- if ne $hubCount 1 }}
+                {{- fail "exactly one core PostgreSQL ApplicationSet entry must set values.hub=true" }}
+                {{- end }}
+                env: '{{ .values.environment }}'
 
                 cluster:
-                  name: {{ .values.clusterName }}
-                  domain: {{ .values.clusterDomain }}
+                  name: '{{ .values.clusterName }}'
+                  domain: '{{ .values.clusterDomain }}'
 
-                datacenter: {{ .values.datacenter }}
+                datacenter: '{{ .values.datacenter }}'
 
-                region: {{ .values.region }}
+                region: '{{ .values.region }}'
 
                 ldap:
-                  server: {{ .values.ldapServer }}
+                  server: '{{ .values.ldapServer }}'
 
                   postgres:
-                    server: {{ .values.ldapServer }}
+                    server: '{{ .values.ldapServer }}'
 
                   pooler:
-                    server: {{ .values.ldapServer }}
+                    server: '{{ .values.ldapServer }}'
 
                   pgadmin:
-                    serverURI: ldap://{{ .values.ldapServer }}:389
+                    serverURI: 'ldap://{{ .values.ldapServer }}:389'
 
                 psql:
-                  controllerID: psql.{{ .values.tenant }}/{{ .values.environment }}
+                  controllerID: 'psql.{{ .values.tenant }}/{{ .values.environment }}'
                   hub: {{ .values.hub }}
-
-                  standby: {{ .values.standby }}
-
+                  standby: {{ not .values.hub }}
+                  standbyHost: 'psql-int.{{ $hub.name }}.{{ $hub.values.datacenter }}.{{ $hub.values.region }}.mylogin.space'
 
                 pooler:
                   peers:

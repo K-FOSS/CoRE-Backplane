@@ -111,6 +111,25 @@ The DC1 Talos PGPool uses k3s node1 as its remote peer. Local pods are generated
 by the chart and must not also be repeated in `pooler.peers`, because duplicate
 backend entries can route multiple PGPool node IDs to the same PostgreSQL pod.
 
+The ApplicationSet's checked-in cluster list is the PostgreSQL topology source
+of truth. A [matrix generator](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Matrix/)
+retains the complete list while its
+[list generator `elementsYaml`](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-List/#dynamically-generated-elements)
+expands one target at a time; the merge generator then adds current destination
+and label data from registered Argo CD cluster Secrets. The one entry with
+`values.hub: true` supplies its cluster name, datacenter and region to the exact
+`psql.standbyHost` value in every render, while every other entry becomes a
+standby. Exactly one hub is required and ApplicationSet templating fails if the
+list contains zero or multiple hubs.
+
+To move the hub, set the former entry's `values.hub` to `false` and the new
+entry's value to `true` in the same Git change. After Argo CD reconciliation,
+verify the former hub is a healthy standby, the new hub is writable, every
+standby PostgreSQL resource reports the new `spec.standby.standby_host`, and
+Patroni is streaming from the intended hub before removing the old endpoint.
+Roll back by restoring both former `values.hub` settings and reconciling the
+ApplicationSet.
+
 The main CoRE PostgreSQL cluster maintenance windows are configured with
 `psql.maintenanceWindows`. The default CRD value is `10:00-12:00`, evaluated
 in UTC by the Zalando Postgres Operator, which corresponds to 02:00-04:00 PST
