@@ -22,14 +22,26 @@ spec:
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    ldapAdditionalExternalDNSHostname: ''
+                    ldapClusterMeshEnabled: false
+                    radiusAdditionalExternalDNSHostname: ''
+                    radiusClusterMeshEnabled: false
 
                 - name: core-dc1-talos-prod
                   values:
                     hub: true
+                    ldapAdditionalExternalDNSHostname: 'ldap.mylogin.space,ldap-dc1-talos.mylogin.space'
+                    ldapClusterMeshEnabled: true
+                    radiusAdditionalExternalDNSHostname: 'radius.mylogin.space'
+                    radiusClusterMeshEnabled: true
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    ldapAdditionalExternalDNSHostname: ''
+                    ldapClusterMeshEnabled: true
+                    radiusAdditionalExternalDNSHostname: ''
+                    radiusClusterMeshEnabled: true
 
           - clusters:
               selector:
@@ -92,6 +104,16 @@ spec:
                   domain: {{ .values.clusterDomain }}
 
                 authentik:
+                  ldap:
+                    additionalExternalDNSHostname: '{{ .values.ldapAdditionalExternalDNSHostname }}'
+                    clusterMesh:
+                      enabled: {{ .values.ldapClusterMeshEnabled }}
+
+                  radius:
+                    additionalExternalDNSHostname: '{{ .values.radiusAdditionalExternalDNSHostname }}'
+                    clusterMesh:
+                      enabled: {{ .values.radiusClusterMeshEnabled }}
+
                   authentik:
                     postgresql:
                       # -- set the postgresql hostname to talk to

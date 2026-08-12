@@ -10,7 +10,12 @@ metadata:
 
   annotations:
     consul.hashicorp.com/service-name: radius
-    external-dns.alpha.kubernetes.io/hostname: 'radius.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+    external-dns.alpha.kubernetes.io/hostname: 'radius.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ with .Values.authentik.radius.additionalExternalDNSHostname }},{{ . }}{{ end }}'
+    {{- if .Values.authentik.radius.clusterMesh.enabled }}
+    service.cilium.io/affinity: 'local'
+    service.cilium.io/global: 'true'
+    service.cilium.io/global-sync-endpoint-slices: 'true'
+    {{- end }}
 
   name: myloginspace-radius
 

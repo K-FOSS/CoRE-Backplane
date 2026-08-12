@@ -119,12 +119,38 @@ established `tls` exception for the DC1 Talos cluster.
 | Values | Resources and ports |
 | --- | --- |
 | `authentik.ldap.enabled`, `replicas` | LDAP outpost Deployment, token ExternalSecret, and Service exposing TCP/UDP 389, 636, and metrics 9300. |
+| `authentik.ldap.additionalExternalDNSHostname` | Optional additional hostname appended to the LDAP Service's cluster-specific ExternalDNS hostname. |
+| `authentik.ldap.clusterMesh.enabled` | Opts the LDAP Service into Cilium global-service discovery and EndpointSlice synchronization. |
 | `authentik.radius.enabled`, `replicas` | RADIUS outpost Deployment and Service exposing TCP/UDP 1812 and metrics 9300. |
+| `authentik.radius.additionalExternalDNSHostname` | Optional additional hostname appended to the RADIUS Service's cluster-specific ExternalDNS hostname. |
+| `authentik.radius.clusterMesh.enabled` | Opts the RADIUS Service into Cilium global-service discovery and EndpointSlice synchronization. |
 | `authentik.proxy.enabled`, `replicas` | Proxy outpost Deployment, token ExternalSecret, Service on port 80, and `/outpost.goauthentik.io` HTTPRoute. |
 
 Outposts connect to the local Authentik server over cluster DNS with
 `AUTHENTIK_INSECURE=true`; the traffic remains inside the cluster service
 network. Their tokens determine outpost identity and authorization.
+
+The owning ApplicationSet enables [Cilium global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
+for LDAP and RADIUS on the two Talos ClusterMesh peers. It leaves the legacy
+K3s target local. The Services have identical names and namespaces on the mesh
+peers, so Cilium can combine their backends. Both Services use
+[`local` service affinity](https://docs.cilium.io/en/stable/network/clustermesh/affinity/),
+preferring same-cluster endpoints when they are available and failing over to
+remote endpoints when no local endpoint is available. EndpointSlice
+synchronization is also enabled so Kubernetes-aware discovery clients can
+observe remote endpoints. Disable either outpost's `clusterMesh.enabled` value
+for a cluster before intentionally removing that cluster's backends from the
+global Service.
+
+The [ExternalDNS hostname annotation](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/annotations/#external-dnsalphakubernetesiohostname)
+accepts comma-separated names. Each outpost always publishes its existing
+cluster-specific name and appends `additionalExternalDNSHostname` when it is
+non-empty. The ApplicationSet currently assigns the shared
+`ldap.mylogin.space` and `radius.mylogin.space` aliases only to
+`core-dc1-talos-prod`, avoiding multiple cluster-scoped ExternalDNS instances
+claiming ownership of the same records. Per-cluster list-generator values are
+the fleet-level opt-in and alias override points; chart defaults are empty and
+disabled for standalone renders.
 
 Current template coupling requires special care:
 
@@ -198,7 +224,8 @@ helm template aaa AAA --namespace core-prod > /tmp/aaa.yaml
 ```
 
 To reproduce a cluster, copy its `hub`, `cluster`, `datacenter`, `region`, and
-other injected values from `Apps/AAA/AAA.yaml` into a temporary values file.
+outpost DNS/ClusterMesh values from `Apps/AAA/AAA.yaml` into a temporary values
+file.
 The Lovely merge also supplies Authentik service annotations, labels,
 PostgreSQL settings, and worker TLS mounts.
 
@@ -219,6 +246,8 @@ database credentials come directly from the existing
 replica hostname.
 - Authentik server/worker images, replicas, PDB, probes, and resources;
 - enabled outpost Deployments, matching Secrets and Services;
+- LDAP/RADIUS cluster-specific and optional shared ExternalDNS hostnames, plus
+  Cilium global-service annotations only on intended ClusterMesh members;
 - Route parent references, peer endpoints, timeouts, and policy targets;
 - TLS Secret names and worker mount paths; and
 - CRD/API compatibility for Authentik, External Secrets, Gateway/Envoy, and
