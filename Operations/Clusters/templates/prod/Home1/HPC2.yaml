@@ -136,6 +136,17 @@ spec:
 
         - name: nvme_core.default_ps_max_latency_us
           value: '0'
+
+        - name: intel_pstate
+          value: active
+
+        - name: cpufreq.default_governor
+          value: performance
+
+        - name: intel_idle.max_cstate
+          value: '0'
+        - name: processor.max_cstate
+          value: '1'
     talos:
       extensions:
         system:
@@ -151,8 +162,14 @@ spec:
           - uinput
           - nvme-cli
           - usb-audio-drivers
+          - nvidia-container-toolkit-production
+          - nonfree-kmod-nvidia-production
       kernel:
         modules:
           - name: dm_multipath
           - name: dm_round-robin
           - name: it87
+          - name: nvidia
+          - name: nvidia_uvm
+          - name: nvidia_drm
+          - name: nvidia_modeset
