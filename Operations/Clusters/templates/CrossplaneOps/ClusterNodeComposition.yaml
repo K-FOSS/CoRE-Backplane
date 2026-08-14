@@ -1156,6 +1156,9 @@ spec:
                     config_patches = [
                       yamlencode({
                         {{- $clusterK8sVersion := $clusterCustomResource.status.atProvider.manifest.spec.versions.kubernetes }}
+                        {{- if and $.observed.composite.resource.spec.overrides $.observed.composite.resource.spec.overrides.version $.observed.composite.resource.spec.overrides.version.kubernetes }}
+                        {{- $clusterK8sVersion = $.observed.composite.resource.spec.overrides.version.kubernetes }}
+                        {{- end }}
                         debug = false
                         cluster = {
                           controlPlane = {
