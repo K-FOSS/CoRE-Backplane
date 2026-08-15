@@ -32,6 +32,12 @@ controllers:
           tag: {{ default "latest" $.Values.sabnzbd.tag }}
           pullPolicy: IfNotPresent
 
+        {{- if $.Values.networks.rogers.enabled }}
+        resources:
+          limits:
+            {{ required "networks.rogers.sriov.device is required when the Rogers network is enabled" $.Values.networks.rogers.sriov.device | squote }}: '1'
+        {{- end }}
+
         ports:
           - name: http
             containerPort: 8080
