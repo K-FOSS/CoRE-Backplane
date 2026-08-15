@@ -14,5 +14,13 @@ spec:
       name: "core-prod/main-gw/https-myloginspace-quic"
       operation:
         op: add
-        path: "/udp_listener_config/downstream_socket_config/prefer_gro"
-        value: true
+        path: "/udp_listener_config"
+        value:
+          downstream_socket_config:
+            prefer_gro: true
+          quic_options: {}
+          udp_packet_packet_writer_config:
+            name: envoy.udp_packet_writer.gso
+            typed_config:
+              '@type': >-
+                type.googleapis.com/envoy.extensions.udp_packet_writer.v3.UdpGsoBatchWriterFactory
