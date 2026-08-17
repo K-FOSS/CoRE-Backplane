@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Release.Name }}-request-writer'
+  labels:
+    app.kubernetes.io/name: '{{ .Chart.Name }}'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+data:
+  serve.sh: |
+    #!/bin/sh
+    set -eu
+
+    while true; do
+      {
+        IFS= read -r request_line || exit 0
+        while IFS= read -r header_line && [ "${header_line}" != "$(printf '\r')" ]; do
+          :
+        done
+
+        request_file="$(mktemp "${MOUNT_PATH}/request-XXXXXX")" || {
+          printf 'HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n'
+          exit 0
+        }
+        printf '%s\n' "${request_line}" > "${request_file}"
+        printf 'HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n%s\n' "${request_file##*/}"
+      } | nc -l -p "${PORT}" -w 5
+    done
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ .Release.Name }}-request-writer'
+  labels:
+    app.kubernetes.io/name: '{{ .Chart.Name }}'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+spec:
+  replicas: {{ .Values.requestWriter.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: '{{ .Chart.Name }}'
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: '{{ .Chart.Name }}'
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+    spec:
+      containers:
+        - name: 'request-writer'
+          image: '{{ .Values.requestWriter.image }}'
+          imagePullPolicy: 'IfNotPresent'
+          command: ['/bin/sh', '/scripts/serve.sh']
+          env:
+            - name: 'MOUNT_PATH'
+              value: '{{ .Values.requestWriter.mountPath }}'
+            - name: 'PORT'
+              value: '{{ .Values.requestWriter.port }}'
+          ports:
+            - name: 'http'
+              containerPort: {{ .Values.requestWriter.port }}
+              protocol: 'TCP'
+          readinessProbe:
+            tcpSocket:
+              port: 'http'
+          livenessProbe:
+            tcpSocket:
+              port: 'http'
+          volumeMounts:
+            - name: 'data'
+              mountPath: '{{ .Values.requestWriter.mountPath }}'
+            - name: 'script'
+              mountPath: '/scripts'
+              readOnly: true
+      volumes:
+        - name: 'data'
+          persistentVolumeClaim:
+            claimName: '{{ .Release.Name }}'
+        - name: 'script'
+          configMap:
+            name: '{{ .Release.Name }}-request-writer'
+            defaultMode: 365
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ .Release.Name }}-request-writer'
+  labels:
+    app.kubernetes.io/name: '{{ .Chart.Name }}'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+spec:
+  type: 'ClusterIP'
+  selector:
+    app.kubernetes.io/name: '{{ .Chart.Name }}'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+  ports:
+    - name: 'http'
+      port: {{ .Values.requestWriter.port }}
+      targetPort: 'http'
+      protocol: 'TCP'
