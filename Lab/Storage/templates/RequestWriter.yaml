@@ -5,6 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: '{{ .Chart.Name }}'
     app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/component: 'request-writer'
 data:
   serve.sh: |
     #!/bin/sh
@@ -36,6 +37,7 @@ metadata:
   labels:
     app.kubernetes.io/name: '{{ .Chart.Name }}'
     app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/component: 'request-writer'
 spec:
   replicas: {{ .Values.requestWriter.replicas }}
   selector:
@@ -47,6 +49,7 @@ spec:
       labels:
         app.kubernetes.io/name: '{{ .Chart.Name }}'
         app.kubernetes.io/instance: '{{ .Release.Name }}'
+        app.kubernetes.io/component: 'request-writer'
     spec:
       containers:
         - name: 'request-writer'
@@ -90,11 +93,13 @@ metadata:
   labels:
     app.kubernetes.io/name: '{{ .Chart.Name }}'
     app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/component: 'request-writer'
 spec:
   type: 'ClusterIP'
   selector:
     app.kubernetes.io/name: '{{ .Chart.Name }}'
     app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/component: 'request-writer'
   ports:
     - name: 'http'
       port: {{ .Values.requestWriter.port }}
