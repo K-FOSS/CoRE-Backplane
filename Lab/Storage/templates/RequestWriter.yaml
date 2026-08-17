@@ -10,6 +10,9 @@ data:
     #!/bin/sh
     set -eu
 
+    fifo="${MOUNT_PATH}/.nc-fifo"
+    [ -p "${fifo}" ] || mkfifo "${fifo}"
+
     while true; do
       {
         IFS= read -r request_line || exit 0
@@ -18,12 +21,12 @@ data:
         done
 
         request_file="$(mktemp "${MOUNT_PATH}/request-XXXXXX")" || {
-          printf 'HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n'
-          exit 0
+          printf 'HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\n' > "${fifo}"
+          continue
         }
         printf '%s\n' "${request_line}" > "${request_file}"
-        printf 'HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n%s\n' "${request_file##*/}"
-      } | nc -l -p "${PORT}" -w 5
+        printf 'HTTP/1.1 201 Created\r\nContent-Type: text/plain\r\nConnection: close\r\n\r\n%s\n' "${request_file##*/}" > "${fifo}"
+      } < "${fifo}" | nc -l -p "${PORT}" > "${fifo}" || true
     done
 ---
 apiVersion: apps/v1
