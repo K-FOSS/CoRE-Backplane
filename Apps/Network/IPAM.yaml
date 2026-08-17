@@ -40,6 +40,8 @@ spec:
 
                       enabled: true
 
+                      replicas: '3'
+
                 - name: dc1-k3s-node1
                   values:
                     hub: false
@@ -168,6 +170,10 @@ spec:
 
                 netbox:
                   enabled: {{ .values.netbox.enabled }}
+
+                  clusterDomain: {{ .values.clusterDomain }}
+
+                  replicaCount: {{ default 1 .values.netbox.replicas }}
 
                   tasksDatabase:
                     host: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
