@@ -12,6 +12,15 @@
   value: https://s3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
 
 #
+# Prometheus
+#
+- name: MINIO_PROMETHEUS_AUTH_TYPE
+  value: public
+
+- name: MINIO_PROMETHEUS_URL
+  value: http://core-mimir-proxy.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}:8080
+
+#
 # High Avail
 #
 - name: MINIO_STORAGE_CLASS_STANDARD
