@@ -53,19 +53,6 @@ argo-cd:
     deploymentAnnotations:
       secret.reloader.stakater.com/reload: argocd-redis-password
 
-    affinity:
-      # Prefer the larger server tier when it exists, but do not make the
-      # control plane depend on YVR-specific node names.
-      nodeAffinity:
-        type: soft          # hard = requiredDuringScheduling; soft = preferred
-        matchExpressions:
-          - key: kubernetes.io/hostname
-            operator: In
-            values:
-              - hpc3
-              - laptop2
-              - srv3
-
     # Keep replicated control-plane components off the same node where the
     # cluster has enough capacity. ScheduleAnyway preserves availability on
     # smaller sites.
@@ -364,19 +351,7 @@ argo-cd:
     statefulsetAnnotations:
       secret.reloader.stakater.com/reload: argocd-redis-password
 
-    replicas: 3
-  
-    affinity: &prefer-big-nodes
-      nodeAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            preference:
-              matchExpressions:
-                - key: kubernetes.io/hostname
-                  operator: In
-                  values:
-                    - srv2
-                    - srv3
+    replicas: 2
 
     extraArgs:
       - --redis-use-tls=true
@@ -434,8 +409,6 @@ argo-cd:
 
     extraArgs:
       - --redis-use-tls=true
-
-    affinity: *prefer-big-nodes
 
     pdb:
       enabled: true
