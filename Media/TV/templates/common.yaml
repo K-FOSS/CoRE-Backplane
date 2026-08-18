@@ -23,9 +23,9 @@ controllers:
 
     pod:
       securityContext:
-        fsGroup: 911
-        runAsUser: 911
-        runAsGroup: 911
+        fsGroup: {{ .Values.user.gid }}
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
         fsGroupChangePolicy: "OnRootMismatch"
 
     containers:
@@ -39,6 +39,16 @@ controllers:
         ports:
           - name: http
             containerPort: 8989
+
+        env:
+          - name: PUID
+            value: '{{ .Values.user.uid }}'
+
+          - name: PGID
+            value: '{{ .Values.user.gid }}'
+
+          - name: TZ
+            value: '{{ .Values.global.timezone }}'      
   {{- end }}
 
   {{- if .Values.prefetcharr.enabled }}
@@ -52,9 +62,9 @@ controllers:
 
     pod:
       securityContext:
-        fsGroup: 911
-        runAsUser: 911
-        runAsGroup: 911
+        fsGroup: {{ .Values.user.gid }}
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
         fsGroupChangePolicy: "OnRootMismatch"
 
     containers:
@@ -70,6 +80,9 @@ controllers:
               configMapKeyRef:
                 name: prefetcharr-config
                 key: config.toml
+
+          - name: TZ
+            value: '{{ .Values.global.timezone }}'
   {{- end }}
 
 persistence:
@@ -186,24 +199,6 @@ service:
     # -- Set the service type
     type: ClusterIP
 
-    # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
-    # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
-    #externalTrafficPolicy: Local
-
-    # -- Specify the ip policy. Options: SingleStack, PreferDualStack, RequireDualStack
-    ipFamilyPolicy:
-    # -- The ip families that should be used. Options: IPv4, IPv6
-    ipFamilies: []
-
-    # -- Provide additional annotations which may be required.
-    #annotations:
-
-    # -- Provide additional labels which may be required.
-    labels: {}
-
-    # -- Allow adding additional match labels
-    extraSelectorLabels: {}
-
     ports:
       http:
         # -- Enables or disables the port
@@ -244,25 +239,14 @@ route:
       lan-mode: 'private'
 
     hostnames:
-      - movies.mylogin.space
-
-    # -- Configure the resource the route attaches to.
+      - tv.mylogin.space
     parentRefs:
-      - # Group of the referent resource.
-        group: gateway.networking.k8s.io
-
-        # Kind of the referent resource.
+      - group: gateway.networking.k8s.io
         kind: Gateway
-
-        # Name of the referent resource
         name: {{ $.Values.pubgateway.name }}
-
         sectionName: {{ $.Values.pubgateway.sectionName }}
-
-        # Namespace of the referent resource
         namespace: {{ $.Values.pubgateway.namespace }}
 
-    # -- Configure rules for routing. Defaults to the primary service.
     rules:
       - backendRefs:
           - kind: Service
