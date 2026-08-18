@@ -20,7 +20,9 @@
 - name: MINIO_PROMETHEUS_URL
   value: http://core-mimir-proxy.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}:8080
 
-#
+- name: MINIO_PROMETHEUS_JOB_ID
+  value: {{ .Release.Name }}-s3
+
 # High Avail
 #
 - name: MINIO_STORAGE_CLASS_STANDARD
