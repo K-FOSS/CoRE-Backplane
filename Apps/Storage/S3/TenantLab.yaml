@@ -20,12 +20,11 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     replicas: 1
-                    node: infra1
 
                 - name: core-home1-talos-prod
                   values:
                     replicas: 1
-                    node: hpc1
+                    existingClaim: core-home1-talos-prod-core-storage-s3-tenant-prod-data
           - clusters:
               selector:
                 matchLabels:
@@ -83,8 +82,10 @@ spec:
                 s3:
                   replicas: {{ .values.replicas }}
 
-                  nodeSelector:
-                    kubernetes.io/hostname: {{ .values.node }}
+                  {{ if .values.existingClaim }}
+                  storage:
+                    existingClaim: {{ .values.existingClaim }}
+                  {{ end }}
 
       destination:
         server: '{{ .server }}'

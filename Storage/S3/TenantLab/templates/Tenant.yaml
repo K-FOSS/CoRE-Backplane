@@ -321,7 +321,10 @@ persistence:
     enabled: true
     type: persistentVolumeClaim
     mountPath: 
-    existingClaim: core-home1-talos-prod-core-storage-s3-tenant-prod-data
+    {{ with .Values.s3.storage.existingClaim }}
+    existingClaim: {{ . }}
+    {{ end }}
+
     accessMode: ReadWriteOnce
     storageClass: {{ .Values.s3.storage.storageClass }}
     size: {{ .Values.s3.storage.size }}
