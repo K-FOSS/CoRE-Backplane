@@ -20,11 +20,13 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     replicas: 1
+                    size: 300Gi
 
                 - name: core-home1-talos-prod
                   values:
                     replicas: 1
                     existingClaim: core-home1-talos-prod-core-storage-s3-tenant-prod-data
+                    size: 300Gi
           - clusters:
               selector:
                 matchLabels:
@@ -82,10 +84,13 @@ spec:
                 s3:
                   replicas: {{ .values.replicas }}
 
-                  {{ if .values.existingClaim }}
+
                   storage:
+                    {{ if .values.existingClaim }}
                     existingClaim: {{ .values.existingClaim }}
-                  {{ end }}
+                    {{ end }}
+                    size: {{ .values.size }}
+                  
 
       destination:
         server: '{{ .server }}'
