@@ -242,6 +242,33 @@ service:
   {{- end }}
 
 route:
+  {{- if .Values.stash.enabled }}
+  stash:
+    enabled: true
+    kind: HTTPRoute
+
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - 'accessmyporn.download'
+
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: '{{ $.Values.pubgateway.name }}'
+        sectionName: '{{ $.Values.pubgateway.sectionName }}'
+        namespace: '{{ $.Values.pubgateway.namespace }}'
+
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'stash'
+            weight: 1
+  {{- end }}
+
   {{- if .Values.jellyfin.enabled }}
   jellyfin:
     # -- Enables or disables the route
@@ -296,9 +323,16 @@ metadata:
   name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
 spec:
   targetRefs:
-    - group: gateway.networking.k8s.io
+    {{- if .Values.jellyfin.enabled }}
+    - group: 'gateway.networking.k8s.io'
       kind: HTTPRoute
-      name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+      name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}{{ if .Values.stash.enabled }}-jellyfin{{ end }}'
+    {{- end }}
+    {{- if .Values.stash.enabled }}
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}{{ if .Values.jellyfin.enabled }}-stash{{ end }}'
+    {{- end }}
 
   compression: []
   

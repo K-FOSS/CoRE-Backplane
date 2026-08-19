@@ -22,6 +22,14 @@ controller itself is enabled through Network Base.
 Dependencies include Gateway API/Envoy Gateway, Cilium and LoadBalancer
 addresses, cert-manager, DNS/ExternalDNS and Authentik.
 
+The shared HTTPS listener uses [Gateway API certificate references](https://gateway-api.sigs.k8s.io/guides/user-guides/tls/)
+for every public hostname it terminates. Its certificate list includes the
+`accessmyporndownload-default-certificates` Secret declared by
+`Network/TLS/Certificates` so the Stash route can serve
+`accessmyporn.download`. The Stash ApplicationSet currently deploys only to
+`core-home1-talos-prod`; adding the certificate to a shared listener does not
+create a route on other clusters.
+
 Verify Gateway/HTTPRoute `Accepted`, `Programmed` and `ResolvedRefs`, DNS, SNI
 and certificate chains, redirects, backend health, and login/logout flows.
 Avoid changing shared listeners, policies, DNS and certificates in one

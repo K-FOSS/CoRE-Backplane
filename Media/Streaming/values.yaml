@@ -6,6 +6,25 @@ pubgateway:
   namespace: core-prod
   sectionName: https-myloginspace
 
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Stash'
+    externalHost: 'https://accessmyporn.download'
+    group: 'Media'
+
+  accessGroups:
+    - 'Private Stash'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
 jellyfin:
   enabled: true
 
