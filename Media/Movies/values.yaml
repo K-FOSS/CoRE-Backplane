@@ -6,6 +6,25 @@ pubgateway:
   namespace: core-prod
   sectionName: mylogin-https
 
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Radarr'
+    externalHost: 'https://movies.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
 radarr:
   enabled: true
 

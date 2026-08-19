@@ -3,6 +3,25 @@ pubgateway:
   namespace: core-prod
   sectionName: mylogin-https
 
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'SABnzbd'
+    externalHost: 'https://nzb.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
 tenant:
   name: example-tenant
 
