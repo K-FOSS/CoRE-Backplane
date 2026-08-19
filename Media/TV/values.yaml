@@ -6,6 +6,25 @@ pubgateway:
   namespace: core-prod
   sectionName: mylogin-https
 
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Sonarr'
+    externalHost: 'https://tv.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
 user:
   uid: 911
   gid: 911
