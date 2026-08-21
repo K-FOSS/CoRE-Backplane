@@ -174,7 +174,7 @@ service:
 
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
-        appProtocol:  
+        appProtocol: 'kubernetes.io/ws'
 
       discovery:
         enabled: true
@@ -238,7 +238,7 @@ service:
 
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
-        appProtocol:  
+        appProtocol: 'kubernetes.io/ws'
   {{- end }}
 
 route:
@@ -335,6 +335,12 @@ spec:
     {{- end }}
 
   compression: []
+
+  timeout:
+    http:
+      requestTimeout: '0s'
+      maxStreamDuration: '0s'
+      streamIdleTimeout: '0s'
   
   connection:
     bufferLimit: 0
