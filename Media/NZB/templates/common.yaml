@@ -64,6 +64,77 @@ controllers:
             containerPort: 9696
   {{- end }}
 
+  {{- if $.Values.filebrowser.enabled }}
+  filebrowser:
+    strategy: RollingUpdate
+
+    name: filebrowser
+
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
+    containers:
+      filebrowser:
+        image:
+          repository: {{ $.Values.filebrowser.image | squote }}
+          tag: {{ required "filebrowser.tag is required" $.Values.filebrowser.tag | squote }}
+          pullPolicy: IfNotPresent
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+
+        env:
+          FILEBROWSER_CONFIG: '/etc/filebrowser/config.yaml'
+
+        ports:
+          - name: http
+            containerPort: 80
+  {{- end }}
+
+configMaps:
+  {{- if $.Values.filebrowser.enabled }}
+  filebrowser:
+    enabled: true
+    data:
+      config.yaml: |
+        server:
+          cacheDir: '/home/filebrowser/data/tmp'
+          sources:
+            - path: '/downloads'
+              name: 'Downloads'
+              config:
+                defaultEnabled: true
+                private: true
+        auth:
+          methods:
+            proxy:
+              enabled: true
+              header: 'X-authentik-username'
+            password:
+              enabled: false
+        userDefaults:
+          settingsAllowed: false
+          permissions:
+            admin: false
+            execute: false
+            create: false
+            rename: false
+            modify: false
+            delete: false
+            share: false
+            download: true
+            api: false
+  {{- end }}
+
 persistence:
   {{- if .Values.sabnzbd.volumes.config.enabled }}
   sabnzbd-config:
@@ -89,6 +160,19 @@ persistence:
           - path: /config
   {{- end }}
 
+  {{- if .Values.filebrowser.enabled }}
+  filebrowser-config:
+    enabled: true
+    type: configMap
+    identifier: filebrowser
+    advancedMounts:
+      filebrowser:
+        filebrowser:
+          - path: /etc/filebrowser/config.yaml
+            subPath: config.yaml
+            readOnly: true
+  {{- end }}
+
   {{- if .Values.sabnzbd.volumes.downloads.enabled }}
   downloads:
     enabled: true
@@ -100,6 +184,12 @@ persistence:
       sabnzbd: # the controller with the "main" identifier
         sabnzbd: # the container with the "main" identifier
           - path: /downloads
+      {{- if and .Values.filebrowser.enabled .Values.filebrowser.volumes.downloads.enabled }}
+      filebrowser:
+        filebrowser:
+          - path: /downloads
+            readOnly: true
+      {{- end }}
   {{- end }}
 
 service:
@@ -219,12 +309,30 @@ service:
         appProtocol:  
   {{- end }}
 
+  {{- if $.Values.filebrowser.enabled }}
+  filebrowser:
+    enabled: true
+    controller: filebrowser
+    primary: false
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: http
+        protocol: TCP
+  {{- end }}
+
 
 route:
   {{- if .Values.sabnzbd.enabled }}
   sabnzbd:
     # -- Enables or disables the route
     enabled: true
+
+    # Preserve the existing route identity when additional routes are enabled.
+    forceRename: '{{ .Release.Name }}'
 
     # -- Set the route kind
     # Valid options are GRPCRoute, HTTPRoute, TCPRoute, TLSRoute, UDPRoute
@@ -236,7 +344,7 @@ route:
       lan-mode: 'private'
 
     hostnames:
-      - nzb.mylogin.space
+      - 'nzb.mylogin.space'
 
     # -- Configure the resource the route attaches to.
     parentRefs:
@@ -260,6 +368,60 @@ route:
           - kind: Service
             port: 80
             identifier: sabnzbd
+            weight: 1
+  {{- end }}
+
+  {{- if .Values.prowlarr.enabled }}
+  prowlarr:
+    enabled: true
+    kind: HTTPRoute
+
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - 'prowlarr.mylogin.space'
+
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: '{{ $.Values.pubgateway.name }}'
+        sectionName: '{{ $.Values.pubgateway.sectionName }}'
+        namespace: '{{ $.Values.pubgateway.namespace }}'
+
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'prowlarr'
+            weight: 1
+  {{- end }}
+
+  {{- if .Values.filebrowser.enabled }}
+  filebrowser:
+    enabled: true
+    kind: HTTPRoute
+
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - {{ required "filebrowser.host is required" .Values.filebrowser.host | squote }}
+
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: '{{ $.Values.pubgateway.name }}'
+        sectionName: '{{ $.Values.pubgateway.sectionName }}'
+        namespace: '{{ $.Values.pubgateway.namespace }}'
+
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'filebrowser'
             weight: 1
   {{- end }}
 

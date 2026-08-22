@@ -11,6 +11,19 @@ authentik:
     externalHost: 'https://nzb.mylogin.space'
     group: 'Media'
 
+  applications:
+    prowlarr:
+      enabled: true
+      displayName: 'Prowlarr'
+      externalHost: 'https://prowlarr.mylogin.space'
+      group: 'Media'
+
+    filebrowser:
+      enabled: true
+      displayName: 'Downloads'
+      externalHost: 'https://downloads.mylogin.space'
+      group: 'Media'
+
   accessGroups:
     - 'Media Consumers'
 
@@ -47,6 +60,18 @@ prowlarr:
 
   volumes:
     config:
+      enabled: true
+
+filebrowser:
+  enabled: true
+
+  image: 'gtstef/filebrowser'
+  tag: '1.5.3-stable@sha256:e2ac55ccbe53d63b3f1d7d5ea5b82edf589b005a4b747b59912f97c6ba4f969e'
+
+  host: 'downloads.mylogin.space'
+
+  volumes:
+    downloads:
       enabled: true
 
 networks:

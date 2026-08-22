@@ -1,4 +1,4 @@
-{{- if and .Values.sabnzbd.enabled .Values.authentik.autoconfigure }}
+{{- if .Values.authentik.autoconfigure }}
 {{- if not .Values.authentik.accessGroups }}
 {{- fail "authentik.accessGroups must contain at least one group" }}
 {{- end }}
@@ -58,5 +58,47 @@ spec:
         group  = data.authentik_group.access_{{ $index }}.id
         order  = {{ $index }}
       }
+      {{- end }}
+
+      {{- range $identifier, $application := .Values.authentik.applications }}
+      {{- if $application.enabled }}
+      resource "authentik_provider_proxy" "{{ $identifier }}" {
+        name               = "{{ $.Release.Name }}-{{ $identifier }}"
+        mode               = "forward_single"
+        external_host      = "{{ required (printf "authentik.applications.%s.externalHost is required" $identifier) $application.externalHost }}"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+
+      resource "authentik_application" "{{ $identifier }}" {
+        name              = "{{ required (printf "authentik.applications.%s.displayName is required" $identifier) $application.displayName }}"
+        slug              = "{{ $.Release.Name }}-{{ $identifier }}"
+        group             = "{{ required (printf "authentik.applications.%s.group is required" $identifier) $application.group }}"
+        protocol_provider = authentik_provider_proxy.{{ $identifier }}.id
+      }
+
+      resource "authentik_application_entitlement" "{{ $identifier }}_access" {
+        name        = "media-access"
+        application = authentik_application.{{ $identifier }}.uuid
+      }
+
+      {{- range $index, $group := $.Values.authentik.accessGroups }}
+      data "authentik_group" "{{ $identifier }}_access_{{ $index }}" {
+        name = "{{ $group }}"
+      }
+
+      resource "authentik_policy_binding" "{{ $identifier }}_entitlement_{{ $index }}" {
+        target = authentik_application_entitlement.{{ $identifier }}_access.id
+        group  = data.authentik_group.{{ $identifier }}_access_{{ $index }}.id
+        order  = {{ $index }}
+      }
+
+      resource "authentik_policy_binding" "{{ $identifier }}_application_{{ $index }}" {
+        target = authentik_application.{{ $identifier }}.uuid
+        group  = data.authentik_group.{{ $identifier }}_access_{{ $index }}.id
+        order  = {{ $index }}
+      }
+      {{- end }}
+      {{- end }}
       {{- end }}
 {{- end }}

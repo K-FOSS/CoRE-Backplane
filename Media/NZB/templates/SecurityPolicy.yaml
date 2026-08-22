@@ -1,4 +1,4 @@
-{{- if and .Values.sabnzbd.enabled .Values.authentik.route.enabled }}
+{{- if .Values.authentik.route.enabled }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -6,9 +6,21 @@ metadata:
 
 spec:
   targetRefs:
+    {{- if .Values.sabnzbd.enabled }}
     - group: 'gateway.networking.k8s.io'
       kind: HTTPRoute
       name: '{{ .Release.Name }}'
+    {{- end }}
+    {{- if .Values.prowlarr.enabled }}
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: '{{ .Release.Name }}-prowlarr'
+    {{- end }}
+    {{- if .Values.filebrowser.enabled }}
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: '{{ .Release.Name }}-filebrowser'
+    {{- end }}
 
   extAuth:
     failOpen: false
