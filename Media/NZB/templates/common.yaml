@@ -89,11 +89,12 @@ controllers:
             drop:
               - 'ALL'
           runAsNonRoot: true
-          runAsUser: 1000
-          runAsGroup: 1000
+          runAsUser: 911
+          runAsGroup: 911
 
         env:
           FILEBROWSER_CONFIG: '/etc/filebrowser/config.yaml'
+          FILEBROWSER_DATABASE: '/tmp/filebrowser/database.db'
 
         ports:
           - name: http
@@ -108,7 +109,7 @@ configMaps:
       config.yaml: |
         server:
           port: 8080
-          cacheDir: '/home/filebrowser/data/tmp'
+          cacheDir: '/tmp/filebrowser/cache'
           sources:
             - path: '/downloads'
               name: 'Downloads'
@@ -117,7 +118,11 @@ configMaps:
                 private: true
         auth:
           methods:
-            noauth: true
+            proxy:
+              enabled: true
+              header: 'X-authentik-username'
+            password:
+              enabled: false
   {{- end }}
 
 persistence:
