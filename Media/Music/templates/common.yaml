@@ -50,6 +50,85 @@ controllers:
             value: '{{ .Values.global.timezone }}'
   {{- end }}
 
+  #
+  # YouTube trusted session generator
+  #
+  {{- if $.Values.youtubeSessionGenerator.enabled }}
+  yt-session:
+    strategy: 'RollingUpdate'
+
+    name: 'yt-session'
+
+    pod:
+      automountServiceAccountToken: false
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: 'RuntimeDefault'
+
+    containers:
+      yt-session:
+        image:
+          repository: '{{ required "youtubeSessionGenerator.image.repository is required" $.Values.youtubeSessionGenerator.image.repository }}'
+          tag: '{{ required "youtubeSessionGenerator.image.tag is required" $.Values.youtubeSessionGenerator.image.tag }}'
+          pullPolicy: 'IfNotPresent'
+
+        ports:
+          - name: 'http'
+            containerPort: {{ $.Values.youtubeSessionGenerator.port }}
+
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/ping'
+                port: 'http'
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 3
+
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/ping'
+                port: 'http'
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/ping'
+                port: 'http'
+              periodSeconds: 5
+              timeoutSeconds: 5
+              failureThreshold: 30
+
+        resources:
+          requests:
+            cpu: '10m'
+            memory: '64Mi'
+          limits:
+            memory: '256Mi'
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          readOnlyRootFilesystem: true
+  {{- end }}
+
 persistence:
   {{- if .Values.lidarr.volumes.config.enabled }}
   lidarr-config:
@@ -146,6 +225,23 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:  
+  {{- end }}
+
+  {{- if $.Values.youtubeSessionGenerator.enabled }}
+  yt-session:
+    enabled: true
+    controller: 'yt-session'
+    primary: true
+    type: 'ClusterIP'
+
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: {{ $.Values.youtubeSessionGenerator.port }}
+        targetPort: 'http'
+        protocol: 'HTTP'
+        appProtocol: 'http'
   {{- end }}
 
 route:

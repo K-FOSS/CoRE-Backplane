@@ -6,7 +6,34 @@ selected by `Apps/Media/Music.yaml`. The ApplicationSet currently selects the
 the [Lovely Helm merge layer](https://github.com/crumbhole/lovely-vault-plugin#readme).
 The chart uses the bjw-s-labs
 [Common Library](https://bjw-s-labs.github.io/helm-charts/docs/) to generate its
-workload, storage, service, and route resources.
+workloads, storage, services, and route resources.
+
+## YouTube trusted sessions
+
+The chart also deploys the
+[BgUtils PO-token provider](https://github.com/Brainicism/bgutil-ytdlp-pot-provider#readme)
+as the internal `yt-session` service. Version `1.3.2` and its image digest are
+pinned; see the upstream
+[1.3.2 release notes](https://github.com/Brainicism/bgutil-ytdlp-pot-provider/releases/tag/1.3.2).
+The service generates YouTube proof-of-origin tokens on demand and exposes the
+upstream [`/ping` and `/get_pot` HTTP API](https://github.com/Brainicism/bgutil-ytdlp-pot-provider/tree/1.3.2/server#server)
+on port `4416`. It has no public `HTTPRoute` and runs as the image's non-root
+UID/GID `1000` with a read-only root filesystem and all Linux capabilities
+dropped.
+
+Configure Lidarr's compatible YouTube/Tubifarry downloader to use:
+
+```text
+http://core-home1-talos-prod-media-music-augy-prod-yt-session:4416
+```
+
+The consumer must support the BgUtils HTTP provider protocol; this is not the
+API of the deprecated Invidious trusted-session generator. Tokens are cached in
+memory and are not persisted. They are tied to YouTube request context and
+network reputation, so the provider and Lidarr must continue to reach YouTube
+through compatible public egress. No YouTube cookies or generated tokens belong
+in Git; supply cookies separately through the existing application workflow if
+the downloader requires them.
 
 ## Access and identity
 
@@ -32,12 +59,16 @@ their mounted content.
 ## Reconciliation and verification
 
 Argo CD renders this directory with the injected tenant and reconciles the
-Deployment, Service, `HTTPRoute`, `SecurityPolicy`, and Terraform `Workspace`.
+Deployments, Services, `HTTPRoute`, `SecurityPolicy`, and Terraform `Workspace`.
 The Workspace then reconciles the Authentik provider, application, entitlement,
 and group bindings. Verify all of the following after sync:
 
 ```sh
 kubectl -n core-media get deploy,service,httproute,securitypolicy,workspace
+kubectl -n core-media get deploy -l app.kubernetes.io/controller=yt-session
+kubectl -n core-media get service/core-home1-talos-prod-media-music-augy-prod-yt-session
+kubectl -n core-media port-forward service/core-home1-talos-prod-media-music-augy-prod-yt-session 4416:4416
+curl --fail --show-error http://127.0.0.1:4416/ping
 kubectl -n core-media get httproute -o yaml
 kubectl -n core-media get securitypolicy -o yaml
 kubectl -n core-media get workspace -o yaml
@@ -46,8 +77,9 @@ kubectl -n core-media get workspace -o yaml
 Confirm that the route and policy report accepted/attached conditions, the
 Workspace reports successful reconciliation, an unauthorized request redirects
 through Authentik, a `Media Consumers` member can open Lidarr, and Lidarr can
-read and write its config, media, and download paths. Resource readiness alone
-does not prove that authentication or storage permissions work.
+read and write its config, media, and download paths. Also confirm that `/ping`
+reports version `1.3.2` and test the configured YouTube downloader from Lidarr;
+provider readiness alone does not prove token generation or YouTube access works.
 
 ## Rollback and removal
 
@@ -57,3 +89,8 @@ objects according to the provider's deletion policy, so inspect its conditions
 and deletion behavior before syncing a removal. The ApplicationSet preserves
 application resources on deletion; removing the ApplicationSet is therefore not
 proof that either Kubernetes or Authentik resources were deleted.
+
+Disabling `youtubeSessionGenerator.enabled` removes its Deployment and Service.
+Because its cache is memory-only, rollback or removal discards cached tokens and
+does not delete persistent data. Remove the provider URL from Lidarr before
+disabling the service so the downloader does not retain a dead dependency.
