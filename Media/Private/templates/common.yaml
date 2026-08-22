@@ -22,6 +22,17 @@ controllers:
     name: whisparr
 
     pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
       {{- with $.Values.whisparr.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}
@@ -59,6 +70,17 @@ controllers:
     name: metube
 
     pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
       {{- with $.Values.metube.nodeSelector }}
       nodeSelector:
         {{ toYaml . | nindent 8 }}

@@ -22,6 +22,17 @@ controllers:
     name: sonarr
 
     pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
       securityContext:
         fsGroup: {{ .Values.user.gid }}
         runAsUser: {{ .Values.user.uid }}

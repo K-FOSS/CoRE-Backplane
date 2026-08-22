@@ -11,6 +11,16 @@ global:
 defaultPodOptions:
   labels:
     logs: loki-myloginspace
+    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+  affinity:
+    podAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchLabels:
+                mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+            topologyKey: 'kubernetes.io/hostname'
 
 controllers:
   #
@@ -58,6 +68,10 @@ controllers:
           repository: {{ $.Values.prowlarr.image }}
           tag: {{ default "latest" $.Values.prowlarr.tag }}
           pullPolicy: IfNotPresent
+
+        env:
+          PUID: {{ required "prowlarr.userId is required" $.Values.prowlarr.userId | squote }}
+          PGID: {{ required "prowlarr.groupId is required" $.Values.prowlarr.groupId | squote }}
 
         ports:
           - name: http
@@ -118,11 +132,7 @@ configMaps:
                 private: true
         auth:
           methods:
-            proxy:
-              enabled: true
-              header: 'X-authentik-username'
-            password:
-              enabled: false
+            noauth: true
   {{- end }}
 
 persistence:

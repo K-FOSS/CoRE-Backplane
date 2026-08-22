@@ -21,6 +21,19 @@ controllers:
 
     name: lidarr
 
+    pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+
     containers:
       lidarr:
         image:
