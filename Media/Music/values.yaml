@@ -4,14 +4,40 @@ tenant:
 pubgateway:
   name: main-gw
   namespace: core-prod
-  sectionName: mylogin-https
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Lidarr'
+    externalHost: 'https://music.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
+user:
+  uid: 911
+  gid: 911
+
+global:
+  timezone: 'America/Vancouver'
 
 
 lidarr:
   enabled: true
 
-  image: linuxserver/lidarr
-  tag: latest
+  image: ghcr.io/hotio/lidarr
+  tag: pr-plugins
 
   volumes:
     config:

@@ -23,10 +23,10 @@ controllers:
 
     pod:
       securityContext:
-        fsGroup: 911
-        runAsUser: 911
-        runAsGroup: 911
-        fsGroupChangePolicy: "OnRootMismatch"
+        fsGroup: {{ .Values.user.gid }}
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
+        fsGroupChangePolicy: 'OnRootMismatch'
 
     containers:
       lidarr:
@@ -38,6 +38,16 @@ controllers:
         ports:
           - name: http
             containerPort: 8686
+
+        env:
+          - name: PUID
+            value: '{{ .Values.user.uid }}'
+
+          - name: PGID
+            value: '{{ .Values.user.gid }}'
+
+          - name: TZ
+            value: '{{ .Values.global.timezone }}'
   {{- end }}
 
 persistence:
@@ -154,7 +164,7 @@ route:
       lan-mode: 'private'
 
     hostnames:
-      - lidarr.mylogin.space
+      - 'music.mylogin.space'
 
     # -- Configure the resource the route attaches to.
     parentRefs:
