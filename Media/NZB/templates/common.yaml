@@ -97,7 +97,7 @@ controllers:
 
         ports:
           - name: http
-            containerPort: 80
+            containerPort: 8080
   {{- end }}
 
 configMaps:
@@ -107,6 +107,7 @@ configMaps:
     data:
       config.yaml: |
         server:
+          port: 8080
           cacheDir: '/home/filebrowser/data/tmp'
           sources:
             - path: '/downloads'
@@ -116,23 +117,7 @@ configMaps:
                 private: true
         auth:
           methods:
-            proxy:
-              enabled: true
-              header: 'X-authentik-username'
-            password:
-              enabled: false
-        userDefaults:
-          settingsAllowed: false
-          permissions:
-            admin: false
-            execute: false
-            create: false
-            rename: false
-            modify: false
-            delete: false
-            share: false
-            download: true
-            api: false
+            noauth: true
   {{- end }}
 
 persistence:
