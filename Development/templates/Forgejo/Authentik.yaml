@@ -9,17 +9,21 @@ spec:
   providerConfigRef:
     name: 'authentik'
 
-  credentials:
-    - filename: 'client-secret'
-      source: 'Secret'
-      secretRef:
-        namespace: '{{ .Release.Namespace }}'
-        name: 'forgejo-oidc'
-        key: 'secret'
-
   forProvider:
     source: 'Inline'
+    varFiles:
+      - source: 'SecretKey'
+        secretKeyRef:
+          namespace: '{{ .Release.Namespace }}'
+          name: 'forgejo-oidc'
+          key: 'terraform.tfvars.json'
+        format: 'JSON'
     module: |
+      variable "client_secret" {
+        type      = string
+        sensitive = true
+      }
+
       locals {
         application_slug = "forgejo-{{ .Values.cluster.name }}"
         client_id        = "forgejo-{{ .Values.cluster.name }}"
@@ -49,7 +53,7 @@ spec:
       resource "authentik_provider_oauth2" "forgejo" {
         name          = "Forgejo {{ .Values.cluster.name }}"
         client_id     = local.client_id
-        client_secret = file("${path.module}/client-secret")
+        client_secret = var.client_secret
         signing_key   = data.authentik_certificate_key_pair.signing.id
 
         allowed_redirect_uris = [
@@ -59,15 +63,16 @@ spec:
           },
         ]
 
-        property_mappings   = data.authentik_property_mapping_provider_scope.scopes.ids
-        authorization_flow  = data.authentik_flow.authorization.id
-        invalidation_flow   = data.authentik_flow.invalidation.id
+        property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow    = data.authentik_flow.authorization.id
+        invalidation_flow     = data.authentik_flow.invalidation.id
         access_token_validity = "hours=8"
       }
 
       resource "authentik_application" "forgejo" {
         name              = "Forgejo {{ .Values.cluster.name }}"
         slug              = local.application_slug
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         meta_launch_url   = local.external_url
         open_in_new_tab   = true
         protocol_provider = authentik_provider_oauth2.forgejo.id

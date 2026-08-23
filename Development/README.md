@@ -278,18 +278,24 @@ Each site also reconciles a separate Authentik OAuth2/OIDC provider and
 application named `forgejo-<cluster>`. Its only redirect URI is the strict
 `https://<site-hostname>/user/oauth2/authentik/callback` callback. Forgejo uses
 the application-specific discovery document and requests only `email` and
-`profile` in addition to OpenID Connect's required `openid` scope. This follows
-the upstream [Authentik Gitea integration](https://docs.goauthentik.io/integrations/services/gitea/)
+`profile` in addition to OpenID Connect's required `openid` scope. The
+Authentik application is placed in the site group
+`<datacenter>-<cluster>`; this organizes the application catalog and does not
+grant access or create an Authentik group binding. This follows the upstream
+[Authentik Gitea integration](https://docs.goauthentik.io/integrations/services/gitea/)
 and [OAuth2/OIDC provider guidance](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
 
 External Secrets generates the `forgejo-oidc` client Secret once. The
-Authentik Workspace reads that Secret without publishing it to Git or Vault,
-and the Forgejo chart consumes the same `key` and `secret` keys. The pod
-reloader watches the OIDC, LDAP/database, Dragonfly, and local administrator
-Secrets. Prerequisites are a ready `authentik` Terraform ProviderConfig, the
-named default Authentik authorization/invalidation flows, the `tls` signing
-key, the site-local LDAP endpoint and certificate chain, and a working
-External Secrets Password generator.
+Workspace uses the shared `authentik` Terraform ProviderConfig for its
+Authentik API credential. It receives the generated OIDC client secret
+separately as a sensitive Terraform JSON variable file, while the Forgejo
+chart consumes the same Secret's `key` and `secret` entries. Neither credential
+is published to Git or Vault. The pod reloader watches the OIDC,
+LDAP/database, Dragonfly, and local administrator Secrets. Prerequisites are a
+ready `authentik` Terraform ProviderConfig and its `authentik-credentials`
+Secret, the named default Authentik authorization/invalidation flows, the
+`tls` signing key, the site-local LDAP endpoint and certificate chain, and a
+working External Secrets Password generator.
 
 After reconciliation, verify the Password generator, `forgejo-oidc`
 ExternalSecret/Secret, Authentik Workspace, provider/application, both
