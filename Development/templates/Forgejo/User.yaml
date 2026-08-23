@@ -11,6 +11,9 @@ spec:
   psql:
     enabled: true
     createUserDatabase: true
+    crossplane:
+      terraformProvider: 'psql-{{ .Values.datacenter }}-{{ .Values.region }}'
+      crossplaneProvider: 'psql-{{ .Values.datacenter }}-{{ .Values.region }}'
   writeConnectionSecretToRef:
     name: 'forgejo-user'
 {{- end }}
