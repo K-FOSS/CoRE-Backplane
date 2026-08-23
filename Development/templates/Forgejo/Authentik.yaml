@@ -1,0 +1,75 @@
+{{- if .Values.forgejo.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: 'forgejo-authentik'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  providerConfigRef:
+    name: 'authentik'
+
+  credentials:
+    - filename: 'client-secret'
+      source: 'Secret'
+      secretRef:
+        namespace: '{{ .Release.Namespace }}'
+        name: 'forgejo-oidc'
+        key: 'secret'
+
+  forProvider:
+    source: 'Inline'
+    module: |
+      locals {
+        application_slug = "forgejo-{{ .Values.cluster.name }}"
+        client_id        = "forgejo-{{ .Values.cluster.name }}"
+        external_url     = "https://{{ .Values.forgejo.gitea.config.server.DOMAIN }}"
+      }
+
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+        ]
+      }
+
+      data "authentik_certificate_key_pair" "signing" {
+        name = "tls"
+      }
+
+      resource "authentik_provider_oauth2" "forgejo" {
+        name          = "Forgejo {{ .Values.cluster.name }}"
+        client_id     = local.client_id
+        client_secret = file("${path.module}/client-secret")
+        signing_key   = data.authentik_certificate_key_pair.signing.id
+
+        allowed_redirect_uris = [
+          {
+            matching_mode = "strict"
+            url           = "${local.external_url}/user/oauth2/authentik/callback"
+          },
+        ]
+
+        property_mappings   = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow  = data.authentik_flow.authorization.id
+        invalidation_flow   = data.authentik_flow.invalidation.id
+        access_token_validity = "hours=8"
+      }
+
+      resource "authentik_application" "forgejo" {
+        name              = "Forgejo {{ .Values.cluster.name }}"
+        slug              = local.application_slug
+        meta_launch_url   = local.external_url
+        open_in_new_tab   = true
+        protocol_provider = authentik_provider_oauth2.forgejo.id
+      }
+{{- end }}

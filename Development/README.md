@@ -61,7 +61,7 @@ production patches.
 | --- | --- | --- |
 | GitLab CE | `gitlab.enabled` | Git hosting, projects, CI application services, Gitaly/Praefect, KAS, and toolbox operations. |
 | Harbor | `harbor.enabled` | OCI registry, external object storage/database/cache integration, LDAP authentication, and public pull-through caches. |
-| Forgejo | `forgejo.enabled` | Site-local lightweight Git hosting backed by local PostgreSQL, Dragonfly, and persistent repository storage. |
+| Forgejo | `forgejo.enabled` | Site-local Git hosting backed by local PostgreSQL, Dragonfly, persistent repository storage, Authentik OIDC, and LDAP. |
 | Eclipse Che | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
 | Artifact Hub | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
 | Hoppscotch | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
@@ -256,6 +256,58 @@ Dragonfly password into Forgejo's runtime environment before `app.ini` is
 generated. A CreatedOnce External Secrets password generator creates the local
 break-glass `forgejo-admin` Secret. Consult Forgejo's [database preparation guide](https://forgejo.org/docs/latest/admin/installation/database-preparation/)
 and [configuration reference](https://forgejo.org/docs/latest/admin/config-cheat-sheet/).
+
+### Forgejo LDAP and OIDC
+
+Both sites configure two idempotently managed external authentication sources
+through the upstream chart's `configure-gitea` init container. The
+[`forgejo-user` claim](templates/Forgejo/User.yaml) remains the single service
+identity for both PostgreSQL and LDAP. Its `ldapsBIND` and `password`
+connection keys are mapped into the init container after Helm rendering; they
+are never copied into chart values or rendered as literals.
+
+The `authentik-ldap` source connects with verified LDAPS to the target
+cluster's `ldap.<cluster>.<datacenter>.<region>.mylogin.space:636` endpoint. It
+searches `ou=users,dc=ldap,dc=mylogin,dc=space` for an exact `cn` match and
+maps `cn`, `name`, `lastname`, and `mail` into the Forgejo profile. LDAP bulk
+synchronization and LDAP-derived administrator privileges are deliberately
+not enabled. See the Forgejo 14 [LDAP behavior](https://forgejo.org/docs/v14.0/user/authentication/)
+and [authentication-source CLI](https://forgejo.org/docs/v14.0/admin/command-line/#admin-auth-add-ldap).
+
+Each site also reconciles a separate Authentik OAuth2/OIDC provider and
+application named `forgejo-<cluster>`. Its only redirect URI is the strict
+`https://<site-hostname>/user/oauth2/authentik/callback` callback. Forgejo uses
+the application-specific discovery document and requests only `email` and
+`profile` in addition to OpenID Connect's required `openid` scope. This follows
+the upstream [Authentik Gitea integration](https://docs.goauthentik.io/integrations/services/gitea/)
+and [OAuth2/OIDC provider guidance](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
+
+External Secrets generates the `forgejo-oidc` client Secret once. The
+Authentik Workspace reads that Secret without publishing it to Git or Vault,
+and the Forgejo chart consumes the same `key` and `secret` keys. The pod
+reloader watches the OIDC, LDAP/database, Dragonfly, and local administrator
+Secrets. Prerequisites are a ready `authentik` Terraform ProviderConfig, the
+named default Authentik authorization/invalidation flows, the `tls` signing
+key, the site-local LDAP endpoint and certificate chain, and a working
+External Secrets Password generator.
+
+After reconciliation, verify the Password generator, `forgejo-oidc`
+ExternalSecret/Secret, Authentik Workspace, provider/application, both
+authentication sources, strict callback, and successful login through LDAP
+and OIDC at each hostname. Test account linking with a non-administrator before
+using both sources for an existing identity; matching LDAP and OIDC attributes
+do not by themselves prove that Forgejo will merge existing accounts. Finally,
+verify the namespace-local `forgejo-admin` login so Authentik or LDAP failure
+does not remove break-glass access.
+
+Removing the Helm values does not delete authentication sources already stored
+in Forgejo's PostgreSQL database; remove them deliberately through Forgejo's
+administration UI or CLI after confirming no users depend on them. Removing the
+Workspace deletes the corresponding Authentik application/provider according
+to Crossplane's default deletion behavior. To rotate OIDC credentials, replace
+the CreatedOnce Secret, force the Workspace to reconcile the new client
+secret, and restart Forgejo as one coordinated operation; rotating only one
+side causes an OIDC lockout.
 
 The PostgreSQL database and persistent repository volume form one recovery
 unit. Back them up consistently; Dragonfly queue/cache/session data is

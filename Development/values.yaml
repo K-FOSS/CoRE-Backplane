@@ -586,7 +586,26 @@ forgejo:
       passwordMode: 'initialOnlyNoReset'
 
     podAnnotations:
-      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,dragonfly-core-password'
+      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,dragonfly-core-password'
+
+    ldap:
+      - name: 'authentik-ldap'
+        securityProtocol: 'ldaps'
+        host: 'ldap.k8s.dc1.yxl.mylogin.space'
+        port: '636'
+        userSearchBase: 'ou=users,dc=ldap,dc=mylogin,dc=space'
+        userFilter: '(&(objectClass=user)(cn=%[1]s))'
+        usernameAttribute: 'cn'
+        firstnameAttribute: 'name'
+        surnameAttribute: 'lastname'
+        emailAttribute: 'mail'
+
+    oauth:
+      - name: 'authentik'
+        provider: 'openidConnect'
+        existingSecret: 'forgejo-oidc'
+        autoDiscoverUrl: 'https://idp.mylogin.space/application/o/forgejo-k8s/.well-known/openid-configuration'
+        scopes: 'email profile'
 
     config:
       database:
