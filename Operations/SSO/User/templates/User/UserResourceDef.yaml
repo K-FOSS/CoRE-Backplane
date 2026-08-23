@@ -169,6 +169,13 @@ spec:
 
                 s3:
                   type: object
+
+                  x-kubernetes-validations:
+                    - rule: '!has(self.createCredentials) || !self.createCredentials || has(self.writeCredentialsSecretRef)'
+                      message: 'writeCredentialsSecretRef is required when createCredentials is true'
+                    - rule: '!has(self.createServiceAccount) || !self.createServiceAccount || has(self.writeServiceAccountCredentialsSecretRef)'
+                      message: 'writeServiceAccountCredentialsSecretRef is required when createServiceAccount is true'
+
                   properties:
                     enabled:
                       type: boolean
@@ -211,6 +218,13 @@ spec:
 
                       description: Create and store access keys using the LDAP authentication
 
+                    createServiceAccount:
+                      type: 'boolean'
+
+                      default: false
+
+                      description: 'Create a long-lived MinIO service account access key and secret key for the LDAP identity'
+
                     buckets:
                       type: array
 
@@ -218,6 +232,53 @@ spec:
 
                       items:
                         type: string
+
+                    additionalPolicyStatements:
+                      type: 'array'
+
+                      default: []
+
+                      description: 'Additional IAM policy statements appended to the generated bucket access statement'
+
+                      items:
+                        type: 'object'
+
+                        properties:
+                          sid:
+                            type: 'string'
+
+                          effect:
+                            type: 'string'
+
+                            enum:
+                              - 'Allow'
+                              - 'Deny'
+
+                          actions:
+                            type: 'array'
+
+                            minItems: 1
+
+                            items:
+                              type: 'string'
+
+                          resources:
+                            type: 'array'
+
+                            minItems: 1
+
+                            items:
+                              type: 'string'
+
+                          conditions:
+                            type: 'object'
+
+                            x-kubernetes-preserve-unknown-fields: true
+
+                        required:
+                          - 'effect'
+                          - 'actions'
+                          - 'resources'
 
                     writeCredentialsSecretRef:      
                       type: object
@@ -228,9 +289,37 @@ spec:
                       properties:
                         namespace:
                           type: string
+
+                          minLength: 1
                   
                         name:
                           type: string
+
+                          minLength: 1
+
+                      required:
+                        - 'namespace'
+                        - 'name'
+
+                    writeServiceAccountCredentialsSecretRef:
+                      type: 'object'
+
+                      description: 'Secret to store the long-lived MinIO service account AccessKey and SecretAccessKey'
+
+                      properties:
+                        namespace:
+                          type: 'string'
+
+                          minLength: 1
+
+                        name:
+                          type: 'string'
+
+                          minLength: 1
+
+                      required:
+                        - 'namespace'
+                        - 'name'
 
                 groups:
                   type: array

@@ -40,6 +40,7 @@ spec:
             {{ $tfMinioCreds := "tf-minio-creds" }}
             {{ $tfMinioPolicy := "tf-minio-policy" }}
             {{ $s3Creds := "s3-creds-secret" }}
+            {{ $s3ServiceAccountCreds := "s3-service-account-creds-secret" }}
 
             #
             # PostgreSQL
@@ -330,6 +331,18 @@ spec:
 
             {{- $buckets = uniq ($buckets | sortAlpha) }}
 
+            {{- $additionalPolicyStatements := list }}
+            {{- range $statement := .observed.composite.resource.spec.s3.additionalPolicyStatements }}
+              {{- $renderedStatement := dict "Effect" $statement.effect "Action" $statement.actions "Resource" $statement.resources }}
+              {{- if $statement.sid }}
+                {{- $_ := set $renderedStatement "Sid" $statement.sid }}
+              {{- end }}
+              {{- if $statement.conditions }}
+                {{- $_ := set $renderedStatement "Condition" $statement.conditions }}
+              {{- end }}
+              {{- $additionalPolicyStatements = append $additionalPolicyStatements $renderedStatement }}
+            {{- end }}
+
             {{- range $bucketIndex, $bucketName := $createBuckets }}
             apiVersion: minio.crossplane.io/v1
             kind: Bucket
@@ -385,7 +398,14 @@ spec:
                     - {{ $bucketName  }}
                     {{- end }}
 
+                  additional_policy_statements: |-
+                    {{ toJson $additionalPolicyStatements }}
+
+                  create_service_account: {{ default false .observed.composite.resource.spec.s3.createServiceAccount }}
+
                   username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+
+                  user_dn: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND | b64dec }}'
 
                 module: | # hcl
                   variable "buckets" {
@@ -402,25 +422,86 @@ spec:
                     nullable = true
                   }
 
-                  resource "minio_iam_policy" "policy" {
-                    name = var.username
-                    policy = jsonencode({
-                      Version = "2012-10-17"
-                      Statement = [
+                  variable "user_dn" {
+                    description = "LDAP distinguished name that owns the MinIO service account"
+                    type        = string
+                  }
+
+                  variable "additional_policy_statements" {
+                    description = "Additional JSON-encoded IAM policy statements"
+                    type        = string
+                    default     = "[]"
+                  }
+
+                  variable "create_service_account" {
+                    description = "Create a long-lived MinIO service account for the LDAP identity"
+                    type        = bool
+                    default     = false
+                  }
+
+                  locals {
+                    policy_statements = concat(
+                      [
                         {
                           Effect = "Allow"
                           Action = [
                             "s3:*"
-                          ],
+                          ]
                           Resource = flatten([
-                              for bucket in var.buckets : ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
-                            ])
+                            for bucket in var.buckets : ["arn:aws:s3:::${bucket}", "arn:aws:s3:::${bucket}/*"]
+                          ])
                         }
-                      ]
+                      ],
+                      jsondecode(var.additional_policy_statements)
+                    )
+                  }
+
+                  resource "minio_iam_policy" "policy" {
+                    name = var.username
+                    policy = jsonencode({
+                      Version = "2012-10-17"
+                      Statement = local.policy_statements
                     })
                   }
 
+                  resource "minio_iam_service_account" "service_account" {
+                    count = var.create_service_account ? 1 : 0
+
+                    target_user = var.user_dn
+                  }
+
+                  output "ServiceAccountAccessKey" {
+                    value = try(minio_iam_service_account.service_account[0].access_key, null)
+                  }
+
+                  output "ServiceAccountSecretAccessKey" {
+                    value     = try(minio_iam_service_account.service_account[0].secret_key, null)
+                    sensitive = true
+                  }
+
             ---
+            {{- if .observed.composite.resource.spec.s3.createServiceAccount }}
+            {{- $observedMinioPolicy := index .observed.resources $tfMinioPolicy }}
+            {{- $policyConnectionDetails := default (dict) (and $observedMinioPolicy $observedMinioPolicy.connectionDetails) }}
+            {{- $serviceAccountAccessKey := get $policyConnectionDetails "ServiceAccountAccessKey" }}
+            {{- if $serviceAccountAccessKey }}
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              namespace: '{{ .observed.composite.resource.spec.s3.writeServiceAccountCredentialsSecretRef.namespace }}'
+              name: '{{ .observed.composite.resource.spec.s3.writeServiceAccountCredentialsSecretRef.name }}'
+
+              annotations:
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $s3ServiceAccountCreds }}
+            data:
+              AccessKey: '{{ $serviceAccountAccessKey }}'
+              SecretAccessKey: '{{ (get $policyConnectionDetails "ServiceAccountSecretAccessKey") }}'
+            type: 'Opaque'
+            ---
+            {{- end }}
+            {{- end }}
+
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace

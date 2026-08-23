@@ -37,7 +37,7 @@ User claim
        +-> optional PostgreSQL Role, Database, and grants
        |
        +-> optional MinIO buckets, policy, LDAP attachment,
-           and temporary S3 credentials
+           temporary S3 credentials, and long-lived service-account keys
 ```
 
 The base Terraform Workspace generates a random username when `spec.username`
@@ -61,7 +61,10 @@ it does not prove a `User` claim completed.
 - For `spec.psql.enabled`: provider-sql PostgreSQL CRDs plus the Terraform and
   Crossplane ProviderConfigs selected by the claim.
 - For `spec.s3.enabled`: the MinIO `Bucket` CRD plus the Terraform and
-  Crossplane ProviderConfigs selected by the claim.
+  Crossplane ProviderConfigs selected by the claim. The Terraform provider
+  must support the
+  [`minio_iam_service_account` resource](https://registry.terraform.io/providers/aminueza/minio/3.2.2/docs/resources/iam_service_account)
+  when long-lived credentials are requested.
 - Network and credentials allowing those providers to reach Authentik,
   PostgreSQL, and MinIO.
 
@@ -106,8 +109,11 @@ generated password is 16 characters.
 | `spec.s3.createUserBucket` | Creates a username-named bucket unless explicitly `false`. |
 | `spec.s3.createBuckets` | Creates entries in `s3.buckets` unless explicitly `false`. |
 | `spec.s3.buckets[]` | Buckets included in the user's MinIO policy. |
+| `spec.s3.additionalPolicyStatements[]` | Appends structured IAM statements to the generated bucket-access statement. |
 | `spec.s3.createCredentials` | Requests temporary LDAP-derived S3 credentials; defaults to `false`. |
 | `spec.s3.writeCredentialsSecretRef` | Destination for the optional S3 credential Secret. |
+| `spec.s3.createServiceAccount` | Creates long-lived MinIO access-key credentials for the LDAP identity; defaults to `false`. |
+| `spec.s3.writeServiceAccountCredentialsSecretRef` | Destination for the optional long-lived credential Secret. |
 | `spec.s3.crossplane.*Provider` | Overrides MinIO/S3 provider configuration names. |
 | `spec.writeConnectionSecretToRef.name` | Claim connection Secret written in the claim namespace. |
 
@@ -172,24 +178,35 @@ Example:
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
-  name: gitlab-object-storage
-  namespace: core-prod
+  name: 'gitlab-object-storage'
+  namespace: 'core-prod'
 spec:
-  name: GitLab
-  username: gl-core
+  name: 'GitLab'
+  username: 'gl-core'
   s3:
     enabled: true
-    region: us-east-1
+    region: 'us-east-1'
     createUserBucket: false
     buckets:
-      - gitlab-uploads
-      - gitlab-packages
+      - 'gitlab-uploads'
+      - 'gitlab-packages'
+    additionalPolicyStatements:
+      - sid: 'ListBuckets'
+        effect: 'Allow'
+        actions:
+          - 's3:ListAllMyBuckets'
+        resources:
+          - 'arn:aws:s3:::*'
     createCredentials: true
     writeCredentialsSecretRef:
-      name: gitlab-s3
-      namespace: core-prod
+      name: 'gitlab-s3'
+      namespace: 'core-prod'
+    createServiceAccount: true
+    writeServiceAccountCredentialsSecretRef:
+      name: 'gitlab-s3-service-account'
+      namespace: 'core-prod'
   writeConnectionSecretToRef:
-    name: gitlab-object-storage
+    name: 'gitlab-object-storage'
 ```
 
 When enabled, the composition:
@@ -198,10 +215,14 @@ When enabled, the composition:
    `spec.s3.buckets`.
 2. Optionally creates those buckets as MinIO managed resources.
 3. Creates a username-named MinIO policy granting `s3:*` on the selected
-   buckets and their objects.
+   buckets and their objects, followed by any statements in
+   `additionalPolicyStatements`.
 4. Attaches that policy to the Authentik user's LDAP distinguished name.
 5. Optionally exchanges the LDAP username/password for temporary S3
    credentials and copies them to `writeCredentialsSecretRef`.
+6. Optionally creates a MinIO service account owned by that LDAP distinguished
+   name and copies its access key and secret key to
+   `writeServiceAccountCredentialsSecretRef`.
 
 Created bucket resources use `deletionPolicy: Orphan`. Setting
 `createUserBucket` or `createBuckets` to `false` excludes creation, not policy
@@ -211,6 +232,28 @@ Temporary credentials are requested for seven days and the template attempts
 to reuse or refresh them. This path handles passwords and access keys inside
 Terraform Workspace connection Secrets. Treat all intermediate and copied
 Secrets as sensitive, and test rotation before depending on it in production.
+
+Long-lived credentials use MinIO's service-account model rather than
+`AssumeRoleWithLDAPIdentity`. Their Secret contains `AccessKey` and
+`SecretAccessKey`, with no `SessionToken` or `Expiry`. They inherit the LDAP
+identity's effective policy; MinIO documents these as
+[long-lived LDAP access keys](https://docs.min.io/aistor/administration/iam/identity/ldap-identity/#generate-sts-credentials-for-application-authentication).
+The service-account resource does not currently request an expiration or
+automatic secret rotation, so consumers and operators must coordinate an
+explicit rotation.
+
+The XRD rejects either credential-creation option when its matching Secret
+reference is absent. Both `name` and `namespace` are required; the composition
+does not fall back to a generated or shared credential destination.
+
+Each additional policy statement requires `effect`, at least one `actions`
+entry, and at least one `resources` entry. `sid` and the free-form
+`conditions` mapping are optional. These statements are additive to the
+generated `s3:*` bucket statement; review them as an access expansion and use
+IAM conditions or explicit `Deny` statements where appropriate. MinIO service
+account inline policies can only reduce the parent identity's permissions, so
+this composition attaches the combined policy to the LDAP identity and lets
+the service account inherit it.
 
 ## Connection details and Secrets
 
@@ -302,6 +345,9 @@ the base Workspace is not Ready or has not exposed connection details.
 - Identity creation, policy changes, database grants, and credential issuance
   are security-sensitive. Review provider access and target namespaces before
   accepting claims from additional tenants.
+- Additional S3 policy statements can grant access beyond `spec.s3.buckets`.
+  Review every action, resource ARN, and condition for unintended cross-service
+  access.
 - Hostnames, ports, the LDAP bind DN suffix, and the `LDAPService` group are
   hardcoded in the composition rather than sourced consistently from values.
 - The S3 branch contains complex time-based credential refresh logic and
@@ -314,7 +360,9 @@ the base Workspace is not Ready or has not exposed connection details.
   procedure.
 
 Before deleting a claim, inventory its Authentik user, PostgreSQL role and
-grants, databases, MinIO policy and attachment, buckets, temporary
-credentials, and consuming workloads. Revoke credentials first, preserve data
-that has a retention requirement, and verify external cleanup after
-reconciliation.
+grants, databases, MinIO policy and attachment, buckets, temporary credentials,
+long-lived service-account keys, and consuming workloads. The S3 Terraform
+Workspace is orphaned and excludes delete management, so deleting the claim or
+copied Secret is not proof that a service-account key was revoked. Revoke
+credentials first, preserve data that has a retention requirement, and verify
+external cleanup after reconciliation.
