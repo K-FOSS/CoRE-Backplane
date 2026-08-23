@@ -1,0 +1,177 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+{{- if not .Values.global.nameOverride }}
+global:
+  nameOverride: '{{ .Release.Name }}'
+{{- end }}
+
+controllers:
+  {{- if .Values.questarr.enabled }}
+  questarr:
+    strategy: Recreate
+    name: 'questarr'
+
+    pod:
+      automountServiceAccountToken: false
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+      securityContext:
+        fsGroup: {{ .Values.user.gid }}
+        runAsNonRoot: true
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
+        fsGroupChangePolicy: 'OnRootMismatch'
+        seccompProfile:
+          type: RuntimeDefault
+
+    containers:
+      questarr:
+        image:
+          repository: {{ .Values.questarr.image | squote }}
+          tag: {{ required "questarr.tag is required" .Values.questarr.tag | squote }}
+          digest: {{ required "questarr.digest is required" .Values.questarr.digest | squote }}
+          pullPolicy: IfNotPresent
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+
+        command:
+          - 'npm'
+
+        args:
+          - 'run'
+          - 'start'
+
+        env:
+          TZ: {{ .Values.global.timezone | squote }}
+          SQLITE_DB_PATH: '/app/data/sqlite.db'
+
+        ports:
+          - name: 'http'
+            containerPort: 5000
+
+        probes:
+          liveness:
+            enabled: true
+            type: 'HTTP'
+            path: '/api/health'
+            port: 'http'
+            spec:
+              periodSeconds: 30
+              timeoutSeconds: 10
+              failureThreshold: 3
+
+          readiness:
+            enabled: true
+            type: 'HTTP'
+            path: '/api/health'
+            port: 'http'
+            spec:
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+
+          startup:
+            enabled: true
+            type: 'HTTP'
+            path: '/api/health'
+            port: 'http'
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 5
+              failureThreshold: 12
+  {{- end }}
+
+persistence:
+  {{- if .Values.questarr.volumes.config.enabled }}
+  questarr-config:
+    enabled: true
+    type: 'persistentVolumeClaim'
+    accessMode: 'ReadWriteOnce'
+    size: {{ .Values.questarr.volumes.config.size | squote }}
+    advancedMounts:
+      questarr:
+        questarr:
+          - path: '/app/data'
+  {{- end }}
+
+  {{- if .Values.questarr.volumes.downloads.enabled }}
+  downloads:
+    enabled: true
+    type: 'persistentVolumeClaim'
+    existingClaim: {{ printf "%s-downloads" .Values.tenant.name | squote }}
+    advancedMounts:
+      questarr:
+        questarr:
+          - path: '/downloads'
+  {{- end }}
+
+  {{- if .Values.questarr.volumes.media.enabled }}
+  media:
+    enabled: true
+    type: 'persistentVolumeClaim'
+    existingClaim: {{ printf "%s-media" .Values.tenant.name | squote }}
+    advancedMounts:
+      questarr:
+        questarr:
+          - path: '/Media'
+  {{- end }}
+
+service:
+  {{- if .Values.questarr.enabled }}
+  questarr:
+    enabled: true
+    controller: 'questarr'
+    primary: true
+    type: 'ClusterIP'
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: 'TCP'
+  {{- end }}
+
+route:
+  {{- if .Values.questarr.enabled }}
+  questarr:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'games.mylogin.space'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: {{ .Values.pubgateway.name | squote }}
+        sectionName: {{ .Values.pubgateway.sectionName | squote }}
+        namespace: {{ .Values.pubgateway.namespace | squote }}
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'questarr'
+            weight: 1
+  {{- end }}
+
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+
+{{ include "bjw-s.common.loader.generate" . }}

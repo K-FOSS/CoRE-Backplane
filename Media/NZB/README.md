@@ -21,19 +21,30 @@ SABnzbd writes fetched files to the existing `augy-downloads` persistent
 volume. FileBrowser Quantum mounts that same claim at `/downloads` read-only,
 so authenticated users can browse and download files but cannot upload,
 rename, or delete them through the explorer. Envoy enforces Authentik before
-requests reach its Service, then FileBrowser uses Authentik's forwarded
-username for proxy authentication. Password authentication is disabled, and
-auto-provisioned users receive browse/download-only defaults. The
-SecurityPolicy is fail-closed. FileBrowser's local database and cache are
-ephemeral pod state and do not contain download data, so browser preferences,
-proxy users, and indexes are rebuilt after pod replacement.
+requests reach its Service. FileBrowser application-side authentication is
+disabled with `noauth`, making the fail-closed SecurityPolicy and Authentik
+`Media Consumers` entitlement the sole public authentication boundary.
+FileBrowser's local database and cache are ephemeral pod state and do not
+contain download data, so browser preferences and indexes are rebuilt after
+pod replacement.
+The container runs as UID and GID `911:911`, matching the download service's
+filesystem identity; its ephemeral writable state is kept under `/tmp` rather
+than the image's UID-1000-owned home directory.
+Prowlarr's LinuxServer container is configured with `PUID=911` and `PGID=911`
+so its process-created files and persistent config use the same media service
+identity.
+
+SABnzbd, Prowlarr, and FileBrowser participate in the shared hostname-level
+pod preference documented in [`../STORAGE_AFFINITY.md`](../STORAGE_AFFINITY.md).
+The same selector is used by every workload that mounts the media or downloads
+claims.
 
 The FileBrowser Quantum image is pinned to stable release `1.5.3` and its
 registry digest. Its [Docker documentation](https://filebrowserquantum.com/en/docs/getting-started/docker-v1.5.x/),
 [source configuration](https://filebrowserquantum.com/en/docs/advanced/source-configuration/sources/),
-and [proxy-authentication documentation](https://filebrowserquantum.com/en/docs/configuration/authentication/proxy/)
-describe the mounted paths and why the identity header must not be accepted
-from a path that bypasses the gateway policy.
+and [no-auth documentation](https://filebrowserquantum.com/en/docs/configuration/authentication/noauth/)
+describe the mounted paths and why the Service must not be exposed through a
+path that bypasses the gateway policy.
 
 ## Verification and rollback
 
@@ -44,8 +55,8 @@ unauthenticated request to every hostname must redirect to Authentik; a
 `Media Consumers` member must be admitted and an account outside that group
 must be denied. In the explorer, download a representative completed file and
 confirm upload, rename, and delete operations fail. Check the FileBrowser pod
-can read the downloads claim and its own PVC before treating pod readiness as
-end-to-end success.
+can read the downloads claim before treating pod readiness as end-to-end
+success.
 
 Rolling back the FileBrowser controller, Service, route, config, and
 application removes browser access without deleting the shared downloads

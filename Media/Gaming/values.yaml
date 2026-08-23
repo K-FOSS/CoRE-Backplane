@@ -1,0 +1,51 @@
+tenant:
+  name: 'example-tenant'
+
+pubgateway:
+  name: 'main-gw'
+  namespace: 'core-prod'
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Questarr'
+    externalHost: 'https://games.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
+user:
+  uid: '911'
+  gid: '911'
+
+global:
+  timezone: 'America/Vancouver'
+
+questarr:
+  enabled: true
+
+  image: 'ghcr.io/doezer/questarr'
+  tag: 'v1.4.2'
+  digest: 'sha256:6faaf75f484a20805309315dd9eb9f1550b039a668efb89c13fc028c72b45485'
+
+  volumes:
+    config:
+      enabled: true
+      size: '5G'
+
+    downloads:
+      enabled: true
+
+    media:
+      enabled: true
