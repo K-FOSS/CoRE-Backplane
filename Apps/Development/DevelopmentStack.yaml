@@ -34,6 +34,7 @@ spec:
 
                     forgejo:
                       enabled: true
+                      runners: true
                       hostname: 'forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes'
 
                     artifacthub:
@@ -63,6 +64,7 @@ spec:
 
                     forgejo:
                       enabled: true
+                      runners: true
                       hostname: 'slop.writemy.codes'
 
                     artifacthub:
@@ -89,6 +91,7 @@ spec:
 
                     forgejo:
                       enabled: false
+                      runners: false
                       hostname: 'forgejo.dc1-k3s-node1.dc1.yxl.writemy.codes'
 
                     artifacthub:
@@ -210,7 +213,7 @@ spec:
 
                   gitea:
                     podAnnotations:
-                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,dragonfly-core-password'
+                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,forgejo-runner,dragonfly-core-password'
 
                     ldap:
                       - name: 'authentik-ldap'
@@ -265,6 +268,9 @@ spec:
                       - name: 'FORGEJO__SESSION__PROVIDER_CONFIG'
                         value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/92'
 
+                forgejoRunner:
+                  enabled: {{ .values.forgejo.runners }}
+
                 crddocs:
                   enabled: {{ .values.crddocs.enabled }}
 
@@ -275,7 +281,7 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
-                  {{ if .values.forgejo.enabled }}
+                  {{ if and .values.forgejo.enabled .values.forgejo.runners }}
                   - target:
                       kind: Deployment
                       name: '{{ .values.clusterName }}-development-forgejo'
@@ -302,6 +308,27 @@ spec:
                                       secretKeyRef:
                                         name: 'forgejo-user'
                                         key: 'password'
+                                command:
+                                  - '/usr/bin/env'
+                                  - 'bash'
+                                  - '-ec'
+                                  - |-
+                                    /usr/sbin/configure_gitea.sh
+                                    gitea forgejo-cli actions register \
+                                      --name '{{ .values.clusterName }}-runner' \
+                                      --secret-file '/var/run/secrets/forgejo-runner/token' \
+                                      --labels 'docker,ubuntu-latest'
+                                volumeMounts:
+                                  - name: 'forgejo-runner-registration'
+                                    mountPath: '/var/run/secrets/forgejo-runner'
+                                    readOnly: true
+                          volumes:
+                            - name: 'forgejo-runner-registration'
+                              secret:
+                                secretName: 'forgejo-runner'
+                                items:
+                                  - key: 'token'
+                                    path: 'token'
 
                   - target:
                       kind: HTTPRoute

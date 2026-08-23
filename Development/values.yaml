@@ -586,7 +586,7 @@ forgejo:
       passwordMode: 'initialOnlyNoReset'
 
     podAnnotations:
-      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,dragonfly-core-password'
+      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,forgejo-runner,dragonfly-core-password'
 
     ldap:
       - name: 'authentik-ldap'
@@ -608,6 +608,9 @@ forgejo:
         scopes: 'email profile'
 
     config:
+      actions:
+        ENABLED: true
+        DEFAULT_ACTIONS_URL: 'https://data.forgejo.org'
       database:
         DB_TYPE: 'postgres'
         HOST: 'psql-local.k8s.dc1.yxl.mylogin.space:5432'
@@ -644,6 +647,47 @@ forgejo:
         value: 'redis'
       - name: 'FORGEJO__SESSION__PROVIDER_CONFIG'
         value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.k8s.dc1.yxl.mylogin.space:6379/92'
+
+
+# One site-local global Actions runner is deployed beside every enabled Forgejo
+# instance. Its registration credential is generated in-cluster and is not a
+# deployable value. The DinD sidecar is privileged, while workflow containers
+# are confined to that pod's disposable Docker daemon.
+forgejoRunner:
+  enabled: false
+  replicaCount: 1
+
+  image:
+    repository: 'code.forgejo.org/forgejo/runner'
+    tag: '12.13.2'
+    digest: 'sha256:eb6e7bc21973382d261e6eb883dbd27b8cb56939d33a3bfd79a1352b7f9a33a0'
+
+  dind:
+    image:
+      repository: 'docker.io/library/docker'
+      tag: '29.3.1-dind'
+      digest: 'sha256:686d2c5464787b0ca42420e0aa03a94fc9781ff9bf8b5ff947614b9fa4c3c3e0'
+    storage: '20Gi'
+
+  jobImage:
+    repository: 'data.forgejo.org/oci/node'
+    digest: 'sha256:934240a162082fd8b8a2f90cd5114446443f1eba1c5378f6687167ca405e6584'
+
+  resources:
+    runner:
+      requests:
+        cpu: '100m'
+        memory: '128Mi'
+      limits:
+        cpu: '1'
+        memory: '1Gi'
+    dind:
+      requests:
+        cpu: '200m'
+        memory: '512Mi'
+      limits:
+        cpu: '2'
+        memory: '4Gi'
 
 
 # Disabled by default. The local template supplies renovate-config from Vault

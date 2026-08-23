@@ -1,0 +1,196 @@
+{{- if and .Values.forgejo.enabled .Values.forgejoRunner.enabled }}
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: 'forgejo-runner'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  # Twenty random bytes encoded as hexadecimal produce Forgejo's required
+  # forty-character offline registration secret.
+  length: 20
+  encoding: 'hex'
+  allowRepeat: true
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: 'forgejo-runner'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  refreshPolicy: 'CreatedOnce'
+  target:
+    name: 'forgejo-runner'
+    template:
+      engineVersion: 'v2'
+      data:
+        token: '{{ `{{ .password }}` }}'
+        config.yaml: |-
+          log:
+            level: 'info'
+            job_level: 'info'
+          runner:
+            capacity: 1
+            timeout: '3h'
+            shutdown_timeout: '3h'
+            insecure: false
+            fetch_timeout: '5s'
+            fetch_interval: '2s'
+            report_interval: '1s'
+            envs:
+              DOCKER_HOST: 'tcp://127.0.0.1:2376'
+              DOCKER_TLS_VERIFY: '1'
+              DOCKER_CERT_PATH: '/certs/client'
+          cache:
+            enabled: true
+          container:
+            network: 'host'
+            privileged: false
+            options: '--volume /certs/client:/certs/client:ro'
+            valid_volumes:
+              - '/certs/client'
+            docker_host: '-'
+            force_pull: true
+          server:
+            connections:
+              local:
+                url: '{{ .Values.forgejo.gitea.config.server.ROOT_URL }}'
+                uuid: '{{ `{{ printf "%x-%x-%x-%x-%x" (substr 0 4 .password) (substr 4 6 .password) (substr 6 8 .password) (substr 8 10 .password) (substr 10 16 .password) }}` }}'
+                token_url: 'file:/var/run/secrets/forgejo-runner/token'
+                labels:
+                  - 'docker:docker://{{ .Values.forgejoRunner.jobImage.repository }}@{{ .Values.forgejoRunner.jobImage.digest }}'
+                  - 'ubuntu-latest:docker://{{ .Values.forgejoRunner.jobImage.repository }}@{{ .Values.forgejoRunner.jobImage.digest }}'
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: 'forgejo-runner'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 'forgejo-runner'
+  labels:
+    app.kubernetes.io/name: 'forgejo-runner'
+    app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'
+    app.kubernetes.io/component: 'actions-runner'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  replicas: {{ .Values.forgejoRunner.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 'forgejo-runner'
+      app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: 'forgejo-runner'
+        app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'
+        app.kubernetes.io/component: 'actions-runner'
+      annotations:
+        secret.reloader.stakater.com/reload: 'forgejo-runner'
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 10830
+      containers:
+        - name: 'runner'
+          image: '{{ .Values.forgejoRunner.image.repository }}:{{ .Values.forgejoRunner.image.tag }}@{{ .Values.forgejoRunner.image.digest }}'
+          imagePullPolicy: 'IfNotPresent'
+          command:
+            - '/bin/sh'
+            - '-ec'
+          args:
+            - |-
+              until nc -z '127.0.0.1' '2376'; do
+                echo 'Waiting for the site-local Docker daemon.'
+                sleep 2
+              done
+              exec /bin/forgejo-runner --config '/etc/forgejo-runner/config.yaml' daemon
+          env:
+            - name: 'DOCKER_HOST'
+              value: 'tcp://127.0.0.1:2376'
+            - name: 'DOCKER_TLS_VERIFY'
+              value: '1'
+            - name: 'DOCKER_CERT_PATH'
+              value: '/certs/client'
+          resources:
+{{ toYaml .Values.forgejoRunner.resources.runner | indent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: 'runner-config'
+              mountPath: '/etc/forgejo-runner'
+              readOnly: true
+            - name: 'runner-credentials'
+              mountPath: '/var/run/secrets/forgejo-runner'
+              readOnly: true
+            - name: 'docker-certs'
+              mountPath: '/certs'
+              readOnly: true
+            - name: 'runner-data'
+              mountPath: '/data'
+            - name: 'runner-tmp'
+              mountPath: '/tmp'
+        - name: 'dind'
+          image: '{{ .Values.forgejoRunner.dind.image.repository }}:{{ .Values.forgejoRunner.dind.image.tag }}@{{ .Values.forgejoRunner.dind.image.digest }}'
+          imagePullPolicy: 'IfNotPresent'
+          env:
+            - name: 'DOCKER_TLS_CERTDIR'
+              value: '/certs'
+          resources:
+{{ toYaml .Values.forgejoRunner.resources.dind | indent 12 }}
+          securityContext:
+            privileged: true
+            runAsUser: 0
+            runAsGroup: 0
+          startupProbe:
+            exec:
+              command:
+                - 'docker'
+                - 'info'
+            failureThreshold: 30
+            periodSeconds: 2
+          volumeMounts:
+            - name: 'docker-certs'
+              mountPath: '/certs'
+            - name: 'docker-data'
+              mountPath: '/var/lib/docker'
+      volumes:
+        - name: 'runner-config'
+          secret:
+            secretName: 'forgejo-runner'
+            items:
+              - key: 'config.yaml'
+                path: 'config.yaml'
+        - name: 'runner-credentials'
+          secret:
+            secretName: 'forgejo-runner'
+            items:
+              - key: 'token'
+                path: 'token'
+        - name: 'docker-certs'
+          emptyDir: {}
+        - name: 'docker-data'
+          emptyDir:
+            sizeLimit: '{{ .Values.forgejoRunner.dind.storage }}'
+        - name: 'runner-data'
+          emptyDir:
+            sizeLimit: '1Gi'
+        - name: 'runner-tmp'
+          emptyDir:
+            sizeLimit: '1Gi'
+{{- end }}

@@ -61,7 +61,7 @@ production patches.
 | --- | --- | --- |
 | GitLab CE | `gitlab.enabled` | Git hosting, projects, CI application services, Gitaly/Praefect, KAS, and toolbox operations. |
 | Harbor | `harbor.enabled` | OCI registry, external object storage/database/cache integration, LDAP authentication, and public pull-through caches. |
-| Forgejo | `forgejo.enabled` | Site-local Git hosting backed by local PostgreSQL, Dragonfly, persistent repository storage, Authentik OIDC, and LDAP. |
+| Forgejo | `forgejo.enabled`, `forgejoRunner.enabled` | Site-local Git hosting backed by local PostgreSQL, Dragonfly, persistent repository storage, Authentik OIDC and LDAP, plus a site-local Actions runner. |
 | Eclipse Che | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
 | Artifact Hub | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
 | Hoppscotch | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
@@ -106,6 +106,7 @@ values does not replace every hardcoded reference; inspect the final render.
 | `datacenter`, `region` | Build cluster-qualified DNS names. |
 | `gateway` | Intended shared Gateway configuration; some templates currently use fixed values instead. |
 | `artifact-hub`, `gitlab`, `harbor`, `forgejo`, `renovate`, `hoppscotch` | Values passed to the corresponding upstream charts. |
+| `forgejoRunner` | Site-local runner, DinD, default job image, storage, and resource configuration. |
 | `che`, `mqttx`, `crddocs` | Feature flags for local templates. |
 
 Feature flags control both their conditional dependency and most associated
@@ -322,6 +323,70 @@ Removing the `User` claim or Application does not prove the orphaned database
 or retained PVC was deleted. Verify the claim/composite, provider resources,
 database grants, PVC, HTTPRoute, login, repository creation, HTTPS clone,
 push, issue updates, and background jobs after reconciliation.
+
+### Forgejo Actions runners
+
+The two Forgejo sites each run one site-local, instance-wide Actions runner:
+`core-dc1-talos-prod-runner` in YXL and `core-home1-talos-prod-runner` in YVR.
+The owning ApplicationSet enables `forgejoRunner` only where both the Forgejo
+instance and its runner are selected. Each runner accepts one job at a time and
+serves the `docker` and `ubuntu-latest` labels. Both labels use the same
+digest-pinned Forgejo mirror of the upstream
+[Node 24 Bookworm container image](https://github.com/nodejs/docker-node/tree/main/24/bookworm)
+so common Node-based actions work without relying on a mutable default image.
+The runner itself is the official [Forgejo Runner 12.13.2 image and source](https://code.forgejo.org/forgejo/runner/src/tag/v12.13.2),
+and its configuration follows the upstream [runner configuration reference](https://forgejo.org/docs/latest/admin/actions/configuration/).
+
+Registration is declarative and site-local. An External Secrets
+[Password generator](https://external-secrets.io/latest/api/generator/password/)
+creates 20 random bytes and hex-encodes them as Forgejo's required
+40-character shared secret. A CreatedOnce `forgejo-runner` ExternalSecret
+publishes the token and the runner configuration. During every Forgejo pod
+initialization, the existing `configure-gitea` container runs the idempotent
+offline registration command against the local PostgreSQL database before the
+Forgejo container starts. The runner derives the UUID from the same secret and
+reads the token from its mounted Secret. This is the IaC flow documented by
+Forgejo's [offline runner registration guide](https://forgejo.org/docs/v14.0/admin/actions/registration/#offline-registration);
+no registration token, runner token, or generated runner file is stored in
+Git. Actions are explicitly enabled and unqualified actions resolve through
+`https://data.forgejo.org`.
+
+Each runner pod contains an unprivileged Forgejo Runner container and a
+privileged, digest-pinned Docker 29.3.1 DinD sidecar based on the
+[Docker Official Image source](https://github.com/docker-library/docker/tree/8d9e3502aba39127e4d12196dae16d306f76993d/29/dind).
+The DinD daemon, certificates, build layers, runner cache, and workspaces are
+pod-local `emptyDir` data. Workflow containers share the DinD/pod network and
+receive access only to that disposable daemon; the pod does not receive a
+Kubernetes service-account token, and workflow volume mounts are restricted to
+the DinD client certificates. This keeps jobs away from the Talos host's
+container runtime, but it does not make instance-wide runners safe for
+untrusted workflows. Anyone who can change a workflow that these global
+runners accept can execute code with the runner pod's network access and can
+control its DinD daemon. Review Forgejo's [Actions security guidance](https://forgejo.org/docs/latest/admin/actions/security/)
+and [Docker-in-Docker guidance](https://forgejo.org/docs/v15.0/admin/actions/docker-access/)
+before expanding repository access, labels, runner capacity, allowed volumes,
+or container privileges.
+
+After reconciliation at both sites, verify the Password generator,
+ExternalSecret, generated Secret, Forgejo init-container registration, and the
+`forgejo-runner` Deployment. In Forgejo's site administration, confirm the
+expected runner name is online with only `docker` and `ubuntu-latest`, then run
+a non-sensitive test workflow that checks out a repository, executes a Node
+action, installs or supplies a Docker client to build a disposable container
+image, and exercises the Actions cache.
+Runner pod readiness alone does not prove registration, label selection, job
+logs, cache reachability, or DinD access works.
+
+Setting a site's `forgejo.runners` selection to false removes the generated
+credential resources and runner Deployment and removes the registration patch
+from Forgejo, but it does not remove the runner record already stored in
+Forgejo's PostgreSQL database. Remove that record deliberately through site
+administration after confirming no queued jobs depend on it. Because the
+ApplicationSet preserves resources when an entire generated Application is
+deleted, inspect retained resources explicitly in that case. Deleting and
+recreating the CreatedOnce Secret rotates the runner identity; first stop the
+runner, remove the prior Forgejo record, allow Forgejo to reconcile the new
+shared secret, and then start and verify the replacement runner.
 
 ## Eclipse Che
 
