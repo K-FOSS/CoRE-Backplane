@@ -34,6 +34,7 @@ spec:
 
                     forgejo:
                       enabled: true
+                      hostname: 'forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes'
 
                     artifacthub:
                       enabled: false
@@ -62,6 +63,7 @@ spec:
 
                     forgejo:
                       enabled: true
+                      hostname: 'slop.writemy.codes'
 
                     artifacthub:
                       enabled: false
@@ -87,6 +89,7 @@ spec:
 
                     forgejo:
                       enabled: false
+                      hostname: 'forgejo.dc1-k3s-node1.dc1.yxl.writemy.codes'
 
                     artifacthub:
                       enabled: false
@@ -203,7 +206,7 @@ spec:
 
                   httpRoute:
                     hostnames:
-                      - 'forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+                      - '{{ .values.forgejo.hostname }}'
 
                   gitea:
                     config:
@@ -212,9 +215,9 @@ spec:
                         NAME: 'forgejo-{{ .values.clusterName }}'
                         USER: 'forgejo-{{ .values.clusterName }}'
                       server:
-                        DOMAIN: 'forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
-                        ROOT_URL: 'https://forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes/'
-                        SSH_DOMAIN: 'forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+                        DOMAIN: '{{ .values.forgejo.hostname }}'
+                        ROOT_URL: 'https://{{ .values.forgejo.hostname }}/'
+                        SSH_DOMAIN: '{{ .values.forgejo.hostname }}'
 
                     additionalConfigFromEnvs:
                       - name: 'FORGEJO__DATABASE__PASSWD'
@@ -250,6 +253,16 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                  {{ if .values.forgejo.enabled }}
+                  - target:
+                      kind: HTTPRoute
+                      name: '{{ .values.clusterName }}-development-forgejo'
+                    patch: |
+                      - op: add
+                        path: /metadata/labels/wan-mode
+                        value: 'public'
+                  {{ end }}
+
                   {{ if .values.harbor.enabled }}
                   - target:
                       kind: Deployment

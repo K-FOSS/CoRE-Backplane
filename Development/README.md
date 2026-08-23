@@ -187,7 +187,8 @@ site has its own `harbor-<cluster>` PostgreSQL role and database.
 Local ExternalSecrets create Harbor's general, core, registry, job-service,
 S3, and Redis configuration credentials. Every enabled site creates a
 `harbor-user` claim with PostgreSQL enabled; the claim provisions the local
-role/database and writes the stable namespace-local `harbor-user` Secret. The
+role/database through both site-local `psql-<datacenter>-<region>` providers
+and writes the stable namespace-local `harbor-user` Secret. The
 former hub PushSecret and non-hub shared credential pull are no longer part of
 the Harbor lifecycle. Existing `Harbor/User` and `Harbor/Database` values in
 Vault are not deleted by this change; retire them separately only after every
@@ -237,18 +238,23 @@ names, or authentication mode.
 Forgejo is deployed independently at both infrastructure sites through the
 official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v16.2.2)
 and a digest-pinned Forgejo 14.0.4 rootless image. Each site uses
-`forgejo.<cluster>.<datacenter>.<region>.writemy.codes`, one replica, and a
-retained 50 GiB persistent volume for repositories and application data.
+an ApplicationSet-owned hostname: YXL uses
+`forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes`, while YVR uses
+`slop.writemy.codes`. Each deployment has one replica and a retained 50 GiB
+persistent volume for repositories and application data.
 External SSH routing is not configured; HTTPS clone and web traffic use the
-Gateway API HTTPRoute.
+Gateway API HTTPRoute. The fleet post-render patch labels that public route
+with `wan-mode: 'public'`, matching the chart-owned public routes in this
+deployment.
 
 The site-local `forgejo-user` claim provisions the matching PostgreSQL role
-and database on `psql-local` and publishes the password in the stable
-`forgejo-user` Secret. Queue, cache, and session state use Dragonfly databases
-`90`, `91`, and `92`; Kubernetes expands the namespace-local Dragonfly password
-into Forgejo's runtime environment before `app.ini` is generated. A
-CreatedOnce External Secrets password generator creates the local break-glass
-`forgejo-admin` Secret. Consult Forgejo's [database preparation guide](https://forgejo.org/docs/latest/admin/installation/database-preparation/)
+and database on `psql-local` through both
+`psql-<datacenter>-<region>` providers and publishes the password in the
+stable `forgejo-user` Secret. Queue, cache, and session state use Dragonfly
+databases `90`, `91`, and `92`; Kubernetes expands the namespace-local
+Dragonfly password into Forgejo's runtime environment before `app.ini` is
+generated. A CreatedOnce External Secrets password generator creates the local
+break-glass `forgejo-admin` Secret. Consult Forgejo's [database preparation guide](https://forgejo.org/docs/latest/admin/installation/database-preparation/)
 and [configuration reference](https://forgejo.org/docs/latest/admin/config-cheat-sheet/).
 
 The PostgreSQL database and persistent repository volume form one recovery
