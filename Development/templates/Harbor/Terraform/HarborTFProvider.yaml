@@ -24,7 +24,7 @@ spec:
         key: password
   configuration: | # hcl
     provider "harbor" {
-      url      = "https://registry.writemy.codes"
+      url      = "https://registry.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.writemy.codes"
       username = "admin"
       password = file("${path.module}/password")
       insecure = false

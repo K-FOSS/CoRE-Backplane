@@ -1,7 +1,7 @@
 # Development stack
 
 This chart deploys CoRE's shared software-development services. It combines
-large upstream charts for GitLab, Harbor, Artifact Hub, Renovate, and
+large upstream charts for GitLab, Harbor, Forgejo, Artifact Hub, Renovate, and
 Hoppscotch with local resources for Eclipse Che, MQTTX, CRD documentation,
 identity provisioning, Vault-backed secrets, Gateway API routes, and
 Crossplane Terraform automation.
@@ -22,11 +22,11 @@ on each cluster.
 
 Current fleet intent:
 
-| Cluster | GitLab | Harbor | Che | Artifact Hub | CRD docs | MQTTX |
-| --- | --- | --- | --- | --- | --- | --- |
-| `core-dc1-talos-prod` | Off | On | Off | Off | Off | Off |
-| `core-home1-talos-prod` | On | On | On | Off | Off | Off |
-| `dc1-k3s-node1` | On | Off | Off | Off | Off | Off |
+| Cluster | GitLab | Harbor | Forgejo | Che | Artifact Hub | CRD docs | MQTTX |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `core-dc1-talos-prod` | Off | On | On | Off | Off | Off | Off |
+| `core-home1-talos-prod` | On | On | On | On | Off | Off | Off |
+| `dc1-k3s-node1` | On | Off | Off | Off | Off | Off | Off |
 
 Hoppscotch and Renovate are not overridden by the ApplicationSet. Their
 checked-in values therefore apply: Hoppscotch is enabled and Renovate is
@@ -61,6 +61,7 @@ production patches.
 | --- | --- | --- |
 | GitLab CE | `gitlab.enabled` | Git hosting, projects, CI application services, Gitaly/Praefect, KAS, and toolbox operations. |
 | Harbor | `harbor.enabled` | OCI registry, external object storage/database/cache integration, LDAP authentication, and public pull-through caches. |
+| Forgejo | `forgejo.enabled` | Site-local lightweight Git hosting backed by local PostgreSQL, Dragonfly, and persistent repository storage. |
 | Eclipse Che | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
 | Artifact Hub | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
 | Hoppscotch | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
@@ -69,7 +70,7 @@ production patches.
 | CRD docs | `crddocs.enabled` | CRD documentation workload and optional identity. |
 
 The upstream chart dependencies are declared in [`Chart.yaml`](Chart.yaml).
-GitLab, Harbor, Artifact Hub, Renovate, and Hoppscotch are conditional
+GitLab, Harbor, Forgejo, Artifact Hub, Renovate, and Hoppscotch are conditional
 dependencies; the BJW-S common chart is always required.
 
 ## Shared prerequisites
@@ -104,7 +105,7 @@ values does not replace every hardcoded reference; inspect the final render.
 | `cluster.name`, `cluster.domain` | Cluster identity and service DNS suffix. |
 | `datacenter`, `region` | Build cluster-qualified DNS names. |
 | `gateway` | Intended shared Gateway configuration; some templates currently use fixed values instead. |
-| `artifact-hub`, `gitlab`, `harbor`, `renovate`, `hoppscotch` | Values passed to the corresponding upstream charts. |
+| `artifact-hub`, `gitlab`, `harbor`, `forgejo`, `renovate`, `hoppscotch` | Values passed to the corresponding upstream charts. |
 | `che`, `mqttx`, `crddocs` | Feature flags for local templates. |
 
 Feature flags control both their conditional dependency and most associated
@@ -173,26 +174,34 @@ incidental chart cleanup.
 
 Harbor uses an external PostgreSQL database, external cache service, and
 S3-compatible image/chart storage. It is exposed through the
-`registry.writemy.codes` HTTPRoute, whose rules direct Docker API and token
-paths to Harbor core and ordinary UI paths to the portal.
+`registry.<cluster>.<datacenter>.<region>.writemy.codes` HTTPRoute, whose rules
+direct Docker API and token paths to Harbor core and ordinary UI paths to the
+portal.
 
-The ApplicationSet injects per-cluster PostgreSQL and S3 endpoints and a
-cluster-qualified Helm release name. Current fleet values enable Harbor on
-two clusters, so verify which instance owns writes, storage, and public
-routing before changing either deployment.
+The ApplicationSet injects per-cluster `psql-local`, Dragonfly, S3, LDAP, and
+public endpoints plus a cluster-qualified Helm release name. Every enabled
+site has its own `harbor-<cluster>` PostgreSQL role and database.
 
 ### Harbor credentials and post-configuration
 
 Local ExternalSecrets create Harbor's general, core, registry, job-service,
-S3, and admin credentials from `mainvault-core`. Hub behavior mirrors other
-platform charts:
+S3, and Redis configuration credentials. Every enabled site creates a
+`harbor-user` claim with PostgreSQL enabled; the claim provisions the local
+role/database and writes the stable namespace-local `harbor-user` Secret. The
+former hub PushSecret and non-hub shared credential pull are no longer part of
+the Harbor lifecycle. Existing `Harbor/User` and `Harbor/Database` values in
+Vault are not deleted by this change; retire them separately only after every
+site-local claim and rollback path has been verified.
 
-- a hub creates the `harbor-user` identity and publishes selected connection
-  data with a PushSecret;
-- a non-hub reads the shared Harbor username/password from Vault.
-
-All current Development targets set `hub: false`; a valid `harbor-user` Secret
-must therefore already exist in Vault for every enabled cluster.
+Harbor uses the target site's TLS-enabled `dragonfly-core` endpoint. Its
+logical allocations are recorded in
+[`Storage/Dragonfly/CoRE/README.md`](../Storage/Dragonfly/CoRE/README.md).
+Harbor chart 1.18.2 cannot render `redis.external.existingSecret` offline
+because it uses Helm `lookup`. The `harbor-redis-config` ExternalSecret and
+ApplicationSet Kustomize patches therefore supply runtime URLs and the job
+service config from a Secret, without putting the password in rendered
+ConfigMaps. See the upstream [Harbor chart source](https://github.com/goharbor/harbor-helm/tree/v1.18.2)
+and [high-availability guidance](https://github.com/goharbor/harbor-helm/blob/v1.18.2/docs/High%20Availability.md).
 
 A Terraform `ProviderConfig` uses the Harbor admin credential. Two Workspaces
 then:
@@ -216,7 +225,39 @@ names, or authentication mode.
 - Confirm `externalURL` and Gateway routing; an incorrect token-service URL
   breaks registry clients even when the portal loads.
 - Coordinate changes across both enabled Harbor clusters to avoid
-  inconsistent configuration against shared backing services.
+  inconsistent public routing or replication behavior.
+- Changing the desired database endpoint does not copy the existing Harbor
+  database. Before reconciliation, quiesce writes, back up and restore the
+  existing database into each intended `psql-local` database, then validate
+  schema migrations and object-store consistency. Roll back to the former
+  endpoint only while its database remains a valid point-in-time source.
+
+## Forgejo
+
+Forgejo is deployed independently at both infrastructure sites through the
+official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v16.2.2)
+and a digest-pinned Forgejo 14.0.4 rootless image. Each site uses
+`forgejo.<cluster>.<datacenter>.<region>.writemy.codes`, one replica, and a
+retained 50 GiB persistent volume for repositories and application data.
+External SSH routing is not configured; HTTPS clone and web traffic use the
+Gateway API HTTPRoute.
+
+The site-local `forgejo-user` claim provisions the matching PostgreSQL role
+and database on `psql-local` and publishes the password in the stable
+`forgejo-user` Secret. Queue, cache, and session state use Dragonfly databases
+`90`, `91`, and `92`; Kubernetes expands the namespace-local Dragonfly password
+into Forgejo's runtime environment before `app.ini` is generated. A
+CreatedOnce External Secrets password generator creates the local break-glass
+`forgejo-admin` Secret. Consult Forgejo's [database preparation guide](https://forgejo.org/docs/latest/admin/installation/database-preparation/)
+and [configuration reference](https://forgejo.org/docs/latest/admin/config-cheat-sheet/).
+
+The PostgreSQL database and persistent repository volume form one recovery
+unit. Back them up consistently; Dragonfly queue/cache/session data is
+disposable, but losing queued work can interrupt asynchronous operations.
+Removing the `User` claim or Application does not prove the orphaned database
+or retained PVC was deleted. Verify the claim/composite, provider resources,
+database grants, PVC, HTTPRoute, login, repository creation, HTTPS clone,
+push, issue updates, and background jobs after reconciliation.
 
 ## Eclipse Che
 
@@ -317,7 +358,8 @@ ApplicationSet's Kustomize merge. To reproduce a target cluster:
 
 1. Copy its feature flags and cluster metadata from
    `Apps/Development/DevelopmentStack.yaml`.
-2. Include the injected Harbor database, cache, S3, and fullname overrides.
+2. Include the injected Harbor and Forgejo database, Dragonfly, route, and
+   fullname overrides, plus Harbor's S3 endpoint.
 3. Apply the Hoppscotch Kustomize patches to the Helm output.
 4. Compare the resulting resource names with the patch targets and Secret
    references.
@@ -341,6 +383,7 @@ After reconciliation:
 ```sh
 kubectl -n core-prod get pods,pdb,jobs
 kubectl -n core-prod get externalsecret,pushsecret
+kubectl -n core-prod get user
 kubectl -n core-prod get httproute
 kubectl -n core-prod get workspace,providerconfig
 kubectl -n eclipse-che get checluster,devworkspace

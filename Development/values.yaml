@@ -21,6 +21,8 @@ region: yxl
 # as the complete intentional configuration for a future enabled deployment.
 artifact-hub:
   enabled: true
+
+  type: 'hub'
   dynamicResourceNamePrefixEnabled: true
   fullnameOverride: artifacthub-prod
 
@@ -446,7 +448,7 @@ harbor:
   enabled: true
 
   ldap:
-    server: ldap.core-home1-talos-prod.home1.yvr.mylogin.space
+    server: 'ldap.k8s.dc1.yxl.mylogin.space'
 
   expose:
     type: clusterIP
@@ -459,8 +461,8 @@ harbor:
 
     ingress:
       hosts:
-        core: registry.writemy.codes
-  externalURL: https://registry.writemy.codes
+        core: 'registry.k8s.dc1.yxl.writemy.codes'
+  externalURL: 'https://registry.k8s.dc1.yxl.writemy.codes'
 
   persistence:
     enabled: false
@@ -490,9 +492,13 @@ harbor:
     existingSecret: harbor-core-core
     existingXsrfSecret: harbor-core-core
     existingXsrfSecretKey: XSRFKey
+    podAnnotations:
+      secret.reloader.stakater.com/reload: 'harbor-redis-config'
 
   jobservice:
     revisionHistoryLimit: 3
+    podAnnotations:
+      secret.reloader.stakater.com/reload: 'harbor-redis-config'
 
     jobLoggers:
       - stdout
@@ -503,6 +509,8 @@ harbor:
     revisionHistoryLimit: 3
     existingSecret: harbor-core-registry
     existingSecretKey: secret
+    podAnnotations:
+      secret.reloader.stakater.com/reload: 'harbor-redis-config'
 
     credentials:
       htpasswdString: harbor_registry_user:$2y$10$L4LTCe2fG2H42qquClN5.e6L4PnL68.LaRAVfxPW37HAKm2vX9iX.
@@ -515,9 +523,9 @@ harbor:
     type: external
 
     external:
-      host: psql.mylogin.space
-      username: harbor-core
-      coreDatabase: harbor-core
+      host: 'psql-local.k8s.dc1.yxl.mylogin.space'
+      username: 'harbor-k8s'
+      coreDatabase: 'harbor-k8s'
       existingSecret: harbor-user
       sslmode: require
     maxIdleConns: 10
@@ -527,14 +535,96 @@ harbor:
     type: external
 
     external:
-      addr: redis.mylogin.space:6379
-      jobserviceDatabaseIndex: '7'
-      registryDatabaseIndex: '8'
-      chartmuseumDatabaseIndex: '9'
-      trivyAdapterIndex: '14'
+      addr: 'dragonfly.k8s.dc1.yxl.mylogin.space:6379'
+      tlsOptions:
+        enable: true
+      coreDatabaseIndex: '0'
+      jobserviceDatabaseIndex: '70'
+      registryDatabaseIndex: '71'
+      trivyAdapterIndex: '72'
+      harborDatabaseIndex: '73'
+      cacheLayerDatabaseIndex: '74'
 
   exporter:
     revisionHistoryLimit: 3
+    podAnnotations:
+      secret.reloader.stakater.com/reload: 'harbor-redis-config'
+
+
+# Forgejo uses a site-local User claim, PostgreSQL, and Dragonfly. Production
+# hostnames and service identities are injected by the fleet ApplicationSet.
+forgejo:
+  enabled: false
+
+  image:
+    tag: '14.0.4'
+    digest: 'sha256:bca6943cdd8a50f5befaf1d654bec32c9a3b6da400d23a77a829bd41f88a7263'
+
+  persistence:
+    enabled: true
+    size: '50Gi'
+
+  test:
+    enabled: false
+
+  httpRoute:
+    enabled: true
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        namespace: 'core-prod'
+        name: 'main-gw'
+        sectionName: 'https-myloginspace'
+    hostnames:
+      - 'forgejo.k8s.dc1.yxl.writemy.codes'
+    port: 3000
+    terminate: true
+
+  gitea:
+    admin:
+      existingSecret: 'forgejo-admin'
+      passwordMode: 'initialOnlyNoReset'
+
+    podAnnotations:
+      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,dragonfly-core-password'
+
+    config:
+      database:
+        DB_TYPE: 'postgres'
+        HOST: 'psql-local.k8s.dc1.yxl.mylogin.space:5432'
+        NAME: 'forgejo-k8s'
+        USER: 'forgejo-k8s'
+        SSL_MODE: 'require'
+      server:
+        DOMAIN: 'forgejo.k8s.dc1.yxl.writemy.codes'
+        ROOT_URL: 'https://forgejo.k8s.dc1.yxl.writemy.codes/'
+        SSH_DOMAIN: 'forgejo.k8s.dc1.yxl.writemy.codes'
+
+    # Kubernetes expands the preceding Secret-backed password variables in
+    # later env entries before Forgejo's environment-to-ini conversion.
+    additionalConfigFromEnvs:
+      - name: 'FORGEJO__DATABASE__PASSWD'
+        valueFrom:
+          secretKeyRef:
+            name: 'forgejo-user'
+            key: 'password'
+      - name: 'DRAGONFLY_PASSWORD'
+        valueFrom:
+          secretKeyRef:
+            name: 'dragonfly-core-password'
+            key: 'password'
+      - name: 'FORGEJO__QUEUE__TYPE'
+        value: 'redis'
+      - name: 'FORGEJO__QUEUE__CONN_STR'
+        value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.k8s.dc1.yxl.mylogin.space:6379/90'
+      - name: 'FORGEJO__CACHE__ADAPTER'
+        value: 'redis'
+      - name: 'FORGEJO__CACHE__HOST'
+        value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.k8s.dc1.yxl.mylogin.space:6379/91'
+      - name: 'FORGEJO__SESSION__PROVIDER'
+        value: 'redis'
+      - name: 'FORGEJO__SESSION__PROVIDER_CONFIG'
+        value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.k8s.dc1.yxl.mylogin.space:6379/92'
 
 
 # Disabled by default. The local template supplies renovate-config from Vault

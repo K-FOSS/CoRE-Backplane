@@ -1,21 +1,16 @@
-{{ if .Values.harbor.enabled }}
+{{- if .Values.forgejo.enabled }}
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
-  name: harbor-user
-
+  name: 'forgejo-user'
   annotations:
     argocd.argoproj.io/sync-wave: '0'
-
 spec:
-  name: 'Harbor {{ .Values.cluster.name }}'
-
-  username: 'harbor-{{ .Values.cluster.name }}'
-
+  name: 'Forgejo {{ .Values.cluster.name }}'
+  username: 'forgejo-{{ .Values.cluster.name }}'
   psql:
     enabled: true
     createUserDatabase: true
-
   writeConnectionSecretToRef:
-    name: harbor-user
+    name: 'forgejo-user'
 {{- end }}

@@ -32,6 +32,9 @@ spec:
                     harbor:
                       enabled: true
 
+                    forgejo:
+                      enabled: true
+
                     artifacthub:
                       enabled: false
 
@@ -57,6 +60,9 @@ spec:
                     harbor:
                       enabled: true
 
+                    forgejo:
+                      enabled: true
+
                     artifacthub:
                       enabled: false
 
@@ -77,6 +83,9 @@ spec:
                       enabled: false
 
                     harbor:
+                      enabled: false
+
+                    forgejo:
                       enabled: false
 
                     artifacthub:
@@ -165,13 +174,71 @@ spec:
                       s3:
                         regionendpoint: https://s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
 
+                  ldap:
+                    server: 'ldap.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+
+                  expose:
+                    ingress:
+                      hosts:
+                        core: 'registry.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+
+                  externalURL: 'https://registry.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+
                   database:
                     external:
-                      host: psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                      host: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                      username: 'harbor-{{ .values.clusterName }}'
+                      coreDatabase: 'harbor-{{ .values.clusterName }}'
 
                   redis:
                     external:
-                      addr: redis.{{ .values.datacenter }}.mylogin.space
+                      addr: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379'
+
+                forgejo:
+                  enabled: {{ .values.forgejo.enabled }}
+
+                  fullnameOverride: '{{ .values.clusterName }}-development-forgejo'
+
+                  clusterDomain: '{{ .values.clusterDomain }}'
+
+                  httpRoute:
+                    hostnames:
+                      - 'forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+
+                  gitea:
+                    config:
+                      database:
+                        HOST: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:5432'
+                        NAME: 'forgejo-{{ .values.clusterName }}'
+                        USER: 'forgejo-{{ .values.clusterName }}'
+                      server:
+                        DOMAIN: 'forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+                        ROOT_URL: 'https://forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes/'
+                        SSH_DOMAIN: 'forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+
+                    additionalConfigFromEnvs:
+                      - name: 'FORGEJO__DATABASE__PASSWD'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'forgejo-user'
+                            key: 'password'
+                      - name: 'DRAGONFLY_PASSWORD'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'dragonfly-core-password'
+                            key: 'password'
+                      - name: 'FORGEJO__QUEUE__TYPE'
+                        value: 'redis'
+                      - name: 'FORGEJO__QUEUE__CONN_STR'
+                        value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/90'
+                      - name: 'FORGEJO__CACHE__ADAPTER'
+                        value: 'redis'
+                      - name: 'FORGEJO__CACHE__HOST'
+                        value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/91'
+                      - name: 'FORGEJO__SESSION__PROVIDER'
+                        value: 'redis'
+                      - name: 'FORGEJO__SESSION__PROVIDER_CONFIG'
+                        value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/92'
 
                 crddocs:
                   enabled: {{ .values.crddocs.enabled }}
@@ -183,6 +250,74 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                  {{ if .values.harbor.enabled }}
+                  - target:
+                      kind: Deployment
+                      name: '{{ .values.clusterName }}-development-harbor-helm-core'
+                    patch: |
+                      - op: add
+                        path: /spec/template/spec/containers/0/envFrom/-
+                        value:
+                          secretRef:
+                            name: 'harbor-redis-config'
+
+                  - target:
+                      kind: Deployment
+                      name: '{{ .values.clusterName }}-development-harbor-helm-jobservice'
+                    patch: |
+                      - op: replace
+                        path: /spec/template/spec/volumes/0
+                        value:
+                          name: 'jobservice-config'
+                          secret:
+                            secretName: 'harbor-redis-config'
+                            items:
+                              - key: 'config.yml'
+                                path: 'config.yml'
+                      - op: add
+                        path: /spec/template/spec/containers/0/envFrom/-
+                        value:
+                          secretRef:
+                            name: 'harbor-redis-config'
+
+                  - target:
+                      kind: Deployment
+                      name: '{{ .values.clusterName }}-development-harbor-helm-registry'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: '{{ .values.clusterName }}-development-harbor-helm-registry'
+                      spec:
+                        template:
+                          spec:
+                            containers:
+                              - name: 'registry'
+                                env:
+                                  - name: 'REGISTRY_REDIS_PASSWORD'
+                                    valueFrom:
+                                      secretKeyRef:
+                                        name: 'harbor-redis-config'
+                                        key: 'REDIS_PASSWORD'
+                              - name: 'registryctl'
+                                env:
+                                  - name: 'REGISTRY_REDIS_PASSWORD'
+                                    valueFrom:
+                                      secretKeyRef:
+                                        name: 'harbor-redis-config'
+                                        key: 'REDIS_PASSWORD'
+
+                  - target:
+                      kind: Deployment
+                      name: '{{ .values.clusterName }}-development-harbor-helm-exporter'
+                    patch: |
+                      - op: add
+                        path: /spec/template/spec/containers/0/envFrom/-
+                        value:
+                          secretRef:
+                            name: 'harbor-redis-config'
+                  {{ end }}
+
                   - target:
                       kind: Service
                       name: {{ .values.clusterName }}-development-hoppscotch

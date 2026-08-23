@@ -13,13 +13,3 @@ spec:
     - ports:
         - port: 6379
           protocol: TCP
-
-    # PGPool's Memcached client has no Dragonfly password/TLS integration.
-    # A podSelector without a namespaceSelector only admits local PGPool pods.
-    - from:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: pgpool
-      ports:
-        - port: 11211
-          protocol: TCP

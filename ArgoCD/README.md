@@ -70,7 +70,8 @@ currently enabled, while Authentik is the configured OIDC provider.
 
 The chart depends on three separate credential flows:
 
-1. `argocd-redis` reads `Storage/DragonFly/CoRE/Creds` from the
+1. `argocd-redis` reads the target cluster's
+   `Storage/DragonFly/CoRE/<region>/<datacenter>/<cluster>/Creds` path from the
    `corevault-rootsecrets` ClusterSecretStore and creates
    `argocd-redis-password`.
 2. `argocdvault-secret-sync` reads the Vault token and creates
