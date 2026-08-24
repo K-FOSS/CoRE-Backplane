@@ -2,6 +2,7 @@ apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
   name: '{{ .Release.Name }}'
+  namespace: '{{ .Release.Namespace }}'
 spec:
   name: 'OpenNMS {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}'
   username: {{ required "postgresql.username is required" .Values.postgresql.username | squote }}

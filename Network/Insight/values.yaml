@@ -19,10 +19,15 @@ image:
 postgresql:
   host: ''
   port: 5432
-  database: 'opennms'
-  username: 'opennms'
+  database: 'opennms-insight'
+  username: 'opennms-insight'
   credentialsSecretName: 'opennms-creds'
   adminSecretName: ''
+  adminSecretSourceNamespace: 'core-prod'
+  secretSync:
+    enabled: true
+    storeName: 'mainvault-core'
+    remoteKeyPrefix: 'Network/Insight/example-cluster'
   providers:
     crossplane: 'psql-main'
     terraform: 'psql'
@@ -34,7 +39,7 @@ storage:
     size: '100Gi'
 
 migration:
-  replaceStatefulSet: true
+  replaceStatefulSet: false
 
 resources:
   requests:

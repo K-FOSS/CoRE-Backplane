@@ -92,7 +92,7 @@ controllers:
             fi
 
             install -d -m 0755 "${config_dir}/opennms.properties.d"
-        securityContext: &containerSecurityContext
+        securityContext:
           allowPrivilegeEscalation: false
           capabilities:
             drop:
@@ -141,7 +141,16 @@ controllers:
               secretKeyRef:
                 name: {{ .Values.postgresql.credentialsSecretName | squote }}
                 key: 'password'
-        securityContext: *containerSecurityContext
+        # The pinned OpenNMS image assigns cap_net_raw to the Java executable
+        # for its native ICMP pollers. NET_RAW must remain in the container's
+        # capability bounding set or Linux refuses to execute Java with EPERM.
+        securityContext: &javaContainerSecurityContext
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - 'NET_RAW'
+            drop:
+              - 'ALL'
         resources: *containerResources
     containers:
       opennms:
@@ -191,7 +200,7 @@ controllers:
               periodSeconds: 10
               timeoutSeconds: 5
               failureThreshold: 90
-        securityContext: *containerSecurityContext
+        securityContext: *javaContainerSecurityContext
         resources: *containerResources
 
 service:
@@ -206,27 +215,6 @@ service:
         port: 80
         targetPort: 'http'
         protocol: 'TCP'
-
-route:
-  main:
-    forceRename: '{{ .Release.Name }}'
-    kind: 'HTTPRoute'
-    labels:
-      wan-mode: 'public'
-      lan-mode: 'private'
-    hostnames:
-      - {{ required "gateway.hostname is required" .Values.gateway.hostname | squote }}
-    parentRefs:
-      - group: 'gateway.networking.k8s.io'
-        kind: Gateway
-        name: {{ required "gateway.name is required" .Values.gateway.name | squote }}
-        namespace: {{ required "gateway.namespace is required" .Values.gateway.namespace | squote }}
-        sectionName: {{ required "gateway.sectionName is required" .Values.gateway.sectionName | squote }}
-    rules:
-      - backendRefs:
-          - identifier: 'main'
-            port: 80
-            weight: 1
 
 {{- if .Values.networkPolicy.enabled }}
 networkpolicies:
@@ -251,6 +239,93 @@ networkpolicies:
       - 'Ingress'
     rules:
 {{ include "core-network-insight.networkPolicyRules" . | nindent 6 }}
+{{- end }}
+
+rawResources:
+  route:
+    forceRename: '{{ .Release.Name }}'
+    manifest:
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        namespace: '{{ .Release.Namespace }}'
+        labels:
+          wan-mode: 'public'
+          lan-mode: 'private'
+      spec:
+        hostnames:
+          - {{ required "gateway.hostname is required" .Values.gateway.hostname | squote }}
+        parentRefs:
+          - group: 'gateway.networking.k8s.io'
+            kind: Gateway
+            name: {{ required "gateway.name is required" .Values.gateway.name | squote }}
+            namespace: {{ required "gateway.namespace is required" .Values.gateway.namespace | squote }}
+            sectionName: {{ required "gateway.sectionName is required" .Values.gateway.sectionName | squote }}
+        rules:
+          - backendRefs:
+              - group: ''
+                kind: Service
+                name: '{{ .Release.Name }}'
+                port: 80
+                weight: 1
+{{- if .Values.postgresql.secretSync.enabled }}
+  postgresql-admin-push:
+    forceRename: '{{ .Release.Name }}-postgresql-admin-push'
+    manifest:
+      apiVersion: external-secrets.io/v1alpha1
+      kind: PushSecret
+      metadata:
+        namespace: {{ required "postgresql.adminSecretSourceNamespace is required" .Values.postgresql.adminSecretSourceNamespace | squote }}
+        annotations:
+          argocd.argoproj.io/sync-wave: '-3'
+      spec:
+        updatePolicy: 'Replace'
+        deletionPolicy: 'None'
+        refreshInterval: '1h'
+        secretStoreRefs:
+          - name: {{ required "postgresql.secretSync.storeName is required" .Values.postgresql.secretSync.storeName | squote }}
+            kind: 'ClusterSecretStore'
+        selector:
+          secret:
+            name: {{ required "postgresql.adminSecretName is required" .Values.postgresql.adminSecretName | squote }}
+        data:
+          - match:
+              secretKey: 'username'
+              remoteRef:
+                remoteKey: {{ printf "%s/PostgreSQLAdmin" (required "postgresql.secretSync.remoteKeyPrefix is required" .Values.postgresql.secretSync.remoteKeyPrefix) | squote }}
+                property: 'username'
+          - match:
+              secretKey: 'password'
+              remoteRef:
+                remoteKey: {{ printf "%s/PostgreSQLAdmin" .Values.postgresql.secretSync.remoteKeyPrefix | squote }}
+                property: 'password'
+  postgresql-admin-sync:
+    forceRename: '{{ .Release.Name }}-postgresql-admin-sync'
+    manifest:
+      apiVersion: external-secrets.io/v1
+      kind: ExternalSecret
+      metadata:
+        namespace: '{{ .Release.Namespace }}'
+        annotations:
+          argocd.argoproj.io/sync-wave: '-2'
+      spec:
+        refreshInterval: '1h'
+        secretStoreRef:
+          name: {{ .Values.postgresql.secretSync.storeName | squote }}
+          kind: 'ClusterSecretStore'
+        target:
+          name: {{ .Values.postgresql.adminSecretName | squote }}
+          creationPolicy: 'Owner'
+          deletionPolicy: 'Retain'
+        data:
+          - secretKey: 'username'
+            remoteRef:
+              key: {{ printf "%s/PostgreSQLAdmin" .Values.postgresql.secretSync.remoteKeyPrefix | squote }}
+              property: 'username'
+          - secretKey: 'password'
+            remoteRef:
+              key: {{ printf "%s/PostgreSQLAdmin" .Values.postgresql.secretSync.remoteKeyPrefix | squote }}
+              property: 'password'
 {{- end }}
 
 {{- if .Values.authentik.proxyAuth.enabled }}

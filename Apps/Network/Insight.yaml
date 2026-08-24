@@ -73,10 +73,13 @@ spec:
                 postgresql:
                   host: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                   adminSecretName: 'opsadmin.psql-{{ .values.datacenter }}-{{ .values.region }}.credentials.postgresql.acid.zalan.do'
+                  adminSecretSourceNamespace: 'core-{{ .values.environment }}'
+                  secretSync:
+                    remoteKeyPrefix: 'Network/Insight/{{ .values.clusterName }}'
                   providers:
                     crossplane: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
                     terraform: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
 
       destination:
         server: '{{ .server }}'
-        namespace: 'core-{{ .values.environment }}'
+        namespace: 'core-net-{{ .values.environment }}'

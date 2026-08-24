@@ -3,7 +3,9 @@
 This Helm rendering unit deploys a basic, single-replica OpenNMS Horizon
 instance. The owning `Apps/Network/Insight.yaml` ApplicationSet selects only
 the `core-home1-talos-prod` bare-metal infrastructure cluster and deploys into
-`core-prod`. Lovely injects the target's region, datacenter, cluster domain,
+`core-net-prod`. That namespace enforces the privileged Pod Security profile
+required for OpenNMS's narrowly scoped `NET_RAW` capability. Lovely injects the
+target's region, datacenter, cluster domain,
 site-local PostgreSQL hostname, local provider names, and administrative Secret
 name. The deployment uses the writable `psql-home1-yvr` cluster owned by
 `Apps/Storage/PSQL.yaml`, not the fleet-wide `psql-main` replication topology or
@@ -32,11 +34,14 @@ image is built from OpenNMS's component-specific
 The configuration follows the upstream
 [Horizon 36 container installation procedure](https://docs.opennms.com/horizon/latest/deployment/core/install.html#install-core-docker):
 an init container runs the guarded `-i` database/configuration initialization,
-then the main container runs `-s`. The image runs as UID/GID `10001`; only the
-runtime-default seccomp profile is used and all Linux capabilities are dropped.
-Direct raw-socket ICMP monitoring therefore requires a separately reviewed
-`NET_RAW` grant or a capability-free polling mechanism. The chart does not
-expose Karaf, trap, or syslog listeners publicly.
+then the main container runs `-s`. The image runs as UID/GID `10001` with the
+runtime-default seccomp profile. The configuration-preparation container drops
+all Linux capabilities. The database-initialization and OpenNMS runtime
+containers drop all capabilities and add back only `NET_RAW`, which the pinned
+image's capability-bearing Java executable requires for its native ICMP
+pollers. Removing `NET_RAW` from the container bounding set causes Linux to
+reject Java execution with `EPERM` before OpenNMS can run its configuration
+tester. The chart does not expose Karaf, trap, or syslog listeners publicly.
 
 Two ReadWriteOnce claims retain `/opt/opennms/etc` and `/opennms-data`. The
 latter contains the default RRD time-series data. Back up both claims and the
@@ -56,36 +61,42 @@ partially initialized claim while preserving deliberate configuration. After
 reconciliation, verify both init containers complete and inspect the
 `initialize` log for successful confd, config-tester, and schema initialization.
 
-## BJW-S migration
+## Namespace and storage migration
 
-The first BJW-S reconciliation must replace the existing StatefulSet because
-the common library adds its required controller selector label and Kubernetes
-does not permit an in-place selector change. `migration.replaceStatefulSet` is
-therefore initially `true`, which renders Argo CD's `Replace=true` sync option.
-While that flag is true, BJW-S also generates a sync-wave `-1` compatibility
-NetworkPolicy for the old pod selector. It is established before the original
-policy changes selector, so the old pod does not become unrestricted during
-replacement.
+The ApplicationSet moves the workload from `core-prod` to `core-net-prod`
+because the former namespace rejects `NET_RAW`. This creates a new StatefulSet
+and new `config` and `data` PVCs in `core-net-prod`; Kubernetes PVCs cannot move
+between namespaces. The original claims remain in `core-prod` after its
+StatefulSet is pruned. Do not delete them until any required configuration and
+RRD history has been copied to the new claims and the monitoring workflow has
+been validated. `migration.replaceStatefulSet` is `false` because the target
+namespace receives a new StatefulSet and has no immutable selector to replace.
 
-The StatefulSet name and the `config` and `data` claim-template names do not
-change, so deletion of the StatefulSet retains and reattaches the existing
-PVCs. Confirm both PVCs and a coordinated PostgreSQL backup before this sync,
-avoid manually deleting either claim, and verify the repaired configuration,
-database, RRD data, ingress isolation, and monitoring workflow after
-replacement. Then set `migration.replaceStatefulSet` to `false` in Git so later
-StatefulSet changes return to normal server-side apply behavior and Argo CD
-removes the temporary compatibility policy.
+This is a clean deployment rather than a state-preserving migration. The new
+`User` claim creates the distinct `opennms-insight` PostgreSQL role and database
+in `core-net-prod`; the failed `core-prod` claim and its orphaned external
+objects are not reused. A BJW-S raw resource creates an External Secrets
+Operator
+[`PushSecret`](https://external-secrets.io/v1.0.0/api/pushsecret/) in
+`core-prod` and an `ExternalSecret` in `core-net-prod` to reproduce only the
+PostgreSQL administrator credential through `mainvault-core`. The remote record
+uses the ApplicationSet-injected
+`Network/Insight/core-home1-talos-prod/PostgreSQLAdmin` key, contains no literal
+credential in Git, and is retained if the PushSecret is removed. Verify the
+PushSecret is synced and the target admin Secret exists before expecting the
+new init container to start.
 
 ## Identity and PostgreSQL
 
-The namespaced `User.mylogin.space/v1alpha1` claim creates the `opennms`
-service identity, role, and database through the `psql-home1-yvr` SQL and
+The namespaced `User.mylogin.space/v1alpha1` claim in `core-net-prod` creates
+the `opennms-insight` service identity, role, and database through the
+`psql-home1-yvr` SQL and
 Terraform ProviderConfigs. Both providers target the Home1 site-local cluster
 through
 [`provider-sql` 0.14.0](https://github.com/crossplane-contrib/provider-sql/tree/v0.14.0)
 and the
 [`provider-terraform` Workspace API](https://github.com/crossplane-contrib/provider-terraform).
-Its stable `opennms-creds` Secret supplies `OPENNMS_DBUSER` and
+Its stable local `opennms-creds` Secret supplies `OPENNMS_DBUSER` and
 `OPENNMS_DBPASS`; no application database password is stored in Git. The
 application connects to
 `psql-local.core-home1-talos-prod.home1.yvr.mylogin.space` rather than PGPool or
@@ -93,8 +104,8 @@ a chart-private database.
 
 Horizon schema installation and upgrades require a PostgreSQL superuser, as
 documented by the upstream installation guide. The init container therefore
-reads the existing local-cluster Zalando operator credential Secret named by
-`postgresql.adminSecretName`. The owning ApplicationSet selects the
+reads a synchronized copy of the local-cluster Zalando operator credential
+Secret named by `postgresql.adminSecretName`. The owning ApplicationSet selects the
 `opsadmin.psql-home1-yvr.credentials.postgresql.acid.zalan.do` Secret so schema
 initialization targets the same database as the site-local providers; it does
 not create another administrative identity. Confirm the PostgreSQL instance
@@ -155,14 +166,16 @@ break-glass procedure independently of Authentik, DNS, and the Gateway.
 ## Reconciliation, verification, and removal
 
 Before sync, the target cluster must have the `User`, Terraform `Workspace`,
-Gateway API `HTTPRoute`, and Envoy Gateway `SecurityPolicy` CRDs; the
+Gateway API `HTTPRoute`, Envoy Gateway `SecurityPolicy`, PushSecret, and
+ExternalSecret CRDs; the
 `psql-home1-yvr` PostgreSQL service, matching SQL and Terraform ProviderConfigs,
 and local admin Secret; the `authentik` ProviderConfig
 and named flows; the `Server Admins` group; the public Gateway; and the shared
 Authentik proxy service.
 
 After reconciliation, verify the User claim and composite, generated Role and
-Database, grants, and `opennms-creds` Secret before checking the init container.
+Database, grants, the admin PushSecret and ExternalSecret, `opennms-creds`, and
+the synchronized admin credential before checking the init container.
 Then verify the StatefulSet is Ready, both PVCs are mounted, the HTTPRoute is
 Accepted, the SecurityPolicy is attached, and the Authentik Workspace and
 downstream provider, property mappings, application, and bindings are healthy.
@@ -178,8 +191,8 @@ Rollback through Git and Argo CD. The ApplicationSet preserves resources on
 deletion, PVCs retain local configuration and RRD data, the User composition
 orphans external database objects, and Terraform resources may have finalizers.
 Take a coordinated backup and explicitly verify every retained or destroyed
-resource before deleting PVCs, claims, Workspaces, or finalizers. Moving the
-ApplicationSet target creates new Home1 PVCs and a new site-local database; it
-does not copy the DC1 database, configuration, or RRD data. Restore a coordinated
-DC1 backup into Home1 and validate the complete monitoring workflow before
-explicitly retiring the preserved DC1 resources.
+resource before deleting PVCs, claims, Workspaces, or finalizers. The namespace
+move creates new PVCs and the distinct `opennms-insight` database identity. It
+does not copy configuration or RRD data from the preserved `core-prod` claims
+or adopt the orphaned `opennms` database objects. Validate the complete new
+monitoring workflow before explicitly retiring those stale resources.
