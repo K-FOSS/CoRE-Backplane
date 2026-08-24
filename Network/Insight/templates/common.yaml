@@ -145,12 +145,9 @@ controllers:
         # for its native ICMP pollers. NET_RAW must remain in the container's
         # capability bounding set or Linux refuses to execute Java with EPERM.
         securityContext: &javaContainerSecurityContext
-          allowPrivilegeEscalation: false
           capabilities:
             add:
               - 'NET_RAW'
-            drop:
-              - 'ALL'
         resources: *containerResources
     containers:
       opennms:
