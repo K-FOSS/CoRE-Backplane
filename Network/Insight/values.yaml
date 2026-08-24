@@ -1,0 +1,81 @@
+env: 'prod'
+datacenter: 'example-dc'
+region: 'example-region'
+
+cluster:
+  name: 'example-cluster'
+  domain: 'cluster.local'
+
+global:
+  timezone: 'America/Vancouver'
+
+image:
+  repository: 'docker.io/opennms/horizon'
+  tag: '36.0.3'
+  digest: 'sha256:d5ab66e2f5b24a799b8d15a6d8cc07d2c0b7a0d91bbef67828c37876e32602fe'
+  pullPolicy: 'IfNotPresent'
+
+postgresql:
+  host: ''
+  port: 5432
+  database: 'opennms'
+  username: 'opennms'
+  credentialsSecretName: 'opennms-creds'
+  adminSecretName: ''
+  providers:
+    crossplane: 'psql-main'
+    terraform: 'psql'
+
+storage:
+  config:
+    size: '2Gi'
+  data:
+    size: '100Gi'
+
+resources:
+  requests:
+    cpu: '1'
+    memory: '4Gi'
+  limits:
+    cpu: '2'
+    memory: '8Gi'
+
+gateway:
+  hostname: 'insight.mylogin.space'
+  name: 'main-gw'
+  namespace: 'core-prod'
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+  proxyAuth:
+    enabled: true
+    userHeader: 'X-Authentik-Username'
+    authoritiesHeader: 'X-OpenNMS-Roles'
+    authorities:
+      - 'ROLE_USER'
+      - 'ROLE_ADMIN'
+      - 'ROLE_REST'
+      - 'ROLE_PROVISION'
+    failOnError: false
+  application:
+    displayName: 'OpenNMS'
+    externalHost: 'https://insight.mylogin.space'
+    group: 'Infrastructure'
+  accessGroups:
+    - 'Server Admins'
+  route:
+    enabled: true
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
+networkPolicy:
+  enabled: true
+  gateway:
+    namespace: 'kube-system'
+    podLabels:
+      app.kubernetes.io/name: 'envoy'
+      gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
+      gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'

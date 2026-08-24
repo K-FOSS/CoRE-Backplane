@@ -1,0 +1,34 @@
+{{- if .Values.authentik.route.enabled }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: '{{ .Release.Name }}'
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: '{{ .Release.Name }}'
+  extAuth:
+    failOpen: false
+    headersToExtAuth:
+      - 'cookie'
+    http:
+      headersToBackend:
+        - 'set-cookie'
+        - {{ .Values.authentik.proxyAuth.userHeader | lower | squote }}
+        - {{ .Values.authentik.proxyAuth.authoritiesHeader | lower | squote }}
+        - 'Content-Type'
+        - 'Location'
+      backendSettings:
+        loadBalancer:
+          type: 'ConsistentHash'
+          consistentHash:
+            type: 'SourceIP'
+      backendRefs:
+        - group: ''
+          kind: Service
+          namespace: {{ required "authentik.route.backend.namespace is required" .Values.authentik.route.backend.namespace | squote }}
+          name: {{ required "authentik.route.backend.name is required" .Values.authentik.route.backend.name | squote }}
+          port: {{ required "authentik.route.backend.port is required" .Values.authentik.route.backend.port }}
+      path: '/outpost.goauthentik.io/auth/envoy'
+{{- end }}

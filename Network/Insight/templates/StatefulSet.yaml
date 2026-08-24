@@ -1,0 +1,160 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: '{{ .Release.Name }}'
+  labels:
+    app.kubernetes.io/name: 'opennms'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+spec:
+  serviceName: '{{ .Release.Name }}'
+  replicas: 1
+  updateStrategy:
+    type: 'RollingUpdate'
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 'opennms'
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: 'opennms'
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+      annotations:
+        secret.reloader.stakater.com/reload: '{{ .Values.postgresql.credentialsSecretName }},{{ .Values.postgresql.adminSecretName }}'
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: 'OnRootMismatch'
+        seccompProfile:
+          type: 'RuntimeDefault'
+      initContainers:
+        - name: 'initialize'
+          image: '{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: '{{ .Values.image.pullPolicy }}'
+          {{- if .Values.authentik.proxyAuth.enabled }}
+          command:
+            - '/opt/opennms-auth/start.sh'
+          {{- end }}
+          args:
+            - '-i'
+          env: &databaseEnvironment
+            - name: 'TZ'
+              value: '{{ .Values.global.timezone }}'
+            - name: 'POSTGRES_HOST'
+              value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
+            - name: 'POSTGRES_PORT'
+              value: '{{ .Values.postgresql.port }}'
+            - name: 'POSTGRES_USER'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "postgresql.adminSecretName is required" .Values.postgresql.adminSecretName | squote }}
+                  key: 'username'
+            - name: 'POSTGRES_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.adminSecretName | squote }}
+                  key: 'password'
+            - name: 'OPENNMS_DBNAME'
+              value: {{ required "postgresql.database is required" .Values.postgresql.database | squote }}
+            - name: 'OPENNMS_DBUSER'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                  key: 'username'
+            - name: 'OPENNMS_DBPASS'
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                  key: 'password'
+          securityContext: &containerSecurityContext
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: &volumeMounts
+            - name: 'config'
+              mountPath: '/opt/opennms/etc'
+            - name: 'data'
+              mountPath: '/opennms-data'
+            {{- if .Values.authentik.proxyAuth.enabled }}
+            - name: 'proxy-auth'
+              mountPath: '/opt/opennms-auth'
+              readOnly: true
+            {{- end }}
+      containers:
+        - name: 'opennms'
+          image: '{{ .Values.image.repository }}:{{ .Values.image.tag }}@{{ .Values.image.digest }}'
+          imagePullPolicy: '{{ .Values.image.pullPolicy }}'
+          {{- if .Values.authentik.proxyAuth.enabled }}
+          command:
+            - '/opt/opennms-auth/start.sh'
+          {{- end }}
+          args:
+            - '-s'
+          env: *databaseEnvironment
+          ports:
+            - name: 'http'
+              containerPort: 8980
+              protocol: 'TCP'
+          readinessProbe:
+            httpGet:
+              path: '/opennms/login.jsp'
+              port: 'http'
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: '/opennms/login.jsp'
+              port: 'http'
+            initialDelaySeconds: 120
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 5
+          startupProbe:
+            httpGet:
+              path: '/opennms/login.jsp'
+              port: 'http'
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 90
+          securityContext:
+            <<: *containerSecurityContext
+            capabilities:
+              add:
+                - 'NET_RAW'
+              drop:
+                - 'ALL'
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: *volumeMounts
+      {{- if .Values.authentik.proxyAuth.enabled }}
+      volumes:
+        - name: 'proxy-auth'
+          configMap:
+            name: '{{ .Release.Name }}-proxy-auth'
+            defaultMode: 365
+      {{- end }}
+      terminationGracePeriodSeconds: 120
+  volumeClaimTemplates:
+    - metadata:
+        name: 'config'
+      spec:
+        accessModes:
+          - 'ReadWriteOnce'
+        resources:
+          requests:
+            storage: '{{ .Values.storage.config.size }}'
+    - metadata:
+        name: 'data'
+      spec:
+        accessModes:
+          - 'ReadWriteOnce'
+        resources:
+          requests:
+            storage: '{{ .Values.storage.data.size }}'

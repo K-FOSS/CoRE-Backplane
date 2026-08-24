@@ -1,0 +1,18 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ .Release.Name }}'
+spec:
+  name: 'OpenNMS {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}'
+  username: {{ required "postgresql.username is required" .Values.postgresql.username | squote }}
+  serviceAccount: true
+  groups:
+    - 'LDAPService'
+  psql:
+    enabled: true
+    createUserDatabase: true
+    crossplane:
+      crossplaneProvider: {{ required "postgresql.providers.crossplane is required" .Values.postgresql.providers.crossplane | squote }}
+      terraformProvider: {{ required "postgresql.providers.terraform is required" .Values.postgresql.providers.terraform | squote }}
+  writeConnectionSecretToRef:
+    name: {{ required "postgresql.credentialsSecretName is required" .Values.postgresql.credentialsSecretName | squote }}
