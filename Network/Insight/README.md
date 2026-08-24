@@ -2,12 +2,12 @@
 
 This Helm rendering unit deploys a basic, single-replica OpenNMS Horizon
 instance. The owning `Apps/Network/Insight.yaml` ApplicationSet selects only
-the `core-dc1-talos-prod` bare-metal infrastructure cluster and deploys into
-`core-prod`. That entry is the writable PostgreSQL hub in
-`Apps/Storage/PSQL.yaml`; the other current `psql-main` entries are standbys and
-are not valid OpenNMS write targets. Lovely injects the target's region,
-datacenter, cluster domain, main PostgreSQL hostname, and administrative Secret
-name.
+the `core-home1-talos-prod` bare-metal infrastructure cluster and deploys into
+`core-prod`. Lovely injects the target's region, datacenter, cluster domain,
+site-local PostgreSQL hostname, local provider names, and administrative Secret
+name. The deployment uses the writable `psql-home1-yvr` cluster owned by
+`Apps/Storage/PSQL.yaml`, not the fleet-wide `psql-main` replication topology or
+PGPool endpoint.
 
 ## Runtime and persistence
 
@@ -31,26 +31,26 @@ starting point, not a capacity plan for a large monitored estate.
 ## Identity and PostgreSQL
 
 The namespaced `User.mylogin.space/v1alpha1` claim creates the `opennms`
-service identity, role, and database through the fleet-wide `psql-main` SQL
-Crossplane ProviderConfig and `psql` Terraform ProviderConfig. Both providers
-target the global writable `psql-main` cluster through
+service identity, role, and database through the `psql-home1-yvr` SQL and
+Terraform ProviderConfigs. Both providers target the Home1 site-local cluster
+through
 [`provider-sql` 0.14.0](https://github.com/crossplane-contrib/provider-sql/tree/v0.14.0)
 and the
 [`provider-terraform` Workspace API](https://github.com/crossplane-contrib/provider-terraform).
 Its stable `opennms-creds` Secret supplies `OPENNMS_DBUSER` and
 `OPENNMS_DBPASS`; no application database password is stored in Git. The
 application connects to
-`psql.<cluster>.<datacenter>.<region>.mylogin.space` rather than a chart-private
-database.
+`psql-local.core-home1-talos-prod.home1.yvr.mylogin.space` rather than PGPool or
+a chart-private database.
 
 Horizon schema installation and upgrades require a PostgreSQL superuser, as
 documented by the upstream installation guide. The init container therefore
-reads the existing main-cluster Zalando operator credential Secret named by
+reads the existing local-cluster Zalando operator credential Secret named by
 `postgresql.adminSecretName`. The owning ApplicationSet selects the
-`opsadmin.psql-main.credentials.postgresql.acid.zalan.do` Secret so schema
-initialization targets the same database as the global providers; it does not
-create another administrative identity. Confirm the PostgreSQL instance permits
-at least the
+`opsadmin.psql-home1-yvr.credentials.postgresql.acid.zalan.do` Secret so schema
+initialization targets the same database as the site-local providers; it does
+not create another administrative identity. Confirm the PostgreSQL instance
+permits at least the
 [70 connections required by the default Horizon pools](https://docs.opennms.com/horizon/latest/deployment/core/install.html#setup-postgresql-pool-size).
 
 The current `sso-user` Composition orphans PostgreSQL roles, databases, and
@@ -108,8 +108,8 @@ break-glass procedure independently of Authentik, DNS, and the Gateway.
 
 Before sync, the target cluster must have the `User`, Terraform `Workspace`,
 Gateway API `HTTPRoute`, and Envoy Gateway `SecurityPolicy` CRDs; the
-`psql-main` PostgreSQL service, global `psql-main` SQL and `psql` Terraform
-ProviderConfigs, and main-cluster admin Secret; the `authentik` ProviderConfig
+`psql-home1-yvr` PostgreSQL service, matching SQL and Terraform ProviderConfigs,
+and local admin Secret; the `authentik` ProviderConfig
 and named flows; the `Server Admins` group; the public Gateway; and the shared
 Authentik proxy service.
 
@@ -130,4 +130,8 @@ Rollback through Git and Argo CD. The ApplicationSet preserves resources on
 deletion, PVCs retain local configuration and RRD data, the User composition
 orphans external database objects, and Terraform resources may have finalizers.
 Take a coordinated backup and explicitly verify every retained or destroyed
-resource before deleting PVCs, claims, Workspaces, or finalizers.
+resource before deleting PVCs, claims, Workspaces, or finalizers. Moving the
+ApplicationSet target creates new Home1 PVCs and a new site-local database; it
+does not copy the DC1 database, configuration, or RRD data. Restore a coordinated
+DC1 backup into Home1 and validate the complete monitoring workflow before
+explicitly retiring the preserved DC1 resources.

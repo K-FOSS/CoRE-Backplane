@@ -17,7 +17,7 @@ spec:
         generators:
           - list:
               elements:
-                - name: 'core-dc1-talos-prod'
+                - name: 'core-home1-talos-prod'
           - clusters:
               selector:
                 matchLabels:
@@ -71,8 +71,11 @@ spec:
                   domain: '{{ .values.clusterDomain }}'
 
                 postgresql:
-                  host: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
-                  adminSecretName: 'opsadmin.psql-main.credentials.postgresql.acid.zalan.do'
+                  host: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                  adminSecretName: 'opsadmin.psql-{{ .values.datacenter }}-{{ .values.region }}.credentials.postgresql.acid.zalan.do'
+                  providers:
+                    crossplane: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
+                    terraform: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
 
       destination:
         server: '{{ .server }}'
