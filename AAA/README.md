@@ -205,7 +205,9 @@ rules.
 The ReferenceGrant permits SecurityPolicies from a fixed set of namespaces to
 reference the Authentik server and proxy Services. Adding a namespace expands
 which workloads may delegate authentication to AAA; review it as an
-authorization boundary.
+authorization boundary. `core-net-prod` is included for the OpenNMS Insight
+SecurityPolicy, whose workload requires that namespace's privileged Pod
+Security profile for `NET_RAW`.
 
 The HTTPRoute hostname, Gateway section name, CORS origin, Vault paths, and
 some namespaces/domains are currently hardcoded. The
