@@ -58,3 +58,45 @@ Dragonfly data were removed.
 
 Other manifests under `Legacy/` remain legacy fleet owners until they are
 individually migrated and documented.
+
+## Passwords
+
+[Tools/VaultWarden.yaml](Tools/VaultWarden.yaml) owns the production
+[CoRE Vaultwarden chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Passwords/VaultWarden)
+on three explicitly selected clusters. `dc1-k3s-node1` is the credential hub;
+`core-dc1-talos-prod` and `core-home1-talos-prod` are spokes. All three serve
+the production `passwords.mylogin.space` endpoint and connect to the PGPool
+endpoint local to their site.
+
+| Argo CD cluster | Role | PostgreSQL endpoint | Provider |
+| --- | --- | --- | --- |
+| `dc1-k3s-node1` | Hub | `psql.dc1-k3s-node1.dc1.yxl.mylogin.space` | `psql-dc1-yxl` |
+| `core-dc1-talos-prod` | Spoke | `psql.core-dc1-talos-prod.dc1.yxl.mylogin.space` | `psql-dc1-yxl` |
+| `core-home1-talos-prod` | Spoke | `psql.core-home1-talos-prod.home1.yvr.mylogin.space` | `psql-home1-yvr` |
+
+Only the K3s render enables the `User.mylogin.space/v1alpha1` claim. That claim
+owns the stable `vaultwarden-prod` PostgreSQL identity and `bitwarden` database
+grant, then a PushSecret publishes its username, password, and database fields
+to the chart's configured Vault record. Each Talos spoke omits the claim and
+uses an ExternalSecret to reproduce the same stable connection Secret before
+Vaultwarden starts. No credential values are stored in this repository.
+
+The [Vaultwarden operations README](https://github.com/K-FOSS/CoRE-Business/blob/main/Passwords/VaultWarden/README.md)
+documents component behavior, prerequisites, credential flow, and validation.
+This document and `Tools/VaultWarden.yaml` are authoritative for the current
+hub and target selection. Removing the hub, changing `hubCluster`, or rotating
+the shared database identity requires a coordinated change across all three
+sites. The PushSecret does not delete its remote record, spoke ExternalSecrets
+retain orphaned local Secrets, and the PostgreSQL resources use orphaning
+behavior; removal from Git is therefore not proof of credential revocation or
+database deletion.
+
+Before sync, render all three targets and confirm that only K3s produces one
+User and one PushSecret, each Talos target produces one ExternalSecret, and all
+three Deployments use their site-local PGPool hostname and the same stable
+connection Secret name. After reconciliation, verify the claim and composite,
+PostgreSQL Role/Database and Terraform Workspace, PushSecret/ExternalSecret
+conditions, application readiness, login, vault read/write, invitations, and
+SMTP delivery. Vaultwarden's local `/data` remains ephemeral, so recovery must
+also account for local RSA keys, attachments, sends, and icon-cache data rather
+than treating PostgreSQL readiness alone as complete recovery.

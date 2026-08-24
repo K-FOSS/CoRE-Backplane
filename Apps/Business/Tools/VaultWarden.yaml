@@ -1,114 +1,104 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-business-vaultwarden
-  namespace: argocd
+  name: 'core-backplane-business-vaultwarden'
+  namespace: 'argocd'
+
+  labels:
+    resolvemy.host/env: 'prod'
+
 spec:
   goTemplate: true
-  # goTemplateOptions:
-  #   - 'missingkey=error'
-  
+  goTemplateOptions:
+    - 'missingkey=error'
+
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-        values:
-          clusterName: '{{ .name }}'
-          environment: 'prod'
-          domain: passwords.mylogin.space
+    - merge:
+        mergeKeys:
+          - 'name'
+
+        generators:
+          - list:
+              elements:
+                - name: 'dc1-k3s-node1'
+                  values:
+                    hub: true
+                    psqlProvider: 'psql-dc1-yxl'
+
+                - name: 'core-dc1-talos-prod'
+                  values:
+                    hub: false
+                    psqlProvider: 'psql-dc1-yxl'
+
+                - name: 'core-home1-talos-prod'
+                  values:
+                    hub: false
+                    psqlProvider: 'psql-home1-yvr'
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/env: 'prod'
+
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
 
   template:
     metadata:
       name: '{{ .values.clusterName }}-business-passwords-vaultwarden'
 
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: .
+        argocd.argoproj.io/manifest-generate-paths: '.'
 
       labels:
         resolvemy.host/env: '{{ .values.environment }}'
+        resolvemy.host/priority: 'critical'
 
     spec:
-      project: core
+      project: 'core'
+
+      syncPolicy:
+        syncOptions:
+          - 'ServerSideApply=true'
 
       source:
-        repoURL: https://github.com/K-FOSS/CoRE-Business.git
-        path: Passwords/VaultWarden
-        targetRevision: HEAD
+        repoURL: 'https://github.com/K-FOSS/CoRE-Business.git'
+        path: 'Passwords/VaultWarden'
+        targetRevision: 'HEAD'
+
         plugin:
-          name: argocd-lovely-plugin
+          name: 'argocd-lovely-plugin'
           env:
-            - name: LOVELY_HELM_MERGE
-              value: |- 
+            - name: 'LOVELY_HELM_MERGE'
+              value: |- # yaml
+                env: '{{ .values.environment }}'
+
+                cluster:
+                  name: '{{ .values.clusterName }}'
+
+                datacenter: '{{ .values.datacenter }}'
+
+                region: '{{ .values.region }}'
+
                 vaultwarden:
-                  database:
-                    type: postgresql
-                    wal: false
-                    ## Set the size of the database connection pool.
-                    maxConnections: 10
-                    ## Connection retries during startup, 0 for infinite. 1 second between retries.
-                    # retries: 15
+                  enabled: true
 
-                  envFrom: []
+                  psql:
+                    host: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                    crossplaneProvider: '{{ .values.psqlProvider }}'
+                    terraformProvider: '{{ .values.psqlProvider }}'
 
-
-                  env:
-                  # -- Config dir
-                    DATA_FOLDER: "/tmp"
-                    DOMAIN: https://{{ .values.domain }}
-
-                    SMTP_FROM_NAME: 'Vaultwarden'
-                    SMTP_SECURITY: 'off'
-
-                    SMTP_TIMEOUT: '120'
-
-                    ROCKET_PORT: '8080'
-
-                    SMTP_HOST:
-                      valueFrom:
-                        secretKeyRef:
-                          key: Hostname
-                          name: business-vaultwarden-mail-{{ .values.environment }}
-
-                    SMTP_FROM:
-                      valueFrom:
-                        secretKeyRef:
-                          key: Username
-                          name: business-vaultwarden-mail-{{ .values.environment }}
-
-                    SMTP_PORT:
-                      valueFrom:
-                        secretKeyRef:
-                          key: Port
-                          name: business-vaultwarden-mail-{{ .values.environment }}
-
-                    SMTP_USERNAME:
-                      valueFrom:
-                        secretKeyRef:
-                          key: Username
-                          name: business-vaultwarden-mail-{{ .values.environment }}
-
-                    SMTP_PASSWORD:
-                      valueFrom:
-                        secretKeyRef:
-                          key: Password
-                          name: business-vaultwarden-mail-{{ .values.environment }}
-
-
-                    DATABASE_URL:
-                      valueFrom:
-                        secretKeyRef:
-                          name: {{ .values.clusterName }}-business-passwords-vaultwarden-core-business-pass
-                          key: psqlURI
-
-
-                  ingress:
-                    # -- Enable and configure ingress settings for the chart under this key.
-                    # @default -- See values.yaml
-                    main:
-                      enabled: false
+                  user:
+                    enabled: {{ .values.hub }}
+                    hubCluster: 'dc1-k3s-node1'
 
       destination:
         server: '{{ .server }}'
-        namespace: core-{{ .values.environment }}
+        namespace: 'core-{{ .values.environment }}'
