@@ -12,28 +12,6 @@ alloy-logs:
 
         otelcol.storage.file "offsets" {}
 
-        otelcol.receiver.filelog "pod_logs" {
-          include = ["/var/log/pods/*/*/*.log"]
-          include_file_path = true
-          start_at          = "end"
-          storage           = otelcol.storage.file.offsets.handler
-          attributes = {
-            cluster = sys.env("CLUSTER"),
-            dc      = sys.env("DC"),
-            job     = "kubernetes-pods",
-          }
-          operators = [{
-            type = "container",
-          }]
-          retry_on_failure {
-            enabled          = true
-            max_elapsed_time = "0s"
-          }
-          output {
-            logs = [otelcol.processor.batch.logs.input]
-          }
-        }
-
         otelcol.processor.batch "logs" {
           output {
             logs = [otelcol.exporter.otlp.gateway.input]
@@ -53,7 +31,7 @@ alloy-logs:
           }
         }
     mounts:
-      varlog: true
+      varlog: false
     extraEnv:
     - name: DC
       value: dc1
@@ -468,6 +446,16 @@ alloy:
           }
         }
 
+        // Accept Prometheus remote-write from trusted, cluster-internal
+        // producers and keep backend addressing in the central Alloy tier.
+        prometheus.receive_http "internal" {
+          http {
+            listen_address = "0.0.0.0"
+            listen_port    = 9090
+          }
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
         // Convert gateway OTLP metrics into the existing Prometheus
         // remote-write pipeline.
         otelcol.exporter.prometheus "mimir" {
@@ -590,6 +578,11 @@ alloy:
       port: 4328
       targetPort: 4328
       protocol: TCP
+    - name: 'prom-write'
+      port: 9090
+      targetPort: 9090
+      protocol: 'TCP'
+      appProtocol: 'http'
     - name: jaeger-grpc
       port: 14250
       targetPort: 14250

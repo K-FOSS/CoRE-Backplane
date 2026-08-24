@@ -53,6 +53,16 @@ Mimir, received OTLP logs for Loki, and exports traces to Tempo. These backends
 currently use private addresses; they are mutable operational dependencies,
 not service discovery.
 
+The same Service exposes a cluster-internal Prometheus remote-write receiver on
+port `9090`. Its
+[`prometheus.receive_http`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.receive_http/)
+endpoint is `/api/v1/metrics/write` and forwards into the existing Mimir writer,
+so pushed samples receive the same ApplicationSet-injected `cluster` and `dc`
+external labels as scraped metrics. OpenNMS Insight is the first consumer. The
+receiver is not an HTTPRoute or LoadBalancer and performs no authentication;
+only trusted in-cluster producers may use it. Reads do not pass through Alloy
+because it is a write gateway, not a Prometheus remote-read service.
+
 Backend shipping is configured under `alloy.destinations`: `lokiUrl` is the
 Loki push URL, `mimirUrl` is the Prometheus remote-write URL, and
 `tempoEndpoint` is the Tempo OTLP/gRPC `host:port`. The ApplicationSet
@@ -128,8 +138,11 @@ DaemonSet Service selects one ready pod on the caller's node, then inspect
 Loki write metrics on the central StatefulSet, plus exporter queue and send
 failure metrics on every DaemonSet. Correlate API-server requests by Alloy
 service-account user agent before attributing traffic to Metrics Server or
-Mimir. A rollout can briefly duplicate or miss scrapes while consistent-hash
-ownership converges; watch remote-write and target health during
+Mimir. Also inspect `prometheus_receive_http_*` and
+`prometheus_forwarded_samples_total` for internal remote-write producers, then
+query their expected external labels in Mimir. A rollout can briefly duplicate
+or miss scrapes while consistent-hash ownership converges; watch remote-write
+and target health during
 reconciliation. The filelog receiver is public preview and may require config
 changes during a future Alloy upgrade.
 

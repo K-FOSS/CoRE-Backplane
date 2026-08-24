@@ -38,6 +38,27 @@ storage:
   data:
     size: '100Gi'
 
+timeseries:
+  enabled: false
+  writeUrl: ''
+  readUrl: ''
+  plugin:
+    url: 'https://repo1.maven.org/maven2/org/opennms/plugins/timeseries/org.opennms.plugins.timeseries.prometheus.remotewrite.assembly.kar/2.1.0/org.opennms.plugins.timeseries.prometheus.remotewrite.assembly.kar-2.1.0.kar'
+    sha256: 'e7a6d0bf07487ebac00244c9002c6b0410d48c0ff27c92e475dd24ee11826686'
+    resources:
+      requests:
+        cpu: '10m'
+        memory: '32Mi'
+      limits:
+        cpu: '100m'
+        memory: '128Mi'
+  maxConcurrentHttpConnections: 100
+  writeTimeoutInMs: 5000
+  readTimeoutInMs: 5000
+  metricCacheSize: 1000
+  externalTagsCacheSize: 1000
+  maxSeriesLookback: 7776000
+
 migration:
   replaceStatefulSet: false
 

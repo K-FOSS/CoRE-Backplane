@@ -44,9 +44,12 @@ reject Java execution with `EPERM` before OpenNMS can run its configuration
 tester. The chart does not expose Karaf, trap, or syslog listeners publicly.
 
 Two ReadWriteOnce claims retain `/opt/opennms/etc` and `/opennms-data`. The
-latter contains the default RRD time-series data. Back up both claims and the
-PostgreSQL database together. The upstream default RRD setup is a basic
-starting point, not a capacity plan for a large monitored estate.
+configuration claim also caches the pinned time-series plugin after its first
+verified download. The data claim remains mounted for the image's reports and
+MIB directories and is retained for rollback and any historical RRD files, but
+the production ApplicationSet selects the integration strategy, so new
+performance and latency samples are not written there. Back up both claims and
+the PostgreSQL database before changing or rolling back the storage strategy.
 
 Filesystem-backed claims can expose a `lost+found` directory at the volume
 root. The pinned
@@ -55,10 +58,11 @@ considers any such entry to be existing configuration and therefore does not
 copy `share/etc-pristine`. Before the upstream `-i` initialization, the
 `prepare-configuration` init container checks for the required
 `opennms.properties` file, adds missing pristine configuration when it is
-absent, and ensures `opennms.properties.d` exists for confd's atomic writes.
+absent, and ensures `opennms.properties.d` and the optional `featuresBoot.d`
+directory exist for mounted configuration.
 This operation does not delete or overwrite existing files, so it repairs the
 partially initialized claim while preserving deliberate configuration. After
-reconciliation, verify both init containers complete and inspect the
+reconciliation, verify all init containers complete and inspect the
 `initialize` log for successful confd, config-tester, and schema initialization.
 
 ## Namespace and storage migration
@@ -116,16 +120,60 @@ The current `sso-user` Composition orphans PostgreSQL roles, databases, and
 grants on deletion. Removing the claim or Argo CD Application is not proof that
 database state or credentials were removed.
 
+## Time-series storage
+
+Production uses the official OpenNMS
+[Prometheus RemoteWrite plugin](https://github.com/OpenNMS-Plugins/opennms-prometheus-remotewrite-plugin/tree/v2.1.0)
+2.1.0, following Horizon's
+[plugin deployment guidance](https://docs.opennms.com/horizon/36/deployment/time-series-storage/timeseries/prometheus-remotewrite.html),
+and Horizon's
+[time-series integration strategy](https://docs.opennms.com/horizon/36/deployment/time-series-storage/timeseries/configuration.html)
+instead of local RRD storage. The plugin artifact comes from its immutable
+[Maven Central 2.1.0 directory](https://repo1.maven.org/maven2/org/opennms/plugins/timeseries/org.opennms.plugins.timeseries.prometheus.remotewrite.assembly.kar/2.1.0/)
+and must match the SHA-256 stored in `values.yaml`. The
+`install-timeseries-plugin` init container downloads it only when the cached
+copy on the configuration claim is absent or has the wrong digest. A first
+installation therefore requires egress to `repo1.maven.org`; later starts use
+the verified cache. The runtime mounts the KAR into `deploy`, enables
+`opennms-plugins-prometheus-remotewrite`, and sets
+`org.opennms.timeseries.strategy=integration`.
+
+Writes go to the cluster-local central Alloy Service at
+`core-home1-talos-prod-collectors-alloy.core-prod` on port `9090`. Alloy's
+[`prometheus.receive_http`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.receive_http/)
+receiver forwards samples through the existing Mimir remote-write component,
+which adds `cluster=core-home1-talos-prod` and the site `dc` label. OpenNMS
+reads its graphs through the internal `core-mimir` Cilium global Service and
+Mimir's
+[remote-read API](https://grafana.com/docs/mimir/latest/references/http-api/#remote-read).
+Reads deliberately bypass `core-mimir-proxy` because
+its `prom-label-proxy` handles PromQL and label APIs, not the protobuf
+remote-read protocol. Both paths remain private ClusterIP/global-Service
+traffic and use no credential stored in this chart; Mimir currently has
+multitenancy disabled and maps traffic to its configured `core` tenant.
+
+This is a cutover, not a migration. Existing RRD samples remain on the retained
+data PVC and are not copied into Mimir or visible through integration-backed
+graphs. The current
+[`core-observability-metrics` owner](../../Apps/Observability/Metrics.yaml)
+retains only 12 hours at YXL, and Home1 depends on Cilium ClusterMesh to reach
+that backend. Confirm the required history and capacity before increasing
+collection scope. To roll back, restore the RRD strategy through Git and keep
+the data PVC; samples collected only in Mimir during the integration interval
+will not be backfilled into RRD. OpenNMS keeps its integration buffer in memory
+by default; the data PVC is not a fallback if Alloy or Mimir is unavailable, so
+an extended write-path outage can create a permanent collection gap.
+
 ## Dragonfly compatibility
 
 The site-local `dragonfly-core` service is deliberately not connected to this
 basic deployment. Horizon's upstream
 [`opennms.properties` reference](https://github.com/OpenNMS/opennms/blob/e05049c7ec4/opennms-base-assembly/src/main/filtered/etc/opennms.properties)
 offers Redis only as the external metadata cache for the Newts time-series
-strategy. Newts also requires Cassandra, while this chart uses the basic RRD
-strategy and deploys no Cassandra. Supplying unused Redis environment variables
-would not make Horizon consume Dragonfly. Consequently this chart reserves no
-logical database in the
+strategy. This chart instead uses the Prometheus RemoteWrite integration and
+deploys no Cassandra. Supplying unused Redis environment variables would not
+make Horizon consume Dragonfly. Consequently this chart reserves no logical
+database in the
 [`dragonfly-core` allocation registry](../../Storage/Dragonfly/CoRE/README.md).
 Introduce Newts/Cassandra as a separately reviewed architecture change before
 allocating and configuring a Dragonfly database.
@@ -182,21 +230,32 @@ ExternalSecret CRDs; the
 `psql-home1-yvr` PostgreSQL service, matching SQL and Terraform ProviderConfigs,
 and local admin Secret; the `authentik` ProviderConfig
 and named flows; the `Server Admins` group; the public Gateway; and the shared
-Authentik proxy service.
+Authentik proxy service. The Collectors and Metrics ApplicationSets are created
+in wave 20 before Insight's wave 30, but that ordering does not prove their
+downstream services are healthy. Confirm the Home1 central Alloy Service has
+its port-`9090` receiver and the `core-mimir` global Service has healthy YXL
+query and write backends before Insight starts collecting.
 
 After reconciliation, verify the User claim and composite, generated Role and
 Database, grants, the admin PushSecret and ExternalSecret, `opennms-creds`, and
 the synchronized admin credential before checking the init container.
-Then verify the StatefulSet is Ready, both PVCs are mounted, the HTTPRoute is
-Accepted, the SecurityPolicy is attached, and the Authentik Workspace and
+Verify the plugin init container reports either a valid cache hit or a
+successful checksum, the Karaf feature and time-series integration health check
+are active, and OpenNMS logs contain no TSS write/read failures. Verify Alloy's
+`prometheus.receive_http` request and forwarded-sample metrics, Mimir accepted
+samples carrying the expected `cluster` and `dc` labels, and a graph read back
+through OpenNMS after one collection cycle. Confirm that no new RRD files are
+created after the cutover. Then verify the StatefulSet is Ready, both PVCs are
+mounted, the HTTPRoute is Accepted, the SecurityPolicy is attached, and the
+Authentik Workspace and
 downstream provider, property mappings, application, and bindings are healthy.
 Confirm the rendered NetworkPolicy selectors match the actual Envoy data-plane
 pods before sync. Test denial for an unauthenticated user and a non-member,
 automatic named Horizon login and effective roles for a `Server Admins` member,
 rejection of spoofed headers through any non-Gateway path, break-glass local
 login, node provisioning, the configured ICMP and SNMP polling mechanisms,
-alarm generation, RRD graphing, and restart persistence. Pod readiness alone
-does not validate the monitoring workflow.
+alarm generation, Mimir-backed graphing, and restart persistence. Pod readiness
+alone does not validate the monitoring workflow.
 
 Rollback through Git and Argo CD. The ApplicationSet preserves resources on
 deletion, PVCs retain local configuration and RRD data, the User composition
@@ -207,3 +266,8 @@ move creates new PVCs and the distinct `opennms-insight` database identity. It
 does not copy configuration or RRD data from the preserved `core-prod` claims
 or adopt the orphaned `opennms` database objects. Validate the complete new
 monitoring workflow before explicitly retiring those stale resources.
+Disabling `timeseries.enabled` removes the runtime plugin configuration and
+returns new samples to Horizon's default RRD strategy after restart; the cached
+KAR remains inert on the retained configuration PVC. The shared Alloy receiver
+remains available to other internal producers and is removed only by reverting
+the Collectors change.

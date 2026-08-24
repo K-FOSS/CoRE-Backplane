@@ -80,6 +80,11 @@ spec:
                     crossplane: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
                     terraform: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
 
+                timeseries:
+                  enabled: true
+                  writeUrl: 'http://{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:9090/api/v1/metrics/write'
+                  readUrl: 'http://core-mimir.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:8080/prometheus/api/v1'
+
       destination:
         server: '{{ .server }}'
         namespace: 'core-net-{{ .values.environment }}'

@@ -56,10 +56,19 @@ controllers:
           advancedMounts:
             prepare-configuration:
               - path: '/opennms-config'
+            {{- if .Values.timeseries.enabled }}
+            install-timeseries-plugin:
+              - path: '/opennms-config'
+            {{- end }}
             initialize:
               - path: '/opt/opennms/etc'
             opennms:
               - path: '/opt/opennms/etc'
+              {{- if .Values.timeseries.enabled }}
+              - path: '/opt/opennms/deploy/opennms-prometheus-remotewrite-plugin.kar'
+                subPath: '.plugin-cache/opennms-prometheus-remotewrite-plugin.kar'
+                readOnly: true
+              {{- end }}
         - name: 'data'
           accessMode: 'ReadWriteOnce'
           size: {{ .Values.storage.data.size | squote }}
@@ -92,6 +101,9 @@ controllers:
             fi
 
             install -d -m 0755 "${config_dir}/opennms.properties.d"
+            {{- if .Values.timeseries.enabled }}
+            install -d -m 0755 "${config_dir}/featuresBoot.d"
+            {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -99,8 +111,54 @@ controllers:
               - 'ALL'
         resources: &containerResources
 {{ toYaml .Values.resources | nindent 10 }}
-      initialize:
+      {{- if .Values.timeseries.enabled }}
+      install-timeseries-plugin:
         dependsOn: 'prepare-configuration'
+        image:
+          repository: {{ .Values.image.repository | squote }}
+          tag: {{ required "image.tag is required" .Values.image.tag | squote }}
+          digest: {{ required "image.digest is required" .Values.image.digest | squote }}
+          pullPolicy: {{ .Values.image.pullPolicy | squote }}
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
+        args:
+          - |
+            set -Eeuo pipefail
+
+            plugin_dir='/opennms-config/.plugin-cache'
+            plugin_path="${plugin_dir}/opennms-prometheus-remotewrite-plugin.kar"
+            download_path="${plugin_path}.download"
+            plugin_url={{ required "timeseries.plugin.url is required when external time-series storage is enabled" .Values.timeseries.plugin.url | squote }}
+            expected_sha256={{ required "timeseries.plugin.sha256 is required when external time-series storage is enabled" .Values.timeseries.plugin.sha256 | squote }}
+
+            if [[ -f "${plugin_path}" ]] && \
+              printf '%s  %s\n' "${expected_sha256}" "${plugin_path}" | sha256sum --check --status; then
+              echo 'The cached Prometheus RemoteWrite plugin matches the pinned checksum.'
+              exit 0
+            fi
+
+            install -d -m 0755 "${plugin_dir}"
+            curl --fail --location --silent --show-error \
+              --output "${download_path}" "${plugin_url}"
+            printf '%s  %s\n' "${expected_sha256}" "${download_path}" | sha256sum --check
+            mv -f "${download_path}" "${plugin_path}"
+            chmod 0444 "${plugin_path}"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        resources:
+{{ toYaml .Values.timeseries.plugin.resources | nindent 10 }}
+      {{- end }}
+      initialize:
+        {{- if .Values.timeseries.enabled }}
+        dependsOn: 'install-timeseries-plugin'
+        {{- else }}
+        dependsOn: 'prepare-configuration'
+        {{- end }}
         image:
           repository: {{ .Values.image.repository | squote }}
           tag: {{ .Values.image.tag | squote }}
@@ -332,6 +390,30 @@ configMaps:
       public-url.properties: |
         opennms.web.base-url=https://{{ required "gateway.hostname is required" .Values.gateway.hostname }}/opennms/
 
+{{- if .Values.timeseries.enabled }}
+  timeseries:
+    forceRename: '{{ .Release.Name }}-timeseries'
+    data:
+      timeseries.properties: |
+        org.opennms.timeseries.strategy=integration
+        org.opennms.rrd.storeByForeignSource=true
+        org.opennms.timeseries.tin.metatags.tag.node=${node:label}
+        org.opennms.timeseries.tin.metatags.tag.location=${node:location}
+        org.opennms.timeseries.tin.metatags.tag.ifDescr=${interface:if-description}
+        org.opennms.timeseries.tin.metatags.tag.ifName=${interface:if-name}
+      org.opennms.plugins.tss.prometheus.cfg: |
+        writeUrl={{ required "timeseries.writeUrl is required when external time-series storage is enabled" .Values.timeseries.writeUrl }}
+        readUrl={{ required "timeseries.readUrl is required when external time-series storage is enabled" .Values.timeseries.readUrl }}
+        maxConcurrentHttpConnections={{ int .Values.timeseries.maxConcurrentHttpConnections }}
+        writeTimeoutInMs={{ int .Values.timeseries.writeTimeoutInMs }}
+        readTimeoutInMs={{ int .Values.timeseries.readTimeoutInMs }}
+        metricCacheSize={{ int .Values.timeseries.metricCacheSize }}
+        externalTagsCacheSize={{ int .Values.timeseries.externalTagsCacheSize }}
+        maxSeriesLookback={{ int .Values.timeseries.maxSeriesLookback }}
+      prometheus-remotewrite.boot: |
+        opennms-plugins-prometheus-remotewrite wait-for-kar=opennms-prometheus-remotewrite-plugin
+{{- end }}
+
 {{- if .Values.authentik.proxyAuth.enabled }}
   proxy-auth:
     forceRename: '{{ .Release.Name }}-proxy-auth'
@@ -400,6 +482,23 @@ persistence:
           - path: '/opt/opennms/etc/opennms.properties.d/public-url.properties'
             subPath: 'public-url.properties'
             readOnly: true
+{{- if .Values.timeseries.enabled }}
+  timeseries:
+    type: 'configMap'
+    identifier: 'timeseries'
+    advancedMounts:
+      main:
+        opennms:
+          - path: '/opt/opennms/etc/opennms.properties.d/timeseries.properties'
+            subPath: 'timeseries.properties'
+            readOnly: true
+          - path: '/opt/opennms/etc/org.opennms.plugins.tss.prometheus.cfg'
+            subPath: 'org.opennms.plugins.tss.prometheus.cfg'
+            readOnly: true
+          - path: '/opt/opennms/etc/featuresBoot.d/prometheus-remotewrite.boot'
+            subPath: 'prometheus-remotewrite.boot'
+            readOnly: true
+{{- end }}
 {{- if .Values.authentik.proxyAuth.enabled }}
   proxy-auth:
     type: 'configMap'
