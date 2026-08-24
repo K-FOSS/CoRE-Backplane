@@ -132,6 +132,12 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 
 - Keep changes narrowly scoped and preserve unrelated worktree edits. Do not
   reformat, revert, stage, or include another author's changes.
+- Prefer the pinned BJW-S common library chart over handwritten Kubernetes
+  workload, Service, routing, persistence, ConfigMap, Secret, and NetworkPolicy
+  resources when the library supports the required behavior. Use direct
+  manifests for unsupported CRDs or when BJW-S cannot preserve required
+  identity, lifecycle, ordering, or security semantics, and document the
+  reason for the exception.
 - In new or touched YAML, use single quotes for string scalars, including
   strings in flow sequences and mappings. Use double quotes only when YAML
   escape processing is required or a single-quoted value would be materially
