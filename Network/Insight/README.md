@@ -9,6 +9,19 @@ name. The deployment uses the writable `psql-home1-yvr` cluster owned by
 `Apps/Storage/PSQL.yaml`, not the fleet-wide `psql-main` replication topology or
 PGPool endpoint.
 
+The chart pins the
+[BJW-S common library 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
+to generate the StatefulSet, init containers, claim templates, Service,
+HTTPRoute, ConfigMap, and NetworkPolicy from `templates/common.yaml`. The
+OpenNMS-specific User claim, Authentik Workspace, SecurityPolicy, and
+NodeFeatureRule remain direct templates because they are site or controller
+CRDs outside the common library's typed resource model. Common 5 requires
+Kubernetes 1.31 and Helm 3.18 according to its
+[v5 release notes](https://github.com/bjw-s-labs/helm-charts/releases/tag/common-5.0.0).
+The target was observed at Kubernetes 1.36.3, and the pinned
+[`lovely-vault-plugin` 1.2.5 renderer](https://github.com/crumbhole/lovely)
+contains Helm 3.21.2; verify both again before changing either dependency.
+
 ## Runtime and persistence
 
 The StatefulSet runs the official
@@ -20,8 +33,10 @@ The configuration follows the upstream
 [Horizon 36 container installation procedure](https://docs.opennms.com/horizon/latest/deployment/core/install.html#install-core-docker):
 an init container runs the guarded `-i` database/configuration initialization,
 then the main container runs `-s`. The image runs as UID/GID `10001`; only the
-`NET_RAW` capability needed for direct ICMP monitoring is added. The chart does
-not expose Karaf, trap, or syslog listeners publicly.
+runtime-default seccomp profile is used and all Linux capabilities are dropped.
+Direct raw-socket ICMP monitoring therefore requires a separately reviewed
+`NET_RAW` grant or a capability-free polling mechanism. The chart does not
+expose Karaf, trap, or syslog listeners publicly.
 
 Two ReadWriteOnce claims retain `/opt/opennms/etc` and `/opennms-data`. The
 latter contains the default RRD time-series data. Back up both claims and the
@@ -40,6 +55,26 @@ This operation does not delete or overwrite existing files, so it repairs the
 partially initialized claim while preserving deliberate configuration. After
 reconciliation, verify both init containers complete and inspect the
 `initialize` log for successful confd, config-tester, and schema initialization.
+
+## BJW-S migration
+
+The first BJW-S reconciliation must replace the existing StatefulSet because
+the common library adds its required controller selector label and Kubernetes
+does not permit an in-place selector change. `migration.replaceStatefulSet` is
+therefore initially `true`, which renders Argo CD's `Replace=true` sync option.
+While that flag is true, BJW-S also generates a sync-wave `-1` compatibility
+NetworkPolicy for the old pod selector. It is established before the original
+policy changes selector, so the old pod does not become unrestricted during
+replacement.
+
+The StatefulSet name and the `config` and `data` claim-template names do not
+change, so deletion of the StatefulSet retains and reattaches the existing
+PVCs. Confirm both PVCs and a coordinated PostgreSQL backup before this sync,
+avoid manually deleting either claim, and verify the repaired configuration,
+database, RRD data, ingress isolation, and monitoring workflow after
+replacement. Then set `migration.replaceStatefulSet` to `false` in Git so later
+StatefulSet changes return to normal server-side apply behavior and Argo CD
+removes the temporary compatibility policy.
 
 ## Identity and PostgreSQL
 
@@ -135,9 +170,9 @@ Confirm the rendered NetworkPolicy selectors match the actual Envoy data-plane
 pods before sync. Test denial for an unauthenticated user and a non-member,
 automatic named Horizon login and effective roles for a `Server Admins` member,
 rejection of spoofed headers through any non-Gateway path, break-glass local
-login, node provisioning, ICMP/SNMP polling, alarm generation, RRD graphing,
-and restart persistence. Pod readiness alone does not validate the monitoring
-workflow.
+login, node provisioning, the configured ICMP and SNMP polling mechanisms,
+alarm generation, RRD graphing, and restart persistence. Pod readiness alone
+does not validate the monitoring workflow.
 
 Rollback through Git and Argo CD. The ApplicationSet preserves resources on
 deletion, PVCs retain local configuration and RRD data, the User composition

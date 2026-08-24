@@ -1,0 +1,327 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "core-network-insight.networkPolicyRules" -}}
+ingress:
+  - from:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: {{ required "networkPolicy.gateway.namespace is required" .Values.networkPolicy.gateway.namespace | squote }}
+        podSelector:
+          matchLabels:
+            {{- range $key, $value := .Values.networkPolicy.gateway.podLabels }}
+            {{ $key }}: {{ $value | squote }}
+            {{- end }}
+    ports:
+      - port: 'http'
+        protocol: 'TCP'
+{{- end -}}
+
+{{- define "core-network-insight.commonValues" -}}
+global:
+  nameOverride: '{{ .Release.Name }}'
+
+controllers:
+  main:
+    forceRename: '{{ .Release.Name }}'
+    type: 'statefulset'
+    replicas: 1
+    strategy: 'RollingUpdate'
+    {{- if .Values.migration.replaceStatefulSet }}
+    annotations:
+      argocd.argoproj.io/sync-options: 'Replace=true'
+    {{- end }}
+    pod:
+      annotations:
+        secret.reloader.stakater.com/reload: '{{ .Values.postgresql.credentialsSecretName }},{{ .Values.postgresql.adminSecretName }}'
+      automountServiceAccountToken: false
+      nodeSelector:
+        core.resolvemy.host/x86-64-v3: 'true'
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: 'OnRootMismatch'
+        seccompProfile:
+          type: 'RuntimeDefault'
+      terminationGracePeriodSeconds: 120
+    statefulset:
+      serviceName:
+        identifier: 'main'
+      volumeClaimTemplates:
+        - name: 'config'
+          accessMode: 'ReadWriteOnce'
+          size: {{ .Values.storage.config.size | squote }}
+          advancedMounts:
+            prepare-configuration:
+              - path: '/opennms-config'
+            initialize:
+              - path: '/opt/opennms/etc'
+            opennms:
+              - path: '/opt/opennms/etc'
+        - name: 'data'
+          accessMode: 'ReadWriteOnce'
+          size: {{ .Values.storage.data.size | squote }}
+          advancedMounts:
+            initialize:
+              - path: '/opennms-data'
+            opennms:
+              - path: '/opennms-data'
+    initContainers:
+      prepare-configuration:
+        image:
+          repository: {{ .Values.image.repository | squote }}
+          tag: {{ required "image.tag is required" .Values.image.tag | squote }}
+          digest: {{ required "image.digest is required" .Values.image.digest | squote }}
+          pullPolicy: {{ .Values.image.pullPolicy | squote }}
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
+        args:
+          - |
+            set -Eeuo pipefail
+
+            config_dir='/opennms-config'
+            pristine_dir='/opt/opennms/share/etc-pristine'
+
+            if [[ ! -f "${config_dir}/opennms.properties" ]]; then
+              echo 'OpenNMS configuration is incomplete; seed missing files from etc-pristine.'
+              rsync -r --ignore-existing --out-format='%n %C' "${pristine_dir}/" "${config_dir}/"
+            fi
+
+            install -d -m 0755 "${config_dir}/opennms.properties.d"
+        securityContext: &containerSecurityContext
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        resources: &containerResources
+{{ toYaml .Values.resources | nindent 10 }}
+      initialize:
+        dependsOn: 'prepare-configuration'
+        image:
+          repository: {{ .Values.image.repository | squote }}
+          tag: {{ .Values.image.tag | squote }}
+          digest: {{ .Values.image.digest | squote }}
+          pullPolicy: {{ .Values.image.pullPolicy | squote }}
+        {{- if .Values.authentik.proxyAuth.enabled }}
+        command:
+          - '/opt/opennms-auth/start.sh'
+        {{- end }}
+        args:
+          - '-i'
+        env: &databaseEnvironment
+          - name: 'TZ'
+            value: {{ .Values.global.timezone | squote }}
+          - name: 'POSTGRES_HOST'
+            value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
+          - name: 'POSTGRES_PORT'
+            value: {{ .Values.postgresql.port | quote }}
+          - name: 'POSTGRES_USER'
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "postgresql.adminSecretName is required" .Values.postgresql.adminSecretName | squote }}
+                key: 'username'
+          - name: 'POSTGRES_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.adminSecretName | squote }}
+                key: 'password'
+          - name: 'OPENNMS_DBNAME'
+            value: {{ required "postgresql.database is required" .Values.postgresql.database | squote }}
+          - name: 'OPENNMS_DBUSER'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                key: 'username'
+          - name: 'OPENNMS_DBPASS'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                key: 'password'
+        securityContext: *containerSecurityContext
+        resources: *containerResources
+    containers:
+      opennms:
+        image:
+          repository: {{ .Values.image.repository | squote }}
+          tag: {{ .Values.image.tag | squote }}
+          digest: {{ .Values.image.digest | squote }}
+          pullPolicy: {{ .Values.image.pullPolicy | squote }}
+        {{- if .Values.authentik.proxyAuth.enabled }}
+        command:
+          - '/opt/opennms-auth/start.sh'
+        {{- end }}
+        args:
+          - '-s'
+        env: *databaseEnvironment
+        ports:
+          - name: 'http'
+            containerPort: 8980
+            protocol: 'TCP'
+        probes:
+          readiness:
+            enabled: true
+            type: 'HTTP'
+            path: '/opennms/login.jsp'
+            port: 'http'
+            spec:
+              initialDelaySeconds: 30
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 12
+          liveness:
+            enabled: true
+            type: 'HTTP'
+            path: '/opennms/login.jsp'
+            port: 'http'
+            spec:
+              initialDelaySeconds: 120
+              periodSeconds: 30
+              timeoutSeconds: 10
+              failureThreshold: 5
+          startup:
+            enabled: true
+            type: 'HTTP'
+            path: '/opennms/login.jsp'
+            port: 'http'
+            spec:
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 90
+        securityContext: *containerSecurityContext
+        resources: *containerResources
+
+service:
+  main:
+    forceRename: '{{ .Release.Name }}'
+    controller: 'main'
+    primary: true
+    type: 'ClusterIP'
+    ports:
+      http:
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: 'TCP'
+
+route:
+  main:
+    forceRename: '{{ .Release.Name }}'
+    kind: 'HTTPRoute'
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - {{ required "gateway.hostname is required" .Values.gateway.hostname | squote }}
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: {{ required "gateway.name is required" .Values.gateway.name | squote }}
+        namespace: {{ required "gateway.namespace is required" .Values.gateway.namespace | squote }}
+        sectionName: {{ required "gateway.sectionName is required" .Values.gateway.sectionName | squote }}
+    rules:
+      - backendRefs:
+          - identifier: 'main'
+            port: 80
+            weight: 1
+
+{{- if .Values.networkPolicy.enabled }}
+networkpolicies:
+  {{- if .Values.migration.replaceStatefulSet }}
+  migration-legacy:
+    forceRename: '{{ .Release.Name }}-migration-legacy'
+    annotations:
+      argocd.argoproj.io/sync-wave: '-1'
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: 'opennms'
+        app.kubernetes.io/instance: '{{ .Release.Name }}'
+    policyTypes:
+      - 'Ingress'
+    rules:
+{{ include "core-network-insight.networkPolicyRules" . | nindent 6 }}
+  {{- end }}
+  main:
+    forceRename: '{{ .Release.Name }}'
+    controller: 'main'
+    policyTypes:
+      - 'Ingress'
+    rules:
+{{ include "core-network-insight.networkPolicyRules" . | nindent 6 }}
+{{- end }}
+
+{{- if .Values.authentik.proxyAuth.enabled }}
+configMaps:
+  proxy-auth:
+    forceRename: '{{ .Release.Name }}-proxy-auth'
+    data:
+      start.sh: |
+        #!/usr/bin/env bash
+        set -Eeuo pipefail
+
+        opennms_home="${OPENNMS_HOME:-/opt/opennms}"
+        jetty_overlay="${OPENNMS_JETTY_OVERLAY:-/opt/opennms-jetty-webinf-overlay}"
+        auth_config="${OPENNMS_AUTH_CONFIG:-/opt/opennms-auth/header-preauth.xml}"
+        security_context="${opennms_home}/jetty-webapps/opennms/WEB-INF/applicationContext-spring-security.xml"
+        legacy_provider='org.springframework.security.core.userdetails.UserDetailsByNameServiceWrapper'
+        authorities_provider='org.springframework.security.web.authentication.preauth.PreAuthenticatedGrantedAuthoritiesUserDetailsService'
+
+        if grep -Fq "${authorities_provider}" "${security_context}"; then
+          :
+        elif grep -Fq "${legacy_provider}" "${security_context}"; then
+          sed -i \
+            '/^  <beans:bean id="preauthAuthProvider"/,/^  <\/beans:bean>$/c\
+        <beans:bean id="preauthAuthProvider" class="org.springframework.security.web.authentication.preauth.PreAuthenticatedAuthenticationProvider">\
+          <beans:property name="preAuthenticatedUserDetailsService">\
+            <beans:bean id="preAuthUserDetailsService" class="org.springframework.security.web.authentication.preauth.PreAuthenticatedGrantedAuthoritiesUserDetailsService"/>\
+          </beans:property>\
+        </beans:bean>' \
+            "${security_context}"
+        else
+          echo "OpenNMS pre-auth provider layout is not recognized; refusing to start" >&2
+          exit 1
+        fi
+
+        grep -Fq "${authorities_provider}" "${security_context}"
+        install -d -m 0755 "${jetty_overlay}/spring-security.d"
+        install -m 0444 "${auth_config}" \
+          "${jetty_overlay}/spring-security.d/header-preauth.xml"
+        exec "${OPENNMS_ENTRYPOINT:-/entrypoint.sh}" "$@"
+      header-preauth.xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <beans:beans xmlns="http://www.springframework.org/schema/security"
+          xmlns:beans="http://www.springframework.org/schema/beans"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                              http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+          <beans:bean id="headerPreAuthFilter" class="org.opennms.web.springframework.security.RequestHeaderPreAuthenticationProcessingFilter">
+            <beans:property name="enabled" value="true"/>
+            <beans:property name="failOnError" value="{{ .Values.authentik.proxyAuth.failOnError }}"/>
+            <beans:property name="userHeader" value="{{ required "authentik.proxyAuth.userHeader is required" .Values.authentik.proxyAuth.userHeader }}"/>
+            <beans:property name="credentialsHeader" value=""/>
+            <beans:property name="authoritiesHeader" value="{{ required "authentik.proxyAuth.authoritiesHeader is required" .Values.authentik.proxyAuth.authoritiesHeader }}"/>
+            <beans:property name="authenticationManager" ref="authenticationManager"/>
+          </beans:bean>
+        </beans:beans>
+
+persistence:
+  proxy-auth:
+    type: 'configMap'
+    identifier: 'proxy-auth'
+    defaultMode: 365
+    advancedMounts:
+      main:
+        initialize:
+          - path: '/opt/opennms-auth'
+            readOnly: true
+        opennms:
+          - path: '/opt/opennms-auth'
+            readOnly: true
+{{- end }}
+{{- end -}}
+
+{{- $_ := mergeOverwrite .Values (include "core-network-insight.commonValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}
