@@ -1,0 +1,65 @@
+apiVersion: nfd.k8s-sigs.io/v1alpha1
+kind: NodeFeatureRule
+metadata:
+  name: core-x86-isa-levels
+spec:
+  rules:
+    - name: x86-64-v3
+      labels:
+        core.resolvemy.host/x86-64-v3: 'true'
+      matchFeatures:
+        - feature: cpu.cpuid
+          matchExpressions:
+            AVX:
+              op: Exists
+            AVX2:
+              op: Exists
+            BMI1:
+              op: Exists
+            BMI2:
+              op: Exists
+            F16C:
+              op: Exists
+            FMA3:
+              op: Exists
+            LZCNT:
+              op: Exists
+            MOVBE:
+              op: Exists
+            OSXSAVE:
+              op: Exists
+
+    - name: x86-64-v4
+      labels:
+        core.resolvemy.host/x86-64-v4: 'true'
+      matchFeatures:
+        - feature: cpu.cpuid
+          matchExpressions:
+            AVX:
+              op: Exists
+            AVX2:
+              op: Exists
+            BMI1:
+              op: Exists
+            BMI2:
+              op: Exists
+            F16C:
+              op: Exists
+            FMA3:
+              op: Exists
+            LZCNT:
+              op: Exists
+            MOVBE:
+              op: Exists
+            OSXSAVE:
+              op: Exists
+            AVX512F:
+              op: Exists
+            AVX512BW:
+              op: Exists
+            AVX512CD:
+              op: Exists
+            AVX512DQ:
+              op: Exists
+            AVX512VL:
+              op: Exists
