@@ -23,6 +23,8 @@ spec:
         secret.reloader.stakater.com/reload: '{{ .Values.postgresql.credentialsSecretName }},{{ .Values.postgresql.adminSecretName }}'
     spec:
       automountServiceAccountToken: false
+      nodeSelector:
+        core.resolvemy.host/x86-64-v3: 'true'
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
@@ -127,8 +129,6 @@ spec:
           securityContext:
             <<: *containerSecurityContext
             capabilities:
-              add:
-                - 'NET_RAW'
               drop:
                 - 'ALL'
           resources: {{- toYaml .Values.resources | nindent 12 }}
