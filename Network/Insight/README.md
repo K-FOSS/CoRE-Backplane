@@ -145,6 +145,17 @@ and that OpenNMS-specific role header. See Authentik's
 and Envoy Gateway's
 [external authorization documentation](https://gateway.envoyproxy.io/v1.8/tasks/security/ext-auth/).
 
+A read-only `public-url.properties` file sets
+`opennms.web.base-url=https://insight.mylogin.space/opennms/` in both the
+database-initialization and runtime containers. Horizon uses this public HTTPS
+URL for its HTML base element, so browser assets, navigation, and redirects do
+not resolve to the internal HTTP Service address. The value is rendered from
+`gateway.hostname`; keep that value aligned with the HTTPRoute hostname. This
+follows Horizon's
+[system-property override guidance](https://docs.opennms.com/horizon/36/operation/deep-dive/admin/configuration/system-properties.html)
+and the pinned Horizon 36.0.3
+[`opennms.web.base-url` reverse-proxy setting](https://github.com/OpenNMS/opennms/blob/e05049c7ec4/opennms-base-assembly/src/main/filtered/etc/opennms.properties).
+
 The chart enables Horizon 36's documented
 [HTTP-header pre-authentication](https://docs.opennms.com/horizon/36/operation/deep-dive/user-management/pre-authentication.html)
 and granted-authorities user-details service. The Authentik username therefore

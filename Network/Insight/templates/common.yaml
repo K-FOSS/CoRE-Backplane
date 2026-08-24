@@ -325,8 +325,14 @@ rawResources:
               property: 'password'
 {{- end }}
 
-{{- if .Values.authentik.proxyAuth.enabled }}
 configMaps:
+  public-url:
+    forceRename: '{{ .Release.Name }}-public-url'
+    data:
+      public-url.properties: |
+        opennms.web.base-url=https://{{ required "gateway.hostname is required" .Values.gateway.hostname }}/opennms/
+
+{{- if .Values.authentik.proxyAuth.enabled }}
   proxy-auth:
     forceRename: '{{ .Release.Name }}-proxy-auth'
     data:
@@ -378,8 +384,23 @@ configMaps:
             <beans:property name="authenticationManager" ref="authenticationManager"/>
           </beans:bean>
         </beans:beans>
+{{- end }}
 
 persistence:
+  public-url:
+    type: 'configMap'
+    identifier: 'public-url'
+    advancedMounts:
+      main:
+        initialize:
+          - path: '/opt/opennms/etc/opennms.properties.d/public-url.properties'
+            subPath: 'public-url.properties'
+            readOnly: true
+        opennms:
+          - path: '/opt/opennms/etc/opennms.properties.d/public-url.properties'
+            subPath: 'public-url.properties'
+            readOnly: true
+{{- if .Values.authentik.proxyAuth.enabled }}
   proxy-auth:
     type: 'configMap'
     identifier: 'proxy-auth'
