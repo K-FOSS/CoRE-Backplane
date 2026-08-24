@@ -28,6 +28,19 @@ latter contains the default RRD time-series data. Back up both claims and the
 PostgreSQL database together. The upstream default RRD setup is a basic
 starting point, not a capacity plan for a large monitored estate.
 
+Filesystem-backed claims can expose a `lost+found` directory at the volume
+root. The pinned
+[Horizon 36.0.3 entrypoint](https://github.com/OpenNMS/opennms/blob/e05049c7ec4/opennms-container/core/container-fs/entrypoint.sh)
+considers any such entry to be existing configuration and therefore does not
+copy `share/etc-pristine`. Before the upstream `-i` initialization, the
+`prepare-configuration` init container checks for the required
+`opennms.properties` file, adds missing pristine configuration when it is
+absent, and ensures `opennms.properties.d` exists for confd's atomic writes.
+This operation does not delete or overwrite existing files, so it repairs the
+partially initialized claim while preserving deliberate configuration. After
+reconciliation, verify both init containers complete and inspect the
+`initialize` log for successful confd, config-tester, and schema initialization.
+
 ## Identity and PostgreSQL
 
 The namespaced `User.mylogin.space/v1alpha1` claim creates the `opennms`

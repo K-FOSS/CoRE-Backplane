@@ -34,6 +34,35 @@ spec:
         seccompProfile:
           type: 'RuntimeDefault'
       initContainers:
+        - name: 'prepare-configuration'
+          image: '{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}@{{ required "image.digest is required" .Values.image.digest }}'
+          imagePullPolicy: '{{ .Values.image.pullPolicy }}'
+          command:
+            - '/usr/bin/env'
+            - 'bash'
+            - '-c'
+          args:
+            - |
+              set -Eeuo pipefail
+
+              config_dir='/opennms-config'
+              pristine_dir='/opt/opennms/share/etc-pristine'
+
+              if [[ ! -f "${config_dir}/opennms.properties" ]]; then
+                echo 'OpenNMS configuration is incomplete; seed missing files from etc-pristine.'
+                rsync -r --ignore-existing --out-format='%n %C' "${pristine_dir}/" "${config_dir}/"
+              fi
+
+              install -d -m 0755 "${config_dir}/opennms.properties.d"
+          securityContext: &containerSecurityContext
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: 'config'
+              mountPath: '/opennms-config'
         - name: 'initialize'
           image: '{{ .Values.image.repository }}:{{ required "image.tag is required" .Values.image.tag }}@{{ required "image.digest is required" .Values.image.digest }}'
           imagePullPolicy: '{{ .Values.image.pullPolicy }}'
@@ -72,11 +101,7 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.postgresql.credentialsSecretName | squote }}
                   key: 'password'
-          securityContext: &containerSecurityContext
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - 'ALL'
+          securityContext: *containerSecurityContext
           resources: {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts: &volumeMounts
             - name: 'config'
