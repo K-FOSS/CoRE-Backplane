@@ -249,6 +249,67 @@ it is not exposed as a second public route. Immediately replace the upstream
 `admin` password with a generated credential stored outside Git, and verify the
 break-glass procedure independently of Authentik, DNS, and the Gateway.
 
+## TODO roadmap
+
+The following items describe desired behavior and are not implemented by the
+current chart:
+
+- [ ] Add flow ingestion and processing for NetFlow, IPFIX, and sFlow following
+  OpenNMS's [flows architecture](https://docs.opennms.com/horizon/36/operation/deep-dive/flows/introduction.html)
+  and [basic flow setup](https://docs.opennms.com/horizon/36/operation/deep-dive/flows/basic.html).
+  Define Telemetryd listeners and adapters, exposed ports and NetworkPolicies,
+  classification, inventory enrichment, persistence, index lifecycle and
+  retention, capacity limits, and recovery. Decide whether the expected volume
+  requires a message broker and Sentinel processing before selecting and
+  pinning the search backend and Grafana flow integration.
+- [ ] Replace the current single-group access rule with an explicit allowlist
+  limited to `Network Admins`, `Network`, `Network Automation Services`, and
+  `Server Admins`. Define least-privilege OpenNMS roles per group and update the
+  Authentik application entitlement, proxy role header, and LDAP group-to-role
+  mapping together. Verify denial for every non-member and preserve independent
+  break-glass access.
+- [ ] Add multi-site OpenNMS collectors, distinct from the existing Alloy
+  telemetry collectors. Place Minions close to monitored networks, select every
+  target site explicitly, and define location identity, discovery and polling
+  ownership, encrypted core transport, credentials, buffering, failure
+  isolation, upgrade ordering, and site-loss behavior. Include Sentinel and the
+  message broker in this design if flow processing is distributed.
+- [ ] Automate creation, rotation, publication, and revocation of the scoped
+  Grafana and NetBox integration identities and tokens. Use `User` claims,
+  controller-managed connection Secrets, and provider or Workspace resources;
+  do not add literal tokens or parallel credentials. Account for integrations
+  where the [OpenNMS REST API](https://docs.opennms.com/horizon/36/development/rest/rest-api.html)
+  still requires HTTP Basic credentials, and verify deletion policies for every
+  externally retained account or token.
+- [ ] Integrate NetBox through the
+  [`netbox-opennms-plugin`](https://github.com/no42-org/netbox-opennms-plugin/tree/v0.0.9),
+  not through a parallel Terraform inventory synchronization path. Keep NetBox
+  as the source of truth and have the plugin render and import OpenNMS
+  requisitions through Horizon's REST provisioning API. Extend the existing
+  [`Network/IPAM` deployment](../../Network/IPAM/README.md) with a pinned custom
+  NetBox image containing a verified compatible plugin release, enable the
+  plugin in both the web and worker lifecycle, and supply its OpenNMS connection
+  from a controller-managed Secret. Define monitoring intent, dry-run and sync
+  triggers, idempotency, conflict reporting, deletion behavior, job status, and
+  end-to-end tests. Terraform may provision supporting identities or Secrets,
+  but must not become a second owner of synchronized inventory.
+- [ ] Install and pin the OpenNMS Plugin for Grafana, then provision its entity,
+  performance, and flow data sources with Secret-backed credentials. Follow the
+  plugin's [data-source setup](https://docs.opennms.com/grafana-plugin/9/getting_started/basic_walkthrough.html)
+  and the repository's existing
+  [`Observability/Dashboards` ownership](../../Observability/Dashboards/README.md),
+  and validate queries and dashboards rather than only Grafana provisioning
+  health.
+- [ ] Add passthrough OIDC for browser and service-to-service integration,
+  modeled on the [Metrics](../../Apps/Observability/Metrics.yaml),
+  [Logs](../../Apps/Observability/Logs.yaml), and
+  [Grafana SecurityPolicy](../../Observability/Dashboards/templates/GrafanaOAuth.yaml)
+  and [Authentik Workspace](../../Observability/Dashboards/templates/GrafanaAuthentik.yaml)
+  configuration. Generate the client and scopes, synchronize the client Secret,
+  validate JWT issuer and audience, forward only the required claims or access
+  token, and prevent credentials intended for Grafana, NetBox, or OpenNMS from
+  reaching unrelated backends.
+
 ## Reconciliation, verification, and removal
 
 Before sync, the target cluster must have the `User`, Terraform `Workspace`,
