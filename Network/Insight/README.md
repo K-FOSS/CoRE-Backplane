@@ -212,6 +212,33 @@ admitted by the `Server Admins` binding receive `ROLE_USER`, `ROLE_ADMIN`,
 `ROLE_REST`, and `ROLE_PROVISION`; adjust that fixed mapping only as a coordinated
 Authentik/OpenNMS authorization change.
 
+Username/password login through the Horizon form is also enabled using
+Horizon 36's documented
+[external LDAP authentication](https://docs.opennms.com/horizon/36/operation/deep-dive/admin/configuration/external-auth.html)
+and the pinned
+[`ldap.xml.disabled` example](https://github.com/OpenNMS/opennms/blob/e05049c7ec4/opennms-webapp/src/main/webapp/WEB-INF/spring-security.d/ldap.xml.disabled).
+The existing `opennms-creds` connection Secret is the only credential source:
+the runtime reads its `ldapsURI`, `ldapsBIND`, and `password` keys to bind and
+search Authentik's LDAP outpost, then authenticates the submitted user by bind.
+The bind password remains a Secret-backed environment value and is not rendered
+into the ConfigMap. User searches use `cn` below
+`ou=users,dc=ldap,dc=mylogin,dc=space`, and group membership searches use
+`member` below `ou=groups,dc=ldap,dc=mylogin,dc=space`. Authentik's
+[LDAP provider documentation](https://docs.goauthentik.io/add-secure-apps/providers/ldap/)
+describes bind and directory-search behavior. The `User` claim's existing
+`LDAPService` group membership must continue to grant this service account the
+`Search full LDAP directory` permission; a successful bind without that search
+permission is insufficient for user and group resolution.
+
+LDAP and proxy authorization intentionally share `authentik.accessGroups` and
+`authentik.proxyAuth.authorities`. A directory user receives access only when a
+searched group is one of those configured access groups; the current `Server
+Admins` mapping grants the same `ROLE_USER`, `ROLE_ADMIN`, `ROLE_REST`, and
+`ROLE_PROVISION` roles as header pre-authentication. Built-in OpenNMS login
+remains available for the independent break-glass account. Treat changes to the
+LDAP search bases, filters, access groups, or roles as coordinated directory,
+Authentik entitlement, and OpenNMS authorization changes.
+
 OpenNMS header authentication is safe only behind a trusted proxy. The
 NetworkPolicy permits port `8980` solely from the Envoy pods owned by
 `core-prod/main-gw`, and the SecurityPolicy forwards exact header names rather
@@ -252,6 +279,8 @@ downstream provider, property mappings, application, and bindings are healthy.
 Confirm the rendered NetworkPolicy selectors match the actual Envoy data-plane
 pods before sync. Test denial for an unauthenticated user and a non-member,
 automatic named Horizon login and effective roles for a `Server Admins` member,
+form login with a directory username/password for a `Server Admins` member,
+rejection of a valid directory user outside the configured access group,
 rejection of spoofed headers through any non-Gateway path, break-glass local
 login, node provisioning, the configured ICMP and SNMP polling mechanisms,
 alarm generation, Mimir-backed graphing, and restart persistence. Pod readiness

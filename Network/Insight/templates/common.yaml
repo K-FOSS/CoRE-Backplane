@@ -1,6 +1,13 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
+{{- if and .Values.ldap.enabled (not .Values.authentik.accessGroups) }}
+{{- fail "authentik.accessGroups must contain at least one group when LDAP authentication is enabled" }}
+{{- end }}
+{{- if and .Values.ldap.enabled (not .Values.authentik.proxyAuth.authorities) }}
+{{- fail "authentik.proxyAuth.authorities must contain at least one role when LDAP authentication is enabled" }}
+{{- end }}
+
 {{- define "core-network-insight.networkPolicyRules" -}}
 ingress:
   - from:
@@ -164,7 +171,7 @@ controllers:
           tag: {{ .Values.image.tag | squote }}
           digest: {{ .Values.image.digest | squote }}
           pullPolicy: {{ .Values.image.pullPolicy | squote }}
-        {{- if .Values.authentik.proxyAuth.enabled }}
+        {{- if or .Values.authentik.proxyAuth.enabled .Values.ldap.enabled }}
         command:
           - '/opt/opennms-auth/start.sh'
         {{- end }}
@@ -199,6 +206,23 @@ controllers:
               secretKeyRef:
                 name: {{ .Values.postgresql.credentialsSecretName | squote }}
                 key: 'password'
+          {{- if .Values.ldap.enabled }}
+          - name: 'OPENNMS_LDAP_URI'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                key: 'ldapsURI'
+          - name: 'OPENNMS_LDAP_BIND_DN'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                key: 'ldapsBIND'
+          - name: 'OPENNMS_LDAP_BIND_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.credentialsSecretName | squote }}
+                key: 'password'
+          {{- end }}
         # The pinned OpenNMS image assigns cap_net_raw to the Java executable
         # for its native ICMP pollers. NET_RAW must remain in the container's
         # capability bounding set or Linux refuses to execute Java with EPERM.
@@ -214,7 +238,7 @@ controllers:
           tag: {{ .Values.image.tag | squote }}
           digest: {{ .Values.image.digest | squote }}
           pullPolicy: {{ .Values.image.pullPolicy | squote }}
-        {{- if .Values.authentik.proxyAuth.enabled }}
+        {{- if or .Values.authentik.proxyAuth.enabled .Values.ldap.enabled }}
         command:
           - '/opt/opennms-auth/start.sh'
         {{- end }}
@@ -414,7 +438,7 @@ configMaps:
         opennms-plugins-prometheus-remotewrite wait-for-kar=opennms-prometheus-remotewrite-plugin
 {{- end }}
 
-{{- if .Values.authentik.proxyAuth.enabled }}
+{{- if or .Values.authentik.proxyAuth.enabled .Values.ldap.enabled }}
   proxy-auth:
     forceRename: '{{ .Release.Name }}-proxy-auth'
     data:
@@ -424,8 +448,9 @@ configMaps:
 
         opennms_home="${OPENNMS_HOME:-/opt/opennms}"
         jetty_overlay="${OPENNMS_JETTY_OVERLAY:-/opt/opennms-jetty-webinf-overlay}"
-        auth_config="${OPENNMS_AUTH_CONFIG:-/opt/opennms-auth/header-preauth.xml}"
+        auth_config="${OPENNMS_AUTH_CONFIG:-/opt/opennms-auth/authentication.xml}"
         security_context="${opennms_home}/jetty-webapps/opennms/WEB-INF/applicationContext-spring-security.xml"
+        {{- if .Values.authentik.proxyAuth.enabled }}
         legacy_provider='org.springframework.security.core.userdetails.UserDetailsByNameServiceWrapper'
         authorities_provider='org.springframework.security.web.authentication.preauth.PreAuthenticatedGrantedAuthoritiesUserDetailsService'
 
@@ -446,17 +471,33 @@ configMaps:
         fi
 
         grep -Fq "${authorities_provider}" "${security_context}"
+        {{- end }}
+        {{- if .Values.ldap.enabled }}
+        if grep -Eq '^[[:space:]]*<authentication-provider ref="externalAuthenticationProvider"[[:space:]]*/>[[:space:]]*$' "${security_context}"; then
+          :
+        elif grep -Fq '<!-- <authentication-provider ref="externalAuthenticationProvider" /> -->' "${security_context}"; then
+          sed -i \
+            's@^[[:space:]]*<!-- <authentication-provider ref="externalAuthenticationProvider" /> -->@    <authentication-provider ref="externalAuthenticationProvider" />@' \
+            "${security_context}"
+        else
+          echo "OpenNMS external authentication provider layout is not recognized; refusing to start" >&2
+          exit 1
+        fi
+
+        grep -Eq '^[[:space:]]*<authentication-provider ref="externalAuthenticationProvider"[[:space:]]*/>[[:space:]]*$' "${security_context}"
+        {{- end }}
         install -d -m 0755 "${jetty_overlay}/spring-security.d"
         install -m 0444 "${auth_config}" \
-          "${jetty_overlay}/spring-security.d/header-preauth.xml"
+          "${jetty_overlay}/spring-security.d/authentication.xml"
         exec "${OPENNMS_ENTRYPOINT:-/entrypoint.sh}" "$@"
-      header-preauth.xml: |
+      authentication.xml: |
         <?xml version="1.0" encoding="UTF-8"?>
         <beans:beans xmlns="http://www.springframework.org/schema/security"
           xmlns:beans="http://www.springframework.org/schema/beans"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
                               http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd">
+          {{- if .Values.authentik.proxyAuth.enabled }}
           <beans:bean id="headerPreAuthFilter" class="org.opennms.web.springframework.security.RequestHeaderPreAuthenticationProcessingFilter">
             <beans:property name="enabled" value="true"/>
             <beans:property name="failOnError" value="{{ .Values.authentik.proxyAuth.failOnError }}"/>
@@ -465,6 +506,71 @@ configMaps:
             <beans:property name="authoritiesHeader" value="{{ required "authentik.proxyAuth.authoritiesHeader is required" .Values.authentik.proxyAuth.authoritiesHeader }}"/>
             <beans:property name="authenticationManager" ref="authenticationManager"/>
           </beans:bean>
+          {{- end }}
+          {{- if .Values.ldap.enabled }}
+          <beans:bean id="ldapTemplate" class="org.springframework.ldap.core.LdapTemplate">
+            <beans:constructor-arg ref="contextSource"/>
+            <beans:property name="ignorePartialResultException" value="true"/>
+          </beans:bean>
+
+          <beans:bean id="contextSource" class="org.springframework.ldap.core.support.LdapContextSource">
+            <beans:property name="urls">
+              <beans:list>
+                <beans:value>#{systemEnvironment['OPENNMS_LDAP_URI']}</beans:value>
+              </beans:list>
+            </beans:property>
+            <beans:property name="base" value="{{ required "ldap.baseDn is required when LDAP authentication is enabled" .Values.ldap.baseDn | html }}"/>
+            <beans:property name="authenticationSource" ref="authenticationSource"/>
+          </beans:bean>
+
+          <beans:bean id="authenticationSource" class="org.springframework.ldap.authentication.DefaultValuesAuthenticationSourceDecorator">
+            <beans:property name="target" ref="springSecurityAuthenticationSource"/>
+            <beans:property name="defaultUser" value="#{systemEnvironment['OPENNMS_LDAP_BIND_DN']}"/>
+            <beans:property name="defaultPassword" value="#{systemEnvironment['OPENNMS_LDAP_BIND_PASSWORD']}"/>
+          </beans:bean>
+
+          <beans:bean id="springSecurityAuthenticationSource" class="org.springframework.security.ldap.authentication.SpringSecurityAuthenticationSource"/>
+
+          <beans:bean id="externalAuthenticationProvider" class="org.springframework.security.ldap.authentication.LdapAuthenticationProvider">
+            <beans:constructor-arg ref="ldapAuthenticator"/>
+            <beans:constructor-arg ref="userGroupLdapAuthoritiesPopulator"/>
+          </beans:bean>
+
+          <beans:bean id="ldapAuthenticator" class="org.springframework.security.ldap.authentication.BindAuthenticator">
+            <beans:constructor-arg ref="contextSource"/>
+            <beans:property name="userSearch" ref="userSearch"/>
+          </beans:bean>
+
+          <beans:bean id="userSearch" class="org.springframework.security.ldap.search.FilterBasedLdapUserSearch">
+            <beans:constructor-arg index="0" value="{{ required "ldap.userSearchBase is required when LDAP authentication is enabled" .Values.ldap.userSearchBase | html }}"/>
+            <beans:constructor-arg index="1" value="{{ required "ldap.userSearchFilter is required when LDAP authentication is enabled" .Values.ldap.userSearchFilter | html }}"/>
+            <beans:constructor-arg index="2" ref="contextSource"/>
+            <beans:property name="searchSubtree" value="true"/>
+          </beans:bean>
+
+          <beans:bean id="userGroupLdapAuthoritiesPopulator" class="org.opennms.web.springframework.security.UserGroupLdapAuthoritiesPopulator">
+            <beans:constructor-arg ref="contextSource"/>
+            <beans:constructor-arg value="{{ required "ldap.groupSearchBase is required when LDAP authentication is enabled" .Values.ldap.groupSearchBase | html }}"/>
+            <beans:property name="searchSubtree" value="true"/>
+            <beans:property name="convertToUpperCase" value="true"/>
+            <beans:property name="groupRoleAttribute" value="cn"/>
+            <beans:property name="groupSearchFilter" value="{{ required "ldap.groupSearchFilter is required when LDAP authentication is enabled" .Values.ldap.groupSearchFilter | html }}"/>
+            <beans:property name="groupToRoleMap">
+              <beans:map>
+                {{- range $group := .Values.authentik.accessGroups }}
+                <beans:entry>
+                  <beans:key><beans:value>{{ $group | html }}</beans:value></beans:key>
+                  <beans:list>
+                    {{- range $.Values.authentik.proxyAuth.authorities }}
+                    <beans:value>{{ . | html }}</beans:value>
+                    {{- end }}
+                  </beans:list>
+                </beans:entry>
+                {{- end }}
+              </beans:map>
+            </beans:property>
+          </beans:bean>
+          {{- end }}
         </beans:beans>
 {{- end }}
 
@@ -499,7 +605,7 @@ persistence:
             subPath: 'prometheus-remotewrite.boot'
             readOnly: true
 {{- end }}
-{{- if .Values.authentik.proxyAuth.enabled }}
+{{- if or .Values.authentik.proxyAuth.enabled .Values.ldap.enabled }}
   proxy-auth:
     type: 'configMap'
     identifier: 'proxy-auth'
