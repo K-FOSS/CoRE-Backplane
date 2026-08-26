@@ -56,9 +56,6 @@ alloy-metrics:
         }
 
         prometheus.exporter.unix "node" {
-          procfs_path = "/host/proc"
-          sysfs_path  = "/host/sys"
-          rootfs_path = "/host/root"
         }
         prometheus.exporter.self "alloy" {}
 
@@ -111,29 +108,6 @@ alloy-metrics:
       value: dc1
     - name: CLUSTER
       value: k8s
-    mounts:
-      extra:
-      - name: host-root
-        mountPath: /host/root
-        readOnly: true
-      - name: host-proc
-        mountPath: /host/proc
-        readOnly: true
-      - name: host-sys
-        mountPath: /host/sys
-        readOnly: true
-  controller:
-    volumes:
-      extra:
-      - name: host-root
-        hostPath:
-          path: /
-      - name: host-proc
-        hostPath:
-          path: /proc
-      - name: host-sys
-        hostPath:
-          path: /sys
   rbac:
     create: false
   serviceAccount:
