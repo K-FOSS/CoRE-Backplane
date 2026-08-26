@@ -22,10 +22,10 @@ spec:
 
                     mode: SingleBinary
 
-                    mimirEnabled: true
+                    mimirEnabled: false
                     mimirBridgeEnabled: true
-                    mimirGlobalAffinity: local
-                    mimirGlobalShared: 'true'
+                    mimirGlobalAffinity: remote
+                    mimirGlobalShared: 'false'
 
                     # YXL is storage-bandwidth constrained. Bound accepted
                     # samples and serialize block uploads at this site only.
@@ -41,10 +41,14 @@ spec:
 
                     mode: SingleBinary
 
-                    mimirEnabled: false
+                    mimirEnabled: true
                     mimirBridgeEnabled: true
-                    mimirGlobalAffinity: remote
-                    mimirGlobalShared: 'false'
+                    mimirGlobalAffinity: local
+                    mimirGlobalShared: 'true'
+                    mimirIngestionRate: 500000
+                    mimirIngestionBurstSize: 1550000
+                    mimirRetentionPeriod: 12h
+                    mimirShipConcurrency: 1
 
           - clusters:
               selector:
