@@ -171,12 +171,26 @@ unmanaged `mgig-sw2` through an SFP+ to RJ45 connection. HPC3 therefore has
 both its documented 1 GbE connection to the UniFi USW Flex Mini and this
 separate 10 GbE path through the living-room switch.
 
+HPC3 interface mapping is `enp34s0f0`, the external dual-10GbE Thunderbolt 2
+NIC, to `mgig-sw2` port 5; `enp4s0f0` is the iMac 5K's internal NIC and connects
+to the UniFi USW Flex Mini port 3, configured as an access port on VLAN 121.
+The UniFi Flex Mini port 1 uplinks to `mgig-sw2` port 1, and port 2 is an
+access port on VLAN 150 for the Shaw/Rogers modem.
+
+The current Catalyst 3850 server-port assignments are:
+
+| Interface | Peer | Configuration |
+| --- | --- | --- |
+| `TenGigabitEthernet1/0/46` | `eno2.srv3.home2.yvr.resolvemy.host` | 10 GbE RJ45 802.1Q trunk; allowed VLANs 1, 20, 21, 30, 31, 50, 131, 150, 151, 1000; STP PortFast trunk |
+| `TenGigabitEthernet1/0/47` | `eno1.srv2.home2.yvr.resolvemy.host` | 10 GbE RJ45 802.1Q trunk; allowed VLANs 1, 5, 20, 21, 30, 31, 50, 150, 151, 1000; STP PortFast trunk; BPS history enabled; receive flow control desired; output hold queue 240000 |
+| `TenGigabitEthernet1/0/48` | `eno1.srv3.home2.yvr.resolvemy.host` | 10 GbE RJ45 802.1Q trunk; allowed VLANs 1, 20, 21, 30, 31, 50, 150, 151, 1000; STP PortFast trunk; output hold queue 18000 |
+
 The Catalyst 3850 has two physical room-to-room links to `mgig-sw2`:
 
 | Interface | Link and allowed VLANs | Switching/STP configuration |
 | --- | --- | --- |
-| `Te1/1/3` | 10 GbE fibre; VLANs 1, 5, 8, 20, 21, 30, 50, 121, 151, 666 | 802.1Q trunk; STP point-to-point link type |
-| `Te1/0/39` | 2.5 GbE copper; VLANs 1, 5, 7, 8, 20, 21, 121, 666 under normal operation | 802.1Q trunk; STP point-to-point link type |
+| `Te1/1/3` | 10 GbE fibre to `eth15.mgig-sw2.home2.yvr.resolvemy.host`; VLANs 1, 5, 8, 20, 21, 30, 50, 121, 151, 666 | 802.1Q trunk; BPS history enabled; receive flow control off; STP point-to-point; VLANs 1, 5, 20, 666 priority 64; output hold queue 240000 |
+| `Te1/0/39` | 2.5 GbE copper to `mgig-sw2.lvng-rm.home2.yvr.resolvemy.host` port 5; VLANs 1, 5, 7, 8, 20, 21, 121, 666 under normal operation | 802.1Q trunk; BPS history enabled; receive flow control off; STP point-to-point; VLANs 5, 7-8, 20, 121 priority 32; output hold queue 1000 |
 
 These links deliberately form a Layer-2 loop through the unmanaged YuanLey
 switch. The Catalyst 3850 controls the loop with per-VLAN Spanning Tree
@@ -190,8 +204,7 @@ VLAN.
 
 VLAN 150 is the Shaw/Rogers WAN VLAN. Its normal physical attachment is the
 direct 2.5 GbE modem connection on `TenGigabitEthernet1/0/41`, configured as
-access port VLAN 150 with description
-`serena-shawgers.home2.yvr.resolvemy.host` and PortFast enabled. VLAN 150 is
+an access port on VLAN 150 with PortFast enabled. VLAN 150 is
 normally absent from `Te1/0/39` and is not part of the normal STP-redundant LAN
 topology.
 
@@ -205,30 +218,22 @@ membership; it does not perform routing failover.
 
 ```text
 Bedroom / server area
+
   Cisco Catalyst 3850 (cpe-sw1)
   main managed access + 10 GbE server switch
-       | Te1/1/3 — 10 GbE fibre trunk (VLANs 1,5,8,20,21,30,50,121,151,666)
-       |\\
-       | +— Te1/0/41 — 2.5 GbE access VLAN 150 — Shaw/Rogers modem
-       |                              ^
-       |                              | alternate WAN path (EEM only)
-       | Te1/0/39 — 2.5 GbE copper trunk |
-       | VLANs 1,5,7,8,20,21,121,666     |
-       | (VLAN 150 added only during failover)
-       v                              |
-  living-room mgig-sw2                |
-  YuanLey unmanaged switch            |
-       | 1 GbE                         |
-       v                              |
-  UniFi USW Flex Mini ----------------+
-       /              \\
-    HPC3          Thunderbolt dock
-  iMac 5K          management device
-    ||
-    || 10 GbE Thunderbolt 2 (one port to SRV2, one port via SFP+ to RJ45)
-    ||
-  SRV2 — 10 GbE RJ45 — Catalyst 3850
-  SRV3 — 2 × 10 GbE RJ45 — Catalyst 3850
+    ├─ Te1/1/3 — 10 GbE fibre trunk ─┐
+    ├─ Te1/0/39 — 2.5 GbE copper trunk┴─ mgig-sw2 (YuanLey, unmanaged)
+    │                                  └─ SFP+→RJ45 — HPC3 Thunderbolt 2 (10 GbE)
+    ├─ 2 × 10 GbE RJ45 ─ SRV3
+    ├─ 10 GbE RJ45 ─ SRV2 ─ 10 GbE ─ HPC3 Thunderbolt 2 (10 GbE)
+    └─ Te1/0/41 — 2.5 GbE access VLAN 150 ───────────────┐
+                                                         │
+  mgig-sw2 port 1 ─ 1 GbE ─ UniFi USW Flex Mini port 1 ──┤
+       ├─ port 3 → HPC3 enp4s0f0 (1 GbE, access VLAN 121)│
+       ├─ port 2 → Shaw/Rogers modem (access VLAN 150)  │
+       └─ Thunderbolt dock (management device)           │
+                                                         v
+                                              Shaw/Rogers modem
 
   Te1/1/3 + Te1/0/39: intentional STP-controlled Layer-2 redundancy.
   VLAN 150: direct Te1/0/41 normally; EEM adds/removes it on Te1/0/39.
