@@ -189,7 +189,7 @@ The Catalyst 3850 has two physical room-to-room links to `mgig-sw2`:
 
 | Interface | Link and allowed VLANs | Switching/STP configuration |
 | --- | --- | --- |
-| `Te1/1/3` | 10 GbE fibre to `eth15.mgig-sw2.home2.yvr.resolvemy.host`; VLANs 1, 5, 8, 20, 21, 30, 50, 121, 151, 666 | 802.1Q trunk; BPS history enabled; receive flow control off; STP point-to-point; VLANs 1, 5, 20, 666 priority 64; output hold queue 240000 |
+| `Te1/1/3` | 10 GbE fibre to `mgig-sw2` port 6 (`p6.mgig-sw2.home2.yvr.resolvemy.host`); VLANs 1, 5, 8, 20, 21, 30, 50, 121, 151, 666 | 802.1Q trunk; BPS history enabled; receive flow control off; STP point-to-point; VLANs 1, 5, 20, 666 priority 64; output hold queue 240000 |
 | `Te1/0/39` | 2.5 GbE copper to `mgig-sw2.lvng-rm.home2.yvr.resolvemy.host` port 5; VLANs 1, 5, 7, 8, 20, 21, 121, 666 under normal operation | 802.1Q trunk; BPS history enabled; receive flow control off; STP point-to-point; VLANs 5, 7-8, 20, 121 priority 32; output hold queue 1000 |
 
 These links deliberately form a Layer-2 loop through the unmanaged YuanLey
@@ -239,7 +239,7 @@ membership; it does not perform routing failover.
 Bedroom / server area
 
   [Cisco Catalyst 3850: cpe-sw1]
-    ├─ Te1/1/3  10 GbE fibre trunk ─┐
+    ├─ Te1/1/3  10 GbE fibre trunk ─ mgig-sw2 p6
     ├─ Te1/0/39 2.5 GbE copper trunk ─┼─ [mgig-sw2: YuanLey, unmanaged]
     ├─ Te1/0/46 10 GbE RJ45 ─ SRV3 eno2
     ├─ Te1/0/48 10 GbE RJ45 ─ SRV3 eno1
