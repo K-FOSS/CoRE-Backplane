@@ -67,13 +67,11 @@ the deployment manifests and IPAM records.
 | CPU | 2 × Intel Xeon E5-2690 @ 2.90 GHz; 8 cores / 16 threads per CPU; 16 physical cores / 32 hardware threads total |
 | Memory | 384 GB DDR3 ECC; 24 × 16 GB, all 24 slots populated; dual-rank; rated 1600 MHz, operating at 1333 MHz |
 | DIMMs | 16 × Kingston `9965516-496.A00LF`; 8 × Hynix `HMT42GR7BFR4A-PB` |
-| Memory health | DIMM B2 degraded; iDRAC reports “Correctable Memory Error Log Limit Reached”. This is an active warning, not a declaration that the entire memory subsystem has failed. |
-| Storage controller | Dell PERC H710 Mini; status OK; encryption capable |
-| Virtual disk | RAID5; 64 KB stripe; Write Back Force / Read Ahead; 438,489,317,376 bytes; status **DEGRADED**; metadata span length 4 disks |
-| Physical disks currently detected | Bay 1, Bay 2, and Bay 5: Seagate `ST9146803SS`, 146,163,105,792 bytes each, SAS 6 Gb/s, healthy |
-| RAID warning | Metadata expects four members but only three disks are inventoried. The missing or failed fourth member explains the degraded virtual disk; its former bay is unknown. |
+| Storage controller | Dell PERC H710 Mini; encryption capable |
+| Virtual disk | RAID5; 64 KB stripe; Write Back Force / Read Ahead; 438,489,317,376 bytes; metadata span length 4 disks |
+| Physical disks currently detected | Bay 1, Bay 2, and Bay 5: Seagate `ST9146803SS`, 146,163,105,792 bytes each, SAS 6 Gb/s |
 | Networking | Integrated Broadcom BCM5720 (4 × 1 GbE); Intel XXV710 add-in (2 × 25 GbE SFP28), PCIe slot 3 |
-| Power | 1 × Dell 750 W PSU installed; slot 2 absent; current configuration is not redundant |
+| Power | 1 × Dell 750 W PSU installed; slot 2 absent |
 | Management | iDRAC7 Enterprise |
 
 ### May 2026 cluster additions
@@ -84,12 +82,12 @@ the deployment manifests and IPAM records.
 | --- | --- |
 | Platform / identity | Dell PowerEdge R620; added to the cluster in May 2026 |
 | CPU | 2 × Intel Xeon E5-2697 v2 @ 2.70 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
-| Memory | 128 GB DDR3 ECC; 8 × 16 GB in 8 of 24 slots; dual-rank; operating at 1333 MHz; all installed DIMMs healthy |
+| Memory | 128 GB DDR3 ECC; 8 × 16 GB in 8 of 24 slots; dual-rank; operating at 1333 MHz |
 | DIMMs | 5 × Hynix `HMT42GR7MFR4A-H9`; 3 × Hynix `HMT42GR7AFR4A-H9` |
-| Storage | Dell PERC H710 Mini, status OK, encryption capable; one HGST `HUC101212CSS600`, 1,199,638,052,864 bytes (~1.2 TB), SAS 6 Gb/s, bay 0, healthy |
-| Virtual disk | RAID0 single-disk span; 64 KB stripe; Write Back / Adaptive; Online / OK |
+| Storage | Dell PERC H710 Mini, encryption capable; one HGST `HUC101212CSS600`, 1,199,638,052,864 bytes (~1.2 TB), SAS 6 Gb/s, bay 0 |
+| Virtual disk | RAID0 single-disk span; 64 KB stripe; Write Back / Adaptive |
 | Networking | Integrated Intel I350-t rNDC; 4 × 1 GbE |
-| Power | 2 × Dell 750 W PSUs providing redundant power, both present and healthy |
+| Power | 2 × Dell 750 W PSUs providing redundant power |
 | Management | iDRAC7 Enterprise |
 
 #### SRV3
@@ -98,12 +96,12 @@ the deployment manifests and IPAM records.
 | --- | --- |
 | Platform / identity | Dell PowerEdge R620; added to the cluster in May 2026 |
 | CPU | 2 × Intel Xeon E5-2697 v2 @ 2.70 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
-| Memory | 128 GB DDR3 ECC; 8 × 16 GB in 8 of 24 slots; dual-rank; operating at 1333 MHz; all installed DIMMs healthy |
+| Memory | 128 GB DDR3 ECC; 8 × 16 GB in 8 of 24 slots; dual-rank; operating at 1333 MHz |
 | DIMMs | 8 × Hynix `HMT42GR7AFR4A-H9` |
-| Storage | Dell PERC H710 Mini, status OK, encryption capable; one HGST `HUC101212CSS600`, 1,199,638,052,864 bytes (~1.2 TB), SAS 6 Gb/s, bay 0, healthy |
-| Virtual disk | RAID0 single-disk span; 64 KB stripe; Write Back / No Read Ahead; Online / OK |
+| Storage | Dell PERC H710 Mini, encryption capable; one HGST `HUC101212CSS600`, 1,199,638,052,864 bytes (~1.2 TB), SAS 6 Gb/s, bay 0 |
+| Virtual disk | RAID0 single-disk span; 64 KB stripe; Write Back / No Read Ahead |
 | Networking | Integrated Intel I350-t rNDC; 4 × 1 GbE |
-| Power | 2 × Dell 750 W PSUs providing redundant power, both present and healthy |
+| Power | 2 × Dell 750 W PSUs providing redundant power |
 | Management | iDRAC7 Enterprise |
 
 #### SRV7
@@ -112,12 +110,12 @@ the deployment manifests and IPAM records.
 | --- | --- |
 | Platform / identity | Dell PowerEdge R720xd; added to the cluster in May 2026 |
 | CPU | 2 × Intel Xeon E5-2630 v2 @ 2.60 GHz; 6 cores / 12 threads per CPU; 12 physical cores / 24 hardware threads total |
-| Memory | 384 GB DDR3 ECC; 24 × 16 GB, all 24 slots populated; dual-rank; rated 1600 MHz, operating at 1333 MHz; all installed DIMMs healthy |
+| Memory | 384 GB DDR3 ECC; 24 × 16 GB, all 24 slots populated; dual-rank; rated 1600 MHz, operating at 1333 MHz |
 | DIMMs | Samsung `M393B2G70QH0-YK0` |
 | Storage/controller | Integrated Broadcom/LSI SAS2308 PCI-Express Fusion-MPT SAS-2 controller (PCI vendor/device Broadcom/LSI SAS2308) |
 | Storage limits | The current XML export has no normal DCIM controller, physical-disk, or virtual-disk records. RAID level, drive count/capacity, and virtual-disk layout are therefore unknown; any independently documented storage details not contradicted here remain valid. |
 | Networking | Integrated Intel I350-t rNDC (4 × 1 GbE); Mellanox ConnectX-3 Pro (`MT27520 Family [ConnectX-3 Pro]`) in PCIe Gen 3 x16 slot 6. Port count/link speed beyond existing independent documentation is unknown. |
-| Power | 2 × Dell 1100 W redundant PSUs, both present and healthy |
+| Power | 2 × Dell 1100 W redundant PSUs |
 | Management | iDRAC7 Enterprise |
 
 ### Scoped capacity totals
@@ -148,13 +146,11 @@ configuration, firmware, topology, address allocation, and out-of-band
 management paths are external dependencies of this chart and must be backed up
 and documented with the same care as the Kubernetes control plane.
 
-The Nexus 92160YC-X switches are separated by site; they are not configured as
-a redundant pair. Each site must therefore treat its local switch as a
-potential single point of failure unless other documented switching paths
-exist. Cross-site placement improves site-failure separation but does not
-provide local switching redundancy. Shared power, management, carrier,
-configuration, and routing-policy dependencies must still be considered
-explicitly.
+The Nexus 92160YC-X switches are separated by site and are not configured as a
+redundant pair. Having one Nexus at each site does not by itself provide local
+switching redundancy. Cross-site placement improves site-failure separation,
+while shared power, management, carrier, configuration, and routing-policy
+dependencies must still be considered explicitly.
 
 ## Operator workflow
 
@@ -175,14 +171,10 @@ out-of-band-management network.
 
 ## Availability experience
 
-The operator reports that the platform is normally available, with only a few
-hours of interruption in a typical month and an occasional day of disruption
-roughly every six months, usually during scheduled work.
-
-This is useful operational history, but it is not yet a measured service-level
-objective. Planned maintenance, total outages, partial degradation, and
-individual service failures need consistent definitions before an availability
-percentage can be asserted.
+No formal measured service-level objective is currently asserted. Planned
+maintenance, total outages, partial degradation, and individual service
+failures need consistent definitions before an availability percentage can be
+asserted.
 
 The first services worth measuring from the user's perspective are:
 
