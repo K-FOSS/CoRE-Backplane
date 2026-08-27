@@ -194,11 +194,27 @@ The Catalyst 3850 has two physical room-to-room links to `mgig-sw2`:
 
 These links deliberately form a Layer-2 loop through the unmanaged YuanLey
 switch. The Catalyst 3850 controls the loop with per-VLAN Spanning Tree
-behavior. `mgig-sw2` transparently forwards Ethernet frames and BPDUs; it does
-not make STP forwarding or blocking decisions. Neither link is universally
-primary or backup: STP operates per VLAN, the trunks carry different VLAN
-sets, their port priorities differ, and the forwarding state depends on the
-VLAN.
+behavior. `mgig-sw2` acts as an unmanaged, transparent Layer-2 segment; the
+Catalyst 3850 makes the STP forwarding or blocking decisions. Neither link is
+universally primary or backup: STP operates per VLAN, the trunks carry
+different VLAN sets, their port priorities differ, and the forwarding state
+depends on the VLAN.
+
+The resulting STP path choices can be read as follows (VLAN 150 is excluded
+and uses the separate EEM failover described below):
+
+| VLANs | Te1/1/3 | Te1/0/39 | STP path guidance |
+| --- | --- | --- | --- |
+| 1, 666 | Allowed; priority 64 | Allowed; default priority | Te1/1/3 is preferred by its lower configured priority; Te1/0/39 can be blocking. |
+| 5, 20 | Allowed; priority 64 | Allowed; priority 32 | Te1/0/39 is preferred by its lower configured priority; Te1/1/3 can be blocking. |
+| 8 | Allowed; default priority | Allowed; priority 32 | Te1/0/39 is preferred by its lower configured priority. |
+| 21 | Allowed; default priority | Allowed; default priority | STP selects using the remaining topology and bridge/path information. |
+| 7, 121 | Not allowed | Allowed | Te1/0/39 is the only trunk path. |
+| 30, 50, 151 | Allowed | Not allowed | Te1/1/3 is the only trunk path. |
+
+“Preferred” describes the configured priority bias, not a permanent primary
+link: STP may change forwarding or blocking state when topology or upstream
+root-path conditions change.
 
 #### VLAN 150 WAN failover
 
@@ -208,8 +224,11 @@ an access port on VLAN 150 with PortFast enabled. VLAN 150 is
 normally absent from `Te1/0/39` and is not part of the normal STP-redundant LAN
 topology.
 
-Catalyst IOS Embedded Event Manager provides physical-path failover. When
-`Te1/0/41` goes down, the `VLAN150_FAILOVER_ENABLE` applet executes
+Catalyst IOS Embedded Event Manager provides physical-path failover. EEM
+triggers on loss of Ethernet link/carrier on `Te1/0/41`; an upstream
+Shaw/Rogers outage that leaves the Ethernet link up does not trigger this
+mechanism. When `Te1/0/41` goes down, the `VLAN150_FAILOVER_ENABLE` applet
+executes
 `switchport trunk allowed vlan add 150` on `Te1/0/39`, extending the WAN VLAN
 through the living-room path. When the direct link recovers, the
 `VLAN150_FAILOVER_DISABLE` applet executes
@@ -219,21 +238,29 @@ membership; it does not perform routing failover.
 ```text
 Bedroom / server area
 
-  Cisco Catalyst 3850 (cpe-sw1)
-  main managed access + 10 GbE server switch
-    ├─ Te1/1/3 — 10 GbE fibre trunk ─┐
-    ├─ Te1/0/39 — 2.5 GbE copper trunk┴─ mgig-sw2 (YuanLey, unmanaged)
-    │                                  └─ SFP+→RJ45 — HPC3 Thunderbolt 2 (10 GbE)
-    ├─ 2 × 10 GbE RJ45 ─ SRV3
-    ├─ 10 GbE RJ45 ─ SRV2 ─ 10 GbE ─ HPC3 Thunderbolt 2 (10 GbE)
-    └─ Te1/0/41 — 2.5 GbE access VLAN 150 ───────────────┐
-                                                         │
-  mgig-sw2 port 1 ─ 1 GbE ─ UniFi USW Flex Mini port 1 ──┤
-       ├─ port 3 → HPC3 enp4s0f0 (1 GbE, access VLAN 121)│
-       ├─ port 2 → Shaw/Rogers modem (access VLAN 150)  │
-       └─ Thunderbolt dock (management device)           │
-                                                         v
-                                              Shaw/Rogers modem
+  [Cisco Catalyst 3850: cpe-sw1]
+    ├─ Te1/1/3  10 GbE fibre trunk ─┐
+    ├─ Te1/0/39 2.5 GbE copper trunk ─┼─ [mgig-sw2: YuanLey, unmanaged]
+    ├─ Te1/0/46 10 GbE RJ45 ─ SRV3 eno2
+    ├─ Te1/0/48 10 GbE RJ45 ─ SRV3 eno1
+    └─ Te1/0/47 10 GbE RJ45 ─ SRV2 eno1 ─ 10 GbE ─ HPC3 TB2 port 1
+
+Living room
+
+  [mgig-sw2]
+    ├─ SFP+→RJ45 ─ HPC3 enp34s0f0 (external dual-10 GbE Thunderbolt 2 NIC)
+    └─ port 1 ─ 1 GbE ─ [UniFi USW Flex Mini: port 1]
+                         ├─ port 3, access VLAN 121 ─ HPC3 enp4s0f0 (internal NIC)
+                         ├─ port 2, access VLAN 150 ─ Shaw/Rogers modem
+                         └─ Thunderbolt dock (management device)
+
+WAN paths (one modem)
+
+  [Catalyst Te1/0/41]
+       └─ direct 2.5 GbE access VLAN 150 ───────────────┐
+  [Flex Mini port 2, access VLAN 150] ──────────────────┤
+                                                        v
+                                              [Shaw/Rogers modem]
 
   Te1/1/3 + Te1/0/39: intentional STP-controlled Layer-2 redundancy.
   VLAN 150: direct Te1/0/41 normally; EEM adds/removes it on Te1/0/39.
