@@ -166,14 +166,16 @@ management laptop or iPad Pro.
 
 The Catalyst 3850 also provides the server-area 10 GbE links: two 10 GbE
 RJ45 links terminate on SRV3, and one 10 GbE RJ45 link terminates on SRV2.
-SRV2's other 10 GbE port is a direct link to one of HPC3's two 10 GbE
-Thunderbolt 2 ports. HPC3's other Thunderbolt 2 port connects to the
-unmanaged `mgig-sw2` through an SFP+ to RJ45 connection. HPC3 therefore has
-both its documented 1 GbE connection to the UniFi USW Flex Mini and this
-separate 10 GbE path through the living-room switch.
+HPC3 uses one Thunderbolt 2 port, connected to a Sonnet Twin 10G two-port
+dual-10G NIC. One Sonnet NIC port connects to SRV2's other 10 GbE port, and
+the other connects to the unmanaged `mgig-sw2` through an SFP+ to RJ45
+connection. SRV2 `eno2` connects to HPC3 `enp34s0f1` through the Sonnet NIC.
+HPC3 therefore has both its documented 1 GbE connection to the
+UniFi USW Flex Mini and this separate 10 GbE path through the living-room
+switch.
 
-HPC3 interface mapping is `enp34s0f0`, the external dual-10GbE Thunderbolt 2
-NIC, to `mgig-sw2` port 5; `enp4s0f0` is the iMac 5K's internal NIC and connects
+HPC3 interface mapping is `enp34s0f0` on the external Sonnet Twin 10G NIC to
+`mgig-sw2` port 5; `enp4s0f0` is the iMac 5K's internal NIC and connects
 to the UniFi USW Flex Mini on an access port on VLAN 121. The UniFi Flex Mini
 port 1 uplinks to `mgig-sw2` port 1, port 2 is an access port on VLAN 150 for
 the Shaw/Rogers modem. The GOOVEE star projector is connected to `mgig-sw2`.
@@ -231,6 +233,7 @@ flowchart LR
     dock["Thunderbolt dock<br/>management device"]
   end
   hpc3["HPC3 iMac 5K"]
+  sonnet["Sonnet Twin 10G<br/>2-port dual-10G NIC"]
   modem["Shaw/Rogers modem"]
 
   cpe -- "Te1/1/3 · 10 GbE fibre · mgig p6" --- mgig
@@ -238,8 +241,9 @@ flowchart LR
   cpe -- "Te1/0/46 · 10 GbE RJ45" --- srv3
   cpe -- "Te1/0/48 · 10 GbE RJ45" --- srv3
   cpe -- "Te1/0/47 · 10 GbE RJ45" --- srv2
-  srv2 -- "10 GbE · Thunderbolt 2" --- hpc3
-  mgig -- "port 5 · SFP+→RJ45 · 10 GbE · enp34s0f0" --- hpc3
+  hpc3 -- "one used Thunderbolt 2 port" --- sonnet
+  srv2 -- "eno2 ↔ enp34s0f1 · 10 GbE" --- sonnet
+  mgig -- "port 5 · SFP+→RJ45 · 10 GbE · enp34s0f0" --- sonnet
   mgig -- "port 4 · 2.5 GbE" --- laptop
   mgig -- "port 1 · 1 GbE" --- flex
   flex -- "access VLAN 121 · enp4s0f0" --- hpc3
