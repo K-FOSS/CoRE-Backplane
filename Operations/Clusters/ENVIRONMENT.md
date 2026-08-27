@@ -158,8 +158,8 @@ The Home2 YVR network uses `cpe-sw1.home2.yvr.resolvemy.host`, the Cisco
 Catalyst 3850 in the bedroom/server area. It is the main managed access switch
 and the main 10 GbE server switch. Living-room `mgig-sw2` is an unmanaged
 YuanLey multi-gigabit switch with 4 × 2.5 GbE copper ports and 2 × 10 GbE SFP
-ports. It connects the
-Framework-mainboard Laptop2 node. A UniFi USW Flex Mini is downstream of
+ports. It connects the Framework-mainboard Laptop2 node at 2.5 GbE on port 4.
+It also connects a UniFi USW Flex Mini, which is downstream of
 `mgig-sw2` over 1 GbE; it connects HPC3 (the iMac 5K compute node) at 1 GbE,
 the Shaw/Rogers modem, and the Thunderbolt dock used for wired access by a
 management laptop or iPad Pro.
@@ -174,9 +174,10 @@ separate 10 GbE path through the living-room switch.
 
 HPC3 interface mapping is `enp34s0f0`, the external dual-10GbE Thunderbolt 2
 NIC, to `mgig-sw2` port 5; `enp4s0f0` is the iMac 5K's internal NIC and connects
-to the UniFi USW Flex Mini port 3, configured as an access port on VLAN 121.
-The UniFi Flex Mini port 1 uplinks to `mgig-sw2` port 1, and port 2 is an
-access port on VLAN 150 for the Shaw/Rogers modem.
+to the UniFi USW Flex Mini on an access port on VLAN 121. The UniFi Flex Mini
+port 1 uplinks to `mgig-sw2` port 1, port 2 is an access port on VLAN 150 for
+the Shaw/Rogers modem, and port 3 is a spare PoE port used to charge a phone or
+power a GOOVEE star projector.
 
 The current Catalyst 3850 server-port assignments are:
 
@@ -217,6 +218,38 @@ and uses the separate EEM failover described below):
 link: STP may change forwarding or blocking state when topology or upstream
 root-path conditions change.
 
+```mermaid
+flowchart LR
+  subgraph bedroom["Bedroom / server area"]
+    cpe["Cisco Catalyst 3850<br/>cpe-sw1.home2.yvr.resolvemy.host"]
+    srv2["SRV2"]
+    srv3["SRV3"]
+  end
+  subgraph living["Living room"]
+    mgig["mgig-sw2<br/>YuanLey unmanaged"]
+    flex["UniFi USW Flex Mini"]
+    laptop["Framework-mainboard Laptop2"]
+    dock["Thunderbolt dock<br/>management device"]
+  end
+  hpc3["HPC3 iMac 5K"]
+  modem["Shaw/Rogers modem"]
+
+  cpe -- "Te1/1/3 · 10 GbE fibre · mgig p6" --- mgig
+  cpe -- "Te1/0/39 · 2.5 GbE copper trunk" --- mgig
+  cpe -- "Te1/0/46 · 10 GbE RJ45" --- srv3
+  cpe -- "Te1/0/48 · 10 GbE RJ45" --- srv3
+  cpe -- "Te1/0/47 · 10 GbE RJ45" --- srv2
+  srv2 -- "10 GbE · Thunderbolt 2" --- hpc3
+  mgig -- "port 5 · SFP+→RJ45 · 10 GbE · enp34s0f0" --- hpc3
+  mgig -- "port 4 · 2.5 GbE" --- laptop
+  mgig -- "port 1 · 1 GbE" --- flex
+  flex -- "access VLAN 121 · enp4s0f0" --- hpc3
+  flex -- "port 3 · spare PoE" --- phone["Phone / GOOVEE star projector"]
+  flex --- dock
+  cpe -- "Te1/0/41 · direct 2.5 GbE · VLAN 150" --- modem
+  flex -- "port 2 · access VLAN 150 · EEM alternate" --- modem
+```
+
 #### VLAN 150 WAN failover
 
 VLAN 150 is the Shaw/Rogers WAN VLAN. Its normal physical attachment is the
@@ -235,37 +268,6 @@ through the living-room path. When the direct link recovers, the
 `VLAN150_FAILOVER_DISABLE` applet executes
 `switchport trunk allowed vlan remove 150` on `Te1/0/39`. EEM changes VLAN
 membership; it does not perform routing failover.
-
-```text
-Bedroom / server area
-
-  [Cisco Catalyst 3850: cpe-sw1]
-    ├─ Te1/1/3  10 GbE fibre trunk ─ mgig-sw2 p6
-    ├─ Te1/0/39 2.5 GbE copper trunk ─┼─ [mgig-sw2: YuanLey, unmanaged]
-    ├─ Te1/0/46 10 GbE RJ45 ─ SRV3 eno2
-    ├─ Te1/0/48 10 GbE RJ45 ─ SRV3 eno1
-    └─ Te1/0/47 10 GbE RJ45 ─ SRV2 eno1 ─ 10 GbE ─ HPC3 TB2 port 1
-
-Living room
-
-  [mgig-sw2]
-    ├─ SFP+→RJ45 ─ HPC3 enp34s0f0 (external dual-10 GbE Thunderbolt 2 NIC)
-    └─ port 1 ─ 1 GbE ─ [UniFi USW Flex Mini: port 1]
-                         ├─ port 3, access VLAN 121 ─ HPC3 enp4s0f0 (internal NIC)
-                         ├─ port 2, access VLAN 150 ─ Shaw/Rogers modem
-                         └─ Thunderbolt dock (management device)
-
-WAN paths (one modem)
-
-  [Catalyst Te1/0/41]
-       └─ direct 2.5 GbE access VLAN 150 ───────────────┐
-  [Flex Mini port 2, access VLAN 150] ──────────────────┤
-                                                        v
-                                              [Shaw/Rogers modem]
-
-  Te1/1/3 + Te1/0/39: intentional STP-controlled Layer-2 redundancy.
-  VLAN 150: direct Te1/0/41 normally; EEM adds/removes it on Te1/0/39.
-```
 
 ## Operator workflow
 
