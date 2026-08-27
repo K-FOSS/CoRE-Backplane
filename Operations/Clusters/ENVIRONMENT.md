@@ -5,8 +5,8 @@ chart and Bare Metal Provisioning System are being developed. It is deployment
 context, not a statement of the chart's minimum requirements or a portable
 reference architecture.
 
-Inventory and capacity figures are operator-reported and current as of
-2026-07-27. Keep this document synchronized with the inventory source of truth
+Inventory and capacity figures are operator-reported and current as of August
+2026. Keep this document synchronized with the inventory source of truth
 as the fleet changes.
 
 ## Operational scope
@@ -46,6 +46,91 @@ fleet.
 
 Hardware inventory should eventually be generated from NetBox/IPAM rather than
 maintained manually in this document.
+
+## dc1.yxl.resolvemy.host hardware inventory
+
+The following records are the authoritative hardware inventory for the YXL
+data-centre systems as of August 2026. Names in this section are canonical;
+legacy identifiers are intentionally omitted from this public documentation.
+Site, rack,
+addressing, Kubernetes placement, and workload assignments remain defined by
+the deployment manifests and IPAM records.
+
+### Legacy K3s infrastructure
+
+#### Infra1
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Dell PowerEdge R620; acquired on eBay in 2018 |
+| Role and software | Legacy K3s server; Flatcar Container Linux; not a May 2026 cluster addition |
+| CPU | 2 × Intel Xeon E5-2690 @ 2.90 GHz; 8 cores / 16 threads per CPU; 16 physical cores / 32 hardware threads total |
+| Memory | 384 GB DDR3 ECC; 24 × 16 GB, all 24 slots populated; dual-rank; rated 1600 MHz, operating at 1333 MHz |
+| DIMMs | 16 × Kingston `9965516-496.A00LF`; 8 × Hynix `HMT42GR7BFR4A-PB` |
+| Memory health | DIMM B2 degraded; iDRAC reports “Correctable Memory Error Log Limit Reached”. This is an active warning, not a declaration that the entire memory subsystem has failed. |
+| Storage controller | Dell PERC H710 Mini; firmware `21.3.5-0002`; status OK; encryption capable |
+| Virtual disk | RAID5; 64 KB stripe; Write Back Force / Read Ahead; 438,489,317,376 bytes; status **DEGRADED**; metadata span length 4 disks |
+| Physical disks currently detected | Bay 1, Bay 2, and Bay 5: Seagate `ST9146803SS`, 146,163,105,792 bytes each, SAS 6 Gb/s, healthy |
+| RAID warning | Metadata expects four members but only three disks are inventoried. The missing or failed fourth member explains the degraded virtual disk; its former bay is unknown. |
+| Networking | Integrated Broadcom BCM5720 (4 × 1 GbE); Intel XXV710 add-in (2 × 25 GbE SFP28), PCIe slot 3 |
+| Power | 1 × Dell 750 W PSU installed; slot 2 absent; current configuration is not redundant |
+| Management / firmware | iDRAC7 Enterprise; iDRAC `2.61.60.60`; BIOS `2.9.0` |
+
+### May 2026 cluster additions
+
+#### SRV1
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Dell PowerEdge R620; added to the cluster in May 2026 |
+| CPU | 2 × Intel Xeon E5-2697 v2 @ 2.70 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
+| Memory | 128 GB DDR3 ECC; 8 × 16 GB in 8 of 24 slots; dual-rank; operating at 1333 MHz; all installed DIMMs healthy |
+| DIMMs | 5 × Hynix `HMT42GR7MFR4A-H9`; 3 × Hynix `HMT42GR7AFR4A-H9` |
+| Storage | Dell PERC H710 Mini, firmware `21.3.5-0002`, status OK, encryption capable; one HGST `HUC101212CSS600`, 1,199,638,052,864 bytes (~1.2 TB), SAS 6 Gb/s, bay 0, healthy |
+| Virtual disk | RAID0 single-disk span; 64 KB stripe; Write Back / Adaptive; Online / OK |
+| Networking | Integrated Intel I350-t rNDC; 4 × 1 GbE |
+| Power | 2 × Dell 750 W PSUs providing redundant power, both present and healthy |
+| Management / firmware | iDRAC7 Enterprise; iDRAC `2.65.65.65`; BIOS `2.9.0` |
+
+#### SRV3
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Dell PowerEdge R620; added to the cluster in May 2026 |
+| CPU | 2 × Intel Xeon E5-2697 v2 @ 2.70 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
+| Memory | 128 GB DDR3 ECC; 8 × 16 GB in 8 of 24 slots; dual-rank; operating at 1333 MHz; all installed DIMMs healthy |
+| DIMMs | 8 × Hynix `HMT42GR7AFR4A-H9` |
+| Storage | Dell PERC H710 Mini, firmware `21.3.5-0002`, status OK, encryption capable; one HGST `HUC101212CSS600`, 1,199,638,052,864 bytes (~1.2 TB), SAS 6 Gb/s, bay 0, healthy |
+| Virtual disk | RAID0 single-disk span; 64 KB stripe; Write Back / No Read Ahead; Online / OK |
+| Networking | Integrated Intel I350-t rNDC; 4 × 1 GbE |
+| Power | 2 × Dell 750 W PSUs providing redundant power, both present and healthy |
+| Management / firmware | iDRAC7 Enterprise; iDRAC `2.65.65.65`; BIOS `2.9.0` |
+
+#### SRV7
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Dell PowerEdge R720xd; added to the cluster in May 2026 |
+| CPU | 2 × Intel Xeon E5-2630 v2 @ 2.60 GHz; 6 cores / 12 threads per CPU; 12 physical cores / 24 hardware threads total |
+| Memory | 384 GB DDR3 ECC; 24 × 16 GB, all 24 slots populated; dual-rank; rated 1600 MHz, operating at 1333 MHz; all installed DIMMs healthy |
+| DIMMs | Samsung `M393B2G70QH0-YK0` |
+| Storage/controller | Integrated Broadcom/LSI SAS2308 PCI-Express Fusion-MPT SAS-2 controller (PCI vendor/device Broadcom/LSI SAS2308) |
+| Storage limits | The current XML export has no normal DCIM controller, physical-disk, or virtual-disk records. RAID level, drive count/capacity, and virtual-disk layout are therefore unknown; any independently documented storage details not contradicted here remain valid. |
+| Networking | Integrated Intel I350-t rNDC (4 × 1 GbE); Mellanox ConnectX-3 Pro (`MT27520 Family [ConnectX-3 Pro]`) in PCIe Gen 3 x16 slot 6. Port count/link speed beyond existing independent documentation is unknown. |
+| Power | 2 × Dell 1100 W redundant PSUs, both present and healthy |
+| Management / firmware | iDRAC7 Enterprise; iDRAC `2.65.65.65`; BIOS `2.9.0` |
+
+### Scoped capacity totals
+
+These totals are intentionally separate from the broad fleet estimates above:
+
+| Scope | Servers | Physical cores | Hardware threads | Installed RAM |
+| --- | ---: | ---: | ---: | ---: |
+| May 2026 cluster additions (SRV1 + SRV3 + SRV7) | 3 | 60 | 120 | 640 GB |
+| All four records in this update (Infra1 + SRV1 + SRV3 + SRV7) | 4 | 76 | 152 | 1,024 GB |
+
+Infra1's capacity is not included in the May 2026 cluster-additions total
+because it remains a legacy K3s system.
 
 ## Network fabric
 
