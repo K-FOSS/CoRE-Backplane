@@ -130,6 +130,81 @@ These totals are intentionally separate from the broad fleet estimates above:
 Infra1's capacity is not included in the May 2026 cluster-additions total
 because it remains a legacy K3s system.
 
+## YVR hardware inventory
+
+The following YVR records capture stable maintenance information for the
+inventoried systems.
+
+#### SRV3
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Canonical name SRV3; hostname `srv3.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
+| CPU | 2 × Intel Xeon E5-2680 v3 @ 2.50 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
+| Memory | 64 GB DDR4 ECC; 2 × 32 GB; quad-rank; 2133 MHz |
+| DIMMs | 2 × Samsung `M386A4G40DM0-CPB`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
+| Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
+| Backplane | 24 drive slots |
+| Physical storage currently inventoried | Bay 0: HGST `HUC101212CSS600`, ~1.2 TB, 2.5-inch SAS 6 Gb/s |
+| Storage layout | No RAID or virtual-disk layout is documented; the inventory export contains no virtual-disk records. |
+| Networking | Intel X540/I350 four-port rNDC: 2 × 10 GbE Base-T and 2 × 1 GbE Base-T |
+| Power | 2 × Dell 750 W PSUs installed |
+| Management | iDRAC8 Enterprise |
+
+#### SRV2
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Canonical name SRV2; hostname `srv2.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
+| CPU | 2 × Intel Xeon E5-2650 v4 @ 2.20 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
+| Memory | 32 GB DDR4 ECC; 2 × 16 GB; dual-rank; 2133 MHz |
+| DIMMs | 2 × Micron `36ASF2G72PZ-2G1A2`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
+| Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
+| Backplane | 14 drive slots reported by inventory |
+| Physical storage currently inventoried | Bay 12: HGST `HUC101212CSS600`, ~1.2 TB SAS HDD; Bay 13: WDC `WD5000LPLX`, ~500 GB SATA HDD |
+| Storage layout | Both inventoried disks are exposed as Non-RAID; no virtual-disk record is present. |
+| Networking | Intel X540/I350 four-port rNDC: 2 × 10 GbE Base-T and 2 × 1 GbE Base-T |
+| Power | 2 × Dell 750 W PSUs installed |
+| Management | iDRAC8 Enterprise |
+
+### Non-rack compute nodes
+
+#### HPC2
+
+| Field | Current record |
+| --- | --- |
+| Platform | Custom workstation-class node; Gigabyte AORUS Gaming 7 motherboard |
+| CPU | Intel Core i7-8700K; 6 cores / 12 threads |
+| Memory | 32 GB DDR4-3600 installed |
+| GPU | NVIDIA GeForce RTX 2080 Founders Edition |
+| PSU | Corsair SF750 (2024), 750 W, 80 Plus Platinum |
+| Storage | 1 TB NVMe (historically documented) |
+| Role | Talos/Kubernetes compute node with KubeVirt and GPU workloads |
+
+#### HPC3
+
+| Field | Current record |
+| --- | --- |
+| Platform | Apple iMac17,1, Retina 5K 27-inch, Late 2015 |
+| CPU | Intel Core i7-6700K; 4 cores / 8 threads |
+| Memory | 32 GB DDR3-1867 installed |
+| GPU | AMD Radeon R9 M395, 2 GB GDDR5 |
+| Storage | 2 TB NVMe SSD plus 2 TB HDD |
+| Role | Talos/Kubernetes compute node |
+| Networking | Built-in 1 GbE interface to the UniFi USW Flex Mini on VLAN 121; Sonnet Twin 10G dual-port adapter over Thunderbolt 2; `enp34s0f0` at 10 GbE to `mgig-sw2`; `enp34s0f1` at 10 GbE directly to SRV2 `eno2` |
+
+#### Laptop2
+
+| Field | Current record |
+| --- | --- |
+| Identity / platform | Laptop2; Framework Laptop 13 with 11th-generation Intel mainboard |
+| CPU | Intel Core i5-1135G7, Tiger Lake; 4 cores / 8 threads |
+| Role | Talos/Kubernetes worker-class node with KubeVirt capability |
+| Memory | 40 GiB installed |
+| Networking | 2.5 GbE connection to living-room `mgig-sw2` port 4 |
+| Physical placement | Home2/YVR living-room network segment |
+| Platform characteristics | Mobile/desktop-class compute platform with different power, storage, and remote-management characteristics from the PowerEdge fleet |
+
 ## Network fabric
 
 The switching fleet consists of:
@@ -153,6 +228,9 @@ while shared power, management, carrier, configuration, and routing-policy
 dependencies must still be considered explicitly.
 
 ### YVR network topology
+
+See the [YVR hardware inventory](#yvr-hardware-inventory) for the SRV3
+maintenance record used by this topology.
 
 The Home2 YVR network uses `cpe-sw1.home2.yvr.resolvemy.host`, the Cisco
 Catalyst 3850 in the bedroom/server area. It is the main managed access switch
