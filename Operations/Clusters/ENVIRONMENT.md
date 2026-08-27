@@ -176,8 +176,7 @@ HPC3 interface mapping is `enp34s0f0`, the external dual-10GbE Thunderbolt 2
 NIC, to `mgig-sw2` port 5; `enp4s0f0` is the iMac 5K's internal NIC and connects
 to the UniFi USW Flex Mini on an access port on VLAN 121. The UniFi Flex Mini
 port 1 uplinks to `mgig-sw2` port 1, port 2 is an access port on VLAN 150 for
-the Shaw/Rogers modem, and port 3 is a spare PoE port used to charge a phone or
-power a GOOVEE star projector.
+the Shaw/Rogers modem. The GOOVEE star projector is connected to `mgig-sw2`.
 
 The current Catalyst 3850 server-port assignments are:
 
@@ -244,7 +243,7 @@ flowchart LR
   mgig -- "port 4 · 2.5 GbE" --- laptop
   mgig -- "port 1 · 1 GbE" --- flex
   flex -- "access VLAN 121 · enp4s0f0" --- hpc3
-  flex -- "port 3 · spare PoE" --- phone["Phone / GOOVEE star projector"]
+  mgig --- projector["GOOVEE star projector"]
   flex --- dock
   cpe -- "Te1/0/41 · direct 2.5 GbE · VLAN 150" --- modem
   flex -- "port 2 · access VLAN 150 · EEM alternate" --- modem
