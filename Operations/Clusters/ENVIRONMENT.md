@@ -152,12 +152,13 @@ switching redundancy. Cross-site placement improves site-failure separation,
 while shared power, management, carrier, configuration, and routing-policy
 dependencies must still be considered explicitly.
 
-### Home2/YVR physical network topology
+### YVR network topology
 
-`cpe-sw1.home2.yvr.resolvemy.host` is the Cisco Catalyst 3850 in the
-bedroom/server area. It is the main managed access switch and the main 10 GbE
-server switch. The living-room `mgig-sw2` is an unmanaged YuanLey multi-gigabit
-switch with 4 × 2.5 GbE copper ports and 2 × 10 GbE SFP ports. It connects the
+The Home2 YVR network uses `cpe-sw1.home2.yvr.resolvemy.host`, the Cisco
+Catalyst 3850 in the bedroom/server area. It is the main managed access switch
+and the main 10 GbE server switch. Living-room `mgig-sw2` is an unmanaged
+YuanLey multi-gigabit switch with 4 × 2.5 GbE copper ports and 2 × 10 GbE SFP
+ports. It connects the
 Framework-mainboard Laptop2 node. A UniFi USW Flex Mini is downstream of
 `mgig-sw2` over 1 GbE; it connects HPC3 (the iMac 5K compute node) at 1 GbE,
 the Shaw/Rogers modem, and the Thunderbolt dock used for wired access by a
