@@ -25,17 +25,25 @@ Every selected cluster receives:
 - optional LDAP, RADIUS, and proxy outpost Deployments and Services; and
 - optional Envoy `Backend` objects for peer Authentik clusters.
 
-The HTTPRoute sends traffic to the local Authentik server and every configured
-peer backend with equal weight. This provides multi-cluster reachability, but
-it also means a bad peer endpoint can affect the shared identity hostname.
+The HTTPRoute hostnames come from `route.hostnames`, which the fleet
+ApplicationSet currently sets to `idp.mylogin.space`. It sends traffic to the
+local Authentik server and every configured peer backend with equal weight.
+This provides multi-cluster reachability, but it also means a bad peer endpoint
+can affect the shared identity hostname. The same external origin is supplied
+to Authentik through `AUTHENTIK_WEB__BASE_URL`; Authentik requires only the
+scheme and host, without a path. See the [Authentik base URL
+documentation](https://docs.goauthentik.io/install-config/configuration/#authentik_web__base_url).
 
 Authentik uses the per-cluster PGPool hostname for normal ORM traffic and the
 matching per-cluster PostgreSQL master hostname for session-scoped operations.
-The fleet ApplicationSet sets `AUTHENTIK_POSTGRESQL__DIRECT__HOST` to the
-`psql-int.<cluster>.<datacenter>.<region>.mylogin.space` service and the
-upstream chart's `authentik.authentik.postgresql.host` to
-`psql.<cluster>.<datacenter>.<region>.mylogin.space`, the PGPool service. This
-split is required by Authentik 2026.8 when the normal endpoint is pooled:
+The chart's `aaa-authentik-environment` ConfigMap supplies the cluster,
+datacenter, region, and domain components. Kubernetes environment replacement
+then builds the `psql.<cluster>.<datacenter>.<region>.<domain>` PGPool endpoint
+and the `psql-int.<cluster>.<datacenter>.<region>.<domain>` direct endpoint. This
+environment and all Authentik environment variables are defined in the AAA
+chart values, so ApplicationSet merging cannot discard the secret-backed
+database and email entries. This split is required by Authentik 2026.8 when the
+normal endpoint is pooled:
 [Authentik's PostgreSQL pooler guidance](https://docs.goauthentik.io/install-config/configuration/#session-scoped-operations-and-transaction-mode-poolers)
 documents that Channels LISTEN/NOTIFY, worker advisory locks, and startup
 migrations need a stable session. Server replicas default to two with a

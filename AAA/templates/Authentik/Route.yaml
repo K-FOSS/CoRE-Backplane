@@ -20,7 +20,9 @@ spec:
       sectionName: https-myloginspace
 
   hostnames:
-    - idp.mylogin.space
+    {{- range required "route.hostnames must contain at least one hostname" .Values.route.hostnames }}
+    - {{ . | quote }}
+    {{- end }}
   rules:
     - backendRefs:
         - group: ''

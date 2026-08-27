@@ -93,6 +93,8 @@ spec:
 
                 region: {{ .values.region }}
 
+                domainName: 'mylogin.space'
+
                 hub: {{ .values.hub }}
 
                 readReplica:
@@ -102,6 +104,10 @@ spec:
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+
+                route:
+                  hostnames:
+                    - 'idp.mylogin.space'
 
                 authentik:
                   ldap:
@@ -114,15 +120,6 @@ spec:
                     clusterMesh:
                       enabled: {{ .values.radiusClusterMeshEnabled }}
 
-                  authentik:
-                    postgresql:
-                      # -- set the postgresql hostname to talk to
-                      # if unset and .Values.postgresql.enabled == true, will generate the default
-                      # @default -- `{{ .Release.Name }}-postgresql`
-                      # Normal ORM traffic uses the local PGPool Service.
-                      host: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
-                      port: 5432
-                  
                   server:
                     service:
                       annotations:
@@ -134,22 +131,6 @@ spec:
                     additionalLabels:
                       resolvemy.host/env: '{{ .values.environment }}'
                       resolvemy.host/priority: 'critical'
-
-                    env:
-                      - name: AUTHENTIK_WEB__WORKERS
-                        value: '2'
-                      - name: AUTHENTIK_WEB__THREADS
-                        value: '2'
-                      - name: AUTHENTIK_OUTPOSTS__DISCOVER
-                        value: 'false'
-                      - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
-                        value: 'false'
-                      - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-                        value: '3600'
-                      - name: AUTHENTIK_POSTGRESQL__CONN_HEALTH_CHECKS
-                        value: 'true'
-                      - name: AUTHENTIK_POSTGRESQL__DIRECT__HOST
-                        value: 'psql-int.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
 
                   worker:
                     # Authentik names discovered Kubernetes TLS Secrets after

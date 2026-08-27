@@ -10,6 +10,8 @@ datacenter: dc1
 
 region: yxl
 
+domainName: 'mylogin.space'
+
 hub: false
 
 readReplica:
@@ -20,6 +22,10 @@ gateway:
   name: main-gw
   namespace: core-prod
 
+route:
+  hostnames:
+    - 'idp.mylogin.space'
+
 authentik:
   global:
     podLabels:
@@ -28,14 +34,47 @@ authentik:
     priorityClassName: tier2-priority
 
     env:
+      - name: CLUSTER_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: aaa-authentik-environment
+            key: CLUSTER_NAME
+
+      - name: DATACENTER
+        valueFrom:
+          configMapKeyRef:
+            name: aaa-authentik-environment
+            key: DATACENTER
+
+      - name: REGION
+        valueFrom:
+          configMapKeyRef:
+            name: aaa-authentik-environment
+            key: REGION
+
+      - name: DOMAIN_NAME
+        valueFrom:
+          configMapKeyRef:
+            name: aaa-authentik-environment
+            key: DOMAIN_NAME
+
       - name: AUTHENTIK_WEB__WORKERS
         value: '2'
 
       - name: AUTHENTIK_WEB__THREADS
         value: '2'
 
+      - name: AUTHENTIK_WEB__BASE_URL
+        value: 'https://idp.$(DOMAIN_NAME)'
+
       - name: AUTHENTIK_OUTPOSTS__DISCOVER
         value: 'false'
+
+      - name: AUTHENTIK_POSTGRESQL__HOST
+        value: 'psql.$(CLUSTER_NAME).$(DATACENTER).$(REGION).$(DOMAIN_NAME)'
+
+      - name: AUTHENTIK_POSTGRESQL__DIRECT__HOST
+        value: 'psql-int.$(CLUSTER_NAME).$(DATACENTER).$(REGION).$(DOMAIN_NAME)'
 
       - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
         value: 'false'
@@ -87,9 +126,6 @@ authentik:
       host: mail.mylogin.space
       use_tls: true
       from: tnumovaqly@mail.mylogin.space
-
-    postgresql:
-      host: 'psql.k8s.dc1.yxl.mylogin.space'
 
   server:
     replicas: 2
