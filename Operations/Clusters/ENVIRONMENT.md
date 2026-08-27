@@ -197,7 +197,7 @@ inventoried systems.
 
 | Field | Current record |
 | --- | --- |
-| Identity / platform | Laptop2; Framework Laptop 13 with 11th-generation Intel mainboard |
+| Identity / platform | Laptop2; Framework 11th-generation Intel mainboard node |
 | CPU | Intel Core i5-1135G7, Tiger Lake; 4 cores / 8 threads |
 | Role | Talos/Kubernetes worker-class node with KubeVirt capability |
 | Memory | 40 GiB installed |
@@ -229,8 +229,8 @@ dependencies must still be considered explicitly.
 
 ### YVR network topology
 
-See the [YVR hardware inventory](#yvr-hardware-inventory) for the SRV3
-maintenance record used by this topology.
+See the [YVR hardware inventory](#yvr-hardware-inventory) for the maintenance
+records of the compute nodes referenced by this topology.
 
 The Home2 YVR network uses `cpe-sw1.home2.yvr.resolvemy.host`, the Cisco
 Catalyst 3850 in the bedroom/server area. It is the main managed access switch
