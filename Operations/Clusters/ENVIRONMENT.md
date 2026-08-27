@@ -152,6 +152,88 @@ switching redundancy. Cross-site placement improves site-failure separation,
 while shared power, management, carrier, configuration, and routing-policy
 dependencies must still be considered explicitly.
 
+### Home2/YVR physical network topology
+
+`cpe-sw1.home2.yvr.resolvemy.host` is the Cisco Catalyst 3850 in the
+bedroom/server area. It is the main managed access switch and the main 10 GbE
+server switch. The living-room `mgig-sw2` is an unmanaged YuanLey multi-gigabit
+switch with 4 × 2.5 GbE copper ports and 2 × 10 GbE SFP ports. It connects the
+Framework-mainboard Laptop2 node. A UniFi USW Flex Mini is downstream of
+`mgig-sw2` over 1 GbE; it connects HPC3 (the iMac 5K compute node) at 1 GbE,
+the Shaw/Rogers modem, and the Thunderbolt dock used for wired access by a
+management laptop or iPad Pro.
+
+The Catalyst 3850 also provides the server-area 10 GbE links: two 10 GbE
+RJ45 links terminate on SRV3, and one 10 GbE RJ45 link terminates on SRV2.
+SRV2's other 10 GbE port is a direct link to one of HPC3's two 10 GbE
+Thunderbolt 2 ports. HPC3's other Thunderbolt 2 port connects to the
+unmanaged `mgig-sw2` through an SFP+ to RJ45 connection. HPC3 therefore has
+both its documented 1 GbE connection to the UniFi USW Flex Mini and this
+separate 10 GbE path through the living-room switch.
+
+The Catalyst 3850 has two physical room-to-room links to `mgig-sw2`:
+
+| Interface | Link and allowed VLANs | Switching/STP configuration |
+| --- | --- | --- |
+| `Te1/1/3` | 10 GbE fibre; VLANs 1, 5, 8, 20, 21, 30, 50, 121, 151, 666 | 802.1Q trunk; STP point-to-point link type |
+| `Te1/0/39` | 2.5 GbE copper; VLANs 1, 5, 7, 8, 20, 21, 121, 666 under normal operation | 802.1Q trunk; STP point-to-point link type |
+
+These links deliberately form a Layer-2 loop through the unmanaged YuanLey
+switch. The Catalyst 3850 controls the loop with per-VLAN Spanning Tree
+behavior. `mgig-sw2` transparently forwards Ethernet frames and BPDUs; it does
+not make STP forwarding or blocking decisions. Neither link is universally
+primary or backup: STP operates per VLAN, the trunks carry different VLAN
+sets, their port priorities differ, and the forwarding state depends on the
+VLAN.
+
+#### VLAN 150 WAN failover
+
+VLAN 150 is the Shaw/Rogers WAN VLAN. Its normal physical attachment is the
+direct 2.5 GbE modem connection on `TenGigabitEthernet1/0/41`, configured as
+access port VLAN 150 with description
+`serena-shawgers.home2.yvr.resolvemy.host` and PortFast enabled. VLAN 150 is
+normally absent from `Te1/0/39` and is not part of the normal STP-redundant LAN
+topology.
+
+Catalyst IOS Embedded Event Manager provides physical-path failover. When
+`Te1/0/41` goes down, the `VLAN150_FAILOVER_ENABLE` applet executes
+`switchport trunk allowed vlan add 150` on `Te1/0/39`, extending the WAN VLAN
+through the living-room path. When the direct link recovers, the
+`VLAN150_FAILOVER_DISABLE` applet executes
+`switchport trunk allowed vlan remove 150` on `Te1/0/39`. EEM changes VLAN
+membership; it does not perform routing failover.
+
+```text
+Bedroom / server area
+  Cisco Catalyst 3850 (cpe-sw1)
+  main managed access + 10 GbE server switch
+       | Te1/1/3 — 10 GbE fibre trunk (VLANs 1,5,8,20,21,30,50,121,151,666)
+       |\\
+       | +— Te1/0/41 — 2.5 GbE access VLAN 150 — Shaw/Rogers modem
+       |                              ^
+       |                              | alternate WAN path (EEM only)
+       | Te1/0/39 — 2.5 GbE copper trunk |
+       | VLANs 1,5,7,8,20,21,121,666     |
+       | (VLAN 150 added only during failover)
+       v                              |
+  living-room mgig-sw2                |
+  YuanLey unmanaged switch            |
+       | 1 GbE                         |
+       v                              |
+  UniFi USW Flex Mini ----------------+
+       /              \\
+    HPC3          Thunderbolt dock
+  iMac 5K          management device
+    ||
+    || 10 GbE Thunderbolt 2 (one port to SRV2, one port via SFP+ to RJ45)
+    ||
+  SRV2 — 10 GbE RJ45 — Catalyst 3850
+  SRV3 — 2 × 10 GbE RJ45 — Catalyst 3850
+
+  Te1/1/3 + Te1/0/39: intentional STP-controlled Layer-2 redundancy.
+  VLAN 150: direct Te1/0/41 normally; EEM adds/removes it on Te1/0/39.
+```
+
 ## Operator workflow
 
 Day-to-day development is performed through Eclipse Che environments running
