@@ -138,7 +138,7 @@ spec:
                       caSecretName: ''
                       serverName: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                   rules:
-                    configMapName: prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0
+                    configMapName: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
                     tenant: core
                   {{- if eq .values.region "yvr" }}
                   limits:

@@ -2,6 +2,16 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
+{{- $dataVolumeIsPVC := eq .Values.mimir.dataVolume.type "persistentVolumeClaim" -}}
+{{- $tmpVolumeIsPVC := eq .Values.mimir.tmpVolume.type "persistentVolumeClaim" -}}
+
+{{- if and .Values.mimir.enabled (ne .Values.mimir.dataVolume.type "emptyDir") (ne .Values.mimir.dataVolume.type "persistentVolumeClaim") }}
+{{- fail "mimir.dataVolume.type must be emptyDir or persistentVolumeClaim" }}
+{{- end }}
+{{- if and .Values.mimir.enabled (ne .Values.mimir.tmpVolume.type "emptyDir") (ne .Values.mimir.tmpVolume.type "persistentVolumeClaim") }}
+{{- fail "mimir.tmpVolume.type must be emptyDir or persistentVolumeClaim" }}
+{{- end }}
+
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}
 global:
@@ -19,6 +29,7 @@ controllers:
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
     # DaemonSets/CronJobs ignore this.
+    type: {{ if or $dataVolumeIsPVC $tmpVolumeIsPVC }}'statefulset'{{ else }}'deployment'{{ end }}
     strategy: RollingUpdate
 
     rollingUpdate:
@@ -55,6 +66,34 @@ controllers:
       {{- end }}
 
     replicas: {{ .Values.mimir.replicas }}
+
+    {{- if or $dataVolumeIsPVC $tmpVolumeIsPVC }}
+    statefulset:
+      serviceName:
+        identifier: 'mimir'
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: 'Retain'
+        whenScaled: 'Retain'
+      volumeClaimTemplates:
+        {{- if $dataVolumeIsPVC }}
+        - name: 'mimir-data'
+          accessMode: {{ .Values.mimir.dataVolume.accessMode | squote }}
+          size: {{ .Values.mimir.dataVolume.size | squote }}
+          storageClass: {{ .Values.mimir.dataVolume.storageClass | squote }}
+          advancedMounts:
+            mimir:
+              - path: '/data'
+        {{- end }}
+        {{- if $tmpVolumeIsPVC }}
+        - name: 'mimir-tmp'
+          accessMode: {{ .Values.mimir.tmpVolume.accessMode | squote }}
+          size: {{ .Values.mimir.tmpVolume.size | squote }}
+          storageClass: {{ .Values.mimir.tmpVolume.storageClass | squote }}
+          advancedMounts:
+            mimir:
+              - path: '/tmp'
+        {{- end }}
+    {{- end }}
 
     containers:
       mimir:
@@ -145,6 +184,7 @@ controllers:
     annotations:
       secret.reloader.stakater.com/reload: '{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds'
 
+    type: {{ if or $dataVolumeIsPVC $tmpVolumeIsPVC }}'statefulset'{{ else }}'deployment'{{ end }}
     strategy: RollingUpdate
 
     rollingUpdate:
@@ -181,6 +221,34 @@ controllers:
       {{- end }}
 
     replicas: {{ .Values.mimir.querier.replicas }}
+
+    {{- if or $dataVolumeIsPVC $tmpVolumeIsPVC }}
+    statefulset:
+      serviceName:
+        identifier: 'mimir'
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: 'Retain'
+        whenScaled: 'Retain'
+      volumeClaimTemplates:
+        {{- if $dataVolumeIsPVC }}
+        - name: 'mimir-data'
+          accessMode: {{ .Values.mimir.dataVolume.accessMode | squote }}
+          size: {{ .Values.mimir.dataVolume.size | squote }}
+          storageClass: {{ .Values.mimir.dataVolume.storageClass | squote }}
+          advancedMounts:
+            querier:
+              - path: '/data'
+        {{- end }}
+        {{- if $tmpVolumeIsPVC }}
+        - name: 'mimir-tmp'
+          accessMode: {{ .Values.mimir.tmpVolume.accessMode | squote }}
+          size: {{ .Values.mimir.tmpVolume.size | squote }}
+          storageClass: {{ .Values.mimir.tmpVolume.storageClass | squote }}
+          advancedMounts:
+            querier:
+              - path: '/tmp'
+        {{- end }}
+    {{- end }}
 
     containers:
       querier:
@@ -534,7 +602,7 @@ configMaps:
       mimir.yaml: |
         # Keep the write path, query frontend/scheduler, storage components,
         # and optional services together. Queriers run in their own Deployment.
-        target: distributor,ingester,query-frontend,query-scheduler,store-gateway,compactor,ruler,alertmanager,overrides-exporter
+        target: all
 
         activity_tracker:
           filepath: /data/metrics-activity.log
@@ -723,40 +791,38 @@ configMaps:
 
 persistence:
   {{- if .Values.mimir.enabled }}
+  {{- if not $dataVolumeIsPVC }}
   mimir-data:
     enabled: true
-
-    type: emptyDir
-
-    medium: Memory
-
-    sizeLimit: {{ .Values.mimir.dataVolume.sizeLimit }}
-
+    type: 'emptyDir'
+    {{- with .Values.mimir.dataVolume.medium }}
+    medium: {{ . | squote }}
+    {{- end }}
+    sizeLimit: {{ .Values.mimir.dataVolume.sizeLimit | squote }}
     advancedMounts:
       mimir:
         mimir:
-          - path: /data
+          - path: '/data'
       querier:
         querier:
-          - path: /data
-
+          - path: '/data'
+  {{- end }}
+  {{- if not $tmpVolumeIsPVC }}
   mimir-tmp:
     enabled: true
-
-    type: emptyDir
-
-    medium: Memory
-
-    sizeLimit: {{ .Values.mimir.tmpVolume.sizeLimit }}
-
+    type: 'emptyDir'
+    {{- with .Values.mimir.tmpVolume.medium }}
+    medium: {{ . | squote }}
+    {{- end }}
+    sizeLimit: {{ .Values.mimir.tmpVolume.sizeLimit | squote }}
     advancedMounts:
       mimir:
         mimir:
-          - path: /tmp
+          - path: '/tmp'
       querier:
         querier:
-          - path: /tmp
-
+          - path: '/tmp'
+  {{- end }}
   mimir-alertmanager:
     enabled: true
 

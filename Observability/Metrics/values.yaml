@@ -83,12 +83,23 @@ mimir:
       limits:
         memory: 16Gi
 
-  # The WAL, head blocks, and index working set are memory-backed. S3 is the
-  # durable store; emptyDir use counts against the container memory limit.
+  # Set type to emptyDir for node-local disk or tmpfs memory, or to
+  # persistentVolumeClaim for per-replica storage. PVC mode uses one claim per
+  # StatefulSet replica; Mimir's S3 backend remains authoritative for blocks.
   dataVolume:
-    sizeLimit: 2Gi
+    type: 'persistentVolumeClaim'
+    accessMode: 'ReadWriteOnce'
+    size: '2Gi'
+    storageClass: 'longhorn'
+    sizeLimit: '2Gi'
+    medium: ''
   tmpVolume:
-    sizeLimit: 512Mi
+    type: 'persistentVolumeClaim'
+    accessMode: 'ReadWriteOnce'
+    size: '512Mi'
+    storageClass: 'longhorn'
+    sizeLimit: '512Mi'
+    medium: ''
 
   nodeSelector: {}
 
