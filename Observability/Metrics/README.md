@@ -21,6 +21,9 @@ main replicas retain the query frontend and query scheduler,
 so `core-mimir` remains the entry point for both reads and writes; the scheduler
 dispatches read work to the querier StatefulSet. All three components discover
 the schedulers through the existing memberlist-backed query-scheduler ring.
+The blocks backend is explicitly configured as S3; the local claims hold TSDB
+working state and synchronized block indexes rather than being the durable
+blocks store.
 This follows Mimir's
 [query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
 and documented [query-scheduler ring discovery](https://grafana.com/docs/mimir/latest/references/architecture/components/query-scheduler/),
