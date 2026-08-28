@@ -133,7 +133,9 @@ spec:
                     address: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
                     tls:
                       enabled: true
-                      caSecretName: myloginspace-default-certificates
+                      # kjdev-cluster is Let's Encrypt; its Secret has no ca.crt.
+                      # Leave this empty so Mimir uses the system trust store.
+                      caSecretName: ''
                       serverName: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                   rules:
                     configMapName: prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0

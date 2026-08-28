@@ -39,7 +39,9 @@ Memcached-compatible listener for query-result, label, cardinality, index,
 chunk, and block-metadata caches. Mimir's OSS cache backends are Memcached, so
 the Dragonfly instance exposes port `11211` in addition to its existing
 authenticated Redis/TLS port `6379`; the cache connection is TLS-protected and
-uses `myloginspace-default-certificates`. Cache contents are disposable and do
+uses the container system trust store for the public certificate. If the
+Dragonfly certificate issuer changes to a private CA, set `mimir.cache.tls.caSecretName`
+to a Secret containing the configured `caSecretKey`. Cache contents are disposable and do
 not replace Mimir's S3 blocks. This shares the Dragonfly process and memory
 limit with other site-local consumers; if cache pressure affects durable
 application state, move Mimir to a dedicated Dragonfly instance.

@@ -579,21 +579,27 @@ configMaps:
               memcached:
                 addresses: '{{ required "mimir.cache.address is required when Mimir caching is enabled" .Values.mimir.cache.address }}'
                 tls_enabled: {{ .Values.mimir.cache.tls.enabled }}
+                {{ if .Values.mimir.cache.tls.caSecretName }}
                 tls_ca_path: '/etc/mimir-dragonfly-ca/{{ .Values.mimir.cache.tls.caSecretKey }}'
+                {{ end }}
                 tls_server_name: '{{ required "mimir.cache.tls.serverName is required when Mimir caching is enabled" .Values.mimir.cache.tls.serverName }}'
             chunks_cache:
               backend: memcached
               memcached:
                 addresses: '{{ .Values.mimir.cache.address }}'
                 tls_enabled: {{ .Values.mimir.cache.tls.enabled }}
+                {{ if .Values.mimir.cache.tls.caSecretName }}
                 tls_ca_path: '/etc/mimir-dragonfly-ca/{{ .Values.mimir.cache.tls.caSecretKey }}'
+                {{ end }}
                 tls_server_name: '{{ .Values.mimir.cache.tls.serverName }}'
             metadata_cache:
               backend: memcached
               memcached:
                 addresses: '{{ .Values.mimir.cache.address }}'
                 tls_enabled: {{ .Values.mimir.cache.tls.enabled }}
+                {{ if .Values.mimir.cache.tls.caSecretName }}
                 tls_ca_path: '/etc/mimir-dragonfly-ca/{{ .Values.mimir.cache.tls.caSecretKey }}'
+                {{ end }}
                 tls_server_name: '{{ .Values.mimir.cache.tls.serverName }}'
             {{ end }}
           tsdb:
@@ -620,7 +626,9 @@ configMaps:
             memcached:
               addresses: '{{ required "mimir.cache.address is required when Mimir caching is enabled" .Values.mimir.cache.address }}'
               tls_enabled: {{ .Values.mimir.cache.tls.enabled }}
+              {{ if .Values.mimir.cache.tls.caSecretName }}
               tls_ca_path: '/etc/mimir-dragonfly-ca/{{ .Values.mimir.cache.tls.caSecretKey }}'
+              {{ end }}
               tls_server_name: '{{ required "mimir.cache.tls.serverName is required when Mimir caching is enabled" .Values.mimir.cache.tls.serverName }}'
           results_cache_ttl: '{{ .Values.mimir.cache.resultsTtl }}'
           results_cache_ttl_for_labels_query: '{{ .Values.mimir.cache.labelsTtl }}'
@@ -786,11 +794,11 @@ persistence:
             readOnly: true
             subPath: mimir.yaml
 
-  {{- if .Values.mimir.cache.enabled }}
+  {{- if and .Values.mimir.cache.enabled .Values.mimir.cache.tls.caSecretName }}
   mimir-dragonfly-ca:
     enabled: true
     type: secret
-    name: {{ required "mimir.cache.tls.caSecretName is required when Mimir caching is enabled" .Values.mimir.cache.tls.caSecretName | quote }}
+    name: {{ .Values.mimir.cache.tls.caSecretName | quote }}
     advancedMounts:
       mimir:
         mimir:
