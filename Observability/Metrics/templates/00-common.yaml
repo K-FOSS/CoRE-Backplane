@@ -616,6 +616,11 @@ configMaps:
           ingestion_burst_size: {{ int .Values.mimir.limits.ingestionBurstSize }}
           out_of_order_time_window: {{ .Values.mimir.limits.outOfOrderTimeWindow }}
           compactor_blocks_retention_period: {{ .Values.mimir.limits.compactorBlocksRetentionPeriod }}
+          {{ if .Values.mimir.cache.enabled }}
+          results_cache_ttl: '{{ .Values.mimir.cache.resultsTtl }}'
+          results_cache_ttl_for_labels_query: '{{ .Values.mimir.cache.labelsTtl }}'
+          results_cache_ttl_for_cardinality_query: '{{ .Values.mimir.cache.cardinalityTtl }}'
+          {{ end }}
 
         # Configure Mimir to use Minio as object storage backend.
         common:
@@ -699,9 +704,6 @@ configMaps:
               tls_ca_path: '/etc/mimir-dragonfly-ca/{{ .Values.mimir.cache.tls.caSecretKey }}'
               {{ end }}
               tls_server_name: '{{ required "mimir.cache.tls.serverName is required when Mimir caching is enabled" .Values.mimir.cache.tls.serverName }}'
-          results_cache_ttl: '{{ .Values.mimir.cache.resultsTtl }}'
-          results_cache_ttl_for_labels_query: '{{ .Values.mimir.cache.labelsTtl }}'
-          results_cache_ttl_for_cardinality_query: '{{ .Values.mimir.cache.cardinalityTtl }}'
         {{ end }}
 
         compactor:
