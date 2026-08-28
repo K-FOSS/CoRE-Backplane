@@ -47,7 +47,13 @@ fleet.
 Hardware inventory should eventually be generated from NetBox/IPAM rather than
 maintained manually in this document.
 
-## dc1.yxl.resolvemy.host hardware inventory
+## Sites
+
+### YXL/DC1 site
+
+#### Inventory
+
+##### Servers
 
 The following records are the authoritative hardware inventory for the YXL
 data-centre systems as of August 2026. Names in this section are canonical;
@@ -56,9 +62,9 @@ Site, rack,
 addressing, Kubernetes placement, and workload assignments remain defined by
 the deployment manifests and IPAM records.
 
-### Legacy K3s infrastructure
+##### Legacy K3s infrastructure
 
-#### Infra1
+###### Infra1
 
 | Field | Current record |
 | --- | --- |
@@ -74,9 +80,9 @@ the deployment manifests and IPAM records.
 | Power | 1 × Dell 750 W PSU installed; slot 2 absent |
 | Management | iDRAC7 Enterprise |
 
-### May 2026 cluster additions
+##### May 2026 cluster additions
 
-#### SRV1
+###### SRV1
 
 | Field | Current record |
 | --- | --- |
@@ -90,7 +96,7 @@ the deployment manifests and IPAM records.
 | Power | 2 × Dell 750 W PSUs providing redundant power |
 | Management | iDRAC7 Enterprise |
 
-#### SRV3
+###### SRV3
 
 | Field | Current record |
 | --- | --- |
@@ -104,7 +110,7 @@ the deployment manifests and IPAM records.
 | Power | 2 × Dell 750 W PSUs providing redundant power |
 | Management | iDRAC7 Enterprise |
 
-#### SRV7
+###### SRV7
 
 | Field | Current record |
 | --- | --- |
@@ -118,7 +124,7 @@ the deployment manifests and IPAM records.
 | Power | 2 × Dell 1100 W redundant PSUs |
 | Management | iDRAC7 Enterprise |
 
-### Scoped capacity totals
+##### Scoped capacity totals
 
 These totals are intentionally separate from the broad fleet estimates above:
 
@@ -130,82 +136,7 @@ These totals are intentionally separate from the broad fleet estimates above:
 Infra1's capacity is not included in the May 2026 cluster-additions total
 because it remains a legacy K3s system.
 
-## YVR hardware inventory
-
-The following YVR records capture stable maintenance information for the
-inventoried systems.
-
-#### SRV3
-
-| Field | Current record |
-| --- | --- |
-| Platform / identity | Canonical name SRV3; hostname `srv3.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
-| CPU | 2 × Intel Xeon E5-2680 v3 @ 2.50 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
-| Memory | 64 GB DDR4 ECC; 2 × 32 GB; quad-rank; 2133 MHz |
-| DIMMs | 2 × Samsung `M386A4G40DM0-CPB`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
-| Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
-| Backplane | 24 drive slots |
-| Physical storage currently inventoried | Bay 0: HGST `HUC101212CSS600`, ~1.2 TB, 2.5-inch SAS 6 Gb/s |
-| Storage layout | No RAID or virtual-disk layout is documented; the inventory export contains no virtual-disk records. |
-| Networking | Intel X540/I350 four-port rNDC: 2 × 10 GbE Base-T and 2 × 1 GbE Base-T |
-| Power | 2 × Dell 750 W PSUs installed |
-| Management | iDRAC8 Enterprise |
-
-#### SRV2
-
-| Field | Current record |
-| --- | --- |
-| Platform / identity | Canonical name SRV2; hostname `srv2.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
-| CPU | 2 × Intel Xeon E5-2650 v4 @ 2.20 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
-| Memory | 32 GB DDR4 ECC; 2 × 16 GB; dual-rank; 2133 MHz |
-| DIMMs | 2 × Micron `36ASF2G72PZ-2G1A2`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
-| Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
-| Backplane | 14 drive slots reported by inventory |
-| Physical storage currently inventoried | Bay 12: HGST `HUC101212CSS600`, ~1.2 TB SAS HDD; Bay 13: WDC `WD5000LPLX`, ~500 GB SATA HDD |
-| Storage layout | Both inventoried disks are exposed as Non-RAID; no virtual-disk record is present. |
-| Networking | Intel X540/I350 four-port rNDC: 2 × 10 GbE Base-T and 2 × 1 GbE Base-T |
-| Power | 2 × Dell 750 W PSUs installed |
-| Management | iDRAC8 Enterprise |
-
-### Non-rack compute nodes
-
-#### HPC2
-
-| Field | Current record |
-| --- | --- |
-| Platform | Custom workstation-class node; Gigabyte AORUS Gaming 7 motherboard |
-| CPU | Intel Core i7-8700K; 6 cores / 12 threads |
-| Memory | 32 GB DDR4-3600 installed |
-| GPU | NVIDIA GeForce RTX 2080 Founders Edition |
-| PSU | Corsair SF750 (2024), 750 W, 80 Plus Platinum |
-| Storage | 1 TB NVMe (historically documented) |
-| Role | Talos/Kubernetes compute node with KubeVirt and GPU workloads |
-
-#### HPC3
-
-| Field | Current record |
-| --- | --- |
-| Platform | Apple iMac17,1, Retina 5K 27-inch, Late 2015 |
-| CPU | Intel Core i7-6700K; 4 cores / 8 threads |
-| Memory | 32 GB DDR3-1867 installed |
-| GPU | AMD Radeon R9 M395, 2 GB GDDR5 |
-| Storage | 2 TB NVMe SSD plus 2 TB HDD |
-| Role | Talos/Kubernetes compute node |
-| Networking | Built-in 1 GbE interface to the UniFi USW Flex Mini on VLAN 121; Sonnet Twin 10G dual-port adapter over Thunderbolt 2; `enp34s0f0` at 10 GbE to `mgig-sw2`; `enp34s0f1` at 10 GbE directly to SRV2 `eno2` |
-
-#### Laptop2
-
-| Field | Current record |
-| --- | --- |
-| Identity / platform | Laptop2; Framework 11th-generation Intel mainboard node |
-| CPU | Intel Core i5-1135G7, Tiger Lake; 4 cores / 8 threads |
-| Role | Talos/Kubernetes worker-class node with KubeVirt capability |
-| Memory | 40 GiB installed |
-| Networking | 2.5 GbE connection to living-room `mgig-sw2` port 4 |
-| Physical placement | Home2/YVR living-room network segment |
-| Platform characteristics | Mobile/desktop-class compute platform with different power, storage, and remote-management characteristics from the PowerEdge fleet |
-
-## Network fabric
+#### Network
 
 The switching fleet consists of:
 
@@ -227,9 +158,165 @@ switching redundancy. Cross-site placement improves site-failure separation,
 while shared power, management, carrier, configuration, and routing-policy
 dependencies must still be considered explicitly.
 
-### YVR network topology
+##### Fabric inventory and YXL/DC1 network
 
-See the [YVR hardware inventory](#yvr-hardware-inventory) for the maintenance
+###### Switch inventory
+
+The verified YXL switching records use these canonical device identities. The
+`spine0` and `lf1` names found in interface descriptions are historical or
+alternate description aliases, not additional switch inventory objects.
+
+| Hostname | Hardware | Role | Software / BIOS |
+| --- | --- | --- | --- |
+| `spine-sw1.dc1.yxl.resolvemy.host` | Cisco Nexus C92160YC-X | Spine | NX-OS 9.3(14) / BIOS 07.69 |
+| `lf-sw1.dc1.yxl.resolvemy.host` | Cisco Nexus 3000-series, N3K-C3172TQ-10GT | Leaf / aggregation-access | NX-OS 9.3(12) / BIOS 5.3.1 |
+
+The relevant upstream references are the [Cisco Nexus 9000 NX-OS 9.3(x)
+interfaces guide](https://www.cisco.com/c/en/us/td/docs/switches/datacenter/nexus9000/sw/93x/interfaces/configuration/guide/b-cisco-nexus-9000-nx-os-interfaces-configuration-guide-93x.html)
+and [Cisco Nexus 3000 NX-OS 9.3(x) interfaces
+guide](https://www.cisco.com/c/en/us/td/docs/switches/datacenter/nexus3000/sw/interfaces/93x/configuration/guide/b-cisco-nexus-3000-nx-os-interfaces-configuration-guide-93x.html).
+
+###### Physical topology
+
+The following topology reflects the documented interface descriptions and leaf
+adjacency. It shows physical attachment and logical aggregation; an
+operationally connected state is not a permanent availability guarantee.
+
+```mermaid
+flowchart LR
+  infra1["infra1.dc1.yxl.resolvemy.host<br/>enp5s0f0np0 · enp5s0f1np1 · eno1-eno4"]
+  spine["spine-sw1.dc1.yxl.resolvemy.host<br/>Cisco Nexus C92160YC-X"]
+  leaf["lf-sw1.dc1.yxl.resolvemy.host<br/>Cisco Nexus 3000"]
+  srv1["srv1.dc1.yxl.resolvemy.host"]
+  srv3["srv3.dc1.yxl.resolvemy.host"]
+  srv7["srv7.dc1.yxl.resolvemy.host"]
+  idrac["Server iDRAC controllers"]
+  knewan["K-Net WAN"]
+
+  infra1 -- "E1/1 · trunk · VLAN 666, 951-954, 1500, 2010 · MTU 9216" --- spine
+  infra1 -- "E1/2 · trunk · VLAN 666, 951-954, 1500 · MTU 9216" --- spine
+  spine ---|"spine E1/49 / leaf E1/49 → Po10 · LACP trunk · 40G observed<br/>spine MTU 9216 · leaf QSFP-40G-CR4"| leaf
+  leaf -- "E1/3-6 → Po2001 · four 1G access members · VLAN 2001" --- infra1
+  leaf -- "E1/21 · 1G edge trunk · native/only VLAN 123<br/>E1/22 · 1G observed VLAN 1" --- srv1
+  leaf -- "E1/26 · 1G observed trunk<br/>E1/29 · 1G observed trunk" --- srv3
+  leaf -- "E1/39 · 1G observed · VLAN 2070" --- srv7
+  leaf -- "E1/34-37 · 1G observed · VLAN 20" --- idrac
+  leaf -- "E1/20 · 1G access · VLAN 10<br/>edge; BPDU Guard/Filter" --- knewan
+```
+
+The drawing intentionally omits endpoints and paths not established by the
+documented network records. The spine and leaf E1/49 interfaces are represented
+as one Po10 relationship because both sides identify the same LACP
+spine-to-leaf connection; no second physical member is documented.
+
+###### Switching and interfaces
+
+###### Spine switch
+
+Configured interfaces on `spine-sw1.dc1.yxl.resolvemy.host`:
+
+| Interface | Peer / description | Mode and VLANs | Link settings |
+| --- | --- | --- | --- |
+| `Ethernet1/1` | `enp5s0f0np0.infra1.dc1.yxl.resolvemy.host` | Layer-2 trunk; 666, 951-954, 1500, 2010 | MTU 9216; administratively enabled |
+| `Ethernet1/2` | `enp5s0f1np1.infra1.dc1.yxl.resolvemy.host` | Layer-2 trunk; 666, 951-954, 1500 | MTU 9216; administratively enabled |
+| `Ethernet1/49` | Toward `lf-sw1` (`lf1` in description) | Layer-2 trunk; 1, 5, 10, 15, 20, 110, 121, 123, 951-954, 1500, 2010-2011, 2021, 2070 | MTU 9216; channel-group 10, LACP active; administratively enabled |
+
+Ethernet1/1 and Ethernet1/2 deliberately have different allowed VLAN lists:
+VLAN 2010 is allowed on E1/1 but not E1/2. This documented asymmetry is the
+configured state and has not been corrected or interpreted as an error.
+
+###### Leaf switch and port channels
+
+The leaf ports below were operationally observed as connected at the listed
+speed. These point-in-time observations establish attachment and mode, not a
+permanent link-state guarantee.
+
+| Interface | Endpoint / description | Observed mode / VLAN | Observed speed |
+| --- | --- | --- | ---: |
+| `Ethernet1/3` | `eno1.infra1.dc1.yxl.resolvemy.host` | Access VLAN 2001; LACP member of Po2001 | 1G |
+| `Ethernet1/4` | `eno2.infra1.dc1.yxl.resolvemy.host` | Access VLAN 2001; LACP member of Po2001 | 1G |
+| `Ethernet1/5` | `eno3.infra1.dc1.yxl.resolvemy.host` | Access VLAN 2001; LACP member of Po2001 | 1G |
+| `Ethernet1/6` | `eno4.infra1.dc1.yxl.resolvemy.host` | Access VLAN 2001; LACP member of Po2001 | 1G |
+| `Ethernet1/20` | K-Net WAN uplink | Access VLAN 10; edge; BPDU Guard and BPDU Filter | 1G |
+| `Ethernet1/21` | `eno1.srv1.dc1.yxl.resolvemy.host` | Trunk; native VLAN 123; allowed VLAN 123 only; edge trunk | 1G |
+| `Ethernet1/22` | `eno2.srv1.dc1.yxl.resolvemy.host` | Observed VLAN 1; detailed switchport configuration not documented | 1G |
+| `Ethernet1/26` | `eno2.srv3.dc1.yxl.resolvemy.host` | Trunk; allowed VLANs 10, 951-954, 1500; edge trunk | 1G |
+| `Ethernet1/29` | `eno1.srv3.dc1.yxl.resolvemy.host` | Trunk | 1G |
+| `Ethernet1/34` | `idrac.srv3.dc1.yxl` | VLAN 20 | 1G |
+| `Ethernet1/35` | `idrac.srv1.dc1.yxl` | VLAN 20 | 1G |
+| `Ethernet1/36` | `idrac.infra1.dc1.yxl` | VLAN 20 | 1G |
+| `Ethernet1/37` | `idrac.srv7.dc1.yxl` | VLAN 20 | 1G |
+| `Ethernet1/39` | `eno1.srv7.dc1.yxl.resolvemy.host` | Observed VLAN 2070 | 1G |
+| `Ethernet1/49` | Toward `spine-sw1` (`spine0` in description) | Trunk; QSFP-40G-CR4 | 40G |
+
+Ethernet1/3-6 are configured identically as four physical 1 GbE members of
+LACP port-channel `Po2001`, and `Po2001` was observed connected on VLAN 2001.
+The four member rates do not by themselves establish an aggregate 4 Gbit/s
+operating rate. On the spine, E1/49 is an LACP-active member of `Po10`; the
+leaf `Po10` was observed connected as a 40G trunk, so these records describe
+one spine-to-leaf logical relationship.
+
+Ethernet1/20 has LLDP transmit/receive and CDP disabled, is a spanning-tree
+edge port, and has BPDU Guard and BPDU Filter enabled. The documented settings
+establish the physical K-Net attachment and its VLAN 10 access configuration
+but do not identify provider-side equipment or routing behavior.
+
+The retained `switchport access vlan 20` line on Ethernet1/26 is recorded as a
+configuration oddity: the interface was operating as a trunk with allowed
+VLANs 10, 951-954, and 1500. It does not establish VLAN 20 as the trunk native
+VLAN. Ethernet1/22 is likewise documented at the observed VLAN 1 because its
+available configuration contains only a description.
+
+###### VLAN inventory
+
+The following VLANs are documented for the YXL switching fabric. Names and
+purposes follow the network records and existing authoritative repository
+configuration.
+
+TODO: Document VLANs.
+
+| VLAN | Documented purpose / evidence |
+| ---: | --- |
+| 1 | Present on the spine interconnect; observed on leaf Ethernet1/22 |
+| 5, 15, 110, 121, 123, 2010, 2011, 2021 | Carried by the configured spine E1/49 trunk |
+| 10 | K-Net Private WAN / K-Net WAN attachment |
+| 20 | YXL management / out-of-band access; used by iDRAC interfaces |
+| 666 | L2 VXLAN Lab |
+| 951-954 | Underlay-related leaf networks |
+| 1000 | VXLAN LAN L3 |
+| 1010 | VXLAN KNT-PrivWAN |
+| 1500 | Present on spine trunks and the srv3 Ethernet1/26 trunk |
+| 2001 | infra1 access and LACP port-channel Po2001 |
+| 2070 | srv7 attachment VLAN |
+
+This list records VLAN 2010 on the spine E1/49 trunk and E1/1, but not on
+E1/2, preserving the observed trunk-list asymmetry. It does not assert that
+the leaf Po10 carries every VLAN listed on the spine, because its complete
+allowed-VLAN list is not documented here.
+
+###### Server and management attachments
+
+The stable physical mappings established by the leaf records are:
+
+| System | Leaf attachment |
+| --- | --- |
+| `infra1.dc1.yxl.resolvemy.host` | `eno1`-`eno4` to Ethernet1/3-6; four 1G access links in Po2001 on VLAN 2001. `enp5s0f0np0` and `enp5s0f1np1` also connect to spine Ethernet1/1-2 |
+| `srv1.dc1.yxl.resolvemy.host` | `eno1` to Ethernet1/21; 1G edge trunk, native and only allowed VLAN 123. `eno2` to Ethernet1/22; observed 1G on VLAN 1, detailed configuration not documented |
+| `srv3.dc1.yxl.resolvemy.host` | `eno2` to Ethernet1/26; observed 1G trunk. `eno1` to Ethernet1/29; observed 1G trunk |
+| `srv7.dc1.yxl.resolvemy.host` | `eno1` to Ethernet1/39; observed 1G on VLAN 2070 |
+| Server management controllers | `idrac.srv3`, `idrac.srv1`, `idrac.infra1`, and `idrac.srv7` to Ethernet1/34-37 respectively; observed 1G on VLAN 20 |
+
+The host-side interface names are endpoint identifiers from switch
+descriptions. They do not create additional switch identities and are not
+evidence of host-side bonding beyond the explicitly documented LACP bundles.
+
+### YVR site
+
+#### Network
+
+##### Network topology and switching
+
+See the [YVR site server inventory](#yvr-site) for the maintenance
 records of the compute nodes referenced by this topology.
 
 The Home2 YVR network uses `cpe-sw1.home2.yvr.resolvemy.host`, the Cisco
@@ -333,7 +420,7 @@ flowchart LR
   flex -- "port 2 · access VLAN 150 · EEM alternate" --- modem
 ```
 
-#### VLAN 150 WAN failover
+##### VLAN 150 WAN failover
 
 VLAN 150 is the Shaw/Rogers WAN VLAN. Its normal physical attachment is the
 direct 2.5 GbE modem connection on `TenGigabitEthernet1/0/41`, configured as
@@ -351,6 +438,83 @@ through the living-room path. When the direct link recovers, the
 `VLAN150_FAILOVER_DISABLE` applet executes
 `switchport trunk allowed vlan remove 150` on `Te1/0/39`. EEM changes VLAN
 membership; it does not perform routing failover.
+
+#### Inventory
+
+##### Servers
+
+The following YVR records capture stable maintenance information for the
+inventoried systems.
+
+###### SRV3
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Canonical name SRV3; hostname `srv3.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
+| CPU | 2 × Intel Xeon E5-2680 v3 @ 2.50 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
+| Memory | 64 GB DDR4 ECC; 2 × 32 GB; quad-rank; 2133 MHz |
+| DIMMs | 2 × Samsung `M386A4G40DM0-CPB`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
+| Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
+| Backplane | 24 drive slots |
+| Physical storage currently inventoried | Bay 0: HGST `HUC101212CSS600`, ~1.2 TB, 2.5-inch SAS 6 Gb/s |
+| Storage layout | No RAID or virtual-disk layout is documented; the inventory export contains no virtual-disk records. |
+| Networking | Intel X540/I350 four-port rNDC: 2 × 10 GbE Base-T and 2 × 1 GbE Base-T |
+| Power | 2 × Dell 750 W PSUs installed |
+| Management | iDRAC8 Enterprise |
+
+###### SRV2
+
+| Field | Current record |
+| --- | --- |
+| Platform / identity | Canonical name SRV2; hostname `srv2.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
+| CPU | 2 × Intel Xeon E5-2650 v4 @ 2.20 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
+| Memory | 32 GB DDR4 ECC; 2 × 16 GB; dual-rank; 2133 MHz |
+| DIMMs | 2 × Micron `36ASF2G72PZ-2G1A2`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
+| Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
+| Backplane | 14 drive slots reported by inventory |
+| Physical storage currently inventoried | Bay 12: HGST `HUC101212CSS600`, ~1.2 TB SAS HDD; Bay 13: WDC `WD5000LPLX`, ~500 GB SATA HDD |
+| Storage layout | Both inventoried disks are exposed as Non-RAID; no virtual-disk record is present. |
+| Networking | Intel X540/I350 four-port rNDC: 2 × 10 GbE Base-T and 2 × 1 GbE Base-T |
+| Power | 2 × Dell 750 W PSUs installed |
+| Management | iDRAC8 Enterprise |
+
+###### Non-rack compute nodes
+
+####### HPC2
+
+| Field | Current record |
+| --- | --- |
+| Platform | Custom workstation-class node; Gigabyte AORUS Gaming 7 motherboard |
+| CPU | Intel Core i7-8700K; 6 cores / 12 threads |
+| Memory | 32 GB DDR4-3600 installed |
+| GPU | NVIDIA GeForce RTX 2080 Founders Edition |
+| PSU | Corsair SF750 (2024), 750 W, 80 Plus Platinum |
+| Storage | 1 TB NVMe (historically documented) |
+| Role | Talos/Kubernetes compute node with KubeVirt and GPU workloads |
+
+####### HPC3
+
+| Field | Current record |
+| --- | --- |
+| Platform | Apple iMac17,1, Retina 5K 27-inch, Late 2015 |
+| CPU | Intel Core i7-6700K; 4 cores / 8 threads |
+| Memory | 32 GB DDR3-1867 installed |
+| GPU | AMD Radeon R9 M395, 2 GB GDDR5 |
+| Storage | 2 TB NVMe SSD plus 2 TB HDD |
+| Role | Talos/Kubernetes compute node |
+| Networking | Built-in 1 GbE interface to the UniFi USW Flex Mini on VLAN 121; Sonnet Twin 10G dual-port adapter over Thunderbolt 2; `enp34s0f0` at 10 GbE to `mgig-sw2`; `enp34s0f1` at 10 GbE directly to SRV2 `eno2` |
+
+####### Laptop2
+
+| Field | Current record |
+| --- | --- |
+| Identity / platform | Laptop2; Framework 11th-generation Intel mainboard node |
+| CPU | Intel Core i5-1135G7, Tiger Lake; 4 cores / 8 threads |
+| Role | Talos/Kubernetes worker-class node with KubeVirt capability |
+| Memory | 40 GiB installed |
+| Networking | 2.5 GbE connection to living-room `mgig-sw2` port 4 |
+| Physical placement | Home2/YVR living-room network segment |
+| Platform characteristics | Mobile/desktop-class compute platform with different power, storage, and remote-management characteristics from the PowerEdge fleet |
 
 ## Operator workflow
 
