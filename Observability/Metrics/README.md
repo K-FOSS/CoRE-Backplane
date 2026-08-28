@@ -34,6 +34,18 @@ serving replicas available during credential rotation. The target cluster must r
 the operations configuration ApplicationSet provides it on both selected
 Talos production clusters.
 
+Mimir's query frontend and queriers use the site-local `dragonfly-core`
+Memcached-compatible listener for query-result, label, cardinality, index,
+chunk, and block-metadata caches. Mimir's OSS cache backends are Memcached, so
+the Dragonfly instance exposes port `11211` in addition to its existing
+authenticated Redis/TLS port `6379`; the cache connection is TLS-protected and
+uses `myloginspace-default-certificates`. Cache contents are disposable and do
+not replace Mimir's S3 blocks. This shares the Dragonfly process and memory
+limit with other site-local consumers; if cache pressure affects durable
+application state, move Mimir to a dedicated Dragonfly instance.
+See the [Mimir configuration parameters](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
+for the supported Memcached cache backends and label-result TTL settings.
+
 Production renders the global-query and bridge Service roles through the
 bjw-s common library. `core-mimir` is the primary Mimir Service and a
 [Cilium global service with

@@ -13,3 +13,19 @@ spec:
     - ports:
         - port: 6379
           protocol: TCP
+    # Mimir's Memcached client has no application-level authentication. Keep
+    # the cache listener limited to Mimir pods in this namespace.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: core-prod
+          podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/controller
+                operator: In
+                values:
+                  - mimir
+                  - querier
+      ports:
+        - port: 11211
+          protocol: TCP

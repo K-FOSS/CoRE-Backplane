@@ -4,7 +4,11 @@ This chart deploys a Dragonfly distribution/cache service with two replicas,
 TLS, S3-backed persistent content and generated credentials. It is owned by
 `Apps/Storage/Dragonfly/CoRE.yaml`.
 
-The `dragonfly-core` instance serves authenticated, TLS-enabled Redis clients.
+The `dragonfly-core` instance serves authenticated, TLS-enabled Redis clients
+on port `6379` and a TLS-enabled Memcached-compatible listener on port `11211`
+for Mimir's disposable query caches. The Mimir listener is not assigned a
+logical Redis database; it uses Mimir's cache-key namespaces on the shared
+Dragonfly process. The core chart's NetworkPolicy allows both ports.
 PGPool does not share this service; the PostgreSQL chart owns a separate,
 ephemeral Dragonfly instance with its Memcached-compatible listener enabled.
 The core chart's NetworkPolicy continues to preserve existing port 6379 access.
@@ -20,6 +24,7 @@ they are not global database numbers across clusters.
 | Database | Current consumers | Purpose and ownership |
 | --- | --- | --- |
 | `0` | Argo CD, n8n, Grafana Live, Harbor core | Shared default database used by clients that do not expose a database selector. Harbor 1.18.2 requires its core database to remain `0`; do not allocate other new consumers here. |
+| `25` | Rspamd | Dedicated mail filtering state. Owned by `Business/Mail` and allocated independently on every Mail target. |
 | `70` | Harbor job service | Dedicated Harbor asynchronous job queue. Owned by `Development`. |
 | `71` | Harbor registry | Dedicated Harbor registry metadata cache. Owned by `Development`. |
 | `72` | Harbor Trivy adapter | Reserved for Harbor vulnerability-scanner cache if Trivy is enabled. Owned by `Development`. |

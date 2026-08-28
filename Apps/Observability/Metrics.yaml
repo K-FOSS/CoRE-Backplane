@@ -128,6 +128,13 @@ spec:
                       service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
                   storage:
                     s3Endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443
+                  cache:
+                    enabled: true
+                    address: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
+                    tls:
+                      enabled: true
+                      caSecretName: myloginspace-default-certificates
+                      serverName: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                   rules:
                     configMapName: prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0
                     tenant: core
