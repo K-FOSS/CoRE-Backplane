@@ -1,0 +1,88 @@
+{{- if .Values.oidc.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: 'core-kafka-authentik'
+  annotations:
+    argocd.argoproj.io/sync-wave: '5'
+
+spec:
+  providerConfigRef:
+    name: {{ .Values.oidc.providerConfigRef | quote }}
+
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: 'core-kafka-oidc'
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "authorization" {
+        slug = {{ .Values.oidc.authorizationFlowSlug | quote }}
+      }
+
+      data "authentik_flow" "invalidation" {
+        slug = {{ .Values.oidc.invalidationFlowSlug | quote }}
+      }
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+        ]
+      }
+
+      data "authentik_certificate_key_pair" "signing" {
+        name = {{ .Values.oidc.signingCertificateName | quote }}
+      }
+
+      resource "random_password" "client_secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
+      resource "authentik_provider_oauth2" "kafka" {
+        name          = {{ .Values.oidc.providerName | quote }}
+        client_id     = {{ .Values.oidc.clientId | quote }}
+        client_secret = random_password.client_secret.result
+        client_type   = "confidential"
+        signing_key   = data.authentik_certificate_key_pair.signing.id
+
+        property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow    = data.authentik_flow.authorization.id
+        invalidation_flow     = data.authentik_flow.invalidation.id
+        access_token_validity = "hours=1"
+      }
+
+      resource "authentik_application" "kafka" {
+        name              = {{ .Values.oidc.applicationName | quote }}
+        slug              = {{ .Values.oidc.applicationSlug | quote }}
+        group             = "Event Stream"
+        meta_launch_url   = "blank://blank"
+        protocol_provider = authentik_provider_oauth2.kafka.id
+      }
+
+      output "client_id" {
+        value     = authentik_provider_oauth2.kafka.client_id
+        sensitive = true
+      }
+
+      output "client_secret" {
+        value     = random_password.client_secret.result
+        sensitive = true
+      }
+
+      output "issuer_url" {
+        value     = "{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/"
+        sensitive = true
+      }
+
+      output "jwks_url" {
+        value     = "{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/jwks/"
+        sensitive = true
+      }
+{{- end }}

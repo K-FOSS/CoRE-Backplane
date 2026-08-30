@@ -11,6 +11,19 @@ this chart to the `core-home1-talos-prod` cluster in the `core-prod` namespace
 through the `argocd-lovely-plugin`. The chart's Kafka custom resource is held
 until sync wave `10`, after the operator and its CRDs are installed.
 
+Kafka clients authenticate through the internal TLS listener on port `9093`
+using Authentik OAuth2 JWTs. The chart creates the Authentik provider and
+application through the repository's `authentik` Terraform ProviderConfig and
+publishes the generated client credentials in the `core-kafka-oidc` connection
+Secret. The broker validates tokens locally using Authentik's JWKS endpoint;
+see the [Strimzi OAuth configuration](https://strimzi.io/docs/operators/0.45.2/deploying.html#con-oauth-server-configuration-str)
+and [Authentik OAuth2 endpoints](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
+
+The client Secret contains `client_id`, `client_secret`, `issuer_url`, and
+`jwks_url` keys. Do not print its values. A client must request an Authentik
+access token for the `core-kafka` provider and use the `preferred_username`
+claim as its Kafka principal.
+
 Kafka and ZooKeeper each use a 10 GiB persistent claim with
 `deleteClaim: false`; deleting the Argo application preserves resources and
 does not intentionally remove those claims. Verify the Strimzi operator and

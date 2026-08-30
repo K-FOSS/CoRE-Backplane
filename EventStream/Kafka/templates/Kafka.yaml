@@ -8,12 +8,37 @@ metadata:
 spec:
   kafka:
     replicas: 1
+    resources:
+      requests:
+        cpu: 250m
+        memory: 1Gi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
     listeners:
+      {{- if .Values.oidc.enabled }}
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: oauth
+          accessTokenIsJwt: true
+          validIssuerUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/'
+          jwksEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/jwks/'
+          userNameClaim: 'preferred_username'
+          maxSecondsWithoutReauthentication: 3600
+          connectTimeoutSeconds: 10
+          readTimeoutSeconds: 10
+          httpRetries: 3
+          httpRetryPauseMs: 500
+      {{- else }}
       - name: plain
         port: 9092
         type: internal
         tls: false
-    
+      {{- end }}
+
     storage:
       type: jbod
       volumes:
@@ -28,8 +53,17 @@ spec:
       transaction.state.log.min.isr: 1
       default.replication.factor: 1
       min.insync.replicas: 1
+      unclean.leader.election.enable: false
+      auto.create.topics.enable: false
   zookeeper:
     replicas: 1
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
     storage:
       type: persistent-claim
       size: 10G
