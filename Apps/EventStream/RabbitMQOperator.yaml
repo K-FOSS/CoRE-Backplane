@@ -2,44 +2,50 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-rabbitmq-operator
-  namespace: argocd
+  name: 'core-backplane-rabbitmq-operator'
+  namespace: 'argocd'
 
   annotations:
     argocd.argoproj.io/sync-wave: '20'
 
 spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://kubernetes.default.svc
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/env: 'prod'
+            resolvemy.host/dc: 'home1'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
   
   template:
     metadata:
-      name: '{{cluster}}-rabbitmq-operator'
+      name: '{{ .name }}-rabbitmq-operator'
     
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: .
+        argocd.argoproj.io/manifest-generate-paths: '.'
 
     spec:
-      project: core
+      project: 'core'
       syncPolicy:
         syncOptions:
-          - CreateNamespace=true
+          - 'CreateNamespace=true'
+          - 'ServerSideApply=true'
 
       source:
-        path: EventStream/RabbitMQ/Operator
-        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
-        targetRevision: HEAD
+        path: 'EventStream/RabbitMQ/Operator'
+        repoURL: 'https://github.com/K-FOSS/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
 
         plugin:
-          name: argocd-lovely-plugin
+          name: 'argocd-lovely-plugin'
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
-
+        server: '{{ .server }}'
+        namespace: 'core-prod'
