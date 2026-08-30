@@ -38,8 +38,10 @@ Store](https://external-secrets.io/latest/provider/cluster-secret-store/)
 under `EventStream/Kafka/OIDC`. The secret is retained in the vault when the
 PushSecret or Argo application is removed.
 
-The Home1 ApplicationSet also enables the external TLS listener on port `9094`.
-It publishes `kafka.<cluster>.<datacenter>.<region>.mylogin.space` for bootstrap
+The Home1 ApplicationSet also enables the external TLS listener on port `9094`,
+which Strimzi exposes through ClusterIP Services rather than a cloud
+LoadBalancer or NodePort. It publishes
+`kafka.<cluster>.<datacenter>.<region>.mylogin.space` for bootstrap
 and `kafka-0.<cluster>.<datacenter>.<region>.mylogin.space` for broker `0`
 through ExternalDNS. Both names are covered by the existing
 `myloginspace-default-certificates` Secret, which Strimzi uses through
