@@ -16,7 +16,7 @@ Canadian provinces. Nine servers are presently managed across the sites, with
 additional systems held in production or inventory. The available fleet
 provides approximately:
 
-- 1.5 TiB of aggregate RAM.
+- 1.6 TiB of aggregate RAM.
 - 500 aggregate CPU cores.
 - Thirteen server, workstation, and mobile systems across production and
   inventory.
@@ -468,8 +468,8 @@ inventoried systems.
 | --- | --- |
 | Platform / identity | Canonical name SRV2; hostname `srv2.home2.yvr.resolvemy.host`; Dell PowerEdge R730xd, 2U, 13th generation |
 | CPU | 2 × Intel Xeon E5-2650 v4 @ 2.20 GHz; 12 cores / 24 threads per CPU; 24 physical cores / 48 hardware threads total |
-| Memory | 32 GB DDR4 ECC; 2 × 16 GB; dual-rank; 2133 MHz |
-| DIMMs | 2 × Micron `36ASF2G72PZ-2G1A2`; DIMM A1 + B1; 2 of 24 DIMM slots populated |
+| Memory | 128 GB DDR4 ECC; 8 × 16 GB; dual-rank; rated and operating at 2133 MHz; balanced 64 GB per processor / four DIMMs per CPU |
+| DIMMs | 2 × Micron `36ASF2G72PZ-2G1A2` (A1, B1); 6 × Samsung `M393A2G40DB0-CPB` (A2-A4, B2-B4); 8 of 24 DIMM slots populated |
 | Storage controller | Dell PERC H730 Mini; embedded PERC S130 also enumerated |
 | Backplane | 14 drive slots reported by inventory |
 | Physical storage currently inventoried | Bay 12: HGST `HUC101212CSS600`, ~1.2 TB SAS HDD; Bay 13: WDC `WD5000LPLX`, ~500 GB SATA HDD |
