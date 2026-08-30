@@ -201,6 +201,8 @@ controllers:
               secretKeyRef:
                 name: {{ .Values.postgresql.adminSecretName | squote }}
                 key: 'password'
+          - name: CORE_SERVICE_TRAPD_ENABLED
+            value: 'true'
           - name: 'OPENNMS_DBNAME'
             value: {{ required "postgresql.database is required" .Values.postgresql.database | squote }}
           - name: 'OPENNMS_DBUSER'
