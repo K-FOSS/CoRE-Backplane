@@ -133,10 +133,12 @@ and Horizon's [message broker setup](https://docs.opennms.com/horizon/36/deploym
 The Kafka Workspace writes its generated `client_id` and `client_secret` to
 `core-kafka-oidc` in `core-prod`. A Kafka `PushSecret` stores those fields in
 CoreVault at `EventStream/Kafka/OIDC`; this chart's `ExternalSecret` restores
-them as `core-kafka-oidc` in `core-net-prod`. The OpenNMS pod reads them only as
-`KAFKA_CLIENT_ID` and `KAFKA_CLIENT_SECRET`, while the mounted
-`kafka.properties` uses SASL/PLAIN over TLS. No credential value is rendered in
-Git. Removing the claims or applications does not prove that the Authentik
+them as `core-kafka-oidc` in `core-net-prod`. The ExternalSecret renders the
+complete `kafka.properties` file into that target Secret, and both the
+initialization and runtime containers mount it directly. Credentials are not
+exposed as pod environment variables. The file uses SASL/PLAIN over TLS. No
+credential value is rendered in Git. Removing the claims or applications does
+not prove that the Authentik
 client or vaulted record was revoked; inspect the Workspace, PushSecret,
 ExternalSecret, and provider state explicitly.
 
