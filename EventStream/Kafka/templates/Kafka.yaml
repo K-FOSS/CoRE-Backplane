@@ -8,6 +8,18 @@ metadata:
 spec:
   kafka:
     replicas: 3
+    template:
+      pod:
+        affinity:
+          podAntiAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              - labelSelector:
+                  matchExpressions:
+                    - key: 'strimzi.io/name'
+                      operator: 'In'
+                      values:
+                        - 'core-kafka-kafka'
+                topologyKey: 'kubernetes.io/hostname'
     resources:
       requests:
         cpu: 250m

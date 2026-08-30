@@ -11,6 +11,13 @@ this chart to the `core-home1-talos-prod` cluster in the `core-prod` namespace
 through the `argocd-lovely-plugin`. The chart's Kafka custom resource is held
 until sync wave `10`, after the operator and its CRDs are installed.
 
+The three Kafka brokers use required pod anti-affinity on the
+`kubernetes.io/hostname` topology, selecting the Strimzi broker label
+`strimzi.io/name: core-kafka-kafka`. Each broker therefore runs on a different
+worker node; the cluster requires at least three eligible worker nodes. See
+Strimzi's [pod anti-affinity configuration](https://strimzi.io/docs/operators/0.45.2/deploying.html#assembly-scheduling-str)
+for the supported scheduling model.
+
 Kafka clients authenticate through the internal TLS listener on port `9093`
 using Authentik OAuth2 JWTs. The chart creates the Authentik provider and
 application through the repository's `authentik` Terraform ProviderConfig and
