@@ -208,6 +208,10 @@ external:
   enabled: false
   hostname: ''
   brokerHostname: ''
+  brokerHostnames:
+    - 'kafka-0.core-home1-talos-prod.home1.yvr.mylogin.space'
+    - 'kafka-1.core-home1-talos-prod.home1.yvr.mylogin.space'
+    - 'kafka-2.core-home1-talos-prod.home1.yvr.mylogin.space'
   tls:
     secretName: 'myloginspace-default-certificates'
     certificate: 'tls.crt'
@@ -237,9 +241,15 @@ kafka-ui:
         - name: 'core-kafka'
           bootstrapServers: 'core-kafka-kafka-bootstrap:9093'
           properties:
-            security.protocol: 'SASL_SSL'
-            sasl.mechanism: 'PLAIN'
-            sasl.jaas.config: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_UI_KAFKA_CLIENT_ID}" password="${KAFKA_UI_KAFKA_CLIENT_SECRET}";'
+            security.protocol: SASL_SSL
+            sasl.mechanism: OAUTHBEARER
+            sasl.login.callback.handler.class: org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginCallbackHandler
+            sasl.oauthbearer.token.endpoint.url: https://idp.mylogin.space/application/o/token/
+            sasl.jaas.config: >-
+              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required
+              clientId="${KAFKA_UI_KAFKA_CLIENT_ID}"
+              clientSecret="${KAFKA_UI_KAFKA_CLIENT_SECRET}"
+              scope="openid profile email";
             ssl.truststore.type: 'PEM'
             ssl.truststore.certificates: '${KAFKA_UI_KAFKA_CA_CERT}'
     auth:

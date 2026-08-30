@@ -44,6 +44,7 @@ spec:
           checkAccessTokenType: false
           clientId: core-kafka
           clientScope: openid profile email
+          validIssuerUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/'
           jwksEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/jwks/'
           userNameClaim: 'preferred_username'
           maxSecondsWithoutReauthentication: 3600
@@ -64,6 +65,7 @@ spec:
           checkAccessTokenType: false
           clientId: core-kafka
           clientScope: openid profile email
+          validIssuerUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/'
           jwksEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/jwks/'
           userNameClaim: 'preferred_username'
           maxSecondsWithoutReauthentication: 3600
@@ -83,10 +85,24 @@ spec:
               wan-mode: 'public'
           brokers:
             - broker: 0
-              advertisedHost: '{{ .Values.external.brokerHostname }}'
+              advertisedHost: '{{ index .Values.external.brokerHostnames 0 }}'
               advertisedPort: 9094
               annotations:
-                external-dns.alpha.kubernetes.io/hostname: '{{ .Values.external.brokerHostname }}'
+                external-dns.alpha.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 0 }}'
+              labels:
+                wan-mode: 'public'
+            - broker: 1
+              advertisedHost: '{{ index .Values.external.brokerHostnames 1 }}'
+              advertisedPort: 9094
+              annotations:
+                external-dns.alpha.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 1 }}'
+              labels:
+                wan-mode: 'public'
+            - broker: 2
+              advertisedHost: '{{ index .Values.external.brokerHostnames 2 }}'
+              advertisedPort: 9094
+              annotations:
+                external-dns.alpha.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 2 }}'
               labels:
                 wan-mode: 'public'
       {{- end }}
