@@ -81,6 +81,18 @@ for `core-kafka-oidc`; a changed local connection Secret therefore causes
 Strimzi to roll the brokers. The broker does not consume this Secret for
 normal JWT validation, so this restart is a credential-rotation safeguard.
 
+## OpenNMS IPC topics
+
+The broker disables automatic topic creation, so the chart declares the
+required Horizon IPC topics as Strimzi `KafkaTopic` resources. The list follows
+OpenNMS's [Horizon 36 required Kafka topics](https://docs.opennms.com/horizon/36/deployment/core/message-broker/kafka-topics.html):
+`OpenNMS.Sink.Heartbeat`, `OpenNMS.rpc-response`, `OpenNMS.twin.request`,
+`OpenNMS.twin.response`, and the location-specific RPC request and Twin
+response topics for `core-home1-talos-prod` and `core-dc1-talos-prod`.
+Keep the list synchronized with the exact `MINION_LOCATION` values and the
+`OpenNMS` instance ID in the Insight ApplicationSet. Each topic is provisioned
+with three partitions and three replicas for this three-broker cluster.
+
 The Home1 ApplicationSet also enables the external TLS listener on port `9094`,
 which Strimzi exposes through ClusterIP Services rather than a cloud
 LoadBalancer or NodePort. It publishes

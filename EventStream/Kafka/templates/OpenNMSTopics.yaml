@@ -1,0 +1,13 @@
+{{- range .Values.topics }}
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: {{ .name | lower | replace "." "-" | squote }}
+  labels:
+    strimzi.io/cluster: 'core-kafka'
+spec:
+  topicName: {{ .name | squote }}
+  partitions: 3
+  replicas: 3
+---
+{{- end }}
