@@ -206,6 +206,18 @@ controllers:
               secretKeyRef:
                 name: {{ .Values.postgresql.credentialsSecretName | squote }}
                 key: 'password'
+          {{- if .Values.kafka.enabled }}
+          - name: 'KAFKA_CLIENT_ID'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.kafka.credentialsSecretName | squote }}
+                key: 'client_id'
+          - name: 'KAFKA_CLIENT_SECRET'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.kafka.credentialsSecretName | squote }}
+                key: 'client_secret'
+          {{- end }}
           {{- if .Values.ldap.enabled }}
           - name: 'OPENNMS_LDAP_URI'
             valueFrom:
@@ -414,6 +426,20 @@ configMaps:
       public-url.properties: |
         opennms.web.base-url=https://{{ required "gateway.hostname is required" .Values.gateway.hostname }}/opennms/
 
+{{- if .Values.kafka.enabled }}
+  kafka:
+    forceRename: '{{ .Release.Name }}-kafka'
+    data:
+      kafka.properties: |
+        org.opennms.activemq.broker.disable=true
+        org.opennms.core.ipc.strategy=kafka
+        org.opennms.core.ipc.sink.initialSleepTime=60000
+        org.opennms.core.ipc.kafka.bootstrap.servers={{ required "kafka.bootstrapServers is required when Kafka is enabled" .Values.kafka.bootstrapServers }}
+        org.opennms.core.ipc.kafka.security.protocol=SASL_SSL
+        org.opennms.core.ipc.kafka.sasl.mechanism=PLAIN
+        org.opennms.core.ipc.kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username="${env:KAFKA_CLIENT_ID}" password="${env:KAFKA_CLIENT_SECRET}";
+{{- end }}
+
 {{- if .Values.timeseries.enabled }}
   timeseries:
     forceRename: '{{ .Release.Name }}-timeseries'
@@ -588,6 +614,21 @@ persistence:
           - path: '/opt/opennms/etc/opennms.properties.d/public-url.properties'
             subPath: 'public-url.properties'
             readOnly: true
+{{- if .Values.kafka.enabled }}
+  kafka:
+    type: 'configMap'
+    identifier: 'kafka'
+    advancedMounts:
+      main:
+        initialize:
+          - path: '/opt/opennms/etc/opennms.properties.d/kafka.properties'
+            subPath: 'kafka.properties'
+            readOnly: true
+        opennms:
+          - path: '/opt/opennms/etc/opennms.properties.d/kafka.properties'
+            subPath: 'kafka.properties'
+            readOnly: true
+{{- end }}
 {{- if .Values.timeseries.enabled }}
   timeseries:
     type: 'configMap'

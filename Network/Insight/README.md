@@ -120,6 +120,35 @@ The current `sso-user` Composition orphans PostgreSQL roles, databases, and
 grants on deletion. Removing the claim or Argo CD Application is not proof that
 database state or credentials were removed.
 
+## Kafka message broker
+
+Production enables Horizon's Kafka IPC strategy against the external TLS
+listener owned by the
+[`Apps/EventStream/Kafka.yaml`](../../Apps/EventStream/Kafka.yaml)
+ApplicationSet. Kafka uses Authentik OAuth2 JWT validation and enables OAuth
+over SASL/PLAIN for compatible clients; the listener and token flow follow
+[Strimzi's OAuth configuration](https://strimzi.io/docs/operators/0.45.2/deploying.html#con-oauth-server-configuration-str)
+and Horizon's [message broker setup](https://docs.opennms.com/horizon/36/deployment/core/setup-message-broker.html).
+
+The Kafka Workspace writes its generated `client_id` and `client_secret` to
+`core-kafka-oidc` in `core-prod`. A Kafka `PushSecret` stores those fields in
+CoreVault at `EventStream/Kafka/OIDC`; this chart's `ExternalSecret` restores
+them as `core-kafka-oidc` in `core-net-prod`. The OpenNMS pod reads them only as
+`KAFKA_CLIENT_ID` and `KAFKA_CLIENT_SECRET`, while the mounted
+`kafka.properties` uses SASL/PLAIN over TLS. No credential value is rendered in
+Git. Removing the claims or applications does not prove that the Authentik
+client or vaulted record was revoked; inspect the Workspace, PushSecret,
+ExternalSecret, and provider state explicitly.
+
+The configured broker address is the site-local external bootstrap hostname on
+port `9094`. Verify that its certificate covers both the bootstrap and broker
+advertised names, that the Kafka Workspace and PushSecret are Ready before the
+OpenNMS ExternalSecret is expected to sync, and that Horizon logs show healthy
+Kafka IPC connections. Horizon's [Kafka tuning
+reference](https://docs.opennms.com/horizon/36/reference/configuration/tuning-kafka.html)
+and [Kafka producer documentation](https://docs.opennms.com/horizon/36/operation/deep-dive/kafka-producer/kafka-producer.html)
+cover topic behavior and operational checks.
+
 ## Time-series storage
 
 Production uses the official OpenNMS

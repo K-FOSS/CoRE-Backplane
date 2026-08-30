@@ -24,6 +24,31 @@ The client Secret contains `client_id`, `client_secret`, `issuer_url`, and
 access token for the `core-kafka` provider and use the `preferred_username`
 claim as its Kafka principal.
 
+The internal and external listeners also enable Strimzi OAuth over SASL/PLAIN
+and point at the Authentik token endpoint. This supports clients such as
+OpenNMS that can pass a username and password but do not bundle Strimzi's
+OAuth callback library: the username is the OAuth client ID and the password
+is the generated client secret. Strimzi exchanges those values for a token
+before validating the resulting JWT; see the [Strimzi OAuth client
+authentication documentation](https://strimzi.io/docs/operators/0.45.2/deploying.html#con-oauth-server-configuration-str).
+
+When enabled, `OIDCSecretSync.yaml` publishes only the generated Kafka OAuth
+connection fields to the `mainvault-core` [External Secrets
+Store](https://external-secrets.io/latest/provider/cluster-secret-store/)
+under `EventStream/Kafka/OIDC`. The secret is retained in the vault when the
+PushSecret or Argo application is removed.
+
+The Home1 ApplicationSet also enables the external TLS listener on port `9094`.
+It publishes `kafka.<cluster>.<datacenter>.<region>.mylogin.space` for bootstrap
+and `kafka-0.<cluster>.<datacenter>.<region>.mylogin.space` for broker `0`
+through ExternalDNS. Both names are covered by the existing
+`myloginspace-default-certificates` Secret, which Strimzi uses through
+`brokerCertChainAndKey`; the certificate and key are not copied into Git.
+Strimzi adds the configured broker addresses to its advertised listeners and
+requires those names in the certificate SANs; see [custom listener
+certificates](https://strimzi.io/docs/operators/0.45.2/configuring.html#type-CertAndKeySecretSource-reference)
+and [external listener annotations](https://strimzi.io/docs/operators/0.45.2/configuring.html#type-GenericKafkaListenerConfiguration-reference).
+
 Kafka and ZooKeeper each use a 10 GiB persistent claim with
 `deleteClaim: false`; deleting the Argo application preserves resources and
 does not intentionally remove those claims. Verify the Strimzi operator and
