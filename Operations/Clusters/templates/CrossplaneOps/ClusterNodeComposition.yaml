@@ -931,7 +931,7 @@ spec:
                             {{- $selectorParts = append $selectorParts (printf "disk.%s == %s" $selectorKey ($selectorValue | toJson)) }}
                           {{- end }}
                           match: {{ join " && " $selectorParts | quote }}
-                        grow: false
+                        grow: {{ default false $longhornDisk.grow }}
                         maxSize: {{ default "50GB" $longhornDisk.maxSize }}
                       {{- end }}
                     EOT
