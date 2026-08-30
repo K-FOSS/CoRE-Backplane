@@ -86,9 +86,13 @@ normal JWT validation, so this restart is a credential-rotation safeguard.
 The broker disables automatic topic creation, so the chart declares the
 required Horizon IPC topics as Strimzi `KafkaTopic` resources. The list follows
 OpenNMS's [Horizon 36 required Kafka topics](https://docs.opennms.com/horizon/36/deployment/core/message-broker/kafka-topics.html):
-`OpenNMS.Sink.Heartbeat`, `OpenNMS.rpc-response`, `OpenNMS.twin.request`,
-`OpenNMS.twin.response`, and the location-specific RPC request and Twin
-response topics for `core-home1-talos-prod` and `core-dc1-talos-prod`.
+`OpenNMS.Sink.Heartbeat`, `OpenNMS.Sink.Events`, `OpenNMS.Sink.Syslog`,
+`OpenNMS.Sink.Trap`, `OpenNMS.Sink.DeviceConfig`, `OpenNMS.rpc-response`,
+`OpenNMS.twin.request`, `OpenNMS.twin.response`, and the location-specific RPC
+request and Twin response topics for `core-home1-talos-prod` and
+`core-dc1-talos-prod`. The optional sink topics are declared proactively so
+enabling trap, syslog, event, or device-configuration forwarding does not rely
+on broker-side automatic topic creation.
 Keep the list synchronized with the exact `MINION_LOCATION` values and the
 `OpenNMS` instance ID in the Insight ApplicationSet. Each topic is provisioned
 with three partitions and three replicas for this three-broker cluster.
