@@ -1,7 +1,7 @@
 # Kafka
 
 This chart deploys the [Strimzi Kafka Operator](https://strimzi.io/docs/operators/0.45.2/deploying.html)
-and a single-broker Kafka cluster named `core-kafka`. The operator dependency is
+and a three-broker Kafka cluster named `core-kafka`. The operator dependency is
 pinned to Strimzi `0.45.2`, the final Strimzi release line that supports
 ZooKeeper-based Kafka clusters. A future migration to KRaft must follow the
 [Strimzi KRaft migration procedure](https://strimzi.io/docs/operators/0.45.2/deploying.html#assembly-migrating-to-kraft-str).
