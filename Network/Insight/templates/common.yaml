@@ -684,7 +684,15 @@ persistence:
       "resources" .Values.resources))))
   "configMaps" (dict "minion-config" (dict
     "forceRename" (printf "%s-minion-config" .Release.Name)
-    "data" (dict "minion-config.yaml" (printf "http-url: %s\nid: %s\nlocation: %s\norg.opennms.instance.id: %s\n" .Values.minion.coreUrl .Values.minion.id .Values.minion.location .Values.kafka.instanceId))))
+    "data" (dict "minion-config.yaml" (toYaml (dict
+      "http-url" .Values.minion.coreUrl
+      "id" .Values.minion.id
+      "location" .Values.minion.location
+      "org.opennms.instance.id" .Values.kafka.instanceId
+      "ipc" (dict
+        "rpc" (dict "kafka" (dict "bootstrap.servers" .Values.minion.kafka.bootstrapServers))
+        "sink" (dict "kafka" (dict "bootstrap.servers" .Values.minion.kafka.bootstrapServers))
+        "twin" (dict "kafka" (dict "bootstrap.servers" .Values.minion.kafka.bootstrapServers))))))))
   "persistence" (dict
     "minion-config" (dict "type" "configMap" "identifier" "minion-config" "advancedMounts" (dict "minion" (dict "minion" (list (dict "path" "/opt/minion/minion-config.yaml" "subPath" "minion-config.yaml" "readOnly" true)))))
     "minion-kafka" (dict "type" "secret" "name" .Values.minion.kafka.credentialsSecretName
