@@ -37,7 +37,7 @@ spec:
       {{- if .Values.external.enabled }}
       - name: external
         port: 9094
-        type: 'clusterip'
+        type: 'cluster-ip'
         tls: true
         authentication:
           type: oauth
@@ -60,12 +60,16 @@ spec:
           bootstrap:
             annotations:
               external-dns.alpha.kubernetes.io/hostname: '{{ .Values.external.hostname }}'
+            labels:
+              wan-mode: 'public'
           brokers:
             - broker: 0
               advertisedHost: '{{ .Values.external.brokerHostname }}'
               advertisedPort: 9094
               annotations:
                 external-dns.alpha.kubernetes.io/hostname: '{{ .Values.external.brokerHostname }}'
+              labels:
+                wan-mode: 'public'
       {{- end }}
       {{- else }}
       - name: plain

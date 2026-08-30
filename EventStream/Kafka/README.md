@@ -46,6 +46,8 @@ and `kafka-0.<cluster>.<datacenter>.<region>.mylogin.space` for broker `0`
 through ExternalDNS. Both names are covered by the existing
 `myloginspace-default-certificates` Secret, which Strimzi uses through
 `brokerCertChainAndKey`; the certificate and key are not copied into Git.
+The generated external bootstrap and broker Services carry
+`wan-mode: 'public'`, which is required by the site ExternalDNS selection.
 Strimzi adds the configured broker addresses to its advertised listeners and
 requires those names in the certificate SANs; see [custom listener
 certificates](https://strimzi.io/docs/operators/0.45.2/configuring.html#type-CertAndKeySecretSource-reference)
