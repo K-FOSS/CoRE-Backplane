@@ -45,12 +45,23 @@ spec:
         special = true
       }
 
+      resource "random_password" "ui_client_secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
+      }
+
       resource "authentik_provider_oauth2" "kafka" {
         name          = {{ .Values.oidc.providerName | quote }}
         client_id     = {{ .Values.oidc.clientId | quote }}
         client_secret = random_password.client_secret.result
         client_type   = "confidential"
         signing_key   = data.authentik_certificate_key_pair.signing.id
+        # Kafka accepts its own issuer and the UI provider's machine tokens.
+        # Authentik permits client_credentials/password grants by default.
+        jwt_federation_providers = [authentik_provider_oauth2.kafka_ui.id]
 
         property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
         authorization_flow    = data.authentik_flow.authorization.id
@@ -66,6 +77,36 @@ spec:
         protocol_provider = authentik_provider_oauth2.kafka.id
       }
 
+      {{- if .Values.ui.enabled }}
+      resource "authentik_provider_oauth2" "kafka_ui" {
+        name          = {{ .Values.ui.oidc.providerName | quote }}
+        client_id     = {{ .Values.ui.oidc.clientId | quote }}
+        client_secret = random_password.ui_client_secret.result
+        client_type   = "confidential"
+        signing_key   = data.authentik_certificate_key_pair.signing.id
+
+        allowed_redirect_uris = [
+          {
+            matching_mode = "strict",
+            url           = "https://{{ .Values.ui.hostname }}/login/oauth2/code/authentik",
+          },
+        ]
+        property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow    = data.authentik_flow.authorization.id
+        invalidation_flow     = data.authentik_flow.invalidation.id
+        access_token_validity = "hours=8"
+      }
+
+      resource "authentik_application" "kafka_ui" {
+        name              = {{ .Values.ui.oidc.applicationName | quote }}
+        slug              = {{ .Values.ui.oidc.applicationSlug | quote }}
+        group             = "Event Stream"
+        meta_launch_url   = "https://{{ .Values.ui.hostname }}"
+        protocol_provider = authentik_provider_oauth2.kafka_ui.id
+      }
+
+      {{- end }}
+
       output "client_id" {
         value     = authentik_provider_oauth2.kafka.client_id
         sensitive = true
@@ -75,6 +116,23 @@ spec:
         value     = random_password.client_secret.result
         sensitive = true
       }
+
+      {{- if .Values.ui.enabled }}
+      output "ui_client_id" {
+        value     = authentik_provider_oauth2.kafka_ui.client_id
+        sensitive = true
+      }
+
+      output "ui_client_secret" {
+        value     = random_password.ui_client_secret.result
+        sensitive = true
+      }
+
+      output "ui_issuer_url" {
+        value     = "{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.ui.oidc.applicationSlug }}/"
+        sensitive = true
+      }
+      {{- end }}
 
       output "issuer_url" {
         value     = "{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/"
