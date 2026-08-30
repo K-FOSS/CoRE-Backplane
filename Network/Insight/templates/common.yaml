@@ -668,7 +668,7 @@ persistence:
     "replicas" 1
     "pod" (dict
       "automountServiceAccountToken" false
-      "nodeSelector" (dict "core.resolvemy.host/x86-64-v3" "true")
+      "nodeSelector" .Values.minion.nodeSelector
       "securityContext" (dict "runAsNonRoot" true "runAsUser" 10001 "runAsGroup" 10001 "seccompProfile" (dict "type" "RuntimeDefault")))
     "containers" (dict "minion" (dict
       "image" (dict "repository" .Values.minion.image.repository "tag" .Values.minion.image.tag "digest" (required "minion.image.digest is required when Minion is enabled" .Values.minion.image.digest) "pullPolicy" .Values.minion.image.pullPolicy)

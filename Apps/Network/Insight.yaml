@@ -23,8 +23,12 @@ spec:
                       enabled: false
                     minion:
                       enabled: true
+                      nodeSelector: {}
                       image:
-                        digest: 'sha256:6652c8d52a7ad8d2f89cfb7a39ba3205d6f340b5fd9bcac444553d7b8c106457'
+                        repository: 'docker.io/opennms/minion'
+                        tag: '35.0.0'
+                        digest: 'sha256:3456699d74e2a0b67bfe3049e560eba7d21de4180726a8c16294f3416178462e'
+                        pullPolicy: 'IfNotPresent'
                       id: 'core-dc1-talos-prod-minion'
                       location: 'core-dc1-talos-prod'
                       coreUrl: ''
@@ -36,8 +40,13 @@ spec:
                       enabled: true
                     minion:
                       enabled: true
+                      nodeSelector:
+                        core.resolvemy.host/x86-64-v3: 'true'
                       image:
+                        repository: 'docker.io/opennms/minion'
+                        tag: '36.0.3'
                         digest: 'sha256:6652c8d52a7ad8d2f89cfb7a39ba3205d6f340b5fd9bcac444553d7b8c106457'
+                        pullPolicy: 'IfNotPresent'
                       id: 'core-home1-talos-prod-minion'
                       location: 'core-home1-talos-prod'
                       coreUrl: ''
@@ -127,6 +136,12 @@ spec:
                   id: '{{ .values.minion.id }}'
                   location: '{{ .values.minion.location }}'
                   coreUrl: '{{ if .values.minion.coreUrl }}{{ .values.minion.coreUrl }}{{ else }}http://core-home1-talos-prod-network-insight-prod.core-net-{{ .values.environment }}.svc.{{ .values.clusterDomain }}/opennms{{ end }}'
+                  nodeSelector: {{ .values.minion.nodeSelector | toJson }}
+                  image:
+                    repository: '{{ .values.minion.image.repository }}'
+                    tag: '{{ .values.minion.image.tag }}'
+                    digest: '{{ .values.minion.image.digest }}'
+                    pullPolicy: '{{ .values.minion.image.pullPolicy }}'
                   kafka:
                     bootstrapServers: '{{ .values.minion.kafka.bootstrapServers }}'
 
