@@ -55,6 +55,14 @@ enables the Kafka RPC and Sink features under `featuresBoot.d`. The same
 ExternalSecret overlay writes
 `/opt/minion/etc/featuresBoot.d/disable-jms.boot` with `!minion-jms` and
 `!opennms-core-ipc-jms`, preventing the embedded JMS IPC features from loading.
+SNMP traps and informs are enabled on each Minion through the supported
+`netmgt.traps` configuration. The Minion listens on `0.0.0.0:1162/udp` as an
+unprivileged process; the chart's `minion-traps` Service exposes UDP port 162
+and targets that listener. Route the site's SNMP traffic to that Service (or
+replace the Service exposure in the target environment) and verify receipt in
+the Horizon event UI. OpenNMS documents the
+[Minion trap listener configuration](https://docs.opennms.com/horizon/36/deployment/minion/install.html#receive-trap-syslog-messages)
+and [SNMP trap/inform behavior](https://docs.opennms.com/horizon/36/reference/configuration/receive-snmp-traps.html).
 Follow OpenNMS's [message-broker
 setup](https://docs.opennms.com/horizon/36/deployment/core/setup-message-broker.html)
 for the role requirement. Verify the Minion `opennms:health-check`
@@ -84,7 +92,8 @@ containers drop all capabilities and add back only `NET_RAW`, which the pinned
 image's capability-bearing Java executable requires for its native ICMP
 pollers. Removing `NET_RAW` from the container bounding set causes Linux to
 reject Java execution with `EPERM` before OpenNMS can run its configuration
-tester. The chart does not expose Karaf, trap, or syslog listeners publicly.
+tester. The chart does not expose Karaf or syslog listeners publicly; SNMP trap
+and inform ingress is described in the Minion section above.
 
 Two ReadWriteOnce claims retain `/opt/opennms/etc` and `/opennms-data`. The
 configuration claim also caches the pinned time-series plugin after its first

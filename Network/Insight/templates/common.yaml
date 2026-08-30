@@ -673,6 +673,7 @@ persistence:
     "containers" (dict "minion" (dict
       "image" (dict "repository" .Values.minion.image.repository "tag" .Values.minion.image.tag "digest" (required "minion.image.digest is required when Minion is enabled" .Values.minion.image.digest) "pullPolicy" .Values.minion.image.pullPolicy)
       "args" (list "-c")
+      "ports" (ternary (list (dict "name" "traps" "containerPort" .Values.minion.traps.listenPort "protocol" "UDP")) (list) .Values.minion.traps.enabled)
       "env" (list
         (dict "name" "TZ" "value" .Values.global.timezone)
         (dict "name" "MINION_ID" "value" .Values.minion.id)
@@ -690,5 +691,19 @@ persistence:
       "advancedMounts" (dict "minion" (dict "minion" (list
         (dict "path" "/opt/minion/minion-config.yaml" "subPath" "minion-config.yaml" "readOnly" true)
         (dict "path" "/opt/minion-etc-overlay" "readOnly" true))))))) .Values -}}
+{{- if .Values.minion.traps.enabled }}
+{{- $_ := mergeOverwrite .Values (dict "service" (dict "minion-traps" (dict
+  "enabled" true
+  "forceRename" (printf "%s-minion-traps" .Release.Name)
+  "controller" "minion"
+  "primary" false
+  "type" "ClusterIP"
+  "ports" (dict "snmp-trap" (dict
+    "enabled" true
+    "primary" true
+    "port" 162
+    "targetPort" "traps"
+    "protocol" "UDP"))))) .Values -}}
+{{- end }}
 {{- end }}
 {{ include "bjw-s.common.loader.generate" . }}
