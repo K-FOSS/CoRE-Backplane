@@ -249,7 +249,10 @@ kafka-ui:
           authentik:
             clientId: '${KAFKA_UI_OIDC_CLIENT_ID}'
             clientSecret: '${KAFKA_UI_OIDC_CLIENT_SECRET}'
-            scope: 'openid profile email'
+            scope:
+              - 'openid'
+              - 'profile'
+              - 'email'
             client-name: 'Authentik'
             provider: 'authentik'
             redirect-uri: '${KAFKA_UI_PUBLIC_URL}/login/oauth2/code/authentik'
