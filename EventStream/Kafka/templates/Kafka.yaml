@@ -41,7 +41,9 @@ spec:
           enablePlain: true
           tokenEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/token/'
           accessTokenIsJwt: true
-          validIssuerUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/'
+          checkAccessTokenType: false
+          clientId: core-kafka
+          clientScope: openid profile email
           jwksEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/jwks/'
           userNameClaim: 'preferred_username'
           maxSecondsWithoutReauthentication: 3600
@@ -59,7 +61,9 @@ spec:
           enablePlain: true
           tokenEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/token/'
           accessTokenIsJwt: true
-          validIssuerUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/'
+          checkAccessTokenType: false
+          clientId: core-kafka
+          clientScope: openid profile email
           jwksEndpointUri: '{{ .Values.oidc.authentikUrl }}/application/o/{{ .Values.oidc.applicationSlug }}/jwks/'
           userNameClaim: 'preferred_username'
           maxSecondsWithoutReauthentication: 3600

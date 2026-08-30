@@ -50,10 +50,17 @@ in the Kafbat image. See [Strimzi OAuth client authentication](https://strimzi.i
 and [Kafbat configuration](https://ui.docs.kafbat.io/configuration/configuration-file)
 for the supported Kafka and application configuration shapes.
 
-The UI client credentials are written to `core-kafka-ui-oidc` and pushed to
+The Kafka provider trusts the UI provider as a federated Authentik provider,
+and both providers use the same configured signing certificate. Strimzi's
+listener therefore validates the shared JWKS but does not set a single
+`validIssuerUri`; this is required because the Kafka and UI clients have
+different per-provider issuers. Keep the Authentik signing certificate and
+provider set tightly controlled.
+
+The combined Terraform Workspace writes the Kafka and UI credentials to
+`core-kafka-oidc` under separate keys. The UI keys are pushed to
 `EventStream/Kafka/UI/OIDC` in `mainvault-core` with deletion policy `None`.
-The Kafka and UI clients are intentionally separate; do not substitute the
-broker client Secret in the Kafbat configuration.
+The Kafka and UI clients remain intentionally separate.
 
 The internal and external listeners also enable Strimzi OAuth over SASL/PLAIN
 and point at the Authentik token endpoint. This supports clients such as
