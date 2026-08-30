@@ -2,6 +2,26 @@ env: 'prod'
 datacenter: 'example-dc'
 region: 'example-region'
 
+opennms:
+  enabled: true
+
+minion:
+  enabled: false
+  image:
+    repository: 'docker.io/opennms/minion'
+    tag: '36.0.3'
+    digest: 'sha256:6652c8d52a7ad8d2f89cfb7a39ba3205d6f340b5fd9bcac444553d7b8c106457'
+    pullPolicy: 'IfNotPresent'
+  id: 'example-minion'
+  location: 'example-location'
+  coreUrl: ''
+  credentialsSecretName: 'opennms-minion-credentials'
+  secretStoreName: 'mainvault-core'
+  remoteKey: 'Network/Insight/example-cluster/Minion'
+  kafka:
+    bootstrapServers: ''
+    remoteKey: 'EventStream/Kafka/OIDC'
+
 cluster:
   name: 'example-cluster'
   domain: 'cluster.local'
@@ -43,6 +63,7 @@ ldap:
 kafka:
   enabled: false
   bootstrapServers: ''
+  instanceId: 'OpenNMS'
   secretStoreName: 'mainvault-core'
   remoteKey: 'EventStream/Kafka/OIDC'
   credentialsSecretName: 'core-kafka-oidc'
@@ -90,6 +111,10 @@ gateway:
   name: 'main-gw'
   namespace: 'core-prod'
   sectionName: 'https-myloginspace'
+
+serviceGlobal:
+  global:
+    enabled: false
 
 authentik:
   autoconfigure: true

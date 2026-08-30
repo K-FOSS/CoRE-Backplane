@@ -17,7 +17,34 @@ spec:
         generators:
           - list:
               elements:
+                - name: 'core-dc1-talos-prod'
+                  values:
+                    opennms:
+                      enabled: false
+                    minion:
+                      enabled: true
+                      image:
+                        digest: 'sha256:6652c8d52a7ad8d2f89cfb7a39ba3205d6f340b5fd9bcac444553d7b8c106457'
+                      id: 'core-dc1-talos-prod-minion'
+                      location: 'core-dc1-talos-prod'
+                      coreUrl: ''
+                      remoteKey: 'Network/Insight/core-dc1-talos-prod/Minion'
+                      kafka:
+                        bootstrapServers: 'kafka.core-home1-talos-prod.yvr.home1.mylogin.space:9094'
                 - name: 'core-home1-talos-prod'
+                  values:
+                    opennms:
+                      enabled: true
+                    minion:
+                      enabled: true
+                      image:
+                        digest: 'sha256:6652c8d52a7ad8d2f89cfb7a39ba3205d6f340b5fd9bcac444553d7b8c106457'
+                      id: 'core-home1-talos-prod-minion'
+                      location: 'core-home1-talos-prod'
+                      coreUrl: ''
+                      remoteKey: 'Network/Insight/core-home1-talos-prod/Minion'
+                      kafka:
+                        bootstrapServers: 'kafka.core-home1-talos-prod.yvr.home1.mylogin.space:9094'
           - clusters:
               selector:
                 matchLabels:
@@ -86,8 +113,24 @@ spec:
                   readUrl: 'http://core-mimir.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:8080/prometheus/api/v1'
 
                 kafka:
+                  instanceId: '{{ .values.clusterName }}'
                   enabled: true
                   bootstrapServers: 'kafka.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:9094'
+
+                serviceGlobal:
+                  global:
+                    enabled: {{ .values.opennms.enabled }}
+
+                opennms:
+                  enabled: {{ .values.opennms.enabled }}
+
+                minion:
+                  enabled: {{ .values.minion.enabled }}
+                  id: '{{ .values.minion.id }}'
+                  location: '{{ .values.minion.location }}'
+                  coreUrl: '{{ if .values.minion.coreUrl }}{{ .values.minion.coreUrl }}{{ else }}http://core-home1-talos-prod-network-insight-prod.core-net-{{ .values.environment }}.svc.{{ .values.clusterDomain }}/opennms{{ end }}'
+                  kafka:
+                    bootstrapServers: '{{ .values.minion.kafka.bootstrapServers }}'
 
       destination:
         server: '{{ .server }}'

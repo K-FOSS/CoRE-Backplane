@@ -1,9 +1,10 @@
 # OpenNMS Insight
 
 This Helm rendering unit deploys a basic, single-replica OpenNMS Horizon
-instance. The owning `Apps/Network/Insight.yaml` ApplicationSet selects only
-the `core-home1-talos-prod` bare-metal infrastructure cluster and deploys into
-`core-net-prod`. That namespace enforces the privileged Pod Security profile
+instance and site-local Minions. The owning `Apps/Network/Insight.yaml`
+ApplicationSet selects the configured bare-metal infrastructure sites and
+deploys into `core-net-prod`. OpenNMS is enabled at Home1 and a Minion-only
+release is enabled at DC1 by default. That namespace enforces the privileged Pod Security profile
 required for OpenNMS's narrowly scoped `NET_RAW` capability. Lovely injects the
 target's region, datacenter, cluster domain,
 site-local PostgreSQL hostname, local provider names, and administrative Secret
@@ -23,6 +24,35 @@ Kubernetes 1.31 and Helm 3.18 according to its
 The target was observed at Kubernetes 1.36.3, and the pinned
 [`lovely-vault-plugin` 1.2.5 renderer](https://github.com/crumbhole/lovely)
 contains Helm 3.21.2; verify both again before changing either dependency.
+
+## Site enablement and Minion
+
+`Apps/Network/Insight.yaml` is the site registry for this rendering unit. Each
+site entry independently sets `opennms.enabled` and `minion.enabled`. Home1 is
+the current OpenNMS core and publishes its HTTP Service as a Cilium global
+Service; DC1 runs a Minion-only release that connects to that core. Add a site
+entry and set its Minion `id`, `location`, `coreUrl`, and Kafka bootstrap name
+when extending the fleet. The location is the OpenNMS distributed-monitoring
+location that owns polling for that site. OpenNMS's [Minion overview](https://docs.opennms.com/horizon/36/deployment/minion/introduction.html)
+and [container configuration reference](https://docs.opennms.com/horizon/36/reference/configuration/minion-docker.html)
+describe the registration and `-c` startup behavior.
+
+Minion credentials are never stored in Git. Before enabling a site, create the
+Vault record named by `minion.remoteKey` with a dedicated OpenNMS account whose
+only required Horizon role is `ROLE_MINION`; the Kafka OIDC record named by
+`minion.kafka.remoteKey` must contain `client_id` and `client_secret`. The
+ExternalSecret combines those records into the Minion credential Secret and
+mounts the generated Kafka configuration. Follow OpenNMS's [message-broker
+setup](https://docs.opennms.com/horizon/36/deployment/core/setup-message-broker.html)
+for the account and role requirement. Verify the Minion `opennms:health-check`
+and that it is `up` under Configure OpenNMS → Distributed Monitoring → Manage
+Minions after reconciliation.
+
+The OpenNMS core and Minion use the same site-specific Kafka instance ID. Keep
+that ID stable when adding or moving Minions because it is part of the Kafka
+topic namespace. The OpenNMS Service is global only when
+`serviceGlobal.global.enabled` is true; do not enable that setting for a core whose
+cross-cluster HTTP reachability has not been reviewed.
 
 ## Runtime and persistence
 
@@ -303,12 +333,6 @@ current chart:
   Authentik application entitlement, proxy role header, and LDAP group-to-role
   mapping together. Verify denial for every non-member and preserve independent
   break-glass access.
-- [ ] Add multi-site OpenNMS collectors, distinct from the existing Alloy
-  telemetry collectors. Place Minions close to monitored networks, select every
-  target site explicitly, and define location identity, discovery and polling
-  ownership, encrypted core transport, credentials, buffering, failure
-  isolation, upgrade ordering, and site-loss behavior. Include Sentinel and the
-  message broker in this design if flow processing is distributed.
 - [ ] Automate creation, rotation, publication, and revocation of the scoped
   Grafana and NetBox integration identities and tokens. Use `User` claims,
   controller-managed connection Secrets, and provider or Workspace resources;

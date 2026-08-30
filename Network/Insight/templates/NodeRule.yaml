@@ -1,3 +1,4 @@
+{{- if or .Values.opennms.enabled .Values.minion.enabled }}
 apiVersion: nfd.k8s-sigs.io/v1alpha1
 kind: NodeFeatureRule
 metadata:
@@ -28,7 +29,6 @@ spec:
               op: Exists
             OSXSAVE:
               op: Exists
-
     - name: x86-64-v4
       labels:
         core.resolvemy.host/x86-64-v4: 'true'
@@ -63,3 +63,4 @@ spec:
               op: Exists
             AVX512VL:
               op: Exists
+{{- end }}

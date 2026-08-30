@@ -1,10 +1,17 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
-{{- if and .Values.ldap.enabled (not .Values.authentik.accessGroups) }}
+{{- if and .Values.minion.enabled (not .Values.minion.coreUrl) }}
+{{- fail "minion.coreUrl is required when Minion is enabled" }}
+{{- end }}
+{{- if and .Values.minion.enabled (not .Values.minion.kafka.bootstrapServers) }}
+{{- fail "minion.kafka.bootstrapServers is required when Minion is enabled" }}
+{{- end }}
+
+{{- if and .Values.opennms.enabled .Values.ldap.enabled (not .Values.authentik.accessGroups) }}
 {{- fail "authentik.accessGroups must contain at least one group when LDAP authentication is enabled" }}
 {{- end }}
-{{- if and .Values.ldap.enabled (not .Values.authentik.proxyAuth.authorities) }}
+{{- if and .Values.opennms.enabled .Values.ldap.enabled (not .Values.authentik.proxyAuth.authorities) }}
 {{- fail "authentik.proxyAuth.authorities must contain at least one role when LDAP authentication is enabled" }}
 {{- end }}
 
@@ -288,6 +295,12 @@ service:
     controller: 'main'
     primary: true
     type: 'ClusterIP'
+    {{- if .Values.serviceGlobal.global.enabled }}
+    annotations:
+      service.cilium.io/global: 'true'
+      service.cilium.io/shared: 'true'
+      service.cilium.io/global-sync-endpoint-slices: 'true'
+    {{- end }}
     ports:
       http:
         primary: true
@@ -636,5 +649,42 @@ persistence:
 {{- end }}
 {{- end -}}
 
+{{- if .Values.opennms.enabled }}
 {{- $_ := mergeOverwrite .Values (include "core-network-insight.commonValues" . | fromYaml) -}}
+{{- end }}
+{{- if .Values.minion.enabled }}
+{{- $_ := mergeOverwrite .Values (dict
+  "controllers" (dict "minion" (dict
+    "forceRename" (printf "%s-minion" .Release.Name)
+    "type" "deployment"
+    "replicas" 1
+    "pod" (dict
+      "automountServiceAccountToken" false
+      "nodeSelector" (dict "core.resolvemy.host/x86-64-v3" "true")
+      "securityContext" (dict "runAsNonRoot" true "runAsUser" 10001 "runAsGroup" 10001 "seccompProfile" (dict "type" "RuntimeDefault")))
+    "containers" (dict "minion" (dict
+      "image" (dict "repository" .Values.minion.image.repository "tag" .Values.minion.image.tag "digest" (required "minion.image.digest is required when Minion is enabled" .Values.minion.image.digest) "pullPolicy" .Values.minion.image.pullPolicy)
+      "args" (list "-c")
+      "env" (list
+        (dict "name" "TZ" "value" .Values.global.timezone)
+        (dict "name" "MINION_ID" "value" .Values.minion.id)
+        (dict "name" "MINION_LOCATION" "value" .Values.minion.location)
+        (dict "name" "OPENNMS_HTTP_URL" "value" .Values.minion.coreUrl)
+        (dict "name" "OPENNMS_HTTP_USER" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "username")))
+        (dict "name" "OPENNMS_HTTP_PASS" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "password"))))
+      "securityContext" (dict "capabilities" (dict "add" (list "NET_RAW")))
+      "resources" .Values.resources))))
+  "configMaps" (dict "minion-config" (dict
+    "forceRename" (printf "%s-minion-config" .Release.Name)
+    "data" (dict "minion-config.yaml" (printf "http-url: %s\nid: %s\nlocation: %s\norg.opennms.instance.id: %s\n" .Values.minion.coreUrl .Values.minion.id .Values.minion.location .Values.kafka.instanceId))))
+  "persistence" (dict
+    "minion-config" (dict "type" "configMap" "identifier" "minion-config" "advancedMounts" (dict "minion" (dict "minion" (list (dict "path" "/opt/minion/minion-config.yaml" "subPath" "minion-config.yaml" "readOnly" true)))))
+    "minion-credentials" (dict "type" "secret" "name" .Values.minion.credentialsSecretName
+      "items" (list
+        (dict "key" "org.opennms.core.ipc.kafka.cfg" "path" "org.opennms.core.ipc.kafka.cfg")
+        (dict "key" "org.opennms.core.ipc.rpc.kafka.cfg" "path" "org.opennms.core.ipc.rpc.kafka.cfg")
+        (dict "key" "org.opennms.core.ipc.sink.kafka.cfg" "path" "org.opennms.core.ipc.sink.kafka.cfg")
+        (dict "key" "org.opennms.core.ipc.twin.kafka.cfg" "path" "org.opennms.core.ipc.twin.kafka.cfg"))
+      "advancedMounts" (dict "minion" (dict "minion" (list (dict "path" "/opt/minion-etc-overlay" "readOnly" true))))))) .Values -}}
+{{- end }}
 {{ include "bjw-s.common.loader.generate" . }}
