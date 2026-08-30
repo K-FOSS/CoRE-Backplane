@@ -1,6 +1,8 @@
 strimzi-kafka-operator:
   # Default values for strimzi-kafka-operator.
 
+  replicas: 1
+
   # If you set `watchNamespaces` to the same value as ``.Release.Namespace` (e.g. `helm ... --namespace $NAMESPACE`),
   # the chart will fail because duplicate RoleBindings will be attempted to be created in the same namespace
   watchNamespaces: []
@@ -8,6 +10,7 @@ strimzi-kafka-operator:
 
   defaultImageRegistry: quay.io
   defaultImageRepository: strimzi
+  defaultImageTag: '0.45.2'
 
   image:
     registry: ""
@@ -43,6 +46,14 @@ strimzi-kafka-operator:
 
   podSecurityContext: {}
   securityContext: {}
+
+  rbac:
+    create: true
+    serviceAccountCreate: true
+    serviceAccount: 'strimzi-cluster-operator'
+
+  leaderElection:
+    enable: true
 
   # Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
   # repository name with your registry URL.
@@ -101,7 +112,7 @@ strimzi-kafka-operator:
       registry: ""
       repository:
       name: kafka-bridge
-      tag: 0.22.0
+      tag: '0.31.2'
 
   kafkaExporter:
     image:
@@ -164,6 +175,8 @@ strimzi-kafka-operator:
 
   createGlobalResources: true
 
+  createAggregateRoles: false
+
   # Override the exclude pattern for exclude some labels
   labelsExclusionPattern: ""
 
@@ -172,3 +185,5 @@ strimzi-kafka-operator:
 
   # Override the value for Connect build timeout
   connectBuildTimeoutMs: 300000
+
+  generatePodDisruptionBudget: true

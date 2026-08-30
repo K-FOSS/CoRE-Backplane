@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 'core-backplane-kafka'
+  namespace: 'argocd'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/env: 'prod'
+            resolvemy.host/dc: 'home1'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .name }}-kafka'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '.'
+
+    spec:
+      project: 'core'
+
+      syncPolicy:
+        syncOptions:
+          - 'CreateNamespace=true'
+          - 'ServerSideApply=true'
+
+      source:
+        path: 'EventStream/Kafka'
+        repoURL: 'https://github.com/K-FOSS/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
+
+        plugin:
+          name: 'argocd-lovely-plugin'
+
+      destination:
+        server: '{{ .server }}'
+        namespace: 'core-prod'
