@@ -17,10 +17,10 @@ minion:
   coreUrl: ''
   credentialsSecretName: 'opennms-minion-credentials'
   secretStoreName: 'mainvault-core'
-  remoteKey: 'Network/Insight/example-cluster/Minion'
   kafka:
     bootstrapServers: ''
     remoteKey: 'EventStream/Kafka/OIDC'
+    credentialsSecretName: 'opennms-minion-kafka'
 
 cluster:
   name: 'example-cluster'
@@ -118,6 +118,7 @@ serviceGlobal:
 
 authentik:
   autoconfigure: true
+  minionGroup: 'OpenNMS Minions'
   proxyAuth:
     enabled: true
     userHeader: 'X-Authentik-Username'

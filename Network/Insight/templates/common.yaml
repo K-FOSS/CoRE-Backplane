@@ -580,6 +580,14 @@ configMaps:
                   </beans:list>
                 </beans:entry>
                 {{- end }}
+                {{- if .Values.minion.enabled }}
+                <beans:entry>
+                  <beans:key><beans:value>{{ required "authentik.minionGroup is required when Minion is enabled" .Values.authentik.minionGroup | html }}</beans:value></beans:key>
+                  <beans:list>
+                    <beans:value>ROLE_MINION</beans:value>
+                  </beans:list>
+                </beans:entry>
+                {{- end }}
               </beans:map>
             </beans:property>
           </beans:bean>
@@ -679,7 +687,7 @@ persistence:
     "data" (dict "minion-config.yaml" (printf "http-url: %s\nid: %s\nlocation: %s\norg.opennms.instance.id: %s\n" .Values.minion.coreUrl .Values.minion.id .Values.minion.location .Values.kafka.instanceId))))
   "persistence" (dict
     "minion-config" (dict "type" "configMap" "identifier" "minion-config" "advancedMounts" (dict "minion" (dict "minion" (list (dict "path" "/opt/minion/minion-config.yaml" "subPath" "minion-config.yaml" "readOnly" true)))))
-    "minion-credentials" (dict "type" "secret" "name" .Values.minion.credentialsSecretName
+    "minion-kafka" (dict "type" "secret" "name" .Values.minion.kafka.credentialsSecretName
       "items" (list
         (dict "key" "org.opennms.core.ipc.kafka.cfg" "path" "org.opennms.core.ipc.kafka.cfg")
         (dict "key" "org.opennms.core.ipc.rpc.kafka.cfg" "path" "org.opennms.core.ipc.rpc.kafka.cfg")

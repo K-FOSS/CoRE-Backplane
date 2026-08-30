@@ -41,9 +41,9 @@ User claim
 ```
 
 The base Terraform Workspace generates a random username when `spec.username`
-is absent, generates a password, resolves the Authentik `LDAPService` group,
-and creates the Authentik user. Later resources wait for that Workspace's
-connection details.
+is absent, generates a password, resolves `LDAPService` plus any groups in
+`spec.groups`, and creates the Authentik user. Later resources wait for that
+Workspace's connection details.
 
 All reconciliation is declarative, but it crosses several controllers:
 Crossplane, the Go-templating function, provider-terraform, the Authentik
@@ -122,9 +122,10 @@ generated password is 16 characters.
 The XRD currently exposes more intent than the Composition consumes:
 
 - `email` is ignored.
-- `serviceAccount` is ignored; the Terraform input is hardcoded to `true`, so
-  Authentik creates a service account.
-- `groups` is ignored; every user is placed only in `LDAPService`.
+- `serviceAccount` is currently ignored; the Terraform input is hardcoded to
+  `true`, so Authentik creates a service account.
+- `groups` is honored in addition to the mandatory `LDAPService` group. Every
+  named group must already exist in Authentik.
 - `mysql` and `mongodb` have schemas but create no resources or connection
   details.
 - `AVoIP` is not consumed.

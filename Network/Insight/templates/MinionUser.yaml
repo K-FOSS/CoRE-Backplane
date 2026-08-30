@@ -1,0 +1,15 @@
+{{- if .Values.minion.enabled }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ .Release.Name }}-minion'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  name: 'OpenNMS Minion {{ .Values.minion.location }}'
+  username: {{ required "minion.id is required when Minion is enabled" .Values.minion.id | squote }}
+  serviceAccount: true
+  groups:
+    - {{ required "authentik.minionGroup is required when Minion is enabled" .Values.authentik.minionGroup | squote }}
+  writeConnectionSecretToRef:
+    name: {{ required "minion.credentialsSecretName is required" .Values.minion.credentialsSecretName | squote }}
+{{- end }}

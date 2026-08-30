@@ -40,6 +40,12 @@ spec:
         EOT
       }
 
+      {{- if .Values.minion.enabled }}
+      resource "authentik_group" "opennms_minions" {
+        name = "{{ required "authentik.minionGroup is required when Minion is enabled" .Values.authentik.minionGroup }}"
+      }
+      {{- end }}
+
       resource "authentik_provider_proxy" "opennms" {
         name               = "{{ .Release.Name }}"
         mode               = "forward_single"

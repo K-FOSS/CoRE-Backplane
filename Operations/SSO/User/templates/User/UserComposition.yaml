@@ -106,6 +106,9 @@ spec:
                   serviceAccount: true
                   groups:
                     - LDAPService
+                    {{- range .observed.composite.resource.spec.groups }}
+                    - {{ . }}
+                    {{- end }}
                 module: | # hcl
                   resource "random_string" "username" {
                     length  = 10
