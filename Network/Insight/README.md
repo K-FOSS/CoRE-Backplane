@@ -145,7 +145,11 @@ ExternalSecret, and provider state explicitly.
 The configured broker address is the site-local external bootstrap hostname on
 port `9094`. Verify that its certificate covers both the bootstrap and broker
 advertised names, that the Kafka Workspace and PushSecret are Ready before the
-OpenNMS ExternalSecret is expected to sync, and that Horizon logs show healthy
+OpenNMS ExternalSecret is expected to sync. The PushSecret and spoke
+ExternalSecret reconcile every five minutes; when the spoke Secret changes,
+the targeted [Stakater Reloader Secret annotation](https://github.com/stakater/Reloader#how-to-use-reloader)
+rolls the OpenNMS StatefulSet so its mounted `kafka.properties` reloads. Check
+the ExternalSecret `refreshTime`, pod start time, and Horizon logs for healthy
 Kafka IPC connections. Horizon's [Kafka tuning
 reference](https://docs.opennms.com/horizon/36/reference/configuration/tuning-kafka.html)
 and [Kafka producer documentation](https://docs.opennms.com/horizon/36/operation/deep-dive/kafka-producer/kafka-producer.html)

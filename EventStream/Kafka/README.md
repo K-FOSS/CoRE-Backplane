@@ -42,8 +42,13 @@ authentication documentation](https://strimzi.io/docs/operators/0.45.2/deploying
 When enabled, `OIDCSecretSync.yaml` publishes only the generated Kafka OAuth
 connection fields to the `mainvault-core` [External Secrets
 Store](https://external-secrets.io/latest/provider/cluster-secret-store/)
-under `EventStream/Kafka/OIDC`. The secret is retained in the vault when the
-PushSecret or Argo application is removed.
+under `EventStream/Kafka/OIDC`. The PushSecret reconciles every five minutes,
+replaces the remote fields as a unit, and leaves the remote record in place
+when the PushSecret or Argo application is removed. Kafka broker pods carry a
+targeted [Stakater Reloader Secret annotation](https://github.com/stakater/Reloader#how-to-use-reloader)
+for `core-kafka-oidc`; a changed local connection Secret therefore causes
+Strimzi to roll the brokers. The broker does not consume this Secret for
+normal JWT validation, so this restart is a credential-rotation safeguard.
 
 The Home1 ApplicationSet also enables the external TLS listener on port `9094`,
 which Strimzi exposes through ClusterIP Services rather than a cloud
