@@ -31,6 +31,30 @@ The client Secret contains `client_id`, `client_secret`, `issuer_url`, and
 access token for the `core-kafka` provider and use the `preferred_username`
 claim as its Kafka principal.
 
+The chart also deploys the pinned [Kafbat UI Helm chart](https://github.com/kafbat/helm-charts/tree/main/charts/kafka-ui)
+at chart version `1.6.5` and image version `v1.5.0`. Kafbat is exposed at the
+ApplicationSet-generated `kafka-ui.<cluster>.<datacenter>.<region>.mylogin.space`
+hostname through the existing `core-prod/main-gw` Gateway. Its native
+[OAuth2/OIDC login](https://ui.docs.kafbat.io/configuration/authentication/for-the-ui/oauth2)
+uses a separate Authentik provider and application named `Core Kafka UI`, with
+the strict callback URI for that hostname. Users therefore receive SSO through
+Authentik while Kafbat retains its own client session and does not reuse the
+Kafka broker client.
+
+Kafbat connects to the internal TLS listener at
+`core-kafka-kafka-bootstrap:9093` with SASL/PLAIN. Strimzi exchanges the UI
+client ID and secret for an OAuth token at Authentik's token endpoint; the UI
+pod trusts the `core-kafka-cluster-ca-cert` Secret. This uses the listener's
+`enablePlain` path and avoids bundling a separate Strimzi OAuth callback plugin
+in the Kafbat image. See [Strimzi OAuth client authentication](https://strimzi.io/docs/operators/0.45.2/deploying.html#con-oauth-server-configuration-str)
+and [Kafbat configuration](https://ui.docs.kafbat.io/configuration/configuration-file)
+for the supported Kafka and application configuration shapes.
+
+The UI client credentials are written to `core-kafka-ui-oidc` and pushed to
+`EventStream/Kafka/UI/OIDC` in `mainvault-core` with deletion policy `None`.
+The Kafka and UI clients are intentionally separate; do not substitute the
+broker client Secret in the Kafbat configuration.
+
 The internal and external listeners also enable Strimzi OAuth over SASL/PLAIN
 and point at the Authentik token endpoint. This supports clients such as
 OpenNMS that can pass a username and password but do not bundle Strimzi's
@@ -73,4 +97,11 @@ the `core-kafka` custom resource after reconciliation:
 ```sh
 kubectl -n core-prod get deployment,strimzipodset,kafka,zookeeper
 kubectl -n core-prod describe kafka core-kafka
+kubectl -n core-prod get deployment/core-kafka-ui httproute/core-kafka-ui
+kubectl -n core-prod describe workspace/core-kafka-ui-authentik
 ```
+
+Then open the generated `kafka-ui.<cluster>.<datacenter>.<region>.mylogin.space`
+URL and verify that Authentik login returns to Kafbat and that the `core-kafka`
+cluster lists topics. Do not print either OIDC Secret; inspect only key names,
+controller conditions, and application logs with secret values redacted.

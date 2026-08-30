@@ -52,6 +52,12 @@ spec:
                   enabled: true
                   hostname: 'kafka.{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
                   brokerHostname: 'kafka-0.{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
+                ui:
+                  hostname: 'kafka-ui.{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
+                kafka-ui:
+                  envs:
+                    config:
+                      KAFKA_UI_PUBLIC_URL: 'https://kafka-ui.{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
 
       destination:
         server: '{{ .server }}'

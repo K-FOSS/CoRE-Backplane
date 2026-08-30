@@ -1,0 +1,34 @@
+{{- if .Values.ui.enabled }}
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: 'core-kafka-ui'
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+
+spec:
+  parentRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: Gateway
+      namespace: {{ .Values.ui.gateway.namespace | squote }}
+      name: {{ .Values.ui.gateway.name | squote }}
+      sectionName: {{ .Values.ui.gateway.sectionName | squote }}
+
+  hostnames:
+    - {{ .Values.ui.hostname | squote }}
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: 'core-kafka-ui'
+          port: 80
+          weight: 1
+      timeouts:
+        backendRequest: 3h
+        request: 0s
+      matches:
+        - path:
+            type: PathPrefix
+            value: '/'
+{{- end }}

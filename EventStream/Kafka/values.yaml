@@ -212,3 +212,88 @@ external:
     secretName: 'myloginspace-default-certificates'
     certificate: 'tls.crt'
     key: 'tls.key'
+
+kafka-ui:
+  enabled: true
+  fullnameOverride: 'core-kafka-ui'
+  image:
+    tag: 'v1.5.0'
+  replicaCount: 1
+  service:
+    type: 'ClusterIP'
+    port: 80
+  ingress:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  yamlApplicationConfig:
+    kafka:
+      clusters:
+        - name: 'core-kafka'
+          bootstrapServers: 'core-kafka-kafka-bootstrap:9093'
+          properties:
+            security.protocol: 'SASL_SSL'
+            sasl.mechanism: 'PLAIN'
+            sasl.jaas.config: 'org.apache.kafka.common.security.plain.PlainLoginModule required username="${KAFKA_UI_KAFKA_CLIENT_ID}" password="${KAFKA_UI_KAFKA_CLIENT_SECRET}";'
+            ssl.truststore.type: 'PEM'
+            ssl.truststore.certificates: '${KAFKA_UI_KAFKA_CA_CERT}'
+    auth:
+      type: 'OAUTH2'
+      oauth2:
+        client:
+          authentik:
+            clientId: '${KAFKA_UI_OIDC_CLIENT_ID}'
+            clientSecret: '${KAFKA_UI_OIDC_CLIENT_SECRET}'
+            scope: 'openid profile email'
+            client-name: 'Authentik'
+            provider: 'authentik'
+            redirect-uri: '${KAFKA_UI_PUBLIC_URL}/login/oauth2/code/authentik'
+            authorization-grant-type: 'authorization_code'
+            issuer-uri: 'https://idp.mylogin.space/application/o/core-kafka-ui/'
+            jwk-set-uri: 'https://idp.mylogin.space/application/o/core-kafka-ui/jwks/'
+            user-name-attribute: 'preferred_username'
+            custom-params:
+              type: 'oauth'
+    server:
+      forward-headers-strategy: 'native'
+  envs:
+    config:
+      KAFKA_UI_PUBLIC_URL: 'https://kafka-ui.core-home1-talos-prod.home1.yxl.mylogin.space'
+    secretMappings:
+      KAFKA_UI_OIDC_CLIENT_ID:
+        name: 'core-kafka-ui-oidc'
+        keyName: 'client_id'
+      KAFKA_UI_OIDC_CLIENT_SECRET:
+        name: 'core-kafka-ui-oidc'
+        keyName: 'client_secret'
+      KAFKA_UI_KAFKA_CLIENT_ID:
+        name: 'core-kafka-ui-oidc'
+        keyName: 'client_id'
+      KAFKA_UI_KAFKA_CLIENT_SECRET:
+        name: 'core-kafka-ui-oidc'
+        keyName: 'client_secret'
+      KAFKA_UI_KAFKA_CA_CERT:
+        name: 'core-kafka-cluster-ca-cert'
+        keyName: 'ca.crt'
+
+ui:
+  enabled: true
+  hostname: 'kafka-ui.core-home1-talos-prod.home1.yxl.mylogin.space'
+  gateway:
+    name: 'main-gw'
+    namespace: 'core-prod'
+    sectionName: 'https-myloginspace'
+  oidc:
+    providerName: 'Core Kafka UI'
+    applicationName: 'Core Kafka UI'
+    applicationSlug: 'core-kafka-ui'
+    clientId: 'core-kafka-ui'
+    secretSync:
+      enabled: true
+      secretStoreName: 'mainvault-core'
+      remoteKey: 'EventStream/Kafka/UI/OIDC'
