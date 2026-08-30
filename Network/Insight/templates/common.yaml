@@ -682,26 +682,13 @@ persistence:
         (dict "name" "OPENNMS_HTTP_PASS" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "password"))))
       "securityContext" (dict "capabilities" (dict "add" (list "NET_RAW")))
       "resources" .Values.resources))))
-  "configMaps" (dict "minion-config" (dict
-    "forceRename" (printf "%s-minion-config" .Release.Name)
-    "data" (dict "minion-config.yaml" (toYaml (dict
-      "http-url" .Values.minion.coreUrl
-      "id" .Values.minion.id
-      "location" .Values.minion.location
-      "org.opennms.instance.id" .Values.kafka.instanceId
-      "ipc" (dict
-        "rpc" (dict "kafka" (dict "bootstrap.servers" .Values.minion.kafka.bootstrapServers))
-        "sink" (dict "kafka" (dict "bootstrap.servers" .Values.minion.kafka.bootstrapServers))
-        "twin" (dict "kafka" (dict "bootstrap.servers" .Values.minion.kafka.bootstrapServers))))))))
   "persistence" (dict
-    "minion-config" (dict "type" "configMap" "identifier" "minion-config" "advancedMounts" (dict "minion" (dict "minion" (list (dict "path" "/opt/minion/minion-config.yaml" "subPath" "minion-config.yaml" "readOnly" true)))))
     "minion-kafka" (dict "type" "secret" "name" .Values.minion.kafka.credentialsSecretName
       "items" (list
-        (dict "key" "org.opennms.core.ipc.kafka.cfg" "path" "org.opennms.core.ipc.kafka.cfg")
-        (dict "key" "org.opennms.core.ipc.rpc.kafka.cfg" "path" "org.opennms.core.ipc.rpc.kafka.cfg")
-        (dict "key" "org.opennms.core.ipc.sink.kafka.cfg" "path" "org.opennms.core.ipc.sink.kafka.cfg")
-        (dict "key" "org.opennms.core.ipc.twin.kafka.cfg" "path" "org.opennms.core.ipc.twin.kafka.cfg")
+        (dict "key" "minion-config.yaml" "path" "minion-config.yaml")
         (dict "key" "disable-jms.boot" "path" "featuresBoot.d/disable-jms.boot"))
-      "advancedMounts" (dict "minion" (dict "minion" (list (dict "path" "/opt/minion-etc-overlay" "readOnly" true))))))) .Values -}}
+      "advancedMounts" (dict "minion" (dict "minion" (list
+        (dict "path" "/opt/minion/minion-config.yaml" "subPath" "minion-config.yaml" "readOnly" true)
+        (dict "path" "/opt/minion-etc-overlay" "readOnly" true))))))) .Values -}}
 {{- end }}
 {{ include "bjw-s.common.loader.generate" . }}
