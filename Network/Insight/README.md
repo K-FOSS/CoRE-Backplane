@@ -43,11 +43,14 @@ claim. It creates a dedicated Authentik LDAP service account, assigns the
 Minion. The core's LDAP mapping grants that group only `ROLE_MINION`. The
 Kafka OIDC record named by `minion.kafka.remoteKey` must contain `client_id`
 and `client_secret`; an ExternalSecret mounts the generated Kafka
-configuration. The mounted Minion configuration also declares Kafka bootstrap
-settings for the RPC, Sink, and Twin IPC modules. The Minion image's confd
-startup then writes the module configuration and enables the Kafka RPC and
-Sink features under `featuresBoot.d`; the credential-bearing files remain in
-the ExternalSecret overlay. Follow OpenNMS's [message-broker
+configuration. The ExternalSecret renders the complete `minion-config.yaml`,
+including the OAuth-backed Kafka settings for the RPC, Sink, and Twin IPC
+modules. The Minion image's confd startup writes the module configuration and
+enables the Kafka RPC and Sink features under `featuresBoot.d`. The same
+ExternalSecret overlay writes
+`/opt/minion/etc/featuresBoot.d/disable-jms.boot` with `!minion-jms` and
+`!opennms-core-ipc-jms`, preventing the embedded JMS IPC features from loading.
+Follow OpenNMS's [message-broker
 setup](https://docs.opennms.com/horizon/36/deployment/core/setup-message-broker.html)
 for the role requirement. Verify the Minion `opennms:health-check`
 and that it is `up` under Configure OpenNMS → Distributed Monitoring → Manage
