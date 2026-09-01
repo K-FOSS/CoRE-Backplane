@@ -14,6 +14,31 @@ plus PGPool, pgAdmin, services and credential automation. It is owned by
   users.
 - Crossplane/provider credentials.
 - Optional restore cluster resource.
+- PostgreSQL metrics from a `postgres_exporter` sidecar, scraped by the
+  cluster's Alloy annotation autodiscovery and forwarded to Mimir.
+
+## Monitoring
+
+The chart enables the [prometheus-community PostgreSQL exporter](https://github.com/prometheus-community/postgres_exporter)
+as a sidecar on both the shared `psql-main` cluster and the site-local
+PostgreSQL cluster. The Zalando operator injects `POSTGRES_USER` and
+`POSTGRES_PASSWORD` into sidecars; the exporter uses those runtime values to
+connect to the local PostgreSQL process over loopback. Credentials are never
+stored in chart values or annotations.
+
+The sidecar exposes port 9187 and the operator attaches the standard
+`prometheus.io` annotations to every database pod. The cluster-local
+[Alloy collector](../../Observability/Collectors/README.md) discovers those
+annotated pods and forwards the resulting Prometheus metrics to Mimir. This
+does not create a `ServiceMonitor`, so it does not require a separate
+Prometheus instance or cross-cluster Service.
+
+Verify after reconciliation that the exporter container is ready on every
+PostgreSQL pod, `http://<pod-ip>:9187/metrics` responds from inside the cluster,
+and Alloy reports successful scrapes and remote writes. A failed exporter must
+not affect PostgreSQL readiness; disable it by setting
+`monitoring.postgresExporter.enabled` to `false` and reconciling the owning
+ApplicationSet.
 
 Chart dependencies are pinned to the
 [BJW-S common library 4.6.2](https://github.com/bjw-s-labs/helm-charts/releases/tag/common-4.6.2)
