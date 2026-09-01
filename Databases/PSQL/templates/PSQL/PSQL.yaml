@@ -14,6 +14,37 @@ spec:
   volume:
     size: 10Gi
 
+  {{- if .Values.monitoring.postgresExporter.enabled }}
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/path: '/metrics'
+    prometheus.io/port: '{{ .Values.monitoring.postgresExporter.port }}'
+    prometheus.io/job: 'postgres-exporter'
+
+  sidecars:
+    - name: postgres-exporter
+      image: '{{ .Values.monitoring.postgresExporter.image }}'
+      imagePullPolicy: 'IfNotPresent'
+      ports:
+        - name: metrics
+          containerPort: {{ .Values.monitoring.postgresExporter.port }}
+          protocol: 'TCP'
+      env:
+        - name: DATA_SOURCE_URI
+          value: '127.0.0.1:5432/postgres?sslmode=disable'
+        - name: DATA_SOURCE_USER
+          value: '$(POSTGRES_USER)'
+        - name: DATA_SOURCE_PASS
+          value: '$(POSTGRES_PASSWORD)'
+      resources:
+        requests:
+          cpu: '10m'
+          memory: '32Mi'
+        limits:
+          cpu: '100m'
+          memory: '128Mi'
+  {{- end }}
+
   numberOfInstances: 3
 
   masterServiceAnnotations:
