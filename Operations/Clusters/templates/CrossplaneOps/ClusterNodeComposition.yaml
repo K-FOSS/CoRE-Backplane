@@ -871,10 +871,15 @@ spec:
                 source: Inline
                 initArgs:
                   - '-upgrade'
+                {{ $talosVersion := $clusterCustomResource.status.atProvider.manifest.spec.versions.talos }}
+                {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.version .observed.composite.resource.spec.overrides.version.talos }}
+                {{ $talosVersion = .observed.composite.resource.spec.overrides.version.talos }}
+                {{- end }}
                 varmap:
                   talosConfig: |
             {{ indent 8 $talosHardware.status.atProvider.manifest.spec.userData }}
                   installerImage: {{ $talosImageFactory.status.atProvider.outputs.installer_url }}
+                  intendedTalosVersion: {{ $talosVersion }}
                   nodeIP: {{ regexReplaceAll "(.*)/[1-3][0-9]"  (index (index .observed.composite.resource.spec.networks 0).addresses 0) "${1}" }}
                 module: | # hcl
                   variable "talosConfig" {
@@ -892,11 +897,36 @@ spec:
                     type        = string
                   }
 
+                  variable "intendedTalosVersion" {
+                    description = "Talos version intended for this node"
+                    type        = string
+                  }
+
+                  # Talos 1.12 introduced the multi-document network configuration
+                  # model. Keep using the legacy machine configuration until the
+                  # running node has actually been upgraded as well as the desired
+                  # image, because ApplyConfiguration is handled by the currently
+                  # installed Talos API.
+                  data "local_command" "talos_version" {
+                    command                  = "talosctl"
+                    arguments                = ["version", "--short", "--talosconfig=./talos-config", "--nodes", var.nodeIP]
+                    allow_non_zero_exit_code = true
+                  }
+
                   output "finished" {
                     value = true
                   }
 
                   locals {
+                    installed_talos_version = try(regex("v?([0-9]+\\.[0-9]+\\.[0-9]+)", trimspace(data.local_command.talos_version.stdout)), "0.0.0")
+                    installed_talos_parts = split(".", local.installed_talos_version)
+                    intended_talos_version = try(regex("v?([0-9]+\\.[0-9]+\\.[0-9]+)", var.intendedTalosVersion), "0.0.0")
+                    intended_talos_parts = split(".", local.intended_talos_version)
+                    installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
+                    installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
+                    intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
+                    use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
+
                     link-script = <<-EOT
                       talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -ojson | jq -cr 'select(.spec.kind == "bridge" or .spec.kind == "bond" or (.spec.type == "ether" and (.spec.kind == "" or .spec.kind == null)))'
                     EOT
@@ -1449,6 +1479,14 @@ spec:
 
                   output "sas_drives" {
                     value = data.talos_machine_disks.sasdrives.disks
+                  }
+
+                  output "detected_talos_version" {
+                    value = local.installed_talos_version
+                  }
+
+                  output "installed_talos_is_1_14_or_newer" {
+                    value = local.installed_talos_is_1_14_or_newer
                   }
 
                   {{- if $.observed.composite.resource.spec.watchdog.enabled }}
