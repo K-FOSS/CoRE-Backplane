@@ -918,9 +918,9 @@ spec:
                   }
 
                   locals {
-                    installed_talos_version = try(regex("v?([0-9]+\\.[0-9]+\\.[0-9]+)", trimspace(data.local_command.talos_version.stdout)), "0.0.0")
+                    installed_talos_version = try(regex("[0-9]+\\.[0-9]+\\.[0-9]+", trimspace(data.local_command.talos_version.stdout)), "0.0.0")
                     installed_talos_parts = split(".", local.installed_talos_version)
-                    intended_talos_version = try(regex("v?([0-9]+\\.[0-9]+\\.[0-9]+)", var.intendedTalosVersion), "0.0.0")
+                    intended_talos_version = try(regex("[0-9]+\\.[0-9]+\\.[0-9]+", var.intendedTalosVersion), "0.0.0")
                     intended_talos_parts = split(".", local.intended_talos_version)
                     installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
