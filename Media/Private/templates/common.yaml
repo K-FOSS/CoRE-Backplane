@@ -230,6 +230,47 @@ service:
         appProtocol:  
   {{- end }}
 
+  {{- if $.Values.metube.enabled }}
+  metube:
+    enabled: true
+    controller: 'metube'
+    type: 'ClusterIP'
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: http
+        protocol: 'TCP'
+  {{- end }}
+
+route:
+  {{- if .Values.metube.enabled }}
+  metube:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - 'metube.mylogin.space'
+
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: '{{ $.Values.pubgateway.name }}'
+        sectionName: '{{ $.Values.pubgateway.sectionName }}'
+        namespace: '{{ $.Values.pubgateway.namespace }}'
+
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'metube'
+            weight: 1
+  {{- end }}
+
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
