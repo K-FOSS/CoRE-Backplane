@@ -909,7 +909,7 @@ spec:
                   # installed Talos API.
                   data "local_command" "talos_version" {
                     command                  = "talosctl"
-                    arguments                = ["version", "--short", "--talosconfig=./talos-config", "--nodes", var.nodeIP]
+                    arguments                = ["get", "version", "-o", "json", "--talosconfig=./talos-config", "--nodes", var.nodeIP]
                     allow_non_zero_exit_code = true
                   }
 
@@ -918,7 +918,7 @@ spec:
                   }
 
                   locals {
-                    installed_talos_version = try(regex("[0-9]+\\.[0-9]+\\.[0-9]+", trimspace(data.local_command.talos_version.stdout)), "0.0.0")
+                    installed_talos_version = try(jsondecode(trimspace(data.local_command.talos_version.stdout)).spec.version, "0.0.0")
                     installed_talos_parts = split(".", local.installed_talos_version)
                     intended_talos_version = try(regex("[0-9]+\\.[0-9]+\\.[0-9]+", var.intendedTalosVersion), "0.0.0")
                     intended_talos_parts = split(".", local.intended_talos_version)
