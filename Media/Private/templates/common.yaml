@@ -145,13 +145,6 @@ persistence:
           - path: /downloads
       {{- end }}
 
-      {{- if .Values.metube.volumes.downloads.enabled }}
-      metube:
-        metube:
-          - path: /downloads
-      {{- end }}
-
-
   media:
     enabled: true
     type: persistentVolumeClaim
@@ -165,10 +158,11 @@ persistence:
           - path: /Media
       {{- end }}
 
-      {{- if .Values.metube.volumes.downloads.enabled }}
+      {{- if .Values.metube.volumes.media.enabled }}
       metube:
         metube:
-          - path: /Media
+          - path: '/downloads'
+            subPath: 'Adult/scenes'
       {{- end }}
 
 service:
