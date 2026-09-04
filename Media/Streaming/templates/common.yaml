@@ -34,6 +34,26 @@ controllers:
                     mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
                 topologyKey: 'kubernetes.io/hostname'
 
+    initContainers:
+      enable-metrics:
+        image:
+          repository: {{ $.Values.jellyfin.image }}
+          tag: {{ default "latest" $.Values.jellyfin.tag }}
+          pullPolicy: IfNotPresent
+        command:
+          - '/bin/sh'
+          - '-ec'
+        args:
+          - >-
+            config='/config/system.xml';
+            if [ ! -f "$config" ]; then
+              printf '%s\n' '<SystemConfiguration><EnableMetrics>true</EnableMetrics></SystemConfiguration>' > "$config";
+            elif grep -q '<EnableMetrics>' "$config"; then
+              sed -i 's#<EnableMetrics>[^<]*</EnableMetrics>#<EnableMetrics>true</EnableMetrics>#' "$config";
+            else
+              sed -i 's#</SystemConfiguration>#<EnableMetrics>true</EnableMetrics></SystemConfiguration>#' "$config";
+            fi
+
     containers:
       jellyfin:
         image:
@@ -48,6 +68,10 @@ controllers:
           - name: discovery
             containerPort: 7359
             protocol: UDP
+
+        env:
+          - name: JELLYFIN_CACHE_DIR
+            value: '/cache'
   {{- end }}
 
   #
@@ -109,6 +133,21 @@ persistence:
       jellyfin:
         jellyfin:
           - path: /config
+        enable-metrics:
+          - path: /config
+  {{- end }}
+
+  {{- if .Values.jellyfin.volumes.transcode.enabled }}
+  jellyfin-transcode:
+    enabled: true
+    type: persistentVolumeClaim
+    accessMode: ReadWriteOnce
+    size: {{ .Values.jellyfin.volumes.transcode.size }}
+    storageClass: '{{ .Release.Name }}-jellyfin-transcode'
+    advancedMounts:
+      jellyfin:
+        jellyfin:
+          - path: /cache
   {{- end }}
 
   {{- if .Values.stash.volumes.config.enabled }}
@@ -263,6 +302,21 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol: 'kubernetes.io/ws'
+  {{- end }}
+
+serviceMonitor:
+  {{- if and $.Values.jellyfin.enabled $.Values.jellyfin.monitoring.enabled }}
+  jellyfin:
+    enabled: true
+    selector:
+      matchLabels:
+        app.kubernetes.io/service: '{{ .Release.Name }}-jellyfin'
+    labels:
+      resolvemy.host/metrics: 'mimir'
+    endpoints:
+      - port: http
+        path: '/metrics'
+        interval: {{ $.Values.jellyfin.monitoring.interval }}
   {{- end }}
 
 route:

@@ -8,6 +8,26 @@ public Gateway API routes through the
 only `core-home1-talos-prod`, injects the `augy` media tenant, and deploys the
 release into `core-media`.
 
+Jellyfin's transcode workspace is a dedicated Longhorn PVC using the
+[Longhorn StorageClass parameters](https://longhorn.io/docs/latest/references/storage-class-parameters/)
+`diskSelector: 'ssd'` and `numberOfReplicas: '1'`. It is mounted at
+`/cache` and is deleted with the PVC/StorageClass lifecycle; transcoded media
+is disposable and is not a backup substitute. The StorageClass uses Longhorn's
+`Delete` reclaim policy for dynamically provisioned volume cleanup. Jellyfin's
+[container documentation](https://jellyfin.org/docs/general/installation/container/)
+defines `/cache` as the cache volume, and `JELLYFIN_CACHE_DIR` is set
+explicitly so transcoding uses it.
+
+The chart enables Jellyfin's built-in `/metrics` endpoint in the persisted
+`system.xml` and creates a Prometheus Operator
+[ServiceMonitor](https://prometheus-operator.dev/docs/platform/operator/)
+labelled for the repository's Mimir Prometheus selection. The endpoint is not
+published as a separate route, but the existing public Jellyfin route forwards
+requests to the same Service; restrict `/metrics` at the gateway or network
+boundary if it must not be internet-accessible. Verify the ServiceMonitor is
+selected by the target Prometheus and that `/metrics` returns a 200 response
+from the in-cluster Jellyfin Service after reconciliation.
+
 ## Streaming and WebSockets
 
 Jellyfin is exposed at `stream.mylogin.space`; Stash is exposed at

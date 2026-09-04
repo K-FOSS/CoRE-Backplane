@@ -1,0 +1,16 @@
+{{- if and .Values.jellyfin.enabled .Values.jellyfin.volumes.transcode.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-jellyfin-transcode'
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+parameters:
+  numberOfReplicas: '1'
+  diskSelector: 'ssd'
+  fsType: 'ext4'
+  dataLocality: 'disabled'
+  dataEngine: 'v1'
+{{- end }}
