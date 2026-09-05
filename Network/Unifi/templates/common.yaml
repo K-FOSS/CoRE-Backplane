@@ -43,6 +43,25 @@ controllers:
               secretKeyRef:
                 name: '{{ .Release.Name }}'
                 key: 'STATDB_MONGO_URI'
+        ports:
+          - name: 'inform'
+            containerPort: 8080
+            protocol: 'TCP'
+          - name: 'speedtest'
+            containerPort: 6789
+            protocol: 'TCP'
+          - name: 'syslog'
+            containerPort: 5514
+            protocol: 'UDP'
+          - name: 'httpportalredir'
+            containerPort: 8880
+            protocol: 'TCP'
+          - name: 'httppsortalredir'
+            containerPort: 8843
+            protocol: 'TCP'
+          - name: 'https'
+            containerPort: 8443
+            protocol: 'TCP'
         probes:
           readiness:
             enabled: true
