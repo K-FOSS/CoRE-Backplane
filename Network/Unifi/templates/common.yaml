@@ -2,12 +2,169 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "app-template.hardcodedValues" -}}
-# Set the nameOverride based on the release name if no override has been set
-{{ if not .Values.global.nameOverride }}
 global:
+  # Set the nameOverride based on the release name if no override has been set
+{{ if not .Values.global.nameOverride }}
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
+  propagateGlobalMetadataToPods: true
+  labels:
+    resolvemy.host/env: '{{ .Values.env }}'
 
+defaultPodOptions:
+  annotations:
+    backup.velero.io/backup-volumes: 'data'
+
+controllers:
+  unifi:
+    strategy: 'RollingUpdate'
+    defaultContainerOptions:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+    containers:
+      unifi:
+        image:
+          repository: 'ghcr.io/goofball222/unifi'
+          tag: 'latest-alpine'
+          pullPolicy: 'Always'
+        env:
+          - name: 'DB_MONGO_LOCAL'
+            value: 'false'
+          - name: 'UNIFI_DB_NAME'
+            value: 'unifi'
+          - name: 'DB_MONGO_URI'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ .Release.Name }}'
+                key: 'DB_MONGO_URI'
+          - name: 'STATDB_MONGO_URI'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ .Release.Name }}'
+                key: 'STATDB_MONGO_URI'
+        probes:
+          readiness:
+            enabled: true
+            type: 'HTTPS'
+            path: '/status'
+            port: 'https'
+            spec:
+              initialDelaySeconds: 30
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 12
+          liveness:
+            enabled: true
+            type: 'HTTPS'
+            path: '/status'
+            port: 'https'
+            spec:
+              initialDelaySeconds: 120
+              periodSeconds: 30
+              timeoutSeconds: 10
+              failureThreshold: 5
+          startup:
+            enabled: true
+            type: 'HTTPS'
+            path: '/status'
+            port: 'https'
+            spec:
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 90
+
+service:
+  unifi-lb:
+    enabled: true
+    controller: 'unifi'
+    type: 'ClusterIP'
+    ipFamilyPolicy:
+    ipFamilies: []
+    annotations:
+      external-dns.alpha.kubernetes.io/hostname: 'unifi.int.mylogin.space'
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    ports:
+      inform:
+        enabled: true
+        primary: false
+        port: 8080
+      speedtest:
+        enabled: true
+        primary: false
+        port: 6789
+      syslog:
+        enabled: true
+        primary: false
+        port: 5514
+        protocol: 'UDP'
+      httpportalredir:
+        enabled: true
+        primary: false
+        port: 8880
+        protocol: 'HTTP'
+      httppsortalredir:
+        enabled: true
+        primary: false
+        port: 8843
+        protocol: 'HTTPS'
+  unifi:
+    enabled: true
+    controller: 'unifi'
+    primary: true
+    type: 'ClusterIP'
+    ports:
+      https:
+        enabled: true
+        primary: true
+        port: 8443
+        protocol: 'HTTPS'
+
+route:
+  unifi-web:
+    enabled: true
+    kind: 'TLSRoute'
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - '{{ .Values.domain }}'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: 'Gateway'
+        name: 'main-gw'
+        sectionName: 'tls-mqtt'
+        namespace: 'core-prod'
+    rules:
+      - backendRefs:
+          - kind: 'Service'
+            port: 8443
+            name: 'unifi'
+            weight: 1
+
+persistence:
+  data:
+    enabled: true
+    type: 'persistentVolumeClaim'
+    mountPath:
+    accessMode: 'ReadWriteOnce'
+    size: '2G'
+    globalMounts:
+      - path: '/usr/lib/unifi/data'
+        readOnly: false
+  tls:
+    enabled: true
+    type: 'secret'
+    name: 'myloginspace-default-certificates'
+    globalMounts:
+      - path: '/usr/lib/unifi/cert/cert.pem'
+        subPath: 'tls.crt'
+        readOnly: false
+      - path: '/usr/lib/unifi/cert/privkey.pem'
+        subPath: 'tls.key'
+        readOnly: false
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
