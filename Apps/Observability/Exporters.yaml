@@ -19,14 +19,17 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    gpuExportersEnabled: true
 
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    gpuExportersEnabled: false
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    gpuExportersEnabled: false
           - clusters:
               selector:
                 matchLabels:
@@ -72,15 +75,14 @@ spec:
 
         plugin:
           name: argocd-lovely-plugin
-          # env:
-          #   - name: LOVELY_HELM_MERGE
-          #     value: |- 
-          #       grafana:
-          #         ldap:
-          #           enabled: true
-          #           # `existingSecret` is a reference to an existing secret containing the ldap configuration
-          #           # for Grafana in a key `ldap-toml`.
-          #           existingSecret: 'grafana-core-ldap'
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                drm-exporter:
+                  enabled: {{ .values.gpuExportersEnabled }}
+
+                dcgm-exporter:
+                  enabled: {{ .values.gpuExportersEnabled }}
 
       destination:
         server: '{{ .server }}'

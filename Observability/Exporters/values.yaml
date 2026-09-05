@@ -2094,6 +2094,9 @@ kube-prometheus-stack:
 
     prometheusSpec:
       replicas: 0
+      # Alloy consumes ServiceMonitors from this release. Do not require the
+      # Prometheus release label, since the scrape is performed externally.
+      serviceMonitorSelectorNilUsesHelmValues: false
 
   ## Configuration for thanosRuler
   ## ref: https://thanos.io/tip/components/rule.md/
@@ -2126,3 +2129,38 @@ prometheus-ipmi-exporter:
     staticConfigs:
       - targets:
           - 172.31.193.100
+
+drm-exporter:
+  enabled: false
+
+  # Intel iGPU and dGPU telemetry through the host DRM interfaces (i915/xe).
+  # NFD must publish this label on YVR GPU nodes.
+  hostAccess:
+    devDri: '/dev/dri'
+    sys: '/sys'
+  nodeSelector:
+    kubernetes.io/arch: 'amd64'
+    feature.node.kubernetes.io/pci-0300_8086.present: 'true'
+  monitoring:
+    serviceMonitor:
+      enabled: true
+      interval: '30s'
+      scrapeTimeout: '10s'
+  config:
+    intervalSeconds: 5
+
+dcgm-exporter:
+  enabled: false
+
+  # NVIDIA DCGM exposes CUDA/NVIDIA device, utilization, memory, power,
+  # thermals, PCIe, and error metrics. The NVIDIA device runtime/driver and
+  # device plugin are prerequisites on matching nodes.
+  image:
+    tag: '4.6.0-4.8.3-distroless'
+  nodeSelector:
+    kubernetes.io/arch: 'amd64'
+    nvidia.com/gpu.present: 'true'
+  serviceMonitor:
+    enabled: true
+    interval: '30s'
+    scrapeTimeout: '25s'
