@@ -149,12 +149,19 @@ spec:
                         cpus:
                           cores: 8
                           sockets: 1
-                          threads: 1
+                          threads: 2
                         podNetwork:
                           enabled: true
                           macAddress: '02:00:11:01:03:01'
                         memory:
-                          guest: 32768M
+                          guest: 32Gi
+                        resources:
+                          requests:
+                            cpu: 4
+                            memory: 16Gi
+                          limits:
+                            cpu: 8
+                            memory: 32Gi
                         ports:
                           - name: ssh
                             port: 22
@@ -162,7 +169,7 @@ spec:
                             expose: true
                         disk:
                           enabled: true
-                          size: 20Gi
+                          size: 64Gi
 
                     networks:
                       - name: mlx3-nic2-backend951
