@@ -17,9 +17,11 @@ Immich PostgreSQL role and database through the site-local Crossplane providers.
 The workload consumes its generated `photos` connection Secret and connects to
 `psql-local.<cluster>.<datacenter>.<region>.mylogin.space`. Immich requires a
 PostgreSQL vector extension; this deployment selects `pgvector`, so the target
-site-local PostgreSQL image must provide that extension. The chart bundles
-[Valkey](https://github.com/immich-app/immich-charts/blob/main/charts/immich/values.yaml)
-for the Immich job queue and persists no Valkey data.
+site-local PostgreSQL image must provide that extension. Immich uses the
+site-local authenticated `dragonfly-core` service for its job queue and cache,
+with logical database `133` reserved in the
+[Dragonfly allocation registry](../../Storage/Dragonfly/CoRE/README.md). The
+deployment does not run a chart-local Valkey instance.
 
 The route is protected by the repository's Authentik Envoy external-authorization
 path and the `Media Consumers` group. Verify the `User` claim, generated

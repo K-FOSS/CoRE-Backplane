@@ -52,6 +52,14 @@ immich:
                   key: 'database'
             DB_VECTOR_EXTENSION: 'pgvector'
             TZ: '{{ .Values.global.timezone }}'
+            REDIS_HOSTNAME: 'dragonfly-core.core-media.svc.cluster.local'
+            REDIS_PORT: '6379'
+            REDIS_PASSWORD:
+              valueFrom:
+                secretKeyRef:
+                  name: 'dragonfly-core-password'
+                  key: 'password'
+            REDIS_DBINDEX: '133'
 
   immich:
     persistence:
@@ -59,7 +67,7 @@ immich:
         existingClaim: 'photos-library'
 
   valkey:
-    enabled: true
+    enabled: false
 
   server:
     enabled: true
