@@ -70,6 +70,47 @@ controllers:
             containerPort: 8191
   {{- end }}
 
+  {{- if $.Values.bazarr.enabled }}
+  bazarr:
+    strategy: Recreate
+    enabled: true
+    forceRename: 'bazarr'
+    name: 'bazarr'
+    pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+      securityContext:
+        fsGroup: 911
+        runAsUser: 911
+        runAsGroup: 911
+        fsGroupChangePolicy: 'OnRootMismatch'
+    containers:
+      bazarr:
+        image:
+          repository: {{ $.Values.bazarr.image }}
+          tag: {{ $.Values.bazarr.tag }}
+          pullPolicy: 'IfNotPresent'
+        env:
+          - name: 'PUID'
+            value: '911'
+          - name: 'PGID'
+            value: '911'
+          - name: 'TZ'
+            value: 'America/Vancouver'
+        ports:
+          - name: 'http'
+            containerPort: 6767
+  {{- end }}
+
 persistence:
   {{- if .Values.flaresolverr.volumes.config.enabled }}
   flaresolverr-config:
@@ -81,6 +122,31 @@ persistence:
       flaresolverr:
         flaresolverr:
           - path: /config
+  {{- end }}
+
+  {{- if .Values.bazarr.volumes.config.enabled }}
+  bazarr-config:
+    enabled: true
+    type: persistentVolumeClaim
+    forceRename: 'core-media-bazarr-config'
+    accessMode: ReadWriteOnce
+    size: {{ .Values.bazarr.volumes.config.size }}
+    advancedMounts:
+      bazarr:
+        bazarr:
+          - path: '/config'
+  {{- end }}
+
+  {{- if .Values.bazarr.enabled }}
+  bazarr-media:
+    enabled: true
+    type: persistentVolumeClaim
+    forceRename: 'bazarr-media'
+    existingClaim: {{ printf "%s-media" .Values.tenant.name | squote }}
+    advancedMounts:
+      bazarr:
+        bazarr:
+          - path: '/media'
   {{- end }}
 
   {{- if and .Values.volumes.enabled .Values.volumes.media.enabled }}
@@ -104,6 +170,22 @@ persistence:
   {{- end }}
 
 service:
+  {{- if $.Values.bazarr.enabled }}
+  bazarr:
+    enabled: true
+    forceRename: 'bazarr'
+    controller: 'bazarr'
+    primary: true
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: TCP
+  {{- end }}
+
   {{- if $.Values.flaresolverr.enabled }}
   flaresolverr:
     # -- Enables or disables the service
