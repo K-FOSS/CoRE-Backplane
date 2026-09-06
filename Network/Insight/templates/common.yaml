@@ -14,6 +14,9 @@
 {{- if and .Values.opennms.enabled .Values.ldap.enabled (not .Values.authentik.proxyAuth.authorities) }}
 {{- fail "authentik.proxyAuth.authorities must contain at least one role when LDAP authentication is enabled" }}
 {{- end }}
+{{- if and .Values.flow.enabled .Values.networkPolicy.enabled (not .Values.flow.allowedCidrs) }}
+{{- fail "flow.allowedCidrs must contain at least one CIDR when the flow collector and network policy are enabled" }}
+{{- end }}
 
 {{- define "core-network-insight.networkPolicyRules" -}}
 ingress:
@@ -290,6 +293,84 @@ controllers:
               failureThreshold: 90
         securityContext: *javaContainerSecurityContext
         resources: *containerResources
+  {{- if .Values.flow.enabled }}
+  flow:
+    forceRename: '{{ .Release.Name }}-flow'
+    replicas: 1
+    strategy: 'RollingUpdate'
+    pod:
+      automountServiceAccountToken: false
+      nodeSelector:
+{{ toYaml .Values.flow.nodeSelector | nindent 8 }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: 'RuntimeDefault'
+    containers:
+      flow:
+        image:
+          repository: {{ .Values.flow.image.repository | squote }}
+          tag: {{ required "flow.image.tag is required" .Values.flow.image.tag | squote }}
+          pullPolicy: {{ .Values.flow.image.pullPolicy | squote }}
+        args:
+          - '-listen'
+          - 'netflow://:2055,netflow://:4739,sflow://:6343'
+          - '-addr'
+          - ':8080'
+          - '-produce'
+          - 'sample'
+          - '-format'
+          - 'bin'
+          - '-transport'
+          - 'file'
+          - '-transport.file'
+          - '/dev/null'
+          - '-logfmt'
+          - 'json'
+        ports:
+          - name: 'netflow'
+            containerPort: 2055
+            protocol: 'UDP'
+          - name: 'ipfix'
+            containerPort: 4739
+            protocol: 'UDP'
+          - name: 'sflow'
+            containerPort: 6343
+            protocol: 'UDP'
+          - name: 'http'
+            containerPort: 8080
+            protocol: 'TCP'
+        probes:
+          readiness:
+            enabled: true
+            type: 'HTTP'
+            path: '/__health'
+            port: 'http'
+            spec:
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              timeoutSeconds: 3
+              failureThreshold: 6
+          liveness:
+            enabled: true
+            type: 'HTTP'
+            path: '/__health'
+            port: 'http'
+            spec:
+              initialDelaySeconds: 15
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        resources:
+{{ toYaml .Values.flow.resources | nindent 10 }}
+  {{- end }}
 
 service:
   main:
@@ -309,6 +390,46 @@ service:
         port: 80
         targetPort: 'http'
         protocol: 'TCP'
+  {{- if .Values.flow.enabled }}
+  flow:
+    forceRename: '{{ .Release.Name }}-flow'
+    controller: 'flow'
+    type: {{ .Values.flow.service.type | squote }}
+    externalTrafficPolicy: {{ .Values.flow.service.externalTrafficPolicy | squote }}
+    annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path: '/metrics'
+      prometheus.io/portName: 'http'
+      prometheus.io/job: 'opennms-flow'
+      {{- range $key, $value := .Values.flow.service.annotations }}
+      {{ $key }}: {{ $value | squote }}
+      {{- end }}
+    ports:
+      netflow:
+        enabled: true
+        primary: false
+        port: 2055
+        targetPort: 'netflow'
+        protocol: 'UDP'
+      ipfix:
+        enabled: true
+        primary: false
+        port: 4739
+        targetPort: 'ipfix'
+        protocol: 'UDP'
+      sflow:
+        enabled: true
+        primary: false
+        port: 6343
+        targetPort: 'sflow'
+        protocol: 'UDP'
+      http:
+        enabled: true
+        primary: true
+        port: 8080
+        targetPort: 'http'
+        protocol: 'TCP'
+  {{- end }}
 
 {{- if .Values.networkPolicy.enabled }}
 networkpolicies:
@@ -333,6 +454,34 @@ networkpolicies:
       - 'Ingress'
     rules:
 {{ include "core-network-insight.networkPolicyRules" . | nindent 6 }}
+  {{- if .Values.flow.enabled }}
+  flow:
+    forceRename: '{{ .Release.Name }}-flow'
+    controller: 'flow'
+    policyTypes:
+      - 'Ingress'
+    rules:
+      ingress:
+        - from:
+            {{- range .Values.flow.allowedCidrs }}
+            - ipBlock:
+                cidr: {{ . | squote }}
+            {{- end }}
+          ports:
+            - port: 'netflow'
+              protocol: 'UDP'
+            - port: 'ipfix'
+              protocol: 'UDP'
+            - port: 'sflow'
+              protocol: 'UDP'
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: {{ .Values.flow.metricsNamespace | squote }}
+          ports:
+            - port: 'http'
+              protocol: 'TCP'
+  {{- end }}
 {{- end }}
 
 rawResources:

@@ -207,6 +207,46 @@ reference](https://docs.opennms.com/horizon/36/reference/configuration/tuning-ka
 and [Kafka producer documentation](https://docs.opennms.com/horizon/36/operation/deep-dive/kafka-producer/kafka-producer.html)
 cover topic behavior and operational checks.
 
+## Flow intake and Prometheus metadata
+
+The OpenNMS-enabled site entries in `Apps/Network/Insight.yaml` enable a
+separate GoFlow2 Deployment. The pinned commit-derived
+[`netsampler/goflow2` image](https://github.com/netsampler/goflow2) receives
+UDP NetFlow v5/v9 and IPFIX on ports `2055` and `4739`, and sFlow v5 on port
+`6343`. The Service is a `LoadBalancer` by default, preserves the exporter
+source address with `externalTrafficPolicy: Local`, and accepts optional
+platform-specific annotations through `flow.service.annotations`.
+
+GoFlow2 discards the decoded sample output to `/dev/null` after processing it;
+the retained output is its Prometheus endpoint on the `http` Service port at
+`/metrics`. Its built-in metrics record received and dropped packet/byte
+traffic, protocol, exporter/router, NetFlow version, template and flow-set
+counts, sFlow samples, decode errors, and decode/flow delay. The existing
+central Alloy annotation autodiscovery scrapes this Service and forwards the
+metrics to Mimir. This intentionally exports bounded protocol and exporter
+metadata, not `src_addr`/`dst_addr` as Prometheus labels; use a flow store or
+Kafka pipeline when per-flow records or high-cardinality dimensions are
+required. GoFlow2's [Prometheus metric definitions](https://github.com/netsampler/goflow2/blob/6dee964/metrics/metrics.go)
+and [collector wiring](https://github.com/netsampler/goflow2/blob/6dee964/cmd/goflow2/main.go)
+describe the current metric and listener behavior.
+
+NetworkPolicy permits UDP packets only from `flow.allowedCidrs`, which
+defaults to RFC1918 networks, and permits TCP metrics scrapes from the
+ApplicationSet's `core-prod` observability namespace. Set the CIDRs to the
+actual exporter networks before enabling a non-private source. The collector
+does not support TCP or TLS flow transport in this deployment. NetFlow/IPFIX
+template packets must arrive before their data records can be decoded; verify
+the GoFlow2 `flow_process_nf_templates_total`, `flow_process_nf_total`, and
+`flow_decoder_error_total` series after sending a test export. GoFlow2's
+[protocol field mapping](https://github.com/netsampler/goflow2/blob/6dee964/docs/protocols.md)
+is the reference for decoded NetFlow/IPFIX/sFlow metadata.
+
+To disable intake, set `flow.enabled: false` through the ApplicationSet merge
+values and reconcile through Git/Argo CD. Removing the Service does not change
+exporter configuration on routers or switches; disable those exporters
+separately and review any retained Prometheus data according to the Mimir
+retention policy.
+
 ## Time-series storage
 
 Production uses the official OpenNMS

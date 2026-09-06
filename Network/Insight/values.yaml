@@ -100,6 +100,36 @@ timeseries:
   externalTagsCacheSize: 1000
   maxSeriesLookback: 7776000
 
+flow:
+  # GoFlow2 collects NetFlow v5/v9, IPFIX, and sFlow over UDP and exposes
+  # protocol and exporter metadata through its Prometheus endpoint.
+  enabled: false
+  image:
+    repository: 'docker.io/netsampler/goflow2'
+    # Commit-derived image tag; do not replace with latest.
+    tag: '6dee964-amd64'
+    pullPolicy: 'IfNotPresent'
+  nodeSelector:
+    core.resolvemy.host/x86-64-v3: 'true'
+  resources:
+    requests:
+      cpu: '100m'
+      memory: '256Mi'
+    limits:
+      cpu: '1'
+      memory: '1Gi'
+  service:
+    type: 'LoadBalancer'
+    externalTrafficPolicy: 'Local'
+    annotations: {}
+  # Restrict flow packets to the private networks used by exporters. Add the
+  # actual exporter CIDRs through ApplicationSet values when they differ.
+  allowedCidrs:
+    - '10.0.0.0/8'
+    - '172.16.0.0/12'
+    - '192.168.0.0/16'
+  metricsNamespace: 'core-prod'
+
 migration:
   replaceStatefulSet: false
 
