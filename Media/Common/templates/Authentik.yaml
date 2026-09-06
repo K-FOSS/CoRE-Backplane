@@ -6,22 +6,18 @@ apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
   name: '{{ .Release.Name }}-authentik'
-
 spec:
   providerConfigRef:
     name: 'authentik'
-
   forProvider:
     source: 'Inline'
     module: | # hcl
       data "authentik_flow" "authorization" {
         slug = "default-provider-authorization-implicit-consent"
       }
-
       data "authentik_flow" "invalidation" {
         slug = "default-provider-invalidation-flow"
       }
-
       resource "authentik_provider_proxy" "app" {
         name               = "{{ .Release.Name }}"
         mode               = "forward_single"
@@ -29,34 +25,78 @@ spec:
         authorization_flow = data.authentik_flow.authorization.id
         invalidation_flow  = data.authentik_flow.invalidation.id
       }
-
       resource "authentik_application" "app" {
         name              = "{{ required "authentik.application.displayName is required" .Values.authentik.application.displayName }}"
         slug              = "{{ .Release.Name }}"
         group             = "{{ required "authentik.application.group is required" .Values.authentik.application.group }}"
         protocol_provider = authentik_provider_proxy.app.id
       }
-
       resource "authentik_application_entitlement" "access" {
         name        = "media-access"
         application = authentik_application.app.uuid
       }
-
       {{- range $index, $group := .Values.authentik.accessGroups }}
       data "authentik_group" "access_{{ $index }}" {
         name = "{{ $group }}"
       }
-
       resource "authentik_policy_binding" "entitlement_{{ $index }}" {
         target = authentik_application_entitlement.access.id
         group  = data.authentik_group.access_{{ $index }}.id
         order  = {{ $index }}
       }
-
       resource "authentik_policy_binding" "application_{{ $index }}" {
         target = authentik_application.app.uuid
         group  = data.authentik_group.access_{{ $index }}.id
         order  = {{ $index }}
       }
       {{- end }}
+{{- end }}
+
+{{- if and .Values.unmanic.enabled .Values.authentik.autoconfigure }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: '{{ .Release.Name }}-unmanic-authentik'
+spec:
+  providerConfigRef:
+    name: 'authentik'
+  forProvider:
+    source: 'Inline'
+    module: | # hcl
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+      data "authentik_group" "access" {
+        name = "{{ required "authentik.accessGroups must contain at least one group" (index .Values.authentik.accessGroups 0) }}"
+      }
+      resource "authentik_provider_proxy" "app" {
+        name               = "{{ .Release.Name }}-unmanic"
+        mode               = "forward_single"
+        external_host      = "{{ required "authentik.applications.unmanic.externalHost is required" .Values.authentik.applications.unmanic.externalHost }}"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+      resource "authentik_application" "app" {
+        name              = "{{ required "authentik.applications.unmanic.displayName is required" .Values.authentik.applications.unmanic.displayName }}"
+        slug              = "{{ .Release.Name }}-unmanic"
+        group             = "{{ required "authentik.applications.unmanic.group is required" .Values.authentik.applications.unmanic.group }}"
+        protocol_provider = authentik_provider_proxy.app.id
+      }
+      resource "authentik_application_entitlement" "access" {
+        name        = "media-access"
+        application = authentik_application.app.uuid
+      }
+      resource "authentik_policy_binding" "entitlement" {
+        target = authentik_application_entitlement.access.id
+        group  = data.authentik_group.access.id
+        order  = 0
+      }
+      resource "authentik_policy_binding" "application" {
+        target = authentik_application.app.uuid
+        group  = data.authentik_group.access.id
+        order  = 0
+      }
 {{- end }}

@@ -9,6 +9,11 @@ spec:
     - group: 'gateway.networking.k8s.io'
       kind: HTTPRoute
       name: 'core-media'
+    {{- if .Values.unmanic.enabled }}
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: '{{ .Release.Name }}-unmanic'
+    {{- end }}
 
   extAuth:
     failOpen: false

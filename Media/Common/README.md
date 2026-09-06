@@ -6,6 +6,12 @@ This rendering unit deploys shared media storage, FlareSolverr, Bazarr, and
 [`Apps/Media/Common.yaml`](../../Apps/Media/Common.yaml) owns the Argo CD
 ApplicationSet and injects the cluster, tenant, and environment values.
 
+It also deploys [Unmanic](https://docs.unmanic.app/docs/installation/kubernetes/)
+at `https://unmanic.mylogin.space`. Unmanic uses the shared tenant media PVC as
+`/library`, a persistent 5Gi config PVC at `/config`, and a dedicated 20Gi
+cache PVC at `/tmp/unmanic`. Its route is protected by the shared Authentik
+forward-auth policy and the `Media Consumers` group.
+
 Bazarr is published at `https://bazarr.mylogin.space` through the shared
 Gateway and protected by an Authentik forward-auth policy. The Authentik
 application and its `Media Consumers` entitlement are managed by the
