@@ -24,9 +24,9 @@ controllers:
                 topologyKey: 'kubernetes.io/hostname'
       securityContext:
         fsGroup: {{ .Values.user.gid }}
-        runAsUser: {{ .Values.user.uid }}
-        runAsGroup: {{ .Values.user.gid }}
         fsGroupChangePolicy: 'OnRootMismatch'
+      # Kapowarr's image entrypoint must start as root so it can create/update
+      # the PUID/PGID account before dropping privileges with gosu.
     containers:
       kapowarr:
         image:
