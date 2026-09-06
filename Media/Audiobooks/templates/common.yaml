@@ -1,0 +1,104 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+{{- define "app-template.hardcodedValues" -}}
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: '{{ .Release.Name }}'
+{{ end }}
+controllers:
+  {{- if .Values.audiobookshelf.enabled }}
+  audiobookshelf:
+    strategy: Recreate
+    name: 'audiobookshelf'
+    pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+      securityContext:
+        fsGroup: {{ .Values.user.gid }}
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
+        fsGroupChangePolicy: 'OnRootMismatch'
+    containers:
+      audiobookshelf:
+        image:
+          repository: {{ .Values.audiobookshelf.image }}
+          tag: {{ .Values.audiobookshelf.tag }}
+          digest: {{ .Values.audiobookshelf.digest }}
+          pullPolicy: 'IfNotPresent'
+        ports:
+          - name: 'http'
+            containerPort: 80
+  {{- end }}
+persistence:
+  {{- if .Values.audiobookshelf.volumes.config.enabled }}
+  audiobookshelf-config:
+    enabled: true
+    type: persistentVolumeClaim
+    accessMode: ReadWriteOnce
+    size: 5G
+    advancedMounts:
+      audiobookshelf:
+        audiobookshelf:
+          - path: '/config'
+          - path: '/metadata'
+  {{- end }}
+  {{- if .Values.audiobookshelf.volumes.media.enabled }}
+  media:
+    enabled: true
+    type: persistentVolumeClaim
+    existingClaim: {{ printf "%s-media" .Values.tenant.name | squote }}
+    advancedMounts:
+      audiobookshelf:
+        audiobookshelf:
+          - path: '/audiobooks'
+  {{- end }}
+service:
+  {{- if .Values.audiobookshelf.enabled }}
+  audiobookshelf:
+    enabled: true
+    controller: 'audiobookshelf'
+    primary: true
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: TCP
+  {{- end }}
+route:
+  {{- if .Values.audiobookshelf.enabled }}
+  audiobookshelf:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'audiobooks.mylogin.space'
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: {{ .Values.pubgateway.name }}
+        sectionName: {{ .Values.pubgateway.sectionName }}
+        namespace: {{ .Values.pubgateway.namespace }}
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'audiobookshelf'
+            weight: 1
+  {{- end }}
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}

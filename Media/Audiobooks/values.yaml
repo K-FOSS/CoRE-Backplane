@@ -1,0 +1,40 @@
+tenant:
+  name: example-tenant
+
+pubgateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+  application:
+    displayName: 'Audiobookshelf'
+    externalHost: 'https://audiobooks.mylogin.space'
+    group: 'Media'
+  accessGroups:
+    - 'Media Consumers'
+  route:
+    enabled: true
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: core-prod
+      port: 80
+
+user:
+  uid: 911
+  gid: 911
+
+global:
+  timezone: 'America/Vancouver'
+
+audiobookshelf:
+  enabled: true
+  image: 'ghcr.io/advplyr/audiobookshelf'
+  tag: 'latest'
+  digest: 'sha256:180acad33d69c99ed208676465d8edcb268fa46967735579a7810859885b1a8e'
+  volumes:
+    config:
+      enabled: true
+    media:
+      enabled: true
