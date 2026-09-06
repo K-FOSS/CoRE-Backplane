@@ -111,6 +111,58 @@ controllers:
             containerPort: 6767
   {{- end }}
 
+  {{- if $.Values.scraparr.enabled }}
+  scraparr:
+    strategy: RollingUpdate
+    enabled: true
+    name: 'scraparr'
+    pod:
+      automountServiceAccountToken: false
+    containers:
+      scraparr:
+        image:
+          repository: {{ $.Values.scraparr.image }}
+          tag: {{ required "scraparr.tag is required" $.Values.scraparr.tag | squote }}
+          pullPolicy: 'IfNotPresent'
+        envFrom:
+          - secretRef:
+              name: {{ required "scraparr.apiKeysSecret is required" $.Values.scraparr.apiKeysSecret | squote }}
+        ports:
+          - name: 'metrics'
+            containerPort: 7100
+        probes:
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/metrics'
+                port: 'metrics'
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 30
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/metrics'
+                port: 'metrics'
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 3
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/metrics'
+                port: 'metrics'
+              periodSeconds: 60
+              timeoutSeconds: 5
+              failureThreshold: 3
+  {{- end }}
+
 persistence:
   {{- if .Values.flaresolverr.volumes.config.enabled }}
   flaresolverr-config:
@@ -149,6 +201,19 @@ persistence:
           - path: '/media'
   {{- end }}
 
+  {{- if $.Values.scraparr.enabled }}
+  scraparr-config:
+    enabled: true
+    type: 'configMap'
+    identifier: 'scraparr'
+    advancedMounts:
+      scraparr:
+        scraparr:
+          - path: '/scraparr/config/config.yaml'
+            subPath: 'config.yaml'
+            readOnly: true
+  {{- end }}
+
   {{- if and .Values.volumes.enabled .Values.volumes.media.enabled }}
   media:
     enabled: true
@@ -157,6 +222,9 @@ persistence:
     forceRename: {{ .Values.tenant.name }}-media
     accessMode: ReadWriteMany
     size: {{ .Values.volumes.media.size }}
+    advancedMounts:
+      bazarr:
+        bazarr: []
   {{- end }}
 
   {{- if and .Values.volumes.enabled .Values.volumes.downloads.enabled }}
@@ -167,6 +235,37 @@ persistence:
     forceRename: {{ .Values.tenant.name }}-downloads
     accessMode: ReadWriteMany
     size: {{ .Values.volumes.downloads.size }}
+    advancedMounts:
+      bazarr:
+        bazarr: []
+  {{- end }}
+
+configMaps:
+  {{- if $.Values.scraparr.enabled }}
+  scraparr:
+    enabled: true
+    data:
+      config.yaml: |
+        general:
+          port: 7100
+          path: '/metrics'
+          log_level: 'INFO'
+        sonarr:
+          url: 'http://{{ dig "cluster" "name" "cluster" $.Values }}-media-tv-{{ .Values.tenant.name }}-{{ default "prod" .Values.env }}-sonarr.core-media.svc.cluster.local:80'
+          api_key: '${SONARR_API_KEY}'
+          interval: 300
+        radarr:
+          url: 'http://{{ dig "cluster" "name" "cluster" $.Values }}-media-movies-{{ .Values.tenant.name }}-{{ default "prod" .Values.env }}-radarr.core-media.svc.cluster.local:80'
+          api_key: '${RADARR_API_KEY}'
+          interval: 300
+        prowlarr:
+          url: 'http://{{ dig "cluster" "name" "cluster" $.Values }}-media-nzb-{{ default "prod" .Values.env }}-prowlarr.core-media.svc.cluster.local:80'
+          api_key: '${PROWLARR_API_KEY}'
+          interval: 300
+        bazarr:
+          url: 'http://bazarr.core-media.svc.cluster.local:80'
+          api_key: '${BAZARR_API_KEY}'
+          interval: 300
   {{- end }}
 
 service:
@@ -242,6 +341,36 @@ service:
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
         appProtocol:  
+  {{- end }}
+
+  {{- if $.Values.scraparr.enabled }}
+  scraparr:
+    enabled: true
+    controller: 'scraparr'
+    primary: true
+    type: 'ClusterIP'
+    ports:
+      metrics:
+        enabled: true
+        primary: true
+        port: 7100
+        targetPort: 'metrics'
+        protocol: 'TCP'
+  {{- end }}
+
+serviceMonitor:
+  {{- if and $.Values.scraparr.enabled $.Values.scraparr.monitoring.enabled }}
+  scraparr:
+    enabled: true
+    selector:
+      matchLabels:
+        app.kubernetes.io/service: '{{ .Release.Name }}-scraparr'
+    labels:
+      resolvemy.host/metrics: 'mimir'
+    endpoints:
+      - port: 'metrics'
+        path: '/metrics'
+        interval: {{ $.Values.scraparr.monitoring.interval }}
   {{- end }}
 
 {{- end -}}
