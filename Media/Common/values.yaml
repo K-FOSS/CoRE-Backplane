@@ -1,6 +1,30 @@
 tenant:
   name: example-tenant
 
+pubgateway:
+  name: 'main-gw'
+  namespace: 'core-prod'
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Bazarr'
+    externalHost: 'https://bazarr.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
 volumes:
   enabled: true
 

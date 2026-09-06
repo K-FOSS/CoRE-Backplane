@@ -373,6 +373,30 @@ serviceMonitor:
         interval: {{ $.Values.scraparr.monitoring.interval }}
   {{- end }}
 
+route:
+  {{- if .Values.bazarr.enabled }}
+  bazarr:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'bazarr.mylogin.space'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: {{ .Values.pubgateway.name }}
+        sectionName: {{ .Values.pubgateway.sectionName }}
+        namespace: {{ .Values.pubgateway.namespace }}
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'bazarr'
+            weight: 1
+  {{- end }}
+
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
