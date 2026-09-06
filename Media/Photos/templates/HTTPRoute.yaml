@@ -1,0 +1,21 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: 'photos'
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+spec:
+  hostnames:
+    - 'photos.mylogin.space'
+  parentRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: 'Gateway'
+      name: '{{ .Values.pubgateway.name }}'
+      sectionName: '{{ .Values.pubgateway.sectionName }}'
+      namespace: '{{ .Values.pubgateway.namespace }}'
+  rules:
+      - backendRefs:
+        - kind: Service
+          name: '{{ .Release.Name }}-server'
+          port: 2283

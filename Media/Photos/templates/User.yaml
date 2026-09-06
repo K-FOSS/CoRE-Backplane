@@ -1,0 +1,16 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: 'photos'
+  namespace: '{{ .Release.Namespace }}'
+spec:
+  name: 'Immich Photos'
+  username: 'photos'
+  psql:
+    enabled: true
+    createUserDatabase: true
+    crossplane:
+      terraformProvider: 'psql-{{ default "datacenter" .Values.datacenter }}-{{ default "region" .Values.region }}'
+      crossplaneProvider: 'psql-{{ default "datacenter" .Values.datacenter }}-{{ default "region" .Values.region }}'
+  writeConnectionSecretToRef:
+    name: 'photos'

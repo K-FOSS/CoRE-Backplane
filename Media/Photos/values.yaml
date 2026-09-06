@@ -1,0 +1,68 @@
+global:
+  timezone: 'America/Vancouver'
+
+pubgateway:
+  name: 'main-gw'
+  namespace: 'core-prod'
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+
+  application:
+    displayName: 'Immich Photos'
+    externalHost: 'https://photos.mylogin.space'
+    group: 'Media'
+
+  accessGroups:
+    - 'Media Consumers'
+
+  route:
+    enabled: true
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: 'core-prod'
+      port: 80
+
+immich:
+  image:
+    tag: 'v2.6.3'
+
+  controllers:
+    main:
+      containers:
+        main:
+          env:
+            DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
+            DB_PORT: '5432'
+            DB_USERNAME:
+              valueFrom:
+                secretKeyRef:
+                  name: 'photos'
+                  key: 'username'
+            DB_PASSWORD:
+              valueFrom:
+                secretKeyRef:
+                  name: 'photos'
+                  key: 'password'
+            DB_DATABASE_NAME:
+              valueFrom:
+                secretKeyRef:
+                  name: 'photos'
+                  key: 'database'
+            DB_VECTOR_EXTENSION: 'pgvector'
+            TZ: '{{ .Values.global.timezone }}'
+
+  immich:
+    persistence:
+      library:
+        existingClaim: 'photos-library'
+
+  valkey:
+    enabled: true
+
+  server:
+    enabled: true
+
+  machine-learning:
+    enabled: true
