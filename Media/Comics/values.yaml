@@ -1,0 +1,41 @@
+tenant:
+  name: example-tenant
+
+pubgateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+  application:
+    displayName: 'Kapowarr'
+    externalHost: 'https://comics.mylogin.space'
+    group: 'Media'
+  accessGroups:
+    - 'Media Consumers'
+  route:
+    enabled: true
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: core-prod
+      port: 80
+
+user:
+  uid: 911
+  gid: 911
+
+global:
+  timezone: 'America/Vancouver'
+
+kapowarr:
+  enabled: true
+  image: 'docker.io/mrcas/kapowarr'
+  tag: 'latest@sha256:d455797e4f2c5b1a8ccc5ce05c427f1af2179451bb1af195ca3fa8c3e928623b'
+  volumes:
+    config:
+      enabled: true
+    comics:
+      enabled: true
+    downloads:
+      enabled: true

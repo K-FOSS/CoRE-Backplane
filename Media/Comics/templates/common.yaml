@@ -1,0 +1,119 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+{{- define "app-template.hardcodedValues" -}}
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: '{{ .Release.Name }}'
+{{ end }}
+controllers:
+  {{- if .Values.kapowarr.enabled }}
+  kapowarr:
+    strategy: Recreate
+    name: 'kapowarr'
+    pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+      securityContext:
+        fsGroup: {{ .Values.user.gid }}
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
+        fsGroupChangePolicy: 'OnRootMismatch'
+    containers:
+      kapowarr:
+        image:
+          repository: {{ .Values.kapowarr.image }}
+          tag: {{ .Values.kapowarr.tag }}
+          pullPolicy: 'IfNotPresent'
+        env:
+          - name: 'PUID'
+            value: '{{ .Values.user.uid }}'
+          - name: 'PGID'
+            value: '{{ .Values.user.gid }}'
+          - name: 'TZ'
+            value: '{{ .Values.global.timezone }}'
+        ports:
+          - name: 'http'
+            containerPort: 5656
+  {{- end }}
+persistence:
+  {{- if .Values.kapowarr.volumes.config.enabled }}
+  kapowarr-config:
+    enabled: true
+    type: persistentVolumeClaim
+    accessMode: ReadWriteOnce
+    size: 5G
+    advancedMounts:
+      kapowarr:
+        kapowarr:
+          - path: '/app/db'
+  {{- end }}
+  {{- if .Values.kapowarr.volumes.comics.enabled }}
+  comics:
+    enabled: true
+    type: persistentVolumeClaim
+    existingClaim: {{ printf "%s-media" .Values.tenant.name | squote }}
+    advancedMounts:
+      kapowarr:
+        kapowarr:
+          - path: '/comics'
+  {{- end }}
+  {{- if .Values.kapowarr.volumes.downloads.enabled }}
+  downloads:
+    enabled: true
+    type: persistentVolumeClaim
+    existingClaim: {{ printf "%s-downloads" .Values.tenant.name | squote }}
+    advancedMounts:
+      kapowarr:
+        kapowarr:
+          - path: '/app/temp_downloads'
+  {{- end }}
+service:
+  {{- if .Values.kapowarr.enabled }}
+  kapowarr:
+    enabled: true
+    controller: 'kapowarr'
+    primary: true
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: TCP
+  {{- end }}
+route:
+  {{- if .Values.kapowarr.enabled }}
+  kapowarr:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'comics.mylogin.space'
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: {{ .Values.pubgateway.name }}
+        sectionName: {{ .Values.pubgateway.sectionName }}
+        namespace: {{ .Values.pubgateway.namespace }}
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'kapowarr'
+            weight: 1
+  {{- end }}
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}
