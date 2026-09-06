@@ -44,6 +44,24 @@ sabnzbd:
   image: linuxserver/sabnzbd
   tag: latest
 
+  health:
+    enabled: true
+    path: '/api?mode=version'
+
+    startup:
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 60
+
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+
+    liveness:
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
 
   volumes:
     config:

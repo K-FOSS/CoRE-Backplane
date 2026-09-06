@@ -51,6 +51,42 @@ controllers:
         ports:
           - name: http
             containerPort: 8080
+
+        {{- if $.Values.sabnzbd.health.enabled }}
+        probes:
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.sabnzbd.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.sabnzbd.health.startup.periodSeconds }}
+              timeoutSeconds: {{ $.Values.sabnzbd.health.startup.timeoutSeconds }}
+              failureThreshold: {{ $.Values.sabnzbd.health.startup.failureThreshold }}
+
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.sabnzbd.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.sabnzbd.health.readiness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.sabnzbd.health.readiness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.sabnzbd.health.readiness.failureThreshold }}
+
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.sabnzbd.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.sabnzbd.health.liveness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.sabnzbd.health.liveness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.sabnzbd.health.liveness.failureThreshold }}
+        {{- end }}
   {{- end }}
 
   {{- if $.Values.prowlarr.enabled }}
@@ -248,7 +284,7 @@ service:
 
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
-        appProtocol:  
+        appProtocol: 'kubernetes.io/ws'
   {{- end }}
 
   {{- if $.Values.prowlarr.enabled }}
@@ -306,7 +342,7 @@ service:
 
         # -- Specify the appProtocol value for the Service.
         # [[ref]](https://kubernetes.io/docs/concepts/services-networking/service/#application-protocol)
-        appProtocol:  
+        appProtocol: 'kubernetes.io/ws'
   {{- end }}
 
   {{- if $.Values.filebrowser.enabled }}
