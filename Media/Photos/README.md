@@ -18,8 +18,10 @@ The workload consumes its generated `photos` connection Secret and connects to
 `psql-local.<cluster>.<datacenter>.<region>.mylogin.space`. Immich requires a
 PostgreSQL vector extension; this deployment selects `pgvector`, so the target
 site-local PostgreSQL image must provide that extension. Immich uses the
-site-local authenticated `dragonfly-core` service for its job queue and cache,
-with logical database `133` reserved in the
+site-local authenticated `dragonfly-core` service for its job queue and cache.
+Its password is pulled into the namespace by an
+[ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
+from the site-specific CoreVault path, with logical database `133` reserved in the
 [Dragonfly allocation registry](../../Storage/Dragonfly/CoRE/README.md). The
 deployment does not run a chart-local Valkey instance.
 
