@@ -6,10 +6,10 @@ global:
   nameOverride: '{{ .Release.Name }}'
 {{ end }}
 controllers:
-  {{- if .Values.readarr.enabled }}
-  readarr:
+  {{- if .Values.chaptarr.enabled }}
+  chaptarr:
     strategy: Recreate
-    name: 'readarr'
+    name: 'chaptarr'
     pod:
       labels:
         mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
@@ -28,53 +28,63 @@ controllers:
         runAsGroup: {{ .Values.user.gid }}
         fsGroupChangePolicy: 'OnRootMismatch'
     containers:
-      readarr:
+      chaptarr:
         image:
-          repository: {{ .Values.readarr.image }}
-          tag: {{ .Values.readarr.tag }}
-          digest: {{ .Values.readarr.digest }}
+          repository: {{ .Values.chaptarr.image }}
+          tag: {{ .Values.chaptarr.tag }}
+          digest: {{ .Values.chaptarr.digest }}
           pullPolicy: 'IfNotPresent'
         ports:
           - name: 'http'
-            containerPort: 8787
+            containerPort: 8789
+        env:
+          - name: 'PUID'
+            value: '{{ .Values.user.uid }}'
+          - name: 'PGID'
+            value: '{{ .Values.user.gid }}'
+          - name: 'UMASK'
+            value: '002'
+          - name: 'TZ'
+            value: '{{ .Values.global.timezone }}'
   {{- end }}
 persistence:
-  {{- if .Values.readarr.volumes.config.enabled }}
-  readarr-config:
+  {{- if .Values.chaptarr.volumes.config.enabled }}
+  chaptarr-config:
     enabled: true
     type: persistentVolumeClaim
     accessMode: ReadWriteOnce
     size: 2G
     advancedMounts:
-      readarr:
-        readarr:
+      chaptarr:
+        chaptarr:
           - path: '/config'
   {{- end }}
-  {{- if .Values.readarr.volumes.media.enabled }}
+  {{- if .Values.chaptarr.volumes.media.enabled }}
   media:
     enabled: true
     type: persistentVolumeClaim
     existingClaim: {{ printf "%s-media" .Values.tenant.name | squote }}
     advancedMounts:
-      readarr:
-        readarr:
-          - path: '/books'
+      chaptarr:
+        chaptarr:
+          - path: '/ebooks'
+          - path: '/audiobooks'
   {{- end }}
-  {{- if .Values.readarr.volumes.downloads.enabled }}
+  {{- if .Values.chaptarr.volumes.downloads.enabled }}
   downloads:
     enabled: true
     type: persistentVolumeClaim
     existingClaim: {{ printf "%s-downloads" .Values.tenant.name | squote }}
     advancedMounts:
-      readarr:
-        readarr:
+      chaptarr:
+        chaptarr:
           - path: '/downloads'
   {{- end }}
 service:
-  {{- if .Values.readarr.enabled }}
-  readarr:
+  {{- if .Values.chaptarr.enabled }}
+  chaptarr:
     enabled: true
-    controller: 'readarr'
+    controller: 'chaptarr'
     primary: true
     type: ClusterIP
     ports:
@@ -86,8 +96,8 @@ service:
         protocol: TCP
   {{- end }}
 route:
-  {{- if .Values.readarr.enabled }}
-  readarr:
+  {{- if .Values.chaptarr.enabled }}
+  chaptarr:
     enabled: true
     kind: HTTPRoute
     labels:
@@ -105,7 +115,7 @@ route:
       - backendRefs:
           - kind: Service
             port: 80
-            identifier: 'readarr'
+            identifier: 'chaptarr'
             weight: 1
   {{- end }}
 {{- end -}}
