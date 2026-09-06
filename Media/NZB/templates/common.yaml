@@ -112,6 +112,42 @@ controllers:
         ports:
           - name: http
             containerPort: 9696
+
+        {{- if $.Values.prowlarr.health.enabled }}
+        probes:
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.prowlarr.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.prowlarr.health.startup.periodSeconds }}
+              timeoutSeconds: {{ $.Values.prowlarr.health.startup.timeoutSeconds }}
+              failureThreshold: {{ $.Values.prowlarr.health.startup.failureThreshold }}
+
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.prowlarr.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.prowlarr.health.readiness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.prowlarr.health.readiness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.prowlarr.health.readiness.failureThreshold }}
+
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.prowlarr.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.prowlarr.health.liveness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.prowlarr.health.liveness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.prowlarr.health.liveness.failureThreshold }}
+        {{- end }}
   {{- end }}
 
   {{- if $.Values.filebrowser.enabled }}

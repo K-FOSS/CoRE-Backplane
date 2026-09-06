@@ -19,6 +19,8 @@ shared access path, prerequisites, and recovery behavior.
 SABnzbd startup, readiness, and liveness probes use its documented
 [`mode=version` API endpoint](https://sabnzbd.org/wiki/advanced/api), which does
 not require an API key.
+Prowlarr startup, readiness, and liveness probes use its unauthenticated
+`/ping` endpoint.
 
 SABnzbd writes fetched files to the existing `augy-downloads` persistent
 volume. FileBrowser Quantum mounts that same claim at `/downloads` read-only,
