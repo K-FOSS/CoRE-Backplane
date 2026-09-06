@@ -7,7 +7,7 @@ and Whisparr using the
 media tenant for the current home cluster, and deploys the release into
 `core-media`.
 
-MeTube is published at `metube.mylogin.space`, and Whisparr at
+MeTube is published at `metube.accessmyporn.download`, and Whisparr at
 `whisparr.accessmyporn.download`, through the shared Gateway. Both routes are
 protected by separate Authentik single-application forward-auth providers.
 Access is restricted to the `Media Consumers` group. Each route uses a
