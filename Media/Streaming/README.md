@@ -4,6 +4,10 @@ This Helm rendering unit deploys [Jellyfin](https://jellyfin.org/docs/),
 [Stash](https://docs.stashapp.cc/), their persistent storage, Services, and
 public Gateway API routes through the
 [`bjw-s/common` library chart](https://github.com/bjw-s-labs/helm-charts/tree/main/charts/library/common).
+It also deploys [Jellystat](https://github.com/CyferShepard/Jellystat), a
+Jellyfin statistics dashboard, at `jellystat.mylogin.space`. The container is
+pinned to the upstream `1.1.11` release tag documented in the
+[Jellystat container package](https://github.com/CyferShepard/Jellystat/pkgs/container/jellystat).
 `Apps/Media/Streaming.yaml` owns the Argo CD ApplicationSet, currently selects
 only `core-home1-talos-prod`, injects the `augy` media tenant, and deploys the
 release into `core-media`.
@@ -44,6 +48,16 @@ initialization, with readiness and liveness using shorter periodic checks.
 The public Jellyfin HTTPRoute returns a gateway-level `404` for `/metrics` and
 `/health` using Envoy Gateway's [`HTTPRouteFilter` direct response](https://gateway.envoyproxy.io/latest/tasks/traffic/direct-response/).
 The in-cluster ServiceMonitor and container probes continue to use those paths.
+
+Jellystat uses the repository's [`User` claim](../../Operations/SSO/User/README.md)
+to provision a dedicated PostgreSQL role and database on the site-local
+PostgreSQL service (`psql-local.<cluster>.<datacenter>.<region>.mylogin.space`)
+using the site-local Crossplane providers. Its connection Secret is written in
+`core-media` and consumed by the workload; the JWT secret is sourced from the
+same generated Secret. Backups are persisted in a dedicated PVC at
+`/app/backend/backup-data`. The Jellystat route is protected by the shared
+Authentik Envoy external authorization policy and the configured
+`authentik.accessGroups` group (`Private Stash` in the current values).
 
 ## Streaming and WebSockets
 

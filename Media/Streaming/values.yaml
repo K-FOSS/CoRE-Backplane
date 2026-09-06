@@ -1,6 +1,9 @@
 tenant:
   name: example-tenant
 
+global:
+  timezone: 'America/Vancouver'
+
 pubgateway:
   name: main-gw
   namespace: core-prod
@@ -13,6 +16,13 @@ authentik:
     displayName: 'Stash'
     externalHost: 'https://accessmyporn.download'
     group: 'Media'
+
+  applications:
+    jellystat:
+      enabled: true
+      displayName: 'Jellystat'
+      externalHost: 'https://jellystat.mylogin.space'
+      group: 'Media'
 
   accessGroups:
     - 'Private Stash'
@@ -105,3 +115,33 @@ stash:
       enabled: true
 
       external: true
+
+jellystat:
+  enabled: true
+
+  image: ghcr.io/cyfershepard/jellystat
+  tag: '1.1.11'
+
+  health:
+    enabled: true
+    path: '/auth/isConfigured'
+
+    startup:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 60
+
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+
+    liveness:
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+  volumes:
+    backup:
+      enabled: true
+      size: '5G'

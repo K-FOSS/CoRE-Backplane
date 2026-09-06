@@ -1,4 +1,4 @@
-{{- if and .Values.stash.enabled .Values.authentik.route.enabled }}
+{{- if and (or .Values.stash.enabled .Values.jellystat.enabled) .Values.authentik.route.enabled }}
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
@@ -6,9 +6,16 @@ metadata:
 
 spec:
   targetRefs:
+    {{- if .Values.stash.enabled }}
     - group: 'gateway.networking.k8s.io'
       kind: HTTPRoute
       name: '{{ .Release.Name }}-stash'
+    {{- end }}
+    {{- if .Values.jellystat.enabled }}
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: '{{ .Release.Name }}-jellystat'
+    {{- end }}
 
   extAuth:
     failOpen: false

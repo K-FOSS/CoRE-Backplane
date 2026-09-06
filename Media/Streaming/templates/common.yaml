@@ -194,7 +194,111 @@ controllers:
         {{- end }}
   {{- end }}
 
+  #
+  # Jellystat
+  #
+  {{- if $.Values.jellystat.enabled }}
+  jellystat:
+    strategy: 'Recreate'
+    name: 'jellystat'
+
+    pod:
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+
+    containers:
+      jellystat:
+        image:
+          repository: {{ $.Values.jellystat.image }}
+          tag: {{ $.Values.jellystat.tag | squote }}
+          pullPolicy: IfNotPresent
+
+        env:
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: 'jellystat'
+                key: 'username'
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: 'jellystat'
+                key: 'password'
+          - name: POSTGRES_IP
+            value: 'psql-local.{{ dig "cluster" "name" "cluster" $.Values }}.{{ default "datacenter" $.Values.datacenter }}.{{ default "region" $.Values.region }}.mylogin.space'
+          - name: POSTGRES_PORT
+            value: '5432'
+          - name: POSTGRES_DB
+            value: 'jellystat'
+          - name: JWT_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: 'jellystat'
+                key: 'password'
+          - name: TZ
+            value: {{ $.Values.global.timezone | squote }}
+
+        ports:
+          - name: http
+            containerPort: 3000
+
+        {{- if $.Values.jellystat.health.enabled }}
+        probes:
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.jellystat.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.jellystat.health.startup.periodSeconds }}
+              timeoutSeconds: {{ $.Values.jellystat.health.startup.timeoutSeconds }}
+              failureThreshold: {{ $.Values.jellystat.health.startup.failureThreshold }}
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.jellystat.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.jellystat.health.readiness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.jellystat.health.readiness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.jellystat.health.readiness.failureThreshold }}
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.jellystat.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.jellystat.health.liveness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.jellystat.health.liveness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.jellystat.health.liveness.failureThreshold }}
+        {{- end }}
+  {{- end }}
+
 persistence:
+  {{- if .Values.jellystat.enabled }}
+  jellystat-backup:
+    enabled: true
+    type: persistentVolumeClaim
+    accessMode: ReadWriteOnce
+    size: {{ .Values.jellystat.volumes.backup.size }}
+    advancedMounts:
+      jellystat:
+        jellystat:
+          - path: /app/backend/backup-data
+  {{- end }}
+
   {{- if .Values.jellyfin.volumes.config.enabled }}
   jellyfin-config:
     enabled: true
@@ -376,7 +480,23 @@ service:
         appProtocol: 'kubernetes.io/ws'
   {{- end }}
 
+  {{- if $.Values.jellystat.enabled }}
+  jellystat:
+    enabled: true
+    controller: 'jellystat'
+    primary: true
+    type: 'ClusterIP'
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: 'TCP'
+  {{- end }}
+
 serviceMonitor:
+
   {{- if and $.Values.jellyfin.enabled $.Values.jellyfin.monitoring.enabled }}
   jellyfin:
     enabled: true
@@ -485,6 +605,29 @@ route:
         timeouts:
           backendRequest: 2h
           request: 0s
+  {{- end }}
+
+  {{- if .Values.jellystat.enabled }}
+  jellystat:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'jellystat.mylogin.space'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: '{{ $.Values.pubgateway.name }}'
+        sectionName: '{{ $.Values.pubgateway.sectionName }}'
+        namespace: '{{ $.Values.pubgateway.namespace }}'
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'jellystat'
+            weight: 1
   {{- end }}
 
 {{- end -}}
