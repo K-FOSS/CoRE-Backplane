@@ -1,0 +1,42 @@
+tenant:
+  name: example-tenant
+
+pubgateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+  application:
+    displayName: 'Readarr'
+    externalHost: 'https://books.mylogin.space'
+    group: 'Media'
+  accessGroups:
+    - 'Media Consumers'
+  route:
+    enabled: true
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: core-prod
+      port: 80
+
+user:
+  uid: 911
+  gid: 911
+
+global:
+  timezone: 'America/Vancouver'
+
+readarr:
+  enabled: true
+  image: 'docker.io/linuxserver/readarr'
+  tag: 'nightly-version-0.4.19.2811'
+  digest: 'sha256:4f291128d1a5538be73c2a30473d7cdd0820e223dc8b8533b0cbc5659000dcbe'
+  volumes:
+    config:
+      enabled: true
+    media:
+      enabled: true
+    downloads:
+      enabled: true
