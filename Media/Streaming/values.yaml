@@ -32,6 +32,25 @@ jellyfin:
 
   tag: '10'
 
+  health:
+    enabled: true
+    path: '/health'
+
+    startup:
+      periodSeconds: 5
+      timeoutSeconds: 5
+      failureThreshold: 60
+
+    readiness:
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 6
+
+    liveness:
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+
   volumes:
     config:
       enabled: true

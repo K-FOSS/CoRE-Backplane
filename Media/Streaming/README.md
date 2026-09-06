@@ -28,6 +28,13 @@ boundary if it must not be internet-accessible. Verify the ServiceMonitor is
 selected by the target Prometheus and that `/metrics` returns a 200 response
 from the in-cluster Jellyfin Service after reconciliation.
 
+The Jellyfin container uses the documented [`/health` endpoint](https://jellyfin.org/docs/general/post-install/networking/advanced/monitoring/)
+for startup, readiness, and liveness probes. The endpoint checks HTTP and
+database connectivity and returns `200 OK` when healthy. Startup allows up to
+five minutes for migrations; readiness and liveness then use shorter periodic
+checks. Because Jellyfin's health endpoint is not reliable during startup,
+readiness and liveness are held behind the startup probe.
+
 ## Streaming and WebSockets
 
 Jellyfin is exposed at `stream.mylogin.space`; Stash is exposed at

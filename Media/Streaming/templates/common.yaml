@@ -72,6 +72,42 @@ controllers:
         env:
           - name: JELLYFIN_CACHE_DIR
             value: '/cache'
+
+        {{- if $.Values.jellyfin.health.enabled }}
+        probes:
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.jellyfin.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.jellyfin.health.startup.periodSeconds }}
+              timeoutSeconds: {{ $.Values.jellyfin.health.startup.timeoutSeconds }}
+              failureThreshold: {{ $.Values.jellyfin.health.startup.failureThreshold }}
+
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.jellyfin.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.jellyfin.health.readiness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.jellyfin.health.readiness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.jellyfin.health.readiness.failureThreshold }}
+
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.jellyfin.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.jellyfin.health.liveness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.jellyfin.health.liveness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.jellyfin.health.liveness.failureThreshold }}
+        {{- end }}
   {{- end }}
 
   #
