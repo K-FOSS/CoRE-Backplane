@@ -35,6 +35,10 @@ five minutes for migrations; readiness and liveness then use shorter periodic
 checks. Because Jellyfin's health endpoint is not reliable during startup,
 readiness and liveness are held behind the startup probe.
 
+The public Jellyfin HTTPRoute returns a gateway-level `404` for `/metrics` and
+`/health` using Envoy Gateway's [`HTTPRouteFilter` direct response](https://gateway.envoyproxy.io/latest/tasks/traffic/direct-response/).
+The in-cluster ServiceMonitor and container probes continue to use those paths.
+
 ## Streaming and WebSockets
 
 Jellyfin is exposed at `stream.mylogin.space`; Stash is exposed at
@@ -62,8 +66,10 @@ After Argo CD reconciliation, verify both HTTPRoutes are `Accepted`, the
 BackendTrafficPolicy is attached to both route names, and both Services render
 `appProtocol: kubernetes.io/ws`. Test a Jellyfin playback longer than the prior
 proxy timeout, Jellyfin's `/socket` WebSocket, a long Stash stream, and a Stash
-WebSocket upgrade through the public hosts. Check Envoy access logs and route
-status alongside the application behavior; pod readiness alone is not enough.
+WebSocket upgrade through the public hosts. Verify the public Jellyfin
+`/metrics` and `/health` paths return `404`, while the in-cluster Service still
+serves `/health` and `/metrics`. Check Envoy access logs and route status
+alongside the application behavior; pod readiness alone is not enough.
 
 Rolling back the timeout fields restores Envoy's inherited timeout behavior.
 Rolling back `appProtocol` removes the explicit WebSocket upstream selection.

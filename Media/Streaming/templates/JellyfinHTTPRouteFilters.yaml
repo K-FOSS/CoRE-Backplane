@@ -1,0 +1,26 @@
+{{- if .Values.jellyfin.enabled }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: 'jellyfin-block-metrics'
+spec:
+  directResponse:
+    contentType: 'text/plain'
+    statusCode: 404
+    body:
+      type: 'Inline'
+      inline: 'Not Found'
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: 'jellyfin-block-health'
+spec:
+  directResponse:
+    contentType: 'text/plain'
+    statusCode: 404
+    body:
+      type: 'Inline'
+      inline: 'Not Found'
+{{- end }}

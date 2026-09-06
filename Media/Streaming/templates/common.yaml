@@ -418,6 +418,28 @@ route:
 
     # -- Configure rules for routing. Defaults to the primary service.
     rules:
+      - matches:
+          - path:
+              type: 'Exact'
+              value: '/metrics'
+        filters:
+          - type: 'ExtensionRef'
+            extensionRef:
+              group: 'gateway.envoyproxy.io'
+              kind: 'HTTPRouteFilter'
+              name: 'jellyfin-block-metrics'
+
+      - matches:
+          - path:
+              type: 'Exact'
+              value: '/health'
+        filters:
+          - type: 'ExtensionRef'
+            extensionRef:
+              group: 'gateway.envoyproxy.io'
+              kind: 'HTTPRouteFilter'
+              name: 'jellyfin-block-health'
+
       - backendRefs:
           - kind: Service
             port: 80
