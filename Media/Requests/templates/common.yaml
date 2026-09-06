@@ -1,0 +1,121 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+{{- define "app-template.hardcodedValues" -}}
+{{ if not .Values.global.nameOverride }}
+global:
+  nameOverride: '{{ .Release.Name }}'
+{{ end }}
+controllers:
+  {{- if .Values.seerr.enabled }}
+  seerr:
+    strategy: Recreate
+    name: 'seerr'
+    pod:
+      automountServiceAccountToken: false
+      labels:
+        mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+                topologyKey: 'kubernetes.io/hostname'
+      securityContext:
+        fsGroup: {{ .Values.user.gid }}
+        runAsUser: {{ .Values.user.uid }}
+        runAsGroup: {{ .Values.user.gid }}
+        fsGroupChangePolicy: 'OnRootMismatch'
+    containers:
+      seerr:
+        image:
+          repository: {{ .Values.seerr.image }}
+          tag: {{ printf "%s@%s" .Values.seerr.tag .Values.seerr.digest | squote }}
+          pullPolicy: 'IfNotPresent'
+        env:
+          - name: 'TZ'
+            value: {{ .Values.global.timezone | squote }}
+          - name: 'PORT'
+            value: '5055'
+        ports:
+          - name: 'http'
+            containerPort: 5055
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/api/v1/settings/public'
+                port: 'http'
+              initialDelaySeconds: 20
+              periodSeconds: 15
+              timeoutSeconds: 3
+              failureThreshold: 3
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/api/v1/settings/public'
+                port: 'http'
+              initialDelaySeconds: 20
+              periodSeconds: 15
+              timeoutSeconds: 3
+              failureThreshold: 3
+  {{- end }}
+persistence:
+  {{- if .Values.seerr.volumes.config.enabled }}
+  seerr-config:
+    enabled: true
+    type: persistentVolumeClaim
+    accessMode: ReadWriteOnce
+    size: 5G
+    advancedMounts:
+      seerr:
+        seerr:
+          - path: '/app/config'
+  {{- end }}
+service:
+  {{- if .Values.seerr.enabled }}
+  seerr:
+    enabled: true
+    controller: 'seerr'
+    primary: true
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        targetPort: 'http'
+        protocol: TCP
+  {{- end }}
+route:
+  {{- if .Values.seerr.enabled }}
+  seerr:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'requests.mylogin.space'
+    parentRefs:
+      - group: gateway.networking.k8s.io
+        kind: Gateway
+        name: {{ .Values.pubgateway.name }}
+        sectionName: {{ .Values.pubgateway.sectionName }}
+        namespace: {{ .Values.pubgateway.namespace }}
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'seerr'
+            weight: 1
+  {{- end }}
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}

@@ -1,0 +1,38 @@
+tenant:
+  name: example-tenant
+
+pubgateway:
+  name: main-gw
+  namespace: core-prod
+  sectionName: 'https-myloginspace'
+
+authentik:
+  autoconfigure: true
+  application:
+    displayName: 'Seerr'
+    externalHost: 'https://requests.mylogin.space'
+    group: 'Media'
+  accessGroups:
+    - 'Media Consumers'
+  route:
+    enabled: true
+    backend:
+      name: 'aaa-myloginspace-proxy'
+      namespace: core-prod
+      port: 80
+
+global:
+  timezone: 'America/Vancouver'
+
+user:
+  uid: 1000
+  gid: 1000
+
+seerr:
+  enabled: true
+  image: 'ghcr.io/seerr-team/seerr'
+  tag: 'v3.4.1'
+  digest: 'sha256:f4768de5f616248d723e05891f3345a1402123775d03bf0890dbfedc0831bda1'
+  volumes:
+    config:
+      enabled: true
