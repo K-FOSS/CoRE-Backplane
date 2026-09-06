@@ -156,6 +156,42 @@ controllers:
         ports:
           - name: http
             containerPort: 9999
+
+        {{- if $.Values.stash.health.enabled }}
+        probes:
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.stash.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.stash.health.startup.periodSeconds }}
+              timeoutSeconds: {{ $.Values.stash.health.startup.timeoutSeconds }}
+              failureThreshold: {{ $.Values.stash.health.startup.failureThreshold }}
+
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.stash.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.stash.health.readiness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.stash.health.readiness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.stash.health.readiness.failureThreshold }}
+
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: {{ $.Values.stash.health.path | squote }}
+                port: http
+              periodSeconds: {{ $.Values.stash.health.liveness.periodSeconds }}
+              timeoutSeconds: {{ $.Values.stash.health.liveness.timeoutSeconds }}
+              failureThreshold: {{ $.Values.stash.health.liveness.failureThreshold }}
+        {{- end }}
   {{- end }}
 
 persistence:

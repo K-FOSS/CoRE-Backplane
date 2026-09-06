@@ -35,6 +35,12 @@ five minutes for migrations; readiness and liveness then use shorter periodic
 checks. Because Jellyfin's health endpoint is not reliable during startup,
 readiness and liveness are held behind the startup probe.
 
+The Stash container uses Stash's unauthenticated [`/healthz` heartbeat route](https://github.com/stashapp/stash/blob/develop/internal/api/server.go#L116)
+for startup, readiness, and liveness probes. This verifies that the Stash HTTP
+server is running without requiring an API key; it does not validate library
+indexing or media-processing state. Startup allows up to five minutes for
+initialization, with readiness and liveness using shorter periodic checks.
+
 The public Jellyfin HTTPRoute returns a gateway-level `404` for `/metrics` and
 `/health` using Envoy Gateway's [`HTTPRouteFilter` direct response](https://gateway.envoyproxy.io/latest/tasks/traffic/direct-response/).
 The in-cluster ServiceMonitor and container probes continue to use those paths.
