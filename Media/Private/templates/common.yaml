@@ -239,6 +239,32 @@ service:
   {{- end }}
 
 route:
+  {{- if .Values.whisparr.enabled }}
+  whisparr:
+    enabled: true
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+
+    hostnames:
+      - 'whisparr.accessmyporn.download'
+
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        name: '{{ $.Values.pubgateway.name }}'
+        sectionName: '{{ $.Values.pubgateway.sectionName }}'
+        namespace: '{{ $.Values.pubgateway.namespace }}'
+
+    rules:
+      - backendRefs:
+          - kind: Service
+            port: 80
+            identifier: 'whisparr'
+            weight: 1
+  {{- end }}
+
   {{- if .Values.metube.enabled }}
   metube:
     enabled: true

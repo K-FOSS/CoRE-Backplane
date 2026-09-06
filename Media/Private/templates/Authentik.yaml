@@ -59,4 +59,40 @@ spec:
         order  = {{ $index }}
       }
       {{- end }}
+
+      {{- if .Values.whisparr.enabled }}
+      resource "authentik_provider_proxy" "whisparr" {
+        name               = "{{ .Release.Name }}-whisparr"
+        mode               = "forward_single"
+        external_host      = "{{ required "authentik.applications.whisparr.externalHost is required" .Values.authentik.applications.whisparr.externalHost }}"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+
+      resource "authentik_application" "whisparr" {
+        name              = "{{ required "authentik.applications.whisparr.displayName is required" .Values.authentik.applications.whisparr.displayName }}"
+        slug              = "{{ .Release.Name }}-whisparr"
+        group             = "{{ required "authentik.applications.whisparr.group is required" .Values.authentik.applications.whisparr.group }}"
+        protocol_provider = authentik_provider_proxy.whisparr.id
+      }
+
+      resource "authentik_application_entitlement" "whisparr_access" {
+        name        = "media-access"
+        application = authentik_application.whisparr.uuid
+      }
+
+      {{- range $index, $group := .Values.authentik.accessGroups }}
+      resource "authentik_policy_binding" "whisparr_entitlement_{{ $index }}" {
+        target = authentik_application_entitlement.whisparr_access.id
+        group  = data.authentik_group.access_{{ $index }}.id
+        order  = {{ $index }}
+      }
+
+      resource "authentik_policy_binding" "whisparr_application_{{ $index }}" {
+        target = authentik_application.whisparr.uuid
+        group  = data.authentik_group.access_{{ $index }}.id
+        order  = {{ $index }}
+      }
+      {{- end }}
+      {{- end }}
 {{- end }}
