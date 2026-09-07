@@ -69,6 +69,13 @@ spec:
           env:
             - name: 'LOVELY_HELM_MERGE'
               value: |- # yaml
+                cluster:
+                  name: '{{ .values.clusterName }}'
+
+                datacenter: '{{ .values.datacenter }}'
+
+                region: '{{ .values.region }}'
+
                 pds:
                   hostname: 'bsky.mylogin.space'
                   existingSecret: 'social-microblog-pds'
