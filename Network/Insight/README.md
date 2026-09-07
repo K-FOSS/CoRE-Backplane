@@ -246,6 +246,22 @@ The flow Service is scraped every 30 seconds through a
 consumed by the existing Alloy ServiceMonitor integration. The SQL exporter
 also refreshes its query cache every 30 seconds.
 
+Detailed flow rows are retained for 90 days by the default daily
+`<release>-flow-retention` CronJob. It replaces closed periods older than the
+configured `flow.retention.detailDays` value in `flow_monthly`, removes those
+rows from `acct_v4`, and rebuilds `flow_yearly` from the monthly table in the
+same PostgreSQL transaction. Change `flow.retention.schedule` or disable the
+job with `flow.retention.enabled: false` through the ApplicationSet values.
+The job uses the flow claim credentials, while the existing admin-only init
+container owns creation and grants for the summary tables. Review a successful
+Job and the summary tables before reducing the detail retention window; the
+cleanup is intentionally destructive for the deleted detail rows.
+The job uses the Kubernetes
+[`CronJob`](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
+controller and PostgreSQL's transactional SQL; normal `DELETE` operations may
+leave allocated table space reusable rather than immediately shrinking the
+relation on disk.
+
 The `OpenNMS Flow Capacity` dashboard is auto-imported into the Grafana
 `OpenNMS` folder through the existing labelled-ConfigMap sidecar integration;
 see the [Grafana dashboard sidecar documentation](https://github.com/grafana-community/helm-charts/tree/grafana-12.10.4/charts/grafana#sidecar-for-dashboards).

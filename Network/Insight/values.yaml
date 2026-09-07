@@ -120,6 +120,18 @@ flow:
       limits:
         cpu: '100m'
         memory: '128Mi'
+  retention:
+    # Closed detail periods older than this many days are rolled into the
+    # monthly table and removed from acct_v4. Set enabled to false to retain
+    # all detail rows.
+    enabled: true
+    detailDays: 90
+    schedule: '17 2 * * *'
+    image:
+      repository: 'docker.io/library/postgres'
+      tag: '16.4'
+      digest: 'sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412'
+      pullPolicy: 'IfNotPresent'
   netflowImage:
     repository: 'docker.io/pmacct/nfacctd'
     tag: 'v1.7.9'

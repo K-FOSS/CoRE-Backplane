@@ -20,6 +20,9 @@
 {{- if and .Values.flow.enabled (ne .Values.flow.database.username .Values.flow.database.database) }}
 {{- fail "flow.database.database must match flow.database.username because the User claim creates the database named after its username" }}
 {{- end }}
+{{- if and .Values.flow.enabled .Values.flow.retention.enabled (lt (.Values.flow.retention.detailDays | int) 1) }}
+{{- fail "flow.retention.detailDays must be greater than zero when flow retention is enabled" }}
+{{- end }}
 
 {{- define "core-network-insight.networkPolicyRules" -}}
 ingress:
@@ -332,7 +335,7 @@ controllers:
             psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
               --username="${POSTGRES_ADMIN_USER}" --dbname="${FLOW_DATABASE}" \
               --set=ON_ERROR_STOP=1 \
-              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4 TO \"${FLOW_DATABASE_USER}\";"
+              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4, flow_monthly, flow_yearly TO \"${FLOW_DATABASE_USER}\";"
         env:
           - name: 'POSTGRES_HOST'
             value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
@@ -629,6 +632,93 @@ rawResources:
             path: '/metrics'
             interval: '30s'
             scrapeTimeout: '10s'
+  {{- if .Values.flow.retention.enabled }}
+  flow-retention:
+    forceRename: '{{ .Release.Name }}-flow-retention'
+    manifest:
+      apiVersion: batch/v1
+      kind: CronJob
+      metadata:
+        name: '{{ .Release.Name }}-flow-retention'
+        namespace: '{{ .Release.Namespace }}'
+        labels:
+          app.kubernetes.io/name: '{{ .Release.Name }}'
+          app.kubernetes.io/instance: '{{ .Release.Name }}'
+          app.kubernetes.io/component: 'flow-retention'
+      spec:
+        schedule: {{ .Values.flow.retention.schedule | squote }}
+        concurrencyPolicy: 'Forbid'
+        successfulJobsHistoryLimit: 2
+        failedJobsHistoryLimit: 3
+        jobTemplate:
+          spec:
+            backoffLimit: 2
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: '{{ .Release.Name }}'
+                  app.kubernetes.io/instance: '{{ .Release.Name }}'
+                  app.kubernetes.io/component: 'flow-retention'
+              spec:
+                restartPolicy: 'OnFailure'
+                automountServiceAccountToken: false
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 999
+                  runAsGroup: 999
+                  seccompProfile:
+                    type: 'RuntimeDefault'
+                containers:
+                  - name: 'flow-retention'
+                    image: '{{ .Values.flow.retention.image.repository }}:{{ .Values.flow.retention.image.tag }}@{{ .Values.flow.retention.image.digest }}'
+                    imagePullPolicy: {{ .Values.flow.retention.image.pullPolicy | squote }}
+                    command:
+                      - '/usr/bin/env'
+                      - 'bash'
+                      - '-c'
+                    args:
+                      - |
+                        set -Eeuo pipefail
+                        export PGPASSWORD="${FLOW_DATABASE_PASSWORD}"
+                        psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+                          --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
+                          --set=ON_ERROR_STOP=1 \
+                          --variable="detail_retention_days=${FLOW_DETAIL_RETENTION_DAYS}" \
+                          --file='/etc/pmacct/flow-retention.sql'
+                    env:
+                      - name: 'POSTGRES_HOST'
+                        value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
+                      - name: 'POSTGRES_PORT'
+                        value: {{ .Values.postgresql.port | quote }}
+                      - name: 'FLOW_DATABASE'
+                        value: {{ .Values.flow.database.database | squote }}
+                      - name: 'FLOW_DATABASE_USER'
+                        valueFrom:
+                          secretKeyRef:
+                            name: {{ required "flow.database.credentialsSecretName is required" .Values.flow.database.credentialsSecretName | squote }}
+                            key: 'username'
+                      - name: 'FLOW_DATABASE_PASSWORD'
+                        valueFrom:
+                          secretKeyRef:
+                            name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                            key: 'password'
+                      - name: 'FLOW_DETAIL_RETENTION_DAYS'
+                        value: {{ .Values.flow.retention.detailDays | quote }}
+                    volumeMounts:
+                      - name: 'flow-config'
+                        mountPath: '/etc/pmacct/flow-retention.sql'
+                        subPath: 'flow-retention.sql'
+                        readOnly: true
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      capabilities:
+                        drop:
+                          - 'ALL'
+                volumes:
+                  - name: 'flow-config'
+                    configMap:
+                      name: '{{ .Release.Name }}-flow'
+  {{- end }}
 {{- end }}
   flow-dashboard:
     forceRename: '{{ .Release.Name }}-flow-dashboard'
@@ -879,6 +969,50 @@ configMaps:
           CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, mac_src, mac_dst, vlan, ip_src, ip_dst, port_src, port_dst, ip_proto, tos, stamp_inserted)
         );
         CREATE INDEX IF NOT EXISTS acct_v4_stamp_inserted_idx ON acct_v4 (stamp_inserted);
+        CREATE TABLE IF NOT EXISTS flow_monthly (
+          period_start DATE PRIMARY KEY,
+          packets NUMERIC NOT NULL,
+          bytes NUMERIC NOT NULL,
+          flows NUMERIC NOT NULL,
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS flow_yearly (
+          period_start DATE PRIMARY KEY,
+          packets NUMERIC NOT NULL,
+          bytes NUMERIC NOT NULL,
+          flows NUMERIC NOT NULL,
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS flow_monthly_period_start_idx ON flow_monthly (period_start);
+        CREATE INDEX IF NOT EXISTS flow_yearly_period_start_idx ON flow_yearly (period_start);
+      flow-retention.sql: |
+        BEGIN;
+        CREATE TEMP TABLE flow_rollup_monthly ON COMMIT DROP AS
+        SELECT date_trunc('month', stamp_inserted)::date AS period_start,
+               COALESCE(SUM(packets), 0)::numeric AS packets,
+               COALESCE(SUM(bytes), 0)::numeric AS bytes,
+               COALESCE(SUM(flows), 0)::numeric AS flows
+        FROM acct_v4
+        WHERE stamp_inserted < date_trunc('month', CURRENT_TIMESTAMP)
+          AND stamp_inserted < CURRENT_DATE - (:'detail_retention_days')::integer
+        GROUP BY 1;
+        DELETE FROM flow_monthly m
+        USING flow_rollup_monthly r
+        WHERE m.period_start = r.period_start;
+        INSERT INTO flow_monthly (period_start, packets, bytes, flows)
+        SELECT period_start, packets, bytes, flows
+        FROM flow_rollup_monthly;
+        DELETE FROM acct_v4 a
+        USING flow_rollup_monthly r
+        WHERE a.stamp_inserted >= r.period_start
+          AND a.stamp_inserted < r.period_start + INTERVAL '1 month';
+        DELETE FROM flow_yearly;
+        INSERT INTO flow_yearly (period_start, packets, bytes, flows)
+        SELECT date_trunc('year', period_start)::date,
+               SUM(packets), SUM(bytes), SUM(flows)
+        FROM flow_monthly
+        GROUP BY 1;
+        COMMIT;
       sql-exporter.yml: |
         global:
           scrape_timeout: 10s
