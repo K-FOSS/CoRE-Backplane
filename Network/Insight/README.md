@@ -253,6 +253,18 @@ replaces the map and sends `SIGUSR2` to reload it; if the public lookup fails,
 the previous map remains in place. Team Cymru reports a four-hour BGP refresh
 cadence, so this is attribution for public origin routes rather than a
 real-time guarantee. Private or unrouted addresses remain ASN `0`.
+Static entries in `flow.asnLookup.staticMappings` are retained across refreshes.
+Each entry accepts either one `range` or multiple `ranges`, for example:
+
+```yaml
+- asn: '64567'
+  ranges: ['172.16.0.0/12', '192.168.0.0/12']
+```
+
+The default includes `{asn: '6327', range: '10.0.0.0/24'}` for the configured
+private network. Hourly, daily, monthly, and yearly rollups retain
+`as_src`/`as_dst` dimensions, allowing traffic summaries to be grouped by ASN
+pair instead of only by period.
 pmacct's [map refresh and flow augmentation documentation](https://github.com/pmacct/pmacct/blob/master/docs/FLOW_AUGMENTATION_PROCESS_DESCRIPTION.md)
 describes the lookup precedence and reload behavior. Disable the public lookup
 with `flow.asnLookup.enabled: false` when outbound WHOIS access is not allowed.

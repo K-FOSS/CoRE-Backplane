@@ -495,27 +495,37 @@ controllers:
                   WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
                     AND NOT (ip_dst <<= inet '10.0.0.0/8' OR ip_dst <<= inet '172.16.0.0/12' OR ip_dst <<= inet '192.168.0.0/16' OR ip_dst <<= inet '127.0.0.0/8' OR ip_dst <<= inet '169.254.0.0/16' OR ip_dst <<= inet '::/128' OR ip_dst <<= inet '::1/128' OR ip_dst <<= inet 'fc00::/7' OR ip_dst <<= inet 'fe80::/10');
                 " > "${ips}"
-              if [ ! -s "${ips}" ]; then
-                return 0
-              fi
-              exec 3<>/dev/tcp/whois.cymru.com/43
-              {
-                printf '%s\n' 'begin' 'verbose'
-                cat "${ips}"
-                printf '%s\n' 'end'
-              } >&3
               : > "${response}"
-              while IFS= read -r line <&3; do
-                printf '%s\n' "${line}" >> "${response}"
-              done
-              exec 3>&-
-              awk -F '|' '
-                function trim(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
+              if [ -s "${ips}" ]; then
+                exec 3<>/dev/tcp/whois.cymru.com/43
                 {
-                  asn = trim($1); prefix = trim($3)
-                  if (asn ~ /^[0-9]+$/ && prefix ~ /\/[0-9]+$/) print asn "," prefix
-                }
-              ' "${response}" | sort -t, -k2,2 -u > "${next}"
+                  printf '%s\n' 'begin' 'verbose'
+                  cat "${ips}"
+                  printf '%s\n' 'end'
+                } >&3
+                while IFS= read -r line <&3; do
+                  printf '%s\n' "${line}" >> "${response}"
+                done
+                exec 3>&-
+              fi
+              {
+                {{- range $mapping := .Values.flow.asnLookup.staticMappings }}
+                {{- if $mapping.ranges }}
+                {{- range $range := $mapping.ranges }}
+                printf '%s,%s\n' {{ $mapping.asn | squote }} {{ $range | squote }}
+                {{- end }}
+                {{- else if $mapping.range }}
+                printf '%s,%s\n' {{ $mapping.asn | squote }} {{ $mapping.range | squote }}
+                {{- end }}
+                {{- end }}
+                awk -F '|' '
+                  function trim(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
+                  {
+                    asn = trim($1); prefix = trim($3)
+                    if (asn ~ /^[0-9]+$/ && prefix ~ /\/[0-9]+$/) print asn "," prefix
+                  }
+                ' "${response}"
+              } | sort -t, -k2,2 -u > "${next}"
               if [ -s "${next}" ]; then
                 mv "${next}" "${map}"
                 for daemon in nfacctd sfacctd; do
@@ -1112,33 +1122,65 @@ configMaps:
         ALTER TABLE acct_v4 ADD CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, class_id, mac_src, mac_dst, vlan, ip_src, ip_dst, as_src, as_dst, port_src, port_dst, ip_proto, tos, stamp_inserted);
         CREATE INDEX IF NOT EXISTS acct_v4_stamp_inserted_idx ON acct_v4 (stamp_inserted);
         CREATE TABLE IF NOT EXISTS flow_hourly (
-          period_start TIMESTAMP WITHOUT TIME ZONE PRIMARY KEY,
+          period_start TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+          as_src BIGINT NOT NULL DEFAULT 0,
+          as_dst BIGINT NOT NULL DEFAULT 0,
           packets NUMERIC NOT NULL,
           bytes NUMERIC NOT NULL,
           flows NUMERIC NOT NULL,
-          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT flow_hourly_pk PRIMARY KEY (period_start, as_src, as_dst)
         );
         CREATE TABLE IF NOT EXISTS flow_daily (
-          period_start DATE PRIMARY KEY,
+          period_start DATE NOT NULL,
+          as_src BIGINT NOT NULL DEFAULT 0,
+          as_dst BIGINT NOT NULL DEFAULT 0,
           packets NUMERIC NOT NULL,
           bytes NUMERIC NOT NULL,
           flows NUMERIC NOT NULL,
-          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT flow_daily_pk PRIMARY KEY (period_start, as_src, as_dst)
         );
         CREATE TABLE IF NOT EXISTS flow_monthly (
-          period_start DATE PRIMARY KEY,
+          period_start DATE NOT NULL,
+          as_src BIGINT NOT NULL DEFAULT 0,
+          as_dst BIGINT NOT NULL DEFAULT 0,
           packets NUMERIC NOT NULL,
           bytes NUMERIC NOT NULL,
           flows NUMERIC NOT NULL,
-          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT flow_monthly_pk PRIMARY KEY (period_start, as_src, as_dst)
         );
         CREATE TABLE IF NOT EXISTS flow_yearly (
-          period_start DATE PRIMARY KEY,
+          period_start DATE NOT NULL,
+          as_src BIGINT NOT NULL DEFAULT 0,
+          as_dst BIGINT NOT NULL DEFAULT 0,
           packets NUMERIC NOT NULL,
           bytes NUMERIC NOT NULL,
           flows NUMERIC NOT NULL,
-          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          CONSTRAINT flow_yearly_pk PRIMARY KEY (period_start, as_src, as_dst)
         );
+        ALTER TABLE flow_hourly DROP CONSTRAINT IF EXISTS flow_hourly_pkey;
+        ALTER TABLE flow_hourly DROP CONSTRAINT IF EXISTS flow_hourly_pk;
+        ALTER TABLE flow_hourly ADD COLUMN IF NOT EXISTS as_src BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_hourly ADD COLUMN IF NOT EXISTS as_dst BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_hourly ADD CONSTRAINT flow_hourly_pk PRIMARY KEY (period_start, as_src, as_dst);
+        ALTER TABLE flow_daily DROP CONSTRAINT IF EXISTS flow_daily_pkey;
+        ALTER TABLE flow_daily DROP CONSTRAINT IF EXISTS flow_daily_pk;
+        ALTER TABLE flow_daily ADD COLUMN IF NOT EXISTS as_src BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_daily ADD COLUMN IF NOT EXISTS as_dst BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_daily ADD CONSTRAINT flow_daily_pk PRIMARY KEY (period_start, as_src, as_dst);
+        ALTER TABLE flow_monthly DROP CONSTRAINT IF EXISTS flow_monthly_pkey;
+        ALTER TABLE flow_monthly DROP CONSTRAINT IF EXISTS flow_monthly_pk;
+        ALTER TABLE flow_monthly ADD COLUMN IF NOT EXISTS as_src BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_monthly ADD COLUMN IF NOT EXISTS as_dst BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_monthly ADD CONSTRAINT flow_monthly_pk PRIMARY KEY (period_start, as_src, as_dst);
+        ALTER TABLE flow_yearly DROP CONSTRAINT IF EXISTS flow_yearly_pkey;
+        ALTER TABLE flow_yearly DROP CONSTRAINT IF EXISTS flow_yearly_pk;
+        ALTER TABLE flow_yearly ADD COLUMN IF NOT EXISTS as_src BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_yearly ADD COLUMN IF NOT EXISTS as_dst BIGINT NOT NULL DEFAULT 0;
+        ALTER TABLE flow_yearly ADD CONSTRAINT flow_yearly_pk PRIMARY KEY (period_start, as_src, as_dst);
         CREATE INDEX IF NOT EXISTS flow_hourly_period_start_idx ON flow_hourly (period_start);
         CREATE INDEX IF NOT EXISTS flow_daily_period_start_idx ON flow_daily (period_start);
         CREATE INDEX IF NOT EXISTS flow_monthly_period_start_idx ON flow_monthly (period_start);
@@ -1147,54 +1189,67 @@ configMaps:
         BEGIN;
         CREATE TEMP TABLE flow_rollup_hourly ON COMMIT DROP AS
         SELECT date_trunc('hour', stamp_inserted) AS period_start,
+               as_src,
+               as_dst,
                COALESCE(SUM(packets), 0)::numeric AS packets,
                COALESCE(SUM(bytes), 0)::numeric AS bytes,
                COALESCE(SUM(flows), 0)::numeric AS flows
         FROM acct_v4
         WHERE stamp_inserted < date_trunc('hour', CURRENT_TIMESTAMP)
-        GROUP BY 1;
+        GROUP BY 1, 2, 3;
         DELETE FROM flow_hourly h
         USING flow_rollup_hourly r
-        WHERE h.period_start = r.period_start;
-        INSERT INTO flow_hourly (period_start, packets, bytes, flows)
-        SELECT period_start, packets, bytes, flows
+        WHERE h.period_start = r.period_start
+          AND h.as_src = r.as_src
+          AND h.as_dst = r.as_dst;
+        INSERT INTO flow_hourly (period_start, as_src, as_dst, packets, bytes, flows)
+        SELECT period_start, as_src, as_dst, packets, bytes, flows
         FROM flow_rollup_hourly;
         DELETE FROM acct_v4
         WHERE stamp_inserted < CURRENT_TIMESTAMP - make_interval(hours => (:'detail_retention_hours')::integer);
         CREATE TEMP TABLE flow_rollup_daily ON COMMIT DROP AS
         SELECT date_trunc('day', period_start)::date AS period_start,
+               as_src,
+               as_dst,
                COALESCE(SUM(packets), 0)::numeric AS packets,
                COALESCE(SUM(bytes), 0)::numeric AS bytes,
                COALESCE(SUM(flows), 0)::numeric AS flows
         FROM flow_hourly
         WHERE period_start < date_trunc('day', CURRENT_TIMESTAMP)
-        GROUP BY 1;
+        GROUP BY 1, 2, 3;
         DELETE FROM flow_daily d
         USING flow_rollup_daily r
-        WHERE d.period_start = r.period_start;
-        INSERT INTO flow_daily (period_start, packets, bytes, flows)
-        SELECT period_start, packets, bytes, flows
+        WHERE d.period_start = r.period_start
+          AND d.as_src = r.as_src
+          AND d.as_dst = r.as_dst;
+        INSERT INTO flow_daily (period_start, as_src, as_dst, packets, bytes, flows)
+        SELECT period_start, as_src, as_dst, packets, bytes, flows
         FROM flow_rollup_daily;
         CREATE TEMP TABLE flow_rollup_monthly ON COMMIT DROP AS
         SELECT date_trunc('month', period_start)::date AS period_start,
+               as_src,
+               as_dst,
                COALESCE(SUM(packets), 0)::numeric AS packets,
                COALESCE(SUM(bytes), 0)::numeric AS bytes,
                COALESCE(SUM(flows), 0)::numeric AS flows
         FROM flow_daily
         WHERE period_start < date_trunc('month', CURRENT_TIMESTAMP)::date
-        GROUP BY 1;
+        GROUP BY 1, 2, 3;
         DELETE FROM flow_monthly m
         USING flow_rollup_monthly r
-        WHERE m.period_start = r.period_start;
-        INSERT INTO flow_monthly (period_start, packets, bytes, flows)
-        SELECT period_start, packets, bytes, flows
+        WHERE m.period_start = r.period_start
+          AND m.as_src = r.as_src
+          AND m.as_dst = r.as_dst;
+        INSERT INTO flow_monthly (period_start, as_src, as_dst, packets, bytes, flows)
+        SELECT period_start, as_src, as_dst, packets, bytes, flows
         FROM flow_rollup_monthly;
         DELETE FROM flow_yearly;
-        INSERT INTO flow_yearly (period_start, packets, bytes, flows)
+        INSERT INTO flow_yearly (period_start, as_src, as_dst, packets, bytes, flows)
         SELECT date_trunc('year', period_start)::date,
+               as_src, as_dst,
                SUM(packets), SUM(bytes), SUM(flows)
         FROM flow_monthly
-        GROUP BY 1;
+        GROUP BY 1, 2, 3;
         COMMIT;
       sql-exporter.yml: |
         global:
@@ -1242,37 +1297,37 @@ configMaps:
                 help: 'Flow records in the latest completed archived hourly period.'
                 values: ['flows']
                 query: |
-                  SELECT COALESCE((SELECT flows FROM flow_hourly WHERE period_start = (SELECT MAX(period_start) FROM flow_hourly)), 0) AS flows
+                  SELECT COALESCE((SELECT SUM(flows) FROM flow_hourly WHERE period_start = (SELECT MAX(period_start) FROM flow_hourly)), 0) AS flows
               - metric_name: 'opennms_flow_daily_flows'
                 type: 'gauge'
                 help: 'Flow records in the latest completed archived daily period.'
                 values: ['flows']
                 query: |
-                  SELECT COALESCE((SELECT flows FROM flow_daily WHERE period_start = (SELECT MAX(period_start) FROM flow_daily)), 0) AS flows
+                  SELECT COALESCE((SELECT SUM(flows) FROM flow_daily WHERE period_start = (SELECT MAX(period_start) FROM flow_daily)), 0) AS flows
               - metric_name: 'opennms_flow_monthly_flows'
                 type: 'gauge'
                 help: 'Flow records in the latest completed archived monthly period.'
                 values: ['flows']
                 query: |
-                  SELECT COALESCE((SELECT flows FROM flow_monthly WHERE period_start = (SELECT MAX(period_start) FROM flow_monthly)), 0) AS flows
+                  SELECT COALESCE((SELECT SUM(flows) FROM flow_monthly WHERE period_start = (SELECT MAX(period_start) FROM flow_monthly)), 0) AS flows
               - metric_name: 'opennms_flow_hourly_bytes'
                 type: 'gauge'
                 help: 'Bytes in the latest completed archived hourly period.'
                 values: ['bytes']
                 query: |
-                  SELECT COALESCE((SELECT bytes FROM flow_hourly WHERE period_start = (SELECT MAX(period_start) FROM flow_hourly)), 0) AS bytes
+                  SELECT COALESCE((SELECT SUM(bytes) FROM flow_hourly WHERE period_start = (SELECT MAX(period_start) FROM flow_hourly)), 0) AS bytes
               - metric_name: 'opennms_flow_daily_bytes'
                 type: 'gauge'
                 help: 'Bytes in the latest completed archived daily period.'
                 values: ['bytes']
                 query: |
-                  SELECT COALESCE((SELECT bytes FROM flow_daily WHERE period_start = (SELECT MAX(period_start) FROM flow_daily)), 0) AS bytes
+                  SELECT COALESCE((SELECT SUM(bytes) FROM flow_daily WHERE period_start = (SELECT MAX(period_start) FROM flow_daily)), 0) AS bytes
               - metric_name: 'opennms_flow_monthly_bytes'
                 type: 'gauge'
                 help: 'Bytes in the latest completed archived monthly period.'
                 values: ['bytes']
                 query: |
-                  SELECT COALESCE((SELECT bytes FROM flow_monthly WHERE period_start = (SELECT MAX(period_start) FROM flow_monthly)), 0) AS bytes
+                  SELECT COALESCE((SELECT SUM(bytes) FROM flow_monthly WHERE period_start = (SELECT MAX(period_start) FROM flow_monthly)), 0) AS bytes
 {{- end }}
 
 {{- if .Values.timeseries.enabled }}
