@@ -52,3 +52,14 @@ Use the authoritative [Horizon Kafka topic reference](https://docs.opennms.com/h
 [Horizon Minion IPC overview](https://docs.opennms.com/horizon/36/deployment/minion/introduction.html),
 and [Strimzi KafkaTopic documentation](https://strimzi.io/docs/operators/0.45.2/deploying.html#type-KafkaTopic-reference)
 when determining topic requirements or resource behavior.
+
+## Flow metrics and dashboard changes
+
+The Flow stack's Prometheus metrics and Grafana dashboard are one operational
+surface. Any change that adds, removes, renames, or changes the meaning of a
+Flow metric must update the auto-imported `OpenNMS Flow Capacity` dashboard in
+`templates/common.yaml` in the same change. Add or adjust a panel, query,
+legend, unit, or explanatory text so the dashboard remains useful for the
+current metric set. Validate the rendered dashboard JSON together with the
+SQL exporter configuration and document any retention or aggregation timing
+that affects when a metric becomes non-zero.

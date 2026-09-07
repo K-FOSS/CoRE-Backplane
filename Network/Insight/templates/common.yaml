@@ -735,7 +735,7 @@ rawResources:
         opennms-flow.json: |
           {
             "annotations": {"list": []},
-            "description": "OpenNMS flow intake rate and PostgreSQL storage capacity.",
+            "description": "OpenNMS flow intake rate, archived hourly/daily/monthly rollups, and PostgreSQL storage capacity.",
             "editable": true,
             "fiscalYearStartMonth": 0,
             "graphTooltip": 1,
@@ -789,6 +789,26 @@ rawResources:
                 "options": {"legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
                 "targets": [{"expr": "sum(opennms_flow_database_size_bytes)", "legendFormat": "database size", "refId": "A"}, {"expr": "sum(opennms_flow_storage_bytes)", "legendFormat": "acct_v4 table", "refId": "B"}],
                 "title": "Flow storage growth",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "short"}, "overrides": []},
+                "gridPos": {"h": 9, "w": 12, "x": 0, "y": 14},
+                "id": 6,
+                "options": {"legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+                "targets": [{"expr": "sum(opennms_flow_hourly_flows)", "legendFormat": "hourly flows", "refId": "A"}, {"expr": "sum(opennms_flow_daily_flows)", "legendFormat": "daily flows", "refId": "B"}, {"expr": "sum(opennms_flow_monthly_flows)", "legendFormat": "monthly flows", "refId": "C"}],
+                "title": "Archived flow records",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "decbytes"}, "overrides": []},
+                "gridPos": {"h": 9, "w": 12, "x": 12, "y": 14},
+                "id": 7,
+                "options": {"legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+                "targets": [{"expr": "sum(opennms_flow_hourly_bytes)", "legendFormat": "hourly bytes", "refId": "A"}, {"expr": "sum(opennms_flow_daily_bytes)", "legendFormat": "daily bytes", "refId": "B"}, {"expr": "sum(opennms_flow_monthly_bytes)", "legendFormat": "monthly bytes", "refId": "C"}],
+                "title": "Archived flow volume",
                 "type": "timeseries"
               }
             ],
