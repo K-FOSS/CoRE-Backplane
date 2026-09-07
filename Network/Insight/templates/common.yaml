@@ -306,6 +306,7 @@ controllers:
     strategy: 'RollingUpdate'
     pod:
       automountServiceAccountToken: false
+      shareProcessNamespace: true
       nodeSelector:
 {{ toYaml .Values.flow.nodeSelector | nindent 8 }}
       securityContext:
@@ -328,6 +329,7 @@ controllers:
         args:
           - |
             set -Eeuo pipefail
+            install -m 0644 /dev/null /var/run/pmacct/networks.lst
             export PGPASSWORD="${POSTGRES_ADMIN_PASSWORD}"
             psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
               --username="${POSTGRES_ADMIN_USER}" --dbname="${FLOW_DATABASE}" \
@@ -463,6 +465,96 @@ controllers:
               secretKeyRef:
                 name: {{ .Values.flow.database.credentialsSecretName | squote }}
                 key: 'password'
+      {{- if .Values.flow.asnLookup.enabled }}
+      asn-lookup:
+        image:
+          repository: {{ .Values.flow.asnLookup.image.repository | squote }}
+          tag: {{ .Values.flow.asnLookup.image.tag | squote }}
+          digest: {{ .Values.flow.asnLookup.image.digest | squote }}
+          pullPolicy: {{ .Values.flow.asnLookup.image.pullPolicy | squote }}
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
+        args:
+          - |
+            set -Eeuo pipefail
+            map='/var/run/pmacct/networks.lst'
+            refresh() {
+              ips='/tmp/asn-ips'
+              response='/tmp/asn-response'
+              next='/tmp/networks.lst.new'
+              psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+                --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
+                --tuples-only --no-align --command="
+                  SELECT DISTINCT host(ip_src) FROM acct_v4
+                  WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
+                    AND NOT (ip_src <<= inet '10.0.0.0/8' OR ip_src <<= inet '172.16.0.0/12' OR ip_src <<= inet '192.168.0.0/16' OR ip_src <<= inet '127.0.0.0/8' OR ip_src <<= inet '169.254.0.0/16' OR ip_src <<= inet '::/128' OR ip_src <<= inet '::1/128' OR ip_src <<= inet 'fc00::/7' OR ip_src <<= inet 'fe80::/10')
+                  UNION
+                  SELECT DISTINCT host(ip_dst) FROM acct_v4
+                  WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
+                    AND NOT (ip_dst <<= inet '10.0.0.0/8' OR ip_dst <<= inet '172.16.0.0/12' OR ip_dst <<= inet '192.168.0.0/16' OR ip_dst <<= inet '127.0.0.0/8' OR ip_dst <<= inet '169.254.0.0/16' OR ip_dst <<= inet '::/128' OR ip_dst <<= inet '::1/128' OR ip_dst <<= inet 'fc00::/7' OR ip_dst <<= inet 'fe80::/10');
+                " > "${ips}"
+              if [ ! -s "${ips}" ]; then
+                return 0
+              fi
+              exec 3<>/dev/tcp/whois.cymru.com/43
+              {
+                printf '%s\n' 'begin' 'verbose'
+                cat "${ips}"
+                printf '%s\n' 'end'
+              } >&3
+              : > "${response}"
+              while IFS= read -r line <&3; do
+                printf '%s\n' "${line}" >> "${response}"
+              done
+              exec 3>&-
+              awk -F '|' '
+                function trim(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
+                {
+                  asn = trim($1); prefix = trim($3)
+                  if (asn ~ /^[0-9]+$/ && prefix ~ /\/[0-9]+$/) print asn "," prefix
+                }
+              ' "${response}" | sort -t, -k2,2 -u > "${next}"
+              if [ -s "${next}" ]; then
+                mv "${next}" "${map}"
+                for daemon in nfacctd sfacctd; do
+                  for process in /proc/[0-9]*; do
+                    pid="${process##*/}"
+                    if [ "$(cat "${process}/comm" 2>/dev/null || true)" = "${daemon}" ]; then
+                      kill -USR2 "${pid}" || true
+                    fi
+                  done
+                done
+              fi
+            }
+            while true; do
+              refresh || true
+              sleep "${ASN_REFRESH_SECONDS}"
+            done
+        env:
+          - name: 'POSTGRES_HOST'
+            value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
+          - name: 'POSTGRES_PORT'
+            value: {{ .Values.postgresql.port | quote }}
+          - name: 'FLOW_DATABASE'
+            value: {{ .Values.flow.database.database | squote }}
+          - name: 'FLOW_DATABASE_USER'
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "flow.database.credentialsSecretName is required" .Values.flow.database.credentialsSecretName | squote }}
+                key: 'username'
+          - name: 'FLOW_DATABASE_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                key: 'password'
+          - name: 'ASN_REFRESH_SECONDS'
+            value: {{ .Values.flow.asnLookup.refreshSeconds | quote }}
+        securityContext: *flowContainerSecurityContext
+        resources:
+{{ toYaml .Values.flow.metrics.resources | nindent 10 }}
+      {{- end }}
       sql-exporter:
         image:
           repository: {{ .Values.flow.metrics.exporterImage.repository | squote }}
@@ -923,7 +1015,12 @@ configMaps:
         nfacctd_ip: 0.0.0.0
         nfacctd_port: 2055
         plugins: pgsql
-        aggregate: src_host, dst_host, dst_as, src_port, dst_port, proto, flows
+        {{- if .Values.flow.asnLookup.enabled }}
+        nfacctd_as: file
+        networks_file: /var/run/pmacct/networks.lst
+        refresh_maps: true
+        {{- end }}
+        aggregate: src_host, dst_host, src_as, dst_as, src_port, dst_port, proto, flows
         sql_table: acct_v4
         sql_table_version: 6
         sql_data: typed
@@ -940,7 +1037,12 @@ configMaps:
         nfacctd_ip: 0.0.0.0
         nfacctd_port: 4739
         plugins: pgsql
-        aggregate: src_host, dst_host, dst_as, src_port, dst_port, proto, flows
+        {{- if .Values.flow.asnLookup.enabled }}
+        nfacctd_as: file
+        networks_file: /var/run/pmacct/networks.lst
+        refresh_maps: true
+        {{- end }}
+        aggregate: src_host, dst_host, src_as, dst_as, src_port, dst_port, proto, flows
         sql_table: acct_v4
         sql_table_version: 6
         sql_data: typed
@@ -957,7 +1059,12 @@ configMaps:
         sfacctd_ip: 0.0.0.0
         sfacctd_port: 6343
         plugins: pgsql
-        aggregate: src_host, dst_host, dst_as, src_port, dst_port, proto, flows
+        {{- if .Values.flow.asnLookup.enabled }}
+        sfacctd_as: file
+        networks_file: /var/run/pmacct/networks.lst
+        refresh_maps: true
+        {{- end }}
+        aggregate: src_host, dst_host, src_as, dst_as, src_port, dst_port, proto, flows
         sql_table: acct_v4
         sql_table_version: 6
         sql_data: typed
@@ -1371,6 +1478,20 @@ persistence:
           - path: '/etc/sql-exporter/sql_exporter.yml'
             readOnly: true
             subPath: 'sql-exporter.yml'
+  asn-map:
+    type: 'emptyDir'
+    advancedMounts:
+      flow:
+        flow-schema:
+          - path: '/var/run/pmacct'
+        netflow:
+          - path: '/var/run/pmacct'
+        ipfix:
+          - path: '/var/run/pmacct'
+        sflow:
+          - path: '/var/run/pmacct'
+        asn-lookup:
+          - path: '/var/run/pmacct'
 {{- end }}
 {{- if .Values.kafka.enabled }}
   kafka:

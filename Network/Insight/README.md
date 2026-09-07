@@ -228,17 +228,34 @@ is site-local, using the same `postgresql.host` and provider pair as the core;
 it is not a chart-private PostgreSQL instance. pmacct's
 [`CONFIG-KEYS` reference](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS)
 describes the listener and plugin settings. The flow aggregate key includes
-destination AS (`dst_as`) and does not aggregate MAC addresses. pmacct SQL
+source and destination AS (`src_as`, `dst_as`) and does not aggregate MAC addresses. pmacct SQL
 table version 6 requires compatibility columns for `class_id`, `mac_src`, and
 `mac_dst`; those columns are fixed to blank/zero defaults and are not populated
-as metadata by this configuration. The schema also includes the version-6-
-required `as_src` column with its default value of zero, but does not aggregate
-source AS. The schema uses pmacct SQL table version 6 because that version
+as metadata by this configuration. The schema uses pmacct SQL table version 6 because that version
 supports IP addresses and AS numbers together; the PostgreSQL mapping is
 documented in pmacct's [`README.pgsql`](https://github.com/pmacct/pmacct/blob/master/sql/README.pgsql).
 The flow init migration resets these compatibility fields to defaults for
 existing rows and rebuilds the primary key, so no actual MAC metadata is
 retained by the flow pipeline.
+
+ASN values are not inferred by PostgreSQL. For NetFlow/IPFIX, pmacct uses AS
+fields carried by the exporter when present. If the exporter does not send
+them, pmacct must be given an appropriate BGP/routing lookup source; otherwise
+the corresponding `as_src` or `as_dst` value remains zero. The source and
+destination IPs are correlated to ASNs by pmacct before the SQL plugin writes
+the aggregate row, and the ASN becomes part of that row's key.
+
+When `flow.asnLookup.enabled` is true, the flow Pod's ASN sidecar queries the
+recent detail IPs in PostgreSQL every four hours, submits them in bulk to
+[Team Cymru's public IP-to-ASN service](https://www.team-cymru.com/ip-asn-mapping),
+and writes origin-ASN/prefix entries to pmacct's `networks_file`. It atomically
+replaces the map and sends `SIGUSR2` to reload it; if the public lookup fails,
+the previous map remains in place. Team Cymru reports a four-hour BGP refresh
+cadence, so this is attribution for public origin routes rather than a
+real-time guarantee. Private or unrouted addresses remain ASN `0`.
+pmacct's [map refresh and flow augmentation documentation](https://github.com/pmacct/pmacct/blob/master/docs/FLOW_AUGMENTATION_PROCESS_DESCRIPTION.md)
+describes the lookup precedence and reload behavior. Disable the public lookup
+with `flow.asnLookup.enabled: false` when outbound WHOIS access is not allowed.
 
 The flow Pod also runs the pinned
 [`sql_exporter`](https://github.com/burningalchemist/sql_exporter) sidecar. Its
