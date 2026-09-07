@@ -549,6 +549,11 @@ controllers:
               secretKeyRef:
                 name: {{ .Values.flow.database.credentialsSecretName | squote }}
                 key: 'password'
+          - name: 'PGPASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                key: 'password'
           - name: 'ASN_REFRESH_SECONDS'
             value: {{ .Values.flow.asnLookup.refreshSeconds | quote }}
         securityContext: *flowContainerSecurityContext
