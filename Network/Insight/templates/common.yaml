@@ -607,6 +607,87 @@ networkpolicies:
 {{- end }}
 
 rawResources:
+  flow-dashboard:
+    forceRename: '{{ .Release.Name }}-flow-dashboard'
+    manifest:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: '{{ .Release.Name }}-flow-dashboard'
+        namespace: 'core-{{ .Values.env }}'
+        labels:
+          grafana_dashboard: 'true'
+          grafana_folder: 'OpenNMS'
+      data:
+        opennms-flow.json: |
+          {
+            "annotations": {"list": []},
+            "description": "OpenNMS flow intake rate and PostgreSQL storage capacity.",
+            "editable": true,
+            "fiscalYearStartMonth": 0,
+            "graphTooltip": 1,
+            "links": [],
+            "panels": [
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "flow/s"}, "overrides": []},
+                "gridPos": {"h": 5, "w": 8, "x": 0, "y": 0},
+                "id": 1,
+                "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+                "targets": [{"expr": "sum(opennms_flow_received_per_second)", "refId": "A"}],
+                "title": "Inbound flow records / second",
+                "type": "stat"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "Bps"}, "overrides": []},
+                "gridPos": {"h": 5, "w": 8, "x": 8, "y": 0},
+                "id": 2,
+                "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+                "targets": [{"expr": "sum(opennms_flow_bytes_per_second)", "refId": "A"}],
+                "title": "Inbound flow bytes / second",
+                "type": "stat"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "decbytes"}, "overrides": []},
+                "gridPos": {"h": 5, "w": 8, "x": 16, "y": 0},
+                "id": 3,
+                "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+                "targets": [{"expr": "sum(opennms_flow_database_size_bytes)", "refId": "A"}],
+                "title": "Flow database size",
+                "type": "stat"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "flow/s"}, "overrides": []},
+                "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5},
+                "id": 4,
+                "options": {"legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+                "targets": [{"expr": "sum(opennms_flow_received_per_second)", "legendFormat": "flow records/s", "refId": "A"}],
+                "title": "Inbound flow rate",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"},
+                "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "unit": "decbytes"}, "overrides": []},
+                "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5},
+                "id": 5,
+                "options": {"legend": {"calcs": ["mean", "max", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
+                "targets": [{"expr": "sum(opennms_flow_database_size_bytes)", "legendFormat": "database size", "refId": "A"}, {"expr": "sum(opennms_flow_storage_bytes)", "legendFormat": "acct_v4 table", "refId": "B"}],
+                "title": "Flow storage growth",
+                "type": "timeseries"
+              }
+            ],
+            "refresh": "1m",
+            "schemaVersion": 39,
+            "tags": ["OpenNMS", "flows", "capacity"],
+            "templating": {"list": [{"current": {}, "hide": 0, "label": "Prometheus", "name": "DS_PROMETHEUS", "options": [], "query": "prometheus", "refresh": 1, "type": "datasource"}]},
+            "time": {"from": "now-24h", "to": "now"},
+            "title": "OpenNMS Flow Capacity",
+            "uid": "opennms-flow-capacity",
+            "version": 1
+          }
   route:
     forceRename: '{{ .Release.Name }}'
     manifest:
@@ -810,6 +891,12 @@ configMaps:
                 values: ['storage_bytes']
                 query: |
                   SELECT pg_total_relation_size('acct_v4') AS storage_bytes
+              - metric_name: 'opennms_flow_database_size_bytes'
+                type: 'gauge'
+                help: 'Total PostgreSQL database size for the OpenNMS flow database in bytes.'
+                values: ['database_size_bytes']
+                query: |
+                  SELECT pg_database_size(current_database()) AS database_size_bytes
 {{- end }}
 
 {{- if .Values.timeseries.enabled }}
