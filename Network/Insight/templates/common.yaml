@@ -795,7 +795,7 @@ configMaps:
                 query: |
                   SELECT COALESCE(SUM(flows), 0)::double precision / 300 AS flows_per_second
                   FROM acct_v4
-                  WHERE stamp_inserted >= NOW() - INTERVAL '5 minutes'
+                  WHERE stamp_updated >= NOW() - INTERVAL '5 minutes'
               - metric_name: 'opennms_flow_bytes_per_second'
                 type: 'gauge'
                 help: 'Average bytes represented by received flow records per second during the last five minutes.'
@@ -803,7 +803,7 @@ configMaps:
                 query: |
                   SELECT COALESCE(SUM(bytes), 0)::double precision / 300 AS bytes_per_second
                   FROM acct_v4
-                  WHERE stamp_inserted >= NOW() - INTERVAL '5 minutes'
+                  WHERE stamp_updated >= NOW() - INTERVAL '5 minutes'
               - metric_name: 'opennms_flow_storage_bytes'
                 type: 'gauge'
                 help: 'PostgreSQL relation size of the OpenNMS flow accounting table in bytes.'
