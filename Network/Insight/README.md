@@ -241,6 +241,11 @@ retention/compaction policy when forecasting capacity. The exporter assembles
 its connection from the site-local host and the flow claim's Secret-backed
 username/password; no password is stored in a ConfigMap or Git.
 
+The flow Service is scraped every 30 seconds through a
+[`ServiceMonitor`](https://prometheus-operator.dev/docs/api-reference/api/#servicemonitor)
+consumed by the existing Alloy ServiceMonitor integration. The SQL exporter
+also refreshes its query cache every 30 seconds.
+
 The `OpenNMS Flow Capacity` dashboard is auto-imported into the Grafana
 `OpenNMS` folder through the existing labelled-ConfigMap sidecar integration;
 see the [Grafana dashboard sidecar documentation](https://github.com/grafana-community/helm-charts/tree/grafana-12.10.4/charts/grafana#sidecar-for-dashboards).

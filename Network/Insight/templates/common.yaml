@@ -520,9 +520,6 @@ service:
     type: {{ .Values.flow.service.type | squote }}
     externalTrafficPolicy: {{ .Values.flow.service.externalTrafficPolicy | squote }}
     annotations:
-      prometheus.io/scrape: 'true'
-      prometheus.io/portName: 'metrics'
-      prometheus.io/path: '/metrics'
       {{- range $key, $value := .Values.flow.service.annotations }}
       {{ $key }}: {{ $value | squote }}
       {{- end }}
@@ -607,6 +604,32 @@ networkpolicies:
 {{- end }}
 
 rawResources:
+{{- if .Values.flow.enabled }}
+  flow-service-monitor:
+    forceRename: '{{ .Release.Name }}-flow-service-monitor'
+    manifest:
+      apiVersion: monitoring.coreos.com/v1
+      kind: ServiceMonitor
+      metadata:
+        name: '{{ .Release.Name }}-flow'
+        namespace: '{{ .Release.Namespace }}'
+        labels:
+          app.kubernetes.io/managed-by: 'argocd'
+      spec:
+        namespaceSelector:
+          matchNames:
+            - '{{ .Release.Namespace }}'
+        selector:
+          matchLabels:
+            app.kubernetes.io/name: '{{ .Release.Name }}'
+            app.kubernetes.io/instance: '{{ .Release.Name }}'
+            app.kubernetes.io/service: '{{ .Release.Name }}-flow'
+        endpoints:
+          - port: 'metrics'
+            path: '/metrics'
+            interval: '30s'
+            scrapeTimeout: '10s'
+{{- end }}
   flow-dashboard:
     forceRename: '{{ .Release.Name }}-flow-dashboard'
     manifest:
@@ -859,7 +882,7 @@ configMaps:
       sql-exporter.yml: |
         global:
           scrape_timeout: 10s
-          min_interval: 60s
+          min_interval: 30s
           max_connections: 1
           max_idle_connections: 1
         target:
