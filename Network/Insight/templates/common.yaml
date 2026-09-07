@@ -972,6 +972,9 @@ configMaps:
       flow-schema.sql: |
         CREATE TABLE IF NOT EXISTS acct_v4 (
           agent_id BIGINT NOT NULL DEFAULT 0,
+          class_id CHAR(16) NOT NULL DEFAULT ' ',
+          mac_src macaddr NOT NULL DEFAULT '0:0:0:0:0:0',
+          mac_dst macaddr NOT NULL DEFAULT '0:0:0:0:0:0',
           vlan INT NOT NULL DEFAULT 0,
           ip_src inet NOT NULL DEFAULT '0.0.0.0',
           ip_dst inet NOT NULL DEFAULT '0.0.0.0',
@@ -986,14 +989,15 @@ configMaps:
           flows INT NOT NULL DEFAULT 0,
           stamp_inserted timestamp without time zone NOT NULL DEFAULT '0001-01-01 00:00:00',
           stamp_updated timestamp without time zone,
-          CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, vlan, ip_src, ip_dst, as_src, as_dst, port_src, port_dst, ip_proto, tos, stamp_inserted)
+          CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, class_id, mac_src, mac_dst, vlan, ip_src, ip_dst, as_src, as_dst, port_src, port_dst, ip_proto, tos, stamp_inserted)
         );
         ALTER TABLE acct_v4 DROP CONSTRAINT IF EXISTS acct_v4_pk;
-        ALTER TABLE acct_v4 DROP COLUMN IF EXISTS mac_src;
-        ALTER TABLE acct_v4 DROP COLUMN IF EXISTS mac_dst;
+        ALTER TABLE acct_v4 ADD COLUMN IF NOT EXISTS class_id CHAR(16) NOT NULL DEFAULT ' ';
+        ALTER TABLE acct_v4 ADD COLUMN IF NOT EXISTS mac_src macaddr NOT NULL DEFAULT '0:0:0:0:0:0';
+        ALTER TABLE acct_v4 ADD COLUMN IF NOT EXISTS mac_dst macaddr NOT NULL DEFAULT '0:0:0:0:0:0';
         ALTER TABLE acct_v4 ADD COLUMN IF NOT EXISTS as_src BIGINT NOT NULL DEFAULT 0;
         ALTER TABLE acct_v4 ADD COLUMN IF NOT EXISTS as_dst BIGINT NOT NULL DEFAULT 0;
-        ALTER TABLE acct_v4 ADD CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, vlan, ip_src, ip_dst, as_src, as_dst, port_src, port_dst, ip_proto, tos, stamp_inserted);
+        ALTER TABLE acct_v4 ADD CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, class_id, mac_src, mac_dst, vlan, ip_src, ip_dst, as_src, as_dst, port_src, port_dst, ip_proto, tos, stamp_inserted);
         CREATE INDEX IF NOT EXISTS acct_v4_stamp_inserted_idx ON acct_v4 (stamp_inserted);
         CREATE TABLE IF NOT EXISTS flow_hourly (
           period_start TIMESTAMP WITHOUT TIME ZONE PRIMARY KEY,

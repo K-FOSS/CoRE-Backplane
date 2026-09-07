@@ -228,14 +228,17 @@ is site-local, using the same `postgresql.host` and provider pair as the core;
 it is not a chart-private PostgreSQL instance. pmacct's
 [`CONFIG-KEYS` reference](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS)
 describes the listener and plugin settings. The flow aggregate key includes
-destination AS (`dst_as`) and intentionally excludes source and destination
-MAC addresses. The schema includes the version-6-required `as_src` column with
-its default value of zero, but does not aggregate source AS. The schema uses
-pmacct SQL table version 6 because that version
+destination AS (`dst_as`) and does not aggregate MAC addresses. pmacct SQL
+table version 6 requires compatibility columns for `class_id`, `mac_src`, and
+`mac_dst`; those columns are fixed to blank/zero defaults and are not populated
+as metadata by this configuration. The schema also includes the version-6-
+required `as_src` column with its default value of zero, but does not aggregate
+source AS. The schema uses pmacct SQL table version 6 because that version
 supports IP addresses and AS numbers together; the PostgreSQL mapping is
 documented in pmacct's [`README.pgsql`](https://github.com/pmacct/pmacct/blob/master/sql/README.pgsql).
-The flow init migration removes the old MAC columns and rebuilds the primary
-key, so existing detail rows lose MAC metadata during reconciliation.
+The flow init migration resets these compatibility fields to defaults for
+existing rows and rebuilds the primary key, so no actual MAC metadata is
+retained by the flow pipeline.
 
 The flow Pod also runs the pinned
 [`sql_exporter`](https://github.com/burningalchemist/sql_exporter) sidecar. Its
