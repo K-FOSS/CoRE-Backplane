@@ -257,12 +257,13 @@ The flow Service is scraped every 30 seconds through a
 consumed by the existing Alloy ServiceMonitor integration. The SQL exporter
 also refreshes its query cache every 30 seconds.
 
-Detailed flow rows are retained for 90 days by the default 30-minute
+Detailed flow rows are retained for approximately two hours by the default 30-minute
 `<release>-flow-retention` CronJob. It replaces closed periods older than the
-configured `flow.retention.detailDays` value in `flow_monthly`, removes those
-rows from `acct_v4`, and rebuilds `flow_yearly` from the monthly table in the
-same PostgreSQL transaction. Change `flow.retention.schedule` or disable the
-job with `flow.retention.enabled: false` through the ApplicationSet values.
+configured `flow.retention.detailHours` value in `flow_hourly`, removes those
+rows from `acct_v4`, and rebuilds daily, monthly, and yearly summaries from
+the rollup tables in the same PostgreSQL transaction. Change
+`flow.retention.schedule`, `flow.retention.detailHours`, or disable the job
+with `flow.retention.enabled: false` through the ApplicationSet values.
 The job uses the flow claim credentials, while the existing admin-only init
 container owns creation and grants for the summary tables. Review a successful
 Job and the summary tables before reducing the detail retention window; the

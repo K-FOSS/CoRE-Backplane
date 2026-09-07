@@ -121,11 +121,10 @@ flow:
         cpu: '100m'
         memory: '128Mi'
   retention:
-    # Closed detail periods older than this many days are rolled into the
-    # monthly table and removed from acct_v4. Set enabled to false to retain
-    # all detail rows.
+    # Detail rows older than this many hours are rolled into flow_hourly and
+    # removed from acct_v4. Set enabled to false to retain all detail rows.
     enabled: true
-    detailDays: 90
+    detailHours: 2
     schedule: '*/30 * * * *'
     image:
       repository: 'docker.io/library/postgres'

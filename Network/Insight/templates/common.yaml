@@ -20,8 +20,8 @@
 {{- if and .Values.flow.enabled (ne .Values.flow.database.username .Values.flow.database.database) }}
 {{- fail "flow.database.database must match flow.database.username because the User claim creates the database named after its username" }}
 {{- end }}
-{{- if and .Values.flow.enabled .Values.flow.retention.enabled (lt (.Values.flow.retention.detailDays | int) 1) }}
-{{- fail "flow.retention.detailDays must be greater than zero when flow retention is enabled" }}
+{{- if and .Values.flow.enabled .Values.flow.retention.enabled (lt (.Values.flow.retention.detailHours | int) 1) }}
+{{- fail "flow.retention.detailHours must be greater than zero when flow retention is enabled" }}
 {{- end }}
 
 {{- define "core-network-insight.networkPolicyRules" -}}
@@ -683,7 +683,7 @@ rawResources:
                         psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
                           --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
                           --set=ON_ERROR_STOP=1 \
-                          --variable="detail_retention_days=${FLOW_DETAIL_RETENTION_DAYS}" \
+                          --variable="detail_retention_hours=${FLOW_DETAIL_RETENTION_HOURS}" \
                           --file='/etc/pmacct/flow-retention.sql'
                     env:
                       - name: 'POSTGRES_HOST'
@@ -702,8 +702,8 @@ rawResources:
                           secretKeyRef:
                             name: {{ .Values.flow.database.credentialsSecretName | squote }}
                             key: 'password'
-                      - name: 'FLOW_DETAIL_RETENTION_DAYS'
-                        value: {{ .Values.flow.retention.detailDays | quote }}
+                      - name: 'FLOW_DETAIL_RETENTION_HOURS'
+                        value: {{ .Values.flow.retention.detailHours | quote }}
                     volumeMounts:
                       - name: 'flow-config'
                         mountPath: '/etc/pmacct/flow-retention.sql'
@@ -1033,14 +1033,6 @@ configMaps:
         CREATE INDEX IF NOT EXISTS flow_yearly_period_start_idx ON flow_yearly (period_start);
       flow-retention.sql: |
         BEGIN;
-        CREATE TEMP TABLE flow_rollup_monthly ON COMMIT DROP AS
-        SELECT date_trunc('month', stamp_inserted)::date AS period_start,
-               COALESCE(SUM(packets), 0)::numeric AS packets,
-               COALESCE(SUM(bytes), 0)::numeric AS bytes,
-               COALESCE(SUM(flows), 0)::numeric AS flows
-        FROM acct_v4
-        WHERE stamp_inserted < date_trunc('month', CURRENT_TIMESTAMP)
-        GROUP BY 1;
         CREATE TEMP TABLE flow_rollup_hourly ON COMMIT DROP AS
         SELECT date_trunc('hour', stamp_inserted) AS period_start,
                COALESCE(SUM(packets), 0)::numeric AS packets,
@@ -1049,41 +1041,42 @@ configMaps:
         FROM acct_v4
         WHERE stamp_inserted < date_trunc('hour', CURRENT_TIMESTAMP)
         GROUP BY 1;
-        CREATE TEMP TABLE flow_rollup_daily ON COMMIT DROP AS
-        SELECT date_trunc('day', stamp_inserted)::date AS period_start,
-               COALESCE(SUM(packets), 0)::numeric AS packets,
-               COALESCE(SUM(bytes), 0)::numeric AS bytes,
-               COALESCE(SUM(flows), 0)::numeric AS flows
-        FROM acct_v4
-        WHERE stamp_inserted < date_trunc('day', CURRENT_TIMESTAMP)
-        GROUP BY 1;
-        CREATE TEMP TABLE flow_delete_monthly ON COMMIT DROP AS
-        SELECT DISTINCT date_trunc('month', stamp_inserted)::date AS period_start
-        FROM acct_v4
-        WHERE stamp_inserted < date_trunc('month', CURRENT_TIMESTAMP)
-          AND stamp_inserted < CURRENT_DATE - (:'detail_retention_days')::integer;
         DELETE FROM flow_hourly h
         USING flow_rollup_hourly r
         WHERE h.period_start = r.period_start;
         INSERT INTO flow_hourly (period_start, packets, bytes, flows)
         SELECT period_start, packets, bytes, flows
         FROM flow_rollup_hourly;
+        DELETE FROM acct_v4
+        WHERE stamp_inserted < CURRENT_TIMESTAMP - make_interval(hours => (:'detail_retention_hours')::integer);
+        CREATE TEMP TABLE flow_rollup_daily ON COMMIT DROP AS
+        SELECT date_trunc('day', period_start)::date AS period_start,
+               COALESCE(SUM(packets), 0)::numeric AS packets,
+               COALESCE(SUM(bytes), 0)::numeric AS bytes,
+               COALESCE(SUM(flows), 0)::numeric AS flows
+        FROM flow_hourly
+        WHERE period_start < date_trunc('day', CURRENT_TIMESTAMP)
+        GROUP BY 1;
         DELETE FROM flow_daily d
         USING flow_rollup_daily r
         WHERE d.period_start = r.period_start;
         INSERT INTO flow_daily (period_start, packets, bytes, flows)
         SELECT period_start, packets, bytes, flows
         FROM flow_rollup_daily;
+        CREATE TEMP TABLE flow_rollup_monthly ON COMMIT DROP AS
+        SELECT date_trunc('month', period_start)::date AS period_start,
+               COALESCE(SUM(packets), 0)::numeric AS packets,
+               COALESCE(SUM(bytes), 0)::numeric AS bytes,
+               COALESCE(SUM(flows), 0)::numeric AS flows
+        FROM flow_daily
+        WHERE period_start < date_trunc('month', CURRENT_TIMESTAMP)::date
+        GROUP BY 1;
         DELETE FROM flow_monthly m
         USING flow_rollup_monthly r
         WHERE m.period_start = r.period_start;
         INSERT INTO flow_monthly (period_start, packets, bytes, flows)
         SELECT period_start, packets, bytes, flows
         FROM flow_rollup_monthly;
-        DELETE FROM acct_v4 a
-        USING flow_delete_monthly r
-        WHERE a.stamp_inserted >= r.period_start
-          AND a.stamp_inserted < r.period_start + INTERVAL '1 month';
         DELETE FROM flow_yearly;
         INSERT INTO flow_yearly (period_start, packets, bytes, flows)
         SELECT date_trunc('year', period_start)::date,
