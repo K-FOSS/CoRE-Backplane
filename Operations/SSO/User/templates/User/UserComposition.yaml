@@ -505,6 +505,7 @@ spec:
             {{- end }}
             {{- end }}
 
+            ---
             {{- $minioPolicy := getComposedResource . $s3MinioPolicy }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
@@ -562,6 +563,7 @@ spec:
                   output "S3Endpoint" {
                     value = local.S3_ENDPOINT
                   }
+            ---
 
             {{ if .observed.composite.resource.spec.s3.createCredentials }}
             {{- $obsMinio := index .observed.resources $tfMinioCreds -}}
