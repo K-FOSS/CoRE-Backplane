@@ -229,7 +229,9 @@ it is not a chart-private PostgreSQL instance. pmacct's
 [`CONFIG-KEYS` reference](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS)
 describes the listener and plugin settings. The flow aggregate key includes
 destination AS (`dst_as`) and intentionally excludes source and destination
-MAC addresses. The schema uses pmacct SQL table version 6 because that version
+MAC addresses. The schema includes the version-6-required `as_src` column with
+its default value of zero, but does not aggregate source AS. The schema uses
+pmacct SQL table version 6 because that version
 supports IP addresses and AS numbers together; the PostgreSQL mapping is
 documented in pmacct's [`README.pgsql`](https://github.com/pmacct/pmacct/blob/master/sql/README.pgsql).
 The flow init migration removes the old MAC columns and rebuilds the primary
