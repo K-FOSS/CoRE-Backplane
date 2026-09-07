@@ -236,8 +236,9 @@ annotated Service is discovered by the site Alloy collector and exposes
 second), `opennms_flow_bytes_per_second`, and
 `opennms_flow_storage_bytes`. The rate is a planning signal, not a guarantee
 of future growth: combine it with the storage gauge and PostgreSQL table
-retention/compaction policy when forecasting capacity. The exporter uses the
-flow claim's `psqlURI`; no password is stored in a ConfigMap or Git.
+retention/compaction policy when forecasting capacity. The exporter assembles
+its connection from the site-local host and the flow claim's Secret-backed
+username/password; no password is stored in a ConfigMap or Git.
 
 NetworkPolicy permits UDP packets only from `flow.allowedCidrs`, which
 defaults to RFC1918 networks. Set the CIDRs to the actual exporter networks

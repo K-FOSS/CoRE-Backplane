@@ -468,11 +468,24 @@ controllers:
         args:
           - '-config.file=/etc/sql-exporter/sql_exporter.yml'
         env:
-          - name: 'SQLEXPORTER_TARGET_DSN'
+          - name: 'PG_HOST'
+            value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
+          - name: 'PG_PORT'
+            value: {{ .Values.postgresql.port | quote }}
+          - name: 'PG_DATABASE'
+            value: {{ .Values.flow.database.database | squote }}
+          - name: 'PG_USER'
             valueFrom:
               secretKeyRef:
                 name: {{ required "flow.database.credentialsSecretName is required" .Values.flow.database.credentialsSecretName | squote }}
-                key: 'psqlURI'
+                key: 'username'
+          - name: 'PG_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                key: 'password'
+          - name: 'SQLEXPORTER_TARGET_DSN'
+            value: 'postgresql://$(PG_USER):$(PG_PASSWORD)@$(PG_HOST):$(PG_PORT)/$(PG_DATABASE)?sslmode=disable'
         ports:
           - name: 'metrics'
             containerPort: {{ .Values.flow.metrics.port }}
