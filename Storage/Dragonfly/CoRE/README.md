@@ -36,6 +36,11 @@ they are not global database numbers across clusters.
 | `91` | Forgejo cache | Dedicated Forgejo application cache. Owned by `Development`. |
 | `92` | Forgejo sessions | Dedicated Forgejo session store. Owned by `Development`. |
 | `132` | Grafana | Dedicated Grafana remote cache. Owned by `Observability/Dashboards`; Grafana Live remains on DB `0`. |
+| `133` | Immich Photos | Dedicated Immich job queue and cache. Owned by `Media/Photos`. |
+| `150` | OpenWebUI cache | Dedicated OpenWebUI application cache. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
+| `151` | OpenWebUI websocket manager | Dedicated OpenWebUI websocket-manager state. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
+| `152` | SnapOtter | Dedicated SnapOtter/BullMQ queues and processing state. Owned by [`Business/Conversions`](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Conversions). |
+| `189` | n8n | Dedicated n8n external Redis state. Owned by [`Business/Automation`](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation). |
 
 
 Numeric databases prevent accidental key collisions but are not a security or
