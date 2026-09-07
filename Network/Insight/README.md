@@ -262,6 +262,11 @@ controller and PostgreSQL's transactional SQL; normal `DELETE` operations may
 leave allocated table space reusable rather than immediately shrinking the
 relation on disk.
 
+The exporter also exposes the latest archived period as
+`opennms_flow_hourly_flows`, `opennms_flow_daily_flows`, and
+`opennms_flow_monthly_flows`, with corresponding `_bytes` metrics. Empty
+summary tables export zero rather than disappearing from the scrape.
+
 The `OpenNMS Flow Capacity` dashboard is auto-imported into the Grafana
 `OpenNMS` folder through the existing labelled-ConfigMap sidecar integration;
 see the [Grafana dashboard sidecar documentation](https://github.com/grafana-community/helm-charts/tree/grafana-12.10.4/charts/grafana#sidecar-for-dashboards).

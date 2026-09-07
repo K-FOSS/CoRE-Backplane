@@ -335,7 +335,7 @@ controllers:
             psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
               --username="${POSTGRES_ADMIN_USER}" --dbname="${FLOW_DATABASE}" \
               --set=ON_ERROR_STOP=1 \
-              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4, flow_monthly, flow_yearly TO \"${FLOW_DATABASE_USER}\";"
+              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4, flow_hourly, flow_daily, flow_monthly, flow_yearly TO \"${FLOW_DATABASE_USER}\";"
         env:
           - name: 'POSTGRES_HOST'
             value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
@@ -969,6 +969,20 @@ configMaps:
           CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, mac_src, mac_dst, vlan, ip_src, ip_dst, port_src, port_dst, ip_proto, tos, stamp_inserted)
         );
         CREATE INDEX IF NOT EXISTS acct_v4_stamp_inserted_idx ON acct_v4 (stamp_inserted);
+        CREATE TABLE IF NOT EXISTS flow_hourly (
+          period_start TIMESTAMP WITHOUT TIME ZONE PRIMARY KEY,
+          packets NUMERIC NOT NULL,
+          bytes NUMERIC NOT NULL,
+          flows NUMERIC NOT NULL,
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS flow_daily (
+          period_start DATE PRIMARY KEY,
+          packets NUMERIC NOT NULL,
+          bytes NUMERIC NOT NULL,
+          flows NUMERIC NOT NULL,
+          generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
         CREATE TABLE IF NOT EXISTS flow_monthly (
           period_start DATE PRIMARY KEY,
           packets NUMERIC NOT NULL,
@@ -983,6 +997,8 @@ configMaps:
           flows NUMERIC NOT NULL,
           generated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE INDEX IF NOT EXISTS flow_hourly_period_start_idx ON flow_hourly (period_start);
+        CREATE INDEX IF NOT EXISTS flow_daily_period_start_idx ON flow_daily (period_start);
         CREATE INDEX IF NOT EXISTS flow_monthly_period_start_idx ON flow_monthly (period_start);
         CREATE INDEX IF NOT EXISTS flow_yearly_period_start_idx ON flow_yearly (period_start);
       flow-retention.sql: |
@@ -994,8 +1010,40 @@ configMaps:
                COALESCE(SUM(flows), 0)::numeric AS flows
         FROM acct_v4
         WHERE stamp_inserted < date_trunc('month', CURRENT_TIMESTAMP)
-          AND stamp_inserted < CURRENT_DATE - (:'detail_retention_days')::integer
         GROUP BY 1;
+        CREATE TEMP TABLE flow_rollup_hourly ON COMMIT DROP AS
+        SELECT date_trunc('hour', stamp_inserted) AS period_start,
+               COALESCE(SUM(packets), 0)::numeric AS packets,
+               COALESCE(SUM(bytes), 0)::numeric AS bytes,
+               COALESCE(SUM(flows), 0)::numeric AS flows
+        FROM acct_v4
+        WHERE stamp_inserted < date_trunc('hour', CURRENT_TIMESTAMP)
+        GROUP BY 1;
+        CREATE TEMP TABLE flow_rollup_daily ON COMMIT DROP AS
+        SELECT date_trunc('day', stamp_inserted)::date AS period_start,
+               COALESCE(SUM(packets), 0)::numeric AS packets,
+               COALESCE(SUM(bytes), 0)::numeric AS bytes,
+               COALESCE(SUM(flows), 0)::numeric AS flows
+        FROM acct_v4
+        WHERE stamp_inserted < date_trunc('day', CURRENT_TIMESTAMP)
+        GROUP BY 1;
+        CREATE TEMP TABLE flow_delete_monthly ON COMMIT DROP AS
+        SELECT DISTINCT date_trunc('month', stamp_inserted)::date AS period_start
+        FROM acct_v4
+        WHERE stamp_inserted < date_trunc('month', CURRENT_TIMESTAMP)
+          AND stamp_inserted < CURRENT_DATE - (:'detail_retention_days')::integer;
+        DELETE FROM flow_hourly h
+        USING flow_rollup_hourly r
+        WHERE h.period_start = r.period_start;
+        INSERT INTO flow_hourly (period_start, packets, bytes, flows)
+        SELECT period_start, packets, bytes, flows
+        FROM flow_rollup_hourly;
+        DELETE FROM flow_daily d
+        USING flow_rollup_daily r
+        WHERE d.period_start = r.period_start;
+        INSERT INTO flow_daily (period_start, packets, bytes, flows)
+        SELECT period_start, packets, bytes, flows
+        FROM flow_rollup_daily;
         DELETE FROM flow_monthly m
         USING flow_rollup_monthly r
         WHERE m.period_start = r.period_start;
@@ -1003,7 +1051,7 @@ configMaps:
         SELECT period_start, packets, bytes, flows
         FROM flow_rollup_monthly;
         DELETE FROM acct_v4 a
-        USING flow_rollup_monthly r
+        USING flow_delete_monthly r
         WHERE a.stamp_inserted >= r.period_start
           AND a.stamp_inserted < r.period_start + INTERVAL '1 month';
         DELETE FROM flow_yearly;
@@ -1054,6 +1102,42 @@ configMaps:
                 values: ['database_size_bytes']
                 query: |
                   SELECT pg_database_size(current_database()) AS database_size_bytes
+              - metric_name: 'opennms_flow_hourly_flows'
+                type: 'gauge'
+                help: 'Flow records in the latest completed archived hourly period.'
+                values: ['flows']
+                query: |
+                  SELECT COALESCE((SELECT flows FROM flow_hourly WHERE period_start = (SELECT MAX(period_start) FROM flow_hourly)), 0) AS flows
+              - metric_name: 'opennms_flow_daily_flows'
+                type: 'gauge'
+                help: 'Flow records in the latest completed archived daily period.'
+                values: ['flows']
+                query: |
+                  SELECT COALESCE((SELECT flows FROM flow_daily WHERE period_start = (SELECT MAX(period_start) FROM flow_daily)), 0) AS flows
+              - metric_name: 'opennms_flow_monthly_flows'
+                type: 'gauge'
+                help: 'Flow records in the latest completed archived monthly period.'
+                values: ['flows']
+                query: |
+                  SELECT COALESCE((SELECT flows FROM flow_monthly WHERE period_start = (SELECT MAX(period_start) FROM flow_monthly)), 0) AS flows
+              - metric_name: 'opennms_flow_hourly_bytes'
+                type: 'gauge'
+                help: 'Bytes in the latest completed archived hourly period.'
+                values: ['bytes']
+                query: |
+                  SELECT COALESCE((SELECT bytes FROM flow_hourly WHERE period_start = (SELECT MAX(period_start) FROM flow_hourly)), 0) AS bytes
+              - metric_name: 'opennms_flow_daily_bytes'
+                type: 'gauge'
+                help: 'Bytes in the latest completed archived daily period.'
+                values: ['bytes']
+                query: |
+                  SELECT COALESCE((SELECT bytes FROM flow_daily WHERE period_start = (SELECT MAX(period_start) FROM flow_daily)), 0) AS bytes
+              - metric_name: 'opennms_flow_monthly_bytes'
+                type: 'gauge'
+                help: 'Bytes in the latest completed archived monthly period.'
+                values: ['bytes']
+                query: |
+                  SELECT COALESCE((SELECT bytes FROM flow_monthly WHERE period_start = (SELECT MAX(period_start) FROM flow_monthly)), 0) AS bytes
 {{- end }}
 
 {{- if .Values.timeseries.enabled }}
