@@ -337,7 +337,7 @@ controllers:
             psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
               --username="${POSTGRES_ADMIN_USER}" --dbname="${FLOW_DATABASE}" \
               --set=ON_ERROR_STOP=1 \
-              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4, flow_hourly, flow_daily, flow_monthly, flow_yearly TO \"${FLOW_DATABASE_USER}\";"
+              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4, flow_hourly, flow_daily, flow_monthly, flow_yearly, flow_asn_cache TO \"${FLOW_DATABASE_USER}\";"
         env:
           - name: 'POSTGRES_HOST'
             value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
@@ -483,17 +483,21 @@ controllers:
             refresh() {
               ips='/tmp/asn-ips'
               response='/tmp/asn-response'
+              updates='/tmp/asn-updates'
+              sql='/tmp/asn-cache.sql'
+              cached='/tmp/asn-cache-map'
               next='/tmp/networks.lst.new'
               psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
                 --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
                 --tuples-only --no-align --command="
-                  SELECT DISTINCT host(ip_src) FROM acct_v4
-                  WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
-                    AND NOT (ip_src <<= inet '10.0.0.0/8' OR ip_src <<= inet '172.16.0.0/12' OR ip_src <<= inet '192.168.0.0/16' OR ip_src <<= inet '127.0.0.0/8' OR ip_src <<= inet '169.254.0.0/16' OR ip_src <<= inet '::/128' OR ip_src <<= inet '::1/128' OR ip_src <<= inet 'fc00::/7' OR ip_src <<= inet 'fe80::/10')
-                  UNION
-                  SELECT DISTINCT host(ip_dst) FROM acct_v4
-                  WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
-                    AND NOT (ip_dst <<= inet '10.0.0.0/8' OR ip_dst <<= inet '172.16.0.0/12' OR ip_dst <<= inet '192.168.0.0/16' OR ip_dst <<= inet '127.0.0.0/8' OR ip_dst <<= inet '169.254.0.0/16' OR ip_dst <<= inet '::/128' OR ip_dst <<= inet '::1/128' OR ip_dst <<= inet 'fc00::/7' OR ip_dst <<= inet 'fe80::/10');
+                  WITH flow_ips AS (
+                    SELECT ip_src AS ip FROM acct_v4 WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
+                    UNION
+                    SELECT ip_dst AS ip FROM acct_v4 WHERE stamp_inserted >= NOW() - INTERVAL '2 hours'
+                  )
+                  SELECT host(ip) FROM flow_ips
+                  WHERE NOT (ip <<= inet '10.0.0.0/8' OR ip <<= inet '172.16.0.0/12' OR ip <<= inet '192.168.0.0/16' OR ip <<= inet '127.0.0.0/8' OR ip <<= inet '169.254.0.0/16' OR ip <<= inet '::/128' OR ip <<= inet '::1/128' OR ip <<= inet 'fc00::/7' OR ip <<= inet 'fe80::/10')
+                    AND NOT EXISTS (SELECT 1 FROM flow_asn_cache c WHERE c.ip = flow_ips.ip);
                 " > "${ips}"
               : > "${response}"
               if [ -s "${ips}" ]; then
@@ -508,6 +512,26 @@ controllers:
                 done
                 exec 3>&-
               fi
+              awk -F '|' '
+                function trim(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
+                {
+                  asn = trim($1); ip = trim($2); prefix = trim($3)
+                  if (asn ~ /^[0-9]+$/ && ip !~ /[[:space:]]/ && prefix ~ /\/[0-9]+$/) print ip "\t" asn "\t" prefix
+                }
+              ' "${response}" > "${updates}"
+              if [ -s "${updates}" ]; then
+                : > "${sql}"
+                while IFS=$'\t' read -r ip asn prefix; do
+                  printf "INSERT INTO flow_asn_cache (ip, asn, prefix, updated_at) VALUES ('%s', %s, '%s', CURRENT_TIMESTAMP) ON CONFLICT (ip) DO UPDATE SET asn = EXCLUDED.asn, prefix = EXCLUDED.prefix, updated_at = EXCLUDED.updated_at;\n" "${ip}" "${asn}" "${prefix}" >> "${sql}"
+                done < "${updates}"
+                psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+                  --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
+                  --set=ON_ERROR_STOP=1 --file="${sql}"
+              fi
+              psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+                --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
+                --tuples-only --no-align --field-separator=',' \
+                --command="SELECT asn, prefix::text FROM flow_asn_cache ORDER BY prefix;" > "${cached}"
               {
                 {{- range $mapping := .Values.flow.asnLookup.staticMappings }}
                 {{- if $mapping.ranges }}
@@ -518,13 +542,7 @@ controllers:
                 printf '%s,%s\n' {{ $mapping.asn | squote }} {{ $mapping.range | squote }}
                 {{- end }}
                 {{- end }}
-                awk -F '|' '
-                  function trim(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
-                  {
-                    asn = trim($1); prefix = trim($3)
-                    if (asn ~ /^[0-9]+$/ && prefix ~ /\/[0-9]+$/) print asn "," prefix
-                  }
-                ' "${response}"
+                cat "${cached}"
               } | sort -t, -k2,2 -u > "${next}"
               if [ -s "${next}" ]; then
                 mv "${next}" "${map}"
@@ -1185,6 +1203,13 @@ configMaps:
         CREATE INDEX IF NOT EXISTS flow_daily_period_start_idx ON flow_daily (period_start);
         CREATE INDEX IF NOT EXISTS flow_monthly_period_start_idx ON flow_monthly (period_start);
         CREATE INDEX IF NOT EXISTS flow_yearly_period_start_idx ON flow_yearly (period_start);
+        CREATE TABLE IF NOT EXISTS flow_asn_cache (
+          ip inet PRIMARY KEY,
+          asn BIGINT NOT NULL,
+          prefix cidr NOT NULL,
+          updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS flow_asn_cache_prefix_idx ON flow_asn_cache (prefix);
       flow-retention.sql: |
         BEGIN;
         CREATE TEMP TABLE flow_rollup_hourly ON COMMIT DROP AS

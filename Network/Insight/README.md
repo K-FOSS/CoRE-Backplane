@@ -253,6 +253,10 @@ replaces the map and sends `SIGUSR2` to reload it; if the public lookup fails,
 the previous map remains in place. Team Cymru reports a four-hour BGP refresh
 cadence, so this is attribution for public origin routes rather than a
 real-time guarantee. Private or unrouted addresses remain ASN `0`.
+Results are persisted in the `flow_asn_cache` table; subsequent refreshes send
+only currently observed public IPs absent from that table, avoiding repeated
+requests for known addresses. The cache is updated with the latest returned
+prefix and origin ASN when a new lookup succeeds.
 Static entries in `flow.asnLookup.staticMappings` are retained across refreshes.
 Each entry accepts either one `range` or multiple `ranges`, for example:
 
