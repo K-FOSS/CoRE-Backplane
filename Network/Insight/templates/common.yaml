@@ -634,12 +634,12 @@ rawResources:
             scrapeTimeout: '10s'
   {{- if .Values.flow.retention.enabled }}
   flow-retention:
-    forceRename: '{{ .Release.Name }}-flow-retention'
+    forceRename: '{{ printf "%s-%s-flow-retention" (trunc 28 .Release.Name) (sha256sum .Release.Name | trunc 8) }}'
     manifest:
       apiVersion: batch/v1
       kind: CronJob
       metadata:
-        name: '{{ .Release.Name }}-flow-retention'
+        name: '{{ printf "%s-%s-flow-retention" (trunc 28 .Release.Name) (sha256sum .Release.Name | trunc 8) }}'
         namespace: '{{ .Release.Namespace }}'
         labels:
           app.kubernetes.io/name: '{{ .Release.Name }}'
