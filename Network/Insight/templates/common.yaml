@@ -309,65 +309,56 @@ controllers:
         seccompProfile:
           type: 'RuntimeDefault'
     containers:
-      flow:
+      netflow:
         image:
-          repository: {{ .Values.flow.image.repository | squote }}
-          tag: {{ required "flow.image.tag is required" .Values.flow.image.tag | squote }}
-          pullPolicy: {{ .Values.flow.image.pullPolicy | squote }}
+          repository: {{ .Values.flow.netflowImage.repository | squote }}
+          tag: {{ required "flow.netflowImage.tag is required" .Values.flow.netflowImage.tag | squote }}
+          digest: {{ required "flow.netflowImage.digest is required" .Values.flow.netflowImage.digest | squote }}
+          pullPolicy: {{ .Values.flow.netflowImage.pullPolicy | squote }}
         args:
-          - '-listen'
-          - 'netflow://:2055,netflow://:4739,sflow://:6343'
-          - '-addr'
-          - ':8080'
-          - '-produce'
-          - 'sample'
-          - '-format'
-          - 'bin'
-          - '-transport'
-          - 'file'
-          - '-transport.file'
-          - '/dev/null'
-          - '-logfmt'
-          - 'json'
+          - '-f'
+          - '/etc/pmacct/nfacctd-netflow.conf'
         ports:
           - name: 'netflow'
             containerPort: 2055
             protocol: 'UDP'
-          - name: 'ipfix'
-            containerPort: 4739
-            protocol: 'UDP'
-          - name: 'sflow'
-            containerPort: 6343
-            protocol: 'UDP'
-          - name: 'http'
-            containerPort: 8080
-            protocol: 'TCP'
-        probes:
-          readiness:
-            enabled: true
-            type: 'HTTP'
-            path: '/__health'
-            port: 'http'
-            spec:
-              initialDelaySeconds: 5
-              periodSeconds: 10
-              timeoutSeconds: 3
-              failureThreshold: 6
-          liveness:
-            enabled: true
-            type: 'HTTP'
-            path: '/__health'
-            port: 'http'
-            spec:
-              initialDelaySeconds: 15
-              periodSeconds: 30
-              timeoutSeconds: 5
-              failureThreshold: 3
-        securityContext:
+        securityContext: &flowContainerSecurityContext
           allowPrivilegeEscalation: false
           capabilities:
             drop:
               - 'ALL'
+        resources:
+{{ toYaml .Values.flow.resources | nindent 10 }}
+      ipfix:
+        image:
+          repository: {{ .Values.flow.netflowImage.repository | squote }}
+          tag: {{ required "flow.netflowImage.tag is required" .Values.flow.netflowImage.tag | squote }}
+          digest: {{ required "flow.netflowImage.digest is required" .Values.flow.netflowImage.digest | squote }}
+          pullPolicy: {{ .Values.flow.netflowImage.pullPolicy | squote }}
+        args:
+          - '-f'
+          - '/etc/pmacct/nfacctd-ipfix.conf'
+        ports:
+          - name: 'ipfix'
+            containerPort: 4739
+            protocol: 'UDP'
+        securityContext: *flowContainerSecurityContext
+        resources:
+{{ toYaml .Values.flow.resources | nindent 10 }}
+      sflow:
+        image:
+          repository: {{ .Values.flow.sflowImage.repository | squote }}
+          tag: {{ required "flow.sflowImage.tag is required" .Values.flow.sflowImage.tag | squote }}
+          digest: {{ required "flow.sflowImage.digest is required" .Values.flow.sflowImage.digest | squote }}
+          pullPolicy: {{ .Values.flow.sflowImage.pullPolicy | squote }}
+        args:
+          - '-f'
+          - '/etc/pmacct/sfacctd.conf'
+        ports:
+          - name: 'sflow'
+            containerPort: 6343
+            protocol: 'UDP'
+        securityContext: *flowContainerSecurityContext
         resources:
 {{ toYaml .Values.flow.resources | nindent 10 }}
   {{- end }}
@@ -397,10 +388,6 @@ service:
     type: {{ .Values.flow.service.type | squote }}
     externalTrafficPolicy: {{ .Values.flow.service.externalTrafficPolicy | squote }}
     annotations:
-      prometheus.io/scrape: 'true'
-      prometheus.io/path: '/metrics'
-      prometheus.io/portName: 'http'
-      prometheus.io/job: 'opennms-flow'
       {{- range $key, $value := .Values.flow.service.annotations }}
       {{ $key }}: {{ $value | squote }}
       {{- end }}
@@ -423,12 +410,6 @@ service:
         port: 6343
         targetPort: 'sflow'
         protocol: 'UDP'
-      http:
-        enabled: true
-        primary: true
-        port: 8080
-        targetPort: 'http'
-        protocol: 'TCP'
   {{- end }}
 
 {{- if .Values.networkPolicy.enabled }}
@@ -474,13 +455,6 @@ networkpolicies:
               protocol: 'UDP'
             - port: 'sflow'
               protocol: 'UDP'
-        - from:
-            - namespaceSelector:
-                matchLabels:
-                  kubernetes.io/metadata.name: {{ .Values.flow.metricsNamespace | squote }}
-          ports:
-            - port: 'http'
-              protocol: 'TCP'
   {{- end }}
 {{- end }}
 
@@ -577,6 +551,36 @@ configMaps:
     data:
       public-url.properties: |
         opennms.web.base-url=https://{{ required "gateway.hostname is required" .Values.gateway.hostname }}/opennms/
+
+{{- if .Values.flow.enabled }}
+  flow:
+    forceRename: '{{ .Release.Name }}-flow'
+    data:
+      nfacctd-netflow.conf: |
+        daemonize: false
+        nfacctd_ip: 0.0.0.0
+        nfacctd_port: 2055
+        plugins: print
+        print_output: json
+        print_output_file: stdout
+        print_refresh_time: 60
+      nfacctd-ipfix.conf: |
+        daemonize: false
+        nfacctd_ip: 0.0.0.0
+        nfacctd_port: 4739
+        plugins: print
+        print_output: json
+        print_output_file: stdout
+        print_refresh_time: 60
+      sfacctd.conf: |
+        daemonize: false
+        sfacctd_ip: 0.0.0.0
+        sfacctd_port: 6343
+        plugins: print
+        print_output: json
+        print_output_file: stdout
+        print_refresh_time: 60
+{{- end }}
 
 {{- if .Values.timeseries.enabled }}
   timeseries:
@@ -760,6 +764,25 @@ persistence:
           - path: '/opt/opennms/etc/opennms.properties.d/public-url.properties'
             subPath: 'public-url.properties'
             readOnly: true
+{{- if .Values.flow.enabled }}
+  flow-config:
+    type: 'configMap'
+    name: '{{ .Release.Name }}-flow'
+    advancedMounts:
+      flow:
+        netflow:
+          - path: '/etc/pmacct/nfacctd-netflow.conf'
+            readOnly: true
+            subPath: 'nfacctd-netflow.conf'
+        ipfix:
+          - path: '/etc/pmacct/nfacctd-ipfix.conf'
+            readOnly: true
+            subPath: 'nfacctd-ipfix.conf'
+        sflow:
+          - path: '/etc/pmacct/sfacctd.conf'
+            readOnly: true
+            subPath: 'sfacctd.conf'
+{{- end }}
 {{- if .Values.kafka.enabled }}
   kafka:
     type: 'secret'

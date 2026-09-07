@@ -207,45 +207,40 @@ reference](https://docs.opennms.com/horizon/36/reference/configuration/tuning-ka
 and [Kafka producer documentation](https://docs.opennms.com/horizon/36/operation/deep-dive/kafka-producer/kafka-producer.html)
 cover topic behavior and operational checks.
 
-## Flow intake and Prometheus metadata
+## Flow intake
 
 The OpenNMS-enabled site entries in `Apps/Network/Insight.yaml` enable a
-separate GoFlow2 Deployment. The pinned commit-derived
-[`netsampler/goflow2` image](https://github.com/netsampler/goflow2) receives
-UDP NetFlow v5/v9 and IPFIX on ports `2055` and `4739`, and sFlow v5 on port
-`6343`. The Service is a `LoadBalancer` by default, preserves the exporter
-source address with `externalTrafficPolicy: Local`, and accepts optional
-platform-specific annotations through `flow.service.annotations`.
+separate pmacct flow application. The pinned official
+[`pmacct` containers](https://github.com/pmacct/pmacct/blob/master/docs/DOCKER.md)
+run two `nfacctd` listeners for NetFlow v5/v9 and IPFIX on ports `2055` and
+`4739`, plus one `sfacctd` listener for sFlow v5 on port `6343`. The Service is
+a `LoadBalancer` by default, preserves the exporter source address with
+`externalTrafficPolicy: Local`, and accepts optional platform-specific
+annotations through `flow.service.annotations`.
 
-GoFlow2 discards the decoded sample output to `/dev/null` after processing it;
-the retained output is its Prometheus endpoint on the `http` Service port at
-`/metrics`. Its built-in metrics record received and dropped packet/byte
-traffic, protocol, exporter/router, NetFlow version, template and flow-set
-counts, sFlow samples, decode errors, and decode/flow delay. The existing
-central Alloy annotation autodiscovery scrapes this Service and forwards the
-metrics to Mimir. This intentionally exports bounded protocol and exporter
-metadata, not `src_addr`/`dst_addr` as Prometheus labels; use a flow store or
-Kafka pipeline when per-flow records or high-cardinality dimensions are
-required. GoFlow2's [Prometheus metric definitions](https://github.com/netsampler/goflow2/blob/6dee964/metrics/metrics.go)
-and [collector wiring](https://github.com/netsampler/goflow2/blob/6dee964/cmd/goflow2/main.go)
-describe the current metric and listener behavior.
+Each daemon uses a read-only ConfigMap and the pmacct `print` plugin, emitting
+JSON flow records to its container log. This is an ingestion replacement, not
+yet a durable flow store or OpenNMS Telemetryd pipeline; records are lost when
+the Pod is removed. pmacct does not provide the former GoFlow2 `/metrics`
+endpoint, so the flow Service has UDP ports only and no Prometheus scrape
+annotations. The pmacct
+[`CONFIG-KEYS` reference](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS)
+describes the listener and plugin settings.
 
 NetworkPolicy permits UDP packets only from `flow.allowedCidrs`, which
-defaults to RFC1918 networks, and permits TCP metrics scrapes from the
-ApplicationSet's `core-prod` observability namespace. Set the CIDRs to the
-actual exporter networks before enabling a non-private source. The collector
-does not support TCP or TLS flow transport in this deployment. NetFlow/IPFIX
-template packets must arrive before their data records can be decoded; verify
-the GoFlow2 `flow_process_nf_templates_total`, `flow_process_nf_total`, and
-`flow_decoder_error_total` series after sending a test export. GoFlow2's
-[protocol field mapping](https://github.com/netsampler/goflow2/blob/6dee964/docs/protocols.md)
-is the reference for decoded NetFlow/IPFIX/sFlow metadata.
+defaults to RFC1918 networks. Set the CIDRs to the actual exporter networks
+before enabling a non-private source. The collector does not support TCP or
+TLS flow transport in this deployment. Verify the `nfacctd` and `sfacctd` logs
+after sending a test export and inspect the emitted JSON records without
+logging credentials or other sensitive configuration. The pmacct
+[NetFlow/IPFIX and sFlow quickstart](https://github.com/pmacct/pmacct/blob/master/QUICKSTART)
+is the reference for daemon behavior.
 
 To disable intake, set `flow.enabled: false` through the ApplicationSet merge
 values and reconcile through Git/Argo CD. Removing the Service does not change
 exporter configuration on routers or switches; disable those exporters
-separately and review any retained Prometheus data according to the Mimir
-retention policy.
+separately and review any retained collector logs according to cluster log
+retention.
 
 ## Time-series storage
 

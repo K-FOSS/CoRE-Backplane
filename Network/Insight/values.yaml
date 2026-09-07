@@ -101,13 +101,17 @@ timeseries:
   maxSeriesLookback: 7776000
 
 flow:
-  # GoFlow2 collects NetFlow v5/v9, IPFIX, and sFlow over UDP and exposes
-  # protocol and exporter metadata through its Prometheus endpoint.
+  # pmacct collects NetFlow v5/v9, IPFIX, and sFlow over UDP.
   enabled: false
-  image:
-    repository: 'docker.io/netsampler/goflow2'
-    # Commit-derived image tag; do not replace with latest.
-    tag: '6dee964-amd64'
+  netflowImage:
+    repository: 'docker.io/pmacct/nfacctd'
+    tag: 'v1.7.9'
+    digest: 'sha256:b29fc2213b9f46c99680d086f43016f39e0acc995bd2d462eb4e2ac4186a7261'
+    pullPolicy: 'IfNotPresent'
+  sflowImage:
+    repository: 'docker.io/pmacct/sfacctd'
+    tag: 'v1.7.9'
+    digest: 'sha256:c413ebbfd80f41399696fad8339eb191b4e258f68a799f33a5d15bc22eacb5c4'
     pullPolicy: 'IfNotPresent'
   nodeSelector:
     core.resolvemy.host/x86-64-v3: 'true'
@@ -128,7 +132,6 @@ flow:
     - '10.0.0.0/8'
     - '172.16.0.0/12'
     - '192.168.0.0/16'
-  metricsNamespace: 'core-prod'
 
 migration:
   replaceStatefulSet: false
