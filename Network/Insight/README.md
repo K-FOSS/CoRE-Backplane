@@ -246,7 +246,7 @@ The flow Service is scraped every 30 seconds through a
 consumed by the existing Alloy ServiceMonitor integration. The SQL exporter
 also refreshes its query cache every 30 seconds.
 
-Detailed flow rows are retained for 90 days by the default daily
+Detailed flow rows are retained for 90 days by the default 30-minute
 `<release>-flow-retention` CronJob. It replaces closed periods older than the
 configured `flow.retention.detailDays` value in `flow_monthly`, removes those
 rows from `acct_v4`, and rebuilds `flow_yearly` from the monthly table in the
