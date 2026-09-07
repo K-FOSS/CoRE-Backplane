@@ -103,6 +103,23 @@ timeseries:
 flow:
   # pmacct collects NetFlow v5/v9, IPFIX, and sFlow over UDP.
   enabled: false
+  database:
+    username: 'opennms-flow'
+    database: 'opennms-flow'
+    credentialsSecretName: 'opennms-flow-creds'
+  metrics:
+    port: 9399
+    exporterImage:
+      repository: 'docker.io/burningalchemist/sql_exporter'
+      tag: '0.24.8'
+      pullPolicy: 'IfNotPresent'
+    resources:
+      requests:
+        cpu: '10m'
+        memory: '32Mi'
+      limits:
+        cpu: '100m'
+        memory: '128Mi'
   netflowImage:
     repository: 'docker.io/pmacct/nfacctd'
     tag: 'v1.7.9'
@@ -123,8 +140,8 @@ flow:
       cpu: '1'
       memory: '1Gi'
   service:
-    type: 'LoadBalancer'
-    externalTrafficPolicy: 'Local'
+    type: 'ClusterIP'
+    #externalTrafficPolicy: 'Local'
     annotations: {}
   # Restrict flow packets to the private networks used by exporters. Add the
   # actual exporter CIDRs through ApplicationSet values when they differ.

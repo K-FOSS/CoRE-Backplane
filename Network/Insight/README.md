@@ -218,21 +218,34 @@ a `LoadBalancer` by default, preserves the exporter source address with
 `externalTrafficPolicy: Local`, and accepts optional platform-specific
 annotations through `flow.service.annotations`.
 
-Each daemon uses a read-only ConfigMap and the pmacct `print` plugin, emitting
-JSON flow records to its container log. This is an ingestion replacement, not
-yet a durable flow store or OpenNMS Telemetryd pipeline; records are lost when
-the Pod is removed. pmacct does not provide the former GoFlow2 `/metrics`
-endpoint, so the flow Service has UDP ports only and no Prometheus scrape
-annotations. The pmacct
+Each daemon uses the pmacct PostgreSQL plugin and writes five-minute accounting
+aggregates to the database created by the dedicated
+`User.mylogin.space/v1alpha1` claim named `<release>-flow`. The claim publishes
+its generated credentials in `flow.database.credentialsSecretName`; the
+PostgreSQL administrator Secret is used only by the flow init container to
+create the pinned `acct_v4` schema and grant the flow role access. The database
+is site-local, using the same `postgresql.host` and provider pair as the core;
+it is not a chart-private PostgreSQL instance. pmacct's
 [`CONFIG-KEYS` reference](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS)
 describes the listener and plugin settings.
+
+The flow Pod also runs the pinned
+[`sql_exporter`](https://github.com/burningalchemist/sql_exporter) sidecar. Its
+annotated Service is discovered by the site Alloy collector and exposes
+`opennms_flow_received_per_second` (five-minute average flow records per
+second), `opennms_flow_bytes_per_second`, and
+`opennms_flow_storage_bytes`. The rate is a planning signal, not a guarantee
+of future growth: combine it with the storage gauge and PostgreSQL table
+retention/compaction policy when forecasting capacity. The exporter uses the
+flow claim's `psqlURI`; no password is stored in a ConfigMap or Git.
 
 NetworkPolicy permits UDP packets only from `flow.allowedCidrs`, which
 defaults to RFC1918 networks. Set the CIDRs to the actual exporter networks
 before enabling a non-private source. The collector does not support TCP or
 TLS flow transport in this deployment. Verify the `nfacctd` and `sfacctd` logs
-after sending a test export and inspect the emitted JSON records without
-logging credentials or other sensitive configuration. The pmacct
+after sending a test export, confirm the `acct_v4` table is receiving rows, and
+scrape `/metrics` without logging credentials or other sensitive configuration.
+The pmacct
 [NetFlow/IPFIX and sFlow quickstart](https://github.com/pmacct/pmacct/blob/master/QUICKSTART)
 is the reference for daemon behavior.
 
@@ -376,7 +389,8 @@ break-glass procedure independently of Authentik, DNS, and the Gateway.
 The following items describe desired behavior and are not implemented by the
 current chart:
 
-- [ ] Add flow ingestion and processing for NetFlow, IPFIX, and sFlow following
+- [ ] Add OpenNMS Telemetryd flow ingestion and processing for NetFlow, IPFIX,
+  and sFlow following
   OpenNMS's [flows architecture](https://docs.opennms.com/horizon/36/operation/deep-dive/flows/introduction.html)
   and [basic flow setup](https://docs.opennms.com/horizon/36/operation/deep-dive/flows/basic.html).
   Define Telemetryd listeners and adapters, exposed ports and NetworkPolicies,

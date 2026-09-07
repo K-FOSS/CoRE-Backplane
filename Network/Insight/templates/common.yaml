@@ -17,6 +17,9 @@
 {{- if and .Values.flow.enabled .Values.networkPolicy.enabled (not .Values.flow.allowedCidrs) }}
 {{- fail "flow.allowedCidrs must contain at least one CIDR when the flow collector and network policy are enabled" }}
 {{- end }}
+{{- if and .Values.flow.enabled (ne .Values.flow.database.username .Values.flow.database.database) }}
+{{- fail "flow.database.database must match flow.database.username because the User claim creates the database named after its username" }}
+{{- end }}
 
 {{- define "core-network-insight.networkPolicyRules" -}}
 ingress:
@@ -308,6 +311,54 @@ controllers:
         runAsGroup: 65532
         seccompProfile:
           type: 'RuntimeDefault'
+    initContainers:
+      flow-schema:
+        image:
+          repository: 'docker.io/library/postgres'
+          tag: '16.4'
+          digest: 'sha256:e62fbf9d3e2b49816a32c400ed2dba83e3b361e6833e624024309c35d334b412'
+          pullPolicy: 'IfNotPresent'
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
+        args:
+          - |
+            set -Eeuo pipefail
+            export PGPASSWORD="${POSTGRES_ADMIN_PASSWORD}"
+            psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+              --username="${POSTGRES_ADMIN_USER}" --dbname="${FLOW_DATABASE}" \
+              --set=ON_ERROR_STOP=1 --file='/etc/pmacct/flow-schema.sql'
+            psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
+              --username="${POSTGRES_ADMIN_USER}" --dbname="${FLOW_DATABASE}" \
+              --set=ON_ERROR_STOP=1 \
+              --command="GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE acct_v4 TO \"${FLOW_DATABASE_USER}\";"
+        env:
+          - name: 'POSTGRES_HOST'
+            value: {{ required "postgresql.host is required" .Values.postgresql.host | squote }}
+          - name: 'POSTGRES_PORT'
+            value: {{ .Values.postgresql.port | quote }}
+          - name: 'POSTGRES_ADMIN_USER'
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "postgresql.adminSecretName is required" .Values.postgresql.adminSecretName | squote }}
+                key: 'username'
+          - name: 'POSTGRES_ADMIN_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.postgresql.adminSecretName | squote }}
+                key: 'password'
+          - name: 'FLOW_DATABASE_USER'
+            value: {{ .Values.flow.database.username | squote }}
+          - name: 'FLOW_DATABASE'
+            value: {{ .Values.flow.database.database | squote }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        resources:
+{{ toYaml .Values.flow.resources | nindent 10 }}
     containers:
       netflow:
         image:
@@ -315,9 +366,19 @@ controllers:
           tag: {{ required "flow.netflowImage.tag is required" .Values.flow.netflowImage.tag | squote }}
           digest: {{ required "flow.netflowImage.digest is required" .Values.flow.netflowImage.digest | squote }}
           pullPolicy: {{ .Values.flow.netflowImage.pullPolicy | squote }}
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
         args:
-          - '-f'
-          - '/etc/pmacct/nfacctd-netflow.conf'
+          - |
+            set -Eeuo pipefail
+            password="${FLOW_DATABASE_PASSWORD}"
+            password="${password//\\/\\\\}"
+            password="${password//&/\\&}"
+            password="${password//|/\\|}"
+            sed "s|\${FLOW_DATABASE_PASSWORD}|${password}|g" /etc/pmacct/nfacctd-netflow.conf > /tmp/nfacctd.conf
+            exec nfacctd -f /tmp/nfacctd.conf
         ports:
           - name: 'netflow'
             containerPort: 2055
@@ -329,15 +390,31 @@ controllers:
               - 'ALL'
         resources:
 {{ toYaml .Values.flow.resources | nindent 10 }}
+        env:
+          - name: 'FLOW_DATABASE_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                key: 'password'
       ipfix:
         image:
           repository: {{ .Values.flow.netflowImage.repository | squote }}
           tag: {{ required "flow.netflowImage.tag is required" .Values.flow.netflowImage.tag | squote }}
           digest: {{ required "flow.netflowImage.digest is required" .Values.flow.netflowImage.digest | squote }}
           pullPolicy: {{ .Values.flow.netflowImage.pullPolicy | squote }}
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
         args:
-          - '-f'
-          - '/etc/pmacct/nfacctd-ipfix.conf'
+          - |
+            set -Eeuo pipefail
+            password="${FLOW_DATABASE_PASSWORD}"
+            password="${password//\\/\\\\}"
+            password="${password//&/\\&}"
+            password="${password//|/\\|}"
+            sed "s|\${FLOW_DATABASE_PASSWORD}|${password}|g" /etc/pmacct/nfacctd-ipfix.conf > /tmp/nfacctd.conf
+            exec nfacctd -f /tmp/nfacctd.conf
         ports:
           - name: 'ipfix'
             containerPort: 4739
@@ -345,15 +422,31 @@ controllers:
         securityContext: *flowContainerSecurityContext
         resources:
 {{ toYaml .Values.flow.resources | nindent 10 }}
+        env:
+          - name: 'FLOW_DATABASE_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                key: 'password'
       sflow:
         image:
           repository: {{ .Values.flow.sflowImage.repository | squote }}
           tag: {{ required "flow.sflowImage.tag is required" .Values.flow.sflowImage.tag | squote }}
           digest: {{ required "flow.sflowImage.digest is required" .Values.flow.sflowImage.digest | squote }}
           pullPolicy: {{ .Values.flow.sflowImage.pullPolicy | squote }}
+        command:
+          - '/usr/bin/env'
+          - 'bash'
+          - '-c'
         args:
-          - '-f'
-          - '/etc/pmacct/sfacctd.conf'
+          - |
+            set -Eeuo pipefail
+            password="${FLOW_DATABASE_PASSWORD}"
+            password="${password//\\/\\\\}"
+            password="${password//&/\\&}"
+            password="${password//|/\\|}"
+            sed "s|\${FLOW_DATABASE_PASSWORD}|${password}|g" /etc/pmacct/sfacctd.conf > /tmp/sfacctd.conf
+            exec sfacctd -f /tmp/sfacctd.conf
         ports:
           - name: 'sflow'
             containerPort: 6343
@@ -361,6 +454,32 @@ controllers:
         securityContext: *flowContainerSecurityContext
         resources:
 {{ toYaml .Values.flow.resources | nindent 10 }}
+        env:
+          - name: 'FLOW_DATABASE_PASSWORD'
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.flow.database.credentialsSecretName | squote }}
+                key: 'password'
+      sql-exporter:
+        image:
+          repository: {{ .Values.flow.metrics.exporterImage.repository | squote }}
+          tag: {{ required "flow.metrics.exporterImage.tag is required" .Values.flow.metrics.exporterImage.tag | squote }}
+          pullPolicy: {{ .Values.flow.metrics.exporterImage.pullPolicy | squote }}
+        args:
+          - '-config.file=/etc/sql-exporter/sql_exporter.yml'
+        env:
+          - name: 'SQLEXPORTER_TARGET_DSN'
+            valueFrom:
+              secretKeyRef:
+                name: {{ required "flow.database.credentialsSecretName is required" .Values.flow.database.credentialsSecretName | squote }}
+                key: 'psqlURI'
+        ports:
+          - name: 'metrics'
+            containerPort: {{ .Values.flow.metrics.port }}
+            protocol: 'TCP'
+        securityContext: *flowContainerSecurityContext
+        resources:
+{{ toYaml .Values.flow.metrics.resources | nindent 10 }}
   {{- end }}
 
 service:
@@ -388,6 +507,9 @@ service:
     type: {{ .Values.flow.service.type | squote }}
     externalTrafficPolicy: {{ .Values.flow.service.externalTrafficPolicy | squote }}
     annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/portName: 'metrics'
+      prometheus.io/path: '/metrics'
       {{- range $key, $value := .Values.flow.service.annotations }}
       {{ $key }}: {{ $value | squote }}
       {{- end }}
@@ -410,6 +532,12 @@ service:
         port: 6343
         targetPort: 'sflow'
         protocol: 'UDP'
+      metrics:
+        enabled: true
+        primary: false
+        port: {{ .Values.flow.metrics.port }}
+        targetPort: 'metrics'
+        protocol: 'TCP'
   {{- end }}
 
 {{- if .Values.networkPolicy.enabled }}
@@ -455,6 +583,13 @@ networkpolicies:
               protocol: 'UDP'
             - port: 'sflow'
               protocol: 'UDP'
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: 'core-{{ .Values.env }}'
+          ports:
+            - port: 'metrics'
+              protocol: 'TCP'
   {{- end }}
 {{- end }}
 
@@ -560,26 +695,108 @@ configMaps:
         daemonize: false
         nfacctd_ip: 0.0.0.0
         nfacctd_port: 2055
-        plugins: print
-        print_output: json
-        print_output_file: stdout
-        print_refresh_time: 60
+        plugins: pgsql
+        aggregate: src_host, dst_host, src_port, dst_port, proto
+        sql_table: acct_v4
+        sql_table_version: 4
+        sql_data: typed
+        sql_host: {{ .Values.postgresql.host | squote }}
+        sql_port: {{ .Values.postgresql.port | quote }}
+        sql_db: {{ .Values.flow.database.database | squote }}
+        sql_user: {{ .Values.flow.database.username | squote }}
+        sql_passwd: '${FLOW_DATABASE_PASSWORD}'
+        sql_refresh_time: 60
+        sql_history: 5m
+        sql_history_roundoff: m
       nfacctd-ipfix.conf: |
         daemonize: false
         nfacctd_ip: 0.0.0.0
         nfacctd_port: 4739
-        plugins: print
-        print_output: json
-        print_output_file: stdout
-        print_refresh_time: 60
+        plugins: pgsql
+        aggregate: src_host, dst_host, src_port, dst_port, proto
+        sql_table: acct_v4
+        sql_table_version: 4
+        sql_data: typed
+        sql_host: {{ .Values.postgresql.host | squote }}
+        sql_port: {{ .Values.postgresql.port | quote }}
+        sql_db: {{ .Values.flow.database.database | squote }}
+        sql_user: {{ .Values.flow.database.username | squote }}
+        sql_passwd: '${FLOW_DATABASE_PASSWORD}'
+        sql_refresh_time: 60
+        sql_history: 5m
+        sql_history_roundoff: m
       sfacctd.conf: |
         daemonize: false
         sfacctd_ip: 0.0.0.0
         sfacctd_port: 6343
-        plugins: print
-        print_output: json
-        print_output_file: stdout
-        print_refresh_time: 60
+        plugins: pgsql
+        aggregate: src_host, dst_host, src_port, dst_port, proto
+        sql_table: acct_v4
+        sql_table_version: 4
+        sql_data: typed
+        sql_host: {{ .Values.postgresql.host | squote }}
+        sql_port: {{ .Values.postgresql.port | quote }}
+        sql_db: {{ .Values.flow.database.database | squote }}
+        sql_user: {{ .Values.flow.database.username | squote }}
+        sql_passwd: '${FLOW_DATABASE_PASSWORD}'
+        sql_refresh_time: 60
+        sql_history: 5m
+        sql_history_roundoff: m
+      flow-schema.sql: |
+        CREATE TABLE IF NOT EXISTS acct_v4 (
+          agent_id BIGINT NOT NULL DEFAULT 0,
+          mac_src macaddr NOT NULL DEFAULT '0:0:0:0:0:0',
+          mac_dst macaddr NOT NULL DEFAULT '0:0:0:0:0:0',
+          vlan INT NOT NULL DEFAULT 0,
+          ip_src inet NOT NULL DEFAULT '0.0.0.0',
+          ip_dst inet NOT NULL DEFAULT '0.0.0.0',
+          port_src INT NOT NULL DEFAULT 0,
+          port_dst INT NOT NULL DEFAULT 0,
+          ip_proto SMALLINT NOT NULL DEFAULT 0,
+          tos INT NOT NULL DEFAULT 0,
+          packets INT NOT NULL,
+          bytes BIGINT NOT NULL,
+          flows INT NOT NULL DEFAULT 0,
+          stamp_inserted timestamp without time zone NOT NULL DEFAULT '0001-01-01 00:00:00',
+          stamp_updated timestamp without time zone,
+          CONSTRAINT acct_v4_pk PRIMARY KEY (agent_id, mac_src, mac_dst, vlan, ip_src, ip_dst, port_src, port_dst, ip_proto, tos, stamp_inserted)
+        );
+        CREATE INDEX IF NOT EXISTS acct_v4_stamp_inserted_idx ON acct_v4 (stamp_inserted);
+      sql-exporter.yml: |
+        global:
+          scrape_timeout: 10s
+          min_interval: 60s
+          max_connections: 1
+          max_idle_connections: 1
+        target:
+          name: 'opennms-flow'
+          data_source_name: 'postgres://placeholder'
+          collectors: ['flow_rate']
+        collectors:
+          - collector_name: 'flow_rate'
+            metrics:
+              - metric_name: 'opennms_flow_received_per_second'
+                type: 'gauge'
+                help: 'Average flow records received per second during the last five minutes.'
+                values: ['flows_per_second']
+                query: |
+                  SELECT COALESCE(SUM(flows), 0)::double precision / 300 AS flows_per_second
+                  FROM acct_v4
+                  WHERE stamp_inserted >= NOW() - INTERVAL '5 minutes'
+              - metric_name: 'opennms_flow_bytes_per_second'
+                type: 'gauge'
+                help: 'Average bytes represented by received flow records per second during the last five minutes.'
+                values: ['bytes_per_second']
+                query: |
+                  SELECT COALESCE(SUM(bytes), 0)::double precision / 300 AS bytes_per_second
+                  FROM acct_v4
+                  WHERE stamp_inserted >= NOW() - INTERVAL '5 minutes'
+              - metric_name: 'opennms_flow_storage_bytes'
+                type: 'gauge'
+                help: 'PostgreSQL relation size of the OpenNMS flow accounting table in bytes.'
+                values: ['storage_bytes']
+                query: |
+                  SELECT pg_total_relation_size('acct_v4') AS storage_bytes
 {{- end }}
 
 {{- if .Values.timeseries.enabled }}
@@ -782,6 +999,14 @@ persistence:
           - path: '/etc/pmacct/sfacctd.conf'
             readOnly: true
             subPath: 'sfacctd.conf'
+        flow-schema:
+          - path: '/etc/pmacct/flow-schema.sql'
+            readOnly: true
+            subPath: 'flow-schema.sql'
+        sql-exporter:
+          - path: '/etc/sql-exporter/sql_exporter.yml'
+            readOnly: true
+            subPath: 'sql-exporter.yml'
 {{- end }}
 {{- if .Values.kafka.enabled }}
   kafka:
