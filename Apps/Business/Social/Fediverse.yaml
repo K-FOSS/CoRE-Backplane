@@ -79,6 +79,21 @@ spec:
                   name: '{{ .values.clusterName }}'
                   domain: '{{ .values.clusterDomain }}'
 
+                gateway:
+                  name: 'main-gw'
+                  namespace: 'core-{{ .values.environment }}'
+                  sectionName: 'https-myloginspace'
+
+                mastodon:
+                  domain: 'mastodon.mylogin.space'
+                  existingSecret: 'social-fediverse-mastodon'
+                  psql:
+                    crossplaneProvider: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
+                    terraformProvider: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
+                  s3:
+                    crossplaneProvider: 's3-{{ .values.region }}-{{ .values.datacenter }}-core'
+                    terraformProvider: 's3-{{ .values.region }}-{{ .values.datacenter }}-core'
+
       destination:
         server: '{{ .server }}'
         namespace: 'core-{{ .values.environment }}'
