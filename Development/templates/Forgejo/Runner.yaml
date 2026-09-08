@@ -68,10 +68,53 @@ spec:
           kind: Password
           name: 'forgejo-runner'
 ---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: 'forgejo-runner-vault-sync'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  refreshInterval: '1h'
+  secretStoreRefs:
+    - name: 'mainvault-core'
+      kind: ClusterSecretStore
+  selector:
+    secret:
+      name: 'forgejo-runner'
+  data:
+    - match:
+        secretKey: 'token'
+        remoteRef:
+          remoteKey: 'Forgejo/{{ .Values.cluster.name }}/Runner'
+          property: 'token'
+    - match:
+        secretKey: 'config.yaml'
+        remoteRef:
+          remoteKey: 'Forgejo/{{ .Values.cluster.name }}/Runner'
+          property: 'config.yaml'
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: 'forgejo-runner'
+  namespace: '{{ .Values.forgejoRunner.namespace }}'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  refreshPolicy: 'Periodic'
+  refreshInterval: '1h'
+  target:
+    name: 'forgejo-runner'
+  dataFrom:
+    - extract:
+        key: 'Forgejo/{{ .Values.cluster.name }}/Runner'
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: 'forgejo-runner'
+  namespace: '{{ .Values.forgejoRunner.namespace }}'
   labels:
     app.kubernetes.io/name: 'forgejo-runner'
     app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'

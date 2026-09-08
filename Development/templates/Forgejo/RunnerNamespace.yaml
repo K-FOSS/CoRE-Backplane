@@ -1,0 +1,12 @@
+{{- if and .Values.forgejo.enabled .Values.forgejoRunner.enabled }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: '{{ .Values.forgejoRunner.namespace }}'
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+  labels:
+    pod-security.kubernetes.io/enforce: 'privileged'
+    pod-security.kubernetes.io/audit: 'privileged'
+    pod-security.kubernetes.io/warn: 'privileged'
+{{- end }}

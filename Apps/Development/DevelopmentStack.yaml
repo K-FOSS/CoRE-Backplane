@@ -270,6 +270,7 @@ spec:
 
                 forgejoRunner:
                   enabled: {{ .values.forgejo.runners }}
+                  namespace: 'core-development-{{ .values.environment }}'
 
                 crddocs:
                   enabled: {{ .values.crddocs.enabled }}
@@ -322,13 +323,13 @@ spec:
                                   - name: 'forgejo-runner-registration'
                                     mountPath: '/var/run/secrets/forgejo-runner'
                                     readOnly: true
-                          volumes:
-                            - name: 'forgejo-runner-registration'
-                              secret:
-                                secretName: 'forgejo-runner'
-                                items:
-                                  - key: 'token'
-                                    path: 'token'
+                            volumes:
+                              - name: 'forgejo-runner-registration'
+                                secret:
+                                  secretName: 'forgejo-runner'
+                                  items:
+                                    - key: 'token'
+                                      path: 'token'
 
                   - target:
                       kind: HTTPRoute

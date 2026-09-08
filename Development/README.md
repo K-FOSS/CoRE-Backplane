@@ -326,8 +326,10 @@ push, issue updates, and background jobs after reconciliation.
 
 ### Forgejo Actions runners
 
-The two Forgejo sites each run one site-local, instance-wide Actions runner:
-`core-dc1-talos-prod-runner` in YXL and `core-home1-talos-prod-runner` in YVR.
+The two Forgejo sites each run one site-local, instance-wide Actions runner in
+the dedicated `core-development-<environment>` namespace:
+`core-development-prod` in both current sites. Forgejo itself remains in
+`core-prod`.
 The owning ApplicationSet enables `forgejoRunner` only where both the Forgejo
 instance and its runner are selected. Each runner accepts one job at a time and
 serves the `docker` and `ubuntu-latest` labels. Both labels use the same
@@ -337,11 +339,18 @@ so common Node-based actions work without relying on a mutable default image.
 The runner itself is the official [Forgejo Runner 12.13.2 image and source](https://code.forgejo.org/forgejo/runner/src/tag/v12.13.2),
 and its configuration follows the upstream [runner configuration reference](https://forgejo.org/docs/latest/admin/actions/configuration/).
 
-Registration is declarative and site-local. An External Secrets
+Registration is declarative and site-local. The registration Secret is
+generated in `core-prod`, pushed into the site-local Vault, and read into the
+runner namespace so Forgejo's init container and the runner use the same
+credential. An External Secrets
 [Password generator](https://external-secrets.io/latest/api/generator/password/)
 creates 20 random bytes and hex-encodes them as Forgejo's required
 40-character shared secret. A CreatedOnce `forgejo-runner` ExternalSecret
-publishes the token and the runner configuration. During every Forgejo pod
+publishes the token and the runner configuration. An External Secrets
+[PushSecret](https://external-secrets.io/latest/api/pushsecret/) writes that
+data through the site-local [Vault provider](https://external-secrets.io/latest/provider/hashicorp-vault/),
+and a runner-namespace ExternalSecret reads it back for the runner.
+During every Forgejo pod
 initialization, the existing `configure-gitea` container runs the idempotent
 offline registration command against the local PostgreSQL database before the
 Forgejo container starts. The runner derives the UUID from the same secret and
@@ -368,8 +377,11 @@ before expanding repository access, labels, runner capacity, allowed volumes,
 or container privileges.
 
 After reconciliation at both sites, verify the Password generator,
-ExternalSecret, generated Secret, Forgejo init-container registration, and the
-`forgejo-runner` Deployment. In Forgejo's site administration, confirm the
+ExternalSecret, generated Secret, Vault PushSecret, runner-namespace
+ExternalSecret, Forgejo init-container registration, and the
+`core-development-prod/forgejo-runner` Deployment. Confirm that the namespace
+has the privileged Pod Security Admission labels. In Forgejo's site
+administration, confirm the
 expected runner name is online with only `docker` and `ubuntu-latest`, then run
 a non-sensitive test workflow that checks out a repository, executes a Node
 action, installs or supplies a Docker client to build a disposable container
@@ -516,6 +528,8 @@ kubectl -n core-prod get user
 kubectl -n core-prod get httproute
 kubectl -n core-prod get workspace,providerconfig
 kubectl -n eclipse-che get checluster,devworkspace
+kubectl -n core-development-prod get pods,externalsecret
+kubectl get namespace core-development-prod --show-labels
 ```
 
 Use the actual Application destination namespace and release-derived names
