@@ -237,8 +237,8 @@ names, or authentication mode.
 ## Forgejo
 
 Forgejo is deployed independently at both infrastructure sites through the
-official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v16.2.2)
-and a digest-pinned Forgejo 14.0.4 rootless image. Each site uses
+official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v17.1.5)
+and a digest-pinned Forgejo 15.0.7 rootless image. Each site uses
 an ApplicationSet-owned hostname: YXL uses
 `forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes`, while YVR uses
 `slop.writemy.codes`. Each deployment has one replica and a retained 50 GiB
@@ -272,8 +272,8 @@ cluster's `ldap.<cluster>.<datacenter>.<region>.mylogin.space:636` endpoint. It
 searches `ou=users,dc=ldap,dc=mylogin,dc=space` for an exact `cn` match and
 maps `cn`, `name`, `lastname`, and `mail` into the Forgejo profile. LDAP bulk
 synchronization and LDAP-derived administrator privileges are deliberately
-not enabled. See the Forgejo 14 [LDAP behavior](https://forgejo.org/docs/v14.0/user/authentication/)
-and [authentication-source CLI](https://forgejo.org/docs/v14.0/admin/command-line/#admin-auth-add-ldap).
+not enabled. See Forgejo's [LDAP behavior](https://forgejo.org/docs/latest/user/authentication/)
+and [authentication-source CLI](https://forgejo.org/docs/latest/admin/command-line/#admin-auth-add-ldap).
 
 Each site also reconciles a separate Authentik OAuth2/OIDC provider and
 application named `forgejo-<cluster>`. Its only redirect URI is the strict
@@ -346,7 +346,7 @@ initialization, the existing `configure-gitea` container runs the idempotent
 offline registration command against the local PostgreSQL database before the
 Forgejo container starts. The runner derives the UUID from the same secret and
 reads the token from its mounted Secret. This is the IaC flow documented by
-Forgejo's [offline runner registration guide](https://forgejo.org/docs/v14.0/admin/actions/registration/#offline-registration);
+Forgejo's [offline runner registration guide](https://forgejo.org/docs/latest/admin/actions/registration/#offline-registration);
 no registration token, runner token, or generated runner file is stored in
 Git. Actions are explicitly enabled and unqualified actions resolve through
 `https://data.forgejo.org`.
@@ -363,7 +363,7 @@ container runtime, but it does not make instance-wide runners safe for
 untrusted workflows. Anyone who can change a workflow that these global
 runners accept can execute code with the runner pod's network access and can
 control its DinD daemon. Review Forgejo's [Actions security guidance](https://forgejo.org/docs/latest/admin/actions/security/)
-and [Docker-in-Docker guidance](https://forgejo.org/docs/v15.0/admin/actions/docker-access/)
+and [Docker-in-Docker guidance](https://forgejo.org/docs/latest/admin/actions/docker-access/)
 before expanding repository access, labels, runner capacity, allowed volumes,
 or container privileges.
 
