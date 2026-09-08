@@ -564,6 +564,12 @@ forgejo:
     enabled: true
     size: '50Gi'
 
+  # The Forgejo 16 rootless image cannot chmod a stale root-owned OpenSSH
+  # environment file left by the previous image on the persistent volume.
+  # Remove only that disposable file before the chart secures the SSH home.
+  initPreScript: |
+    rm -f /data/git/.ssh/environment
+
   test:
     enabled: false
 
