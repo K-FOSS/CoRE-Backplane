@@ -22,6 +22,10 @@ spec:
     createBuckets: true
     buckets:
       - 'forgejo-{{ .Values.cluster.name }}'
+    createCredentials: true
+    writeCredentialsSecretRef:
+      namespace: '{{ .Release.Namespace }}'
+      name: 'forgejo-s3-credentials-2700068d4785d5b1'
     createServiceAccount: true
     crossplane:
       terraformProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
