@@ -74,6 +74,7 @@ spec:
                 consul:
                   enabled: {{ .values.consul.enabled }}
                   address: {{ default (printf "%s-server.core-%s.svc.cluster.local:8500" .name .values.environment) .values.consul.address }}
+                  prefix: '{{ .values.clusterName }}'
 
                 velero:
                   configuration:

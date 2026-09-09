@@ -29,7 +29,7 @@ Each generated Argo CD application:
 - deploys this chart to `velero-system`;
 - uses server-side apply;
 - preserves managed resources if the ApplicationSet entry is deleted;
-- assigns the cluster name as the Velero object-store prefix; and
+- assigns the cluster name as the Velero and Consul object-store prefix; and
 - controls the Consul backup deployment per cluster.
 
 Current Consul backup placement:
@@ -165,8 +165,9 @@ When `consul.enabled` is true, the chart creates:
 - the resulting `consul-s3` Secret.
 
 The Deployment is generated through the BJW-S common library and runs
-`ghcr.io/sputnik-systems/consul-backup-s3:v0.0.4`. It continuously exports data
-from the configured Consul API endpoint to R2. This chart does not create a
+[consul-backup-s3](https://github.com/sputnik-systems/consul-backup-s3)
+`v0.0.4` image. It continuously exports data from the configured Consul API
+endpoint to R2 using the configured S3 prefix. This chart does not create a
 `CronJob`; backup timing, object naming, and retention behavior are controlled
 by the backup application and object-store configuration.
 
@@ -271,7 +272,7 @@ consul:
 
 The Consul workload definition lives in
 `templates/Consul/common.yaml`. Cluster-specific enablement, endpoint
-derivation, Velero bucket, and object prefix live in the ApplicationSet.
+derivation, Velero bucket, and object prefixes live in the ApplicationSet.
 
 When changing backup behavior, review both files; rendering the chart with
 `values.yaml` alone does not include the per-cluster ApplicationSet prefix.
@@ -282,10 +283,11 @@ Build dependencies and render both Consul variants:
 
 ```bash
 helm dependency build
-helm lint .
+helm lint . --set consul.prefix=example-site
 helm template backups . --namespace velero-system \
   --set consul.enabled=true \
-  --set consul.address=consul-server.example.svc.cluster.local:8500
+  --set consul.address=consul-server.example.svc.cluster.local:8500 \
+  --set consul.prefix=example-site
 helm template backups . --namespace velero-system \
   --set consul.enabled=false
 ```
@@ -298,6 +300,8 @@ Check that:
 - `cloudflare-s3` references `backups-velero-cloudflare-s3`;
 - no resolved credential values appear in rendered or committed files; and
 - the ApplicationSet render adds a unique Velero prefix for every cluster.
+- the ApplicationSet render adds the same unique cluster prefix to Consul
+  backup arguments.
 
 After deployment, repeat the runtime health checks above and verify a recent
 object at each destination. Rendering and reconciliation alone do not prove
