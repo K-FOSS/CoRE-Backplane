@@ -35,7 +35,7 @@ spec:
                     forgejo:
                       enabled: true
                       runners: true
-                      hostname: 'forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes'
+                      hostname: 'forge.core-dc1-talos-prod.dc1.yxl.writemy.codes'
                     runnerLocations:
                       - name: 'core-dc1-talos-prod'
                       - name: 'core-home1-talos-prod'
@@ -278,7 +278,6 @@ spec:
                 forgejoRunner:
                   enabled: {{ .values.forgejo.runners }}
                   namespace: 'core-development-{{ .values.environment }}'
-                  targetCluster: '{{ .values.clusterName }}'
                   locations:
                     {{ range .values.runnerLocations }}
                     - name: '{{ .name }}'
