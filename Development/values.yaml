@@ -570,6 +570,10 @@ forgejo:
   # Remove only that disposable file before the chart secures the SSH home.
   initPreScript: |
     rm -f /data/git/.ssh/environment
+    mkdir -p /data/git/.ssh /data/gitea/conf
+    chown -R 1000:1000 /data/git /data/gitea
+    chmod 700 /data/git/.ssh
+    chmod 770 /data/gitea/conf
 
   test:
     enabled: false
