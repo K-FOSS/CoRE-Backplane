@@ -14,6 +14,22 @@ spec:
     crossplane:
       terraformProvider: 'psql-{{ .Values.datacenter }}-{{ .Values.region }}'
       crossplaneProvider: 'psql-{{ .Values.datacenter }}-{{ .Values.region }}'
+  {{- if eq .Values.region "yxl" }}
+  s3:
+    enabled: true
+    region: 'us-east-1'
+    createUserBucket: false
+    createBuckets: true
+    buckets:
+      - 'forgejo-{{ .Values.cluster.name }}'
+    createServiceAccount: true
+    crossplane:
+      terraformProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+      crossplaneProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+    writeServiceAccountCredentialsSecretRef:
+      namespace: '{{ .Release.Namespace }}'
+      name: 'forgejo-s3'
+  {{- end }}
   writeConnectionSecretToRef:
     name: 'forgejo-user'
 {{- end }}

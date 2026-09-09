@@ -238,20 +238,39 @@ names, or authentication mode.
 
 Forgejo is deployed independently at both infrastructure sites through the
 official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v17.1.5)
-and a digest-pinned Forgejo 15.0.7 rootless image. Each site uses
+and a digest-pinned [Forgejo 16.0.3 rootless image](https://forgejo.org/releases/16.x/).
+Each site uses
 an ApplicationSet-owned hostname: YXL uses
 `forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes`, while YVR uses
 `slop.writemy.codes`. Each deployment has one replica and a retained 50 GiB
-persistent volume for repositories and application data.
+persistent volume for repositories and application data. YXL currently uses
+ReadWriteMany; other sites retain their configured access mode. The
+`forgejo-user` claim exists for every enabled site; only YXL additionally
+provisions the site-local S3 bucket and credentials.
 External SSH routing is not configured; HTTPS clone and web traffic use the
 Gateway API HTTPRoute. The fleet post-render patch labels that public route
 with `wan-mode: 'public'`, matching the chart-owned public routes in this
 deployment.
+The embedded Forgejo SSH server is disabled because the rootless image already
+starts OpenSSH on its internal port; the SSH Service remains cluster-local and
+is not routed externally. This does not prevent outbound SSH push mirrors.
+Forgejo's user heatmap is enabled; it attributes activity to the contributing
+user, including contributions made in repositories owned by that user's
+organizations. Forgejo 16 has no separate organization-contributions toggle.
+The chart removes only the disposable stale `/data/git/.ssh/environment` file
+before Forgejo's rootless initialization chmods the persistent SSH directory;
+if the PVC denies unlinking it, repair that file's ownership at the storage
+layer before retrying the deployment.
 
 The site-local `forgejo-user` claim provisions the matching PostgreSQL role
 and database on `psql-local` through both
 `psql-<datacenter>-<region>` providers and publishes the password in the
-stable `forgejo-user` Secret. Queue, cache, and session state use Dragonfly
+stable `forgejo-user` Secret. It also creates the per-cluster
+`forgejo-<cluster>` bucket in the site-local S3 tenant and publishes a
+long-lived service-account key in the namespace-local `forgejo-s3` Secret.
+Forgejo's shared [storage configuration](https://forgejo.org/docs/latest/admin/setup/storage/)
+uses that bucket for attachments, LFS, avatars, repository avatars, archives,
+packages, and Actions storage. Queue, cache, and session state use Dragonfly
 databases `90`, `91`, and `92`; Kubernetes expands the namespace-local
 Dragonfly password into Forgejo's runtime environment before `app.ini` is
 generated. A CreatedOnce External Secrets password generator creates the local
@@ -326,35 +345,33 @@ push, issue updates, and background jobs after reconciliation.
 
 ### Forgejo Actions runners
 
-The two Forgejo sites each run one site-local, instance-wide Actions runner in
-the dedicated `core-development-<environment>` namespace:
-`core-development-prod` in both current sites. Forgejo itself remains in
-`core-prod`.
-The owning ApplicationSet enables `forgejoRunner` only where both the Forgejo
-instance and its runner are selected. Each runner accepts one job at a time and
-serves the `docker` and `ubuntu-latest` labels. Both labels use the same
+Both Forgejo sites run runners in the dedicated
+`core-development-<environment>` namespace. The full matrix has one runner
+for each Forgejo target in each site, so each Forgejo instance has runners in
+both sites. Forgejo itself remains in `core-prod`. The owning ApplicationSet
+enables runners independently from the Forgejo target, and each runner accepts
+one job at a time and serves the `docker` and `ubuntu-latest` labels. Both labels use the same
 digest-pinned Forgejo mirror of the upstream
 [Node 24 Bookworm container image](https://github.com/nodejs/docker-node/tree/main/24/bookworm)
 so common Node-based actions work without relying on a mutable default image.
 The runner itself is the official [Forgejo Runner 12.13.2 image and source](https://code.forgejo.org/forgejo/runner/src/tag/v12.13.2),
 and its configuration follows the upstream [runner configuration reference](https://forgejo.org/docs/latest/admin/actions/configuration/).
 
-Registration is declarative and site-local. The registration Secret is
-generated in `core-prod`, pushed into the site-local Vault, and read into the
-runner namespace so Forgejo's init container and the runner use the same
-credential. An External Secrets
+Registration is declarative. Each Forgejo/runner-site pair has a unique
+registration Secret generated in the Forgejo namespace, pushed into the
+site-local Vault, and read into the runner site so Forgejo's init container and
+the matching runner use the same credential. An External Secrets
 [Password generator](https://external-secrets.io/latest/api/generator/password/)
 creates 20 random bytes and hex-encodes them as Forgejo's required
-40-character shared secret. A CreatedOnce `forgejo-runner` ExternalSecret
-publishes the token and the runner configuration. An External Secrets
+40-character shared secret. A CreatedOnce `forgejo-runner-<runner-site>`
+ExternalSecret publishes the credential. An External Secrets
 [PushSecret](https://external-secrets.io/latest/api/pushsecret/) writes that
 data through the site-local [Vault provider](https://external-secrets.io/latest/provider/hashicorp-vault/),
-and a runner-namespace ExternalSecret reads it back for the runner.
-During every Forgejo pod
-initialization, the existing `configure-gitea` container runs the idempotent
-offline registration command against the local PostgreSQL database before the
-Forgejo container starts. The runner derives the UUID from the same secret and
-reads the token from its mounted Secret. This is the IaC flow documented by
+and runner-site ExternalSecrets read the matching records back. During every
+Forgejo pod initialization, the existing `configure-gitea` container runs an
+idempotent offline registration command for each runner location against the
+local PostgreSQL database before the Forgejo container starts. Each runner
+derives its UUID from its matching secret. This is the IaC flow documented by
 Forgejo's [offline runner registration guide](https://forgejo.org/docs/latest/admin/actions/registration/#offline-registration);
 no registration token, runner token, or generated runner file is stored in
 Git. Actions are explicitly enabled and unqualified actions resolve through
@@ -376,13 +393,13 @@ and [Docker-in-Docker guidance](https://forgejo.org/docs/latest/admin/actions/do
 before expanding repository access, labels, runner capacity, allowed volumes,
 or container privileges.
 
-After reconciliation at both sites, verify the Password generator,
-ExternalSecret, generated Secret, Vault PushSecret, runner-namespace
-ExternalSecret, Forgejo init-container registration, and the
-`core-development-prod/forgejo-runner` Deployment. Confirm that the namespace
-has the privileged Pod Security Admission labels. In Forgejo's site
-administration, confirm the
-expected runner name is online with only `docker` and `ubuntu-latest`, then run
+After reconciliation at both sites, verify the Password generators,
+ExternalSecrets, generated Secrets, Vault PushSecrets, runner-site
+ExternalSecrets, all four Forgejo registrations, and the four
+`forgejo-runner-<target>` Deployments. Confirm that each namespace has the
+privileged Pod Security Admission labels. In each Forgejo site administration,
+confirm both expected runner names are online with only `docker` and
+`ubuntu-latest`, then run
 a non-sensitive test workflow that checks out a repository, executes a Node
 action, installs or supplies a Docker client to build a disposable container
 image, and exercises the Actions cache.
@@ -390,14 +407,16 @@ Runner pod readiness alone does not prove registration, label selection, job
 logs, cache reachability, or DinD access works.
 
 Setting a site's `forgejo.runners` selection to false removes the generated
-credential resources and runner Deployment and removes the registration patch
-from Forgejo, but it does not remove the runner record already stored in
-Forgejo's PostgreSQL database. Remove that record deliberately through site
-administration after confirming no queued jobs depend on it. Because the
+credential resources and runner Deployments and removes the registration patch
+from Forgejo, but it does not remove Vault records or runner records stored in
+Forgejo's PostgreSQL database. Remove those records deliberately through site
+administration after confirming no queued jobs depend on them. Because the
 ApplicationSet preserves resources when an entire generated Application is
-deleted, inspect retained resources explicitly in that case. Deleting and
-recreating the CreatedOnce Secret rotates the runner identity; first stop the
-runner, remove the prior Forgejo record, allow Forgejo to reconcile the new
+deleted, inspect retained resources explicitly in that case. The matrix
+migration also leaves the former single-runner record and Vault path behind;
+after all four new runners are online, remove those legacy records deliberately.
+Rotating a CreatedOnce Secret rotates one runner identity: first stop that
+runner, remove its prior Forgejo record, allow Forgejo to reconcile the new
 shared secret, and then start and verify the replacement runner.
 
 ## Eclipse Che

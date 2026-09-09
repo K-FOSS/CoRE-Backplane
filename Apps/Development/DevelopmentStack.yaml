@@ -210,6 +210,12 @@ spec:
                 forgejo:
                   enabled: {{ .values.forgejo.enabled }}
 
+                {{- if eq .values.region "yxl" }}
+                  persistence:
+                    accessModes:
+                      - 'ReadWriteMany'
+                {{- end }}
+
                   fullnameOverride: '{{ .values.clusterName }}-development-forgejo'
 
                   clusterDomain: '{{ .values.clusterDomain }}'
@@ -220,7 +226,7 @@ spec:
 
                   gitea:
                     podAnnotations:
-                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,forgejo-runner-core-dc1-talos-prod,forgejo-runner-core-home1-talos-prod,dragonfly-core-password'
+                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-s3,forgejo-admin,forgejo-oidc,forgejo-runner-core-dc1-talos-prod,forgejo-runner-core-home1-talos-prod,dragonfly-core-password'
 
                     ldap:
                       - name: 'authentik-ldap'
@@ -246,6 +252,15 @@ spec:
                         HOST: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:5432'
                         NAME: 'forgejo-{{ .values.clusterName }}'
                         USER: 'forgejo-{{ .values.clusterName }}'
+                    {{- if eq .values.region "yxl" }}
+                      storage:
+                        STORAGE_TYPE: 'minio'
+                        MINIO_ENDPOINT: 's3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                        MINIO_BUCKET: 'forgejo-{{ .values.clusterName }}'
+                        MINIO_BUCKET_LOOKUP: 'path'
+                        MINIO_LOCATION: 'us-east-1'
+                        MINIO_USE_SSL: true
+                    {{- end }}
                       server:
                         DOMAIN: '{{ .values.forgejo.hostname }}'
                         ROOT_URL: 'https://{{ .values.forgejo.hostname }}/'
@@ -257,6 +272,18 @@ spec:
                           secretKeyRef:
                             name: 'forgejo-user'
                             key: 'password'
+                    {{- if eq .values.region "yxl" }}
+                      - name: 'FORGEJO__STORAGE__MINIO_ACCESS_KEY_ID'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'forgejo-s3'
+                            key: 'AccessKey'
+                      - name: 'FORGEJO__STORAGE__MINIO_SECRET_ACCESS_KEY'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'forgejo-s3'
+                            key: 'SecretAccessKey'
+                    {{- end }}
                       - name: 'DRAGONFLY_PASSWORD'
                         valueFrom:
                           secretKeyRef:
