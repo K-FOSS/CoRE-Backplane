@@ -659,14 +659,17 @@ forgejo:
         value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.k8s.dc1.yxl.mylogin.space:6379/92'
 
 
-# One site-local global Actions runner is deployed beside every enabled Forgejo
-# instance. Its registration credential is generated in-cluster and is not a
-# deployable value. The DinD sidecar is privileged, while workflow containers
-# are confined to that pod's disposable Docker daemon.
+# Site-local global Actions runners can target every enabled Forgejo instance.
+# Each Forgejo/runner-location registration credential is generated in-cluster
+# and synchronized through Vault. The DinD sidecar is privileged, while
+# workflow containers are confined to that pod's disposable Docker daemon.
 forgejoRunner:
   enabled: false
   namespace: 'core-development-prod'
   replicaCount: 1
+  targetCluster: 'k8s'
+  locations: []
+  targets: []
 
   image:
     repository: 'code.forgejo.org/forgejo/runner'

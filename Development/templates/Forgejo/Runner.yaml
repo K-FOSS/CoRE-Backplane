@@ -1,13 +1,13 @@
-{{- if and .Values.forgejo.enabled .Values.forgejoRunner.enabled }}
+{{- if .Values.forgejoRunner.enabled }}
+{{- if .Values.forgejo.enabled }}
+{{- range .Values.forgejoRunner.locations }}
 apiVersion: generators.external-secrets.io/v1alpha1
 kind: Password
 metadata:
-  name: 'forgejo-runner'
+  name: 'forgejo-runner-{{ .name }}'
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
-  # Twenty random bytes encoded as hexadecimal produce Forgejo's required
-  # forty-character offline registration secret.
   length: 20
   encoding: 'hex'
   allowRepeat: true
@@ -15,17 +15,63 @@ spec:
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: 'forgejo-runner'
+  name: 'forgejo-runner-{{ .name }}'
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
   refreshPolicy: 'CreatedOnce'
   target:
-    name: 'forgejo-runner'
+    name: 'forgejo-runner-{{ .name }}'
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: 'forgejo-runner-{{ .name }}'
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: 'forgejo-runner-{{ .name }}-vault-sync'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  refreshInterval: '1h'
+  secretStoreRefs:
+    - name: 'mainvault-core'
+      kind: ClusterSecretStore
+  selector:
+    secret:
+      name: 'forgejo-runner-{{ .name }}'
+  data:
+    - match:
+        secretKey: 'password'
+        remoteRef:
+          remoteKey: 'Forgejo/{{ $.Values.cluster.name }}/Runner/{{ .name }}'
+          property: 'password'
+{{- end }}
+{{- end }}
+{{- range .Values.forgejoRunner.targets }}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: 'forgejo-runner-{{ .name }}'
+  namespace: '{{ $.Values.forgejoRunner.namespace }}'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  refreshPolicy: 'Periodic'
+  refreshInterval: '1h'
+  secretStoreRef:
+    name: 'mainvault-core'
+    kind: ClusterSecretStore
+  target:
+    name: 'forgejo-runner-{{ .name }}'
     template:
       engineVersion: 'v2'
       data:
-        token: '{{ `{{ .password }}` }}'
+        password: '{{ `{{ .password }}` }}'
         config.yaml: |-
           log:
             level: 'info'
@@ -55,97 +101,54 @@ spec:
           server:
             connections:
               local:
-                url: '{{ .Values.forgejo.gitea.config.server.ROOT_URL }}'
+                url: '{{ .url }}'
                 uuid: '{{ `{{ printf "%x-%x-%x-%x-%x" (substr 0 4 .password) (substr 4 6 .password) (substr 6 8 .password) (substr 8 10 .password) (substr 10 16 .password) }}` }}'
-                token_url: 'file:/var/run/secrets/forgejo-runner/token'
+                token_url: 'file:/var/run/secrets/forgejo-runner/password'
                 labels:
-                  - 'docker:docker://{{ .Values.forgejoRunner.jobImage.repository }}@{{ .Values.forgejoRunner.jobImage.digest }}'
-                  - 'ubuntu-latest:docker://{{ .Values.forgejoRunner.jobImage.repository }}@{{ .Values.forgejoRunner.jobImage.digest }}'
-  dataFrom:
-    - sourceRef:
-        generatorRef:
-          apiVersion: generators.external-secrets.io/v1alpha1
-          kind: Password
-          name: 'forgejo-runner'
----
-apiVersion: external-secrets.io/v1alpha1
-kind: PushSecret
-metadata:
-  name: 'forgejo-runner-vault-sync'
-  annotations:
-    argocd.argoproj.io/sync-wave: '0'
-spec:
-  refreshInterval: '1h'
-  secretStoreRefs:
-    - name: 'mainvault-core'
-      kind: ClusterSecretStore
-  selector:
-    secret:
-      name: 'forgejo-runner'
+                  - 'docker:docker://{{ $.Values.forgejoRunner.jobImage.repository }}@{{ $.Values.forgejoRunner.jobImage.digest }}'
+                  - 'ubuntu-latest:docker://{{ $.Values.forgejoRunner.jobImage.repository }}@{{ $.Values.forgejoRunner.jobImage.digest }}'
   data:
-    - match:
-        secretKey: 'token'
-        remoteRef:
-          remoteKey: 'Forgejo/{{ .Values.cluster.name }}/Runner'
-          property: 'token'
-    - match:
-        secretKey: 'config.yaml'
-        remoteRef:
-          remoteKey: 'Forgejo/{{ .Values.cluster.name }}/Runner'
-          property: 'config.yaml'
----
-apiVersion: external-secrets.io/v1
-kind: ExternalSecret
-metadata:
-  name: 'forgejo-runner'
-  namespace: '{{ .Values.forgejoRunner.namespace }}'
-  annotations:
-    argocd.argoproj.io/sync-wave: '1'
-spec:
-  refreshPolicy: 'Periodic'
-  refreshInterval: '1h'
-  secretStoreRef:
-    name: 'mainvault-core'
-    kind: ClusterSecretStore
-  target:
-    name: 'forgejo-runner'
-  dataFrom:
-    - extract:
-        key: 'Forgejo/{{ .Values.cluster.name }}/Runner'
+    - secretKey: 'password'
+      remoteRef:
+        key: 'Forgejo/{{ $.Values.forgejoRunner.targetCluster }}/Runner/{{ .name }}'
+        property: 'password'
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: 'forgejo-runner'
-  namespace: '{{ .Values.forgejoRunner.namespace }}'
+  name: 'forgejo-runner-{{ .name }}'
+  namespace: '{{ $.Values.forgejoRunner.namespace }}'
   labels:
     app.kubernetes.io/name: 'forgejo-runner'
-    app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'
+    app.kubernetes.io/instance: 'forgejo-{{ $.Values.cluster.name }}'
     app.kubernetes.io/component: 'actions-runner'
+    forgejo.mylogin.space/target: '{{ .name }}'
   annotations:
     argocd.argoproj.io/sync-wave: '1'
 spec:
-  replicas: {{ .Values.forgejoRunner.replicaCount }}
+  replicas: {{ $.Values.forgejoRunner.replicaCount }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: 'forgejo-runner'
-      app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'
+      app.kubernetes.io/instance: 'forgejo-{{ $.Values.cluster.name }}'
+      forgejo.mylogin.space/target: '{{ .name }}'
   template:
     metadata:
       labels:
         app.kubernetes.io/name: 'forgejo-runner'
-        app.kubernetes.io/instance: 'forgejo-{{ .Values.cluster.name }}'
+        app.kubernetes.io/instance: 'forgejo-{{ $.Values.cluster.name }}'
         app.kubernetes.io/component: 'actions-runner'
+        forgejo.mylogin.space/target: '{{ .name }}'
       annotations:
-        secret.reloader.stakater.com/reload: 'forgejo-runner'
+        secret.reloader.stakater.com/reload: 'forgejo-runner-{{ .name }}'
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 10830
       containers:
         - name: 'runner'
-          image: '{{ .Values.forgejoRunner.image.repository }}:{{ .Values.forgejoRunner.image.tag }}@{{ .Values.forgejoRunner.image.digest }}'
+          image: '{{ $.Values.forgejoRunner.image.repository }}:{{ $.Values.forgejoRunner.image.tag }}@{{ $.Values.forgejoRunner.image.digest }}'
           imagePullPolicy: 'IfNotPresent'
           command:
             - '/bin/sh'
@@ -165,7 +168,7 @@ spec:
             - name: 'DOCKER_CERT_PATH'
               value: '/certs/client'
           resources:
-{{ toYaml .Values.forgejoRunner.resources.runner | indent 12 }}
+{{ toYaml $.Values.forgejoRunner.resources.runner | indent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -192,13 +195,13 @@ spec:
             - name: 'runner-tmp'
               mountPath: '/tmp'
         - name: 'dind'
-          image: '{{ .Values.forgejoRunner.dind.image.repository }}:{{ .Values.forgejoRunner.dind.image.tag }}@{{ .Values.forgejoRunner.dind.image.digest }}'
+          image: '{{ $.Values.forgejoRunner.dind.image.repository }}:{{ $.Values.forgejoRunner.dind.image.tag }}@{{ $.Values.forgejoRunner.dind.image.digest }}'
           imagePullPolicy: 'IfNotPresent'
           env:
             - name: 'DOCKER_TLS_CERTDIR'
               value: '/certs'
           resources:
-{{ toYaml .Values.forgejoRunner.resources.dind | indent 12 }}
+{{ toYaml $.Values.forgejoRunner.resources.dind | indent 12 }}
           securityContext:
             privileged: true
             runAsUser: 0
@@ -218,25 +221,26 @@ spec:
       volumes:
         - name: 'runner-config'
           secret:
-            secretName: 'forgejo-runner'
+            secretName: 'forgejo-runner-{{ .name }}'
             items:
               - key: 'config.yaml'
                 path: 'config.yaml'
         - name: 'runner-credentials'
           secret:
-            secretName: 'forgejo-runner'
+            secretName: 'forgejo-runner-{{ .name }}'
             items:
-              - key: 'token'
-                path: 'token'
+              - key: 'password'
+                path: 'password'
         - name: 'docker-certs'
           emptyDir: {}
         - name: 'docker-data'
           emptyDir:
-            sizeLimit: '{{ .Values.forgejoRunner.dind.storage }}'
+            sizeLimit: '{{ $.Values.forgejoRunner.dind.storage }}'
         - name: 'runner-data'
           emptyDir:
             sizeLimit: '1Gi'
         - name: 'runner-tmp'
           emptyDir:
             sizeLimit: '1Gi'
+{{- end }}
 {{- end }}

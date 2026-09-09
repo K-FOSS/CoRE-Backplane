@@ -36,6 +36,9 @@ spec:
                       enabled: true
                       runners: true
                       hostname: 'forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes'
+                    runnerLocations:
+                      - name: 'core-dc1-talos-prod'
+                      - name: 'core-home1-talos-prod'
 
                     artifacthub:
                       enabled: false
@@ -66,6 +69,9 @@ spec:
                       enabled: true
                       runners: true
                       hostname: 'slop.writemy.codes'
+                    runnerLocations:
+                      - name: 'core-dc1-talos-prod'
+                      - name: 'core-home1-talos-prod'
 
                     artifacthub:
                       enabled: false
@@ -93,6 +99,7 @@ spec:
                       enabled: false
                       runners: false
                       hostname: 'forgejo.dc1-k3s-node1.dc1.yxl.writemy.codes'
+                    runnerLocations: []
 
                     artifacthub:
                       enabled: false
@@ -213,7 +220,7 @@ spec:
 
                   gitea:
                     podAnnotations:
-                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,forgejo-runner,dragonfly-core-password'
+                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-admin,forgejo-oidc,forgejo-runner-core-dc1-talos-prod,forgejo-runner-core-home1-talos-prod,dragonfly-core-password'
 
                     ldap:
                       - name: 'authentik-ldap'
@@ -271,6 +278,16 @@ spec:
                 forgejoRunner:
                   enabled: {{ .values.forgejo.runners }}
                   namespace: 'core-development-{{ .values.environment }}'
+                  targetCluster: '{{ .values.clusterName }}'
+                  locations:
+                    {{ range .values.runnerLocations }}
+                    - name: '{{ .name }}'
+                    {{ end }}
+                  targets:
+                    - name: 'core-dc1-talos-prod'
+                      url: 'https://forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes/'
+                    - name: 'core-home1-talos-prod'
+                      url: 'https://slop.writemy.codes/'
 
                 crddocs:
                   enabled: {{ .values.crddocs.enabled }}
@@ -282,7 +299,7 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
-                  {{ if and .values.forgejo.enabled .values.forgejo.runners }}
+                {{ if and .values.forgejo.enabled .values.forgejo.runners }}
                   - target:
                       kind: Deployment
                       name: '{{ .values.clusterName }}-development-forgejo'
@@ -315,21 +332,27 @@ spec:
                                   - '-ec'
                                   - |-
                                     /usr/sbin/configure_gitea.sh
+                                    {{ range .values.runnerLocations }}
                                     gitea forgejo-cli actions register \
-                                      --name '{{ .values.clusterName }}-runner' \
-                                      --secret-file '/var/run/secrets/forgejo-runner/token' \
+                                      --name '{{ .name }}-runner' \
+                                      --secret-file '/var/run/secrets/forgejo-runner/{{ .name }}/password' \
                                       --labels 'docker,ubuntu-latest'
+                                    {{ end }}
                                 volumeMounts:
-                                  - name: 'forgejo-runner-registration'
-                                    mountPath: '/var/run/secrets/forgejo-runner'
+                                  {{ range .values.runnerLocations }}
+                                  - name: 'forgejo-runner-registration-{{ .name }}'
+                                    mountPath: '/var/run/secrets/forgejo-runner/{{ .name }}'
                                     readOnly: true
+                                  {{ end }}
                             volumes:
-                              - name: 'forgejo-runner-registration'
+                              {{ range .values.runnerLocations }}
+                              - name: 'forgejo-runner-registration-{{ .name }}'
                                 secret:
-                                  secretName: 'forgejo-runner'
+                                  secretName: 'forgejo-runner-{{ .name }}'
                                   items:
-                                    - key: 'token'
-                                      path: 'token'
+                                    - key: 'password'
+                                      path: 'password'
+                              {{ end }}
 
                   - target:
                       kind: HTTPRoute
