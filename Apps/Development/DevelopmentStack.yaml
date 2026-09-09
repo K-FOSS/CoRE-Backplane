@@ -380,6 +380,18 @@ spec:
                                       path: 'password'
                               {{ end }}
 
+                  # Strategic merge inserts the patched init container before
+                  # the chart-owned containers. Move it back to the chart's
+                  # required final position so app.ini exists before the
+                  # migration/configuration commands run.
+                  - target:
+                      kind: Deployment
+                      name: '{{ .values.clusterName }}-development-forgejo'
+                    patch: |-
+                      - op: move
+                        from: /spec/template/spec/initContainers/0
+                        path: /spec/template/spec/initContainers/2
+
                   - target:
                       kind: HTTPRoute
                       name: '{{ .values.clusterName }}-development-forgejo'
