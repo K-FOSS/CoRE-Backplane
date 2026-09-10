@@ -235,13 +235,22 @@ spec:
         - name: 'docker-certs'
           emptyDir: {}
         - name: 'docker-data'
-          emptyDir:
-            sizeLimit: '{{ $.Values.forgejoRunner.dind.storage }}'
+{{ include "development-core.forgejoRunnerVolume" $.Values.forgejoRunner.volumes.docker | indent 10 }}
         - name: 'runner-data'
-          emptyDir:
-            sizeLimit: '1Gi'
+{{ include "development-core.forgejoRunnerVolume" $.Values.forgejoRunner.volumes.runner | indent 10 }}
         - name: 'runner-tmp'
-          emptyDir:
-            sizeLimit: '1Gi'
+{{ include "development-core.forgejoRunnerVolume" $.Values.forgejoRunner.volumes.tmp | indent 10 }}
+{{- end }}
+{{- end }}
+
+{{- define "development-core.forgejoRunnerVolume" -}}
+{{- if eq .type "emptyDir" }}
+emptyDir:
+{{ toYaml .emptyDir | indent 2 }}
+{{- else if eq .type "persistentVolumeClaim" }}
+persistentVolumeClaim:
+{{ toYaml .persistentVolumeClaim | indent 2 }}
+{{- else }}
+{{- fail (printf "unsupported forgejoRunner volume type %q; use emptyDir or persistentVolumeClaim" .type) }}
 {{- end }}
 {{- end }}

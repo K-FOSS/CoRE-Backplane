@@ -694,11 +694,24 @@ forgejoRunner:
       repository: 'docker.io/library/docker'
       tag: '29.3.1-dind'
       digest: 'sha256:686d2c5464787b0ca42420e0aa03a94fc9781ff9bf8b5ff947614b9fa4c3c3e0'
-    storage: '20Gi'
+
+  volumes:
+    runner:
+      type: 'emptyDir'
+      emptyDir:
+        sizeLimit: '1Gi'
+    docker:
+      type: 'emptyDir'
+      emptyDir:
+        sizeLimit: '20Gi'
+    tmp:
+      type: 'emptyDir'
+      emptyDir:
+        sizeLimit: '1Gi'
 
   jobImage:
     repository: 'data.forgejo.org/oci/node'
-    digest: 'sha256:934240a162082fd8b8a2f90cd5114446443f1eba1c5378f6687167ca405e6584'
+    digest: '20-bookworm'
 
   resources:
     runner:
