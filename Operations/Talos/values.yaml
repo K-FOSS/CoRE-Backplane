@@ -1,0 +1,48 @@
+env: 'prod'
+
+cluster:
+  name: 'core-dc1-talos-prod'
+  domain: 'cluster.local'
+
+datacenter: 'dc1'
+region: 'yxl'
+
+gateway:
+  name: 'main-gw'
+  namespace: 'core-prod'
+  sectionName: 'https-myloginspace'
+
+imageFactory:
+  image:
+    repository: 'ghcr.io/siderolabs/image-factory'
+    tag: 'v1.4.0'
+    pullPolicy: 'IfNotPresent'
+  cacheSigningKey:
+    secretName: 'talos-image-factory-cache-signing-key'
+  s3:
+    secretName: 'talos-image-factory-s3'
+    bucket: 'talos-image-factory'
+    region: 'us-east-1'
+  artifacts:
+    registry: 'forge.core-dc1-talos-prod.dc1.yxl.writemy.codes'
+    namespace: 'kjones/actions-lab'
+    insecure: false
+    components:
+      installerBase: 'installer-base'
+      installer: 'installer'
+      imager: 'imager'
+      extensionManifest: 'extensions'
+      overlayManifest: 'overlays'
+      talosctl: 'talosctl-all'
+    schematic:
+      repository: 'schematics'
+    installer:
+      internalRepository: 'talos'
+      externalRepository: 'talos'
+  resources:
+    requests:
+      cpu: '100m'
+      memory: '256Mi'
+    limits:
+      cpu: '2'
+      memory: '2Gi'

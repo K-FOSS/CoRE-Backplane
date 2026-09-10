@@ -1,0 +1,29 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: 'talos-image-factory'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  name: 'Talos Image Factory {{ .Values.cluster.name }}'
+  username: 'talos-image-factory-{{ .Values.cluster.name }}'
+  s3:
+    enabled: true
+    region: '{{ .Values.imageFactory.s3.region }}'
+    createUserBucket: false
+    createBuckets: true
+    buckets:
+      - '{{ .Values.imageFactory.s3.bucket }}'
+    createCredentials: true
+    writeCredentialsSecretRef:
+      namespace: '{{ .Release.Namespace }}'
+      name: 'talos-image-factory-s3-credentials'
+    createServiceAccount: true
+    writeServiceAccountCredentialsSecretRef:
+      namespace: '{{ .Release.Namespace }}'
+      name: '{{ .Values.imageFactory.s3.secretName }}'
+    crossplane:
+      terraformProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+      crossplaneProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+  writeConnectionSecretToRef:
+    name: 'talos-image-factory'

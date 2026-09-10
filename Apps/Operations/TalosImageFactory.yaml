@@ -1,0 +1,51 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 'core-backplane-operations-talos-image-factory'
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  generators:
+    - list:
+        elements:
+          - name: 'core-dc1-talos-prod'
+            values:
+              environment: 'prod'
+              datacenter: 'dc1'
+              region: 'yxl'
+              clusterDomain: 'cluster.local'
+  template:
+    metadata:
+      name: '{{ .name }}-operations-talos-image-factory'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - 'CreateNamespace=true'
+          - 'ServerSideApply=true'
+      source:
+        path: 'Operations/Talos'
+        repoURL: 'https://github.com/K-FOSS/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
+        plugin:
+          name: 'argocd-lovely-plugin'
+          env:
+            - name: 'LOVELY_HELM_MERGE'
+              value: |-
+                env: '{{ .values.environment }}'
+                cluster:
+                  name: '{{ .name }}'
+                  domain: '{{ .values.clusterDomain }}'
+                datacenter: '{{ .values.datacenter }}'
+                region: '{{ .values.region }}'
+      destination:
+        name: '{{ .name }}'
+        namespace: 'core-{{ .values.environment }}'

@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ include "talos-image-factory.name" . }}'
+  labels:
+    {{- include "talos-image-factory.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: '{{ include "talos-image-factory.name" . }}'
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  template:
+    metadata:
+      labels:
+        {{- include "talos-image-factory.labels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: 'image-factory'
+          image: '{{ .Values.imageFactory.image.repository }}:{{ .Values.imageFactory.image.tag }}'
+          imagePullPolicy: '{{ .Values.imageFactory.image.pullPolicy }}'
+          args:
+            - '--config=/config.yaml'
+            - '--log-level=info'
+          ports:
+            - name: 'http'
+              containerPort: 8080
+              protocol: TCP
+          env:
+            - name: 'AWS_ACCESS_KEY_ID'
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.imageFactory.s3.secretName }}'
+                  key: 'AccessKey'
+            - name: 'AWS_SECRET_ACCESS_KEY'
+              valueFrom:
+                secretKeyRef:
+                  name: '{{ .Values.imageFactory.s3.secretName }}'
+                  key: 'SecretAccessKey'
+            - name: 'AWS_REGION'
+              value: '{{ .Values.imageFactory.s3.region }}'
+          readinessProbe:
+            httpGet:
+              path: '/'
+              port: 'http'
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: '/'
+              port: 'http'
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.imageFactory.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - 'ALL'
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          volumeMounts:
+            - name: 'config'
+              mountPath: '/config.yaml'
+              subPath: 'config.yaml'
+              readOnly: true
+            - name: 'cache-signing-key'
+              mountPath: '/etc/image-factory/keys'
+              readOnly: true
+      volumes:
+        - name: 'config'
+          configMap:
+            name: '{{ include "talos-image-factory.name" . }}'
+        - name: 'cache-signing-key'
+          secret:
+            secretName: '{{ .Values.imageFactory.cacheSigningKey.secretName }}'
