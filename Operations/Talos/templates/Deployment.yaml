@@ -43,6 +43,8 @@ spec:
                   key: 'SecretAccessKey'
             - name: 'AWS_REGION'
               value: '{{ .Values.imageFactory.s3.region }}'
+            - name: 'DOCKER_CONFIG'
+              value: '/etc/image-factory/docker'
           readinessProbe:
             httpGet:
               path: '/'
@@ -74,6 +76,9 @@ spec:
               mountPath: '/etc/image-factory/keys/cache-signing.key'
               subPath: 'tls.key'
               readOnly: true
+            - name: 'registry-credentials'
+              mountPath: '/etc/image-factory/docker'
+              readOnly: true
       volumes:
         - name: 'config'
           configMap:
@@ -81,3 +86,9 @@ spec:
         - name: 'cache-signing-key'
           secret:
             secretName: '{{ .Values.imageFactory.cacheSigningKey.secretName }}'
+        - name: 'registry-credentials'
+          secret:
+            secretName: 'talos-image-factory-registry'
+            items:
+              - key: '.dockerconfigjson'
+                path: 'config.json'
