@@ -588,6 +588,13 @@ forgejo:
         sectionName: 'https-myloginspace'
     hostnames:
       - 'forgejo.k8s.dc1.yxl.writemy.codes'
+    matches:
+      path:
+        type: PathPrefix
+        value: '/'
+      timeouts:
+        backendRequest: 1800s
+        request: 0s
     port: 3000
     terminate: true
 
@@ -622,6 +629,8 @@ forgejo:
       actions:
         ENABLED: true
         DEFAULT_ACTIONS_URL: 'https://data.forgejo.org'
+      oauth2_client:
+        ACCOUNT_LINKING: 'login'
       database:
         DB_TYPE: 'postgres'
         HOST: 'psql-local.k8s.dc1.yxl.mylogin.space:5432'

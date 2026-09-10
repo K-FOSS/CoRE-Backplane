@@ -239,6 +239,10 @@ names, or authentication mode.
 Forgejo is deployed independently at both infrastructure sites through the
 official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v17.1.5)
 and a digest-pinned [Forgejo 16.0.3 rootless image](https://forgejo.org/releases/16.x/).
+This chart also creates the cluster-scoped
+`ha-core-dev-<environment>` Longhorn StorageClass with two replicas and
+`migratable: 'false'`; the YXL Forgejo deployment selects it for its RWX PVC. See the
+[Longhorn StorageClass parameter reference](https://longhorn.io/docs/1.12.1/references/storage-class-parameters/).
 Each site uses
 an ApplicationSet-owned hostname: YXL uses
 `forgejo.core-dc1-talos-prod.dc1.yxl.writemy.codes`, while YVR uses
@@ -268,6 +272,12 @@ and database on `psql-local` through both
 stable `forgejo-user` Secret. It also creates the per-cluster
 `forgejo-<cluster>` bucket in the site-local S3 tenant and publishes a
 long-lived service-account key in the namespace-local `forgejo-s3` Secret.
+The claim also requests temporary LDAP-derived S3 credentials in the separate
+`forgejo-s3-credentials-2700068d4785d5b1` Secret; those credentials are not
+consumed by Forgejo.
+The directory init container runs as root only to repair PVC ownership, then
+assigns `/data/git` and `/data/gitea` to UID/GID `1000`; the configuration,
+migration, and Forgejo containers remain unprivileged.
 Forgejo's shared [storage configuration](https://forgejo.org/docs/latest/admin/setup/storage/)
 uses that bucket for attachments, LFS, avatars, repository avatars, archives,
 packages, and Actions storage. Queue, cache, and session state use Dragonfly
@@ -418,6 +428,17 @@ after all four new runners are online, remove those legacy records deliberately.
 Rotating a CreatedOnce Secret rotates one runner identity: first stop that
 runner, remove its prior Forgejo record, allow Forgejo to reconcile the new
 shared secret, and then start and verify the replacement runner.
+
+## TODO
+
+- Add a site-local [APT-Cacher-NG](https://apt-cache.privex.io/acng-doc/html/)
+  Deployment, Service, and persistent cache volume for Forgejo runner jobs.
+  Mount an APT proxy configuration into the runner and DinD containers so
+  direct `apt-get` usage in job containers reuses packages across jobs and pod
+  restarts. Test HTTPS repository behavior, restrict access to runner
+  namespaces, and size/monitor the cache volume. Document separate proxy
+  handling for `apt-get` inside `docker build`, and keep digest-pinned job
+  images with common dependencies as the reproducible default.
 
 ## Eclipse Che
 
