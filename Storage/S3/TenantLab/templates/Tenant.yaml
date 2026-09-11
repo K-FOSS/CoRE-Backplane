@@ -123,6 +123,9 @@ service:
 
     primary: true
 
+    annotations:
+      argocd.argoproj.io/sync-options: 'Delete=false,Prune=false'
+
     ports:
       http:
         # -- Enables or disables the port
@@ -152,6 +155,9 @@ service:
     type: ClusterIP
 
     primary: false
+
+    annotations:
+      argocd.argoproj.io/sync-options: 'Delete=false,Prune=false'
 
     ports:
       http:
@@ -231,7 +237,8 @@ route:
     name: s3-main
 
     # -- Provide additional annotations which may be required.
-    annotations: {}
+    annotations:
+      argocd.argoproj.io/sync-options: 'Delete=false,Prune=false'
 
     hostnames:
       - s3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
@@ -284,7 +291,8 @@ route:
     suffix: s3-dash
 
     # -- Provide additional annotations which may be required.
-    annotations: {}
+    annotations:
+      argocd.argoproj.io/sync-options: 'Delete=false,Prune=false'
 
     hostnames:
       - {{ .Values.admin.dashboard.domainKey }}.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}
@@ -326,6 +334,8 @@ persistence:
   data:
     enabled: true
     type: persistentVolumeClaim
+    annotations:
+      argocd.argoproj.io/sync-options: 'Delete=false,Prune=false'
     mountPath: 
     {{ with .Values.s3.storage.existingClaim }}
     existingClaim: {{ . }}

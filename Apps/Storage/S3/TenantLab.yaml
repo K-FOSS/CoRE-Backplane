@@ -15,18 +15,36 @@ spec:
           - name
 
         generators:
-          - list:
-              elements:
-                - name: core-dc1-talos-prod
-                  values:
-                    replicas: 1
-                    size: 300Gi
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - clusters:
+                          - name: core-dc1-talos-prod
+                            values:
+                              replicas: 1
+                              size: 300Gi
 
-                - name: core-home1-talos-prod
-                  values:
-                    replicas: 1
-                    existingClaim: core-home1-talos-prod-core-storage-s3-tenant-prod-data
-                    size: 300Gi
+                              crossplane:
+                                peers:
+                                  - name: core-home1-talos-prod
+                                    datacenter: home1
+                                    region: yvr
+
+                          - name: core-home1-talos-prod
+                            values:
+                              replicas: 1
+                              existingClaim: core-home1-talos-prod-core-storage-s3-tenant-prod-data
+                              size: 300Gi
+
+                              crossplane:
+                                peers:
+                                  - name: core-dc1-talos-prod
+                                    datacenter: dc1
+                                    region: yxl
+
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
           - clusters:
               selector:
                 matchLabels:
@@ -84,12 +102,15 @@ spec:
                 s3:
                   replicas: {{ .values.replicas }}
 
-
                   storage:
                     {{ if .values.existingClaim }}
                     existingClaim: {{ .values.existingClaim }}
                     {{ end }}
                     size: {{ .values.size }}
+
+                crossplane:
+                  peers:
+                    {{ nindent 4 (toYaml .values.crossplane.peers) }}
                   
 
       destination:
