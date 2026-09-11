@@ -1,7 +1,6 @@
 {{- if eq .Values.crossplane.enabled true }}
-  {{- $defaultName := printf "s3-%s-%s-%s" .Values.region .Values.datacenter .Values.tenant.name -}}
-  {{- $name := (default $defaultName .Values.crossplane.providerName) }}
-  {{- $terraformName := printf "tf-%s" $name -}}
+{{- $defaultName := printf "s3-%s-%s-%s" .Values.region .Values.datacenter .Values.tenant.name }}
+{{- $name := (default $defaultName .Values.crossplane.providerName) }}
 
 apiVersion: minio.crossplane.io/v1
 kind: ProviderConfig
@@ -24,7 +23,7 @@ spec:
 apiVersion: tf.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
-  name: {{ $terraformName }}
+  name: {{ $name }}
 
   annotations:
     argocd.argoproj.io/sync-wave: '50'
@@ -63,7 +62,7 @@ spec:
     // Modules _must_ use remote state. The provider does not persist state.
     terraform {
       backend "kubernetes" {
-        secret_suffix     = "providerconfig-{{ $terraformName }}"
+        secret_suffix     = "providerconfig-{{ $name }}"
         namespace         = "{{ .Release.Namespace }}"
         in_cluster_config = true
       }
@@ -84,8 +83,7 @@ spec:
 {{- end }}
 
 {{- range .Values.crossplane.peers }}
-{{- $peerName := printf "s3-%s" .name -}}
-{{- $terraformPeerName := printf "tf-%s" $peerName -}}
+{{- $peerName := printf "s3-%s" .name }}
 ---
 apiVersion: minio.crossplane.io/v1
 kind: ProviderConfig
@@ -108,7 +106,7 @@ spec:
 apiVersion: tf.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
-  name: {{ $terraformPeerName }}
+  name: {{ $peerName }}
 
   annotations:
     argocd.argoproj.io/sync-wave: '50'
@@ -144,7 +142,7 @@ spec:
 
     terraform {
       backend "kubernetes" {
-        secret_suffix     = "providerconfig-{{ $terraformPeerName }}"
+        secret_suffix     = "providerconfig-{{ $peerName }}"
         namespace         = "{{ $.Release.Namespace }}"
         in_cluster_config = true
       }
