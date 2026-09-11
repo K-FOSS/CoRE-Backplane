@@ -209,6 +209,11 @@ spec:
 
                 forgejo:
                   enabled: {{ .values.forgejo.enabled }}
+                  strategy:
+                    type: 'RollingUpdate'
+                    rollingUpdate:
+                      maxSurge: '100%'
+                      maxUnavailable: '0'
 
                 {{- if eq .values.region "yxl" }}
                   persistence:
