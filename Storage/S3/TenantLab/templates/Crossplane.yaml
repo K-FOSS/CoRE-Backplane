@@ -21,7 +21,6 @@ spec:
       name: {{ .Release.Name }}-providercreds
       namespace: {{ .Release.Namespace }}
 ---
-
 apiVersion: tf.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
@@ -81,8 +80,9 @@ spec:
         }
       }
     }
-
+---
 {{- end }}
+
 {{- range .Values.crossplane.peers }}
 {{- $peerName := printf "s3-%s" .name -}}
 {{- $terraformPeerName := printf "tf-%s" $peerName -}}
@@ -105,7 +105,6 @@ spec:
       name: {{ $.Release.Name }}-{{ .name }}-providercreds
       namespace: {{ $.Release.Namespace }}
 ---
-
 apiVersion: tf.upbound.io/v1beta1
 kind: ProviderConfig
 metadata:
@@ -162,4 +161,5 @@ spec:
         }
       }
     }
+---
 {{- end }}
