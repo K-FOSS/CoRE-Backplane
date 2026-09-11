@@ -108,6 +108,11 @@ configMaps:
               insecure: {{ .Values.imageFactory.artifacts.insecure }}
           talosVersionRecheckInterval: '{{ .Values.imageFactory.artifacts.talosVersionRecheckInterval }}'
         cache:
+          oci:
+            registry: '{{ .Values.imageFactory.artifacts.registry }}'
+            namespace: '{{ .Values.imageFactory.cache.oci.namespace }}'
+            repository: '{{ .Values.imageFactory.cache.oci.repository }}'
+            insecure: {{ .Values.imageFactory.artifacts.insecure }}
           s3:
             enabled: true
             bucket: '{{ .Values.imageFactory.s3.bucket }}'
