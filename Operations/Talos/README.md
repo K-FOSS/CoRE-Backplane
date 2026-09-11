@@ -10,18 +10,18 @@ The factory is published at `https://tfactory.<cluster>.<datacenter>.<region>.wr
 
 The Forgejo Actions project is the build and publication boundary for the OCI artifacts consumed by this deployment. The chart does not define or trigger those workflows; it only points Image Factory at their package namespace. The current configured artifact contract is:
 
-| Build output | OCI repository under `kjones/actions-lab/imager` | Image Factory use |
+| Build output | OCI repository | Image Factory use |
 | --- | --- | --- |
-| Installer base | `installer-base` | Base image used when assembling Talos installers. |
-| Installer | `installer` | Generated installer image input. |
-| Imager | `imager` | Image-generation tooling used for requested Talos artifacts. |
-| Extension manifest | `extensions` | Catalog of Talos system extensions. |
-| Overlay manifest | `overlays` | Catalog of platform overlays. |
-| `talosctl` | `talosctl-all` | Published `talosctl` artifacts for the supported platforms. |
-| Schematics | `schematics` | Schematic definitions addressed by Image Factory requests. |
-| Internal and external installers | `talos` | Generated installer repositories configured for both Image Factory paths. |
+| Installer base | `kjones/actions-lab/imager/siderolabs/installer-base` | Base image used when assembling Talos installers. |
+| Installer | `kjones/actions-lab/imager/siderolabs/installer` | Generated installer image input. |
+| Imager | `kjones/actions-lab/imager/siderolabs/imager` | Image-generation tooling used for requested Talos artifacts. |
+| Extension manifest | `kjones/actions-lab/imager/siderolabs/extensions` | Catalog of Talos system extensions. |
+| Overlay manifest | `kjones/actions-lab/imager/siderolabs/overlays` | Catalog of platform overlays. |
+| `talosctl` | `kjones/actions-lab/imager/siderolabs/talosctl-all` | Published `talosctl` artifacts for the supported platforms. |
+| Schematics | `kjones/actions-lab/schematics` | Schematic definitions addressed by Image Factory requests. |
+| Internal and external installers | `kjones/actions-lab/talos` | Generated installer repositories configured for both Image Factory paths. |
 
-These names are the currently deployed values in [`values.yaml`](values.yaml) and the rendered Image Factory configuration in [`templates/ConfigMap.yaml`](templates/ConfigMap.yaml). A successful Forgejo run, package publication, and Image Factory pull are separate checks: confirm the relevant workflow run and package tag or digest in the [actions-lab project](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/kjones/actions-lab), then verify Image Factory logs and an end-to-end artifact request. Do not treat a rendered ConfigMap, an Argo CD `Synced` state, or a ready Deployment as proof that the automated build outputs are current or readable.
+These paths are the desired values in [`values.yaml`](values.yaml) and the rendered Image Factory configuration in [`templates/ConfigMap.yaml`](templates/ConfigMap.yaml). Image Factory v1.4 prepends `artifacts.core.namespace` to core component and discovered extension paths, so `kjones/actions-lab/imager` plus `siderolabs/imager` resolves to `kjones/actions-lab/imager/siderolabs/imager`. Schematics and generated installers intentionally remain under `kjones/actions-lab`. The development factory rechecks Talos versions every `1m0s`; production-like deployments should retain the upstream default unless their values explicitly choose another interval. A successful Forgejo run, package publication, and Image Factory pull are separate checks: confirm the relevant workflow run and package tag or digest in the [actions-lab project](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/kjones/actions-lab), then verify Image Factory logs and an end-to-end artifact request. Do not treat a rendered ConfigMap, an Argo CD `Synced` state, or a ready Deployment as proof that the automated build outputs are current or readable.
 
 The package registry is private to the site. Image Factory reads its registry credentials from CoreVault through External Secrets; workflow credentials and token values must remain in Forgejo or CoreVault and must not be copied into this repository. If a build publishes a new repository name, changes package visibility, or changes the tag/digest contract, update this chart and this table together and validate a real Image Factory request before rollout.
 
@@ -29,4 +29,4 @@ The chart creates a namespace-local self-signed cert-manager `Issuer` and `Certi
 
 Operational verification should follow the `actions-lab` workflow run and package publication, User claim, generated bucket and service-account Secret, Image Factory Deployment, S3 cache writes, Forgejo OCI pulls, and HTTPRoute status. An Argo CD `Synced` status alone does not prove those downstream paths are healthy.
 
-Upstream references: [Image Factory Helm chart](https://github.com/siderolabs/image-factory/tree/main/deploy/helm/image-factory), [Image Factory configuration](https://github.com/siderolabs/image-factory/blob/main/docs/configuration.md), [Image Factory key generation](https://github.com/siderolabs/image-factory/blob/main/docs/developing.md), [Talos private-registry authentication](https://docs.siderolabs.com/talos/v1.13/platform-specific-installations/boot-assets), [External Secrets ExternalSecret API](https://external-secrets.io/latest/api/externalsecret/), [cert-manager Certificate API](https://cert-manager.io/docs/reference/api-docs/), [custom registry deployment](https://github.com/siderolabs/image-factory/blob/main/docs/air-gapped.md), and [Talos Image Factory API/OCI usage](https://github.com/siderolabs/image-factory/blob/main/internal/frontend/http/templates/llms.txt).
+Upstream references: [Image Factory Helm chart](https://github.com/siderolabs/image-factory/tree/main/deploy/helm/image-factory), [Image Factory v1.4.0 configuration reference](https://github.com/siderolabs/image-factory/blob/v1.4.0/docs/configuration.md), [Image Factory key generation](https://github.com/siderolabs/image-factory/blob/main/docs/developing.md), [Talos private-registry authentication](https://docs.siderolabs.com/talos/v1.13/platform-specific-installations/boot-assets), [External Secrets ExternalSecret API](https://external-secrets.io/latest/api/externalsecret/), [cert-manager Certificate API](https://cert-manager.io/docs/reference/api-docs/), [custom registry deployment](https://github.com/siderolabs/image-factory/blob/main/docs/air-gapped.md), and [Talos Image Factory API/OCI usage](https://github.com/siderolabs/image-factory/blob/main/internal/frontend/http/templates/llms.txt).

@@ -20,20 +20,21 @@ data:
           talosctl: '{{ .Values.imageFactory.artifacts.components.talosctl }}'
       schematic:
         registry: '{{ .Values.imageFactory.artifacts.registry }}'
-        namespace: '{{ .Values.imageFactory.artifacts.namespace }}'
+        namespace: '{{ .Values.imageFactory.artifacts.schematic.namespace }}'
         repository: '{{ .Values.imageFactory.artifacts.schematic.repository }}'
         insecure: {{ .Values.imageFactory.artifacts.insecure }}
       installer:
         internal:
           registry: '{{ .Values.imageFactory.artifacts.registry }}'
-          namespace: '{{ .Values.imageFactory.artifacts.namespace }}'
+          namespace: '{{ .Values.imageFactory.artifacts.installer.namespace }}'
           repository: '{{ .Values.imageFactory.artifacts.installer.internalRepository }}'
           insecure: {{ .Values.imageFactory.artifacts.insecure }}
         external:
           registry: '{{ .Values.imageFactory.artifacts.registry }}'
-          namespace: '{{ .Values.imageFactory.artifacts.namespace }}'
+          namespace: '{{ .Values.imageFactory.artifacts.installer.namespace }}'
           repository: '{{ .Values.imageFactory.artifacts.installer.externalRepository }}'
           insecure: {{ .Values.imageFactory.artifacts.insecure }}
+      talosVersionRecheckInterval: '{{ .Values.imageFactory.artifacts.talosVersionRecheckInterval }}'
     cache:
       s3:
         enabled: true

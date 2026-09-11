@@ -16,6 +16,8 @@ spec:
     metadata:
       labels:
         {{- include "talos-image-factory.labels" . | nindent 8 }}
+      annotations:
+        checksum/config: '{{ include (print $.Template.BasePath "/ConfigMap.yaml") . | sha256sum }}'
     spec:
       securityContext:
         runAsNonRoot: true
