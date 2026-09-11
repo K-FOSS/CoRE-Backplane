@@ -106,7 +106,7 @@ values does not replace every hardcoded reference; inspect the final render.
 | `datacenter`, `region` | Build cluster-qualified DNS names. |
 | `gateway` | Intended shared Gateway configuration; some templates currently use fixed values instead. |
 | `artifact-hub`, `gitlab`, `harbor`, `forgejo`, `renovate`, `hoppscotch` | Values passed to the corresponding upstream charts. |
-| `forgejoRunner` | Site-local runner, DinD, default job image, storage, and resource configuration. |
+| `forgejoRunner` | Site-local runner, DinD, default job image, data volumes, and resource configuration. |
 | `che`, `mqttx`, `crddocs` | Feature flags for local templates. |
 
 Feature flags control both their conditional dependency and most associated
@@ -391,7 +391,14 @@ Each runner pod contains an unprivileged Forgejo Runner container and a
 privileged, digest-pinned Docker 29.3.1 DinD sidecar based on the
 [Docker Official Image source](https://github.com/docker-library/docker/tree/8d9e3502aba39127e4d12196dae16d306f76993d/29/dind).
 The DinD daemon, certificates, build layers, runner cache, and workspaces are
-pod-local `emptyDir` data. Workflow containers share the DinD/pod network and
+pod-local `emptyDir` data by default. The `forgejoRunner.volumes.runner`,
+`forgejoRunner.volumes.docker`, and `forgejoRunner.volumes.tmp` values override
+the Kubernetes volume sources for runner data, Docker data, and temporary data.
+Set each `type` to `emptyDir` (the default) or `persistentVolumeClaim`, then
+configure the matching `emptyDir` or `persistentVolumeClaim` map. Each source
+follows the
+[Kubernetes volume documentation](https://kubernetes.io/docs/concepts/storage/volumes/).
+Workflow containers share the DinD/pod network and
 receive access only to that disposable daemon; the pod does not receive a
 Kubernetes service-account token, and workflow volume mounts are restricted to
 the DinD client certificates. This keeps jobs away from the Talos host's

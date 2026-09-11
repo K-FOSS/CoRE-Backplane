@@ -79,8 +79,8 @@ spec:
             job_level: 'info'
           runner:
             capacity: 1
-            timeout: '3h'
-            shutdown_timeout: '3h'
+            timeout: '12h'
+            shutdown_timeout: '12h'
             insecure: false
             fetch_timeout: '5s'
             fetch_interval: '2s'
@@ -146,7 +146,7 @@ spec:
         secret.reloader.stakater.com/reload: 'forgejo-runner-{{ .name }}'
     spec:
       automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 10830
+      terminationGracePeriodSeconds: 43230
       containers:
         - name: 'runner'
           image: '{{ $.Values.forgejoRunner.image.repository }}:{{ $.Values.forgejoRunner.image.tag }}@{{ $.Values.forgejoRunner.image.digest }}'
