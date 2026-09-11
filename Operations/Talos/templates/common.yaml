@@ -1,0 +1,204 @@
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+controllers:
+  main:
+    forceRename: 'talos-image-factory'
+    type: deployment
+    replicas: 1
+    strategy: RollingUpdate
+    rollingUpdate:
+      unavailable: '0%'
+      surge: 1
+    pod:
+      securityContext:
+        runAsNonRoot: true
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.imageFactory.image.repository }}'
+          tag: '{{ .Values.imageFactory.image.tag }}'
+          pullPolicy: '{{ .Values.imageFactory.image.pullPolicy }}'
+        args:
+          - '--config=/config.yaml'
+          - '--log-level=info'
+        env:
+          - name: 'AWS_ACCESS_KEY_ID'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ .Values.imageFactory.s3.secretName }}'
+                key: 'AccessKey'
+          - name: 'AWS_SECRET_ACCESS_KEY'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ .Values.imageFactory.s3.secretName }}'
+                key: 'SecretAccessKey'
+          - name: 'AWS_REGION'
+            value: '{{ .Values.imageFactory.s3.region }}'
+          - name: 'DOCKER_CONFIG'
+            value: '/etc/image-factory/docker'
+        probes:
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/'
+                port: 'http'
+              periodSeconds: 10
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/'
+                port: 'http'
+              periodSeconds: 30
+        resources:
+          {{- toYaml .Values.imageFactory.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsUser: 1000
+          runAsGroup: 1000
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+
+configMaps:
+  config:
+    forceRename: 'talos-image-factory'
+    includeInChecksum: true
+    includeChecksumInControllers:
+      - 'main'
+    data:
+      config.yaml: |-
+        artifacts:
+          core:
+            registry: '{{ .Values.imageFactory.artifacts.registry }}'
+            namespace: '{{ .Values.imageFactory.artifacts.namespace }}'
+            insecure: {{ .Values.imageFactory.artifacts.insecure }}
+            components:
+              installerBase: '{{ .Values.imageFactory.artifacts.components.installerBase }}'
+              installer: '{{ .Values.imageFactory.artifacts.components.installer }}'
+              imager: '{{ .Values.imageFactory.artifacts.components.imager }}'
+              extensionManifest: '{{ .Values.imageFactory.artifacts.components.extensionManifest }}'
+              overlayManifest: '{{ .Values.imageFactory.artifacts.components.overlayManifest }}'
+              talosctl: '{{ .Values.imageFactory.artifacts.components.talosctl }}'
+          schematic:
+            registry: '{{ .Values.imageFactory.artifacts.registry }}'
+            namespace: '{{ .Values.imageFactory.artifacts.schematic.namespace }}'
+            repository: '{{ .Values.imageFactory.artifacts.schematic.repository }}'
+            insecure: {{ .Values.imageFactory.artifacts.insecure }}
+          installer:
+            internal:
+              registry: '{{ .Values.imageFactory.artifacts.registry }}'
+              namespace: '{{ .Values.imageFactory.artifacts.installer.namespace }}'
+              repository: '{{ .Values.imageFactory.artifacts.installer.internalRepository }}'
+              insecure: {{ .Values.imageFactory.artifacts.insecure }}
+            external:
+              registry: '{{ .Values.imageFactory.artifacts.registry }}'
+              namespace: '{{ .Values.imageFactory.artifacts.installer.namespace }}'
+              repository: '{{ .Values.imageFactory.artifacts.installer.externalRepository }}'
+              insecure: {{ .Values.imageFactory.artifacts.insecure }}
+          talosVersionRecheckInterval: '{{ .Values.imageFactory.artifacts.talosVersionRecheckInterval }}'
+        cache:
+          s3:
+            enabled: true
+            bucket: '{{ .Values.imageFactory.s3.bucket }}'
+            region: '{{ .Values.imageFactory.s3.region }}'
+            endpoint: 's3.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+            insecure: false
+          signingKeyPath: '/etc/image-factory/keys/cache-signing.key'
+        http:
+          externalURL: 'https://tfactory.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.writemy.codes/'
+          externalPXEURL: 'https://tfactory.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.writemy.codes/'
+          httpListenAddr: '0.0.0.0:8080'
+
+persistence:
+  config:
+    enabled: true
+    type: configMap
+    name: 'talos-image-factory'
+    items:
+      - key: 'config.yaml'
+        path: 'config.yaml'
+    advancedMounts:
+      main:
+        main:
+          - path: '/config.yaml'
+            subPath: 'config.yaml'
+            readOnly: true
+  cache-signing-key:
+    enabled: true
+    type: secret
+    name: '{{ .Values.imageFactory.cacheSigningKey.secretName }}'
+    items:
+      - key: 'tls.key'
+        path: 'cache-signing.key'
+    advancedMounts:
+      main:
+        main:
+          - path: '/etc/image-factory/keys/cache-signing.key'
+            subPath: 'cache-signing.key'
+            readOnly: true
+  registry-credentials:
+    enabled: true
+    type: secret
+    name: 'talos-image-factory-registry'
+    items:
+      - key: '.dockerconfigjson'
+        path: 'config.json'
+    advancedMounts:
+      main:
+        main:
+          - path: '/etc/image-factory/docker'
+            readOnly: true
+
+service:
+  main:
+    enabled: true
+    forceRename: 'talos-image-factory'
+    controller: 'main'
+    primary: true
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 8080
+        targetPort: 'http'
+        protocol: HTTP
+
+route:
+  main:
+    enabled: true
+    forceRename: 'talos-image-factory'
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'tfactory.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.writemy.codes'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: 'Gateway'
+        namespace: '{{ .Values.gateway.namespace }}'
+        name: '{{ .Values.gateway.name }}'
+        sectionName: '{{ .Values.gateway.sectionName }}'
+    rules:
+      - matches:
+          - path:
+              type: 'PathPrefix'
+              value: '/'
+        backendRefs:
+          - kind: 'Service'
+            port: 8080
+            identifier: 'main'
+            weight: 1
+{{- end -}}
+
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}
