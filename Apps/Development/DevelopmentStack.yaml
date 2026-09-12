@@ -326,6 +326,16 @@ spec:
                                 values:
                                   - 'srv1'
                                   - 'srv3'
+                  volumes:
+                    runner:
+                      emptyDir:
+                        sizeLimit: '50Gi'
+                    docker:
+                      emptyDir:
+                        sizeLimit: '200Gi'
+                    tmp:
+                      emptyDir:
+                        sizeLimit: '50Gi'
                 {{- end }}
                   cacheServer:
                     enabled: {{ .values.forgejo.runners }}
