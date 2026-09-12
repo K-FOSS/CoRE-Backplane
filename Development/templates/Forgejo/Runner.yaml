@@ -53,6 +53,7 @@ spec:
 {{- end }}
 {{- end }}
 {{- range .Values.forgejoRunner.targets }}
+{{- $targetName := .name }}
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
@@ -147,6 +148,18 @@ spec:
     spec:
       automountServiceAccountToken: false
       terminationGracePeriodSeconds: 43230
+{{- with $.Values.forgejoRunner.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: 'forgejo-runner'
+                  app.kubernetes.io/component: 'actions-runner'
+                  forgejo.mylogin.space/target: '{{ $targetName }}'
+              topologyKey: 'kubernetes.io/hostname'
+{{- end }}
       containers:
         - name: 'runner'
           image: '{{ $.Values.forgejoRunner.image.repository }}:{{ $.Values.forgejoRunner.image.tag }}@{{ $.Values.forgejoRunner.image.digest }}'

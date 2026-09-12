@@ -314,6 +314,19 @@ spec:
                 forgejoRunner:
                   enabled: {{ .values.forgejo.runners }}
                   namespace: 'core-development-{{ .values.environment }}'
+                {{- if eq .values.region "yxl" }}
+                  replicaCount: 2
+                  affinity:
+                    nodeAffinity:
+                      requiredDuringSchedulingIgnoredDuringExecution:
+                        nodeSelectorTerms:
+                          - matchExpressions:
+                              - key: 'kubernetes.io/hostname'
+                                operator: 'In'
+                                values:
+                                  - 'srv1'
+                                  - 'srv3'
+                {{- end }}
                   cacheServer:
                     enabled: {{ .values.forgejo.runners }}
                     url: 'https://cache-forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes/'
