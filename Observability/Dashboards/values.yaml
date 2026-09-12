@@ -1,5 +1,12 @@
 hub: true
 
+cluster:
+  # ApplicationSet replaces these chart defaults for each target cluster.
+  name: 'k8s'
+  domain: 'cluster.local'
+  datacenter: 'dc1'
+  region: 'yxl'
+
 grafana:
   fullnameOverride: 'grafana-core'
 
@@ -89,6 +96,13 @@ grafana:
 
   ldap:
     enabled: true
+    groupMappings:
+      - groupDn: 'cn=authentik Admins,ou=groups,dc=ldap,dc=mylogin,dc=space'
+        orgRole: 'Admin'
+        grafanaAdmin: true
+      - groupDn: 'cn=Grafana Admins,ou=groups,dc=ldap,dc=mylogin,dc=space'
+        orgRole: 'Admin'
+        grafanaAdmin: true
 
   sidecar:
     dashboards:

@@ -23,8 +23,13 @@ The list generator currently limits the result to these applications:
 
 `mode` is part of the generator data but is not consumed by this chart. The
 ApplicationSet also derives the cluster domain, region, zone, and datacenter
-from cluster Secret labels. Lovely merges the generated `hub` value and two
-cluster-specific Grafana settings into [`values.yaml`](values.yaml):
+from cluster Secret labels. Lovely merges the generated `hub` value, the
+cluster identity context, and two cluster-specific Grafana settings into
+[`values.yaml`](values.yaml). The chart consumes the injected cluster
+`datacenter` to configure the LDAP endpoint as
+`ldap-<datacenter>.mylogin.space`; `name`, `domain`, and `region` are retained
+in the chart context for cluster-local addressing and site-specific
+configuration.
 
 - `grafanaReplicas` controls the replica count independently for each listed
   cluster.
@@ -46,7 +51,12 @@ cluster-specific Grafana settings into [`values.yaml`](values.yaml):
   `Deployment/grafana-core`; the annotation is not copied to pods, ConfigMaps,
   RBAC, or other resources.
 - Grafana exports OpenTelemetry traces to the cluster-local Alloy service.
-- LDAP mounts the existing `grafana-core-ldap` Secret.
+- LDAP mounts the existing `grafana-core-ldap` Secret. Its
+  `servers.group_mappings` entries are configured through
+  `grafana.ldap.groupMappings` in [`values.yaml`](values.yaml), so a target
+  can add or remove Grafana role mappings through the ApplicationSet merge
+  without editing the ExternalSecret template. Each entry supplies a quoted
+  LDAP `groupDn`, Grafana `orgRole`, and boolean `grafanaAdmin` flag.
 
 Argo CD creates the namespace, uses the Lovely config-management plugin, and
 preserves resources when an Application is deleted. Automated sync, prune, and
@@ -119,9 +129,11 @@ before changing mappings or bind behavior.
 
 The access path spans Authentik scopes and groups, Envoy claim forwarding,
 Grafana role mapping, and LDAP group mappings. Review those layers together.
-In particular, the current LDAP configuration grants Grafana server-admin to
-members of `authentik Admins` and `Grafana Admins`, while the disabled generic
-OAuth mapping refers to `Network Admins` and `Grafana Editors`.
+The default LDAP values grant Grafana server-admin to members of `authentik
+Admins` and `Grafana Admins`, while the disabled generic OAuth mapping refers to
+`Network Admins` and `Grafana Editors`. Treat changes to
+`grafana.ldap.groupMappings` as access-control changes and verify the rendered
+ExternalSecret without exposing its secret values.
 
 Grafana stores application state in the external PostgreSQL database; local PVC
 persistence is disabled. Grafana Live uses Dragonfly as its Redis-compatible
@@ -176,6 +188,10 @@ helm lint .
 helm template dashboards . \
   --namespace core-prod \
   --set hub=false \
+  --set-string cluster.name='core-home1-talos-prod' \
+  --set-string cluster.domain='home1.example-region.mylogin.space' \
+  --set-string cluster.datacenter='home1' \
+  --set-string cluster.region='example-region' \
   --set grafana.replicas=2 \
   --set-string 'grafana.env.DRAGONFLY_ADDRESS=dragonfly.core-home1-talos-prod.home1.example-region.mylogin.space:6379' \
   --set-string 'grafana.grafana\.ini.tracing\.opentelemetry\.otlp.address=core-home1-talos-prod-collectors-alloy.core-prod.svc.cluster.local:4317' \
