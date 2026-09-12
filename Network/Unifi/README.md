@@ -24,7 +24,8 @@ The patch is best-effort: if the upstream bundle changes, the container logs
 the mismatch and starts normally. A new image may therefore require updating
 the patch pattern.
 The public route hostname is configured by `domain` and supplied by the owning
-ApplicationSet.
+ApplicationSet. The ExternalDNS hostname is configured independently through
+the chart's `hostname` value.
 
 Before upgrades or moves, back up application state and test restoration.
 Verify database health, web login, certificates, device inform/adoption and
