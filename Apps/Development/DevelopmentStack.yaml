@@ -241,7 +241,7 @@ spec:
                         host: 'ldap-{{ .values.datacenter }}.mylogin.space'
                         port: '636'
                         userSearchBase: 'ou=users,dc=ldap,dc=mylogin,dc=space'
-                        userFilter: '(&(objectClass=user)(cn=%[1]s))'
+                        userFilter: '(&(objectClass=user)(memberOf=cn=Developers,ou=groups,dc=ldap,dc=mylogin,dc=space)(cn=%[1]s))'
                         usernameAttribute: 'cn'
                         firstnameAttribute: 'name'
                         surnameAttribute: 'lastname'
@@ -431,6 +431,8 @@ spec:
                         path: /metadata/labels/wan-mode
                         value: 'public'
                   {{ end }}
+
+                {{ end }}
 
                   {{ if .values.harbor.enabled }}
                   - target:
