@@ -236,6 +236,7 @@ spec:
 
                     ldap:
                       - name: 'authentik-ldap'
+                        existingSecret: 'forgejo-user'
                         securityProtocol: 'ldaps'
                         host: 'ldap.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                         port: '636'
@@ -313,6 +314,12 @@ spec:
                 forgejoRunner:
                   enabled: {{ .values.forgejo.runners }}
                   namespace: 'core-development-{{ .values.environment }}'
+                  cacheServer:
+                    enabled: {{ .values.forgejo.runners }}
+                    url: 'https://cache-forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes/'
+                    hostname: 'cache-forgejo.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.writemy.codes'
+                    storageClassName: 'ha-core-dev-{{ .values.environment }}'
+                    size: '20Gi'
                   locations:
                     {{ range .values.runnerLocations }}
                     - name: '{{ .name }}'
@@ -333,6 +340,31 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                {{ if .values.forgejo.enabled }}
+                  - target:
+                      kind: Deployment
+                      name: '{{ .values.clusterName }}-development-forgejo'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: '{{ .values.clusterName }}-development-forgejo'
+                      spec:
+                        template:
+                          spec:
+                            initContainers:
+                              - name: 'configure-gitea'
+                                env:
+                                  - name: 'GITEA_LDAP_BIND_DN_0'
+                                    valueFrom:
+                                      secretKeyRef:
+                                        name: 'forgejo-user'
+                                        key: 'ldapsBIND'
+                                  - name: 'GITEA_LDAP_PASSWORD_0'
+                                    valueFrom:
+                                      secretKeyRef:
+                                        name: 'forgejo-user'
+                                        key: 'password'
                 {{ if and .values.forgejo.enabled .values.forgejo.runners }}
                   - target:
                       kind: Deployment
@@ -351,19 +383,6 @@ spec:
                                   runAsUser: 0
                                   runAsGroup: 0
                               - name: 'configure-gitea'
-                                env:
-                                  - name: 'GITEA_LDAP_BIND_DN_0'
-                                    value: null
-                                    valueFrom:
-                                      secretKeyRef:
-                                        name: 'forgejo-user'
-                                        key: 'ldapsBIND'
-                                  - name: 'GITEA_LDAP_PASSWORD_0'
-                                    value: null
-                                    valueFrom:
-                                      secretKeyRef:
-                                        name: 'forgejo-user'
-                                        key: 'password'
                                 command:
                                   - '/usr/bin/env'
                                   - 'bash'
