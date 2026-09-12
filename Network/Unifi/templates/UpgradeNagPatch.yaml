@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Release.Name }}-upgrade-nag-patch'
+data:
+  patch-upgrade-nag.sh: |
+    #!/usr/bin/env bash
+    set -u
+
+    js_files=(/usr/lib/unifi/webapps/ROOT/app-unifi/react/js/swai.*.js)
+    if [ ! -e "${js_files[0]}" ]; then
+      echo '[patch] UniFi UI bundle not found, skipping upgrade nag patch'
+      exec /usr/local/bin/docker-entrypoint.sh unifi
+    fi
+
+    patched=false
+    for js_file in "${js_files[@]}"; do
+      if grep -q 'return !1&&r?' "$js_file"; then
+        patched=true
+        continue
+      fi
+
+      if sed -E -i \
+        '/return n&&r\?.+\.aF\.Root/s/return n&&r\?/return !1\&\&r?/' \
+        "$js_file" && grep -q 'return !1&&r?' "$js_file"; then
+        patched=true
+      fi
+    done
+
+    if [ "$patched" = true ]; then
+      echo '[patch] UniFi OS Server upgrade nag removed'
+    else
+      echo '[patch] UniFi UI bundle pattern changed, skipping upgrade nag patch'
+    fi
+
+    exec /usr/local/bin/docker-entrypoint.sh unifi

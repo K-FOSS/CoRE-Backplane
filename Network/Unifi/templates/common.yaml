@@ -24,6 +24,9 @@ controllers:
         runAsGroup: 999
     containers:
       unifi:
+        command:
+          - '/bin/bash'
+          - '/usr/local/bin/patch-upgrade-nag.sh'
         image:
           repository: 'ghcr.io/goofball222/unifi'
           tag: 'latest'
@@ -164,6 +167,14 @@ route:
             weight: 1
 
 persistence:
+  upgrade-nag-patch:
+    enabled: true
+    type: 'configMap'
+    name: '{{ .Release.Name }}-upgrade-nag-patch'
+    globalMounts:
+      - path: '/usr/local/bin/patch-upgrade-nag.sh'
+        subPath: 'patch-upgrade-nag.sh'
+        readOnly: true
   data:
     enabled: true
     type: 'persistentVolumeClaim'
