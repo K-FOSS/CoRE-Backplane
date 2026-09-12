@@ -107,8 +107,8 @@ spec:
                 uuid: '{{ `{{ printf "%x-%x-%x-%x-%x" (substr 0 4 .password) (substr 4 6 .password) (substr 6 8 .password) (substr 8 10 .password) (substr 10 16 .password) }}` }}'
                 token_url: 'file:/var/run/secrets/forgejo-runner/password'
                 labels:
-                  - 'docker:docker://{{ $.Values.forgejoRunner.jobImage.repository }}@{{ $.Values.forgejoRunner.jobImage.digest }}'
-                  - 'ubuntu-latest:docker://{{ $.Values.forgejoRunner.jobImage.repository }}@{{ $.Values.forgejoRunner.jobImage.digest }}'
+                  - 'docker:docker://{{ $.Values.forgejoRunner.jobImage.repository }}:{{ $.Values.forgejoRunner.jobImage.tag }}'
+                  - 'ubuntu-latest:docker://{{ $.Values.forgejoRunner.jobImage.repository }}:{{ $.Values.forgejoRunner.jobImage.tag }}'
   data:
     - secretKey: 'password'
       remoteRef:
