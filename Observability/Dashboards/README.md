@@ -28,6 +28,12 @@ cluster-specific Grafana settings into [`values.yaml`](values.yaml):
 
 - `grafanaReplicas` controls the replica count independently for each listed
   cluster.
+- The Grafana Service advertises `kubernetes.io/ws` on its HTTP port. This
+  enables the Gateway API backend protocol selection needed for Grafana Live
+  WebSocket upgrades through Envoy Gateway. The public route remains an
+  `HTTPRoute`; WebSockets begin as HTTP/1.1 Upgrade requests on that route. See
+  the [Gateway API backend protocol guide](https://gateway-api.sigs.k8s.io/guides/user-guides/backend-protocol/)
+  and [Envoy Gateway HTTPRoute backend-protocol documentation](https://gateway.envoyproxy.io/latest/api/gateway_api/httproute/).
 - Grafana Live and Grafana's remote cache use the site's shared `dragonfly-core`
   Redis-compatible service. The remote cache uses TLS.
 - Grafana reads the Dragonfly password from the existing
@@ -118,17 +124,23 @@ members of `authentik Admins` and `Grafana Admins`, while the disabled generic
 OAuth mapping refers to `Network Admins` and `Grafana Editors`.
 
 Grafana stores application state in the external PostgreSQL database; local PVC
-persistence is disabled. Grafana Live and the
+persistence is disabled. Grafana Live uses Dragonfly as its Redis-compatible
+HA messaging/pub-sub engine on logical database `0`, allowing both Grafana
+replicas to exchange Live connection state. Grafana's
 [remote cache](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#remote_cache)
-use the ApplicationSet-injected Dragonfly address. The cache stores temporary
+uses the same ApplicationSet-injected Dragonfly address and is isolated in
+logical database `132`. The cache stores temporary
 authentication-related data, not Grafana sessions or authoritative application
-state. It is isolated in Dragonfly database `132`; Grafana Live remains on the
-default Redis database because its Redis client does not expose a database
-selector. Refer to Grafana's [database configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#database)
+state. Grafana Live remains on the default Redis database because its Redis
+client does not expose a database selector. Refer to Grafana's [database configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#database)
 and [Live HA setup](https://grafana.com/docs/grafana/latest/setup-grafana/set-up-grafana-live/#configure-grafana-live-ha-setup)
 when changing either dependency. Grafana Live's Redis client does not support
 TLS, while the remote-cache client is explicitly configured with `ssl=true`;
 verify the Dragonfly listener behavior for both clients after reconciliation.
+The shared Dragonfly allocation is recorded in the
+[Dragonfly logical database registry](../../Storage/Dragonfly/CoRE/README.md),
+which reserves `132` for this remote cache and keeps Grafana Live on the
+legacy shared `0` database.
 
 ## Prerequisites
 
@@ -186,8 +198,9 @@ After Argo CD reconciliation, verify more than Application health:
 2. Confirm ExternalSecret conditions and the presence of the expected Secret
    keys, including `dragonfly-core-password/password`, without printing their
    values.
-3. Confirm the HTTPRoute is accepted by `main-gw` and the SecurityPolicy is
-   attached without errors.
+3. Confirm the Grafana Service port has `appProtocol: kubernetes.io/ws`, the
+   HTTPRoute is accepted by `main-gw`, the SecurityPolicy is attached without
+   errors, and a browser can open Grafana Live WebSocket connections.
 4. Check the Grafana Deployment rollout, database migration logs, unified
    storage migration status, and `/api/health` endpoint.
 5. Test OIDC and LDAP login with least-privileged and administrative accounts,
@@ -195,8 +208,9 @@ After Argo CD reconciliation, verify more than Application health:
 6. Check dashboard-sidecar logs and confirm labelled dashboards appear.
 7. Rotate the Dragonfly credential through its owning workflow and verify
    Reloader rolls both Grafana replicas after the Secret changes.
-8. Verify PostgreSQL connectivity, Grafana Live and remote-cache connectivity,
-   and OTLP traces reaching Alloy and the downstream traces backend.
+8. Verify PostgreSQL connectivity, Dragonfly connectivity for both Live
+   messaging on DB `0` and remote caching on DB `132`, and OTLP traces reaching
+   Alloy and the downstream traces backend.
 
 ## Rollback and deletion
 

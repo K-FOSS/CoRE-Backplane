@@ -16,6 +16,11 @@ grafana:
           namespace: 'core-prod'
           name: 'main-gw'
 
+  service:
+    # Gateway API uses this backend protocol marker to preserve Grafana Live
+    # WebSocket upgrades through Envoy Gateway.
+    appProtocol: 'kubernetes.io/ws'
+
   admin:
     existingSecret: 'core-grafana-creds'
     userKey: 'username'
