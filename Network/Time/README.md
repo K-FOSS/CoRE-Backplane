@@ -10,7 +10,10 @@ requests `66.165.222.123`, and uses `externalTrafficPolicy: Local`. The pod is
 non-root, read-only-rootfs, capability-free, tokenless, and has a default-deny
 NetworkPolicy: public clients can send only NTP; egress is limited to DNS and
 UDP/123 upstream time servers. `NOCLIENTLOG=true` avoids retaining client
-addresses in chrony client logs.
+addresses in chrony client logs. Kubernetes applies `fsGroup: 101` to the
+memory-backed Chrony volumes and reapplies the ownership on every pod start,
+so the rootless `100:101` user can write its configuration, runtime, and state
+paths; see the Kubernetes [`fsGroupChangePolicy` documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
 
 The image is the immutable multi-architecture digest of the upstream
 [`simonrupf/docker-chronyd`](https://github.com/simonrupf/docker-chronyd) image,
