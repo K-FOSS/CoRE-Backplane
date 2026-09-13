@@ -72,6 +72,15 @@ from that repository into `core-prod` without ApplicationSet value overrides.
 The upstream [Landing README](https://github.com/K-FOSS/CoRE-Business/blob/main/Landing/README.md)
 is authoritative for its prerequisites and user-facing verification.
 
+## Tools/IT-Tools
+
+[Tools/IT-Tools.yaml](Tools/IT-Tools.yaml) owns the production YVR deployment
+rendered from the [CoRE-Business IT-Tools component](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/IT-Tools).
+It selects YVR bare-metal infrastructure clusters and reconciles the component
+from that repository into `core-prod` without ApplicationSet value overrides.
+The upstream [IT-Tools README](https://github.com/K-FOSS/CoRE-Business/blob/main/Tools/IT-Tools/README.md)
+is authoritative for prerequisites and user-facing verification.
+
 ## Social/Fediverse
 
 [Social/Fediverse.yaml](Social/Fediverse.yaml) owns the production YVR
