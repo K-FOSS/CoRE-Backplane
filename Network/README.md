@@ -18,6 +18,7 @@ or a physical host can PXE boot.
 | [Filter](Filter/README.md) | Containerized IPv4/IPv6 filtering/routing function. | `Apps/Network/Filter.yaml` |
 | [Ingress](Ingress/README.md) | Envoy Gateway, shared gateways, routes and authentication policy. | `Apps/Network/Ingress.yaml` |
 | [IPAM](IPAM/README.md) | NetBox/DCIM, DHCP, DNS integration and inventory credentials. | `Apps/Network/IPAM.yaml` |
+| [Insight](Insight/README.md) | OpenNMS Horizon/Minion monitoring, flow collection and time-series integration. | `Apps/Network/Insight.yaml` |
 | [NATPuncher](NATPuncher/README.md) | CoTURN STUN/TURN service. | `Apps/Network/NATPuncher.yaml` |
 | [NS](NS/README.md) | PowerDNS and PowerDNS-Admin authoritative DNS. | `Apps/Network/NS.yaml` |
 | [PrivateNetworking](PrivateNetworking/README.md) | NetBird and optional/transitional Netmaker overlays. | `Apps/Network/PrivateNetworking.yaml` |
@@ -25,6 +26,7 @@ or a physical host can PXE boot.
 | [RouteServer](RouteServer/README.md) | FRR route reflectors/servers and routing policy. | `Apps/Network/RouteReflector.yaml` |
 | [Testing](Testing/README.md) | LibreSpeed, iperf3 and network validation resources. | `Apps/Network/Testing.yaml` |
 | [TLS/Certificates](TLS/Certificates/README.md) | Per-cluster certificates and Gateway references. | `Apps/Network/Certificates.yaml` |
+| [Time](Time/README.md) | Public Chrony NTP/NTS, metrics and authenticated dashboards. | `Apps/Network/Time.yaml` |
 | [Tunnels](Tunnels/README.md) | WireGuard/IP tunnels with FRR routing integration. | `Apps/Network/Tunneler.yaml` and legacy `TunnelerOld.yaml` |
 | [Unifi](Unifi/README.md) | UniFi Network Application and database/secret integration. | `Apps/Network/Unifi.yaml` |
 
@@ -58,8 +60,18 @@ validation.
 
 Charts may require Cilium, Gateway API and Envoy Gateway, External Secrets and
 Vault stores, Crossplane user/credential APIs, cert-manager, ExternalDNS,
-NetBox, Tinkerbell, DHCP/PXE, object storage, FRR and Linux networking
-capabilities.
+NetBox, Tinkerbell, DHCP/PXE, object storage, FRR, OpenNMS, Kafka, PostgreSQL,
+Mimir, Chrony, and Linux networking capabilities. See each chart README for
+its dependency references, configuration, and remediation steps.
+
+The newer monitoring and time stacks are documented in their substacks:
+
+- [Insight](Insight/README.md): OpenNMS Horizon/Minion monitoring, flow
+  collection, Kafka, PostgreSQL, and Mimir integration. Owned by
+  [`Apps/Network/Insight.yaml`](../Apps/Network/Insight.yaml).
+- [Time](Time/README.md): Chrony NTP/NTS, PureLB exposure, metrics, and
+  authenticated dashboards. Owned by
+  [`Apps/Network/Time.yaml`](../Apps/Network/Time.yaml).
 
 ## Change safety
 
