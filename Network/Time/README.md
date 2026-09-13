@@ -22,8 +22,9 @@ runtime. The chart bypasses the image entrypoint because it attempts a
 privileged `chown` on `/run/chrony`; instead, the rootless user writes the
 generated config to `/etc/chrony` and starts chronyd without system-clock
 control. A short-lived init container assigns the memory-backed directories to
-UID/GID `100:101` and applies Chrony's required `0770` permissions before the
-rootless container starts. This preserves the chart's `NTP_SERVERS`,
+UID/GID `100:101` and provides a writable `/run` memory volume; the rootless
+process creates `/run/chrony` itself with Chrony's required `0770` permissions
+before starting. This preserves the chart's `NTP_SERVERS`,
 `NOCLIENTLOG`, and `LOG_LEVEL` settings while allowing writes to the volumes.
 
 ## Reconciliation and verification
