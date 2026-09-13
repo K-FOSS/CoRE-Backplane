@@ -92,6 +92,8 @@ using the shared Authentik proxy; the generated Authentik application and
 entitlement are both bound only to the `Server Admins` group. The TICC-DASH
 image documents the `/data` endpoint and Chrony socket configuration in its
 [container documentation](https://github.com/anoniemerd/ticc-dash#containers).
+Gunicorn's temporary worker files use a dedicated 16Mi memory-backed `/tmp`
+mount because the container root filesystem remains read-only.
 
 The route is not public without Authentik authorization. Verify Gateway and
 HTTPRoute `Accepted`/`ResolvedRefs`, the SecurityPolicy attachment, the

@@ -165,6 +165,8 @@ controllers:
             value: 'false'
           - name: 'CHRONY_SOCKET'
             value: '/run/chrony/chronyd.sock'
+          - name: 'TMPDIR'
+            value: '/tmp'
         ports:
           - name: 'http'
             containerPort: 5000
@@ -321,6 +323,14 @@ persistence:
         main:
           - path: '/etc/chrony-tls'
             readOnly: true
+  ticc-dash-tmp:
+    type: 'emptyDir'
+    medium: 'Memory'
+    sizeLimit: '16Mi'
+    advancedMounts:
+      main:
+        ticc-dash:
+          - path: '/tmp'
 
 networkpolicies:
   main:
