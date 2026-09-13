@@ -76,6 +76,7 @@ controllers:
               printf '%s\n' 'noclientlog' >> /etc/chrony/chrony.conf
             fi
             printf '%s\n' 'allow all' 'driftfile /var/lib/chrony/chrony.drift' >> /etc/chrony/chrony.conf
+            printf '%s\n' 'bindcmdaddress 127.0.0.1' 'cmdport 323' >> /etc/chrony/chrony.conf
             printf '%s\n' 'bindcmdaddress /run/chrony/chronyd.sock' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsdumpdir /var/lib/chrony' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsservercert /etc/chrony-tls/tls.crt' >> /etc/chrony/chrony.conf
@@ -130,7 +131,7 @@ controllers:
           tag: {{ .Values.images.exporter.tag | quote }}
           pullPolicy: {{ .Values.images.exporter.pullPolicy }}
         args:
-          - '--chrony.address=unix:///run/chrony/chronyd.sock'
+          - '--chrony.address=127.0.0.1:323'
           - '--collector.sourcestats'
         ports:
           - name: 'metrics'
@@ -165,7 +166,7 @@ controllers:
           - name: 'CHRONY_USE_SUDO'
             value: 'false'
           - name: 'CHRONY_SOCKET'
-            value: '/run/chrony/chronyd.sock'
+            value: '127.0.0.1:323'
           - name: 'TMPDIR'
             value: '/tmp'
           - name: 'HOME'

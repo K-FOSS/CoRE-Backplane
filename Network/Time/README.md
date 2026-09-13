@@ -59,8 +59,9 @@ TCP/4460 to be permitted to the public service in upstream firewall policy.
 
 Each Chrony pod also runs the pinned amd64 build of the
 [`chrony_exporter`](https://github.com/SuperQ/chrony_exporter) beside Chrony.
-The exporter reads `/run/chrony/chronyd.sock` as UID/GID `100:101` and exposes
-TCP/9123 only through the internal `*-metrics` ClusterIP Service. The
+The exporter queries Chrony's pod-local command endpoint at `127.0.0.1:323`
+and exposes TCP/9123 only through the internal `*-metrics` ClusterIP Service.
+The TICC-DASH sidecar uses the same loopback endpoint. The
 NetworkPolicy permits that port only from `core-prod`, where the central
 [Grafana Alloy ServiceMonitor receiver](../../Observability/Collectors/README.md)
 scrapes it and forwards the metrics to Mimir. The exporter image is
@@ -95,8 +96,10 @@ image documents the `/data` endpoint and Chrony socket configuration in its
 Gunicorn's temporary worker files and control socket use a dedicated 16Mi
 memory-backed `/tmp` mount and `HOME=/tmp` because the container root
 filesystem remains read-only and the image user otherwise has `/dev/null` as
-its home directory. Chrony's command socket is explicitly bound to the shared
-`/run/chrony/chronyd.sock` path.
+its home directory. Chrony also retains its Unix command socket at
+`/run/chrony/chronyd.sock`, but dashboard and exporter monitoring use the
+pod-local UDP command endpoint to avoid cross-container Unix-socket ownership
+issues. See the upstream [`chronyc` command access documentation](https://chrony-project.org/doc/4.8/chronyc.html).
 
 The route is not public without Authentik authorization. Verify Gateway and
 HTTPRoute `Accepted`/`ResolvedRefs`, the SecurityPolicy attachment, the
