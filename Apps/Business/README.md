@@ -63,6 +63,26 @@ Dragonfly data were removed.
 Other manifests under `Legacy/` remain legacy fleet owners until they are
 individually migrated and documented.
 
+## Personal/Fitness
+
+[Personal/Fitness.yaml](Personal/Fitness.yaml) owns the YVR deployment of the
+[CoRE openGym chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Fitness)
+in the dedicated `core-fitness-prod` namespace. It targets
+`core-home1-talos-prod`, injects the registered cluster name, datacentre, and
+region into the Lovely renderer, and attaches the `gym.mylogin.space` route to
+the shared `core-prod/main-gw` HTTPS listener. The chart uses its own passkey
+identity and does not consume PostgreSQL, External Secrets, or the Backplane
+`User` resource.
+
+The upstream [openGym README](https://github.com/K-FOSS/CoRE-Business/blob/main/Personal/Fitness/README.md)
+documents prerequisites, the retained data and media PVCs, and operational
+verification. Before sync, render the chart with the Home1 values and inspect
+the two PVCs, Deployments, Services, and HTTPRoute. After reconciliation,
+verify the route, `/api/health`, profile creation, passkey sign-in, media
+loading, and restore of both PVCs. The chart currently follows mutable `HEAD`
+and preserves both PVCs on removal; decommissioning therefore requires an
+explicit backup and data cleanup decision.
+
 ## Landing
 
 [Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
