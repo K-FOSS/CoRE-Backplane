@@ -1,0 +1,29 @@
+---
+global:
+  nameOverride: 'time-core'
+  createDefaultServiceAccount: false
+
+images:
+  chrony:
+    repository: 'cturra/ntp'
+    tag: 'latest@sha256:7224d4e7c7833aabbcb7dd70c46c8a8dcccda365314c6db047b9b10403ace3bc'
+    pullPolicy: 'IfNotPresent'
+
+ntp:
+  servers: 'time.cloudflare.com,time.google.com'
+  logLevel: '1'
+  resources:
+    limits:
+      cpu: '250m'
+      memory: '128Mi'
+      ephemeral-storage: '128Mi'
+    requests:
+      cpu: '25m'
+      memory: '32Mi'
+      ephemeral-storage: '16Mi'
+
+# The owning ApplicationSet supplies the public PureLB address and anycast
+# service group. Keep the service selector and address allocation together.
+service:
+  main:
+    annotations: {}

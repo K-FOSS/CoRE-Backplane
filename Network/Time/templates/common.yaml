@@ -1,0 +1,152 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "core-network-time.commonValues" -}}
+global:
+  nameOverride: {{ .Values.global.nameOverride | quote }}
+  fullnameOverride: {{ .Values.global.nameOverride | quote }}
+
+controllers:
+  main:
+    type: 'deployment'
+    replicas: 2
+    strategy: 'RollingUpdate'
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 101
+        fsGroupChangePolicy: 'OnRootMismatch'
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: 'RuntimeDefault'
+      terminationGracePeriodSeconds: 30
+    containers:
+      main:
+        image:
+          repository: {{ .Values.images.chrony.repository | quote }}
+          tag: {{ .Values.images.chrony.tag | quote }}
+          pullPolicy: {{ .Values.images.chrony.pullPolicy }}
+        env:
+          - name: 'NTP_SERVERS'
+            value: {{ .Values.ntp.servers | quote }}
+          - name: 'NOCLIENTLOG'
+            value: 'true'
+          - name: 'LOG_LEVEL'
+            value: {{ .Values.ntp.logLevel | quote }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+        resources:
+{{ toYaml .Values.ntp.resources | nindent 10 }}
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - 'chronyc'
+                  - '-n'
+                  - 'tracking'
+              initialDelaySeconds: 15
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 3
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - 'chronyc'
+                  - '-n'
+                  - 'tracking'
+              initialDelaySeconds: 15
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 3
+
+service:
+  main:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+    controller: 'main'
+    primary: true
+    type: 'LoadBalancer'
+    loadBalancerClass: 'purelb.io/purelb'
+    externalTrafficPolicy: 'Local'
+    labels:
+      wan-mode: 'public'
+    ports:
+      ntp:
+        primary: true
+        port: 123
+        protocol: 'UDP'
+
+persistence:
+  chrony-config:
+    type: 'emptyDir'
+    medium: 'Memory'
+    sizeLimit: '1Mi'
+    advancedMounts:
+      main:
+        main:
+          - path: '/etc/chrony'
+  chrony-run:
+    type: 'emptyDir'
+    medium: 'Memory'
+    sizeLimit: '1Mi'
+    advancedMounts:
+      main:
+        main:
+          - path: '/run/chrony'
+  chrony-state:
+    type: 'emptyDir'
+    medium: 'Memory'
+    sizeLimit: '4Mi'
+    advancedMounts:
+      main:
+        main:
+          - path: '/var/lib/chrony'
+
+networkpolicies:
+  main:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
+    controller: 'main'
+    policyTypes:
+      - 'Ingress'
+      - 'Egress'
+    rules:
+      ingress:
+        - from:
+            - ipBlock:
+                cidr: '0.0.0.0/0'
+          ports:
+            - port: 'ntp'
+              protocol: 'UDP'
+      egress:
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: 'kube-system'
+          ports:
+            - port: 53
+              protocol: 'UDP'
+            - port: 53
+              protocol: 'TCP'
+        - to:
+            - ipBlock:
+                cidr: '0.0.0.0/0'
+          ports:
+            - port: 123
+              protocol: 'UDP'
+{{- end -}}
+
+{{- $commonValues := include "core-network-time.commonValues" . | fromYaml -}}
+{{- $_ := merge .Values $commonValues -}}
+{{ include "bjw-s.common.loader.generate" . }}

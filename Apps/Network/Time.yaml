@@ -1,0 +1,64 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-time
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - list:
+              elements:
+                - name: core-dc1-talos-prod
+                  values:
+                    ntp:
+                      address:
+                        ipv4: '66.165.222.123'
+                        serviceGroup: 'anycast'
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-network-time-{{ .values.environment }}'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+      source:
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        path: Network/Time
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                service:
+                  main:
+                    annotations:
+                      external-dns.alpha.kubernetes.io/hostname: 'syncmy.date'
+                      purelb.io/addresses: '{{ .values.ntp.address.ipv4 }}'
+                      purelb.io/allow-local: 'true'
+                      purelb.io/service-group: '{{ .values.ntp.address.serviceGroup }}'
+      destination:
+        server: '{{ .server }}'
+        namespace: 'core-{{ .values.environment }}'
