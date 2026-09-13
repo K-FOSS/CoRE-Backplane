@@ -149,6 +149,17 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   `version` values.
 - Prefer values-driven templates for environment-specific behavior. Retain a
   literal only for a deliberate compatibility reason and document it.
+- For every `Landing`/Forecastle-exposed service, add a
+  `forecastle.stakater.com/appName` annotation with a friendly display name;
+  do not rely on the generated resource name in the dashboard.
+- Forecastle’s deployed instance name is `core`. To expose a service through
+  Forecastle, add these annotations to the exposed `HTTPRoute` (or `Ingress`):
+  `forecastle.stakater.com/expose: 'true'`,
+  `forecastle.stakater.com/instance: 'core'`, and a friendly
+  `forecastle.stakater.com/appName`. Add
+  `forecastle.stakater.com/group` when the service belongs in a dashboard
+  group such as `Tools` or `Security`; keep the route hostname and Gateway
+  attachment valid as well.
 - Validate every parser boundary touched by a change, including Helm templates,
   Kustomize output, Crossplane Go templates, embedded Terraform HCL, scripts,
   Talos configuration, and Kubernetes YAML.
