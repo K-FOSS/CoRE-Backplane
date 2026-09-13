@@ -15,10 +15,11 @@ memory-backed Chrony volumes and reapplies the ownership on every pod start,
 so the rootless `100:101` user can write its configuration, runtime, and state
 paths; see the Kubernetes [`fsGroupChangePolicy` documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
 
-The image is the immutable multi-architecture digest of the upstream
+The image is the immutable amd64 digest of the upstream
 [`simonrupf/docker-chronyd`](https://github.com/simonrupf/docker-chronyd) image,
-which runs chronyd as a non-root `chrony` user and supports the chart's
-runtime. The chart bypasses the image entrypoint because it attempts a
+using its separate [NTS-enabled image variant](https://github.com/simonrupf/docker-chronyd#enable-network-time-security-nts-separate--nts-image).
+The default Alpine 3.24 image omits NTS support. The NTS variant runs chronyd
+as a non-root `chrony` user and supports the chart's runtime. The chart bypasses the image entrypoint because it attempts a
 privileged `chown` on `/run/chrony`; instead, the rootless user writes the
 generated config to `/etc/chrony` and starts chronyd without system-clock
 control. A short-lived init container assigns the memory-backed directories to
@@ -26,6 +27,14 @@ UID/GID `100:101` and provides a writable `/run` memory volume; the rootless
 process creates `/run/chrony` itself with Chrony's required `0770` permissions
 before starting. This preserves the chart's `NTP_SERVERS`,
 `NOCLIENTLOG`, and `LOG_LEVEL` settings while allowing writes to the volumes.
+
+NTS is enabled for `syncmy.date`: Chrony serves NTS Key Establishment on
+TCP/4460 using the cert-manager-generated `syncmydate-default-certificates`
+Secret. The certificate and private key are mounted read-only and are
+readable by Chrony's UID/GID `100:101`; NTS cookie keys are persisted in the
+existing memory-backed state volume. Chrony requires `ntsservercert` and
+`ntsserverkey` to enable the NTS-KE port; see the upstream
+[`chrony.conf` NTS directives](https://chrony-project.org/doc/4.8/chrony.conf.html#ntsservercert).
 
 ## Reconciliation and verification
 
@@ -41,6 +50,8 @@ The source configuration uses Cloudflare and Google time services. Change the
 `ntp.servers` value through Git if upstream policy changes. Roll back through
 Git and Argo CD; removing the Application does not remove the upstream route,
 PureLB pool allocation, or external firewall rules.
+NTS clients also require TCP/4460 to be permitted to the public service in
+upstream firewall policy.
 
 ## Metrics and Grafana
 

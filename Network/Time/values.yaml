@@ -6,7 +6,7 @@ global:
 images:
   chrony:
     repository: 'simonrupf/chronyd'
-    tag: '0.7.1@sha256:8bcda8c20bd82af6810c362f35c6e1fd2b1dbd0c6db5e6880a1c0f2a00fa0e46'
+    tag: '0.9.2-nts@sha256:b0d477f68c5df76e448ad4132c7a187fc6dddb8a18095911c0b0bcf3c8fd050d'
     pullPolicy: 'IfNotPresent'
   exporter:
     repository: 'superque/chrony-exporter-linux-amd64'
@@ -25,6 +25,9 @@ ntp:
       cpu: '25m'
       memory: '32Mi'
       ephemeral-storage: '16Mi'
+
+nts:
+  secretName: 'syncmydate-default-certificates'
 
 # The owning ApplicationSet supplies the public PureLB address and anycast
 # service group. Keep the service selector and address allocation together.

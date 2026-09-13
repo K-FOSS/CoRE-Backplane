@@ -17,6 +17,10 @@ It requires cert-manager, the referenced issuer, DNS-provider credentials,
 Gateway API resources and any Vault/External Secrets integration used by the
 issuer.
 
+The chart also issues `syncmydate-default-certificates` for `syncmy.date` and
+`*.syncmy.date`. Network/Time mounts that Secret for Chrony's NTS server; the
+private key remains cert-manager-managed and is not stored in Git.
+
 Verify certificate `Ready`, issuer/challenge status, DNS names, renewal time,
 secret location, Gateway `ResolvedRefs`, and the externally served TLS chain
 and SNI. Confirm secret ownership and renewal before removing an established

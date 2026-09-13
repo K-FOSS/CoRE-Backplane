@@ -76,6 +76,9 @@ controllers:
               printf '%s\n' 'noclientlog' >> /etc/chrony/chrony.conf
             fi
             printf '%s\n' 'allow all' 'driftfile /var/lib/chrony/chrony.drift' >> /etc/chrony/chrony.conf
+            printf '%s\n' 'ntsdumpdir /var/lib/chrony' >> /etc/chrony/chrony.conf
+            printf '%s\n' 'ntsservercert /etc/chrony-tls/tls.crt' >> /etc/chrony/chrony.conf
+            printf '%s\n' 'ntsserverkey /etc/chrony-tls/tls.key' >> /etc/chrony/chrony.conf
             exec chronyd -x -U -d -L "$LOG_LEVEL" -f /etc/chrony/chrony.conf
         env:
           - name: 'NTP_SERVERS'
@@ -152,6 +155,9 @@ controllers:
         volumeMounts:
           - name: 'chrony-run'
             mountPath: '/run'
+          - name: 'nts-tls'
+            mountPath: '/etc/chrony-tls'
+            readOnly: true
 
 service:
   main:
@@ -171,6 +177,9 @@ service:
         protocol: 'UDP'
       metrics:
         enabled: false
+      nts:
+        port: 4460
+        protocol: 'TCP'
 
   metrics:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-metrics'
@@ -211,6 +220,15 @@ persistence:
       main:
         main:
           - path: '/var/lib/chrony'
+  nts-tls:
+    type: 'secret'
+    name: {{ .Values.nts.secretName | quote }}
+    defaultMode: 0440
+    advancedMounts:
+      main:
+        main:
+          - path: '/etc/chrony-tls'
+            readOnly: true
 
 networkpolicies:
   main:
@@ -227,6 +245,8 @@ networkpolicies:
           ports:
             - port: 'ntp'
               protocol: 'UDP'
+            - port: 'nts'
+              protocol: 'TCP'
         - from:
             - namespaceSelector:
                 matchLabels:
