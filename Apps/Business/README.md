@@ -16,23 +16,27 @@ the DC1 and Home Talos deployments are production targets; its presence does
 not make the Talos deployments non-production.
 
 The merge generator limits Mail to these explicitly approved production
-clusters:
+clusters and requires exactly one entry to be marked as the credential hub:
 
-| Argo CD cluster | Site | LDAP | PostgreSQL and S3 providers | Dragonfly credentials |
-| --- | --- | --- | --- | --- |
-| `dc1-k3s-node1` | `dc1/yxl` | `ldap-dc1.mylogin.space` | `psql-dc1-yxl`, `s3-yxl-dc1-core` | Legacy compatibility alias |
-| `core-dc1-talos-prod` | `dc1/yxl` | `ldap-dc1-talos.mylogin.space` | `psql-dc1-yxl`, `s3-yxl-dc1-core` | Site-local path |
-| `core-home1-talos-prod` | `home1/yvr` | `ldap-home1.mylogin.space` | `psql-home1-yvr`, `s3-yvr-home1-core` | Site-local path |
+| Argo CD cluster | Role | Site | LDAP | PostgreSQL and S3 providers | Dragonfly credentials |
+| --- | --- | --- | --- | --- | --- |
+| `dc1-k3s-node1` | Credential hub | `dc1/yxl` | `ldap-dc1.mylogin.space` | `psql-dc1-yxl`, `s3-yxl-dc1-core` | Legacy compatibility alias |
+| `core-dc1-talos-prod` | Spoke | `dc1/yxl` | `ldap-dc1-talos.mylogin.space` | `psql-dc1-yxl`, `s3-yxl-dc1-core` | Site-local path |
+| `core-home1-talos-prod` | Spoke | `home1/yvr` | `ldap-home1.mylogin.space` | `psql-home1-yvr`, `s3-yvr-home1-core` | Site-local path |
 
 For each target, the ApplicationSet derives the destination API server,
 environment, cluster DNS domain, region, and datacentre from the registered
 Argo CD cluster Secret. Lovely overrides the chart's legacy K3s defaults with
-the target's LDAP endpoint, site-local PostgreSQL and Dragonfly endpoints, and
-PostgreSQL/S3 provider names. Talos targets use their site-specific Dragonfly
-credential paths. K3s retains `Storage/DragonFly/CoRE/Creds` until that
-compatibility deployment is removed because it does not publish a current
-site-specific credential path. The chart continues to reserve Dragonfly
-logical database `25` for Rspamd at each site.
+the selected cluster identity, automatically derived credential hub, target's
+LDAP endpoint, site-local PostgreSQL and Dragonfly endpoints, and PostgreSQL/S3
+provider names. Credential synchronization is enabled for every target: only
+the selected hub manages the Mail `User` claims and pushes their generated
+credentials, while each spoke pulls those credentials into its local workload
+Secrets. Talos targets use their site-specific Dragonfly credential paths. K3s
+retains `Storage/DragonFly/CoRE/Creds` until that compatibility deployment is
+removed because it does not publish a current site-specific credential path.
+The chart continues to reserve Dragonfly logical database `25` for Rspamd at
+each site.
 
 Component ownership, mail flow, prerequisites, and user-facing checks are
 documented in the
@@ -58,6 +62,56 @@ Dragonfly data were removed.
 
 Other manifests under `Legacy/` remain legacy fleet owners until they are
 individually migrated and documented.
+
+## Landing
+
+[Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
+the [CoRE-Business Landing component](https://github.com/K-FOSS/CoRE-Business/tree/main/Landing).
+It selects YVR bare-metal infrastructure clusters and reconciles the component
+from that repository into `core-prod` without ApplicationSet value overrides.
+The upstream [Landing README](https://github.com/K-FOSS/CoRE-Business/blob/main/Landing/README.md)
+is authoritative for its prerequisites and user-facing verification.
+
+## Social/Fediverse
+
+[Social/Fediverse.yaml](Social/Fediverse.yaml) owns the production YVR
+deployment rendered from the [CoRE Fediverse chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Social/Fediverse).
+It is restricted to `core-home1-talos-prod` and reconciles into `core-prod`
+through the Lovely renderer. The ApplicationSet patches the selected
+environment, region, datacentre, and cluster name/domain into the chart values.
+It also configures the public `mastodon.mylogin.space` hostname, the
+site-local PostgreSQL and S3 providers, and the `main-gw` HTTPS listener. The
+`social-fediverse-mastodon` Secret must already exist in `core-prod` with the
+Mastodon runtime keys; this ApplicationSet references the Secret but does not
+create or store its values. The chart's current values and prerequisites are
+authoritative in its upstream component directory; federation uses the
+[ActivityPub standard](https://www.w3.org/TR/activitypub/).
+
+## Conversions
+
+[Tools/Conversions.yaml](Tools/Conversions.yaml) owns the production
+[CoRE Conversions chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Conversions)
+for the single YVR target `core-home1-talos-prod`. The chart runs
+[SnapOtter 2.2.0](https://github.com/snapotter-hq/SnapOtter/releases/tag/v2.2.0)
+at `https://conotter.mylogin.space`; its upstream deployment and recovery
+requirements are documented in the
+[Conversions README](https://github.com/K-FOSS/CoRE-Business/blob/main/Tools/Conversions/README.md).
+
+The ApplicationSet injects the selected cluster name, datacentre, and region
+into the Lovely Helm merge. This is intentionally a single persistent
+deployment: independent instances would conflict on the public hostname and
+would split files, sessions, and database state. The chart creates the
+PostgreSQL/User and Authentik automation resources, while the namespace-local
+`snapotter-runtime` Secret and Redis service remain separately provisioned;
+their credential values are never stored here.
+
+Before sync, render the chart with the representative Home1 identity and
+inspect the User, PostgreSQL, Workspace, Secret references, PVC, and HTTPRoute.
+After reconciliation, verify those downstream conditions, the PVC and
+application health, HTTPS, local recovery login, Authentik group access,
+conversion and download workflows, and persistence after a pod restart. The
+chart retains its PVC and User resources on removal, so decommissioning must
+be explicit and coordinated with data backup, identity, and database cleanup.
 
 ## Passwords
 
