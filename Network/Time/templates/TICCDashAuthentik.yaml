@@ -19,7 +19,7 @@ spec:
       resource "authentik_provider_proxy" "ticc_dash" {
         name               = "core-prod-ticc-dash"
         mode               = "forward_single"
-        external_host      = "https://clients.syncmy.date"
+        external_host      = "https://clients.{{ .Values.ntp.domain }}"
         authorization_flow = data.authentik_flow.authorization.id
         invalidation_flow  = data.authentik_flow.invalidation.id
       }
@@ -55,7 +55,7 @@ spec:
       resource "authentik_provider_proxy" "ntp_dashboard" {
         name               = "core-prod-ntp-dashboard"
         mode               = "forward_single"
-        external_host      = "https://dash.syncmy.date"
+        external_host      = "https://dash.{{ .Values.ntp.domain }}"
         authorization_flow = data.authentik_flow.authorization.id
         invalidation_flow  = data.authentik_flow.invalidation.id
       }

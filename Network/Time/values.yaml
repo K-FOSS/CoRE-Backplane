@@ -26,7 +26,30 @@ images:
     pullPolicy: 'IfNotPresent'
 
 ntp:
-  servers: 'time.cloudflare.com,time.google.com'
+  # Upstream NTP sources and their Chrony options.
+  sources:
+    - hostname: 'time.cloudflare.com'
+      iburst: true
+      nts: true
+    - hostname: 'nts.netnod.se'
+      iburst: true
+      nts: true
+    - hostname: 'ptbtime1.ptb.de'
+      iburst: true
+      nts: true
+    - hostname: 'ntppool1.time.nl'
+      iburst: true
+      nts: true
+    - hostname: 'time.nrc.ca'
+      iburst: true
+      nts: false
+    - hostname: 'ntp.torix.ca'
+      type: 'pool'
+      iburst: true
+      nts: false
+      maxsources: 2
+  minsources: 3
+  domain: 'syncmy.date'
   logLevel: '1'
   noClientLog: false
   resources:

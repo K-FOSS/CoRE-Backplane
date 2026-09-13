@@ -29,8 +29,8 @@ UID/GID `100:101` and provides a writable `/run` memory volume; the rootless
 process creates `/run/chrony` with Chrony's required `0770` permissions
 before starting. The init container uses a pinned BusyBox image so its root
 ownership setup is independent of the Chrony image's entrypoint and user. This
-preserves the chart's `NTP_SERVERS`,
-`NOCLIENTLOG`, and `LOG_LEVEL` settings while allowing writes to the volumes.
+preserves the chart's `NTP_SOURCES`, `MINSOURCES`, `NOCLIENTLOG`, and
+`LOG_LEVEL` settings while allowing writes to the volumes.
 
 NTS is enabled for `syncmy.date`: Chrony serves NTS Key Establishment on
 TCP/4460 using the cert-manager-generated `syncmydate-default-certificates`
@@ -50,8 +50,10 @@ chrony state with `chronyc tracking` and `chronyc sources` in the pod. From an
 external network, query `66.165.222.123` with an NTP client; a healthy server
 should not report stratum 16.
 
-The source configuration uses Cloudflare and Google time services. Change the
-`ntp.servers` value through Git if upstream policy changes. Roll back through
+The source configuration uses Cloudflare and Google time services. Configure
+the upstream sources and their `iburst`/`nts` options with the `ntp.sources`
+array, and the public hostname base with `ntp.domain`, in `values.yaml`. Roll
+back through
 Git and Argo CD; removing the Application does not remove the upstream route,
 PureLB pool allocation, or external firewall rules. The state PVC is retained
 when this release is removed; delete it deliberately only after confirming
