@@ -18,9 +18,11 @@ paths; see the Kubernetes [`fsGroupChangePolicy` documentation](https://kubernet
 The image is the immutable multi-architecture digest of the upstream
 [`simonrupf/docker-chronyd`](https://github.com/simonrupf/docker-chronyd) image,
 which runs chronyd as a non-root `chrony` user and supports the chart's
-`NTP_SERVERS`, `NOCLIENTLOG`, and `LOG_LEVEL` environment variables. The image
-startup script runs chronyd without system-clock control, so it serves time from
-the Kubernetes node's clock without attempting to change that clock.
+runtime. The chart bypasses the image entrypoint because it attempts a
+privileged `chown` on `/run/chrony`; instead, the rootless user writes the
+generated config to `/etc/chrony` and starts chronyd without system-clock
+control. This preserves the chart's `NTP_SERVERS`, `NOCLIENTLOG`, and
+`LOG_LEVEL` settings while allowing writes to the memory-backed volumes.
 
 ## Reconciliation and verification
 
