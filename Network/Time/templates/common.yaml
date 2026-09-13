@@ -86,7 +86,7 @@ controllers:
           - name: 'NTP_SERVERS'
             value: {{ .Values.ntp.servers | quote }}
           - name: 'NOCLIENTLOG'
-            value: 'true'
+            value: {{ .Values.ntp.noClientLog | quote }}
           - name: 'LOG_LEVEL'
             value: {{ .Values.ntp.logLevel | quote }}
         securityContext:
@@ -166,7 +166,7 @@ controllers:
           - name: 'CHRONY_USE_SUDO'
             value: 'false'
           - name: 'CHRONY_SOCKET'
-            value: '127.0.0.1:323'
+            value: '127.0.0.1'
           - name: 'TMPDIR'
             value: '/tmp'
           - name: 'HOME'

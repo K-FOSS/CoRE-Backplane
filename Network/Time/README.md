@@ -9,8 +9,9 @@ The Service is UDP/123 only, uses PureLB's `anycast` service group, explicitly
 requests `66.165.222.123`, and uses `externalTrafficPolicy: Local`. The pod is
 non-root, read-only-rootfs, capability-free, tokenless, and has a default-deny
 NetworkPolicy: public clients can send only NTP; egress is limited to DNS and
-UDP/123 upstream time servers. `NOCLIENTLOG=true` avoids retaining client
-addresses in chrony client logs. Kubernetes applies `fsGroup: 101` to the
+UDP/123 upstream time servers. Client logging is enabled (`NOCLIENTLOG=false`)
+so TICC-DASH and Chrony can retain client activity for operational review.
+Kubernetes applies `fsGroup: 101` to the
 memory-backed configuration/runtime volumes and reapplies the ownership on
 every pod start. The rootless `100:101` user can also write the retained 1Gi
 `ReadWriteOnce` PVC mounted at `/var/lib/chrony`; see the Kubernetes
@@ -61,7 +62,8 @@ Each Chrony pod also runs the pinned amd64 build of the
 [`chrony_exporter`](https://github.com/SuperQ/chrony_exporter) beside Chrony.
 The exporter queries Chrony's pod-local command endpoint at `127.0.0.1:323`
 and exposes TCP/9123 only through the internal `*-metrics` ClusterIP Service.
-The TICC-DASH sidecar uses the same loopback endpoint. The
+The TICC-DASH sidecar uses `CHRONY_SOCKET=127.0.0.1`, allowing `chronyc` to
+use its default command port 323. The
 NetworkPolicy permits that port only from `core-prod`, where the central
 [Grafana Alloy ServiceMonitor receiver](../../Observability/Collectors/README.md)
 scrapes it and forwards the metrics to Mimir. The exporter image is
