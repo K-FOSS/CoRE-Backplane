@@ -22,8 +22,8 @@ controllers:
           - '-c'
           - |
             set -eu
-            chmod 0770 /etc/chrony /run /var/lib/chrony
-            chown 100:101 /etc/chrony /run /var/lib/chrony
+            chown '100:101' '/run/chrony'
+            chmod '0770' '/run/chrony'
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -285,16 +285,14 @@ persistence:
     sizeLimit: '1Mi'
     advancedMounts:
       main:
-        main:
-          - path: '/run'
         permissions:
-          - path: '/run'
-        exporter:
-          - path: '/run'
-            readOnly: true
+          - path: '/run/chrony'
+
+        main:
+          - path: '/run/chrony'
+
         ticc-dash:
-          - path: '/run'
-            readOnly: true
+          - path: '/run/chrony'
   chrony-state:
     type: 'persistentVolumeClaim'
     accessMode: 'ReadWriteOnce'
