@@ -262,6 +262,24 @@ service:
         protocol: 'TCP'
         targetPort: 'http'
 
+route:
+  ticc-dash:
+    enabled: true
+    kind: 'HTTPRoute'
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ticc-dash'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: 'Gateway'
+        name: 'main-gw'
+        namespace: 'core-prod'
+        sectionName: 'https-myloginspace'
+    hostnames:
+      - 'clients.syncmy.date'
+    rules:
+      - backendRefs:
+          - identifier: 'dashboard'
+            port: 'http'
+
 persistence:
   chrony-config:
     type: 'emptyDir'
