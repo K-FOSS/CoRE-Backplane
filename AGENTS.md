@@ -160,6 +160,10 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   `forecastle.stakater.com/group` when the service belongs in a dashboard
   group such as `Tools` or `Security`; keep the route hostname and Gateway
   attachment valid as well.
+- Routes intended to receive public DNS records must include the Kubernetes
+  label `wan-mode: 'public'`. Site ExternalDNS selects public records using
+  that label; a public hostname without it will not be published. Keep this
+  label off private Authentik-only routes.
 - Validate every parser boundary touched by a change, including Helm templates,
   Kustomize output, Crossplane Go templates, embedded Terraform HCL, scripts,
   Talos configuration, and Kubernetes YAML.
