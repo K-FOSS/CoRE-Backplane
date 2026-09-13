@@ -80,6 +80,24 @@ in Grafana/Mimir. A failed target usually means the pod is not listening on
 the Unix socket or the metrics ingress rule is being evaluated by the CNI;
 the public NTP Service intentionally does not expose TCP/9123.
 
+## TICC-DASH
+
+The pinned [TICC-DASH](https://github.com/anoniemerd/ticc-dash) image runs
+rootless beside Chrony and reads the shared command socket with
+`CHRONY_USE_SUDO=false`. Its ClusterIP backend is exposed at
+`https://clients.syncmy.date` through the shared Gateway. The route is
+protected by a fail-closed Envoy Gateway
+[external authorization policy](https://gateway.envoyproxy.io/latest/tasks/security/ext-auth/)
+using the shared Authentik proxy; the generated Authentik application and
+entitlement are both bound only to the `Server Admins` group. The TICC-DASH
+image documents the `/data` endpoint and Chrony socket configuration in its
+[container documentation](https://github.com/anoniemerd/ticc-dash#containers).
+
+The route is not public without Authentik authorization. Verify Gateway and
+HTTPRoute `Accepted`/`ResolvedRefs`, the SecurityPolicy attachment, the
+Authentik Workspace readiness, and an authorized and unauthorized session at
+`clients.syncmy.date` after reconciliation.
+
 ## NTPinfo
 
 NTPinfo is not included in this change. The upstream

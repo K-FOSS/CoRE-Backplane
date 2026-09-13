@@ -155,8 +155,61 @@ controllers:
         volumeMounts:
           - name: 'chrony-run'
             mountPath: '/run'
-          - name: 'nts-tls'
-            mountPath: '/etc/chrony-tls'
+      ticc-dash:
+        image:
+          repository: {{ .Values.images.ticcDash.repository | quote }}
+          tag: {{ .Values.images.ticcDash.tag | quote }}
+          pullPolicy: {{ .Values.images.ticcDash.pullPolicy }}
+        env:
+          - name: 'CHRONY_USE_SUDO'
+            value: 'false'
+          - name: 'CHRONY_SOCKET'
+            value: '/run/chrony/chronyd.sock'
+        ports:
+          - name: 'http'
+            containerPort: 5000
+            protocol: 'TCP'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 100
+          runAsGroup: 101
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/'
+                port: 'http'
+              initialDelaySeconds: 10
+              periodSeconds: 30
+              timeoutSeconds: 5
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/'
+                port: 'http'
+              initialDelaySeconds: 10
+              periodSeconds: 15
+              timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: '250m'
+            memory: '128Mi'
+          requests:
+            cpu: '25m'
+            memory: '32Mi'
+        volumeMounts:
+          - name: 'chrony-run'
+            mountPath: '/run'
             readOnly: true
 
 service:
@@ -195,6 +248,20 @@ service:
         protocol: 'TCP'
         targetPort: 'metrics'
 
+  dashboard:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ticc-dash'
+    controller: 'main'
+    type: 'ClusterIP'
+    primary: false
+    labels:
+      app.kubernetes.io/component: 'ticc-dash'
+    ports:
+      http:
+        primary: true
+        port: 5000
+        protocol: 'TCP'
+        targetPort: 'http'
+
 persistence:
   chrony-config:
     type: 'emptyDir'
@@ -212,6 +279,12 @@ persistence:
       main:
         main:
           - path: '/run'
+        exporter:
+          - path: '/run'
+            readOnly: true
+        ticc-dash:
+          - path: '/run'
+            readOnly: true
   chrony-state:
     type: 'persistentVolumeClaim'
     accessMode: 'ReadWriteOnce'
@@ -254,6 +327,18 @@ networkpolicies:
                   kubernetes.io/metadata.name: 'core-prod'
           ports:
             - port: 'metrics'
+              protocol: 'TCP'
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: 'kube-system'
+              podSelector:
+                matchLabels:
+                  app.kubernetes.io/name: 'envoy'
+                  gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
+                  gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
+          ports:
+            - port: 'http'
               protocol: 'TCP'
       egress:
         - to:
