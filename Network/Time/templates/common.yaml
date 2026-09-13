@@ -120,6 +120,38 @@ controllers:
               periodSeconds: 15
               timeoutSeconds: 5
               failureThreshold: 3
+      exporter:
+        image:
+          repository: {{ .Values.images.exporter.repository | quote }}
+          tag: {{ .Values.images.exporter.tag | quote }}
+          pullPolicy: {{ .Values.images.exporter.pullPolicy }}
+        args:
+          - '--chrony.address=unix:///run/chrony/chronyd.sock'
+          - '--collector.sourcestats'
+        ports:
+          - name: 'metrics'
+            containerPort: 9123
+            protocol: 'TCP'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 100
+          runAsGroup: 101
+        resources:
+          limits:
+            cpu: '100m'
+            memory: '64Mi'
+          requests:
+            cpu: '10m'
+            memory: '16Mi'
+        volumeMounts:
+          - name: 'chrony-run'
+            mountPath: '/run'
 
 service:
   main:
@@ -131,11 +163,28 @@ service:
     externalTrafficPolicy: 'Local'
     labels:
       wan-mode: 'public'
+      app.kubernetes.io/component: 'ntp'
     ports:
       ntp:
         primary: true
         port: 123
         protocol: 'UDP'
+      metrics:
+        enabled: false
+
+  metrics:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-metrics'
+    controller: 'main'
+    type: 'ClusterIP'
+    primary: false
+    labels:
+      app.kubernetes.io/component: 'ntp-metrics'
+    ports:
+      metrics:
+        primary: true
+        port: 9123
+        protocol: 'TCP'
+        targetPort: 'metrics'
 
 persistence:
   chrony-config:
@@ -178,6 +227,13 @@ networkpolicies:
           ports:
             - port: 'ntp'
               protocol: 'UDP'
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: 'core-prod'
+          ports:
+            - port: 'metrics'
+              protocol: 'TCP'
       egress:
         - to:
             - namespaceSelector:

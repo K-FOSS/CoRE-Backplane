@@ -41,3 +41,41 @@ The source configuration uses Cloudflare and Google time services. Change the
 `ntp.servers` value through Git if upstream policy changes. Roll back through
 Git and Argo CD; removing the Application does not remove the upstream route,
 PureLB pool allocation, or external firewall rules.
+
+## Metrics and Grafana
+
+Each Chrony pod also runs the pinned amd64 build of the
+[`chrony_exporter`](https://github.com/SuperQ/chrony_exporter) beside Chrony.
+The exporter reads `/run/chrony/chronyd.sock` as UID/GID `100:101` and exposes
+TCP/9123 only through the internal `*-metrics` ClusterIP Service. The
+NetworkPolicy permits that port only from `core-prod`, where the central
+[Grafana Alloy ServiceMonitor receiver](../../Observability/Collectors/README.md)
+scrapes it and forwards the metrics to Mimir. The exporter image is
+[published on Docker Hub](https://hub.docker.com/r/superque/chrony-exporter-linux-amd64)
+and is pinned by digest in `values.yaml`.
+
+The `ServiceMonitor` is Git-managed and the dashboard ConfigMap has the
+`grafana_dashboard` label used by the deployed
+[Grafana dashboard sidecar](https://github.com/grafana/helm-charts/tree/main/charts/grafana#sidecar-for-dashboards),
+so the `Chrony NTP` dashboard is imported automatically. It covers the
+exporter's tracking stratum, offset, root dispersion, and root delay metrics.
+The upstream [Chrony dashboard 19186](https://grafana.com/grafana/dashboards/19186-chrony/)
+is an alternative import if a richer dashboard is preferred.
+
+After Argo sync, verify the `ServiceMonitor` target and the `chrony_*` series
+in Grafana/Mimir. A failed target usually means the pod is not listening on
+the Unix socket or the metrics ingress rule is being evaluated by the CNI;
+the public NTP Service intentionally does not expose TCP/9123.
+
+## NTPinfo
+
+NTPinfo is not included in this change. The upstream
+[NTPinfo project](https://github.com/NTPinfo/NTPinfo) is a multi-component
+application requiring PostgreSQL, RIPE Atlas API credentials, a MaxMind
+GeoLite dataset, and its compiled `ntp-nts` submodule/toolchain; it does not
+provide a suitable immutable public runtime image that can be deployed here
+without inventing production secrets or an unreviewed build. Provisioning
+`ntpinfo.syncmy.date` therefore requires a Vault-backed secret mapping for
+those credentials plus an approved pinned image/build artifact. The hostname
+is not added to the existing public NTP Service because NTPinfo is an HTTP
+application and needs its own Gateway route and application lifecycle.

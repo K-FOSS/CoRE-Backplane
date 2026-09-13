@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: 'time-core'
+  labels:
+    app.kubernetes.io/name: 'time-core'
+    app.kubernetes.io/component: 'monitoring'
+spec:
+  namespaceSelector:
+    matchNames:
+      - '{{ .Release.Namespace }}'
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: 'ntp-metrics'
+  endpoints:
+    - port: 'metrics'
+      path: '/metrics'
+      interval: '30s'
+      scrapeTimeout: '10s'

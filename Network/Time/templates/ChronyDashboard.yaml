@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'time-core-chrony-dashboard'
+  labels:
+    grafana_dashboard: '1'
+data:
+  chrony.json: |-
+    {
+      "__inputs": [
+        {
+          "name": "DS_PROMETHEUS",
+          "label": "Prometheus",
+          "type": "datasource",
+          "pluginId": "prometheus",
+          "pluginName": "Prometheus"
+        }
+      ],
+      "annotations": {"list": []},
+      "editable": true,
+      "panels": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "id": 1,
+          "title": "Stratum",
+          "type": "timeseries",
+          "targets": [{"expr": "chrony_tracking_stratum", "refId": "A"}]
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "id": 2,
+          "title": "Last offset",
+          "type": "timeseries",
+          "targets": [{"expr": "chrony_tracking_last_offset_seconds", "refId": "A"}]
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "title": "Root dispersion",
+          "type": "timeseries",
+          "targets": [{"expr": "chrony_tracking_root_dispersion_seconds", "refId": "A"}]
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "title": "Root delay",
+          "type": "timeseries",
+          "targets": [{"expr": "chrony_tracking_root_delay_seconds", "refId": "A"}]
+        }
+      ],
+      "schemaVersion": 39,
+      "tags": ["chrony", "ntp", "time"],
+      "templating": {"list": []},
+      "time": {"from": "now-6h", "to": "now"},
+      "title": "Chrony NTP",
+      "uid": "core-chrony",
+      "version": 1
+    }
