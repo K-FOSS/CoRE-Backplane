@@ -11,9 +11,10 @@ non-root, read-only-rootfs, capability-free, tokenless, and has a default-deny
 NetworkPolicy: public clients can send only NTP; egress is limited to DNS and
 UDP/123 upstream time servers. `NOCLIENTLOG=true` avoids retaining client
 addresses in chrony client logs. Kubernetes applies `fsGroup: 101` to the
-memory-backed Chrony volumes and reapplies the ownership on every pod start,
-so the rootless `100:101` user can write its configuration, runtime, and state
-paths; see the Kubernetes [`fsGroupChangePolicy` documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+memory-backed configuration/runtime volumes and reapplies the ownership on
+every pod start. The rootless `100:101` user can also write the retained 1Gi
+`ReadWriteOnce` PVC mounted at `/var/lib/chrony`; see the Kubernetes
+[`fsGroupChangePolicy` documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
 
 The image is the immutable amd64 digest of the upstream
 [`simonrupf/docker-chronyd`](https://github.com/simonrupf/docker-chronyd) image,
@@ -32,7 +33,7 @@ NTS is enabled for `syncmy.date`: Chrony serves NTS Key Establishment on
 TCP/4460 using the cert-manager-generated `syncmydate-default-certificates`
 Secret. The certificate and private key are mounted read-only and are
 readable by Chrony's UID/GID `100:101`; NTS cookie keys are persisted in the
-existing memory-backed state volume. Chrony requires `ntsservercert` and
+existing PVC. Chrony requires `ntsservercert` and
 `ntsserverkey` to enable the NTS-KE port; see the upstream
 [`chrony.conf` NTS directives](https://chrony-project.org/doc/4.8/chrony.conf.html#ntsservercert).
 
@@ -49,9 +50,10 @@ should not report stratum 16.
 The source configuration uses Cloudflare and Google time services. Change the
 `ntp.servers` value through Git if upstream policy changes. Roll back through
 Git and Argo CD; removing the Application does not remove the upstream route,
-PureLB pool allocation, or external firewall rules.
-NTS clients also require TCP/4460 to be permitted to the public service in
-upstream firewall policy.
+PureLB pool allocation, or external firewall rules. The state PVC is retained
+when this release is removed; delete it deliberately only after confirming
+Chrony drift and NTS-cookie data is no longer needed. NTS clients also require
+TCP/4460 to be permitted to the public service in upstream firewall policy.
 
 ## Metrics and Grafana
 

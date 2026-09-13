@@ -9,7 +9,7 @@ global:
 controllers:
   main:
     type: 'deployment'
-    replicas: 2
+    replicas: 1
     strategy: 'RollingUpdate'
     initContainers:
       permissions:
@@ -213,9 +213,10 @@ persistence:
         main:
           - path: '/run'
   chrony-state:
-    type: 'emptyDir'
-    medium: 'Memory'
-    sizeLimit: '4Mi'
+    type: 'persistentVolumeClaim'
+    accessMode: 'ReadWriteOnce'
+    size: '1Gi'
+    retain: true
     advancedMounts:
       main:
         main:
