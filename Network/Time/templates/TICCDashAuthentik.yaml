@@ -51,3 +51,35 @@ spec:
         group  = data.authentik_group.server_admins.id
         order  = 0
       }
+
+      resource "authentik_provider_proxy" "ntp_dashboard" {
+        name               = "core-prod-ntp-dashboard"
+        mode               = "forward_single"
+        external_host      = "https://dash.syncmy.date"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+
+      resource "authentik_application" "ntp_dashboard" {
+        name              = "NTP Dashboard"
+        slug              = "core-prod-ntp-dashboard"
+        group             = "Network"
+        protocol_provider = authentik_provider_proxy.ntp_dashboard.id
+      }
+
+      resource "authentik_application_entitlement" "ntp_dashboard_server_admins" {
+        name        = "server-admin-access"
+        application = authentik_application.ntp_dashboard.uuid
+      }
+
+      resource "authentik_policy_binding" "ntp_dashboard_entitlement" {
+        target = authentik_application_entitlement.ntp_dashboard_server_admins.id
+        group  = data.authentik_group.server_admins.id
+        order  = 0
+      }
+
+      resource "authentik_policy_binding" "ntp_dashboard_application" {
+        target = authentik_application.ntp_dashboard.uuid
+        group  = data.authentik_group.server_admins.id
+        order  = 0
+      }

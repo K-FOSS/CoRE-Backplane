@@ -200,6 +200,60 @@ controllers:
           requests:
             cpu: '25m'
             memory: '32Mi'
+      ntp-dashboard:
+        image:
+          repository: {{ .Values.images.ntpDashboard.repository | quote }}
+          tag: {{ .Values.images.ntpDashboard.tag | quote }}
+          pullPolicy: {{ .Values.images.ntpDashboard.pullPolicy }}
+        env:
+          - name: 'LOG_LEVEL'
+            value: 'INFO'
+          - name: 'HOME'
+            value: '/tmp'
+          - name: 'TMPDIR'
+            value: '/tmp'
+        ports:
+          - name: 'dashboard'
+            containerPort: 55234
+            protocol: 'TCP'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 100
+          runAsGroup: 101
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/'
+                port: 'dashboard'
+              initialDelaySeconds: 15
+              periodSeconds: 30
+              timeoutSeconds: 5
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/'
+                port: 'dashboard'
+              initialDelaySeconds: 15
+              periodSeconds: 15
+              timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: '250m'
+            memory: '256Mi'
+          requests:
+            cpu: '25m'
+            memory: '64Mi'
 service:
   main:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
@@ -250,6 +304,20 @@ service:
         protocol: 'TCP'
         targetPort: 'http'
 
+  ntp-dashboard:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
+    controller: 'main'
+    type: 'ClusterIP'
+    primary: false
+    labels:
+      app.kubernetes.io/component: 'ntp-dashboard'
+    ports:
+      http:
+        primary: true
+        port: 55234
+        protocol: 'TCP'
+        targetPort: 'dashboard'
+
 route:
   ticc-dash:
     enabled: true
@@ -266,6 +334,22 @@ route:
     rules:
       - backendRefs:
           - identifier: 'dashboard'
+            port: 'http'
+  ntp-dashboard:
+    enabled: true
+    kind: 'HTTPRoute'
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: 'Gateway'
+        name: 'main-gw'
+        namespace: 'core-prod'
+        sectionName: 'https-myloginspace'
+    hostnames:
+      - 'dash.syncmy.date'
+    rules:
+      - backendRefs:
+          - identifier: 'ntp-dashboard'
             port: 'http'
 
 persistence:
@@ -285,13 +369,14 @@ persistence:
     sizeLimit: '1Mi'
     advancedMounts:
       main:
+        main:
+          - path: '/run/chrony'
         permissions:
           - path: '/run/chrony'
 
-        main:
-          - path: '/run/chrony'
-
         ticc-dash:
+          - path: '/run/chrony'
+        ntp-dashboard:
           - path: '/run/chrony'
   chrony-state:
     type: 'persistentVolumeClaim'
@@ -320,6 +405,23 @@ persistence:
     advancedMounts:
       main:
         ticc-dash:
+          - path: '/tmp'
+  ntp-dashboard-data:
+    type: 'persistentVolumeClaim'
+    accessMode: 'ReadWriteOnce'
+    size: '1Gi'
+    retain: true
+    advancedMounts:
+      main:
+        ntp-dashboard:
+          - path: '/app/data'
+  ntp-dashboard-tmp:
+    type: 'emptyDir'
+    medium: 'Memory'
+    sizeLimit: '16Mi'
+    advancedMounts:
+      main:
+        ntp-dashboard:
           - path: '/tmp'
 
 networkpolicies:
@@ -357,6 +459,8 @@ networkpolicies:
                   gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
           ports:
             - port: 'http'
+              protocol: 'TCP'
+            - port: 'dashboard'
               protocol: 'TCP'
       egress:
         - to:

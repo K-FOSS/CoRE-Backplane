@@ -111,6 +111,18 @@ HTTPRoute `Accepted`/`ResolvedRefs`, the SecurityPolicy attachment, the
 Authentik Workspace readiness, and an authorized and unauthorized session at
 `clients.syncmy.date` after reconciliation.
 
+## NightHawkATL NTP Dashboard
+
+The [NightHawkATL NTP Dashboard](https://github.com/NightHawkATL/ntp-dashboard)
+is published at `https://dash.syncmy.date`. It runs as a rootless sidecar,
+uses the shared `/run/chrony` socket for local Chrony queries, and persists its
+encrypted configuration and key in the `ntp-dashboard-data` PVC. Its image is
+pinned to the amd64 digest published for the upstream
+[`nighthawkatl/ntp-dashboard` image](https://hub.docker.com/r/nighthawkatl/ntp-dashboard).
+The existing fail-closed Authentik SecurityPolicy targets both dashboard
+routes; a separate Authentik proxy application for this hostname is restricted
+to the `Server Admins` group.
+
 ## NTPinfo
 
 NTPinfo is not included in this change. The upstream

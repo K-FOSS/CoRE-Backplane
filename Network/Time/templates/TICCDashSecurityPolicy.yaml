@@ -7,6 +7,9 @@ spec:
     - group: 'gateway.networking.k8s.io'
       kind: 'HTTPRoute'
       name: '{{ ((include "bjw-s.common.lib.route.getByIdentifier" (dict "rootContext" . "id" "ticc-dash")) | fromYaml).name }}'
+    - group: 'gateway.networking.k8s.io'
+      kind: 'HTTPRoute'
+      name: '{{ ((include "bjw-s.common.lib.route.getByIdentifier" (dict "rootContext" . "id" "ntp-dashboard")) | fromYaml).name }}'
   extAuth:
     failOpen: false
     headersToExtAuth:
