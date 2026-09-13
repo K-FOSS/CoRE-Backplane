@@ -10,7 +10,7 @@ requests `66.165.222.123`, and uses `externalTrafficPolicy: Local`. The pod is
 non-root, read-only-rootfs, capability-free, tokenless, and has a default-deny
 NetworkPolicy: public clients can send only NTP; egress is limited to DNS and
 UDP/123 upstream time servers. Client logging is enabled (`NOCLIENTLOG=false`)
-so TICC-DASH and Chrony can retain client activity for operational review.
+so Chrony can retain client activity for operational review.
 Kubernetes applies `fsGroup: 101` to the
 memory-backed configuration/runtime volumes and reapplies the ownership on
 every pod start. The rootless `100:101` user can also write the retained 1Gi
@@ -66,10 +66,13 @@ Each Chrony pod also runs the pinned amd64 build of the
 [`chrony_exporter`](https://github.com/SuperQ/chrony_exporter) beside Chrony.
 The exporter queries Chrony's pod-local command endpoint at `127.0.0.1:323`
 and exposes TCP/9123 only through the internal `*-metrics` ClusterIP Service.
-The TICC-DASH sidecar uses the shared Unix socket at
-`/run/chrony/chronyd.sock`, which is required for the `chronyc clients`
-command. The
-NetworkPolicy permits that port only from `core-prod`, where the central
+Chrony retains its Unix command socket at `/run/chrony/chronyd.sock` for local
+administration, NTS key reloading, and health checks. The remote command port
+is available only through the internal UDP/323 Service and is restricted by
+both the Chrony `cmdallow` CIDRs and NetworkPolicy. NetworkPolicy enforces
+dashboard workload identity; `cmdallow` provides Chrony's address-level
+authorization. The
+NetworkPolicy permits metrics only from `core-prod`, where the central
 [Grafana Alloy ServiceMonitor receiver](../../Observability/Collectors/README.md)
 scrapes it and forwards the metrics to Mimir. The exporter image is
 [published on Docker Hub](https://hub.docker.com/r/superque/chrony-exporter-linux-amd64)
@@ -88,42 +91,33 @@ in Grafana/Mimir. A failed target usually means the pod is not listening on
 the Unix socket or the metrics ingress rule is being evaluated by the CNI;
 the public NTP Service intentionally does not expose TCP/9123.
 
-## TICC-DASH
-
-The pinned [TICC-DASH](https://github.com/anoniemerd/ticc-dash) image runs
-rootless beside Chrony and reads the shared command socket with
-`CHRONY_USE_SUDO=false`. Its ClusterIP backend is exposed at
-`https://clients.syncmy.date` through the shared Gateway. The route is
-protected by a fail-closed Envoy Gateway
-[external authorization policy](https://gateway.envoyproxy.io/latest/tasks/security/ext-auth/)
-using the shared Authentik proxy; the generated Authentik application and
-entitlement are both bound only to the `Server Admins` group. The TICC-DASH
-image documents the `/data` endpoint and Chrony socket configuration in its
-[container documentation](https://github.com/anoniemerd/ticc-dash#containers).
-Gunicorn's temporary worker files and control socket use a dedicated 16Mi
-memory-backed `/tmp` mount and `HOME=/tmp` because the container root
-filesystem remains read-only and the image user otherwise has `/dev/null` as
-its home directory. The exporter uses UDP for its read-only monitoring
-commands, while TICC-DASH uses the Unix socket because Chrony restricts
-`clients` to local command-socket access. See the upstream
-[`chronyc` command access documentation](https://chrony-project.org/doc/4.8/chronyc.html).
-
-The route is not public without Authentik authorization. Verify Gateway and
-HTTPRoute `Accepted`/`ResolvedRefs`, the SecurityPolicy attachment, the
-Authentik Workspace readiness, and an authorized and unauthorized session at
-`clients.syncmy.date` after reconciliation.
-
 ## NightHawkATL NTP Dashboard
 
 The [NightHawkATL NTP Dashboard](https://github.com/NightHawkATL/ntp-dashboard)
-is published at `https://dash.syncmy.date`. It runs as a rootless sidecar,
-uses the shared `/run/chrony` socket for local Chrony queries, and persists its
-encrypted configuration and key in the `ntp-dashboard-data` PVC. Its image is
-pinned to the amd64 digest published for the upstream
+is published at `https://dash.syncmy.date` in a separate singleton Deployment
+using a `ReadWriteOnce` data PVC and a `Recreate` rollout. It is rootless,
+read-only-rootfs, and does not mount Chrony's state or Unix command socket. Its
+image is pinned to the amd64 digest published for the upstream
 [`nighthawkatl/ntp-dashboard` image](https://hub.docker.com/r/nighthawkatl/ntp-dashboard).
-The existing fail-closed Authentik SecurityPolicy targets both dashboard
-routes; a separate Authentik proxy application for this hostname is restricted
-to the `Server Admins` group.
+The `dash.syncmy.date` route remains protected by a fail-closed Authentik
+SecurityPolicy and its proxy application remains restricted to the `Server
+Admins` group.
+
+The pinned image digest is not compatible with the requested native remote
+Chrony command-port mode. Its source supports only local shell execution of
+`chronyc` or a remote SSH session; it has no Chrony host/port environment
+variable or `config.json` network-command mode. No unsupported setting, SSH
+server, credential, or adapter is added here. Consequently, the chart-side
+UDP/323 endpoint is prepared, but this pinned dashboard image cannot retrieve
+remote `tracking`, `sources`, or `clients` until the image gains native UDP
+Chrony support or is replaced with an approved compatible image.
+
+When a compatible dashboard is used, its queries will be pinned by the
+internal Service's `ClientIP` session affinity to one Ready Chrony replica.
+`tracking` and `sources` then describe that replica, and `clients` contains
+only clients observed by it—not an aggregate cluster-wide list. Prometheus/
+Mimir remains the authoritative aggregate view; if the selected replica
+disappears, Kubernetes may move traffic to another Ready replica.
 
 ## NTPinfo
 

@@ -16,16 +16,13 @@ images:
     repository: 'superque/chrony-exporter-linux-amd64'
     tag: 'v0.13.3@sha256:a47168fb01648d93f46f83c0f1c6b8266cc592d088f6d681d7763ec3e4d5a383'
     pullPolicy: 'IfNotPresent'
-  ticcDash:
-    repository: 'venthe/ticc-dash'
-    tag: '1.0.0@sha256:c4d570114a7e0d8a542a6188aeb10190e2a41c8e448508b2d2b280175f409557'
-    pullPolicy: 'IfNotPresent'
   ntpDashboard:
     repository: 'nighthawkatl/ntp-dashboard'
     tag: 'latest@sha256:1ead06b4ffe39470d7026efcba44fb11bc22885ab0adbc5b241d8204d0ea0fea'
     pullPolicy: 'IfNotPresent'
 
 ntp:
+  replicas: 1
   # Upstream NTP sources and their Chrony options.
   sources:
     - hostname: 'time.cloudflare.com'
@@ -49,6 +46,10 @@ ntp:
       nts: false
       maxsources: 2
   minsources: 3
+  # Pod CIDRs permitted to use Chrony's UDP/323 monitoring interface.
+  cmdAllowCidrs:
+    - '172.20.48.0/21'
+  cmdSessionAffinityTimeoutSeconds: 10800
   domain: 'syncmy.date'
   logLevel: '1'
   noClientLog: false

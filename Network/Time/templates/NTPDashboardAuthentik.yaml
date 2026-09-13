@@ -16,40 +16,8 @@ spec:
         slug = "default-provider-invalidation-flow"
       }
 
-      resource "authentik_provider_proxy" "ticc_dash" {
-        name               = "core-prod-ticc-dash"
-        mode               = "forward_single"
-        external_host      = "https://clients.{{ .Values.ntp.domain }}"
-        authorization_flow = data.authentik_flow.authorization.id
-        invalidation_flow  = data.authentik_flow.invalidation.id
-      }
-
-      resource "authentik_application" "ticc_dash" {
-        name              = "TICC-DASH"
-        slug              = "core-prod-ticc-dash"
-        group             = "Network"
-        protocol_provider = authentik_provider_proxy.ticc_dash.id
-      }
-
-      resource "authentik_application_entitlement" "server_admins" {
-        name        = "server-admin-access"
-        application = authentik_application.ticc_dash.uuid
-      }
-
       data "authentik_group" "server_admins" {
         name = "Server Admins"
-      }
-
-      resource "authentik_policy_binding" "entitlement" {
-        target = authentik_application_entitlement.server_admins.id
-        group  = data.authentik_group.server_admins.id
-        order  = 0
-      }
-
-      resource "authentik_policy_binding" "application" {
-        target = authentik_application.ticc_dash.uuid
-        group  = data.authentik_group.server_admins.id
-        order  = 0
       }
 
       resource "authentik_provider_proxy" "ntp_dashboard" {

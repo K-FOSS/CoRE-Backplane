@@ -9,7 +9,7 @@ global:
 controllers:
   main:
     type: 'deployment'
-    replicas: 1
+    replicas: {{ .Values.ntp.replicas }}
     strategy: 'RollingUpdate'
     initContainers:
       permissions:
@@ -52,6 +52,10 @@ controllers:
           repository: {{ .Values.images.chrony.repository | quote }}
           tag: {{ .Values.images.chrony.tag | quote }}
           pullPolicy: {{ .Values.images.chrony.pullPolicy }}
+        ports:
+          - name: 'command'
+            containerPort: 323
+            protocol: 'UDP'
         command:
           - '/bin/sh'
           - '-c'
@@ -79,7 +83,10 @@ controllers:
               printf '%s\n' 'noclientlog' >> /etc/chrony/chrony.conf
             fi
             printf '%s\n' 'allow all' 'driftfile /var/lib/chrony/chrony.drift' >> /etc/chrony/chrony.conf
-            printf '%s\n' 'bindcmdaddress 127.0.0.1' 'cmdport 323' >> /etc/chrony/chrony.conf
+            printf '%s\n' 'bindcmdaddress 0.0.0.0' 'cmdport 323' 'opencommands tracking sources clients' >> /etc/chrony/chrony.conf
+{{- range .Values.ntp.cmdAllowCidrs }}
+            printf '%s\n' 'cmdallow {{ . }}' >> /etc/chrony/chrony.conf
+{{- end }}
             printf '%s\n' 'bindcmdaddress /run/chrony/chronyd.sock' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsdumpdir /var/lib/chrony' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsservercert /etc/chrony-tls/tls.crt' >> /etc/chrony/chrony.conf
@@ -162,63 +169,21 @@ controllers:
           requests:
             cpu: '10m'
             memory: '16Mi'
-      ticc-dash:
-        image:
-          repository: {{ .Values.images.ticcDash.repository | quote }}
-          tag: {{ .Values.images.ticcDash.tag | quote }}
-          pullPolicy: {{ .Values.images.ticcDash.pullPolicy }}
-        env:
-          - name: 'CHRONY_USE_SUDO'
-            value: 'false'
-          - name: 'CHRONY_SOCKET'
-            value: '/run/chrony/chronyd.sock'
-          - name: 'TMPDIR'
-            value: '/tmp'
-          - name: 'HOME'
-            value: '/tmp'
-        ports:
-          - name: 'http'
-            containerPort: 5000
-            protocol: 'TCP'
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - 'ALL'
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 100
-          runAsGroup: 101
-        probes:
-          liveness:
-            enabled: true
-            custom: true
-            spec:
-              httpGet:
-                path: '/'
-                port: 'http'
-              initialDelaySeconds: 10
-              periodSeconds: 30
-              timeoutSeconds: 5
-          readiness:
-            enabled: true
-            custom: true
-            spec:
-              httpGet:
-                path: '/'
-                port: 'http'
-              initialDelaySeconds: 10
-              periodSeconds: 15
-              timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: '250m'
-            memory: '128Mi'
-          requests:
-            cpu: '25m'
-            memory: '32Mi'
-      ntp-dashboard:
+  ntp-dashboard:
+    type: 'deployment'
+    replicas: 1
+    strategy: 'Recreate'
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: 'RuntimeDefault'
+      terminationGracePeriodSeconds: 30
+    containers:
+      main:
         image:
           repository: {{ .Values.images.ntpDashboard.repository | quote }}
           tag: {{ .Values.images.ntpDashboard.tag | quote }}
@@ -308,23 +273,9 @@ service:
         protocol: 'TCP'
         targetPort: 'metrics'
 
-  dashboard:
-    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ticc-dash'
-    controller: 'main'
-    type: 'ClusterIP'
-    primary: false
-    labels:
-      app.kubernetes.io/component: 'ticc-dash'
-    ports:
-      http:
-        primary: true
-        port: 5000
-        protocol: 'TCP'
-        targetPort: 'http'
-
   ntp-dashboard:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
-    controller: 'main'
+    controller: 'ntp-dashboard'
     type: 'ClusterIP'
     primary: false
     labels:
@@ -336,25 +287,25 @@ service:
         protocol: 'TCP'
         targetPort: 'dashboard'
 
-route:
-  ticc-dash:
-    enabled: true
-    kind: 'HTTPRoute'
-    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ticc-dash'
+  chrony-command:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-chrony-command'
+    controller: 'main'
+    type: 'ClusterIP'
+    primary: false
+    sessionAffinity: 'ClientIP'
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: {{ .Values.ntp.cmdSessionAffinityTimeoutSeconds }}
     labels:
-      wan-mode: 'public'
-    parentRefs:
-      - group: 'gateway.networking.k8s.io'
-        kind: 'Gateway'
-        name: 'main-gw'
-        namespace: 'core-prod'
-        sectionName: 'https-myloginspace'
-    hostnames:
-      - 'clients.{{ .Values.ntp.domain }}'
-    rules:
-      - backendRefs:
-          - identifier: 'dashboard'
-            port: 'http'
+      app.kubernetes.io/component: 'chrony-command'
+    ports:
+      command:
+        primary: true
+        port: 323
+        protocol: 'UDP'
+        targetPort: 323
+
+route:
   ntp-dashboard:
     enabled: true
     kind: 'HTTPRoute'
@@ -395,11 +346,6 @@ persistence:
           - path: '/run/chrony'
         permissions:
           - path: '/run/chrony'
-
-        ticc-dash:
-          - path: '/run/chrony'
-        ntp-dashboard:
-          - path: '/run/chrony'
   chrony-state:
     type: 'persistentVolumeClaim'
     accessMode: 'ReadWriteOnce'
@@ -420,21 +366,13 @@ persistence:
         main:
           - path: '/etc/chrony-tls'
             readOnly: true
-  ticc-dash-tmp:
-    type: 'emptyDir'
-    medium: 'Memory'
-    sizeLimit: '16Mi'
-    advancedMounts:
-      main:
-        ticc-dash:
-          - path: '/tmp'
   ntp-dashboard-data:
     type: 'persistentVolumeClaim'
     accessMode: 'ReadWriteOnce'
     size: '1Gi'
     retain: true
     advancedMounts:
-      main:
+      ntp-dashboard:
         ntp-dashboard:
           - path: '/app/data'
   ntp-dashboard-tmp:
@@ -442,7 +380,7 @@ persistence:
     medium: 'Memory'
     sizeLimit: '16Mi'
     advancedMounts:
-      main:
+      ntp-dashboard:
         ntp-dashboard:
           - path: '/tmp'
 
@@ -471,19 +409,14 @@ networkpolicies:
             - port: 'metrics'
               protocol: 'TCP'
         - from:
-            - namespaceSelector:
+            - podSelector:
                 matchLabels:
-                  kubernetes.io/metadata.name: 'kube-system'
-              podSelector:
-                matchLabels:
-                  app.kubernetes.io/name: 'envoy'
-                  gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
-                  gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
+                  app.kubernetes.io/controller: 'ntp-dashboard'
+                  app.kubernetes.io/name: {{ .Values.global.nameOverride | quote }}
+                  app.kubernetes.io/instance: {{ .Release.Name | quote }}
           ports:
-            - port: 'http'
-              protocol: 'TCP'
-            - port: 'dashboard'
-              protocol: 'TCP'
+            - port: 'command'
+              protocol: 'UDP'
       egress:
         - to:
             - namespaceSelector:
@@ -499,6 +432,45 @@ networkpolicies:
                 cidr: '0.0.0.0/0'
           ports:
             - port: 123
+              protocol: 'UDP'
+  ntp-dashboard:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
+    controller: 'ntp-dashboard'
+    policyTypes:
+      - 'Ingress'
+      - 'Egress'
+    rules:
+      ingress:
+        - from:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: 'kube-system'
+              podSelector:
+                matchLabels:
+                  app.kubernetes.io/name: 'envoy'
+                  gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
+                  gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
+          ports:
+            - port: 'dashboard'
+              protocol: 'TCP'
+      egress:
+        - to:
+            - namespaceSelector:
+                matchLabels:
+                  kubernetes.io/metadata.name: 'kube-system'
+          ports:
+            - port: 53
+              protocol: 'UDP'
+            - port: 53
+              protocol: 'TCP'
+        - to:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/controller: 'main'
+                  app.kubernetes.io/name: {{ .Values.global.nameOverride | quote }}
+                  app.kubernetes.io/instance: {{ .Release.Name | quote }}
+          ports:
+            - port: 'command'
               protocol: 'UDP'
 {{- end -}}
 
