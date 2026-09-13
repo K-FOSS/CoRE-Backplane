@@ -83,6 +83,27 @@ loading, and restore of both PVCs. The chart currently follows mutable `HEAD`
 and preserves both PVCs on removal; decommissioning therefore requires an
 explicit backup and data cleanup decision.
 
+## Personal/Finances
+
+[Personal/Finances.yaml](Personal/Finances.yaml) owns the YVR deployment of
+the upstream [CoRE Finances chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Finances)
+for `core-home1-talos-prod` in the standard `core-prod` namespace. The chart
+is rendered through the Lovely plugin with the selected cluster identity and
+Home1 PostgreSQL provider injected. The source is pinned to the upstream
+revision that contains this chart.
+
+The chart deploys Firefly III with a retained 10Gi Longhorn upload PVC, a
+PostgreSQL `User` claim, an Authentik forward-auth policy, and a scheduler
+CronJob. The externally managed `firefly-app-key` Secret must exist in
+`core-prod` with an `APP_KEY` entry before synchronization; no credential value
+is stored here. Before sync, resolve the chart dependency and inspect the
+rendered User, Workspace, SecurityPolicy, Deployment, CronJob, Service,
+HTTPRoute, and PVC. After reconciliation, verify PostgreSQL and Authentik
+conditions, the application endpoint, authentication, transaction creation,
+scheduler completion, and backup/restore behavior. The ApplicationSet
+preserves generated resources on removal; decommissioning must therefore
+include an explicit data-retention and cleanup decision.
+
 ## Landing
 
 [Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
