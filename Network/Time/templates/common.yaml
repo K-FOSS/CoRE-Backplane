@@ -76,6 +76,7 @@ controllers:
               printf '%s\n' 'noclientlog' >> /etc/chrony/chrony.conf
             fi
             printf '%s\n' 'allow all' 'driftfile /var/lib/chrony/chrony.drift' >> /etc/chrony/chrony.conf
+            printf '%s\n' 'bindcmdaddress /run/chrony/chronyd.sock' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsdumpdir /var/lib/chrony' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsservercert /etc/chrony-tls/tls.crt' >> /etc/chrony/chrony.conf
             printf '%s\n' 'ntsserverkey /etc/chrony-tls/tls.key' >> /etc/chrony/chrony.conf
@@ -166,6 +167,8 @@ controllers:
           - name: 'CHRONY_SOCKET'
             value: '/run/chrony/chronyd.sock'
           - name: 'TMPDIR'
+            value: '/tmp'
+          - name: 'HOME'
             value: '/tmp'
         ports:
           - name: 'http'
