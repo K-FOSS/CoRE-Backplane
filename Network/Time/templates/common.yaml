@@ -11,6 +11,37 @@ controllers:
     type: 'deployment'
     replicas: 2
     strategy: 'RollingUpdate'
+    initContainers:
+      permissions:
+        image:
+          repository: {{ .Values.images.chrony.repository | quote }}
+          tag: {{ .Values.images.chrony.tag | quote }}
+          pullPolicy: {{ .Values.images.chrony.pullPolicy }}
+        command:
+          - '/bin/sh'
+          - '-c'
+          - |
+            set -eu
+            chown 100:101 /etc/chrony /run/chrony /var/lib/chrony
+            chmod 1750 /etc/chrony /run/chrony /var/lib/chrony
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - 'CHOWN'
+            drop:
+              - 'ALL'
+          privileged: false
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+        volumeMounts:
+          - name: 'chrony-config'
+            mountPath: '/etc/chrony'
+          - name: 'chrony-run'
+            mountPath: '/run/chrony'
+          - name: 'chrony-state'
+            mountPath: '/var/lib/chrony'
     pod:
       automountServiceAccountToken: false
       securityContext:

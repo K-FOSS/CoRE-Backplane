@@ -21,8 +21,10 @@ which runs chronyd as a non-root `chrony` user and supports the chart's
 runtime. The chart bypasses the image entrypoint because it attempts a
 privileged `chown` on `/run/chrony`; instead, the rootless user writes the
 generated config to `/etc/chrony` and starts chronyd without system-clock
-control. This preserves the chart's `NTP_SERVERS`, `NOCLIENTLOG`, and
-`LOG_LEVEL` settings while allowing writes to the memory-backed volumes.
+control. A short-lived init container assigns the memory-backed directories to
+UID/GID `100:101` and applies Chrony's required `1750` permissions before the
+rootless container starts. This preserves the chart's `NTP_SERVERS`,
+`NOCLIENTLOG`, and `LOG_LEVEL` settings while allowing writes to the volumes.
 
 ## Reconciliation and verification
 
