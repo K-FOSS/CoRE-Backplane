@@ -26,8 +26,10 @@ privileged `chown` on `/run/chrony`; instead, the rootless user writes the
 generated config to `/etc/chrony` and starts chronyd without system-clock
 control. A short-lived init container assigns the memory-backed directories to
 UID/GID `100:101` and provides a writable `/run` memory volume; the rootless
-process creates `/run/chrony` itself with Chrony's required `0770` permissions
-before starting. This preserves the chart's `NTP_SERVERS`,
+process creates `/run/chrony` with Chrony's required `0770` permissions
+before starting. The init container uses a pinned BusyBox image so its root
+ownership setup is independent of the Chrony image's entrypoint and user. This
+preserves the chart's `NTP_SERVERS`,
 `NOCLIENTLOG`, and `LOG_LEVEL` settings while allowing writes to the volumes.
 
 NTS is enabled for `syncmy.date`: Chrony serves NTS Key Establishment on
@@ -62,8 +64,9 @@ Each Chrony pod also runs the pinned amd64 build of the
 [`chrony_exporter`](https://github.com/SuperQ/chrony_exporter) beside Chrony.
 The exporter queries Chrony's pod-local command endpoint at `127.0.0.1:323`
 and exposes TCP/9123 only through the internal `*-metrics` ClusterIP Service.
-The TICC-DASH sidecar uses `CHRONY_SOCKET=127.0.0.1`, allowing `chronyc` to
-use its default command port 323. The
+The TICC-DASH sidecar uses the shared Unix socket at
+`/run/chrony/chronyd.sock`, which is required for the `chronyc clients`
+command. The
 NetworkPolicy permits that port only from `core-prod`, where the central
 [Grafana Alloy ServiceMonitor receiver](../../Observability/Collectors/README.md)
 scrapes it and forwards the metrics to Mimir. The exporter image is
@@ -98,10 +101,10 @@ image documents the `/data` endpoint and Chrony socket configuration in its
 Gunicorn's temporary worker files and control socket use a dedicated 16Mi
 memory-backed `/tmp` mount and `HOME=/tmp` because the container root
 filesystem remains read-only and the image user otherwise has `/dev/null` as
-its home directory. Chrony also retains its Unix command socket at
-`/run/chrony/chronyd.sock`, but dashboard and exporter monitoring use the
-pod-local UDP command endpoint to avoid cross-container Unix-socket ownership
-issues. See the upstream [`chronyc` command access documentation](https://chrony-project.org/doc/4.8/chronyc.html).
+its home directory. The exporter uses UDP for its read-only monitoring
+commands, while TICC-DASH uses the Unix socket because Chrony restricts
+`clients` to local command-socket access. See the upstream
+[`chronyc` command access documentation](https://chrony-project.org/doc/4.8/chronyc.html).
 
 The route is not public without Authentik authorization. Verify Gateway and
 HTTPRoute `Accepted`/`ResolvedRefs`, the SecurityPolicy attachment, the

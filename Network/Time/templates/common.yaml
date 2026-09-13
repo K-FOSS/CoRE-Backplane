@@ -36,18 +36,10 @@ controllers:
           runAsNonRoot: false
           runAsUser: 0
           runAsGroup: 0
-        volumeMounts:
-          - name: 'chrony-config'
-            mountPath: '/etc/chrony'
-          - name: 'chrony-run'
-            mountPath: '/run'
-          - name: 'chrony-state'
-            mountPath: '/var/lib/chrony'
     pod:
       automountServiceAccountToken: false
       securityContext:
         fsGroup: 101
-        fsGroupChangePolicy: 'Always'
         runAsNonRoot: true
         runAsUser: 100
         runAsGroup: 101
@@ -152,9 +144,6 @@ controllers:
           requests:
             cpu: '10m'
             memory: '16Mi'
-        volumeMounts:
-          - name: 'chrony-run'
-            mountPath: '/run'
       ticc-dash:
         image:
           repository: {{ .Values.images.ticcDash.repository | quote }}
@@ -211,11 +200,6 @@ controllers:
           requests:
             cpu: '25m'
             memory: '32Mi'
-        volumeMounts:
-          - name: 'chrony-run'
-            mountPath: '/run'
-            readOnly: true
-
 service:
   main:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
@@ -293,6 +277,8 @@ persistence:
       main:
         main:
           - path: '/etc/chrony'
+        permissions:
+          - path: '/etc/chrony'
   chrony-run:
     type: 'emptyDir'
     medium: 'Memory'
@@ -300,6 +286,8 @@ persistence:
     advancedMounts:
       main:
         main:
+          - path: '/run'
+        permissions:
           - path: '/run'
         exporter:
           - path: '/run'
@@ -315,6 +303,8 @@ persistence:
     advancedMounts:
       main:
         main:
+          - path: '/var/lib/chrony'
+        permissions:
           - path: '/var/lib/chrony'
   nts-tls:
     type: 'secret'
