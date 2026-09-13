@@ -13,9 +13,11 @@ UDP/123 upstream time servers. `NOCLIENTLOG=true` avoids retaining client
 addresses in chrony client logs.
 
 The image is the immutable multi-architecture digest of the upstream
-[`cturra/docker-ntp`](https://github.com/cturra/docker-ntp) image. The image
-startup script runs chronyd with `-x`, so it serves time from the Kubernetes
-node's clock without attempting to change that clock.
+[`simonrupf/docker-chronyd`](https://github.com/simonrupf/docker-chronyd) image,
+which runs chronyd as a non-root `chrony` user and supports the chart's
+`NTP_SERVERS`, `NOCLIENTLOG`, and `LOG_LEVEL` environment variables. The image
+startup script runs chronyd without system-clock control, so it serves time from
+the Kubernetes node's clock without attempting to change that clock.
 
 ## Reconciliation and verification
 
