@@ -80,8 +80,8 @@ spec:
             job_level: 'info'
           runner:
             capacity: 1
-            timeout: '12h'
-            shutdown_timeout: '12h'
+            timeout: '48h'
+            shutdown_timeout: '48h'
             insecure: false
             fetch_timeout: '5s'
             fetch_interval: '2s'
@@ -148,7 +148,7 @@ spec:
         secret.reloader.stakater.com/reload: 'forgejo-runner-{{ .name }}'
     spec:
       automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 43230
+      terminationGracePeriodSeconds: 172830
 {{- with $.Values.forgejoRunner.affinity }}
       affinity:
 {{ toYaml . | indent 8 }}
