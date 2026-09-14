@@ -8,6 +8,8 @@ metadata:
     wan-mode: public
 
   annotations:
+    external-dns.kubernetes.io/hostname: 'psql.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}'
+    # TODO(external-dns-030): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: psql.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}
 
 spec:

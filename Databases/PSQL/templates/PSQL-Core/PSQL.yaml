@@ -56,9 +56,13 @@ spec:
   {{- end }}
 
   masterServiceAnnotations:
+    external-dns.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}{{ if .Values.psql.hub }},psql-int.{{ .Values.tenant.domain }}{{ end }}'
+    # TODO(external-dns-032): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: 'psql-int.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}{{ if .Values.psql.hub }},psql-int.{{ .Values.tenant.domain }}{{ end }}'
 
   replicaServiceAnnotations:
+    external-dns.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}{{ if .Values.psql.hub }},psql-int-rep.{{ .Values.tenant.domain }}{{ end }}'
+    # TODO(external-dns-033): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: 'psql-int-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.tenant.domain }}{{ if .Values.psql.hub }},psql-int-rep.{{ .Values.tenant.domain }}{{ end }}'
 
   allowedSourceRanges:
