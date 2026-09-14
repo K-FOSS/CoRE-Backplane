@@ -80,6 +80,8 @@ spec:
             key: '{{ .Values.external.tls.key }}'
           bootstrap:
             annotations:
+              external-dns.kubernetes.io/hostname: '{{ .Values.external.hostname }}'
+              # TODO(external-dns-003): Remove the legacy annotation after upgrading ExternalDNS.
               external-dns.alpha.kubernetes.io/hostname: '{{ .Values.external.hostname }}'
             labels:
               wan-mode: 'public'
@@ -88,6 +90,8 @@ spec:
               advertisedHost: '{{ index .Values.external.brokerHostnames 0 }}'
               advertisedPort: 9094
               annotations:
+                external-dns.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 0 }}'
+                # TODO(external-dns-004): Remove the legacy annotation after upgrading ExternalDNS.
                 external-dns.alpha.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 0 }}'
               labels:
                 wan-mode: 'public'
@@ -95,6 +99,8 @@ spec:
               advertisedHost: '{{ index .Values.external.brokerHostnames 1 }}'
               advertisedPort: 9094
               annotations:
+                external-dns.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 1 }}'
+                # TODO(external-dns-005): Remove the legacy annotation after upgrading ExternalDNS.
                 external-dns.alpha.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 1 }}'
               labels:
                 wan-mode: 'public'
@@ -102,6 +108,8 @@ spec:
               advertisedHost: '{{ index .Values.external.brokerHostnames 2 }}'
               advertisedPort: 9094
               annotations:
+                external-dns.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 2 }}'
+                # TODO(external-dns-006): Remove the legacy annotation after upgrading ExternalDNS.
                 external-dns.alpha.kubernetes.io/hostname: '{{ index .Values.external.brokerHostnames 2 }}'
               labels:
                 wan-mode: 'public'
