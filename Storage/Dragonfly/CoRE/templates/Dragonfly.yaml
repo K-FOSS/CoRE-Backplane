@@ -16,6 +16,8 @@ spec:
 
   serviceSpec:
     annotations:
+      external-dns.kubernetes.io/hostname: 'dragonfly.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+      # TODO(external-dns-021): Remove the legacy annotation after upgrading ExternalDNS.
       external-dns.alpha.kubernetes.io/hostname: dragonfly.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space
     labels:
       wan-mode: public

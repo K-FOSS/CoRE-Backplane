@@ -99,6 +99,8 @@ service:
     #externalTrafficPolicy: Local
 
     # annotations:
+    #   external-dns.kubernetes.io/hostname: static.mylogin.space
+    #   TODO(external-dns-019): Remove the legacy annotation after upgrading ExternalDNS.
     #   external-dns.alpha.kubernetes.io/hostname: static.mylogin.space
     #   purelb.io/allow-local: 'true'
     #   purelb.io/addresses: ''
@@ -268,6 +270,8 @@ tftp:
     annotations:
       purelb.io/allow-local: 'true'
       purelb.io/addresses: '10.1.1.67'
+      external-dns.kubernetes.io/hostname: 'tftp.mylogin.space'
+      # TODO(external-dns-020): Remove the legacy annotation after upgrading ExternalDNS.
       external-dns.alpha.kubernetes.io/hostname: 'tftp.mylogin.space'
       purelb.io/allow-shared-ip: dhcp.resolvemy.host
 

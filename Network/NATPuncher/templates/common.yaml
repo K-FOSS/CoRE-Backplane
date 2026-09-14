@@ -241,6 +241,8 @@ service:
       purelb.io/service-group: main-public
       purelb.io/allow-local: 'true'
       purelb.io/addresses: '{{ $.Values.networking.publicAddress }}'
+      external-dns.kubernetes.io/hostname: 'nat.mylogin.space'
+      # TODO(external-dns-022): Remove the legacy annotation after upgrading ExternalDNS.
       external-dns.alpha.kubernetes.io/hostname: 'nat.mylogin.space'
 
     # -- Provide additional labels which may be required.
