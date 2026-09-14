@@ -10,6 +10,8 @@ metadata:
 
   annotations:
     consul.hashicorp.com/service-name: ldap
+    external-dns.kubernetes.io/hostname: 'ldap.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+    # TODO(external-dns-024): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: 'ldap.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
 
   name: myloginspace-ldap

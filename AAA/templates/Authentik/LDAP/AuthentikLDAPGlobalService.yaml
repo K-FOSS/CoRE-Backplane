@@ -10,6 +10,8 @@ metadata:
 
   annotations:
     {{- with .Values.authentik.ldap.additionalExternalDNSHostname }}
+    external-dns.kubernetes.io/hostname: '{{ . }}'
+    # TODO(external-dns-025): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: '{{ . }}'
     {{- end }}
     service.cilium.io/affinity: 'local'

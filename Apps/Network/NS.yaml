@@ -92,8 +92,12 @@ spec:
                     annotations:
                       consul.hashicorp.com/service-name: ns-core
                       {{ if .values.nameserver.dns.target }}
+                      external-dns.kubernetes.io/target: '{{ .values.nameserver.dns.target }}'
+                      # TODO(external-dns-016): Remove the legacy annotation after upgrading ExternalDNS.
                       external-dns.alpha.kubernetes.io/target: '{{ .values.nameserver.dns.target }}'
                       {{ end }}
+                      external-dns.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
+                      # TODO(external-dns-017): Remove the legacy annotation after upgrading ExternalDNS.
                       external-dns.alpha.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
                       purelb.io/addresses: '{{ .values.nameserver.address.ipv4 }}'
                       purelb.io/allow-local: 'true'

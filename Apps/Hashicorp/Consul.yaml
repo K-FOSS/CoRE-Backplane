@@ -94,6 +94,8 @@ spec:
                       - op: add
                         path: /metadata/annotations
                         value:
+                          external-dns.kubernetes.io/hostname: 'consul.{{ .values.domain }}'
+                          # TODO(external-dns-012): Remove the legacy annotation after upgrading ExternalDNS.
                           external-dns.alpha.kubernetes.io/hostname: consul.{{ .values.domain }}
 
       destination:

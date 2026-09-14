@@ -10,6 +10,8 @@ metadata:
 
   annotations:
     consul.hashicorp.com/service-name: radius
+    external-dns.kubernetes.io/hostname: 'radius.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ with .Values.authentik.radius.additionalExternalDNSHostname }},{{ . }}{{ end }}'
+    # TODO(external-dns-026): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: 'radius.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ with .Values.authentik.radius.additionalExternalDNSHostname }},{{ . }}{{ end }}'
     {{- if .Values.authentik.radius.clusterMesh.enabled }}
     service.cilium.io/affinity: 'local'
