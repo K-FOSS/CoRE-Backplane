@@ -103,6 +103,9 @@ spec:
                   {{- if .observed.composite.resource.spec.username }}
                   username: {{ .observed.composite.resource.spec.username }}
                   {{- end }}
+                  {{- if .observed.composite.resource.spec.email }}
+                  email: {{ toJson .observed.composite.resource.spec.email }}
+                  {{- end }}
                   serviceAccount: true
                   groups:
                     - LDAPService
@@ -136,6 +139,13 @@ spec:
                     type        = string
                     default = null
                     nullable = true
+                  }
+
+                  variable "email" {
+                    description = "Accounts email address"
+                    type        = string
+                    default     = null
+                    nullable    = true
                   }
 
                   variable "ldaps" {
@@ -220,6 +230,7 @@ spec:
                   resource "authentik_user" "name" {
                     name = var.name
                     username = local.username
+                    email = var.email
 
                     password = local.password
 

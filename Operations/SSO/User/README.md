@@ -99,6 +99,7 @@ generated password is 16 characters.
 | --- | --- |
 | `spec.name` | Friendly name assigned to the Authentik user. Required. |
 | `spec.username` | Optional fixed username; generated when omitted. |
+| `spec.email` | Optional email address assigned to the Authentik user. |
 | `spec.ldaps.uri` | URI prefix used in the emitted `ldapsURI`; defaults to `ldaps://`. |
 | `spec.psql.enabled` | Enables PostgreSQL role/grant reconciliation. |
 | `spec.psql.createUserDatabase` | Creates a database named after the username unless set to `false`; schema default is `true`. |
@@ -121,7 +122,6 @@ generated password is 16 characters.
 
 The XRD currently exposes more intent than the Composition consumes:
 
-- `email` is ignored.
 - `serviceAccount` is currently ignored; the Terraform input is hardcoded to
   `true`, so Authentik creates a service account.
 - `groups` is honored in addition to the mandatory `LDAPService` group. Every
