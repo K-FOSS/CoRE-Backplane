@@ -7,6 +7,7 @@ spec:
   name: 'Longhorn backups {{ $.Values.cluster.name }} to {{ .targetCluster }}'
   s3:
     enabled: true
+    createCredentials: true
     createServiceAccount: true
     createBuckets: true
     buckets:
@@ -17,6 +18,9 @@ spec:
       crossplaneProvider: '{{ .provider }}'
     writeServiceAccountCredentialsSecretRef:
       name: '{{ printf "longhorn-backup-%s-credentials" .targetCluster | trunc 63 | trimSuffix "-" }}'
+      namespace: 'longhorn-system'
+    writeCredentialsSecretRef:
+      name: '{{ printf "longhorn-backup-%s-session-credentials" .targetCluster | trunc 63 | trimSuffix "-" }}'
       namespace: 'longhorn-system'
 ---
 {{- end }}
