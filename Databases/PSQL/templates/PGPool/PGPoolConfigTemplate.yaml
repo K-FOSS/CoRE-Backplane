@@ -68,6 +68,8 @@ data:
     backend_hostname{{ $index }} = 'psql-main-{{ $index }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }}'
     backend_port{{ $index }} = 5432
     backend_weight{{ $index }} = 25
+    # Zalando/Patroni uses the pod name as the walreceiver application_name.
+    backend_application_name{{ $index }} = 'psql-main-{{ $index }}'
     {{ end }}
 
     {{ range $index, $pooler := .Values.pooler.peers }}
@@ -85,6 +87,7 @@ data:
     health_check_period = {{ .Values.pooler.healthCheck.period }}
     health_check_timeout = {{ .Values.pooler.healthCheck.timeout }}
     health_check_max_retries = {{ .Values.pooler.healthCheck.maxRetries }}
+    health_check_retry_delay = {{ .Values.pooler.healthCheck.retryDelay }}
     connect_timeout = {{ .Values.pooler.healthCheck.connectTimeout }}
 
     sr_check_user = '{{ `{{ .Username }}` }}'

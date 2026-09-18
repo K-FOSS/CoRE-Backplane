@@ -122,11 +122,17 @@ logs according to their own policies. See the upstream
 The pooler rejects excess clients before all 64 children are occupied, uses a
 256-entry listen backlog, serializes `accept()` calls to avoid waking every
 pre-forked child, and recycles a child after 1000 accepted connections. Backend
-health and streaming-replication checks run every 10 seconds. Node detachment
-is health-check driven: ordinary backend errors and terminated sessions do not
-trigger failover. Automatic standby reattachment is rate-limited to five
-minutes. Relation metadata expires after five minutes and unlogged-table
-checks remain enabled so read routing does not send unsafe queries to replicas.
+health and streaming-replication checks run every 10 seconds. A failed health
+check is retried three times with a two-second delay before node detachment, so
+a brief PostgreSQL or network interruption can recover without removing the
+backend. Node detachment is health-check driven: ordinary backend errors and
+terminated sessions do not trigger failover. Automatic standby reattachment is
+enabled and rate-limited to once per minute after streaming replication is
+healthy again. The local backend application names match the Zalando/Patroni
+pod names (`psql-main-N`); the remote peers are master Services and therefore
+do not have fixed walreceiver identities. Relation metadata expires after five
+minutes and unlogged-table checks remain enabled so read routing does not send
+unsafe queries to replicas.
 See the upstream [Pgpool-II connection settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection.html)
 and [failover behavior](https://www.pgpool.net/docs/latest/en/html/runtime-config-failover.html).
 

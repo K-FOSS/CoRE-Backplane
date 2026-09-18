@@ -119,15 +119,18 @@ pooler:
   healthCheck:
     period: 10
     timeout: 5
-    maxRetries: 3
-    connectTimeout: 5000
+    maxRetries: 5
+    # Space retries across a short backend interruption before detaching it.
+    retryDelay: 2
+    connectTimeout: 2000
 
   streamingReplicationCheck:
-    period: 10
+    period: 5
 
   failover:
     autoFailback: true
-    autoFailbackInterval: 300
+    # Reattach a recovered standby at most once per minute to avoid flapping.
+    autoFailbackInterval: 60
     # Keep searching indefinitely when failover needs to find a primary.
     searchPrimaryNodeTimeout: 0
 
