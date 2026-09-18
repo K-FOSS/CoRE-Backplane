@@ -48,6 +48,11 @@ cilium:
       # @schema
       maxUnavailable: 1
 
+  # Keep each replacement Cilium agent ready for two minutes before continuing
+  # the DaemonSet rollout to the next node.
+  # ref: https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/
+  minReadySeconds: 120
+
   podLabels:
     logs: loki-myloginspace
 
