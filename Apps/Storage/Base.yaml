@@ -8,20 +8,53 @@ metadata:
 spec:
   goTemplate: true
   generators:
-    - clusters:
-        selector:
-          matchLabels:
-            mylogin.space/tenant: 'core.mylogin.space'
-            resolvemy.host/computetype: 'baremetal'
-            resolvemy.host/nodetype: 'infra'
-        values:
-          clusterName: '{{ .name }}'
-          environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
-          clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-          tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
-          region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
-          zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
-          datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - clusters:
+                          - name: core-dc1-talos-prod
+                            values:
+                              backupTargets:
+                                - targetCluster: 'core-dc1-talos-prod'
+                                  datacenter: 'dc1'
+                                  region: 'yxl'
+                                  provider: 's3-yxl-dc1-core'
+                                - targetCluster: 'core-home1-talos-prod'
+                                  datacenter: 'home1'
+                                  region: 'yvr'
+                                  provider: 's3-core-home1-talos-prod'
+                          - name: core-home1-talos-prod
+                            values:
+                              backupTargets:
+                                - targetCluster: 'core-home1-talos-prod'
+                                  datacenter: 'home1'
+                                  region: 'yvr'
+                                  provider: 's3-yvr-home1-core'
+                                - targetCluster: 'core-dc1-talos-prod'
+                                  datacenter: 'dc1'
+                                  region: 'yxl'
+                                  provider: 's3-core-dc1-talos-prod'
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
 
   syncPolicy:
@@ -59,7 +92,14 @@ spec:
 
                 region: {{ .values.region }}
 
+                backupTargets:
+                  {{- range .values.backupTargets }}
+                  - targetCluster: {{ .targetCluster }}
+                    datacenter: {{ .datacenter }}
+                    region: {{ .region }}
+                    provider: {{ .provider }}
+                  {{- end }}
+
       destination:
         server: '{{ .server }}'
         namespace: longhorn-system
-

@@ -498,6 +498,10 @@ spec:
             {{- $observedMinioPolicy := index .observed.resources $tfMinioPolicy }}
             {{- $policyConnectionDetails := default (dict) (and $observedMinioPolicy $observedMinioPolicy.connectionDetails) }}
             {{- $serviceAccountAccessKey := get $policyConnectionDetails "ServiceAccountAccessKey" }}
+            {{- $observedMinio := get .observed.resources $tfMinio }}
+            {{- $minioConnectionDetails := default (dict) (and $observedMinio $observedMinio.connectionDetails) }}
+            {{- $providerEndpoint := get $minioConnectionDetails "S3Endpoint" }}
+            {{- $endpoint := default ($providerEndpoint | b64dec) .observed.composite.resource.spec.s3.endpoint }}
             {{- if $serviceAccountAccessKey }}
             apiVersion: v1
             kind: Secret
@@ -511,6 +515,9 @@ spec:
             data:
               AccessKey: '{{ $serviceAccountAccessKey }}'
               SecretAccessKey: '{{ (get $policyConnectionDetails "ServiceAccountSecretAccessKey") }}'
+              AWS_ACCESS_KEY_ID: '{{ $serviceAccountAccessKey }}'
+              AWS_SECRET_ACCESS_KEY: '{{ (get $policyConnectionDetails "ServiceAccountSecretAccessKey") }}'
+              AWS_ENDPOINTS: '{{ $endpoint }}'
             type: 'Opaque'
             ---
             {{- end }}
