@@ -313,6 +313,8 @@ spec:
 
                       - name: wan-rt1
                         installing: false
+                        nodeSelector:
+                          kubernetes.io/hostname: 'srv2'
                         disk:
                           enabled: true
                           size: 20Gi
@@ -321,6 +323,8 @@ spec:
 
                       - name: wan-rt2
                         installing: false
+                        nodeSelector:
+                          kubernetes.io/hostname: 'srv3'
                         boot:
                           mode: uefi
                           secureBoot: false
@@ -334,7 +338,7 @@ spec:
                             macAddress: '02:01:50:00:02:01'
                           - name: home2-rt2
 
-                          - name: home2-rt2-alt1
+                          - name: conntrack-sync
 
                       - name: transit-lab2
                         installing: false
