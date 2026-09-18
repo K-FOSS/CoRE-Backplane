@@ -45,6 +45,22 @@ Talos resources are managed through Terraform provider workspaces, while
 Kubernetes objects are managed through Crossplane Kubernetes provider
 configurations.
 
+### Talos compute-node configuration compatibility
+
+The `cluster-node` Composition detects the installed Talos version with
+[`talosctl version`](https://docs.siderolabs.com/talos/v1.12/reference/cli) and
+compares it with the intended cluster version. It emits the separate
+multi-document network/storage/device patches only when both versions are
+Talos v1.12 or newer. Talos v1.12 introduced this multi-document model; older
+nodes continue to receive the legacy machine configuration shape while they
+are upgraded. If the version probe cannot reach a node, legacy mode is used
+conservatively. Reconciliation after the node upgrade then switches it to the
+multi-document patches.
+
+This is implemented in
+[`templates/CrossplaneOps/ClusterNodeComposition.yaml`](templates/CrossplaneOps/ClusterNodeComposition.yaml), using the
+[Talos machine configuration apply resource](https://github.com/siderolabs/terraform-provider-talos/blob/main/docs/resources/machine_configuration_apply.md).
+
 This chart is exercised by a real two-site, multi-province private cloud rather
 than only a virtual test environment. See
 [CoRE deployment environment](ENVIRONMENT.md) for the physical fleet, network
@@ -124,6 +140,27 @@ because that is the format expected by the Talos machine configuration.
 Treat sysctl changes as operating-system changes: validate them against the
 deployed Talos version and test them on a non-critical node first.
 
+## Talos kernel modules and binfmt
+
+Talos nodes that host containerized multi-architecture builds need the signed
+`binfmt_misc` kernel module and the matching
+[`siderolabs/binfmt-misc` system extension](https://factory.talos.dev/). The
+DC1 Forgejo runner is pinned to `srv1` and `srv3`; their node claims declare
+both settings in
+[`templates/prod/DC1`](templates/prod/DC1/). The ClusterNode Composition passes
+the extension to the Talos Image Factory and the module into the generated
+machine configuration, so changing either setting requires the normal
+image-generation and Talos upgrade/reboot flow.
+
+After reconciliation, verify the generated machine configuration and confirm
+that `/proc/sys/fs/binfmt_misc` is mounted on both nodes before retrying a
+QEMU-dependent workflow. A successful `docker/setup-qemu-action` run is the
+end-to-end check; the action installs QEMU through a privileged
+`tonistiigi/binfmt` container. See Talos' [kernel module configuration
+reference](https://docs.siderolabs.com/talos/v1.13/reference/configuration/v1alpha1/config)
+and the [Docker Setup QEMU action](https://github.com/docker/setup-qemu-action)
+for the upstream behavior.
+
 Cilium agent configuration can be overridden for a cluster with
 `Cluster.spec.networks.cni.cilium.configOverrides` and for an individual node
 with `ClusterNode.spec.overrides.cni.cilium.configOverrides`. Both fields are
@@ -131,6 +168,28 @@ maps of Cilium configuration keys to string values. The node map is merged on
 top of the cluster map and rendered as a `CiliumNodeConfig` selected by the
 node's `kubernetes.io/hostname` label. `networkInterfaces`, when set on the
 node, is rendered as the Cilium `devices` override.
+
+## Talos Longhorn volumes
+
+Configure a node's Longhorn storage volume with
+`ClusterNode.spec.storage.longhornDisks`. Set `grow: true` to allow the Talos
+user volume to expand to the available size of its selected disk; when omitted,
+the current default remains `false`.
+
+```yaml
+spec:
+  storage:
+    longhornDisks:
+      - grow: true
+        maxSize: '900GB'
+        selector:
+          wwid: 'naa.5000c50090ca23fa'
+```
+
+This becomes a Talos `UserVolumeConfig` used for the Longhorn mount. Volume
+provisioning settings are generally applied when the volume is first
+provisioned; review the [Talos user volume documentation](https://www.talos.dev/v1.12/talos-guides/configuration/disk-management/user/)
+before changing an existing node.
 
 ## Creating resources
 
