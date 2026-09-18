@@ -117,7 +117,7 @@ spec:
 
                 longhorn:
                   defaultBackupStore:
-                    backupTarget: s3://{{ (index (where .values.backupTargets "local" true) 0).bucket }}@{{ .values.region }}/
+                    backupTarget: s3://{{ (index .values.backupTargets 0).bucket }}@{{ .values.region }}/
                     backupTargetCredentialSecret: longhorn-backup-{{ .values.clusterName }}-credentials
 
       destination:
