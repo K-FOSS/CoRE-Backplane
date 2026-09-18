@@ -2,6 +2,7 @@
 {{ $networks := dict }}
 {{- range $networkIndex, $network := .Values.networks }}
 {{- $nicType := (default "sriov" $network.type) }}
+{{- $sriov := default (dict) $network.sriov }}
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
 metadata:
@@ -15,7 +16,7 @@ metadata:
       ) 
   }}
   annotations:
-    k8s.v1.cni.cncf.io/resourceName: '{{ $network.sriov.device }}'
+    k8s.v1.cni.cncf.io/resourceName: '{{ $sriov.device }}'
   {{- end }}
 spec:
   config: |
@@ -23,6 +24,14 @@ spec:
       "cniVersion": "1.0.0",
       {{- if $network.mtu }}
       "mtu": {{ $network.mtu }},
+      {{- end }}
+
+      {{- if and (eq $nicType "sriov") (hasKey $sriov "spoofchk") }}
+      "spoofchk": {{ if $sriov.spoofchk }}"on"{{ else }}"off"{{ end }},
+      {{- end }}
+
+      {{- if and (eq $nicType "sriov") (hasKey $sriov "trust") }}
+      "trust": {{ if $sriov.trust }}"on"{{ else }}"off"{{ end }},
       {{- end }}
 
       {{- with $network.vlan }}
@@ -285,6 +294,8 @@ metadata:
   {{- end }}
   {{- with $service.externalDNSHostname }}
   annotations:
+    external-dns.kubernetes.io/hostname: {{ . | quote }}
+    # TODO(external-dns-007): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: {{ . | quote }}
   {{- end }}
 spec:
