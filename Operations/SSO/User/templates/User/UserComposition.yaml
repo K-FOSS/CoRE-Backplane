@@ -517,7 +517,7 @@ spec:
               SecretAccessKey: '{{ (get $policyConnectionDetails "ServiceAccountSecretAccessKey") }}'
               AWS_ACCESS_KEY_ID: '{{ $serviceAccountAccessKey }}'
               AWS_SECRET_ACCESS_KEY: '{{ (get $policyConnectionDetails "ServiceAccountSecretAccessKey") }}'
-              AWS_ENDPOINTS: '{{ $endpoint }}'
+              AWS_ENDPOINTS: '{{ $endpoint | b64enc }}'
             type: 'Opaque'
             ---
             {{- end }}
