@@ -385,6 +385,10 @@ spec:
   timeout:
     http:
       requestTimeout: 1800s
+
+  # Longhorn signs S3 requests including Accept-Encoding. The public gateway
+  # compressor can rewrite that header and invalidate the SigV4 signature.
+  compression: []
 ---
 {{- else }}
 apiVersion: minio.min.io/v2
