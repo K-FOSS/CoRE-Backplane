@@ -25,6 +25,7 @@ spec:
                                   bucket: 'longhorn-core-dc1-talos-prod-backups'
                                   datacenter: 'dc1'
                                   region: 'yxl'
+                                  s3Region: 'us-east-1'
                                   provider: 's3-yxl-dc1-core'
                                   local: true
                                 - targetCluster: 'core-home1-talos-prod'
@@ -32,6 +33,7 @@ spec:
                                   bucket: 'longhorn-core-dc1-talos-prod-backups'
                                   datacenter: 'home1'
                                   region: 'yvr'
+                                  s3Region: 'us-east-1'
                                   provider: 's3-core-home1-talos-prod'
                                   local: false
                           - name: core-home1-talos-prod
@@ -42,6 +44,7 @@ spec:
                                   bucket: 'longhorn-core-home1-talos-prod-backups'
                                   datacenter: 'home1'
                                   region: 'yvr'
+                                  s3Region: 'us-east-1'
                                   provider: 's3-yvr-home1-core'
                                   local: true
                                 - targetCluster: 'core-dc1-talos-prod'
@@ -49,6 +52,7 @@ spec:
                                   bucket: 'longhorn-core-home1-talos-prod-backups'
                                   datacenter: 'dc1'
                                   region: 'yxl'
+                                  s3Region: 'us-east-1'
                                   provider: 's3-core-dc1-talos-prod'
                                   local: false
                 - list:
@@ -111,13 +115,14 @@ spec:
                     bucket: {{ .bucket }}
                     datacenter: {{ .datacenter }}
                     region: {{ .region }}
+                    s3Region: {{ .s3Region }}
                     provider: {{ .provider }}
                     local: {{ .local }}
                   {{- end }}
 
                 longhorn:
                   defaultBackupStore:
-                    backupTarget: s3://{{ (index .values.backupTargets 0).bucket }}@{{ .values.region }}/
+                    backupTarget: s3://{{ (index .values.backupTargets 0).bucket }}@{{ (index .values.backupTargets 0).s3Region }}/
                     backupTargetCredentialSecret: longhorn-backup-{{ .values.clusterName }}-credentials
 
       destination:
