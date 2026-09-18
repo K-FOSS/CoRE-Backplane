@@ -24,6 +24,12 @@ creates a `User` claim that creates a long-lived service account and writes its
 AWS-compatible credential Secret to `longhorn-system`. The S3 User composition
 also publishes `AWS_ENDPOINTS` for Longhorn.
 
+The local target is configured through Longhorn’s `defaultBackupStore`; peer
+targets are registered as named `BackupTarget` resources. Longhorn 1.11
+recurring jobs use the default target, so peer targets are available for
+explicit backup or restore workflows rather than being written by the same
+recurring job.
+
 ## Operational risks
 
 Storage-class parameters are inherited by newly created volumes and may differ

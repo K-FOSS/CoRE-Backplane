@@ -1,0 +1,14 @@
+{{- range .Values.backupTargets }}
+{{- if not .local }}
+apiVersion: longhorn.io/v1beta2
+kind: BackupTarget
+metadata:
+  name: '{{ .name }}'
+  namespace: longhorn-system
+spec:
+  backupTargetURL: 's3://{{ .bucket }}@{{ .region }}/'
+  credentialSecret: 'longhorn-backup-{{ .targetCluster }}-credentials'
+  pollInterval: '5m0s'
+---
+{{- end }}
+{{- end }}

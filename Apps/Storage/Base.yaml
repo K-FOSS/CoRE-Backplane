@@ -21,24 +21,36 @@ spec:
                             values:
                               backupTargets:
                                 - targetCluster: 'core-dc1-talos-prod'
+                                  name: 'local'
+                                  bucket: 'longhorn-core-dc1-talos-prod-backups'
                                   datacenter: 'dc1'
                                   region: 'yxl'
                                   provider: 's3-yxl-dc1-core'
+                                  local: true
                                 - targetCluster: 'core-home1-talos-prod'
+                                  name: 'peer-home1'
+                                  bucket: 'longhorn-core-dc1-talos-prod-backups'
                                   datacenter: 'home1'
                                   region: 'yvr'
                                   provider: 's3-core-home1-talos-prod'
+                                  local: false
                           - name: core-home1-talos-prod
                             values:
                               backupTargets:
                                 - targetCluster: 'core-home1-talos-prod'
+                                  name: 'local'
+                                  bucket: 'longhorn-core-home1-talos-prod-backups'
                                   datacenter: 'home1'
                                   region: 'yvr'
                                   provider: 's3-yvr-home1-core'
+                                  local: true
                                 - targetCluster: 'core-dc1-talos-prod'
+                                  name: 'peer-dc1'
+                                  bucket: 'longhorn-core-home1-talos-prod-backups'
                                   datacenter: 'dc1'
                                   region: 'yxl'
                                   provider: 's3-core-dc1-talos-prod'
+                                  local: false
                 - list:
                     elementsYaml: '{{ .clusters | toJson }}'
           - clusters:
@@ -94,11 +106,19 @@ spec:
 
                 backupTargets:
                   {{- range .values.backupTargets }}
-                  - targetCluster: {{ .targetCluster }}
+                  - name: {{ .name }}
+                    targetCluster: {{ .targetCluster }}
+                    bucket: {{ .bucket }}
                     datacenter: {{ .datacenter }}
                     region: {{ .region }}
                     provider: {{ .provider }}
+                    local: {{ .local }}
                   {{- end }}
+
+                longhorn:
+                  defaultBackupStore:
+                    backupTarget: s3://{{ (index (where .values.backupTargets "local" true) 0).bucket }}@{{ .values.region }}/
+                    backupTargetCredentialSecret: longhorn-backup-{{ .values.clusterName }}-credentials
 
       destination:
         server: '{{ .server }}'
