@@ -1,0 +1,22 @@
+{{- range .Values.backupTargets }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ printf "longhorn-backup-%s" .targetCluster | trunc 63 | trimSuffix "-" }}'
+spec:
+  name: 'Longhorn backups {{ $.Values.cluster.name }} to {{ .targetCluster }}'
+  s3:
+    enabled: true
+    createServiceAccount: true
+    createBuckets: true
+    buckets:
+      - '{{ printf "longhorn-%s-backups" $.Values.cluster.name | trunc 63 | trimSuffix "-" }}'
+    endpoint: 'https://s3.{{ .targetCluster }}.{{ .datacenter }}.{{ .region }}.{{ $.Values.domain }}'
+    crossplane:
+      terraformProvider: '{{ .provider }}'
+      crossplaneProvider: '{{ .provider }}'
+    writeServiceAccountCredentialsSecretRef:
+      name: '{{ printf "longhorn-backup-%s-credentials" .targetCluster | trunc 63 | trimSuffix "-" }}'
+      namespace: 'longhorn-system'
+---
+{{- end }}
