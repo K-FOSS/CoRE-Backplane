@@ -1,9 +1,15 @@
 # Photos
 
 This rendering unit deploys the [official Immich Helm chart](https://github.com/immich-app/immich-charts/tree/main/charts/immich)
-version `0.12.0`, using Immich `v2.6.3`, at `photos.mylogin.space`. The chart
+version `0.12.0`, using Immich `v3.2.2`, at `photos.mylogin.space`. The chart
 also uses the [BJW-S common library](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
 through the upstream chart.
+
+The v3 upgrade requires the database migration guidance to be reviewed because
+v3 removes `pgvecto.rs`; this deployment selects `pgvector`. See Immich's
+[v3.0.0 release notes](https://github.com/immich-app/immich/discussions/29439)
+and [upgrade documentation](https://docs.immich.app/install/upgrading/)
+before reconciliation.
 
 The Immich library is a dedicated `50Gi` Longhorn `ReadWriteMany` PVC named
 `photos-library`, using the `photos-library` StorageClass. The StorageClass
@@ -25,6 +31,13 @@ connects to the sidecar on `127.0.0.1:6379`; HAProxy forwards the connection to
 the in-cluster Dragonfly service using TLS, the system CA bundle, and the
 site-local Dragonfly hostname for certificate verification. The proxy is
 configured using [HAProxy's TLS server options](https://docs.haproxy.org/3.2/configuration.html#5.2-ssl).
+Immich OAuth is automated with an Authentik OIDC provider and a generated
+client secret. The External Secrets Password generator supplies the secret to
+both the Authentik Terraform Workspace and the mounted Immich configuration;
+the secret is never stored in Git. The provider allows the Immich web and
+mobile redirect URIs and is restricted to the configured `Media Consumers`
+group. See [Immich OAuth configuration](https://docs.immich.app/administration/oauth/)
+and [Authentik OAuth2 providers](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
 Its password is pulled into the namespace by an
 [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
 from the site-specific CoreVault path, with logical database `133` reserved in the

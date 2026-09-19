@@ -11,12 +11,34 @@ spec:
     name: 'authentik'
   forProvider:
     source: 'Inline'
+    varFiles:
+      - source: 'SecretKey'
+        secretKeyRef:
+          namespace: '{{ .Release.Namespace }}'
+          name: 'photos-oidc'
+          key: 'terraform.tfvars.json'
+        format: 'JSON'
     module: | # hcl
+      variable "client_secret" {
+        type      = string
+        sensitive = true
+      }
+
       data "authentik_flow" "authorization" {
         slug = "default-provider-authorization-implicit-consent"
       }
       data "authentik_flow" "invalidation" {
         slug = "default-provider-invalidation-flow"
+      }
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+        ]
+      }
+      data "authentik_certificate_key_pair" "signing" {
+        name = "tls"
       }
       resource "authentik_provider_proxy" "app" {
         name               = "{{ .Release.Name }}"
@@ -30,6 +52,38 @@ spec:
         slug              = "{{ .Release.Name }}"
         group             = "{{ required "authentik.application.group is required" .Values.authentik.application.group }}"
         protocol_provider = authentik_provider_proxy.app.id
+      }
+      resource "authentik_provider_oauth2" "oidc" {
+        name          = "{{ .Values.authentik.application.displayName }} OIDC"
+        client_id     = "photos"
+        client_secret = var.client_secret
+        client_type   = "confidential"
+        signing_key   = data.authentik_certificate_key_pair.signing.id
+        allowed_redirect_uris = [
+          {
+            matching_mode = "strict"
+            url           = "https://photos.mylogin.space/auth/login"
+          },
+          {
+            matching_mode = "strict"
+            url           = "https://photos.mylogin.space/user-settings"
+          },
+          {
+            matching_mode = "strict"
+            url           = "app.immich:///oauth-callback"
+          },
+        ]
+        property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow    = data.authentik_flow.authorization.id
+        invalidation_flow     = data.authentik_flow.invalidation.id
+        access_token_validity = "hours=8"
+      }
+      resource "authentik_application" "oidc" {
+        name              = "{{ .Values.authentik.application.displayName }} OIDC"
+        slug              = "photos-oidc"
+        group             = "{{ required "authentik.application.group is required" .Values.authentik.application.group }}"
+        meta_launch_url   = "https://photos.mylogin.space"
+        protocol_provider = authentik_provider_oauth2.oidc.id
       }
       resource "authentik_application_entitlement" "access" {
         name        = "media-access"
@@ -46,6 +100,11 @@ spec:
       }
       resource "authentik_policy_binding" "application_{{ $index }}" {
         target = authentik_application.app.uuid
+        group  = data.authentik_group.access_{{ $index }}.id
+        order  = {{ $index }}
+      }
+      resource "authentik_policy_binding" "oidc_{{ $index }}" {
+        target = authentik_application.oidc.uuid
         group  = data.authentik_group.access_{{ $index }}.id
         order  = {{ $index }}
       }

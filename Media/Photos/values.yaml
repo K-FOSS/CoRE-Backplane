@@ -25,13 +25,12 @@ authentik:
       port: 80
 
 immich:
-  image:
-    tag: 'v2.6.3'
-
   controllers:
     main:
       containers:
         main:
+          image:
+            tag: 'v3.2.2'
           env:
             DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
             DB_PORT: '5432'
@@ -62,6 +61,8 @@ immich:
             REDIS_DBINDEX: '133'
 
   immich:
+    existingConfiguration: 'photos-immich-config'
+    configurationKind: 'Secret'
     persistence:
       library:
         existingClaim: 'photos-library'
