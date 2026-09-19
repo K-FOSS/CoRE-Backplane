@@ -152,6 +152,8 @@ immich:
         pod:
           nodeSelector:
             kubernetes.io/hostname: 'laptop2'
+          annotations:
+            checksum/redis-proxy: '{{ toYaml (index .Values.server.configMaps "redis-proxy" "data") | sha256sum }}'
         containers:
           main:
             image:
