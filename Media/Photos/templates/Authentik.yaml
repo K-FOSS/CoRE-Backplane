@@ -9,19 +9,26 @@ metadata:
 spec:
   providerConfigRef:
     name: 'authentik'
+  writeConnectionSecretToRef:
+    namespace: '{{ .Release.Namespace }}'
+    name: 'photos-oidc'
   forProvider:
     source: 'Inline'
-    varFiles:
-      - source: 'SecretKey'
-        secretKeyRef:
-          namespace: '{{ .Release.Namespace }}'
-          name: 'photos-oidc'
-          key: 'terraform.tfvars.json'
-        format: 'JSON'
     module: | # hcl
-      variable "client_secret" {
-        type      = string
-        sensitive = true
+      resource "random_password" "client_id" {
+        length  = 64
+        lower   = true
+        numeric = true
+        upper   = true
+        special = false
+      }
+
+      resource "random_password" "client_secret" {
+        length  = 128
+        lower   = true
+        numeric = true
+        upper   = true
+        special = true
       }
 
       data "authentik_flow" "authorization" {
@@ -55,8 +62,8 @@ spec:
       }
       resource "authentik_provider_oauth2" "oidc" {
         name          = "{{ .Values.authentik.application.displayName }} OIDC"
-        client_id     = "photos"
-        client_secret = var.client_secret
+        client_id     = random_password.client_id.result
+        client_secret = random_password.client_secret.result
         client_type   = "confidential"
         signing_key   = data.authentik_certificate_key_pair.signing.id
         allowed_redirect_uris = [
@@ -109,4 +116,34 @@ spec:
         order  = {{ $index }}
       }
       {{- end }}
+      output "client_id" {
+        value     = authentik_provider_oauth2.oidc.client_id
+        sensitive = true
+      }
+
+      output "client_secret" {
+        value     = random_password.client_secret.result
+        sensitive = true
+      }
+
+      output "immich-config.yaml" {
+        value = <<-EOT
+          oauth:
+            enabled: true
+            issuerUrl: 'https://idp.mylogin.space/application/o/photos-oidc/'
+            clientId: '${random_password.client_id.result}'
+            clientSecret: '${random_password.client_secret.result}'
+            scope: 'openid email profile'
+            tokenEndpointAuthMethod: 'client_secret_post'
+            signingAlgorithm: 'RS256'
+            profileSigningAlgorithm: 'none'
+            autoRegister: true
+            autoLaunch: false
+            buttonText: 'Sign in with Authentik'
+            storageLabelClaim: 'preferred_username'
+            roleClaim: 'immich_role'
+            mobileOverrideEnabled: false
+        EOT
+        sensitive = true
+      }
 {{- end }}
