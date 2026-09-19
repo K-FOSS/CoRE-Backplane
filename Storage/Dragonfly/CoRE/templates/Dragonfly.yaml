@@ -55,7 +55,14 @@ spec:
 
   snapshot:
     cron: '*/5 * * * *'
-    dir: 's3://dragonfly-core-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/core'
+    dir: '/data'
+    persistentVolumeClaimSpec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: '{{ .Values.snapshots.size }}'
+      storageClassName: '{{ .Values.snapshots.storageClass }}'
 
   {{- if .Values.tiering.enabled }}
   tiering:

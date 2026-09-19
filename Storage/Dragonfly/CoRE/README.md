@@ -1,15 +1,15 @@
 # Dragonfly CoRE chart
 
 This chart deploys a Dragonfly distribution/cache service with two replicas,
-TLS, S3-backed persistent content and a long-lived S3 service-account
-credential. It is owned by
+TLS, PVC-backed snapshots and a long-lived S3 service-account credential. It is
+owned by
 `Apps/Storage/Dragonfly/CoRE.yaml`.
 
-Dragonfly keeps scheduled snapshots in site-local S3 and uses a per-replica
-`ssd-storage` PVC for SSD tiering. The PVC is a performance/data-tier volume,
-not a replacement for the S3 backup path. See the [Dragonfly SSD tiering
+Dragonfly keeps scheduled snapshots in a per-replica `ssd-storage` PVC mounted
+at `/data`. The optional `tiering` PVC is a separate performance/data-tier
+volume and is disabled by default. See the [Dragonfly operator snapshot and
+PVC documentation](https://github.com/dragonflydb/dragonfly-operator) and the [Dragonfly SSD tiering
 overview](https://www.dragonflydb.io/blog/a-preview-of-dragonfly-ssd-tiering)
-and [Dragonfly Operator repository](https://github.com/dragonflydb/dragonfly-operator)
 for the upstream behavior.
 
 Updated replicas must remain Ready for 300 seconds before the operator can
@@ -63,11 +63,13 @@ unused database number for every new client that supports selection. Use a
 separate Dragonfly instance when a workload needs independent credentials,
 capacity, lifecycle, or recovery behavior.
 
-The Crossplane `User` claim creates the site-local bucket and a long-lived
-MinIO service account. The SSO User Composition publishes its
+The Crossplane `User` claim still creates the site-local bucket and a long-lived
+MinIO service account for the chart's S3 integration. The SSO User Composition publishes its
 `AccessKey`/`SecretAccessKey` to `dragonfly-core-s3-service-account-creds`,
-which Dragonfly uses for its S3 snapshots. This avoids the seven-day temporary
-credential path, so operators must coordinate service-account key rotation.
+which is retained for that integration. Snapshots are now stored on the PVC,
+so the PVC lifecycle and capacity are part of snapshot recovery. This avoids
+the seven-day temporary credential path, so operators must coordinate
+service-account key rotation.
 The chart's ExternalSecret and PushSecret resources handle the Dragonfly
 password; a Terraform provider configuration is generated for integration.
 
@@ -82,7 +84,7 @@ key.
 It depends on the Dragonfly Operator/CRDs, S3, Vault/External Secrets,
 Crossplane, certificates and network reachability.
 
-Validate replica health, TLS, S3 read/write, credential rotation, cache/data
-recovery and client behavior during one-replica failure. Clarify which content
-is authoritative in S3 and which state is disposable cache before defining a
-restore procedure.
+Validate replica health, TLS, PVC write/read and capacity, credential rotation,
+cache/data recovery and client behavior during one-replica failure. PVC-backed
+snapshots are not an independent site backup; define a volume-level backup or
+restore procedure before treating them as durable recovery copies.
