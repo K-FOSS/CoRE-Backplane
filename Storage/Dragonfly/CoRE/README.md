@@ -1,8 +1,21 @@
 # Dragonfly CoRE chart
 
 This chart deploys a Dragonfly distribution/cache service with two replicas,
-TLS, S3-backed persistent content and generated credentials. It is owned by
+TLS, S3-backed persistent content and a long-lived S3 service-account
+credential. It is owned by
 `Apps/Storage/Dragonfly/CoRE.yaml`.
+
+Dragonfly keeps scheduled snapshots in site-local S3 and uses a per-replica
+`ssd-storage` PVC for SSD tiering. The PVC is a performance/data-tier volume,
+not a replacement for the S3 backup path. See the [Dragonfly SSD tiering
+overview](https://www.dragonflydb.io/blog/a-preview-of-dragonfly-ssd-tiering)
+and [Dragonfly Operator repository](https://github.com/dragonflydb/dragonfly-operator)
+for the upstream behavior.
+
+Updated replicas must remain Ready for 300 seconds before the operator can
+advance the rollout. This is implemented with the Dragonfly custom readiness
+probe and replication-readiness gate because the operator CRD does not expose
+a native rollout-delay field. A pod restart resets this readiness timer.
 
 The `dragonfly-core` instance serves authenticated, TLS-enabled Redis clients
 on port `6379` and a TLS-enabled Memcached-compatible listener on port `11211`
@@ -50,9 +63,13 @@ unused database number for every new client that supports selection. Use a
 separate Dragonfly instance when a workload needs independent credentials,
 capacity, lifecycle, or recovery behavior.
 
-Crossplane user resources create S3 access; ExternalSecret and PushSecret
-resources synchronize credentials; a Terraform provider configuration is
-generated for integration.
+The Crossplane `User` claim creates the site-local bucket and a long-lived
+MinIO service account. The SSO User Composition publishes its
+`AccessKey`/`SecretAccessKey` to `dragonfly-core-s3-service-account-creds`,
+which Dragonfly uses for its S3 snapshots. This avoids the seven-day temporary
+credential path, so operators must coordinate service-account key rotation.
+The chart's ExternalSecret and PushSecret resources handle the Dragonfly
+password; a Terraform provider configuration is generated for integration.
 
 Each instance publishes its password to the site-specific Vault path
 `Storage/DragonFly/CoRE/<region>/<datacenter>/<cluster>/Creds`. Consumers must

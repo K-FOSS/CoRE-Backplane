@@ -10,20 +10,18 @@ spec:
     enabled: true
 
     createBuckets: true
-
-    createCredentials: true
+    createServiceAccount: true
 
     crossplane:
-      terraformProvider: s3-yvr-home1-core
-      crossplaneProvider: s3-yvr-home1-core
+      terraformProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+      crossplaneProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
 
     buckets:
       - dragonfly-core-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
 
-
-    writeCredentialsSecretRef:
-      name: dragonfly-core-s3-creds
-      namespace: {{ .Release.Namespace }}
+    writeServiceAccountCredentialsSecretRef:
+      name: 'dragonfly-core-s3-service-account-creds'
+      namespace: '{{ .Release.Namespace }}'
 
   writeConnectionSecretToRef:
     name: dragonfly-core-creds

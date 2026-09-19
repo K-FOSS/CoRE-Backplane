@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dragonfly-core-readiness
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+data:
+  readiness-check.sh: |
+    #!/bin/sh
+    set -eu
+
+    start_file='/tmp/dragonfly-readiness-start'
+    if [ ! -f "$start_file" ]; then
+      date +%s > "$start_file"
+      exit 1
+    fi
+
+    start_time=$(cat "$start_file")
+    current_time=$(date +%s)
+    elapsed_seconds=$((current_time - start_time))
+    if [ "$elapsed_seconds" -lt '{{ .Values.rollout.newReplicaStabilizationSeconds }}' ]; then
+      exit 1
+    fi
+
+    exec /usr/local/bin/healthcheck.sh
