@@ -130,8 +130,11 @@ immich:
                 enabled: true
                 custom: true
                 spec:
-                  tcpSocket:
-                    port: 6379
+                  exec:
+                    command:
+                      - 'sh'
+                      - '-c'
+                      - 'socat -T 1 - TCP:127.0.0.1:6379 </dev/null >/dev/null'
 
   machine-learning:
     enabled: true
