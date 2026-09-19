@@ -100,6 +100,10 @@ immich:
               option tcp-check
               server dragonfly dragonfly-core.core-prod.svc.cluster.local:6379 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt verifyhost dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space sni str(dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space)
     persistence:
+      config:
+        items:
+          - key: 'immich_config_yaml'
+            path: 'immich-config.yaml'
       data:
         advancedMounts:
           main:
