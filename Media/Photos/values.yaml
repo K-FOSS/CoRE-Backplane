@@ -143,3 +143,21 @@ immich:
 
   machine-learning:
     enabled: true
+    controllers:
+      main:
+        pod:
+          nodeSelector:
+            kubernetes.io/hostname: 'laptop2'
+        containers:
+          main:
+            image:
+              tag: 'v3.2.2-openvino'
+    persistence:
+      dri:
+        type: 'hostPath'
+        hostPath: '/dev/dri'
+        hostPathType: 'Directory'
+        advancedMounts:
+          main:
+            main:
+              - path: '/dev/dri'
