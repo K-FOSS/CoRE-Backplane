@@ -61,7 +61,7 @@ immich:
             REDIS_DBINDEX: '133'
 
   immich:
-    existingConfiguration: 'photos-immich-config'
+    existingConfiguration: 'photos-oidc'
     configurationKind: 'Secret'
     persistence:
       library:
@@ -152,7 +152,35 @@ immich:
           main:
             image:
               tag: 'v3.2.2-openvino'
+          redis-proxy:
+            image:
+              repository: 'docker.io/library/haproxy'
+              tag: '3.2.23-alpine3.24'
+              digest: 'sha256:57b361f7e5cec8279a5d82ea4d4941936d12cf35305146383b9cb01200017a40'
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - 'ALL'
+              runAsNonRoot: true
+              runAsUser: 99
+              runAsGroup: 99
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  exec:
+                    command:
+                      - 'sh'
+                      - '-c'
+                      - 'socat -T 1 - TCP:127.0.0.1:6379 </dev/null >/dev/null'
     persistence:
+      cache:
+        advancedMounts:
+          main:
+            main:
+              - path: '/cache'
       dri:
         type: 'hostPath'
         hostPath: '/dev/dri'
@@ -161,3 +189,12 @@ immich:
           main:
             main:
               - path: '/dev/dri'
+      redis-proxy-config:
+        type: 'configMap'
+        name: 'photos-server'
+        advancedMounts:
+          main:
+            redis-proxy:
+              - path: '/usr/local/etc/haproxy/haproxy.cfg'
+                subPath: 'haproxy.cfg'
+                readOnly: true
