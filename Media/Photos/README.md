@@ -19,6 +19,12 @@ The workload consumes its generated `photos` connection Secret and connects to
 PostgreSQL vector extension; this deployment selects `pgvector`, so the target
 site-local PostgreSQL image must provide that extension. Immich uses the
 site-local authenticated `dragonfly-core` service for its job queue and cache.
+Because Immich's Redis client is configured for plaintext Redis, the server pod
+includes a pinned [HAProxy](https://hub.docker.com/_/haproxy) sidecar. Immich
+connects to the sidecar on `127.0.0.1:6379`; HAProxy forwards the connection to
+the in-cluster Dragonfly service using TLS, the system CA bundle, and the
+site-local Dragonfly hostname for certificate verification. The proxy is
+configured using [HAProxy's TLS server options](https://docs.haproxy.org/3.2/configuration.html#5.2-ssl).
 Its password is pulled into the namespace by an
 [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
 from the site-specific CoreVault path, with logical database `133` reserved in the

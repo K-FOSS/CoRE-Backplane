@@ -52,7 +52,7 @@ immich:
                   key: 'username'
             DB_VECTOR_EXTENSION: 'pgvector'
             TZ: '{{ .Values.global.timezone }}'
-            REDIS_HOSTNAME: 'dragonfly-core.core-prod.svc.cluster.local'
+            REDIS_HOSTNAME: '127.0.0.1'
             REDIS_PORT: '6379'
             REDIS_PASSWORD:
               valueFrom:
@@ -71,6 +71,66 @@ immich:
 
   server:
     enabled: true
+    configMaps:
+      redis-proxy:
+        includeChecksumInControllers:
+          - 'main'
+        data:
+          haproxy.cfg: |
+            global
+              log stdout format raw local0
+
+            defaults
+              mode tcp
+              timeout connect 5s
+              timeout client 1h
+              timeout server 1h
+
+            frontend redis
+              bind 127.0.0.1:6379
+              default_backend dragonfly
+
+            backend dragonfly
+              option tcp-check
+              server dragonfly dragonfly-core.core-prod.svc.cluster.local:6379 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt verifyhost dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space sni str(dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space)
+    persistence:
+      data:
+        advancedMounts:
+          main:
+            main:
+              - path: '/data'
+      redis-proxy-config:
+        type: 'configMap'
+        identifier: 'redis-proxy'
+        advancedMounts:
+          main:
+            redis-proxy:
+              - path: '/usr/local/etc/haproxy/haproxy.cfg'
+                subPath: 'haproxy.cfg'
+                readOnly: true
+    controllers:
+      main:
+        containers:
+          redis-proxy:
+            image:
+              repository: 'docker.io/library/haproxy'
+              tag: '3.2.23-alpine3.24'
+              digest: 'sha256:57b361f7e5cec8279a5d82ea4d4941936d12cf35305146383b9cb01200017a40'
+            securityContext:
+              allowPrivilegeEscalation: false
+              capabilities:
+                drop:
+                  - 'ALL'
+              runAsNonRoot: true
+              runAsUser: 99
+              runAsGroup: 99
+            probes:
+              readiness:
+                enabled: true
+                custom: true
+                spec:
+                  tcpSocket:
+                    port: 6379
 
   machine-learning:
     enabled: true
