@@ -1,0 +1,143 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 'core-business-projects'
+  namespace: 'argocd'
+
+  labels:
+    resolvemy.host/env: 'prod'
+
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+
+  generators:
+    - merge:
+        mergeKeys:
+          - 'name'
+
+        generators:
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - clusters:
+                          - name: 'core-home1-talos-prod'
+                            values:
+                              hub: true
+                              ingress: 'projects.mylogin.space'
+
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+                  topology.kubernetes.io/region: 'yvr'
+
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-business-projects-{{ .values.environment }}'
+
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '.'
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
+
+    spec:
+      project: 'core'
+
+      syncPolicy:
+        syncOptions:
+          - 'ServerSideApply=true'
+
+      source:
+        repoURL: 'https://github.com/K-FOSS/CoRE-Business.git'
+        path: 'Projects'
+        targetRevision: 'HEAD'
+
+        plugin:
+          name: 'argocd-lovely-plugin'
+          env:
+            - name: 'LOVELY_HELM_MERGE'
+              value: |- # yaml
+                secretSuffix: '{{ .values.environment }}'
+
+                openproject:
+                  environment:
+                    # Web
+                    - name: USE_PUMA
+                      value: 'true'
+
+                    # Rails
+                    - name: RAILS_MIN_THREADS
+                      value: '4'
+                    - name: RAILS_MAX_THREADS
+                      value: '16'
+
+                    # Database
+                    - name: DATABASE_URL
+                      valueFrom:
+                        secretKeyRef:
+                          name: '{{ .values.clusterName }}-business-projects'
+                          key: 'psqlURI'
+
+                    # Storage
+                    - name: OPENPROJECT_ATTACHMENTS__STORAGE
+                      value: 'fog'
+
+                    - name: OPENPROJECT_FOG_CREDENTIALS_PROVIDER
+                      value: 'aws'
+
+                    - name: OPENPROJECT_FOG_CREDENTIALS_PATH__STYLE
+                      value: 'true'
+
+                    - name: OPENPROJECT_FOG_CREDENTIALS_ENDPOINT
+                      value: 'https://s3.mylogin.space'
+
+                    - name: OPENPROJECT_FOG_DIRECTORY
+                      valueFrom:
+                        secretKeyRef:
+                          name: '{{ .values.clusterName }}-business-projects'
+                          key: 'username'
+
+                    - name: OPENPROJECT_FOG_CREDENTIALS_AWS__ACCESS__KEY__ID
+                      valueFrom:
+                        secretKeyRef:
+                          name: 'business-projects-openproject-s3-{{ .values.environment }}'
+                          key: 'AccessKey'
+
+                    - name: OPENPROJECT_FOG_CREDENTIALS_AWS__SECRET__ACCESS__KEY
+                      valueFrom:
+                        secretKeyRef:
+                          name: 'business-projects-openproject-s3-{{ .values.environment }}'
+                          key: 'SecretKey'
+
+                    - name: OPENPROJECT_RAILS__RELATIVE__URL__ROOT
+                      value: ''
+
+                    - name: SERVER_NAME
+                      value: '{{ .values.ingress }}'
+
+                    - name: IMAP_ENABLED
+                      value: 'false'
+
+      destination:
+        server: '{{ .server }}'
+        namespace: 'core-{{ .values.environment }}'
