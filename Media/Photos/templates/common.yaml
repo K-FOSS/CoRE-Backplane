@@ -45,7 +45,32 @@ probes:
           - 'socat -T 1 - TCP:127.0.0.1:6379 </dev/null >/dev/null'
 {{- end }}
 
+{{- define "photos.mlControllerId" -}}
+machine-learning-{{ required "mlrunner.name is required" .name }}
+{{- end }}
+
+{{- define "photos.mlResourceName" -}}
+{{- if eq .name "intel" -}}
+{{ .release }}-machine-learning
+{{- else -}}
+{{ .release }}-machine-learning-{{ required "mlrunner.name is required" .name }}
+{{- end -}}
+{{- end }}
+
+{{- define "photos.mlImageTag" -}}
+{{- if eq .type "intel" -}}
+openvino
+{{- else if eq .type "cuda" -}}
+cuda
+{{- else -}}
+{{ fail (printf "Unsupported mlrunner.type %q; expected intel or cuda" .type) }}
+{{- end -}}
+{{- end }}
+
 {{- define "photos.commonValues" -}}
+{{- if not (len .Values.mlrunners) }}
+{{- fail "mlrunners must contain at least one runner" }}
+{{- end }}
 global:
   nameOverride: '{{ .Release.Name }}'
 
@@ -59,7 +84,7 @@ controllers:
           tag: {{ required "immich.version is required" .Values.immich.version | squote }}
         env:
           IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
-          IMMICH_MACHINE_LEARNING_URL: 'http://{{ .Release.Name }}-machine-learning:3003'
+          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Release.Name) }}:3003'
           DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
           DB_PORT: '5432'
           DB_USERNAME:
@@ -108,18 +133,35 @@ controllers:
       redis-proxy:
         {{- include "photos.haproxyContainer" . | nindent 8 }}
 
-  machine-learning:
+{{- range $runner := .Values.mlrunners }}
+  {{- $controller := include "photos.mlControllerId" $runner }}
+  {{ $controller }}:
+    forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Release.Name) }}'
     strategy: Recreate
     pod:
+      {{- with $runner.nodeSelector }}
       nodeSelector:
-        kubernetes.io/hostname: 'laptop2'
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $runner.affinity }}
+      affinity:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $runner.tolerations }}
+      tolerations:
+{{ toYaml . | nindent 8 }}
+      {{- end }}
       annotations:
-        checksum/redis-proxy: {{ include "photos.redisProxyConfig" . | sha256sum | squote }}
+        checksum/redis-proxy: {{ include "photos.redisProxyConfig" $ | sha256sum | squote }}
     containers:
       main:
         image:
           repository: 'ghcr.io/immich-app/immich-machine-learning'
-          tag: {{ printf "%s-openvino" (required "immich.version is required" .Values.immich.version) | squote }}
+          tag: {{ printf "%s-%s" $.Values.immich.version (include "photos.mlImageTag" $runner) | squote }}
+        {{- with $runner.resources }}
+        resources:
+{{ toYaml . | nindent 10 }}
+        {{- end }}
         env:
           TRANSFORMERS_CACHE: '/cache'
           HF_XET_CACHE: '/cache/huggingface-xet'
@@ -135,7 +177,8 @@ controllers:
           - name: 'http'
             containerPort: 3003
       redis-proxy:
-        {{- include "photos.haproxyContainer" . | nindent 8 }}
+        {{- include "photos.haproxyContainer" $ | nindent 8 }}
+{{- end }}
 
 service:
   server:
@@ -147,20 +190,25 @@ service:
         port: 2283
         targetPort: 'http'
         appProtocol: 'kubernetes.io/ws'
-  machine-learning:
-    controller: 'machine-learning'
+{{- range $runner := .Values.mlrunners }}
+  {{ include "photos.mlControllerId" $runner }}:
+    forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Release.Name) }}'
+    controller: {{ include "photos.mlControllerId" $runner | squote }}
     ports:
       http:
         primary: true
         port: 3003
         targetPort: 'http'
+{{- end }}
 
 configMaps:
   redis-proxy:
     forceRename: '{{ printf "%s-redis-proxy" .Release.Name }}'
     includeChecksumInControllers:
       - 'server'
-      - 'machine-learning'
+{{- range $runner := .Values.mlrunners }}
+      - {{ include "photos.mlControllerId" $runner | squote }}
+{{- end }}
     data:
       haproxy.cfg: |
 {{ include "photos.redisProxyConfig" . | nindent 8 }}
@@ -187,9 +235,11 @@ persistence:
   cache:
     type: emptyDir
     advancedMounts:
-      machine-learning:
+{{- range $runner := .Values.mlrunners }}
+      {{ include "photos.mlControllerId" $runner }}:
         main:
           - path: '/cache'
+{{- end }}
   redis-proxy-config:
     type: configMap
     name: '{{ printf "%s-redis-proxy" .Release.Name }}'
@@ -199,19 +249,25 @@ persistence:
           - path: '/usr/local/etc/haproxy/haproxy.cfg'
             subPath: 'haproxy.cfg'
             readOnly: true
-      machine-learning:
+{{- range $runner := .Values.mlrunners }}
+      {{ include "photos.mlControllerId" $runner }}:
         redis-proxy:
           - path: '/usr/local/etc/haproxy/haproxy.cfg'
             subPath: 'haproxy.cfg'
             readOnly: true
+{{- end }}
   dri:
     type: hostPath
     hostPath: '/dev/dri'
     hostPathType: 'Directory'
     advancedMounts:
-      machine-learning:
+{{- range $runner := .Values.mlrunners }}
+{{- if eq $runner.type "intel" }}
+      {{ include "photos.mlControllerId" $runner }}:
         main:
           - path: '/dev/dri'
+{{- end }}
+{{- end }}
 
 {{- end -}}
 

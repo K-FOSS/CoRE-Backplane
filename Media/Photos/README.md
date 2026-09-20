@@ -44,9 +44,12 @@ site-local Dragonfly hostname for certificate verification. The proxy is
 configured using [HAProxy's TLS server options](https://docs.haproxy.org/3.2/configuration.html#5.2-ssl).
 The proxy readiness check connects to its loopback listener from inside the
 sidecar because the listener is intentionally bound to `127.0.0.1`.
-The machine-learning pod mounts the same chart-generated `photos-redis-proxy`
-ConfigMap and `haproxy.cfg` subPath; its pod checksum is tied to that proxy
-configuration so a proxy change rolls the ML sidecar too.
+Each `mlrunners` entry creates a dedicated machine-learning Deployment and
+Service. The `intel` runner retains the `photos-machine-learning` name; other
+runner names receive a suffix such as `photos-machine-learning-cuda`. Each
+runner inherits its configured node selector, affinity, tolerations, resources,
+hardware-appropriate Immich image tag, and the shared `photos-redis-proxy`
+ConfigMap. Immich receives all runner URLs through the generated config.
 
 Immich OAuth is automated with an Authentik OIDC provider and one generated
 `photos-oidc` connection Secret. The Authentik Terraform Workspace generates
@@ -59,9 +62,10 @@ and [Authentik OAuth2 providers](https://docs.goauthentik.io/add-secure-apps/pro
 The connection Secret is published by the [Crossplane Terraform provider](https://github.com/crossplane-contrib/provider-terraform)
 Workspace rather than by a separate OIDC password generator.
 
-The machine-learning Deployment is pinned to the `laptop2` Kubernetes node and
-uses Immich's `v3.2.2-openvino` image with the host `/dev/dri` device directory
-for Intel GPU acceleration. See Immich's [ML hardware acceleration documentation](https://docs.immich.app/features/ml-hardware-acceleration/).
+The Intel machine-learning Deployment is pinned to the `laptop2` Kubernetes
+node and uses Immich's `v3.2.2-openvino` image with the host `/dev/dri` device
+directory. CUDA runners use the `v3.2.2-cuda` image and inherit their configured
+NVIDIA resource and scheduling constraints. See Immich's [ML hardware acceleration documentation](https://docs.immich.app/features/ml-hardware-acceleration/).
 The Dragonfly password is pulled into the namespace by an
 [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
 from the site-specific CoreVault path, with logical database `133` reserved in the

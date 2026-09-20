@@ -129,6 +129,10 @@ spec:
       output "immich_config_yaml" {
         value = <<-EOT
           machineLearning:
+            urls:
+{{- range $runner := .Values.mlrunners }}
+              - 'http://{{ include "photos.mlResourceName" (dict "name" .name "release" $.Release.Name) }}:3003'
+{{- end }}
             clip:
               modelName: '{{ required "immich.smartSearch.modelName is required" .Values.immich.smartSearch.modelName }}'
           oauth:
