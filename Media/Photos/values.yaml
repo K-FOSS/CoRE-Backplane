@@ -4,10 +4,6 @@ global:
   fullnameOverride: 'photos'
 
 mlrunners:
-  - name: 'intel'
-    type: 'intel'
-    nodeSelector:
-      'kubernetes.io/hostname': 'laptop2'
   - name: 'cuda'
     type: 'cuda'
     affinity:
@@ -24,6 +20,10 @@ mlrunners:
     resources:
       limits:
         'nvidia.com/gpu': '1'
+  - name: 'intel'
+    type: 'intel'
+    nodeSelector:
+      'kubernetes.io/hostname': 'laptop2'
 
 pubgateway:
   name: 'main-gw'
@@ -50,8 +50,6 @@ authentik:
 
 immich:
   version: 'v3.2.2'
-  existingConfiguration: 'photos-oidc'
-  configurationKind: 'Secret'
   smartSearch:
     modelName: 'ViT-B-16-SigLIP2__webli'
   persistence:

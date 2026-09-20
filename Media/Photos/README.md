@@ -13,7 +13,7 @@ and [upgrade documentation](https://docs.immich.app/install/upgrading/)
 before reconciliation.
 
 Smart Search uses `ViT-B-16-SigLIP2__webli`, configured through the generated
-Immich config Secret. After changing the model, re-run all Smart Search jobs;
+Immich config ConfigMap. After changing the model, re-run all Smart Search jobs;
 Immich notes that changing models can leave incompatible embeddings in the
 database. See [Immich's Smart Search model guidance](https://docs.immich.app/features/searching/).
 
@@ -54,8 +54,10 @@ ConfigMap. Immich receives all runner URLs through the generated config.
 Immich OAuth is automated with an Authentik OIDC provider and one generated
 `photos-oidc` connection Secret. The Authentik Terraform Workspace generates
 both the client ID and client secret, writes them and the
-`immich_config_yaml` output as `immich-config.yaml` to
-that Secret, and the common-library workload mounts the same Secret. No OIDC credential is
+client ID and client secret outputs to the `photos-oidc` Secret, while the
+non-secret Immich configuration is stored in the chart-generated
+`photos-immich-config` ConfigMap. The common-library workload mounts the
+ConfigMap and reads the OAuth credentials from the Secret. No OIDC credential is
 stored in Git. The provider allows the Immich web and mobile redirect URIs and
 is restricted to the configured `Media Consumers` group. See [Immich OAuth configuration](https://docs.immich.app/administration/oauth/)
 and [Authentik OAuth2 providers](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).

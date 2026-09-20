@@ -126,31 +126,4 @@ spec:
         sensitive = true
       }
 
-      output "immich_config_yaml" {
-        value = <<-EOT
-          machineLearning:
-            urls:
-{{- range $runner := .Values.mlrunners }}
-              - 'http://{{ include "photos.mlResourceName" (dict "name" .name "release" $.Values.global.nameOverride) }}:3003'
-{{- end }}
-            clip:
-              modelName: '{{ required "immich.smartSearch.modelName is required" .Values.immich.smartSearch.modelName }}'
-          oauth:
-            enabled: true
-            issuerUrl: 'https://idp.mylogin.space/application/o/photos-oidc/'
-            clientId: '${random_password.client_id.result}'
-            clientSecret: '${random_password.client_secret.result}'
-            scope: 'openid email profile'
-            tokenEndpointAuthMethod: 'client_secret_post'
-            signingAlgorithm: 'RS256'
-            profileSigningAlgorithm: 'none'
-            autoRegister: true
-            autoLaunch: false
-            buttonText: 'Sign in with Authentik'
-            storageLabelClaim: 'preferred_username'
-            roleClaim: 'immich_role'
-            mobileOverrideEnabled: false
-        EOT
-        sensitive = true
-      }
 {{- end }}

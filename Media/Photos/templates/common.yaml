@@ -85,6 +85,16 @@ controllers:
         env:
           IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
           IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}:3003'
+          OAUTH_CLIENT_ID:
+            valueFrom:
+              secretKeyRef:
+                name: 'photos-oidc'
+                key: 'client_id'
+          OAUTH_CLIENT_SECRET:
+            valueFrom:
+              secretKeyRef:
+                name: 'photos-oidc'
+                key: 'client_secret'
           DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
           DB_PORT: '5432'
           DB_USERNAME:
@@ -224,6 +234,34 @@ route:
             weight: 1
 
 configMaps:
+  immich-config:
+    forceRename: '{{ printf "%s-immich-config" .Values.global.nameOverride }}'
+    includeChecksumInControllers:
+      - 'server'
+    data:
+      immich-config.yaml: |
+        machineLearning:
+          urls:
+{{- range $runner := .Values.mlrunners }}
+            - 'http://{{ include "photos.mlResourceName" (dict "name" .name "release" $.Values.global.nameOverride) }}:3003'
+{{- end }}
+          clip:
+            modelName: '{{ required "immich.smartSearch.modelName is required" .Values.immich.smartSearch.modelName }}'
+        oauth:
+          enabled: true
+          issuerUrl: 'https://idp.mylogin.space/application/o/photos-oidc/'
+          clientId: '${OAUTH_CLIENT_ID}'
+          clientSecret: '${OAUTH_CLIENT_SECRET}'
+          scope: 'openid email profile'
+          tokenEndpointAuthMethod: 'client_secret_post'
+          signingAlgorithm: 'RS256'
+          profileSigningAlgorithm: 'none'
+          autoRegister: true
+          autoLaunch: false
+          buttonText: 'Sign in with Authentik'
+          storageLabelClaim: 'preferred_username'
+          roleClaim: 'immich_role'
+          mobileOverrideEnabled: false
   redis-proxy:
     forceRename: '{{ printf "%s-redis-proxy" .Values.global.nameOverride }}'
     includeChecksumInControllers:
@@ -237,10 +275,10 @@ configMaps:
 
 persistence:
   config:
-    type: secret
-    name: {{ required "immich.existingConfiguration is required" .Values.immich.existingConfiguration | squote }}
+    type: configMap
+    name: '{{ printf "%s-immich-config" .Values.global.nameOverride }}'
     items:
-      - key: 'immich_config_yaml'
+      - key: 'immich-config.yaml'
         path: 'immich-config.yaml'
     advancedMounts:
       server:
