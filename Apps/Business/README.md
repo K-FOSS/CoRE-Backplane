@@ -63,6 +63,23 @@ Dragonfly data were removed.
 Other manifests under `Legacy/` remain legacy fleet owners until they are
 individually migrated and documented.
 
+## Projects
+
+[Projects.yaml](Projects.yaml) owns the production YVR deployment of the
+[CoRE Projects chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Projects).
+Its matrix selects `core-home1-talos-prod` as the main hub and renders the
+application in `core-prod` with the `projects.mylogin.space` hostname. The
+OpenProject PostgreSQL and S3 Secret references are derived from the selected
+cluster and production environment; no credential values are stored here.
+
+The upstream [Projects README](https://github.com/K-FOSS/CoRE-Business/blob/main/Projects/README.md)
+documents chart prerequisites and user-facing verification. Before sync,
+render the chart with the registered Home1 cluster values and inspect the
+Secret references, PostgreSQL, object-storage, Deployment, Service, and
+HTTPRoute resources. Removing the matrix entry preserves generated resources,
+so decommissioning requires an explicit database, bucket, and retained-data
+cleanup decision.
+
 ## Personal/Fitness
 
 [Personal/Fitness.yaml](Personal/Fitness.yaml) owns the YVR deployment of the
@@ -103,6 +120,34 @@ conditions, the application endpoint, authentication, transaction creation,
 scheduler completion, and backup/restore behavior. The ApplicationSet
 preserves generated resources on removal; decommissioning must therefore
 include an explicit data-retention and cleanup decision.
+
+## Personal/History
+
+[Personal/History.yaml](Personal/History.yaml) owns the YVR deployment of the
+upstream [CoRE Personal History chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/History),
+which packages [Dawarich](https://dawarich.app/) in the `core-history-prod`
+namespace. The ApplicationSet targets `core-home1-talos-prod`, pins the source
+to the chart revision that introduced the stack, injects the site-local
+PostgreSQL providers, and attaches `dawarich.mylogin.space` to the shared
+`core-prod/main-gw` HTTPS listener.
+
+The chart creates the PostgreSQL `User` claim, Authentik OIDC Workspace,
+Dragonfly ExternalSecret, and three retained Longhorn PVCs for public data,
+watched imports, and application storage. Dawarich uses Dragonfly logical
+database `153`, registered in the [Dragonfly allocation registry](https://github.com/K-FOSS/CoRE-Backplane/blob/main/Storage/Dragonfly/CoRE/README.md);
+database `152` remains reserved for SnapOtter. The Dragonfly password is read
+from the chart's derived site-local Vault path, and no credential value is
+stored here.
+
+The upstream [Personal History README](https://github.com/K-FOSS/CoRE-Business/blob/main/Personal/History/README.md)
+documents chart prerequisites and user-facing checks. Before sync, render the
+pinned chart with the Home1 values and inspect the User, Workspace,
+ExternalSecret, Deployments, Services, HTTPRoute, and PVCs. After
+reconciliation, verify PostgreSQL migrations, Dragonfly TLS connectivity,
+Authentik callback/login, location import, background processing, and restore
+of all three PVCs. Removal preserves generated resources, runtime credentials,
+database connection material, and PVCs; decommissioning therefore requires an
+explicit data-retention and cleanup decision.
 
 ## Landing
 

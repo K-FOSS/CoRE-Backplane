@@ -53,6 +53,7 @@ they are not global database numbers across clusters.
 | `150` | OpenWebUI cache | Dedicated OpenWebUI application cache. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
 | `151` | OpenWebUI websocket manager | Dedicated OpenWebUI websocket-manager state. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
 | `152` | SnapOtter | Dedicated SnapOtter/BullMQ queues and processing state. Owned by [`Business/Conversions`](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Conversions). |
+| `153` | Dawarich | Dedicated Dawarich queues and processing state. Owned by [`Business/Personal/History`](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/History). |
 | `189` | n8n | Dedicated n8n external Redis state. Owned by [`Business/Automation`](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation). |
 
 
