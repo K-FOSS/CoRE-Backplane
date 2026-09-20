@@ -161,6 +161,9 @@ controllers:
       tolerations:
 {{ toYaml . | nindent 8 }}
       {{- end }}
+      {{- with $runner.runtimeClassName }}
+      runtimeClassName: {{ . | squote }}
+      {{- end }}
       annotations:
         checksum/redis-proxy: {{ include "photos.redisProxyConfig" $ | sha256sum | squote }}
     containers:
