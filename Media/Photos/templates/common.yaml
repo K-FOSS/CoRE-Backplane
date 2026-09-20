@@ -72,7 +72,7 @@ cuda
 {{- fail "mlrunners must contain at least one runner" }}
 {{- end }}
 global:
-  nameOverride: '{{ .Release.Name }}'
+  nameOverride: 'photos'
 
 controllers:
   server:
@@ -84,7 +84,7 @@ controllers:
           tag: {{ required "immich.version is required" .Values.immich.version | squote }}
         env:
           IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
-          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Release.Name) }}:3003'
+          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}:3003'
           DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
           DB_PORT: '5432'
           DB_USERNAME:
@@ -136,7 +136,7 @@ controllers:
 {{- range $runner := .Values.mlrunners }}
   {{- $controller := include "photos.mlControllerId" $runner }}
   {{ $controller }}:
-    forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Release.Name) }}'
+    forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Values.global.nameOverride) }}'
     strategy: Recreate
     pod:
       {{- with $runner.nodeSelector }}
@@ -192,7 +192,7 @@ service:
         appProtocol: 'kubernetes.io/ws'
 {{- range $runner := .Values.mlrunners }}
   {{ include "photos.mlControllerId" $runner }}:
-    forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Release.Name) }}'
+    forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Values.global.fullnameOverride) }}'
     controller: {{ include "photos.mlControllerId" $runner | squote }}
     ports:
       http:
@@ -203,7 +203,7 @@ service:
 
 configMaps:
   redis-proxy:
-    forceRename: '{{ printf "%s-redis-proxy" .Release.Name }}'
+    forceRename: '{{ printf "%s-redis-proxy" .Values.global.nameOverride }}'
     includeChecksumInControllers:
       - 'server'
 {{- range $runner := .Values.mlrunners }}
@@ -242,7 +242,7 @@ persistence:
 {{- end }}
   redis-proxy-config:
     type: configMap
-    name: '{{ printf "%s-redis-proxy" .Release.Name }}'
+    name: '{{ printf "%s-redis-proxy" .Values.global.nameOverride }}'
     advancedMounts:
       server:
         redis-proxy:
