@@ -201,6 +201,28 @@ service:
         targetPort: 'http'
 {{- end }}
 
+route:
+  photos:
+    enabled: true
+    kind: 'HTTPRoute'
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    hostnames:
+      - 'photos.mylogin.space'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: 'Gateway'
+        name: '{{ .Values.pubgateway.name }}'
+        sectionName: '{{ .Values.pubgateway.sectionName }}'
+        namespace: '{{ .Values.pubgateway.namespace }}'
+    rules:
+      - backendRefs:
+          - kind: 'Service'
+            port: 2283
+            identifier: 'server'
+            weight: 1
+
 configMaps:
   redis-proxy:
     forceRename: '{{ printf "%s-redis-proxy" .Values.global.nameOverride }}'
