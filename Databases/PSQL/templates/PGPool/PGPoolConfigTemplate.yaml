@@ -7,6 +7,88 @@ metadata:
     app.kubernetes.io/name: pgpool
 
 data:
+  auto-recovery.sh: |
+    #!/bin/sh
+    set -eu
+
+    : "${CHECK_USER:?CHECK_USER is required}"
+    : "${CHECK_PASSWORD:?CHECK_PASSWORD is required}"
+    : "${PGPOOL_PCP_USER:?PGPOOL_PCP_USER is required}"
+    : "${PGPOOL_PCP_PASSWORD:?PGPOOL_PCP_PASSWORD is required}"
+
+    pcp_passfile=/tmp/pgpool/pcp-pass
+    umask 077
+    printf '127.0.0.1:9898:%s:%s\n' "${PGPOOL_PCP_USER}" "${PGPOOL_PCP_PASSWORD}" > "${pcp_passfile}"
+    trap 'rm -f "${pcp_passfile}"' EXIT INT TERM
+
+    while :; do
+      nodes="$({
+        PGCONNECT_TIMEOUT="${CHECK_PGCONNECT_TIMEOUT:-2}" \
+        PGPASSWORD="${CHECK_PASSWORD}" \
+          psql \
+            --no-password \
+            --no-psqlrc \
+            --quiet \
+            --tuples-only \
+            --no-align \
+            --set=ON_ERROR_STOP=1 \
+            --host=127.0.0.1 \
+            --port=5432 \
+            --username="${CHECK_USER}" \
+            --dbname=template1 \
+            --command='SHOW pool_nodes'
+      } 2>/dev/null)" || {
+        sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
+        continue
+      }
+
+      # Only attach a detached node after its endpoint independently reports
+      # that it is a primary. Standby attachment remains owned by Pgpool's
+      # streaming-replication auto_failback logic.
+      printf '%s\n' "${nodes}" | awk -F '|' '
+        {
+          for (field = 1; field <= NF; field++) {
+            gsub(/^[[:space:]]+|[[:space:]]+$/, "", $field)
+          }
+          if ($4 == "down") {
+            print $1 "|" $2 "|" $3
+          }
+        }
+      ' | while IFS='|' read -r node host port; do
+        [ -n "${node}" ] || continue
+
+        is_primary="$({
+          PGCONNECT_TIMEOUT="${AUTO_RECOVERY_CONNECT_TIMEOUT:-2}" \
+          PGPASSWORD="${CHECK_PASSWORD}" \
+            psql \
+              --no-password \
+              --no-psqlrc \
+              --quiet \
+              --tuples-only \
+              --no-align \
+              --set=ON_ERROR_STOP=1 \
+              --host="${host}" \
+              --port="${port}" \
+              --username="${CHECK_USER}" \
+              --dbname=template1 \
+              --command='SELECT NOT pg_is_in_recovery()'
+        } 2>/dev/null)" || continue
+
+        [ "${is_primary}" = 't' ] || continue
+
+        PCPPASSFILE="${pcp_passfile}" \
+          /opt/pgpool-II/bin/pcp_attach_node \
+            -h 127.0.0.1 \
+            -p 9898 \
+            -U "${PGPOOL_PCP_USER}" \
+            -n "${node}" \
+            -w \
+          >/dev/null 2>&1 || true
+      done
+
+      sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
+    done
+
   readiness.sh: |
     #!/bin/sh
     set -eu

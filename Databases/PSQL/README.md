@@ -136,6 +136,17 @@ unsafe queries to replicas.
 See the upstream [Pgpool-II connection settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection.html)
 and [failover behavior](https://www.pgpool.net/docs/latest/en/html/runtime-config-failover.html).
 
+Each PGPool pod also runs a small auto-recovery sidecar. It examines detached
+nodes reported by `SHOW POOL_NODES`, connects directly to each endpoint, and
+uses `pcp_attach_node` only when the endpoint reports `pg_is_in_recovery() =
+false`. This allows a recovered primary to rejoin without allowing the sidecar
+to promote PostgreSQL or attach a recovering standby; Patroni owns promotion,
+and PGPool owns standby reattachment through `auto_failback`. The sidecar uses
+the same pinned PGPool image and the existing operator credential Secret, and
+can be disabled with `pooler.autoRecovery.enabled`.
+The sidecar follows the upstream [PCP command and password-file
+interface](https://pgpool.net/docs/latest/en/html/pcp-commands.html).
+
 The ApplicationSet connects the k3s node1 and Home1 PGPool deployments to
 their local `psql-main` pods and to the remote DC1 Talos PostgreSQL service.
 The DC1 Talos PGPool uses k3s node1 as its remote peer. Local pods are generated

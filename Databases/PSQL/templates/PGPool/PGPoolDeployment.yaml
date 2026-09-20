@@ -123,6 +123,52 @@ controllers:
               periodSeconds: 10
               timeoutSeconds: 2
               failureThreshold: 3
+      {{- if .Values.pooler.autoRecovery.enabled }}
+      recovery:
+        image:
+          repository: kristianfjones/pgpool
+          digest: sha256:b101c0e0a33c4aa8fd9641f4e6a112851735e62bcd494e8c741a31086b7eba6b
+          pullPolicy: IfNotPresent
+        command:
+          - /bin/sh
+          - /config/auto-recovery.sh
+        resources:
+          requests:
+            cpu: '10m'
+            memory: '32Mi'
+          limits:
+            cpu: '100m'
+            memory: '128Mi'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        env:
+          CHECK_PGCONNECT_TIMEOUT: '{{ .Values.pooler.autoRecovery.connectTimeout }}'
+          AUTO_RECOVERY_POLL_PERIOD: '{{ .Values.pooler.autoRecovery.pollPeriod }}'
+          AUTO_RECOVERY_CONNECT_TIMEOUT: '{{ .Values.pooler.autoRecovery.connectTimeout }}'
+          CHECK_USER:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: username
+          CHECK_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: password
+          PGPOOL_PCP_USER:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: username
+          PGPOOL_PCP_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: password
+      {{- end }}
 
 service:
   main:
@@ -136,6 +182,8 @@ persistence:
     advancedMounts:
       main:
         pgpool:
+          - path: /tmp/pgpool
+        recovery:
           - path: /tmp/pgpool
 
   tmp:
@@ -173,6 +221,9 @@ persistence:
       - key: readiness.sh
         path: readiness.sh
         mode: 420
+      - key: auto-recovery.sh
+        path: auto-recovery.sh
+        mode: 420
       - key: pgpool.conf
         path: pgpool.conf
         mode: 420
@@ -188,6 +239,9 @@ persistence:
             readOnly: true
           - path: /tmp/pgpool/pool_passwd
             subPath: pool_passwd
+            readOnly: true
+        recovery:
+          - path: /config
             readOnly: true
 
   tls:
