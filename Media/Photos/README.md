@@ -12,6 +12,11 @@ v3 removes `pgvecto.rs`; this deployment selects `pgvector`. See Immich's
 and [upgrade documentation](https://docs.immich.app/install/upgrading/)
 before reconciliation.
 
+Smart Search uses `ViT-B-16-SigLIP2__webli`, configured through the generated
+Immich config Secret. After changing the model, re-run all Smart Search jobs;
+Immich notes that changing models can leave incompatible embeddings in the
+database. See [Immich's Smart Search model guidance](https://docs.immich.app/features/searching/).
+
 The chart currently deploys Immich's API and microservices together in the
 single `photos-server` Deployment. The deployment does not override Immich's
 worker selection; this follows the v3.2.2 server process model described in

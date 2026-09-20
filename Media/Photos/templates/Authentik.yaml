@@ -128,6 +128,9 @@ spec:
 
       output "immich_config_yaml" {
         value = <<-EOT
+          machineLearning:
+            clip:
+              modelName: '{{ required "immich.smartSearch.modelName is required" .Values.immich.smartSearch.modelName }}'
           oauth:
             enabled: true
             issuerUrl: 'https://idp.mylogin.space/application/o/photos-oidc/'
