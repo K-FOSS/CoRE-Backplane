@@ -293,7 +293,10 @@ persistence:
         main:
           - path: '/data'
   cache:
-    type: emptyDir
+    type: persistentVolumeClaim
+    forceRename: '{{ printf "%s-ml-cache" .Values.global.nameOverride }}'
+    accessMode: 'ReadWriteMany'
+    size: '30Gi'
     advancedMounts:
 {{- range $runner := .Values.mlrunners }}
       {{ include "photos.mlControllerId" $runner }}:

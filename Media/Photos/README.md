@@ -49,7 +49,9 @@ Service. The `intel` runner retains the `photos-machine-learning` name; other
 runner names receive a suffix such as `photos-machine-learning-cuda`. Each
 runner inherits its configured node selector, affinity, tolerations, resources,
 hardware-appropriate Immich image tag, and the shared `photos-redis-proxy`
-ConfigMap. Immich receives all runner URLs through the generated config.
+ConfigMap. All runners share a dedicated 30 GiB ReadWriteMany PVC named
+`photos-ml-cache` for cached ML models. Immich receives all runner URLs through
+the generated config.
 
 Immich OAuth is automated with an Authentik OIDC provider and one generated
 `photos-oidc` connection Secret. The Authentik Terraform Workspace generates
