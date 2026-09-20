@@ -28,6 +28,7 @@ spec:
                           - name: 'dc1-k3s-node1'
                             values:
                               hub: false
+                              replicas: '1'
                               datacenter: 'dc1'
                               region: 'yxl'
                               ldapServer: 'ldap-dc1.mylogin.space'
@@ -40,6 +41,7 @@ spec:
                           - name: 'core-dc1-talos-prod'
                             values:
                               hub: false
+                              replicas: '1'
                               datacenter: 'dc1'
                               region: 'yxl'
                               ldapServer: 'ldap-dc1-talos.mylogin.space'
@@ -52,6 +54,7 @@ spec:
                           - name: 'core-home1-talos-prod'
                             values:
                               hub: true
+                              replicas: '3'
                               datacenter: 'home1'
                               region: 'yvr'
                               ldapServer: 'ldap-home1.mylogin.space'
@@ -144,6 +147,7 @@ spec:
                   controllerID: 'psql.{{ .values.tenant }}/{{ .values.environment }}'
                   hub: {{ .values.hub }}
                   standby: {{ not .values.hub }}
+                  replicas: '{{ .values.replicas }}'
                   standbyHost: 'psql-int.{{ $hub.name }}.{{ $hub.values.datacenter }}.{{ $hub.values.region }}.mylogin.space'
 
                 pooler:
