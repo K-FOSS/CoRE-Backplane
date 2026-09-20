@@ -1,6 +1,28 @@
 global:
   timezone: 'America/Vancouver'
 
+mlrunners:
+  - name: 'intel'
+    type: 'intel'
+    nodeSelector:
+      'kubernetes.io/hostname': 'laptop2'
+  - name: 'cuda'
+    type: 'cuda'
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: 'nvidia.com/gpu.count'
+                  operator: 'Gt'
+                  values:
+                    - '0'
+    tolerations:
+      - operator: 'Exists'
+    resources:
+      limits:
+        'nvidia.com/gpu': '1'
+
 pubgateway:
   name: 'main-gw'
   namespace: 'core-prod'
@@ -25,182 +47,9 @@ authentik:
       port: 80
 
 immich:
-  controllers:
-    main:
-      containers:
-        main:
-          image:
-            tag: 'v3.2.2'
-          env:
-            DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
-            DB_PORT: '5432'
-            DB_USERNAME:
-              valueFrom:
-                secretKeyRef:
-                  name: 'photos'
-                  key: 'username'
-            DB_PASSWORD:
-              valueFrom:
-                secretKeyRef:
-                  name: 'photos'
-                  key: 'password'
-            DB_DATABASE_NAME:
-              valueFrom:
-                secretKeyRef:
-                  name: 'photos'
-                  key: 'username'
-            DB_VECTOR_EXTENSION: 'pgvector'
-            TZ: '{{ .Values.global.timezone }}'
-            REDIS_HOSTNAME: '127.0.0.1'
-            REDIS_PORT: '6379'
-            REDIS_PASSWORD:
-              valueFrom:
-                secretKeyRef:
-                  name: 'dragonfly-core-password'
-                  key: 'password'
-            REDIS_DBINDEX: '133'
-
-  immich:
-    existingConfiguration: 'photos-oidc'
-    configurationKind: 'Secret'
-    persistence:
-      library:
-        existingClaim: 'photos-library'
-
-  valkey:
-    enabled: false
-
-  server:
-    enabled: true
-    service:
-      main:
-        ports:
-          http:
-            appProtocol: 'kubernetes.io/ws'
-    configMaps:
-      redis-proxy:
-        includeChecksumInControllers:
-          - 'main'
-        data:
-          haproxy.cfg: |
-            global
-              log stdout format raw local0
-
-            defaults
-              mode tcp
-              timeout connect 5s
-              timeout client 1h
-              timeout server 1h
-
-            frontend redis
-              bind 127.0.0.1:6379
-              default_backend dragonfly
-
-            backend dragonfly
-              option tcp-check
-              server dragonfly dragonfly-core.core-prod.svc.cluster.local:6379 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt verifyhost dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space sni str(dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space)
-    persistence:
-      config:
-        items:
-          - key: 'immich_config_yaml'
-            path: 'immich-config.yaml'
-      data:
-        advancedMounts:
-          main:
-            main:
-              - path: '/data'
-      redis-proxy-config:
-        type: 'configMap'
-        identifier: 'redis-proxy'
-        advancedMounts:
-          main:
-            redis-proxy:
-              - path: '/usr/local/etc/haproxy/haproxy.cfg'
-                subPath: 'haproxy.cfg'
-                readOnly: true
-    controllers:
-      main:
-        containers:
-          redis-proxy:
-            image:
-              repository: 'docker.io/library/haproxy'
-              tag: '3.2.23-alpine3.24'
-              digest: 'sha256:57b361f7e5cec8279a5d82ea4d4941936d12cf35305146383b9cb01200017a40'
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - 'ALL'
-              runAsNonRoot: true
-              runAsUser: 99
-              runAsGroup: 99
-            probes:
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  exec:
-                    command:
-                      - 'sh'
-                      - '-c'
-                      - 'socat -T 1 - TCP:127.0.0.1:6379 </dev/null >/dev/null'
-
-  machine-learning:
-    enabled: true
-    controllers:
-      main:
-        pod:
-          nodeSelector:
-            kubernetes.io/hostname: 'laptop2'
-          annotations:
-            checksum/redis-proxy: '{{ toYaml (index .Values.server.configMaps "redis-proxy" "data") | sha256sum }}'
-        containers:
-          main:
-            image:
-              tag: 'v3.2.2-openvino'
-          redis-proxy:
-            image:
-              repository: 'docker.io/library/haproxy'
-              tag: '3.2.23-alpine3.24'
-              digest: 'sha256:57b361f7e5cec8279a5d82ea4d4941936d12cf35305146383b9cb01200017a40'
-            securityContext:
-              allowPrivilegeEscalation: false
-              capabilities:
-                drop:
-                  - 'ALL'
-              runAsNonRoot: true
-              runAsUser: 99
-              runAsGroup: 99
-            probes:
-              readiness:
-                enabled: true
-                custom: true
-                spec:
-                  exec:
-                    command:
-                      - 'sh'
-                      - '-c'
-                      - 'socat -T 1 - TCP:127.0.0.1:6379 </dev/null >/dev/null'
-    persistence:
-      cache:
-        advancedMounts:
-          main:
-            main:
-              - path: '/cache'
-      dri:
-        type: 'hostPath'
-        hostPath: '/dev/dri'
-        hostPathType: 'Directory'
-        advancedMounts:
-          main:
-            main:
-              - path: '/dev/dri'
-      redis-proxy-config:
-        type: 'configMap'
-        name: '{{ printf "%s-server" .Release.Name }}'
-        advancedMounts:
-          main:
-            redis-proxy:
-              - path: '/usr/local/etc/haproxy/haproxy.cfg'
-                subPath: 'haproxy.cfg'
-                readOnly: true
+  version: 'v3.2.2'
+  existingConfiguration: 'photos-oidc'
+  configurationKind: 'Secret'
+  persistence:
+    library:
+      existingClaim: 'photos-library'

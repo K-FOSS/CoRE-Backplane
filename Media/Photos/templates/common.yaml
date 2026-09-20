@@ -1,0 +1,219 @@
+---
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "photos.redisProxyConfig" -}}
+global
+  log stdout format raw local0
+
+defaults
+  mode tcp
+  timeout connect 5s
+  timeout client 1h
+  timeout server 1h
+
+frontend redis
+  bind 127.0.0.1:6379
+  default_backend dragonfly
+
+backend dragonfly
+  option tcp-check
+  server dragonfly dragonfly-core.core-prod.svc.cluster.local:6379 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt verifyhost dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space sni str(dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space)
+{{- end }}
+
+{{- define "photos.haproxyContainer" -}}
+image:
+  repository: 'docker.io/library/haproxy'
+  tag: '3.2.23-alpine3.24'
+  digest: 'sha256:57b361f7e5cec8279a5d82ea4d4941936d12cf35305146383b9cb01200017a40'
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - 'ALL'
+  runAsNonRoot: true
+  runAsUser: 99
+  runAsGroup: 99
+probes:
+  readiness:
+    enabled: true
+    custom: true
+    spec:
+      exec:
+        command:
+          - 'sh'
+          - '-c'
+          - 'socat -T 1 - TCP:127.0.0.1:6379 </dev/null >/dev/null'
+{{- end }}
+
+{{- define "photos.commonValues" -}}
+global:
+  nameOverride: '{{ .Release.Name }}'
+
+controllers:
+  server:
+    strategy: Recreate
+    containers:
+      main:
+        image:
+          repository: 'ghcr.io/immich-app/immich-server'
+          tag: {{ required "immich.version is required" .Values.immich.version | squote }}
+        env:
+          IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
+          IMMICH_MACHINE_LEARNING_URL: 'http://{{ .Release.Name }}-machine-learning:3003'
+          DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
+          DB_PORT: '5432'
+          DB_USERNAME:
+            valueFrom:
+              secretKeyRef:
+                name: 'photos'
+                key: 'username'
+          DB_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: 'photos'
+                key: 'password'
+          DB_DATABASE_NAME:
+            valueFrom:
+              secretKeyRef:
+                name: 'photos'
+                key: 'username'
+          DB_VECTOR_EXTENSION: 'pgvector'
+          TZ: {{ .Values.global.timezone | squote }}
+          REDIS_HOSTNAME: '127.0.0.1'
+          REDIS_PORT: '6379'
+          REDIS_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: 'dragonfly-core-password'
+                key: 'password'
+          REDIS_DBINDEX: '133'
+        ports:
+          - name: 'http'
+            containerPort: 2283
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/api/server/ping'
+                port: 'http'
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/api/server/ping'
+                port: 'http'
+      redis-proxy:
+        {{- include "photos.haproxyContainer" . | nindent 8 }}
+
+  machine-learning:
+    strategy: Recreate
+    pod:
+      nodeSelector:
+        kubernetes.io/hostname: 'laptop2'
+      annotations:
+        checksum/redis-proxy: {{ include "photos.redisProxyConfig" . | sha256sum | squote }}
+    containers:
+      main:
+        image:
+          repository: 'ghcr.io/immich-app/immich-machine-learning'
+          tag: {{ printf "%s-openvino" (required "immich.version is required" .Values.immich.version) | squote }}
+        env:
+          TRANSFORMERS_CACHE: '/cache'
+          HF_XET_CACHE: '/cache/huggingface-xet'
+          MPLCONFIGDIR: '/cache/matplotlib-config'
+          REDIS_HOSTNAME: '127.0.0.1'
+          REDIS_PORT: '6379'
+          REDIS_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: 'dragonfly-core-password'
+                key: 'password'
+        ports:
+          - name: 'http'
+            containerPort: 3003
+      redis-proxy:
+        {{- include "photos.haproxyContainer" . | nindent 8 }}
+
+service:
+  server:
+    controller: 'server'
+    primary: true
+    ports:
+      http:
+        primary: true
+        port: 2283
+        targetPort: 'http'
+        appProtocol: 'kubernetes.io/ws'
+  machine-learning:
+    controller: 'machine-learning'
+    ports:
+      http:
+        primary: true
+        port: 3003
+        targetPort: 'http'
+
+configMaps:
+  redis-proxy:
+    forceRename: '{{ printf "%s-redis-proxy" .Release.Name }}'
+    includeChecksumInControllers:
+      - 'server'
+      - 'machine-learning'
+    data:
+      haproxy.cfg: |
+{{ include "photos.redisProxyConfig" . | nindent 8 }}
+
+persistence:
+  config:
+    type: secret
+    name: {{ required "immich.existingConfiguration is required" .Values.immich.existingConfiguration | squote }}
+    items:
+      - key: 'immich_config_yaml'
+        path: 'immich-config.yaml'
+    advancedMounts:
+      server:
+        main:
+          - path: '/config'
+            readOnly: true
+  data:
+    type: persistentVolumeClaim
+    existingClaim: {{ required "immich.persistence.library.existingClaim is required" .Values.immich.persistence.library.existingClaim | squote }}
+    advancedMounts:
+      server:
+        main:
+          - path: '/data'
+  cache:
+    type: emptyDir
+    advancedMounts:
+      machine-learning:
+        main:
+          - path: '/cache'
+  redis-proxy-config:
+    type: configMap
+    name: '{{ printf "%s-redis-proxy" .Release.Name }}'
+    advancedMounts:
+      server:
+        redis-proxy:
+          - path: '/usr/local/etc/haproxy/haproxy.cfg'
+            subPath: 'haproxy.cfg'
+            readOnly: true
+      machine-learning:
+        redis-proxy:
+          - path: '/usr/local/etc/haproxy/haproxy.cfg'
+            subPath: 'haproxy.cfg'
+            readOnly: true
+  dri:
+    type: hostPath
+    hostPath: '/dev/dri'
+    hostPathType: 'Directory'
+    advancedMounts:
+      machine-learning:
+        main:
+          - path: '/dev/dri'
+
+{{- end -}}
+
+{{- $_ := mergeOverwrite .Values (include "photos.commonValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}
