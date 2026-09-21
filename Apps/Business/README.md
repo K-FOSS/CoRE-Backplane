@@ -149,6 +149,20 @@ of all three PVCs. Removal preserves generated resources, runtime credentials,
 database connection material, and PVCs; decommissioning therefore requires an
 explicit data-retention and cleanup decision.
 
+## Personal/Tasks
+
+[Personal/Tasks.yaml](Personal/Tasks.yaml) owns the production YVR deployment of
+the [CoRE Personal Tasks chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Tasks)
+in the standard `core-prod` namespace. It targets
+`core-home1-talos-prod`, injects the registered cluster name, datacentre, and
+region into the Lovely renderer, and attaches the chart's route to the shared
+`core-prod/main-gw` HTTPS listener.
+
+The upstream [Personal Tasks README](https://github.com/K-FOSS/CoRE-Business/blob/main/Personal/Tasks/README.md)
+is authoritative for chart prerequisites and user-facing verification. The
+ApplicationSet preserves generated resources on removal; decommissioning must
+therefore include an explicit data-retention and cleanup decision.
+
 ## Landing
 
 [Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
