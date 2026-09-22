@@ -391,6 +391,9 @@ spec:
                                       secretKeyRef:
                                         name: 'forgejo-user'
                                         key: 'password'
+                            containers:
+                              - name: 'forgejo'
+                                workingDir: '/tmp'
                 {{ if and .values.forgejo.enabled .values.forgejo.runners }}
                   - target:
                       kind: Deployment
