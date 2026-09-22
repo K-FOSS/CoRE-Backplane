@@ -65,7 +65,7 @@ production patches.
 | Eclipse Che | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
 | Artifact Hub | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
 | Hoppscotch | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
-| Renovate | `renovate.enabled` | Scheduled dependency update discovery against GitLab. |
+| Renovate | `renovate.enabled` | Site-local scheduled dependency update discovery against the matching Forgejo instance. |
 | MQTTX | `mqttx.enabled` | Lightweight MQTT web client generated through the BJW-S common chart. |
 | CRD docs | `crddocs.enabled` | CRD documentation workload and optional identity. |
 
@@ -183,6 +183,18 @@ The ApplicationSet injects per-cluster `psql-local`, Dragonfly, S3, LDAP, and
 public endpoints plus a cluster-qualified Helm release name. Every enabled
 site has its own `harbor-<cluster>` PostgreSQL role and database.
 
+Each enabled site also reconciles a site-local Authentik OAuth2 provider and
+application named `harbor-<cluster>`. Its strict redirect URI is
+`https://registry.<cluster>.<datacenter>.<region>.writemy.codes/c/oidc/callback`,
+and its generated client secret is kept in the namespace-local `harbor-oidc`
+Secret. The application is placed in the `<datacenter>-<cluster>` Authentik
+group for catalog organization. Harbor remains configured for Authentik LDAP
+by the separate `Harbor/<cluster>-sso` Workspace; creating this OIDC
+application does not switch Harbor's authentication mode. If OIDC is enabled
+later, verify Harbor's redirect URI and preserve the local `admin` break-glass
+login. See Harbor's [OIDC authentication documentation](https://goharbor.io/docs/2.12.0/administration/configure-authentication/oidc-auth/)
+and Authentik's [OAuth2 provider documentation](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
+
 ### Harbor credentials and post-configuration
 
 Local ExternalSecrets create Harbor's general, core, registry, job-service,
@@ -238,7 +250,7 @@ names, or authentication mode.
 
 Forgejo is deployed independently at both infrastructure sites through the
 official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v17.1.5)
-and a digest-pinned [Forgejo 16.0.3 rootless image](https://forgejo.org/releases/16.x/).
+and a digest-pinned [Forgejo 16.0.5 rootless image](https://forgejo.org/releases/16.x/).
 This chart also creates the cluster-scoped
 `ha-core-dev-<environment>` Longhorn StorageClass with two replicas and
 `migratable: 'false'`; the YXL Forgejo deployment selects it for its RWX PVC. See the
@@ -298,10 +310,12 @@ are never copied into chart values or rendered as literals.
 
 The `authentik-ldap` source connects with verified LDAPS to the target
 cluster's `ldap.<cluster>.<datacenter>.<region>.mylogin.space:636` endpoint. It
-searches `ou=users,dc=ldap,dc=mylogin,dc=space` for an exact `cn` match and
-maps `cn`, `name`, `lastname`, and `mail` into the Forgejo profile. LDAP bulk
-synchronization and LDAP-derived administrator privileges are deliberately
-not enabled. See Forgejo's [LDAP behavior](https://forgejo.org/docs/latest/user/authentication/)
+searches `ou=users,dc=ldap,dc=mylogin,dc=space` for an exact `cn` match that is
+also a member of the Authentik `Developers` group, and maps `cn`, `name`,
+`lastname`, and `mail` into the Forgejo profile. LDAP bulk synchronization and
+LDAP-derived administrator privileges are deliberately not enabled. Verify
+that a Developer can log in and a non-Developer is rejected by the LDAP source.
+See Forgejo's [LDAP behavior](https://forgejo.org/docs/latest/user/authentication/)
 and [authentication-source CLI](https://forgejo.org/docs/latest/admin/command-line/#admin-auth-add-ldap).
 
 Each site also reconciles a separate Authentik OAuth2/OIDC provider and
@@ -364,7 +378,13 @@ one job at a time and serves the `docker` and `ubuntu-latest` labels. Both label
 digest-pinned Forgejo mirror of the upstream
 [Node 24 Bookworm container image](https://github.com/nodejs/docker-node/tree/main/24/bookworm)
 so common Node-based actions work without relying on a mutable default image.
-The runner itself is the official [Forgejo Runner 12.13.2 image and source](https://code.forgejo.org/forgejo/runner/src/tag/v12.13.2),
+The runner also exposes the DinD sidecar's Docker CLI to job containers, so
+Docker-based JavaScript actions such as
+[Docker Setup QEMU](https://github.com/docker/setup-qemu-action) can reach the
+same TLS-protected daemon. Workflow containers remain unprivileged; the
+privileged DinD sidecar permits the action's binfmt installation container to
+use Docker's `--privileged` flag.
+The runner itself is the official [Forgejo Runner 13.1.0 image and source](https://code.forgejo.org/forgejo/runner/src/tag/v13.1.0),
 and its configuration follows the upstream [runner configuration reference](https://forgejo.org/docs/latest/admin/actions/configuration/).
 
 Registration is declarative. Each Forgejo/runner-site pair has a unique
@@ -390,8 +410,8 @@ Git. Actions are explicitly enabled and unqualified actions resolve through
 Each runner pod contains an unprivileged Forgejo Runner container and a
 privileged, digest-pinned Docker 29.3.1 DinD sidecar based on the
 [Docker Official Image source](https://github.com/docker-library/docker/tree/8d9e3502aba39127e4d12196dae16d306f76993d/29/dind).
-The DinD daemon, certificates, build layers, runner cache, and workspaces are
-pod-local `emptyDir` data by default. The `forgejoRunner.volumes.runner`,
+The DinD daemon, certificates, build layers, and workspaces are pod-local
+`emptyDir` data by default. The `forgejoRunner.volumes.runner`,
 `forgejoRunner.volumes.docker`, and `forgejoRunner.volumes.tmp` values override
 the Kubernetes volume sources for runner data, Docker data, and temporary data.
 Set each `type` to `emptyDir` (the default) or `persistentVolumeClaim`, then
@@ -438,6 +458,12 @@ shared secret, and then start and verify the replacement runner.
 
 ## TODO
 
+- Add a shared Forgejo Actions cache server for Development runners, with
+  persistent storage and runner `cache.external_server` configuration. Use the
+  upstream [runner configuration reference](https://forgejo.org/docs/latest/admin/actions/configuration/)
+  and [Actions cache documentation](https://forgejo.org/docs/v15.0/user/actions/advanced-features/#cache)
+  when implementing and document its retention, access restrictions, and
+  operational verification.
 - Add a site-local [APT-Cacher-NG](https://apt-cache.privex.io/acng-doc/html/)
   Deployment, Service, and persistent cache volume for Forgejo runner jobs.
   Mount an APT proxy configuration into the runner and DinD containers so
@@ -511,11 +537,22 @@ secret rotation.
 
 ## Renovate, MQTTX, and CRD docs
 
-Renovate is disabled by default. When enabled, its ExternalSecret creates a
-GitLab configuration from `corevault-rootsecrets`. The checked-in Renovate
-configuration has `dryRun: true`, `printConfig: true`, autodiscovery enabled,
-and no explicit repository list. Review logs for credential or repository
-metadata exposure before enabling `printConfig`.
+Renovate is enabled automatically for each site where Forgejo is enabled. Its
+CronJob runs once daily against that site's Forgejo endpoint, autodiscovers
+repositories, and creates dependency pull requests. The ExternalSecret reads
+the Renovate account's PAT from the site-local Vault path
+`Forgejo/<cluster>/Renovate` and publishes only `RENOVATE_TOKEN` to the
+CronJob. Create that PAT with the permissions required by Renovate's
+[Forgejo platform documentation](https://docs.renovatebot.com/modules/platform/forgejo/);
+do not put it in Git. Keep `platformAutomerge` disabled until branch protection
+and Actions checks have been verified.
+
+The two site bots are independent: YXL targets
+`forge.core-dc1-talos-prod.dc1.yxl.writemy.codes`, while YVR targets
+`slop.writemy.codes`. Verify the Vault ExternalSecret, CronJob completion,
+Renovate logs, repository autodiscovery, and a test dependency pull request at
+each site. Removing Forgejo disables the local bot but does not revoke the PAT;
+revoke that credential in Forgejo and remove its Vault record deliberately.
 
 MQTTX is a simple web Deployment and ClusterIP Service using a moving
 `latest` image tag. Pin the tag before treating it as reproducible.

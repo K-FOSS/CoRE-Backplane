@@ -311,6 +311,10 @@ spec:
                       - name: 'FORGEJO__SESSION__PROVIDER_CONFIG'
                         value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/92'
 
+                renovate:
+                  enabled: {{ .values.forgejo.enabled }}
+                  endpoint: 'https://{{ .values.forgejo.hostname }}'
+
                 forgejoRunner:
                   enabled: {{ .values.forgejo.runners }}
                   namespace: 'core-development-{{ .values.environment }}'

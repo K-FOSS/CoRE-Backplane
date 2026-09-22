@@ -564,8 +564,8 @@ forgejo:
       maxUnavailable: '0'
 
   image:
-    tag: '16.0.3'
-    digest: 'sha256:214f4ae63ee78be1e445e58573c88dc7215e72091210852e0df94eaac1a25685'
+    tag: '16.0.5'
+    digest: 'sha256:cf5f5ae6acf2ababca0ee3d255705b83a47f35b25e07fc931d694d60664053fe'
 
   persistence:
     enabled: true
@@ -695,8 +695,8 @@ forgejoRunner:
 
   image:
     repository: 'code.forgejo.org/forgejo/runner'
-    tag: '12.13.2'
-    digest: 'sha256:eb6e7bc21973382d261e6eb883dbd27b8cb56939d33a3bfd79a1352b7f9a33a0'
+    tag: '13.1.0'
+    digest: 'sha256:c4af85fd9f0dd03788676a534781a87c71aa2c6a37737143e017eb94d4312952'
 
   dind:
     image:
@@ -739,15 +739,31 @@ forgejoRunner:
         memory: '32Gi'
 
 
-# Disabled by default. The local template supplies renovate-config from Vault
-# when this chart is enabled.
+# Disabled by default. The ApplicationSet enables one site-local Renovate bot
+# for each enabled Forgejo instance and supplies its endpoint.
 renovate:
   enabled: false
+  endpoint: ''
+  image:
+    registry: 'docker.io'
+    repository: 'renovate/renovate'
+    tag: '44.106.0'
+    pullPolicy: 'IfNotPresent'
 
   renovate:
-    existingConfigFile: renovate-config
-    config: test
-    configIsSecret: true
+    configIsJavaScript: true
+    configEnableHelmTpl: true
+    config: |
+      module.exports = {
+        platform: 'forgejo',
+        endpoint: '{{ .Values.endpoint }}/api/v1',
+        token: process.env.RENOVATE_TOKEN,
+        autodiscover: true,
+        onboarding: false,
+        platformAutomerge: false,
+      };
+
+  existingSecret: 'renovate-token'
 
   redis:
     enabled: false
