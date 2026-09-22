@@ -1,0 +1,27 @@
+{{- if .Values.psql.ldapAdminUsername }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: psql-{{ .Values.datacenter }}-{{ .Values.region }}-ldap-admin
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '60'
+
+spec:
+  providerConfigRef:
+    name: psql-{{ .Values.datacenter }}-{{ .Values.region }}
+
+  forProvider:
+    source: Inline
+    module: |
+      resource "postgresql_role" "ldap_admin" {
+        name                         = {{ .Values.psql.ldapAdminUsername | quote }}
+        login                        = true
+        superuser                    = true
+        create_database              = true
+        inherit                      = true
+        replication                  = false
+        bypass_row_level_security    = true
+        connection_limit             = -1
+      }
+{{- end }}
