@@ -576,6 +576,9 @@ forgejo:
   # environment file left by the previous image on the persistent volume.
   # Remove only that disposable file before the chart secures the SSH home.
   initPreScript: |
+    if [ -d /run/forgejo ]; then
+      chmod 1777 /run/forgejo
+    fi
     rm -f /data/git/.ssh/environment
     mkdir -p /data/git/.ssh /data/gitea/conf
     chown -R 1000:1000 /data/git /data/gitea

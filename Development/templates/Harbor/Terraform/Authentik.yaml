@@ -1,0 +1,86 @@
+{{- if .Values.harbor.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: 'harbor-authentik'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  providerConfigRef:
+    name: 'authentik'
+
+  forProvider:
+    source: 'Inline'
+    varFiles:
+      - source: 'SecretKey'
+        secretKeyRef:
+          namespace: '{{ .Release.Namespace }}'
+          name: 'harbor-oidc'
+          key: 'terraform.tfvars.json'
+        format: 'JSON'
+    module: |
+      variable "client_secret" {
+        type      = string
+        sensitive = true
+      }
+
+      locals {
+        application_slug = "harbor-{{ .Values.cluster.name }}"
+        client_id        = "harbor-{{ .Values.cluster.name }}"
+        external_url     = "https://registry.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.writemy.codes"
+      }
+
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+        ]
+      }
+
+      data "authentik_certificate_key_pair" "signing" {
+        name = "tls"
+      }
+
+      resource "authentik_provider_oauth2" "harbor" {
+        name          = "Harbor {{ .Values.cluster.name }}"
+        client_id     = local.client_id
+        client_secret = var.client_secret
+        signing_key   = data.authentik_certificate_key_pair.signing.id
+
+        allowed_redirect_uris = [
+          {
+            matching_mode = "strict"
+            url           = "${local.external_url}/c/oidc/callback"
+          },
+          {{- if eq .Values.region "yxl" }}
+          {
+            matching_mode = "strict"
+            url           = "https://registry.writemy.codes/c/oidc/callback"
+          },
+          {{- end }}
+        ]
+
+        property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow    = data.authentik_flow.authorization.id
+        invalidation_flow     = data.authentik_flow.invalidation.id
+        access_token_validity = "hours=8"
+      }
+
+      resource "authentik_application" "harbor" {
+        name              = "Harbor {{ .Values.cluster.name }}"
+        slug              = local.application_slug
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        meta_launch_url   = local.external_url
+        open_in_new_tab   = true
+        protocol_provider = authentik_provider_oauth2.harbor.id
+      }
+{{- end }}
