@@ -18,6 +18,9 @@ spec:
 
   hostnames:
     - 'registry.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.writemy.codes'
+{{- range .Values.harbor.alternateHostnames }}
+    - '{{ . }}'
+{{- end }}
 
   rules:
     - matches:

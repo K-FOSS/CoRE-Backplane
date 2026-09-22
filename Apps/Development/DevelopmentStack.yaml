@@ -182,6 +182,11 @@ spec:
 
                   enabled: {{ .values.harbor.enabled }}
 
+                {{- if eq .values.region "yxl" }}
+                  alternateHostnames:
+                    - 'registry.writemy.codes'
+                {{- end }}
+
                   persistence:
                     imageChartStorage:
                       s3:
