@@ -231,19 +231,6 @@ spec:
 
                   clusterDomain: '{{ .values.clusterDomain }}'
 
-                  extraVolumes:
-                    - name: 'forgejo-s6-runtime'
-                      emptyDir:
-                        medium: 'Memory'
-
-                  extraContainerVolumeMounts:
-                    - name: 'forgejo-s6-runtime'
-                      mountPath: '/run/forgejo'
-
-                  extraInitVolumeMounts:
-                    - name: 'forgejo-s6-runtime'
-                      mountPath: '/run/forgejo'
-
                   httpRoute:
                     hostnames:
                       - '{{ .values.forgejo.hostname }}'
@@ -409,14 +396,6 @@ spec:
                                       secretKeyRef:
                                         name: 'forgejo-user'
                                         key: 'password'
-                            containers:
-                              - name: 'forgejo'
-                                workingDir: '/run/forgejo'
-                                command:
-                                  - '/bin/sh'
-                                  - '-ec'
-                                args:
-                                  - 'cd /run/forgejo && exec /usr/bin/entrypoint'
                 {{ if and .values.forgejo.enabled .values.forgejo.runners }}
                   - target:
                       kind: Deployment
