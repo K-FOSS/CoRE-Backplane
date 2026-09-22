@@ -412,6 +412,11 @@ spec:
                             containers:
                               - name: 'forgejo'
                                 workingDir: '/run/forgejo'
+                                command:
+                                  - '/bin/sh'
+                                  - '-ec'
+                                args:
+                                  - 'cd /run/forgejo && exec /usr/bin/entrypoint'
                 {{ if and .values.forgejo.enabled .values.forgejo.runners }}
                   - target:
                       kind: Deployment
