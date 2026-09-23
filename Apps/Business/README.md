@@ -196,6 +196,16 @@ create or store its values. The chart's current values and prerequisites are
 authoritative in its upstream component directory; federation uses the
 [ActivityPub standard](https://www.w3.org/TR/activitypub/).
 
+## Social/Matrix
+
+[Social/Matrix.yaml](Social/Matrix.yaml) owns the production YVR deployment
+rendered from the [CoRE Matrix component](https://github.com/K-FOSS/CoRE-Business/tree/main/Social/Matrix).
+It targets `core-home1-talos-prod`, follows the upstream `HEAD` revision, and
+reconciles into `core-prod` through the Lovely renderer. The ApplicationSet
+injects the selected environment, site, cluster identity, and shared HTTPS
+gateway values; Matrix-specific defaults and prerequisites remain owned by the
+upstream component.
+
 ## Conversions
 
 [Tools/Conversions.yaml](Tools/Conversions.yaml) owns the production
