@@ -822,6 +822,14 @@ spec:
               forProvider:
                 owner: {{ $psqlDBName }}
                 connectionLimit: -1
+                {{- if not (getComposedResource . $psqlDatabase) }}
+                {{- if .observed.composite.resource.spec.psql.lcCollate }}
+                lcCollate: {{ toJson $.observed.composite.resource.spec.psql.lcCollate }}
+                {{- end }}
+                {{- if .observed.composite.resource.spec.psql.lcCType }}
+                lcCType: {{ toJson $.observed.composite.resource.spec.psql.lcCType }}
+                {{- end }}
+                {{- end }}
             ---
             {{- end }}
 
