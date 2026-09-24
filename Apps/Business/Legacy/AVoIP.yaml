@@ -1,48 +1,127 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-business-avoip
-  namespace: argocd
+  name: 'core-backplane-business-avoip'
+  namespace: 'argocd'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+
 spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+
   generators:
-    - list:
-        elements:
-          - cluster: dc1-k3s-node1
-            url: https://172.31.241.238:6443
-            jitsiIngress: meet.mylogin.space
-            environment: 'prod'
-  
+    - merge:
+        mergeKeys:
+          - 'name'
+
+        generators:
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - tenant: 'core.mylogin.space'
+                        clusters:
+                          - name: 'core-dc1-talos-prod'
+                            values:
+                              type: 'hub'
+                              hubCluster: 'core-dc1-talos-prod'
+                              hubDatacenter: 'dc1'
+                              hubRegion: 'yxl'
+
+                          - name: 'core-home1-talos-prod'
+                            values:
+                              type: 'spoke'
+                              hubCluster: 'core-dc1-talos-prod'
+                              hubDatacenter: 'dc1'
+                              hubRegion: 'yxl'
+
+                          - name: 'dc1-k3s-node1'
+                            values:
+                              type: 'spoke'
+                              hubCluster: 'core-dc1-talos-prod'
+                              hubDatacenter: 'dc1'
+                              hubRegion: 'yxl'
+
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
+
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/env: 'prod'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                tenant: '{{ .tenant }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+
   syncPolicy:
     preserveResourcesOnDeletion: true
-  
+
   template:
     metadata:
-      name: '{{cluster}}-business-avoip'
+      name: '{{ if eq .values.clusterName "dc1-k3s-node1" }}{{ .values.clusterName }}-business-avoip{{ else }}{{ .values.clusterName }}-business-avoip-{{ .values.environment }}{{ end }}'
 
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: .
+        argocd.argoproj.io/manifest-generate-paths: '.'
+
+      labels:
+        resolvemy.host/env: '{{ .values.environment }}'
 
     spec:
-      project: core
+      project: 'core'
 
       syncPolicy:
         syncOptions:
-          - CreateNamespace=true
+          - 'CreateNamespace=true'
+          - 'ServerSideApply=true'
 
       source:
-        repoURL: https://github.com/K-FOSS/CoRE-Business.git
-        path: AVoIP
-        targetRevision: HEAD
+        repoURL: 'https://slop.writemy.codes/CoRE/CoRE-Business.git'
+        path: 'AVoIP'
+        targetRevision: 'HEAD'
 
         plugin:
-          name: argocd-lovely-plugin
-        #   env:
-        #     - name: LOVELY_HELM_MERGE
-        #       value: |- 
-        #         nextcloud:
-        #           nextcloud:
-        #             host: {{ingress}}
+          name: 'argocd-lovely-plugin'
+          env:
+            - name: 'LOVELY_HELM_MERGE'
+              value: |- # yaml
+                env: '{{ .values.environment }}'
+
+                datacenter: '{{ .values.datacenter }}'
+
+                region: '{{ .values.region }}'
+
+                cluster:
+                  name: '{{ .values.clusterName }}'
+                  domain: '{{ .values.clusterDomain }}'
+                  type: '{{ .values.type }}'
+
+                {{- if eq .values.type "spoke" }}
+                hub:
+                  cluster:
+                    name: '{{ .values.hubCluster }}'
+                    datacenter: '{{ .values.hubDatacenter }}'
+                    region: '{{ .values.hubRegion }}'
+                {{- end }}
+
+                gateway:
+                  name: 'main-gw'
+                  namespace: 'core-{{ .values.environment }}'
+                  sectionName: 'https-myloginspace'
+
+                jitsi:
+                  domain: 'meet.mylogin.space'
+                  tls:
+                    secretName: 'myloginspace-default-certificates'
 
       destination:
-        server: '{{url}}'
-        namespace: core-prod
+        server: '{{ .server }}'
+        namespace: 'core-{{ .values.environment }}'

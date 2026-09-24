@@ -63,6 +63,32 @@ Dragonfly data were removed.
 Other manifests under `Legacy/` remain legacy fleet owners until they are
 individually migrated and documented.
 
+## AVoIP
+
+[Legacy/AVoIP.yaml](Legacy/AVoIP.yaml) is the migration owner for the
+[CoRE-Business AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
+It is prepared for the YVR `core-home1-talos-prod` and DC1
+`core-dc1-talos-prod` clusters, plus the legacy `dc1-k3s-node1` cluster, and
+renders into each cluster's `core-prod` namespace. Its matrix models
+`core-dc1-talos-prod` as the tenant hub and both YVR and legacy K3s as spokes.
+The K3s render deliberately retains the existing
+`dc1-k3s-node1-business-avoip` Application name. The ApplicationSet derives
+each target's cluster name, Kubernetes DNS domain, datacentre, region, and
+environment from the registered Argo CD cluster labels; spoke renders also
+receive the hub cluster name, datacentre, and region. The chart is given
+`meet.mylogin.space`, the shared `core-prod/main-gw` HTTPS listener, and the
+cluster-local `myloginspace-default-certificates` Secret.
+
+The AVoIP chart schema is not yet present in the checked-out CoRE-Business
+source, so the values merge follows the modernized application convention and
+is intentionally pending a chart-schema validation. Before enabling sync,
+render the upstream `AVoIP` path for both targets and confirm that its Jitsi
+route consumes `gateway`, `jitsi.domain`, and `jitsi.tls.secretName`. Verify
+the generated HTTPRoute, certificate reference, Jitsi web health, and media
+connectivity from an external client. Resource preservation remains enabled;
+removing a target does not delete retained application state or prove that
+external DNS, certificates, and any persisted AVoIP data were cleaned up.
+
 ## Projects
 
 [Projects.yaml](Projects.yaml) owns the production YVR deployment of the
@@ -168,7 +194,9 @@ therefore include an explicit data-retention and cleanup decision.
 [Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
 the [CoRE-Business Landing component](https://github.com/K-FOSS/CoRE-Business/tree/main/Landing).
 It selects YVR bare-metal infrastructure clusters and reconciles the component
-from that repository into `core-prod` without ApplicationSet value overrides.
+from that repository through the Lovely renderer into `core-prod`. The
+ApplicationSet injects the selected environment, region, datacentre, and
+cluster name/domain from the registered Argo CD cluster into the chart.
 The upstream [Landing README](https://github.com/K-FOSS/CoRE-Business/blob/main/Landing/README.md)
 is authoritative for its prerequisites and user-facing verification.
 
