@@ -398,14 +398,14 @@ configMaps:
         server-name=nat.mylogin.space
 
         # Site-local Dragonfly stores allocation status and statistics.
-        redis-statsdb="ip=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space dbname=154 password=__DRAGONFLY_PASSWORD__ port=6379 tls=true ca=/etc/ssl/certs/ca-certificates.crt sni=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space verify=true connect_timeout=10"
+        redis-statsdb="ip=dragonfly-core.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }} dbname=154 password=__DRAGONFLY_PASSWORD__ port=6379 tls=true ca=/etc/ssl/certs/ca-certificates.crt sni=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space verify=true connect_timeout=10"
 
-        cert=/tls/tls.crt
-        pkey=/tls/tls.key
+        cert=/etc/tls/tls.crt
+        pkey=/etc/tls/tls.key
+        pidfile=/var/tmp/turnserver.pid
 
-        # Reduce STUN response amplification and disable legacy compatibility.
+        # Reduce STUN response amplification.
         no-rfc5780
-        no-stun-backward-compatibility
         response-origin-only-with-rfc5780
 {{- end }}
 
