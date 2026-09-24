@@ -20,6 +20,24 @@ controllers:
           tag: latest
           pullPolicy: IfNotPresent
 
+        env:
+          - name: DRAGONFLY_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: dragonfly-core-password
+                key: password
+
+        command:
+          - /bin/sh
+          - -ec
+
+        args:
+          - |
+            umask 077
+            cp /etc/turnserver.conf /tmp/turnserver.conf
+            sed -i "s|__DRAGONFLY_PASSWORD__|${DRAGONFLY_PASSWORD}|g" /tmp/turnserver.conf
+            exec turnserver -c /tmp/turnserver.conf
+
         # -- Probe configuration
         # -- [[ref]](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
         # @default -- See below
@@ -741,7 +759,7 @@ configMaps:
         # The connection string has the same parameters as redis-userdb connection string.
         # Use the string format below (space separated parameters, all optional):
         #
-        redis-statsdb="ip=redis.mylogin.space dbname=15"
+        redis-statsdb="ip=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space dbname=154 password=__DRAGONFLY_PASSWORD__ port=6379 tls=true ca=/etc/ssl/certs/ca-certificates.crt sni=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space verify=true connect_timeout=10"
 
         # The default realm to be used for the users when no explicit
         # origin/realm relationship is found in the database, or if the TURN

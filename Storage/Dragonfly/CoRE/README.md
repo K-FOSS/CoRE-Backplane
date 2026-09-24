@@ -54,6 +54,7 @@ they are not global database numbers across clusters.
 | `151` | OpenWebUI websocket manager | Dedicated OpenWebUI websocket-manager state. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
 | `152` | SnapOtter | Dedicated SnapOtter/BullMQ queues and processing state. Owned by [`Business/Conversions`](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Conversions). |
 | `153` | Dawarich | Dedicated Dawarich queues and processing state. Owned by [`Business/Personal/History`](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/History). |
+| `154` | CoTURN | Dedicated CoTURN allocation/status state. Owned by [`Network/NATPuncher`](https://github.com/K-FOSS/CoRE-Backplane/tree/main/Network/NATPuncher). |
 | `189` | n8n | Dedicated n8n external Redis state. Owned by [`Business/Automation`](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation). |
 
 
@@ -63,6 +64,13 @@ password, memory limit, persistence, and failure domain. Allocate a documented,
 unused database number for every new client that supports selection. Use a
 separate Dragonfly instance when a workload needs independent credentials,
 capacity, lifecycle, or recovery behavior.
+
+CoTURN uses database `154` for its Redis status/statistics store. It connects to
+the site-local TLS endpoint with the `dragonfly-core-password` Secret; the
+password is injected at container startup and is never stored in the rendered
+ConfigMap. See the [CoTURN Redis configuration reference](https://github.com/coturn/coturn/blob/master/examples/etc/turnserver.conf)
+and [Dragonfly TLS documentation](https://www.dragonflydb.io/docs/managing-dragonfly/configuring-tls)
+for the upstream connection behavior.
 
 The Crossplane `User` claim still creates the site-local bucket and a long-lived
 MinIO service account for the chart's S3 integration. The SSO User Composition publishes its
