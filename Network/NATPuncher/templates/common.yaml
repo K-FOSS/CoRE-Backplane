@@ -26,6 +26,11 @@ controllers:
               secretKeyRef:
                 name: dragonfly-core-password
                 key: password
+          - name: TURN_AUTH_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: natpuncher-turn-auth
+                key: secret
 
         command:
           - /bin/sh
@@ -36,6 +41,7 @@ controllers:
             umask 077
             cp /etc/turnserver.conf /tmp/turnserver.conf
             sed -i "s|__DRAGONFLY_PASSWORD__|${DRAGONFLY_PASSWORD}|g" /tmp/turnserver.conf
+            sed -i "s|__TURN_AUTH_SECRET__|${TURN_AUTH_SECRET}|g" /tmp/turnserver.conf
             exec turnserver -c /tmp/turnserver.conf
 
         # -- Probe configuration
@@ -396,6 +402,9 @@ configMaps:
         min-port={{ .Values.portRange.min }}
         max-port={{ .Values.portRange.max }}
         server-name=nat.mylogin.space
+        realm=nat.mylogin.space
+        use-auth-secret
+        static-auth-secret=__TURN_AUTH_SECRET__
 
         # Site-local Dragonfly stores allocation status and statistics.
         redis-statsdb="ip=dragonfly-core.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.domain }} dbname=154 password=__DRAGONFLY_PASSWORD__ port=6379 tls=true ca=/etc/ssl/certs/ca-certificates.crt sni=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space verify=true connect_timeout=10"
