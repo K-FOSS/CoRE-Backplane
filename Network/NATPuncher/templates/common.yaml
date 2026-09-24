@@ -407,7 +407,7 @@ configMaps:
         static-auth-secret=__TURN_AUTH_SECRET__
 
         # Site-local Dragonfly stores allocation status and statistics.
-        redis-statsdb="host=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space dbname=154 password=__DRAGONFLY_PASSWORD__ port=6379 tls=true ca=/etc/ssl/certs/ca-certificates.crt verify=true connect_timeout=10"
+        redis-statsdb="ip={{ $.Values.dragonflyAddress }} dbname=154 password=__DRAGONFLY_PASSWORD__ port=6379 tls=true ca=/etc/ssl/certs/ca-certificates.crt sni=dragonfly.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.mylogin.space verify=true connect_timeout=10"
 
         cert=/etc/tls/tls.crt
         pkey=/etc/tls/tls.key
