@@ -78,6 +78,8 @@ environment from the registered Argo CD cluster labels; spoke renders also
 receive the hub cluster name, datacentre, and region. The chart is given
 `meet.mylogin.space`, the shared `core-prod/main-gw` HTTPS listener, and the
 cluster-local `myloginspace-default-certificates` Secret.
+The Asterisk and FreeSWITCH components are enabled only on the DC1 hub; the
+YVR and legacy K3s spoke renders disable them.
 
 The AVoIP chart schema is not yet present in the checked-out CoRE-Business
 source, so the values merge follows the modernized application convention and

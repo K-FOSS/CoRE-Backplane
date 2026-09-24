@@ -30,6 +30,8 @@ spec:
                               hubCluster: 'core-dc1-talos-prod'
                               hubDatacenter: 'dc1'
                               hubRegion: 'yxl'
+                              asteriskEnabled: true
+                              freeswitchEnabled: true
 
                           - name: 'core-home1-talos-prod'
                             values:
@@ -37,6 +39,8 @@ spec:
                               hubCluster: 'core-dc1-talos-prod'
                               hubDatacenter: 'dc1'
                               hubRegion: 'yxl'
+                              asteriskEnabled: false
+                              freeswitchEnabled: false
 
                           - name: 'dc1-k3s-node1'
                             values:
@@ -44,6 +48,8 @@ spec:
                               hubCluster: 'core-dc1-talos-prod'
                               hubDatacenter: 'dc1'
                               hubRegion: 'yxl'
+                              asteriskEnabled: false
+                              freeswitchEnabled: false
 
                 - list:
                     elementsYaml: '{{ .clusters | toJson }}'
@@ -103,6 +109,12 @@ spec:
                   name: '{{ .values.clusterName }}'
                   domain: '{{ .values.clusterDomain }}'
                   type: '{{ .values.type }}'
+
+                asterisk:
+                  enabled: {{ .values.asteriskEnabled }}
+
+                freeswitch:
+                  enabled: {{ .values.freeswitchEnabled }}
 
                 {{- if eq .values.type "spoke" }}
                 hub:
