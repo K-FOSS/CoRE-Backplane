@@ -31,14 +31,7 @@ spec:
       tls:
         mode: Passthrough
 
-    - name: udp-sip
-      allowedRoutes:
-        namespaces:
-          from: All
-      port: 5080
-      protocol: UDP
-
-    - name: tls-sip
+    - name: sip-tls
       allowedRoutes:
         namespaces:
           from: All
@@ -46,7 +39,12 @@ spec:
       port: 5081
       protocol: TLS
       tls:
-        mode: Passthrough
+        mode: Terminate
+        certificateRefs:
+          - group: ''
+            kind: Secret
+            name: resolvemyhost-default-certificates
+            namespace: core-prod
 
     - name: https-myloginspace
       port: 443
