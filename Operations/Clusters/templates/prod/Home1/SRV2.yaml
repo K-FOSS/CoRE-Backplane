@@ -30,6 +30,12 @@ spec:
 
   environment: prod
 
+  networking:
+    dns:
+      servers:
+        - '10.1.1.53'
+        - '1.0.0.1'
+
   bgp:
     instances:
       - asn: 64512
@@ -126,6 +132,12 @@ spec:
     - name: class.net.eno1.device.sriov_numvfs
       value: '16'
     - name: class.net.eno2.device.sriov_numvfs
+      value: '16'
+    - name: 'block.sda.queue.scheduler'
+      value: 'none'
+    - name: 'block.sda.queue.read_ahead_kb'
+      value: '2048'
+    - name: 'block.sda.queue.iosched.writes_starved'
       value: '16'
 
   overrides:
