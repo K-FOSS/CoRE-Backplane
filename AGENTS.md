@@ -21,6 +21,44 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   are incident actions only and must be recorded and reconciled back to Git or
   deliberately removed afterward.
 
+## Standing Git and reconciliation authorization
+
+- The repository owner authorized this workflow on 2026-09-26 after the Valkey
+  operator deployment. For requested implementation work, agents may validate,
+  create narrowly scoped commits, and push them to the repository's intended
+  branch without asking again. For deployment requests, continue through
+  scoped Argo CD reconciliation and downstream verification. Do not default
+  to handing Git operations back to the user. A request to review only, leave
+  changes uncommitted, use a PR, or defer deployment overrides this allowance.
+- Apply this authorization only to the requested task. Preserve unrelated
+  staged and unstaged edits, untracked files, and unpublished commits. Inspect
+  the index and outgoing commit range before publishing; use an isolated
+  worktree when needed to avoid including unrelated work. Never use blanket
+  staging, force-push, or rewrite another author's history under this allowance.
+- Confirm the intended remote and branch, fetch before publishing, review the
+  exact outgoing diff, and use a normal fast-forward push. Respect branch
+  protections and required checks; use the required PR workflow when applicable.
+- Reconcile the reviewed, published commit through the owning Argo CD layers.
+  Select only the necessary parent ApplicationSet resources and affected child
+  applications. Inspect sync hooks and dependency ordering before choosing
+  resource-selective sync; it skips hooks. Do not broadly resync the fleet or
+  enable automated sync as an incidental change.
+- Requesting an Argo CD refresh or sync through its CLI/API or an Application
+  `operation` using kubectl is permitted normal reconciliation. It is distinct
+  from directly applying or modifying the managed workloads. Read-only cluster
+  checks and non-persistent server dry runs are also permitted without a new
+  user confirmation; existing secret-handling rules still apply.
+- Diagnose failed reconciliation before retrying. A scoped retry of the same
+  reviewed commit is permitted when the cause is understood and replay is safe.
+  This does not authorize unidentified provisioning retries, destructive data
+  actions, force/replacement syncs, bypassing protections, or broader incident
+  mutations. Obtain specific authorization for actions outside the requested
+  scope after preparing the concrete change and explaining its effects.
+- Report the published commit, affected targets, actual verification results,
+  material limitations, and any remaining blockers. Documentation-only changes
+  do not require a cluster sync. Follow the detailed
+  [Git and Argo CD operating procedure](docs/OPERATIONS.md#agent-git-and-argo-cd-procedure).
+
 ## Documentation
 
 - Documentation for every external chart, image, plugin, controller, provider,

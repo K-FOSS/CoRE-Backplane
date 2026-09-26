@@ -177,6 +177,11 @@ and the destructive options on the node claim.
 
 ## Working in this repository
 
+Agents have standing authorization to commit and push validated, task-scoped
+changes and complete requested deployments through Argo CD. See the
+[authorization boundaries](AGENTS.md#standing-git-and-reconciliation-authorization)
+and [Git/Argo CD procedure](docs/OPERATIONS.md#agent-git-and-argo-cd-procedure).
+
 Before changing a chart:
 
 1. Identify its owning ApplicationSet under `Apps/` and the clusters selected
