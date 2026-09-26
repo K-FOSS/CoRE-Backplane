@@ -59,6 +59,95 @@ ApplicationSet and full renderer before editing its implementation.
 
 ## Audit, then enforce one site
 
+### DC1 candidate restrictions
+
+`policyRollout` in [`values.yaml`](values.yaml) and
+[`WorkloadRestrictions.yaml`](templates/Policy/WorkloadRestrictions.yaml) add
+three candidate CCNPs only when the ApplicationSet-injected `cilium.cluster.name`
+is in `policyRollout.clusters` (initially DC1 only). Helm fails for that target
+unless policy mode is `default` and daemon audit mode is enabled. This is a
+render-time safety check, not an admission control or proof of live settings.
+Check every agent before syncing; individual endpoint overrides must also be
+inventoried. Keep Home1 outside this first batch.
+
+| Candidate | Selected direction | Allowed dependencies |
+| --- | --- | --- |
+| Envoy Gateway controller | Egress | Local Kubernetes API entity TCP/443,6443; selected CoreDNS pods UDP/TCP/53. Controller ingress, including xDS, is unchanged. |
+| Longhorn manager | Ingress | Longhorn namespace TCP/9500–9503; API-server entity TCP/9501,9502 for webhooks; site Alloy collectors TCP/9500 for metrics. |
+| Longhorn UI | Ingress | Main Gateway's Envoy pods in `kube-system`, TCP/8000 (the Service exposes port 80). |
+
+All selectors and ports are configurable. No L7 rules, explicit deny rules,
+node firewall, or global default-deny are added. Unselected directions remain
+unchanged. Existing policies contribute additive allowances and can broaden
+the effective union. Node probes may be implicitly allowed by Cilium's host
+behavior; these candidates do not isolate local node traffic.
+
+Ownership is centralized in Network/Base for this initial Cilium-CRD audit
+batch. Direct CCNP manifests are intentional: entity matching and audit
+default-deny control are not supported by the common chart's ordinary
+NetworkPolicy abstraction. Longhorn workload/chart ownership stays with
+[`Apps/Storage/Base.yaml`](../../Apps/Storage/Base.yaml); collector identity is
+owned by [`Apps/Observability/Collectors.yaml`](../../Apps/Observability/Collectors.yaml).
+See [Envoy Gateway deployment modes](https://gateway.envoyproxy.io/v1.8/tasks/operations/deployment-mode/),
+[Cilium entities](https://docs.cilium.io/en/stable/security/policy/layer3/),
+and [policy audit mode](https://docs.cilium.io/en/stable/security/policy-creation/).
+
+Read-only DC1 connection-tracking snapshots on 2026-09-26 showed controller API
+connections on TCP/6443, Envoy xDS TCP/18000, Alloy-to-manager TCP/9500,
+Longhorn webhook TCP/9502, instance-manager TCP/8501,8503, node iSCSI TCP/3260,
+NFS TCP/2049, DNS, and external HTTPS. Connection-tracking entries can be stale
+and include reverse and related entries; their counts are not request counts,
+and raw tuple field names do not establish the connection initiator. This is
+an IPv4 snapshot, not complete flow history or IPv6/recovery coverage.
+
+Engine/replica, CSI, share-manager/NFS, backup traffic and all Longhorn egress
+remain unrestricted by this batch. Manager admission and recovery traffic are
+critical: verify both Kubernetes API entity classification and namespace
+identities during provisioning, recurring jobs, rebuilds, and reattachment.
+UI access must pass the existing Authentik/Gateway path; no authentication or
+RBAC changes are made. Exercise controller reconciliation and Gateway config
+updates rather than treating an established API watch as complete coverage.
+
+After reconciliation, capture verdicts on all nodes using the commands below.
+For local regression validation, run `bash tests/policy-rollout.sh DC1_VALUES
+HOME1_VALUES` with locally generated ApplicationSet-injected values files and
+resolved chart dependencies. The script requires Helm, `rg`, and jq-backed
+`yq`; it tests both sites, disabled candidates, and unsafe-mode render failures.
+It leaves generated render outputs in a private `/tmp/network-policy-tests.*`
+directory; do not commit or publish rendered Secrets.
+
+Any would-be denial requires mapping its local endpoint and peer identity to
+the owning stack. Do not blindly allow denied traffic: reject probes/unwanted
+access and allow only an established workload dependency. Exercise normal and
+scheduled/recovery workflows over a representative operating interval before
+graduating these policies. The initial short passive window is insufficient
+to approve enforcement.
+
+Disable individual candidate `enabled` switches, or `policyRollout.enabled`,
+through Git to remove this batch from desired state. Ensure Argo actually
+prunes the CCNPs; omitting them from a render alone does not delete live rules.
+Rollback removes the candidate isolation, not workloads, storage, or the
+separate additive API policy. Enforcement graduation requires a reviewed
+change to the render guard and per-site controls; do not simply remove the
+guard to clear a sync failure.
+
+### Visibility and remaining backlog
+
+Hubble and BPF trace events are currently disabled. Policy verdict monitoring
+does not provide complete traffic discovery for unselected workloads. Use
+read-only `cilium-dbg bpf ct list -o json` snapshots on each node to supplement
+the pod/endpoint inventory, keeping metadata in restricted temporary storage.
+Do not collect packet payloads, pod environment values, or Secrets. Flow
+observability changes require a separate agent rollout and capacity/privacy
+review; no observability agent setting is changed by these candidate policies.
+
+Next batches should follow their own ApplicationSets: shared data services
+and consumer identities, cert-manager/admission controllers, Argo/Crossplane
+and remote API endpoints, telemetry scrapers/exporters, then application
+ingress and egress. Preserve the storage recovery plane while exercising its
+full matrix. This first batch is not complete coverage of the 214 endpoints
+previously observed without policy enforcement in either direction.
+
 The current shared values enable the audit stage on both sites. Sync and
 observe each site's Application independently. Before any enforcement cutover,
 add per-site rollout values to the owning ApplicationSet so one site can remain

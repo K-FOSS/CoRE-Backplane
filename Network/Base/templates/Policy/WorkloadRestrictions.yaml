@@ -1,0 +1,124 @@
+{{- if and .Values.policyRollout.enabled (has .Values.cilium.cluster.name .Values.policyRollout.clusters) }}
+{{- if or (ne .Values.cilium.policyEnforcementMode "default") (ne .Values.cilium.policyAuditMode true) }}
+{{- fail "policyRollout candidates require cilium.policyEnforcementMode=default and cilium.policyAuditMode=true; review and graduate policies before enforcement" }}
+{{- end }}
+{{- $envoy := .Values.policyRollout.envoyController }}
+{{- if $envoy.enabled }}
+{{- if or (empty $envoy.namespace) (empty $envoy.labels) (empty $envoy.dnsNamespace) (empty $envoy.dnsLabels) (empty $envoy.apiPorts) }}
+{{- fail "envoyController requires non-empty workload and DNS namespaces/labels and API ports" }}
+{{- end }}
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: 'core-audit-envoy-controller-egress'
+spec:
+  endpointSelector:
+    matchLabels:
+      'k8s:io.kubernetes.pod.namespace': {{ $envoy.namespace | squote }}
+      {{- range $key, $value := $envoy.labels }}
+      {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+      {{- end }}
+  enableDefaultDeny:
+    ingress: false
+    egress: true
+  egress:
+    - toEntities: ['kube-apiserver']
+      toPorts:
+        - ports:
+            {{- range $envoy.apiPorts }}
+            - port: {{ . | squote }}
+              protocol: 'TCP'
+            {{- end }}
+    - toEndpoints:
+        - matchLabels:
+            'k8s:io.kubernetes.pod.namespace': {{ $envoy.dnsNamespace | squote }}
+            {{- range $key, $value := $envoy.dnsLabels }}
+            {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: '53'
+              protocol: 'UDP'
+            - port: '53'
+              protocol: 'TCP'
+---
+{{- end }}
+{{- $longhorn := .Values.policyRollout.longhorn }}
+{{- if $longhorn.manager.enabled }}
+{{- if or (empty $longhorn.namespace) (empty $longhorn.manager.labels) (empty $longhorn.manager.internalPorts) (empty $longhorn.manager.webhookPorts) (empty $longhorn.manager.metricsNamespace) (empty $longhorn.manager.metricsLabels) (empty $longhorn.manager.metricsPort) }}
+{{- fail "longhorn.manager requires non-empty namespace, selectors, ports, and metrics source" }}
+{{- end }}
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: 'core-audit-longhorn-manager-ingress'
+spec:
+  endpointSelector:
+    matchLabels:
+      'k8s:io.kubernetes.pod.namespace': {{ $longhorn.namespace | squote }}
+      {{- range $key, $value := $longhorn.manager.labels }}
+      {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+      {{- end }}
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            'k8s:io.kubernetes.pod.namespace': {{ $longhorn.namespace | squote }}
+      toPorts:
+        - ports:
+            {{- range $longhorn.manager.internalPorts }}
+            - port: {{ . | squote }}
+              protocol: 'TCP'
+            {{- end }}
+    - fromEntities: ['kube-apiserver']
+      toPorts:
+        - ports:
+            {{- range $longhorn.manager.webhookPorts }}
+            - port: {{ . | squote }}
+              protocol: 'TCP'
+            {{- end }}
+    - fromEndpoints:
+        - matchLabels:
+            'k8s:io.kubernetes.pod.namespace': {{ $longhorn.manager.metricsNamespace | squote }}
+            {{- range $key, $value := $longhorn.manager.metricsLabels }}
+            {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: {{ $longhorn.manager.metricsPort | squote }}
+              protocol: 'TCP'
+---
+{{- end }}
+{{- if $longhorn.ui.enabled }}
+{{- if or (empty $longhorn.namespace) (empty $longhorn.ui.labels) (empty $longhorn.ui.port) (empty $longhorn.ui.gatewayNamespace) (empty $longhorn.ui.gatewayLabels) }}
+{{- fail "longhorn.ui requires non-empty namespace, selector, port, and Gateway source" }}
+{{- end }}
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: 'core-audit-longhorn-ui-ingress'
+spec:
+  endpointSelector:
+    matchLabels:
+      'k8s:io.kubernetes.pod.namespace': {{ $longhorn.namespace | squote }}
+      {{- range $key, $value := $longhorn.ui.labels }}
+      {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+      {{- end }}
+  enableDefaultDeny:
+    ingress: true
+    egress: false
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            'k8s:io.kubernetes.pod.namespace': {{ $longhorn.ui.gatewayNamespace | squote }}
+            {{- range $key, $value := $longhorn.ui.gatewayLabels }}
+            {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+            {{- end }}
+      toPorts:
+        - ports:
+            - port: {{ $longhorn.ui.port | squote }}
+              protocol: 'TCP'
+{{- end }}
+{{- end }}

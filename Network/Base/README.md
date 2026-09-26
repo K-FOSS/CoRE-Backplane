@@ -106,9 +106,16 @@ The device plugin advertises resources but does not create VFs or bind drivers.
 
 ## Validation
 
+Cilium replacements must remain ready for four minutes (`minReadySeconds: 240`)
+before the rolling update advances to the next node. This shared setting applies
+to both sites; see [Kubernetes DaemonSet rolling updates](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/).
+
 For the staged migration from disabled Cilium policy enforcement, follow the
 [policy enforcement rollout](POLICY_ENFORCEMENT.md). It covers existing policy
 inventory, per-site audit stages, workflow verification, and recovery.
+The DC1-only `policyRollout` batch adds candidate restrictions for Envoy Gateway
+controller egress and Longhorn manager/UI ingress. A render guard requires
+audit mode; storage data-plane and recovery validation remains a cutover gate.
 The current desired state evaluates policies in `default` mode with daemon
 audit mode and policy verdict events enabled on both sites. Would-be L3/L4 denials
 remain permitted; L7 proxy policies are not covered by audit mode. Longhorn and API/controller recovery checks must pass before

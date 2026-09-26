@@ -19,6 +19,44 @@ apiAccessPolicy:
       labels:
         app.kubernetes.io/name: 'frr-k8s'
 
+# First isolating policies are DC1-only and must remain in daemon audit mode.
+# These are candidates, not approval to enforce or a fleet default-deny.
+policyRollout:
+  enabled: true
+  clusters: ['core-dc1-talos-prod']
+  envoyController:
+    enabled: true
+    namespace: 'kube-system'
+    labels:
+      control-plane: 'envoy-gateway'
+    dnsNamespace: 'kube-system'
+    dnsLabels:
+      k8s-app: 'kube-dns'
+    apiPorts: ['443', '6443']
+  longhorn:
+    namespace: 'longhorn-system'
+    manager:
+      enabled: true
+      labels:
+        app: 'longhorn-manager'
+      internalPorts: ['9500', '9501', '9502', '9503']
+      webhookPorts: ['9501', '9502']
+      metricsPort: '9500'
+      metricsNamespace: 'core-prod'
+      metricsLabels:
+        app.kubernetes.io/name: 'alloy'
+        app.kubernetes.io/instance: 'core-dc1-talos-prod-collectors'
+    ui:
+      enabled: true
+      labels:
+        app: 'longhorn-ui'
+      port: '8000'
+      gatewayNamespace: 'kube-system'
+      gatewayLabels:
+        app.kubernetes.io/name: 'envoy'
+        gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
+        gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
+
 cilium:
   iptablesRandomFully: true
 
