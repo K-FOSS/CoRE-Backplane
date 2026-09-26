@@ -34,6 +34,27 @@ recurring jobs use the default target, so peer targets are available for
 explicit backup or restore workflows rather than being written by the same
 recurring job.
 
+The DC1 local target uses the `dc1/` object prefix in its existing bucket.
+The optional `prefix` on the ApplicationSet's first backup target is consumed
+by `defaultBackupStore.backupTarget`; other targets retain their existing URLs.
+Longhorn [rejects duplicate backup target URLs](https://github.com/longhorn/longhorn-manager/blob/v1.11.3/datastore/longhorn.go)
+even when different credential Secrets select different S3 endpoints. Without
+this prefix, `default` conflicts with `peer-home1` and the manager cannot apply
+the local target configuration. An empty prefix retains the bucket root, as
+currently configured for Home1. This changes DC1's local discovery path, not
+the peer path: any older local backups at the bucket root must be restored
+from their original URL, not assumed to appear under `dc1/`. No such backups
+were recorded in DC1's Longhorn API during the 2026-09-26 preflight.
+
+Before rolling managers, selectively sync `longhorn-default-resource` in the
+DC1 storage-base application and wait for `BackupTarget/default` to become
+available. The installed 1.11.3 manager watches this ConfigMap; no restart is
+needed. Check the target condition separately from the backup `User` claims,
+because healthy identities do not prove usable backups. Home1/YVR S3 was
+reported offline due to disk capacity during this preflight; do not retry or
+reconcile that site's storage as part of the DC1 upgrade. A local S3 target
+backed by this same Longhorn cluster is not an independent site recovery copy.
+
 ## Operational risks
 
 Storage-class parameters are inherited by newly created volumes and may differ

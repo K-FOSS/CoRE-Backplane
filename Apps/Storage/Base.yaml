@@ -26,6 +26,7 @@ spec:
                                   datacenter: 'dc1'
                                   region: 'yxl'
                                   s3Region: 'us-east-1'
+                                  prefix: 'dc1/'
                                   provider: 's3-yxl-dc1-core'
                                   local: true
                                 - targetCluster: 'core-home1-talos-prod'
@@ -122,7 +123,7 @@ spec:
 
                 longhorn:
                   defaultBackupStore:
-                    backupTarget: s3://{{ (index .values.backupTargets 0).bucket }}@{{ (index .values.backupTargets 0).s3Region }}/
+                    backupTarget: 's3://{{ (index .values.backupTargets 0).bucket }}@{{ (index .values.backupTargets 0).s3Region }}/{{ default "" (index .values.backupTargets 0).prefix }}'
                     backupTargetCredentialSecret: longhorn-backup-{{ .values.clusterName }}-credentials
 
       destination:
