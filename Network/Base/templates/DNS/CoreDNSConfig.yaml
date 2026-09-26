@@ -1,0 +1,50 @@
+{{- if .Values.kubeDNS.enabled }}
+{{- $domain := required "kubeDNS.clusterDomain is required when kubeDNS.enabled is true" .Values.kubeDNS.clusterDomain }}
+{{- if not (regexMatch "^[a-z0-9]+([.-][a-z0-9]+)*$" $domain) }}
+{{- fail "kubeDNS.clusterDomain must be a DNS domain without whitespace or Corefile directives" }}
+{{- end }}
+{{- if empty .Values.kubeDNS.upstreams }}
+{{- fail "kubeDNS.upstreams must contain at least one resolver" }}
+{{- end }}
+{{- range .Values.kubeDNS.upstreams }}
+{{- if not (regexMatch "^[0-9a-fA-F:.]+$" .) }}
+{{- fail "kubeDNS.upstreams entries must be resolver IP addresses" }}
+{{- end }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'coredns'
+  namespace: 'kube-system'
+  annotations:
+    argocd.argoproj.io/sync-options: 'Prune=false,Delete=false'
+    argocd.argoproj.io/sync-wave: '-4'
+data:
+  Corefile: |-
+    .:53 {
+        errors
+        health {
+            lameduck 5s
+        }
+        ready
+        log . {
+            class error
+        }
+        prometheus :9153
+        kubernetes cluster.local {{ $domain }} in-addr.arpa ip6.arpa {
+            pods insecure
+            fallthrough in-addr.arpa ip6.arpa
+            ttl 30
+        }
+        forward . {{ join " " .Values.kubeDNS.upstreams }} {
+            max_concurrent 1000
+        }
+        cache 300 {
+            disable success {{ $domain }}
+            disable denial {{ $domain }}
+        }
+        loop
+        reload
+        loadbalance
+    }
+{{- end }}

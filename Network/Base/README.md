@@ -172,3 +172,112 @@ resources. Removing Multus, SR-IOV, Cilium, BGP, or Gateway resources can strand
 workloads or remove connectivity. First remove dependent workloads and
 NetworkAttachmentDefinitions, confirm no devices or routes remain in use, then
 remove ownership deliberately through Git while preserving out-of-band access.
+
+## Cluster DNS configuration
+
+Network/Base adopts the Talos-installed CoreDNS (`k8s-app=kube-dns`): the existing
+`kube-system/coredns` ConfigMap, Deployment and ServiceAccount, plus the
+`system:coredns` ClusterRole and ClusterRoleBinding. The kube-dns Service and
+its DNS IP remain bootstrap-owned and unchanged. No additional namespaced
+Role/RoleBinding is needed for the observed ServiceAccount access path.
+
+The owning [ApplicationSet](../../Apps/Network/Base.yaml) injects
+`kubeDNS.enabled: true`, `kubeDNS.clusterDomain` from
+`{{ .values.clusterDomain }}`, and each site's `values.kubeDNS` settings. Both
+sites supply `upstreams: ['1.1.1.1', '8.8.8.8']`. The shared Corefile lives in
+[`CoreDNSConfig.yaml`](templates/DNS/CoreDNSConfig.yaml), not the ApplicationSet.
+Defaults in [`values.yaml`](values.yaml) keep adoption disabled and reject
+missing domains/images or empty upstream lists when enabled.
+
+[`CoreDNSWorkload.yaml`](templates/DNS/CoreDNSWorkload.yaml) preserves bootstrap
+names, selectors, RBAC, four replicas, resources, anti-affinity, tolerations
+and `dnsPolicy: Default`. Direct manifests are an intentional common-library
+exception to preserve fixed bootstrap identities and ordering without a
+parallel Deployment or Service. Both sites use the shared
+`registry.k8s.io/coredns/coredns:v1.13.2`
+[image version](https://github.com/coredns/coredns/releases/tag/v1.13.2) from
+`values.yaml`; Home1 upgrades from v1.12.0 on reconciliation while DC1 retains
+its existing version. Review the upgrade and DNS reload logs before proceeding
+to another site.
+Both sites use shared `values.yaml` defaults for `NS_ID` from `status.podIP`,
+liveness HTTP `/health` on 8080 (60-second initial delay), and readiness HTTP
+`/ready` on 8181. Home1 gains these settings and will roll its DNS Deployment;
+DC1 preserves its observed settings. See CoreDNS
+[health](https://coredns.io/plugins/health/) and
+[readiness](https://coredns.io/plugins/ready/) semantics.
+RBAC remains list/watch only for endpoints,
+Services, Pods, namespaces and EndpointSlices; no Secret access is added.
+
+Before adoption, the live configurations observed on 2026-09-26 differ by site:
+
+- Home1 resolves `k8s.home1.resolvemy.host` and `cluster.local` in Kubernetes,
+  forwards other queries to `172.31.193.16`, and disables positive and negative
+  caching for `k8s.home1.resolvemy.host`.
+- DC1 resolves `cluster.local` and `k3s.dc1.resolvemy.host` in Kubernetes,
+  forwards to `1.1.1.1`, `1.0.0.1`, `9.9.9.9`, and `8.8.8.8`, disables caching
+  for `k3s.dc1.resolvemy.host`, and retains `nsid {$NS_ID}`.
+
+The desired shared template Corefile forwards both sites to `1.1.1.1` and
+`8.8.8.8`, serves `cluster.local` and the injected cluster domain, and disables
+caching for that domain. It omits DC1's existing NSID directive. In Home1 this
+bypasses the current site-local resolver, so verify any private zones previously
+resolved by `172.31.193.16` before adoption. External DNS query metadata now goes
+to these public resolvers. The existing DNS egress-gateway destinations include
+both IPs. See
+the CoreDNS [Kubernetes plugin](https://coredns.io/plugins/kubernetes/),
+[forwarding plugin](https://coredns.io/plugins/forward/),
+[cache plugin](https://coredns.io/plugins/cache/), and
+[NSID plugin](https://coredns.io/plugins/nsid/) for their semantics.
+
+Talos remains responsible for DNS bootstrap. Before initial adoption, verify
+all adopted resources, their field managers, and the Deployment's `config-volume`
+mount; check for a Talos/bootstrap reconciler that could overwrite them. The initial
+server-side dry runs without conflict takeover report `data.Corefile` owned by
+`kubectl-edit` in Home1 and Headlamp in DC1. Adoption must transfer that field to
+Argo CD; earlier ConfigMap-only dry runs with `--force-conflicts` succeeded on
+both clusters. Review the expanded adoption's field conflicts separately and
+do not force replacement of bootstrap resources. The desired
+forwarding changes require verification of private and external resolution on
+both sites before adoption. ConfigMap, ServiceAccount and RBAC use sync wave -4,
+then Deployment uses -3. Selective sync does not honor sync waves: adopt the
+ConfigMap/ServiceAccount/RBAC first, then Deployment after checking dependencies.
+Do not resync the whole networking stack for this adoption. CoreDNS's
+[reload plugin](https://coredns.io/plugins/reload/) loads projected ConfigMap
+changes without requiring a rollout; Pod-template changes do trigger a rolling
+update. Check reload errors and resolve both a
+cluster Service name and an external name from workload pods on different nodes:
+
+```console
+kubectl --context CONTEXT -n kube-system get configmap coredns -o yaml
+kubectl --context CONTEXT -n kube-system logs -l k8s-app=kube-dns --since=10m
+kubectl --context CONTEXT exec -n NAMESPACE POD -- nslookup kubernetes.default.svc.CLUSTER_DOMAIN
+kubectl --context CONTEXT exec -n NAMESPACE POD -- nslookup github.com
+```
+
+Corefile edits take effect only after Git publication and Argo CD reconciliation;
+creating these files alone does not change live DNS. Existing configurations
+were managed by Talos and manual edits before adoption. Recovery must retain
+node/API access independent of cluster DNS. Revert the shared template or site's
+injected values in Git and selectively reconcile the affected resources to roll
+back; in an incident, record any direct correction and reconcile it back to Git.
+All adopted resources use Argo CD
+[Prune=false](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#no-prune-resources)
+and [Delete=false](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-options/#no-resource-deletion)
+so disabling adoption or deleting the Application retains DNS and its access path.
+That leaves the last configuration unmanaged until another owner is deliberately
+established; it does not restore the bootstrap Corefile automatically.
+
+Run `bash tests/core-dns.sh DC1_VALUES HOME1_VALUES` with fully rendered
+ApplicationSet/Lovely injected values files to verify identical base Corefiles,
+resource identities, preserved DNS policy and required-value guards. The script
+requires Helm, `rg` and jq-backed `yq`. Generated outputs remain in a private
+temporary directory; do not publish rendered Secrets. Live query and reload
+verification is still required after reconciliation.
+
+Expanded server-side dry runs on 2026-09-26 accepted all five resources on each
+site with conflict takeover simulated; prospective Deployment Pod templates
+matched live state exactly before the later shared image/probe changes. Home1's
+desired Pod template now changes and triggers a rollout. Without takeover,
+only `data.Corefile` conflicted
+on each site. These checks made no live changes and do not prove runtime DNS
+resolution under the new upstreams.

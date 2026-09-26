@@ -18,6 +18,8 @@ spec:
               elements:
                 - name: core-dc1-talos-prod
                   values:
+                    kubeDNS:
+                      upstreams: ['1.1.1.1', '8.8.8.8']
                     nodePortNetwork: 172.31.241.0/24
                     clusterId: 2
                     peers:
@@ -65,6 +67,8 @@ spec:
 
                 - name: core-home1-talos-prod
                   values:
+                    kubeDNS:
+                      upstreams: ['1.1.1.1', '8.8.8.8']
                     nodePortNetwork: 172.31.193.0/24
                     clusterId: 1
                     peers:
@@ -206,6 +210,11 @@ spec:
                     # clusters and in the range of 1 to 255. Only required for Cluster Mesh,
                     # may be 0 if Cluster Mesh is not used.
                     id: {{ .values.clusterId }}
+
+                kubeDNS:
+                  enabled: true
+                  clusterDomain: '{{ .values.clusterDomain }}'
+                  {{- nindent 2 (toYaml .values.kubeDNS) }}
 
                 envoy-gw:
                   config:

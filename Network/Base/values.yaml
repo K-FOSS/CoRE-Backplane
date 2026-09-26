@@ -1,3 +1,42 @@
+# Adopt bootstrap CoreDNS without changing its fixed resource identities.
+kubeDNS:
+  enabled: false
+  clusterDomain: ''
+  upstreams: ['1.1.1.1', '8.8.8.8']
+  replicas: 4
+  image: 'registry.k8s.io/coredns/coredns:v1.13.2'
+  extraEnv:
+    - name: 'NS_ID'
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: 'status.podIP'
+  livenessProbe:
+    failureThreshold: 5
+    httpGet:
+      path: '/health'
+      port: 8080
+      scheme: 'HTTP'
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  readinessProbe:
+    failureThreshold: 3
+    httpGet:
+      path: '/ready'
+      port: 8181
+      scheme: 'HTTP'
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 1
+  resources:
+    limits:
+      memory: '170Mi'
+    requests:
+      cpu: '100m'
+      memory: '70Mi'
+
 # Additive API permissions; these rules do not enable default-deny themselves.
 apiAccessPolicy:
   enabled: true
