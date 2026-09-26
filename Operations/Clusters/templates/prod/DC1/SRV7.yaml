@@ -44,10 +44,20 @@ spec:
             asn: 64567
             name: vlan2070.spine-sw1.dc1.yxl.resolvemy.host
 
-#   nics:
-#     - macAddress: f0:4d:a2:03:cd:ea
-#       rings:
-#         rx: 4096
+  nics:
+    - macAddress: 'b8:ca:3a:60:00:28'
+      offloads:
+        rx-udp-gro-forwarding: true
+      rings:
+        rx: 2048
+        tx: 2048
+
+    - macAddress: '7c:fe:90:ae:46:41'
+      offloads:
+        rx-udp-gro-forwarding: true
+      rings:
+        rx: 4096
+        tx: 4096
 
   storage:
     longhornDisks:
@@ -117,6 +127,11 @@ spec:
         system:
           - binfmt-misc
           - intel-ucode
+      kernel:
+        modules:
+          - name: 'mlx4_core'
+          - name: 'mlx4_en'
+          - name: 'vfio_iommu_type1'
 
     kernel:
       parameters:
@@ -150,3 +165,7 @@ spec:
           value: '0x08'
         - name: mlx4_en.pfcrx
           value: '0x08'
+
+  sysfs:
+    - name: 'class.net.eno1.device.sriov_numvfs'
+      value: '7'
