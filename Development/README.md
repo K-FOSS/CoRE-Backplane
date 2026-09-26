@@ -485,8 +485,9 @@ Key behavior:
 - namespaces are auto-provisioned as `<username>-che`;
 - the default editor is Che Code with the configured universal developer
   image pulled through Harbor;
-- running workspaces idle after 12 hours and inactive workspaces after 6
-  hours;
+- inactive workspaces idle after 6 hours; the absolute runtime cap is disabled;
+- Che 7.122.0 CLI activity tracking keeps terminal Codex processes active,
+  including unattended sessions;
 - each user may run four workspaces, with no configured total-workspace cap;
 - startup may take up to 30 minutes;
 - workspace containers are currently configured with privileged security
@@ -502,6 +503,42 @@ The profile ConfigMap is currently fixed to namespace `kjones-che` and exposes
 an alias that reads Argo CD's initial admin password. Treat this as
 operator-specific and security-sensitive; it is not a general profile for all
 users.
+
+Codex activity uses the native [Che machine-exec CLI watcher](https://github.com/eclipse-che/che-machine-exec/blob/7.122.0/timeout/CLI-WATCHER.md).
+The operator dependency in `IDE/Che` is pinned to 7.122.0 because 7.121.0
+lacks this watcher and its CheCluster fields. `che.cliActivityTracker` enables
+60-second process checks. Its maximum process age is the largest supported
+positive int32 (about 68 years), avoiding the default six-hour process cap.
+The watcher also detects other terminal CLI work using upstream defaults.
+
+`che-codex-activity` is a [globally synchronized workspace ConfigMap](https://eclipse.dev/che/docs/stable/administration-guide/configuring-a-user-namespace/).
+It mounts `/home/user/.noidle` at workspace startup and explicitly treats
+`codex` as non-interactive: even a Codex process waiting for input prevents
+idling until it exits. PID 1 and processes without a user terminal are not
+covered by this native watcher. Project `.noidle` files and
+`CLI_ACTIVITY_TRACKER_CONFIG` override the home configuration.
+The mount-on-start annotation prevents this ConfigMap from restarting active
+sessions. Existing workspaces need a planned restart with a 7.122.0 editor
+image/tooling; old editor contributions or project editor overrides may need
+updating through the dashboard before the watcher is available.
+
+Reconcile the Home1 `ide-che` operator application before the Home1
+`development` CheCluster and ConfigMap. Other Development targets disable Che.
+The operator chart is shared with other production registrations; its version
+pin is desired state there too, but only Home1 needs reconciliation for this
+workspace policy. Check the operator rollout, CheCluster `Active` status,
+`che-user-settings` activity tracker environment, and copied ConfigMaps in user
+namespaces. After a planned workspace restart, confirm machine-exec logs show
+Codex activity ticks, then observe an unattended terminal Codex session beyond
+the inactivity timeout. Once Codex exits, inactivity idling resumes.
+
+To roll back, disable `che.cliActivityTracker.enabled`, restore
+`che.secondsOfRunBeforeIdling: 43200`, and remove the activity ConfigMap via a
+reviewed pruning operation. Restart workspaces to remove their mounted policy.
+Keep the operator at 7.122.0; disabling the feature does not require a CRD
+or controller downgrade. Storage and workspace deletion policies are unchanged.
+See the [CheCluster field reference](https://eclipse.dev/che/docs/stable/administration-guide/checluster-custom-resource-fields-reference/)
+and [7.122.0 release notes](https://github.com/eclipse-che/che/releases/tag/7.122.0).
 
 Before a Che change, test OIDC login, workspace creation, PVC attachment,
 image pull, SCM authorization, editor startup, idling, restart, and deletion.

@@ -67,15 +67,11 @@ spec:
       enabled: true
 
 
-    #
-    # Idle after 12 hours of running
-    #
-    secondsOfRunBeforeIdling: 43200
-
-    #
-    # 6 hours of inactivity
-    #
-    secondsOfInactivityBeforeIdling: 21600
+    # Keep inactivity idling, but allow long-running Codex sessions.
+    secondsOfRunBeforeIdling: {{ .Values.che.secondsOfRunBeforeIdling }}
+    secondsOfInactivityBeforeIdling: {{ .Values.che.secondsOfInactivityBeforeIdling }}
+    cliActivityTracker:
+      {{- toYaml .Values.che.cliActivityTracker | nindent 6 }}
     maxNumberOfRunningWorkspacesPerUser: 4
     maxNumberOfWorkspacesPerUser: -1
 
