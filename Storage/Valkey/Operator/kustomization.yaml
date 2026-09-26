@@ -1,0 +1,58 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  # v0.7.0, pinned to the verified tag's commit.
+  - 'https://github.com/valkey-io/valkey-operator/config/default?ref=0da91fef78d926f403c6a26d75d915dccde975a5'
+images:
+  - name: 'valkey/valkey-operator'
+    newName: 'ghcr.io/valkey-io/valkey-operator'
+    digest: 'sha256:ec928d60ff33f4f28288d8ab85872450f58b487b37bd15b94ab1a82fd8ebae83'
+patches:
+  - path: 'manager-patch.yaml'
+    target:
+      kind: Deployment
+      name: 'valkey-operator-controller-manager'
+  # Workload access must never extend to the retiring legacy namespaces.
+  - target:
+      kind: ClusterRole
+      name: 'valkey-operator-manager-role'
+    patch: |-
+      - op: 'replace'
+        path: '/kind'
+        value: Role
+      - op: 'add'
+        path: '/metadata/namespace'
+        value: 'valkey-operator-system'
+  - target:
+      kind: ClusterRoleBinding
+      name: 'valkey-operator-manager-rolebinding'
+    patch: |-
+      - op: 'replace'
+        path: '/kind'
+        value: RoleBinding
+      - op: 'add'
+        path: '/metadata/namespace'
+        value: 'valkey-operator-system'
+      - op: 'replace'
+        path: '/roleRef/kind'
+        value: Role
+      - op: 'replace'
+        path: '/roleRef/name'
+        value: 'valkey-operator-manager-role'
+  - target:
+      kind: CustomResourceDefinition
+      name: 'valkey(clusters|nodes).valkey.io'
+    patch: |-
+      - op: 'add'
+        path: '/metadata/annotations'
+        value:
+          argocd.argoproj.io/sync-wave: '-1'
+          argocd.argoproj.io/sync-options: 'Prune=false,Delete=false'
+  - target:
+      kind: Namespace
+      name: 'valkey-operator-system'
+    patch: |-
+      - op: 'add'
+        path: '/metadata/annotations'
+        value:
+          argocd.argoproj.io/sync-options: 'Prune=false,Delete=false'

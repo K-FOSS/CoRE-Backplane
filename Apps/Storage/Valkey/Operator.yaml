@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 'core-backplane-storage-valkey-operator'
+  namespace: 'argocd'
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: '{{ .name }}-core-storage-valkey-op'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '.'
+    spec:
+      project: 'core'
+      syncPolicy:
+        syncOptions:
+          - 'ServerSideApply=true'
+          - 'CreateNamespace=true'
+      source:
+        path: 'Storage/Valkey/Operator'
+        repoURL: 'https://github.com/K-FOSS/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
+        plugin:
+          name: 'argocd-lovely-plugin'
+      destination:
+        server: '{{ .server }}'
+        namespace: 'valkey-operator-system'

@@ -10,6 +10,7 @@ cache/distribution services, search, CDN access and supporting tools.
 | [Dragonfly CoRE](Dragonfly/CoRE/README.md) | Dragonfly distribution/cache service and S3 integration. | `Apps/Storage/Dragonfly/CoRE.yaml` |
 | [Dragonfly Operator](Dragonfly/Operator/README.md) | Kustomize-imported Dragonfly Operator wrapped in a Lovely deployment directory. | `Apps/Storage/Dragonfly/Operator.yaml` |
 | [KeyDB](KeyDB/KeyDBChart/README.md) | Redis-compatible StatefulSet and services. | `Apps/Storage/Redis.yaml` |
+| [Valkey Operator](Valkey/Operator/README.md) | Isolated official Valkey Cluster operator; no database instances. | `Apps/Storage/Valkey/Operator.yaml` |
 | [S3 Operator](S3/Operator/README.md) | MinIO Operator. | `Apps/Storage/S3/Operator.yaml` |
 | [S3 TenantLab](S3/TenantLab/README.md) | MinIO tenant, identity, routes and monitoring. | `Apps/Storage/S3/TenantLab.yaml` |
 | [Bytebase](Databases/ByteBase/ByteBaseChart/README.md) | Database schema-management application. | No direct ApplicationSet currently found. |

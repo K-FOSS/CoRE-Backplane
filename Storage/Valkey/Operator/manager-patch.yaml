@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 'valkey-operator-controller-manager'
+  namespace: 'valkey-operator-system'
+spec:
+  template:
+    spec:
+      containers:
+        - name: 'manager'
+          args:
+            - '--leader-elect'
+            - '--health-probe-bind-address=:8081'
+            - '--metrics-bind-address=:8443'
+            - '--metrics-secure=true'
+            - '--watch-namespace=valkey-operator-system'
