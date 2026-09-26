@@ -106,6 +106,15 @@ The device plugin advertises resources but does not create VFs or bind drivers.
 
 ## Validation
 
+For the staged migration from disabled Cilium policy enforcement, follow the
+[policy enforcement rollout](POLICY_ENFORCEMENT.md). It covers existing policy
+inventory, per-site audit stages, workflow verification, and recovery.
+The current desired state evaluates policies in `default` mode with daemon
+audit mode and policy verdict events enabled on both sites. Would-be L3/L4 denials
+remain permitted; L7 proxy policies are not covered by audit mode. Longhorn and API/controller recovery checks must pass before
+audit mode is disabled; live adoption requires Argo CD reconciliation and
+verification of every agent's effective settings.
+
 Resolve Helm dependencies locally; `Chart.lock` and `charts/` are intentionally
 ignored and must not be committed. Render both named clusters with the same
 Lovely plugin and injected layers used by Argo CD. At minimum, run:

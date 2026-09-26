@@ -1,0 +1,38 @@
+{{- if .Values.apiAccessPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: 'core-network-api-access'
+specs:
+  {{- range .Values.apiAccessPolicy.clients }}
+  - endpointSelector:
+      matchLabels:
+        'k8s:io.kubernetes.pod.namespace': {{ required "API client namespace is required" .namespace | squote }}
+        {{- range $key, $value := .labels }}
+        {{ printf "k8s:%s" $key | squote }}: {{ $value | squote }}
+        {{- end }}
+    enableDefaultDeny:
+      egress: false
+    egress:
+      - toEntities: ['kube-apiserver']
+        toPorts:
+          - ports:
+              {{- range $.Values.apiAccessPolicy.ports }}
+              - port: {{ . | squote }}
+                protocol: 'TCP'
+              {{- end }}
+  {{- end }}
+  - endpointSelector:
+      matchLabels:
+        'k8s:network.core.mylogin.space/api-client': 'true'
+    enableDefaultDeny:
+      egress: false
+    egress:
+      - toEntities: ['kube-apiserver']
+        toPorts:
+          - ports:
+              {{- range .Values.apiAccessPolicy.ports }}
+              - port: {{ . | squote }}
+                protocol: 'TCP'
+              {{- end }}
+{{- end }}

@@ -1,3 +1,24 @@
+# Additive API permissions; these rules do not enable default-deny themselves.
+apiAccessPolicy:
+  enabled: true
+  ports: ['443', '6443']
+  clients:
+    - namespace: 'kube-system'
+      labels:
+        control-plane: 'envoy-gateway'
+    - namespace: 'kube-system'
+      labels:
+        app.kubernetes.io/name: 'cf-dns'
+    - namespace: 'kube-system'
+      labels:
+        app.kubernetes.io/part-of: 'cilium'
+    - namespace: 'kube-system'
+      labels:
+        app.kubernetes.io/name: 'purelb'
+    - namespace: 'kube-system'
+      labels:
+        app.kubernetes.io/name: 'frr-k8s'
+
 cilium:
   iptablesRandomFully: true
 
@@ -280,7 +301,7 @@ cilium:
         enabled: true
       policyVerdict:
         # -- Enable policy verdict events.
-        enabled: false
+        enabled: true
       trace:
         # -- Enable trace events.
         enabled: false
@@ -696,12 +717,14 @@ cilium:
     # -- Enable access of the healthcheck nodePort on the LoadBalancerIP. Needs
     # EnableHealthCheck to be enabled
     enableHealthCheckLoadBalancerIP: false
-  # policyAuditMode: false
+  # Evaluate policies and log would-be denials while permitting traffic.
+  # Keep enabled until API, Longhorn, and recovery workflow gates pass.
+  policyAuditMode: true
 
   # -- The agent can be put into one of the three policy enforcement modes:
   # default, always and never.
   # ref: https://docs.cilium.io/en/stable/security/policy/intro/#policy-enforcement-modes
-  policyEnforcementMode: 'never'
+  policyEnforcementMode: 'default'
 
 
   policyCIDRMatchMode:
