@@ -167,3 +167,29 @@ remained unready as it was before the rollout; this was not repaired here.
 The local backup target is available, but backup/restore recoverability remains
 unverified. The Home1 peer remains unavailable. No Home1 storage rollout,
 legacy KeyDB change, volume-engine upgrade, or backup creation was performed.
+
+### Home1/YVR rollout, 2026-09-26
+
+The owner subsequently requested the Home1 update, continuing the instruction
+not to create local S3 backups. Preflight found five ready nodes/managers on
+1.11.3 and 106 V1 volumes: 55 attached/healthy, three attached/degraded,
+47 detached/unknown, and one detached/faulted. The faulted volume is the
+existing production S3 PVC; its only remaining failed replica is on `srv2`'s
+`longhorn-0` disk, with approximately 2 GiB available. The degraded consumers
+are a Che workspace, the photos ML cache, and `pgdata-psql-main-1`.
+
+The [upstream upgrade guidance](https://longhorn.io/docs/1.12.1/deploy/upgrade/)
+advises avoiding upgrades with faulted volumes because failed replicas can be
+deleted. The remaining S3 replica is active, matches the retained 1.11.3 volume
+image, and has `lastHealthyAt` set. The pinned
+[1.12.1 volume controller](https://github.com/longhorn/longhorn-manager/blob/v1.12.1/controller/volume_controller.go)
+retains such a failed replica when no other replica is safe to use. Check that
+replica explicitly after reconciliation; this is not evidence of recoverability.
+Keep automatic engine upgrades disabled and do not salvage, delete, or retry
+the S3 volume as part of this controller update.
+
+Helm lint and rendering with Home1's live injected values passed; admission
+dry-run accepted all non-hook resources. No backing images or V2 volumes were
+present. The local desired backup URL uses the distinct `home1/` prefix to
+avoid collision with `peer-dc1`, matching DC1's earlier fix. The existing local
+target was unavailable and the DC1 peer available; no backup is requested.
