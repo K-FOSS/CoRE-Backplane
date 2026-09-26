@@ -205,6 +205,67 @@ spec:
                   description: New networking configuration
 
                   properties:
+                    dummyInterfaces:
+                      type: array
+
+                      description: 'Configure Linux dummy interfaces on the compute node'
+
+                      items:
+                        type: object
+
+                        required:
+                          - name
+
+                        properties:
+                          name:
+                            type: string
+
+                            description: 'Name of the dummy interface'
+
+                          addresses:
+                            type: array
+
+                            description: 'IPv4 or IPv6 addresses in subnet notation'
+
+                            items:
+                              type: string
+
+                          routes:
+                            type: array
+
+                            description: 'Routes associated with the dummy interface'
+
+                            items:
+                              type: object
+
+                              properties:
+                                network:
+                                  type: string
+
+                                  description: 'IPv4 or IPv6 destination network'
+
+                                gateway:
+                                  type: string
+
+                                  description: 'IPv4 or IPv6 next hop; omit for a link-scope route'
+
+                                metric:
+                                  type: integer
+
+                                  description: 'Route metric'
+
+                                  default: 1024
+
+                          mtu:
+                            type: integer
+
+                            description: 'MTU for the dummy interface'
+
+                            default: 1500
+
+                            minimum: 0
+                            maximum: 9710
+
                     dns:
                       type: object
 
