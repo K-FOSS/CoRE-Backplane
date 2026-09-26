@@ -193,3 +193,11 @@ dry-run accepted all non-hook resources. No backing images or V2 volumes were
 present. The local desired backup URL uses the distinct `home1/` prefix to
 avoid collision with `peer-dc1`, matching DC1's earlier fix. The existing local
 target was unavailable and the DC1 peer available; no backup is requested.
+
+Home1 retained an `OnDelete` manager DaemonSet strategy owned by an older
+Argo CD action. The upstream chart's default specifies `rollingUpdate` but
+omits `type`, so reconciliation did not replace the old pods. The
+[upstream post-upgrade hook](https://github.com/longhorn/longhorn-manager/blob/v1.12.1/app/post_upgrade.go)
+only waits for replacement. This chart now explicitly owns `type: RollingUpdate`
+and retains the upstream `maxUnavailable: 100%` default. This also makes the
+strategy explicit for DC1; only Home1 is synced for this rollout.

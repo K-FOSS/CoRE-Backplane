@@ -300,6 +300,11 @@ longhorn:
     registrySecret: ~
 
   longhornManager:
+    # Own the strategy type so prior live OnDelete actions cannot stall upgrades.
+    updateStrategy:
+      type: 'RollingUpdate'
+      rollingUpdate:
+        maxUnavailable: '100%'
     log:
       # -- Format of Longhorn Manager logs. (Options: "plain", "json")
       format: json
