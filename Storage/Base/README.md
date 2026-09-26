@@ -108,3 +108,28 @@ procedure and verified backups. Do not uninstall or enable the deletion
 confirmation setting as an upgrade recovery step; removing storage resources
 can destroy volume data. Retain backup claims and their credential references
 until restoration is verified.
+
+### DC1 rollout preflight, 2026-09-26
+
+The requested 1.11.3 to 1.12.1 rollout passed Helm lint, representative rendering
+with the live application's injected values, and non-persistent API validation
+using Argo CD's existing field manager. There were no immutable-field or
+admission failures. Both published backup configuration syncs were restricted
+to DC1's `longhorn-default-resource`; the parent sync selected only the storage
+ApplicationSet. No Home1 storage application was synced.
+
+DC1 had three ready nodes and 32 V1 volumes: 25 attached/healthy and seven
+detached/unknown. The detached volumes had previously healthy, stopped replicas;
+none was faulted. Four volumes had a single replica, including one detached
+volume. No V2 volumes or backing images were present. All managers and engines
+were still 1.11.3; automatic engine upgrades were disabled (per-node limit `0`).
+
+The duplicate backup URL was corrected through Git and Argo CD. The local
+`default` target subsequently reported `available: true`. Home1's peer remained
+offline, consistent with the owner's report of disk capacity problems. No
+`Backup`, `BackupVolume` or `SystemBackup` resources were recorded. DC1 MinIO's
+500 GiB Longhorn volume had approximately 211 GiB free during inspection; it
+shares the upgraded storage system's failure domain. These observations do not
+establish recoverability. The manager rollout was held pending the owner's
+decision on proceeding without verified backups; enabling a target alone is
+not backup/restore verification. Recheck these observations before resuming.
