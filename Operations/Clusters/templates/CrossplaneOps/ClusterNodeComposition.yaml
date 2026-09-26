@@ -1018,6 +1018,38 @@ spec:
 
                     {{- $newNetworkUsed := false }}
                     network-conf = <<-EOT
+                      {{- if and $.observed.composite.resource.spec.networking $.observed.composite.resource.spec.networking.dummyInterfaces }}
+                      {{- $newNetworkUsed = true }}
+                      {{- range $dummyInterface := $.observed.composite.resource.spec.networking.dummyInterfaces }}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: LinkConfig
+                      name: {{ $dummyInterface.name }}
+
+                      dummy: true
+                      up: true
+                      mtu: {{ default 1500 $dummyInterface.mtu }}
+
+                      {{- if $dummyInterface.addresses }}
+                      addresses:
+                        {{- range $address := $dummyInterface.addresses }}
+                        - address: {{ $address }}
+                        {{- end }}
+                      {{- end }}
+
+                      {{- if $dummyInterface.routes }}
+                      routes:
+                        {{- range $route := $dummyInterface.routes }}
+                        - {{ if and (ne $route.network "0.0.0.0/0") (ne $route.network "::/0") }}
+                          destination: {{ $route.network }}
+                          {{- end -}}
+                          gateway: {{ $route.gateway }}
+                          metric: {{ default 1024 $route.metric }}
+                        {{- end }}
+                      {{- end }}
+                      {{- end }}
+                      {{- end }}
+
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                       {{- if eq $network.model "new" }}
                       {{- $newNetworkUsed = true }}
