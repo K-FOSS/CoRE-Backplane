@@ -65,7 +65,7 @@ individually migrated and documented.
 
 ## AVoIP
 
-[Legacy/AVoIP.yaml](Legacy/AVoIP.yaml) is the migration owner for the
+[AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the
 [CoRE-Business AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
 It is prepared for the YVR `core-home1-talos-prod` and DC1
 `core-dc1-talos-prod` clusters, plus the legacy `dc1-k3s-node1` cluster, and
@@ -79,17 +79,23 @@ receive the hub cluster name, datacentre, and region. The chart is given
 `meet.mylogin.space`, the shared `core-prod/main-gw` HTTPS listener, and the
 cluster-local `myloginspace-default-certificates` Secret.
 The Asterisk and FreeSWITCH components are enabled only on the DC1 hub; the
-YVR and legacy K3s spoke renders disable them.
+YVR and legacy K3s spoke renders disable them. The DC1 hub sets the chart's
+`network.externalIP` and `network.egressIP` to `66.165.222.120` and enables
+`network.ciliumEgressGateway`. That address is assigned to the DC1 node's
+`avoip-prod` dummy interface. Home1 and legacy K3s explicitly disable the
+Cilium egress gateway policy.
 
-The AVoIP chart schema is not yet present in the checked-out CoRE-Business
-source, so the values merge follows the modernized application convention and
-is intentionally pending a chart-schema validation. Before enabling sync,
-render the upstream `AVoIP` path for both targets and confirm that its Jitsi
-route consumes `gateway`, `jitsi.domain`, and `jitsi.tls.secretName`. Verify
-the generated HTTPRoute, certificate reference, Jitsi web health, and media
-connectivity from an external client. Resource preservation remains enabled;
-removing a target does not delete retained application state or prove that
-external DNS, certificates, and any persisted AVoIP data were cleaned up.
+The upstream [AVoIP chart source](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP)
+defines these network values and renders Cilium egress policies for RTPEngine
+and, when enabled, FreeSWITCH. Before enabling sync, render the upstream
+`AVoIP` path for DC1 and Home1 with their injected values and confirm that only
+DC1 receives those policies and that their selectors and egress IP are valid.
+Also confirm that its Jitsi route consumes `gateway`, `jitsi.domain`, and
+`jitsi.tls.secretName`. Verify the generated HTTPRoute, certificate reference,
+Jitsi web health, and media connectivity from an external client. Resource
+preservation remains enabled; removing a target does not delete retained
+application state or prove that external DNS, certificates, and any persisted
+AVoIP data were cleaned up.
 
 ## Projects
 

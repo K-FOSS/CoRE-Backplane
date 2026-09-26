@@ -32,6 +32,9 @@ spec:
                               hubRegion: 'yxl'
                               asteriskEnabled: true
                               freeswitchEnabled: true
+                              externalIP: '66.165.222.120'
+                              egressIP: '66.165.222.120'
+                              ciliumEgressGatewayEnabled: true
 
                           - name: 'core-home1-talos-prod'
                             values:
@@ -41,6 +44,7 @@ spec:
                               hubRegion: 'yxl'
                               asteriskEnabled: false
                               freeswitchEnabled: false
+                              ciliumEgressGatewayEnabled: false
 
                           - name: 'dc1-k3s-node1'
                             values:
@@ -50,6 +54,7 @@ spec:
                               hubRegion: 'yxl'
                               asteriskEnabled: false
                               freeswitchEnabled: false
+                              ciliumEgressGatewayEnabled: false
 
                 - list:
                     elementsYaml: '{{ .clusters | toJson }}'
@@ -115,6 +120,14 @@ spec:
 
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
+
+                network:
+                  ciliumEgressGateway:
+                    enabled: {{ .values.ciliumEgressGatewayEnabled }}
+                {{- if hasKey .values "externalIP" }}
+                  externalIP: '{{ .values.externalIP }}'
+                  egressIP: '{{ .values.egressIP }}'
+                {{- end }}
 
                 {{- if eq .values.type "spoke" }}
                 hub:
