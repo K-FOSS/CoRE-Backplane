@@ -58,6 +58,17 @@ spec:
 #         selector:
 #           wwid: naa.5000cca072403d08
 
+  networking:
+    dns:
+      servers:
+        - '1.1.1.1'
+        - '8.8.8.8'
+
+    dummyInterfaces:
+      - name: 'avoip-prod'
+        addresses:
+          - '66.165.222.120/32'
+
   networks:
     - macAddress: b8:ca:3a:6e:f3:b8
       bridge: false
@@ -107,3 +118,20 @@ spec:
 
         - name: numa_balancing
           value: enable
+
+  sysctls:
+    - name: 'net.core.bpf_jit_harden'
+      value: '1'
+
+    - name: 'net.ipv6.conf.all.disable_ipv6'
+      value: '0'
+
+    - name: 'net.ipv6.conf.default.disable_ipv6'
+      value: '0'
+
+  sysfs:
+    - name: 'class.net.eno1.device.sriov_numvfs'
+      value: '7'
+
+    - name: 'class.net.eno2.device.sriov_numvfs'
+      value: '7'
