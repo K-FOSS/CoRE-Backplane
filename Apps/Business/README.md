@@ -77,7 +77,10 @@ each target's cluster name, Kubernetes DNS domain, datacentre, region, and
 environment from the registered Argo CD cluster labels; spoke renders also
 receive the hub cluster name, datacentre, and region. The chart is given
 `meet.mylogin.space`, the shared `core-prod/main-gw` HTTPS listener, and the
-cluster-local `myloginspace-default-certificates` Secret.
+cluster-local `myloginspace-default-certificates` Secret. Each cluster's
+Kamailio advertised host is
+`<cluster>.<datacenter>.<region>.resolvemy.host`, built from the selected
+cluster name and its registered datacentre and region.
 The Asterisk and FreeSWITCH components are enabled only on the DC1 hub; the
 YVR and legacy K3s spoke renders disable them. The DC1 hub sets the chart's
 `network.externalIP` and `network.egressIP` to `66.165.222.120` and enables
