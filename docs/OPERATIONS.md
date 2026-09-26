@@ -100,6 +100,18 @@ JSON patch file with `operation.sync.revision` set to the published full SHA,
 The two child applications then received revision-scoped sync requests without
 a resource filter. No controller workload was directly applied with kubectl.
 
+When requesting a new operation with a kubectl merge patch, first confirm that
+no operation is active and reset the **completed** `status.operationState` to
+`null` in the same request. This matches the installed Argo CD 3.3.6
+[SetAppOperation implementation](https://github.com/argoproj/argo-cd/blob/v3.3.6/util/argo/argo.go).
+When switching from a selective sync to a full application sync, also explicitly
+set `operation.sync.resources` to `null`. Omitting a field from a merge patch
+does not clear its old value: the DC1 Longhorn rollout initially retained the
+previous ConfigMap-only filter in operation state and did not upgrade managers.
+Inspect the accepted operation's resource selection and actual workload image
+before treating a successful sync as evidence of the requested rollout. Do not
+reset another operation that is still running.
+
 ### Diagnose, verify and report
 
 Observe the operation for the requested revision, each responsible controller,

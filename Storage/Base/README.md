@@ -130,6 +130,40 @@ offline, consistent with the owner's report of disk capacity problems. No
 `Backup`, `BackupVolume` or `SystemBackup` resources were recorded. DC1 MinIO's
 500 GiB Longhorn volume had approximately 211 GiB free during inspection; it
 shares the upgraded storage system's failure domain. These observations do not
-establish recoverability. The manager rollout was held pending the owner's
-decision on proceeding without verified backups; enabling a target alone is
-not backup/restore verification. Recheck these observations before resuming.
+establish recoverability. The manager rollout was initially held pending the
+owner's decision; enabling a target alone is not backup/restore verification.
+
+### DC1 rollout result, 2026-09-26
+
+The owner explicitly authorized proceeding without creating local S3 backups
+after reporting Home1/YVR S3 offline. No backups were created. This decision
+applies to this rollout and does not waive backup requirements for future work.
+
+Argo CD application `core-dc1-talos-prod-storage-base` reconciled revision
+`bbe69ac310fcb014c698ff31a21c043ffd4b1306` with pruning disabled and completed
+its post-upgrade hook. Its final state was `Synced`, `Healthy`, and `Succeeded`.
+All three managers, the UI and driver deployer run 1.12.1; CSI deployments and
+the node plugin are ready. Both engine images are ready on all three nodes.
+All 32 existing volume engines remain on 1.11.3, with automatic engine upgrades
+disabled. Volume counts remain 25 attached/healthy and seven detached/unknown,
+with no faulted volumes.
+
+A full sync initially encountered transient webhook connection refusals during
+the manager rollout. After all managers and webhook endpoints were ready,
+retrying the same revision succeeded without bypassing admission or deleting
+pods manually. New kubectl-requested operations must clear completed Argo
+operation state as documented in [the operations runbook](../../docs/OPERATIONS.md).
+
+Both RWX share managers moved to 1.12.1. The lab writer and three browser pods
+recovered; a temporary synthetic file written on their shared PVC was read
+through each browser on `srv1`, `srv3`, and `srv7`, then removed. The existing
+lab request-writer HTTP probe returned EOF, so this check used a direct write
+inside the existing lab writer pod rather than claiming that endpoint worked.
+DC1 MinIO readiness returned HTTP 200 and an existing persisted format file
+remained readable. Longhorn metrics remained accessible; the UI returned its
+authentication redirect, without an authenticated UI test. `psql-main-0`
+remained unready as it was before the rollout; this was not repaired here.
+
+The local backup target is available, but backup/restore recoverability remains
+unverified. The Home1 peer remains unavailable. No Home1 storage rollout,
+legacy KeyDB change, volume-engine upgrade, or backup creation was performed.
