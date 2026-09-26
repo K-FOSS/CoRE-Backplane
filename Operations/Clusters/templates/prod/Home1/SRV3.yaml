@@ -30,6 +30,12 @@ spec:
 
   environment: prod
 
+  networking:
+    dns:
+      servers:
+        - '10.1.1.53'
+        - '172.31.193.254'
+
   bgp:
     instances:
       - asn: 64512
@@ -183,6 +189,23 @@ spec:
         system:
           - binfmt-misc
           - intel-ucode
+      kernel:
+        modules:
+          - name: 'vfio-pci'
+          - name: 'vfio_iommu_type1'
+
+  sysctls:
+    - name: 'net.ipv6.conf.eno1.accept_ra'
+      value: '0'
+
+    - name: 'net.ipv6.conf.eno2.accept_ra'
+      value: '0'
+
+    - name: 'net.ipv6.conf.eno1.accept_ra_defrtr'
+      value: '0'
+
+    - name: 'net.ipv6.conf.eno2.accept_ra_defrtr'
+      value: '0'
 
   sysfs:
     - name: class.net.eno1.device.sriov_numvfs
