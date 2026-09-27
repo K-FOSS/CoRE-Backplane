@@ -13,6 +13,22 @@ admin credentials from `mainvault-core`; the `User` and `PushSecret` resources
 for a hub deployment are not rendered. Argo CD deploys each release to
 `core-prod` with the Lovely Helm merge renderer.
 
+The operator-provided authoritative DNS topology is `ns1.resolvemy.host`
+through `ns4.resolvemy.host`, with two names assigned to DC1 and two to YVR.
+All four are part of this Network/NS PowerDNS service. The ApplicationSet
+currently emits `ns4.resolvemy.host` at DC1 address `66.165.222.100` and
+`ns2.resolvemy.host` at Home1/YVR address `10.1.1.153`; the latter is private.
+The current values do not emit the other two names, so verify their live
+records and site assignments against the authoritative zone before relying on
+them for delegation.
+
+Keep the logical nameserver set distinct from PowerDNS pod replicas. The
+current `Network/NS` workload template leaves the PowerDNS controller at its
+BJW-S default of one replica per cluster, and live inspection found one
+`ns-core-main` pod in each cluster. It does not currently run two PowerDNS
+pods per site. Update and verify that workload separately before describing
+the two-per-site replica count as deployed pod capacity.
+
 The chart renders:
 
 - [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)

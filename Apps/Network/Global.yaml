@@ -1,0 +1,61 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-global
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - list:
+              elements:
+                - name: core-home1-talos-prod
+                  values:
+                    clusterGeoTag: 'home1'
+                    extGslbClustersGeoTags: 'dc1'
+                - name: core-dc1-talos-prod
+                  values:
+                    clusterGeoTag: 'dc1'
+                    extGslbClustersGeoTags: 'home1'
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-network-global-{{ .values.environment }}'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=true
+      source:
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        path: Network/Global
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                k8gb:
+                  k8gb:
+                    clusterGeoTag: '{{ .values.clusterGeoTag }}'
+                    extGslbClustersGeoTags: '{{ .values.extGslbClustersGeoTags }}'
+      destination:
+        server: '{{ .server }}'
+        namespace: k8gb
