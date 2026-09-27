@@ -17,7 +17,12 @@ The operator-provided authoritative DNS topology is `ns1.resolvemy.host`
 through `ns4.resolvemy.host`, with two names assigned to DC1 and two to YVR.
 All four are part of this Network/NS PowerDNS service. The ApplicationSet
 currently emits `ns4.resolvemy.host` at DC1 address `66.165.222.100` and
-`ns2.resolvemy.host` at Home1/YVR address `10.1.1.153`; the latter is private.
+`ns2.resolvemy.host` at Home1/YVR. Home1 is configured to use the
+[KubeVIP Service class](https://kube-vip.io/docs/usage/kubernetes-services/)
+and its VLAN 150 pool (`10.0.0.39-10.0.0.49`);
+the previous PureLB address `10.1.1.153` remains live until Argo CD reconciles
+this change. Confirm the assigned address and external reachability before
+publishing it as a public DNS target.
 The current values do not emit the other two names, so verify their live
 records and site assignments against the authoritative zone before relying on
 them for delegation.
@@ -32,7 +37,8 @@ the two-per-site replica count as deployed pod capacity.
 The chart renders:
 
 - [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
-  backed by PostgreSQL and exposed on TCP and UDP port 53 through PureLB. The
+  backed by PostgreSQL and exposed on TCP and UDP port 53 through PureLB in
+  DC1 and KubeVIP in Home1. The
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md)
   is pinned to its multi-architecture manifest digest.
 - [PowerDNS-Admin 0.4.2](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v0.4.2)

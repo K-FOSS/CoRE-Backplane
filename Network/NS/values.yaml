@@ -118,9 +118,10 @@ powerdnsAdmin:
     hostnames:
       - ns.int.mylogin.space
 
-# The owning ApplicationSet adds target-specific ExternalDNS and PureLB
+# The owning ApplicationSet adds target-specific Service class and DNS
 # annotations under this existing override path.
 service:
   main:
+    loadBalancerClass: 'purelb.io/purelbv2'
     annotations:
       consul.hashicorp.com/service-name: ns-core
