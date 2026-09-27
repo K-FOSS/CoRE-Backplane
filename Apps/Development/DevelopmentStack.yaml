@@ -117,6 +117,7 @@ spec:
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
+                timezone: '{{ if eq (index .metadata.labels "topology.kubernetes.io/region") "yxl" }}America/Winnipeg{{ else if eq (index .metadata.labels "topology.kubernetes.io/region") "yvr" }}America/Vancouver{{ else }}America/Vancouver{{ end }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
 
@@ -167,6 +168,8 @@ spec:
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
+
+                timezone: {{ .values.timezone }}
 
                 che:
                   enabled: {{ .values.che.enabled }}

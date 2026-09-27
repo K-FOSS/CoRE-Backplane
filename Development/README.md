@@ -512,7 +512,10 @@ Key behavior:
 - workspaces use a per-user PVC strategy and persist the user home directory;
 - namespaces are auto-provisioned as `<username>-che`;
 - the default editor is Che Code with the configured universal developer
-  image pulled through Harbor;
+  image pulled through Harbor; its terminal container receives `TZ`,
+  `DATACENTER`, and `REGION` from the Development ApplicationSet. The YXL
+  region uses `America/Winnipeg` (Sioux Lookout/Northern Ontario Central
+  Time); YVR uses `America/Vancouver`;
 - inactive workspaces idle after 6 hours; the absolute runtime cap is disabled;
 - Che 7.122.0 CLI activity tracking keeps terminal Codex processes active,
   including unattended sessions;
