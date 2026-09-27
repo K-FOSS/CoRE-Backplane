@@ -74,6 +74,9 @@ primary Cilium interface for Kubernetes API access. The CNI `plugin` map is
 passed through, so a site can choose a supported bridge or SR-IOV CNI and
 configure IPAM, MTU, VLAN, and related options. Any IPAM configuration must
 allocate unique attachment addresses across nodes and preserve API connectivity.
+Home1's node affinity restricts KubeVIP DaemonSet pods to nodes `srv2`, `srv3`,
+and `hpc3` (their `kubernetes.io/hostname` label values); the cloud-provider
+Deployment remains independently scheduled.
 Home1 reserves `10.0.0.39-10.0.0.49` as its LoadBalancer VIP range on VLAN 150.
 Exclude these addresses from DHCP allocation and keep them unused by other
 static hosts.

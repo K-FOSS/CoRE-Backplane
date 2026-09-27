@@ -147,6 +147,10 @@ spec:
         k8s.v1.cni.cncf.io/networks: {{ list (dict "name" $network.name "interface" (required "kubeVip.interfaceName is required" .Values.kubeVip.interfaceName)) | toJson | quote }}
     spec:
       serviceAccountName: kube-vip
+      {{- with .Values.kubeVip.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: kube-vip
           image: {{ .Values.kubeVip.image | quote }}

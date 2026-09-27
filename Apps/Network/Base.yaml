@@ -72,6 +72,14 @@ spec:
                     kubeVip:
                       enabled: true
                       vipRange: '10.0.0.39-10.0.0.49'
+                      affinity:
+                        nodeAffinity:
+                          requiredDuringSchedulingIgnoredDuringExecution:
+                            nodeSelectorTerms:
+                              - matchExpressions:
+                                  - key: 'kubernetes.io/hostname'
+                                    operator: 'In'
+                                    values: ['srv2', 'srv3', 'hpc3']
                       network:
                         resourceName: 'intel.com/intel_x540_netdevice_port0'
                         plugin:
