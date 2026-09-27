@@ -95,6 +95,74 @@ controllers:
               periodSeconds: 10
               timeoutSeconds: 5
               failureThreshold: 90
+      {{ if .Values.unpoller.enabled }}
+      unpoller:
+        image:
+          repository: '{{ .Values.images.unpoller.repository }}'
+          tag: '{{ .Values.images.unpoller.tag }}'
+          pullPolicy: '{{ .Values.images.unpoller.pullPolicy }}'
+        env:
+          - name: 'UP_INFLUXDB_DISABLE'
+            value: 'true'
+          - name: 'UP_POLLER_DEBUG'
+            value: 'false'
+          - name: 'UP_UNIFI_DYNAMIC'
+            value: 'false'
+          - name: 'UP_PROMETHEUS_HTTP_LISTEN'
+            value: '0.0.0.0:9130'
+          - name: 'UP_PROMETHEUS_NAMESPACE'
+            value: 'unifi'
+          - name: 'UP_UNIFI_DEFAULT_URL'
+            value: 'https://127.0.0.1:8443'
+          - name: 'UP_UNIFI_DEFAULT_VERIFY_SSL'
+            value: 'false'
+          - name: 'UP_UNIFI_DEFAULT_SITES_0'
+            value: 'all'
+          - name: 'UP_UNIFI_DEFAULT_SAVE_SITES'
+            value: 'true'
+          - name: 'UP_UNIFI_DEFAULT_USER'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-unpoller'
+                key: 'username'
+          - name: 'UP_UNIFI_DEFAULT_PASS'
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-unpoller'
+                key: 'password'
+        ports:
+          - name: 'metrics'
+            containerPort: 9130
+            protocol: 'TCP'
+        probes:
+          readiness:
+            enabled: true
+            type: 'HTTP'
+            path: '/metrics'
+            port: 'metrics'
+            spec:
+              initialDelaySeconds: 30
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 6
+          liveness:
+            enabled: true
+            type: 'HTTP'
+            path: '/metrics'
+            port: 'metrics'
+            spec:
+              initialDelaySeconds: 60
+              periodSeconds: 30
+              timeoutSeconds: 5
+              failureThreshold: 5
+        resources:
+          limits:
+            cpu: '250m'
+            memory: '128Mi'
+          requests:
+            cpu: '25m'
+            memory: '32Mi'
+      {{ end }}
 
 service:
   unifi-lb:
@@ -146,6 +214,23 @@ service:
         port: 8443
         protocol: 'HTTPS'
         appProtocol: 'gateway.envoyproxy.io/wss'
+  {{ if .Values.unpoller.enabled }}
+  unifi-metrics:
+    enabled: true
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-metrics'
+    controller: 'unifi'
+    primary: false
+    type: 'ClusterIP'
+    labels:
+      app.kubernetes.io/component: 'unifi-metrics'
+    ports:
+      metrics:
+        enabled: true
+        primary: true
+        port: 9130
+        targetPort: 'metrics'
+        protocol: 'TCP'
+  {{ end }}
 
 route:
   unifi-web:
@@ -174,30 +259,36 @@ persistence:
     enabled: true
     type: 'configMap'
     name: '{{ .Release.Name }}-upgrade-nag-patch'
-    globalMounts:
-      - path: '/usr/local/bin/patch-upgrade-nag.sh'
-        subPath: 'patch-upgrade-nag.sh'
-        readOnly: true
+    advancedMounts:
+      unifi:
+        unifi:
+          - path: '/usr/local/bin/patch-upgrade-nag.sh'
+            subPath: 'patch-upgrade-nag.sh'
+            readOnly: true
   data:
     enabled: true
     type: 'persistentVolumeClaim'
     mountPath:
     accessMode: 'ReadWriteOnce'
     size: '2G'
-    globalMounts:
-      - path: '/usr/lib/unifi/data'
-        readOnly: false
+    advancedMounts:
+      unifi:
+        unifi:
+          - path: '/usr/lib/unifi/data'
+            readOnly: false
   tls:
     enabled: true
     type: 'secret'
     name: 'myloginspace-default-certificates'
-    globalMounts:
-      - path: '/usr/lib/unifi/cert/cert.pem'
-        subPath: 'tls.crt'
-        readOnly: false
-      - path: '/usr/lib/unifi/cert/privkey.pem'
-        subPath: 'tls.key'
-        readOnly: false
+    advancedMounts:
+      unifi:
+        unifi:
+          - path: '/usr/lib/unifi/cert/cert.pem'
+            subPath: 'tls.crt'
+            readOnly: true
+          - path: '/usr/lib/unifi/cert/privkey.pem'
+            subPath: 'tls.key'
+            readOnly: true
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
 
