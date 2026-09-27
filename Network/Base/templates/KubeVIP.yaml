@@ -3,6 +3,9 @@
 {{- $class := required "kubeVip.loadBalancerClass is required when kubeVip.enabled is true" .Values.kubeVip.loadBalancerClass }}
 {{- $network := .Values.kubeVip.network }}
 {{- $plugin := deepCopy $network.plugin }}
+{{- if and .Values.kubeVip.upnp.enabled (empty $plugin.ipam) }}
+{{- fail "kubeVip.network.plugin.ipam is required when kubeVip.upnp.enabled is true; each WAN attachment needs a unique address" }}
+{{- end }}
 {{- if eq $plugin.type "sriov" }}
 {{- $_ := set $plugin "spoofchk" "off" }}
 {{- end }}
@@ -165,6 +168,8 @@ spec:
               value: 'true'
             - name: lb_class_legacy_handling
               value: 'false'
+            - name: enableUPNP
+              value: {{ .Values.kubeVip.upnp.enabled | toString | quote }}
           securityContext:
             capabilities:
               add: ['NET_ADMIN', 'NET_RAW']

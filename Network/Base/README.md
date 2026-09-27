@@ -86,9 +86,24 @@ from the existing PureLB class. The cloud provider assigns addresses, and the
 KubeVIP agent advertises them with ARP. See the upstream [pool configuration](https://kube-vip.io/docs/usage/cloud-provider/)
 and [class behavior](https://kube-vip.io/docs/usage/kubernetes-services/).
 
-The NATPuncher UPnP configuration is used only as a reference for the YVR WAN
-attachment. This addon does not create UPnP port mappings; it advertises Service
-VIPs on the attached network using ARP.
+The Home1 values enable KubeVIP's native UPnP support when the addon is enabled.
+The DaemonSet keeps its normal pod interface for Kubernetes API traffic and
+attaches `wan0` through Multus to the SR-IOV VLAN 150 network for WAN discovery
+and ARP advertisement. A LoadBalancer Service requests a UPnP port mapping only
+when annotated `kube-vip.io/forwardUPNP: 'true'`; the exposed Service port is
+then forwarded by the gateway to the Service VIP. See the upstream
+[UPnP service configuration](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
+
+UPnP requires the secondary interface to have a unique WAN IP address on each
+KubeVIP pod. Configure `kubeVip.network.plugin.ipam` for the selected CNI and
+ensure its IPAM binary and any required daemon are installed on every target
+node. For example, the [CNI DHCP IPAM plugin](https://www.cni.dev/plugins/current/ipam/dhcp/)
+uses `type: 'dhcp'` and requires its host daemon and a DHCP server on VLAN 150.
+Network/Base does not currently install that daemon. Rendering fails when UPnP
+is enabled without an IPAM configuration. Do not reuse NATPuncher's static
+`10.0.0.10/24` attachment: KubeVIP runs as a DaemonSet and multiple pods would
+collide. The network `plugin` map is passed through to Multus to support
+site-specific IPAM while retaining VLAN and device configuration.
 
 `sriovDevicePlugin.resourceList` is required and must contain at least one
 device-plugin resource-pool object. Its objects are passed to the upstream
