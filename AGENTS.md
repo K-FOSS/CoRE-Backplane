@@ -130,6 +130,15 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   operator workflow, dependency, recovery step, public endpoint, access model,
   or destructive behavior.
 
+### Stack README structure and headings
+
+- Title stack README files with `# CoRE-Backplane <path> Stack`, using the repository path and established component capitalization (for example, `# CoRE-Backplane Network/NATPuncher Stack`). For non-stack guides, use a concise title naming the component or operational purpose.
+- Start with a short summary of what the stack does and link its owner (normally the ApplicationSet) and parent stack overview.
+- Organize the body into clear, task-focused `##` sections. Cover ownership/targets/rendering, architecture or components, configuration and data flow, operations/verification, and security/recovery where relevant; include only sections that apply. Use `###` for topics within a section and do not skip heading levels.
+- Keep headings specific to the content that follows. Avoid generic headings such as `Details` or `Miscellaneous`, and avoid turning every paragraph into a heading.
+- Link repository files with relative Markdown links from the current document. Use descriptive link text; link the owner, related stack documentation, values/templates, and runbooks where they support the text. Use direct upstream links for external dependencies.
+- Keep documentation focused on observed current behavior, then state desired behavior or TODOs separately. Align section order with the reader’s path from ownership and design through configuration to operation and verification.
+
 ## Secrets and identity
 
 - Never add, decode, print, log, document, or commit production credentials,
