@@ -100,6 +100,9 @@ spec:
                       external-dns.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
                       # TODO(external-dns-017): Remove the legacy annotation after upgrading ExternalDNS.
                       external-dns.alpha.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
+                      {{ if eq .values.nameserver.address.loadBalancerClass "kube-vip.io/kube-vip-class" }}
+                      kube-vip.io/forwardUPNP: 'true'
+                      {{ end }}
                       {{ if not .values.nameserver.address.loadBalancerClass }}
                       purelb.io/addresses: '{{ .values.nameserver.address.ipv4 }}'
                       purelb.io/allow-local: 'true'

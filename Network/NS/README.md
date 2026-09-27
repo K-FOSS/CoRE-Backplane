@@ -22,7 +22,10 @@ currently emits `ns4.resolvemy.host` at DC1 address `66.165.222.100` and
 and its VLAN 150 pool (`10.0.0.39-10.0.0.49`);
 the previous PureLB address `10.1.1.153` remains live until Argo CD reconciles
 this change. Confirm the assigned address and external reachability before
-publishing it as a public DNS target.
+publishing it as a public DNS target. The Home1 Service also opts into KubeVIP
+UPnP forwarding, which maps its DNS ports (TCP and UDP 53) through the YVR
+gateway; this depends on the enabled KubeVIP UPnP support and a working UPnP
+gateway. See the upstream [UPnP service instructions](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
 The current values do not emit the other two names, so verify their live
 records and site assignments against the authoritative zone before relying on
 them for delegation.
