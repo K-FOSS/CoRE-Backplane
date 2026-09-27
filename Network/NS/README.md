@@ -102,12 +102,13 @@ secret-backed. PowerDNS-Admin uses the internal PowerDNS API Service and
 is protected by the shared Authentik forward-auth outpost through a fail-closed
 Envoy Gateway `SecurityPolicy`. The Authentik proxy application and the native
 OIDC application are restricted to the `Network` group. The native PowerDNS
-Admin application is grouped in Authentik under `<datacenter>-<cluster>`, like
-other cluster-scoped applications. The Forward Auth application is hidden from
-the Authentik application dashboard with the `blank://blank` launch URL, so it
-does not show a duplicate launch card; the policy binding and proxy provider
-remain active for route authorization. Authentik documents this as the hiding
-method before 2026.5 and migrates it to the dashboard hide setting on upgrade
+Admin application is displayed as `DNS Admin` and grouped in Authentik under
+`<datacenter>-<cluster>`, like other cluster-scoped applications. The Forward
+Auth application is hidden from the Authentik application dashboard with the
+`blank://blank` launch URL, so it does not show a duplicate launch card; the
+policy binding and proxy provider remain active for route authorization.
+Authentik documents this as the hiding method before 2026.5 and migrates it to
+the dashboard hide setting on upgrade
 ([application visibility documentation](https://docs.goauthentik.io/add-secure-apps/applications/manage_apps)).
 After the proxy admits the request, PowerDNS-Admin handles its own OIDC or LDAP
 login and role mapping. The policy uses Authentik's
