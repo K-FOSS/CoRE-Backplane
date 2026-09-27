@@ -1,4 +1,3 @@
-{{- if .Values.hub }}
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
@@ -9,11 +8,16 @@ metadata:
     {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
 
 spec:
-  name: PowerDNSAdmin
+  name: 'PowerDNS Admin {{ .Values.cluster.name }}'
+  username: 'nsadmin-{{ .Values.cluster.name }}'
 
   psql:
-    uri: postgresql://
+    enabled: true
+    hostname: {{ required "psql.hostname must be injected by the owning ApplicationSet" .Values.psql.hostname | quote }}
+    uri: 'postgresql://'
+    crossplane:
+      crossplaneProvider: {{ required "psql.crossplaneProvider must be injected by the owning ApplicationSet" .Values.psql.crossplaneProvider | quote }}
+      terraformProvider: {{ required "psql.terraformProvider must be injected by the owning ApplicationSet" .Values.psql.terraformProvider | quote }}
 
   writeConnectionSecretToRef:
     name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds
-{{- end }}

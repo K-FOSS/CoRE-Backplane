@@ -89,6 +89,11 @@ spec:
                   database:
                     host: psql.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}
 
+                psql:
+                  hostname: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                  crossplaneProvider: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
+                  terraformProvider: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
+
                 service:
                   main:
                     {{ if .values.nameserver.address.loadBalancerClass }}

@@ -8,10 +8,10 @@ source of truth for target selection and site-specific service annotations.
 
 The ApplicationSet explicitly merges `core-dc1-talos-prod` and
 `core-home1-talos-prod` with registered bare-metal infrastructure clusters.
-Both currently receive `hub: false`, so they pull the shared database and
-admin credentials from `mainvault-core`; the `User` and `PushSecret` resources
-for a hub deployment are not rendered. Argo CD deploys each release to
-`core-prod` with the Lovely Helm merge renderer.
+Both currently receive `hub: false`. The authoritative PowerDNS credentials
+continue to use the shared secret path; each site instead provisions its own
+PowerDNS-Admin database role and database through a local `User` claim. Argo CD
+deploys each release to `core-prod` with the Lovely Helm merge renderer.
 
 The operator-provided authoritative DNS topology is `ns1.resolvemy.host`
 through `ns4.resolvemy.host`, with two names assigned to DC1 and two to YVR.
@@ -57,7 +57,7 @@ The chart renders:
   application's default user role until an administrator assigns zone access.
   Local password login and signup are disabled.
 - [External Secrets Operator](https://external-secrets.io/latest/) resources
-  for the PowerDNS API key and database, LDAP, and application credentials.
+  for the authoritative PowerDNS API key and database credentials.
 - The [BJW-S common library chart 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
   used to generate workloads, Services, storage mounts, and the HTTPRoute.
 
@@ -103,6 +103,25 @@ handles UI authentication itself with Authentik OIDC or LDAP. Gateway
 forward-auth is no longer used for this route; Authentik's OIDC application
 policy limits OIDC login to the `Network` group, while LDAP retains its
 PowerDNS-Admin role mapping.
+
+PowerDNS-Admin's PostgreSQL connection is independent at each site. The
+`Apps/Network/NS.yaml` injects the site-local `psql-local.<cluster>.<datacenter>.<region>.mylogin.space`
+endpoint and matching `psql-<datacenter>-<region>` provider names. The
+`ns-core-nsadmin-db` `User` claim uses those values to create the Authentik
+service identity, PostgreSQL role and database. The [User claim composition](../../Operations/SSO/User/README.md)
+publishes the generated `psqlURI` in the claim Secret; the Deployment consumes
+it from `ns-core-nsadmin-creds`, and [Stakater Reloader's Secret annotation](https://docs.stakater.com/reloader/latest/reference/annotations.html)
+restarts the app when that Secret changes. These credentials are not pushed to
+the shared Vault database path. Claim deletion orphans its PostgreSQL
+resources, so removal needs a separate database and role cleanup decision.
+
+The current PostgreSQL topology makes `core-dc1-talos-prod` a physical standby
+of the writable Home1 hub. A standby cannot accept the role/database writes
+requested by the DC1 `User` claim, and PowerDNS-Admin also needs a writable
+database. The site-local configuration therefore requires DC1 to have a
+writable PostgreSQL target before that site's claim and Deployment can become
+operational; rendering the manifests does not establish that prerequisite.
+
 The Authentik provider credentials are generated per site by the
 [Authentik Terraform provider](https://registry.terraform.io/providers/goauthentik/authentik/latest/docs/resources/provider_oauth2)
 Workspace and written to its local `ns-core-nsadmin-oidc` connection

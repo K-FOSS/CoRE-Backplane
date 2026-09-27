@@ -102,6 +102,8 @@ generated password is 16 characters.
 | `spec.email` | Optional email address assigned to the Authentik user. |
 | `spec.ldaps.uri` | URI prefix used in the emitted `ldapsURI`; defaults to `ldaps://`. |
 | `spec.psql.enabled` | Enables PostgreSQL role/grant reconciliation. |
+| `spec.psql.hostname` | PostgreSQL host included in the emitted `psqlURI`; defaults to `psql-int.mylogin.space`. |
+| `spec.psql.uri` | URI scheme/prefix included in the emitted `psqlURI`; defaults to `postgres://`. |
 | `spec.psql.createUserDatabase` | Creates a database named after the username unless set to `false`; schema default is `true`. |
 | `spec.psql.databases[]` | Existing databases on which grants are applied. |
 | `spec.psql.crossplane.*Provider` | Overrides PostgreSQL provider configuration names. |
@@ -129,7 +131,10 @@ The XRD currently exposes more intent than the Composition consumes:
 - `mysql` and `mongodb` have schemas but create no resources or connection
   details.
 - `AVoIP` is not consumed.
-- `psql.uri` is not used by the PostgreSQL managed resources.
+- `psql.uri` only prefixes the emitted `psqlURI`; it does not configure the
+  PostgreSQL managed resource connection. Select that database controller
+  with `psql.crossplane.crossplaneProvider` and the Terraform grants provider
+  with `psql.crossplane.terraformProvider`.
 
 Do not rely on these fields until both the composition and this document are
 updated. Schema acceptance is not evidence that a feature is implemented.
@@ -267,12 +272,14 @@ published by the final `CompositeConnectionDetails` object:
 | `password` | Always, after the base Workspace reconciles. |
 | `ldapsBIND` | Always; currently uses `cn=<username>,ou=users,dc=ldap,dc=mylogin,dc=space`. |
 | `ldapsURI` | Always; contains only the LDAP endpoint, despite being marked sensitive upstream. |
+| `database` | When PostgreSQL is enabled; the created database name. |
+| `psqlURI` | When PostgreSQL is enabled; connection URI using the configured host, port, scheme, username, password, and database. |
 | `S3Hostname` | Only when S3 is enabled and the MinIO attachment Workspace emits it. |
 
 The XRD advertises additional connection keys, but the current pipeline does
-not publish most of them to the claim Secret. In particular, do not expect
-`psqlURI`, `database`, S3 access keys, ports, or the miscellaneous keys listed
-in `connectionSecretKeys` to appear there.
+not publish most of them to the claim Secret. In particular, do not expect S3
+access keys, ports, or the miscellaneous keys listed in
+`connectionSecretKeys` to appear there.
 
 The composition also creates UID-based intermediate Secrets in the claim
 namespace, including the Authentik Workspace Secret and feature-specific

@@ -74,6 +74,8 @@ controllers:
     revisionHistoryLimit: 3
     strategy: RollingUpdate
     pod:
+      annotations:
+        secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds'
       dnsConfig:
         options:
           - name: ndots

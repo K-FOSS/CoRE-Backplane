@@ -86,7 +86,7 @@ spec:
                     uri: sips://
 
                   psql:
-                    hostname: psql-int.mylogin.space
+                    hostname: {{ default "psql-int.mylogin.space" .observed.composite.resource.spec.psql.hostname }}
                     port: 5432
                     uri: postgres://
 
@@ -969,6 +969,10 @@ spec:
               password: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.password }}
               ldapsBIND: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsBIND }}
               ldapsURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.ldapsURI }}
+              {{- if .observed.composite.resource.spec.psql.enabled }}
+              database: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.database }}
+              psqlURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.psqlURI }}
+              {{- end }}
               {{- if .observed.composite.resource.spec.s3.enabled }}
               S3Hostname: {{ ( index $.observed.resources $tfMinio ).connectionDetails.S3Endpoint }}
               {{- end }}
