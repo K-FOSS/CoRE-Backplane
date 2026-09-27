@@ -184,16 +184,27 @@ and [Git/Argo CD procedure](docs/OPERATIONS.md#agent-git-and-argo-cd-procedure).
 
 ### Commit messages
 
-Use Conventional Commit subjects in the form `type(scope): summary`, with a
-lowercase type such as `feat`, `fix`, `chore`, or `docs` and a short, specific
-summary. Scope names mirror repository paths in dotted form and keep the
+Use Conventional Commit subjects in the form `type(scope): summary`. The
+two-year history most often uses `feat`, `chore`, and `fix`, with `docs` and
+`test` also established. Use a lowercase standard type and a concise, useful
+summary that identifies what changed. Older history includes bare `fix`
+subjects, typos, and nonstandard types; treat these as legacy exceptions, not
+examples to follow. A body is optional, so the subject must make sense on its
+own; add a body when rationale or operational impact needs more context.
+
+Keep the type lowercase, preserve the established capitalization of scope
+components, and start the summary in sentence case with an uppercase word.
+Preserve normal product names and acronyms, as in
+`feat(Network.Base): Enable L2 announcements`.
+
+Scopes usually name a component or deployment layer in dotted form and keep the
 component's capitalization. For the network platform stack, use `Network.Base`
-for changes to the implementation under `Network/Base/` and
-`Apps.Network.Base` for changes to its fleet deployment entry point under
-`Apps/Network/`. Use a more specific scope such as `Network.Base.Cilium` when
-the change is limited to that component. Related, coordinated changes may name
-both scopes, for example `feat(Apps.Network.Base, Network.Base): ...`. Avoid
-bare or nonstandard subjects such as `fix`, `ffix`, or `work on things`.
+for implementation changes under `Network/Base/` and `Apps.Network.Base` for
+its fleet/ApplicationSet entry point at `Apps/Network/Base.yaml`. Use a narrower
+scope such as `Network.Base.Cilium` when that component is the focus. A cohesive
+change may list related scopes separated by commas, for example
+`feat(Apps.Network.Base, Network.Base): ...`; list only components actually
+changed.
 
 Before changing a chart:
 

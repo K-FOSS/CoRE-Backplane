@@ -61,20 +61,38 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 
 ## Commit message conventions
 
-- Write commit subjects in Conventional Commit form: `type(scope): summary`.
-  Use a lowercase standard type such as `feat`, `fix`, `chore`, `docs`,
-  `refactor`, `test`, or `perf`; use `!` for a breaking change and explain it
-  in the body or footer.
-- Use a concise, specific summary after the colon. Keep the subject focused on
-  the change and avoid bare subjects such as `fix`, `oops`, or `work`.
-- Scope names follow repository paths in dotted form, preserving component
-  capitalization. For example, use `Network.Base` for the network platform
-  stack and `Apps.Network.Base` for its fleet/ApplicationSet entry point.
-  Prefer the most specific component scope when a change is contained within
-  one component, such as `Network.Base.Cilium`; use a comma-separated list of
-  related scopes when a commit intentionally changes coordinated components.
-- Use one subject for one cohesive change. Do not add a scope that does not
-  correspond to a changed component or deployment layer.
+- Write new commit subjects in Conventional Commit form:
+  `type(scope): summary`. The two-year history most often uses `feat`,
+  `chore`, and `fix`; `docs` and `test` are also established. Use a lowercase
+  standard type that describes the change. Do not copy historical typos or
+  nonstandard types such as `ffix`, `temp`, or `debug`.
+- Apply casing by field: keep the type lowercase; preserve the established
+  capitalization of scope components; write the summary in sentence case,
+  starting with an uppercase word and preserving normal product names and
+  acronyms. For example:
+  `feat(Network.Base): Enable L2 announcements`. Do not lowercase the scope or
+  force the summary to start lowercase.
+- Include a useful summary after the colon that says what changed. Keep it
+  concise and specific; summaries may use the repository's natural sentence
+  style, but avoid placeholders such as `Fix`, `Tidy up`, or `Work on things`
+  without the thing or outcome being identified. A commit body is optional;
+  the subject must still make sense on its own. Add a body when rationale,
+  operational impact, or other context needs more room.
+- Use a scope that identifies the primary repository component or deployment
+  layer. Scopes commonly use dotted component paths and preserve the
+  component's capitalization. For the network platform stack, use
+  `Network.Base` for implementation changes under `Network/Base/` and
+  `Apps.Network.Base` for its fleet/ApplicationSet entry point under
+  `Apps/Network/Base.yaml`. Use a narrower scope such as
+  `Network.Base.Cilium` when that component is the focus.
+- When one cohesive change intentionally spans components, list their scopes
+  separated by commas, for example
+  `feat(Apps.Network.Base, Network.Base): ...`. Keep the scope list limited to
+  components actually changed. A primary scope is sufficient for routine
+  coordinated edits when it clearly identifies the change.
+- Use one subject for one cohesive change. Do not leave the type or scope out,
+  and avoid bare subjects such as `fix` or `test` even though they appear in
+  older history.
 
 ## Documentation
 
