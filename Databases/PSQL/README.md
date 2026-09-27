@@ -136,14 +136,16 @@ unsafe queries to replicas.
 See the upstream [Pgpool-II connection settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection.html)
 and [failover behavior](https://www.pgpool.net/docs/latest/en/html/runtime-config-failover.html).
 
-Each PGPool pod also runs a small auto-recovery sidecar. It examines detached
-nodes reported by `SHOW POOL_NODES`, connects directly to each endpoint, and
-uses `pcp_attach_node` only when the endpoint reports `pg_is_in_recovery() =
-false`. This allows a recovered primary to rejoin without allowing the sidecar
-to promote PostgreSQL or attach a recovering standby; Patroni owns promotion,
-and PGPool owns standby reattachment through `auto_failback`. The sidecar uses
-the same pinned PGPool image and the existing operator credential Secret, and
-can be disabled with `pooler.autoRecovery.enabled`.
+Each PGPool pod also runs a small auto-recovery sidecar. It reads detached-node
+status through Pgpool's PCP control interface, which remains available when no
+backend is attached, then connects directly to each detached endpoint. It uses
+`pcp_attach_node` only when the endpoint reports `pg_is_in_recovery() = false`.
+This lets a recovered primary rejoin without allowing the sidecar to promote
+PostgreSQL or attach a recovering standby; Patroni owns promotion, and PGPool
+owns standby reattachment through `auto_failback`. Recovery inventory and
+attachment errors are reported to the sidecar log. The sidecar uses the same
+pinned PGPool image and the existing operator credential Secret, and can be
+disabled with `pooler.autoRecovery.enabled`.
 The sidecar follows the upstream [PCP command and password-file
 interface](https://pgpool.net/docs/latest/en/html/pcp-commands.html).
 
@@ -161,7 +163,9 @@ expands one target at a time; the merge generator then adds current destination
 and label data from registered Argo CD cluster Secrets. The one entry with
 `values.hub: true` supplies its cluster name, datacenter and region to the exact
 `psql.standbyHost` value in every render, while every other entry becomes a
-standby. Exactly one hub is required and ApplicationSet templating fails if the
+standby. The same cluster entries provide the main PostgreSQL instance count
+through `values.replicas`: the hub currently uses two instances and standbys use
+one. Exactly one hub is required and ApplicationSet templating fails if the
 list contains zero or multiple hubs.
 
 To move the hub, set the former entry's `values.hub` to `false` and the new
@@ -213,7 +217,32 @@ The bind password is still resolved from Vault at render/reconciliation time;
 do not put LDAP credentials in Helm values. PostgreSQL LDAP authentication is
 documented in the [PostgreSQL client authentication documentation](https://www.postgresql.org/docs/17/auth-ldap.html),
 PGPool LDAP parameters in the [PGPool pool_hba documentation](https://www.pgpool.net/docs/latest/en/html/auth-pool-hba-conf.html),
-and pgAdmin LDAP settings in the [pgAdmin LDAP authentication documentation](https://www.pgadmin.org/docs/pgadmin4/latest/ldap.html).
+pgAdmin LDAP settings in the [pgAdmin LDAP authentication documentation](https://www.pgadmin.org/docs/pgadmin4/latest/ldap.html),
+and pgAdmin SMTP settings in the [pgAdmin configuration documentation](https://www.pgadmin.org/docs/pgadmin4/latest/config_py.html).
+
+## LDAP PostgreSQL administrator
+
+Set `psql.ldapAdminUsername` in the site values to an approved LDAP username
+when that identity needs PostgreSQL administrator access. Each site-local
+render creates a Crossplane Terraform `Workspace` bound to the matching
+per-cluster `psql-<datacenter>-<region>` `ProviderConfig`; the workspace creates
+the username as a passwordless PostgreSQL `LOGIN`/`SUPERUSER` role. LDAP
+authenticates the username through the existing `pg_hba` rule, and PostgreSQL
+applies the role's administrator privileges. Leaving the value empty does not
+create the workspace or role. Verify the Workspace and role reconciliation
+before testing an LDAP login, and clear the value before removing the access
+workflow so Terraform can reconcile the role deletion.
+
+The Terraform PostgreSQL provider's [role resource](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/postgresql_role)
+is used for the role lifecycle, while Crossplane's [Terraform Workspace](https://marketplace.upbound.io/providers/upbound/provider-terraform/latest/resources/tf.upbound.io/Workspace/v1beta1)
+supplies the workflow and provider binding.
+
+pgAdmin sends mail through `mail.mylogin.space` using STARTTLS on port 587. It
+authenticates with the username and password generated for the `pgadmin-core`
+User claim and published through the existing `PSQL/PGAdmin/Credentials` Vault
+path. The default sender is generated per target as
+`pgadmin-<region>-<datacenter>@mail.mylogin.space` through the chart-owned
+`pgadmin-envs` ExternalSecret.
 
 The checked-in `restore` value is operationally significant. Inspect rendered
 output before every reconciliation and ensure restore resources reference the

@@ -21,40 +21,95 @@ data:
     printf '127.0.0.1:9898:%s:%s\n' "${PGPOOL_PCP_USER}" "${PGPOOL_PCP_PASSWORD}" > "${pcp_passfile}"
     trap 'rm -f "${pcp_passfile}"' EXIT INT TERM
 
+    last_failure=''
+    last_attach_failure=''
+    report_failure() {
+      if [ "${last_failure}" != "$1" ]; then
+        printf 'pgpool-auto-recovery: %s\n' "$1" >&2
+        last_failure="$1"
+      fi
+    }
+
     while :; do
-      nodes="$({
-        PGCONNECT_TIMEOUT="${CHECK_PGCONNECT_TIMEOUT:-2}" \
-        PGPASSWORD="${CHECK_PASSWORD}" \
-          psql \
-            --no-password \
-            --no-psqlrc \
-            --quiet \
-            --tuples-only \
-            --no-align \
-            --set=ON_ERROR_STOP=1 \
-            --host=127.0.0.1 \
-            --port=5432 \
-            --username="${CHECK_USER}" \
-            --dbname=template1 \
-            --command='SHOW pool_nodes'
-      } 2>/dev/null)" || {
+      node_count="$(PCPPASSFILE="${pcp_passfile}" \
+        /opt/pgpool-II/bin/pcp_node_count \
+          -h 127.0.0.1 \
+          -p 9898 \
+          -U "${PGPOOL_PCP_USER}" \
+          -w 2>/dev/null)" || {
+        report_failure 'could not read backend count through PCP'
         sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
         continue
       }
 
+      case "${node_count}" in
+        ''|*[!0-9]*)
+          report_failure 'PCP returned an invalid backend count'
+          sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
+          continue
+          ;;
+      esac
+
+      node_info="$(PCPPASSFILE="${pcp_passfile}" \
+        /opt/pgpool-II/bin/pcp_node_info \
+          -h 127.0.0.1 \
+          -p 9898 \
+          -U "${PGPOOL_PCP_USER}" \
+          -a \
+          -v \
+          -w 2>/dev/null)" || {
+        report_failure 'could not read backend details through PCP'
+        sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
+        continue
+      }
+
+      listed_count="$(printf '%s\n' "${node_info}" | awk '
+        /^[[:space:]]*Hostname[[:space:]]*:/ { count++ }
+        END { print count + 0 }
+      ')"
+      if [ "${listed_count}" -ne "${node_count}" ]; then
+        report_failure 'PCP backend count did not match its backend details'
+        sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
+        continue
+      fi
+      last_failure=''
+
       # Only attach a detached node after its endpoint independently reports
       # that it is a primary. Standby attachment remains owned by Pgpool's
-      # streaming-replication auto_failback logic.
-      printf '%s\n' "${nodes}" | awk -F '|' '
-        {
-          for (field = 1; field <= NF; field++) {
-            gsub(/^[[:space:]]+|[[:space:]]+$/, "", $field)
-          }
-          if ($4 == "down") {
-            print $1 "|" $2 "|" $3
+      # streaming-replication auto_failback logic. PCP remains usable when
+      # Pgpool cannot route SQL because every frontend backend is detached.
+      down_nodes="$(printf '%s\n' "${node_info}" | awk -F ':' '
+        BEGIN { node_id = -1 }
+        function trim(value) {
+          gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+          return value
+        }
+        function emit() {
+          if (have_node && status == "down" && host != "" && port ~ /^[0-9]+$/) {
+            printf "%d|%s|%s\n", node_id, host, port
           }
         }
-      ' | while IFS='|' read -r node host port; do
+        /^[[:space:]]*Hostname[[:space:]]*:/ {
+          emit()
+          node_id++
+          have_node = 1
+          host = trim(substr($0, index($0, ":") + 1))
+          port = ""
+          status = ""
+        }
+        /^[[:space:]]*Port[[:space:]]*:/ {
+          port = trim(substr($0, index($0, ":") + 1))
+        }
+        /^[[:space:]]*Status Name[[:space:]]*:/ {
+          status = trim(substr($0, index($0, ":") + 1))
+        }
+        END { emit() }
+      ')"
+      if [ -z "${down_nodes}" ]; then
+        last_attach_failure=''
+      fi
+
+      while IFS='|' read -r node host port; do
         [ -n "${node}" ] || continue
 
         is_primary="$({
@@ -76,15 +131,26 @@ data:
 
         [ "${is_primary}" = 't' ] || continue
 
-        PCPPASSFILE="${pcp_passfile}" \
+        if PCPPASSFILE="${pcp_passfile}" \
           /opt/pgpool-II/bin/pcp_attach_node \
             -h 127.0.0.1 \
             -p 9898 \
             -U "${PGPOOL_PCP_USER}" \
             -n "${node}" \
             -w \
-          >/dev/null 2>&1 || true
-      done
+          >/dev/null 2>&1; then
+          printf 'pgpool-auto-recovery: attached backend node %s after primary verification\n' "${node}" >&2
+          last_attach_failure=''
+          last_failure=''
+        else
+          if [ "${last_attach_failure}" != "${node}" ]; then
+            printf 'pgpool-auto-recovery: PCP could not attach backend node %s after primary verification\n' "${node}" >&2
+            last_attach_failure="${node}"
+          fi
+        fi
+      done <<EOF
+    ${down_nodes}
+    EOF
 
       sleep "${AUTO_RECOVERY_POLL_PERIOD:-10}"
     done
