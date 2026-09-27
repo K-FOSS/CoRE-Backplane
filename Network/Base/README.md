@@ -41,6 +41,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | --- | --- |
 | [Cilium](https://docs.cilium.io/en/stable/) | Helm dependency providing the primary CNI, cluster mesh, BGP control plane, and local `CiliumEgressGatewayPolicy`. See [BGP resources](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-configuration/) and [egress gateway](https://docs.cilium.io/en/stable/network/egress-gateway/egress-gateway/). |
 | [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) | Remote Kustomize resource installing thick Multus and the NetworkAttachmentDefinition CRD. The ApplicationSet patches its images, resources, and host network-namespace path. |
+| [CNI DHCP IPAM](https://www.cni.dev/plugins/current/ipam/dhcp/) | Installed conditionally into Multus' host CNI binary directory and served by a DHCP daemon sidecar when KubeVIP is enabled. |
 | [Multus dynamic networks controller](https://github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller) | Remote Kustomize resource installing the per-node dynamic attachment controller. |
 | [SR-IOV CNI](https://github.com/k8snetworkplumbingwg/sriov-cni) | Remote Kustomize resource installing the SR-IOV CNI binary on nodes. |
 | [SR-IOV network device plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin) | Remote Kustomize resource plus Helm-rendered `sriovdp-config`. The owning ApplicationSet supplies its resource pools through `sriovDevicePlugin.resourceList`. The patch in `kustomization.yaml` sets the `kube-sriovdp` CPU request to `16m`; memory and limits retain upstream values. |
@@ -63,8 +64,8 @@ The primary value groups are `cilium`, `sriov-network-operator`, `cf-dns`,
 belong in the owning ApplicationSet rather than as additional literals in this
 directory.
 
-`kubeVip.enabled` is false in the chart and both site generator entries. The
-Home1 entry describes the existing YVR UPnP WAN attachment pattern: SR-IOV
+`kubeVip.enabled` is false in the chart and DC1 generator entry; it is enabled
+for Home1. The Home1 entry describes the YVR UPnP WAN attachment: SR-IOV
 resource `intel.com/intel_x540_netdevice_port0`, VLAN 150, MTU 1500. The resource
 is used by the node device plugin, and Multus injects its device request from the
 NetworkAttachmentDefinition annotation. When enabled, the generated KubeVIP DaemonSet uses
@@ -73,6 +74,9 @@ primary Cilium interface for Kubernetes API access. The CNI `plugin` map is
 passed through, so a site can choose a supported bridge or SR-IOV CNI and
 configure IPAM, MTU, VLAN, and related options. Any IPAM configuration must
 allocate unique attachment addresses across nodes and preserve API connectivity.
+Home1 reserves `10.0.0.39-10.0.0.49` as its LoadBalancer VIP range on VLAN 150.
+Exclude these addresses from DHCP allocation and keep them unused by other
+static hosts.
 
 When enabling the addon, set `kubeVip.vipRange` to an explicitly reserved CIDR
 or range on that L2 network. Rendering fails if the addon is enabled without a
@@ -94,16 +98,17 @@ when annotated `kube-vip.io/forwardUPNP: 'true'`; the exposed Service port is
 then forwarded by the gateway to the Service VIP. See the upstream
 [UPnP service configuration](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
 
-UPnP requires the secondary interface to have a unique WAN IP address on each
-KubeVIP pod. Configure `kubeVip.network.plugin.ipam` for the selected CNI and
-ensure its IPAM binary and any required daemon are installed on every target
-node. For example, the [CNI DHCP IPAM plugin](https://www.cni.dev/plugins/current/ipam/dhcp/)
-uses `type: 'dhcp'` and requires its host daemon and a DHCP server on VLAN 150.
-Network/Base does not currently install that daemon. Rendering fails when UPnP
-is enabled without an IPAM configuration. Do not reuse NATPuncher's static
-`10.0.0.10/24` attachment: KubeVIP runs as a DaemonSet and multiple pods would
-collide. The network `plugin` map is passed through to Multus to support
-site-specific IPAM while retaining VLAN and device configuration.
+Each KubeVIP DaemonSet pod needs a distinct WAN IP for DHCP and UPnP. Home1 uses
+the [CNI DHCP IPAM plugin](https://www.cni.dev/plugins/current/ipam/dhcp/) on
+VLAN 150 and skips DHCP default-route installation so Cilium remains the pod's
+default route. The Multus DaemonSet installs the DHCP CNI binary and runs its
+required daemon only while KubeVIP is enabled. Ensure the VLAN 150 DHCP server
+has enough leases and excludes `10.0.0.39-10.0.0.49`, the Service VIP pool.
+`.35` is a single address, so it cannot be statically assigned to every
+DaemonSet pod; use a DHCP reservation for one specific VF MAC only if a fixed
+lease at `.35` is required. Do not reuse NATPuncher's static `10.0.0.10/24`
+attachment: multiple KubeVIP pods would collide. The network `plugin` map is
+passed through to Multus so other sites can configure their own IPAM.
 
 `sriovDevicePlugin.resourceList` is required and must contain at least one
 device-plugin resource-pool object. Its objects are passed to the upstream

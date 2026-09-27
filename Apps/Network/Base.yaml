@@ -70,13 +70,22 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     kubeVip:
-                      enabled: false
+                      enabled: true
+                      vipRange: '10.0.0.39-10.0.0.49'
                       network:
                         resourceName: 'intel.com/intel_x540_netdevice_port0'
                         plugin:
                           type: 'sriov'
                           vlan: 150
                           mtu: 1500
+                          ipam:
+                            type: 'dhcp'
+                            daemonSocketPath: '/run/cni/dhcp.sock'
+                            request:
+                              - skipDefault: true
+                            provide:
+                              - option: 'host-name'
+                                fromArg: 'K8S_POD_NAME'
                       upnp:
                         enabled: true
                     kubeDNS:
@@ -251,6 +260,55 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                  {{ if .values.kubeVip.enabled }}
+                  - target:
+                      kind: DaemonSet
+                      name: kube-multus-ds
+                    patch: |
+                      apiVersion: apps/v1
+                      kind: DaemonSet
+                      metadata:
+                        name: kube-multus-ds
+                      spec:
+                        template:
+                          spec:
+                            initContainers:
+                              - name: install-dhcp-cni
+                                image: rancher/hardened-cni-plugins:v1.9.1-build20260511
+                                env:
+                                  - name: SKIP_CNI_BINARIES
+                                    value: 'bandwidth,bridge,firewall,flannel,host-device,host-local,ipvlan,loopback,macvlan,portmap,ptp,sbr,static,tuning,vlan,vrf'
+                                  - name: UPDATE_CNI_BINARIES
+                                    value: 'false'
+                                volumeMounts:
+                                  - name: cnibin
+                                    mountPath: /host/opt/cni/bin
+                            containers:
+                              - name: kube-multus
+                                volumeMounts:
+                                  - name: host-run-cni
+                                    mountPath: /run/cni
+                              - name: dhcp-cni-daemon
+                                image: rancher/hardened-cni-plugins:v1.9.1-build20260511
+                                command: ['/bin/sh', '-c']
+                                args: ['rm -f /run/cni/dhcp.sock && exec /host/opt/cni/bin/dhcp daemon']
+                                securityContext:
+                                  capabilities:
+                                    add: ['NET_ADMIN', 'NET_RAW']
+                                volumeMounts:
+                                  - name: cnibin
+                                    mountPath: /host/opt/cni/bin
+                                    readOnly: true
+                                  - name: host-run-cni
+                                    mountPath: /run/cni
+                                  - name: host-run-netns
+                                    mountPath: /run/netns
+                            volumes:
+                              - name: host-run-cni
+                                hostPath:
+                                  path: /run/cni
+                                  type: DirectoryOrCreate
+                  {{ end }}
                   - target:
                       kind: DaemonSet
                       name: kube-multus-ds
