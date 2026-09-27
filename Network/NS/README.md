@@ -44,9 +44,18 @@ The chart renders:
   DC1 and KubeVIP in Home1. The
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md)
   is pinned to its multi-architecture manifest digest.
-- [PowerDNS-Admin 0.4.2](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v0.4.2)
-  behind an [Envoy Gateway security policy](https://gateway.envoyproxy.io/docs/api/extension_types/#securitypolicy)
-  and fail-closed [Authentik forward authentication](https://docs.goauthentik.io/add-secure-apps/providers/proxy/server_envoy/).
+- [PowerDNS-Admin 2026.08.1](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v2026.08.1)
+  provides forward and reverse zone management against this PowerDNS API. Its
+  [official multi-architecture image](https://hub.docker.com/r/powerdnsadmin/pda-legacy/tags)
+  is pinned by manifest digest. The UI is available
+  at a per-site `nsadmin.<cluster>.<datacenter>.<region>.resolvemy.host`
+  hostname. Each site has a separate
+  [Authentik OAuth2/OIDC provider](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/)
+  restricted to the
+  `Network` group; native LDAP stays enabled for existing LDAP logins and its
+  configured user/admin group role mapping. OIDC-created accounts receive the
+  application's default user role until an administrator assigns zone access.
+  Local password login and signup are disabled.
 - [External Secrets Operator](https://external-secrets.io/latest/) resources
   for the PowerDNS API key and database, LDAP, and application credentials.
 - The [BJW-S common library chart 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
@@ -89,8 +98,17 @@ Secrets must populate the referenced Kubernetes Secrets before PowerDNS and
 PowerDNS-Admin can become ready. PowerDNS connects to the
 [cluster-local Pgpool `psql` Service](../../Databases/PSQL/README.md) using the
 FQDN injected by the ApplicationSet; its database credentials remain
-secret-backed. PowerDNS-Admin uses the internal PowerDNS API Service. Envoy
-Gateway calls the Authentik external-auth service before allowing UI traffic.
+secret-backed. PowerDNS-Admin uses the internal PowerDNS API Service and
+handles UI authentication itself with Authentik OIDC or LDAP. Gateway
+forward-auth is no longer used for this route; Authentik's OIDC application
+policy limits OIDC login to the `Network` group, while LDAP retains its
+PowerDNS-Admin role mapping.
+The Authentik provider credentials are generated per site by the
+[Authentik Terraform provider](https://registry.terraform.io/providers/goauthentik/authentik/latest/docs/resources/provider_oauth2)
+Workspace and written to its local `ns-core-nsadmin-oidc` connection
+Secret, consumed by the PowerDNS-Admin container. The provider registers strict
+`/oidc/authorized` and `/oidc/logged-out` URLs for that site's hostname. Keep
+these callback URLs aligned if the hostname or OIDC routes change.
 
 The deployment requires the PowerDNS PostgreSQL schema and user, the
 `mainvault-core` and `corevault-rootsecrets` `ClusterSecretStore` objects,

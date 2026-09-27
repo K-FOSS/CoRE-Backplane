@@ -85,6 +85,10 @@ controllers:
           tag: {{ .Values.images.powerdnsAdmin.tag | quote }}
           pullPolicy: {{ .Values.images.powerdnsAdmin.pullPolicy }}
         env:
+          - name: LOCAL_DB_ENABLED
+            value: 'False'
+          - name: SIGNUP_ENABLED
+            value: 'False'
           - name: PDNS_API_URL
             value: 'http://{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice:8081'
           - name: PDNS_API_KEY
@@ -125,6 +129,26 @@ controllers:
               secretKeyRef:
                 name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-creds'
                 key: password
+          - name: OIDC_OAUTH_ENABLED
+            value: 'True'
+          - name: OIDC_OAUTH_KEY
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-oidc'
+                key: client_id
+          - name: OIDC_OAUTH_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-nsadmin-oidc'
+                key: client_secret
+          - name: OIDC_OAUTH_SCOPE
+            value: 'openid email profile'
+          - name: OIDC_OAUTH_AUTO_CONFIGURE
+            value: 'True'
+          - name: OIDC_OAUTH_METADATA_URL
+            value: 'https://idp.mylogin.space/application/o/{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-{{ .Values.cluster.name }}/.well-known/openid-configuration'
+          - name: OIDC_OAUTH_USERNAME
+            value: 'preferred_username'
           - name: GUNICORN_LOGLEVEL
             value: {{ .Values.powerdnsAdmin.gunicorn.logLevel | quote }}
           - name: GUNICORN_TIMEOUT

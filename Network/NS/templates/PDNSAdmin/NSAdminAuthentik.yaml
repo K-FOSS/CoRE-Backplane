@@ -1,0 +1,90 @@
+{{- if not .Values.hub }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-oidc'
+spec:
+  providerConfigRef:
+    name: 'authentik'
+  writeConnectionSecretToRef:
+    namespace: '{{ .Release.Namespace }}'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-oidc'
+  forProvider:
+    source: 'Inline'
+    module: | # hcl
+      resource "random_password" "client_id" {
+        length  = 48
+        lower   = true
+        numeric = true
+        upper   = true
+        special = false
+      }
+
+      resource "random_password" "client_secret" {
+        length  = 96
+        lower   = true
+        numeric = true
+        upper   = true
+        special = false
+      }
+
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+      data "authentik_property_mapping_provider_scope" "scopes" {
+        managed_list = [
+          "goauthentik.io/providers/oauth2/scope-email",
+          "goauthentik.io/providers/oauth2/scope-openid",
+          "goauthentik.io/providers/oauth2/scope-profile",
+        ]
+      }
+      data "authentik_certificate_key_pair" "signing" {
+        name = "tls"
+      }
+      data "authentik_group" "network" {
+        name = "Network"
+      }
+      resource "authentik_provider_oauth2" "nsadmin" {
+        name          = "PowerDNS Admin {{ .Values.cluster.name }}"
+        client_id     = random_password.client_id.result
+        client_secret = random_password.client_secret.result
+        client_type   = "confidential"
+        signing_key   = data.authentik_certificate_key_pair.signing.id
+        allowed_redirect_uris = [
+          {
+            matching_mode = "strict"
+            url           = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}/oidc/authorized"
+          },
+          {
+            matching_mode = "strict"
+            url           = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}/oidc/logged-out"
+          },
+        ]
+        property_mappings     = data.authentik_property_mapping_provider_scope.scopes.ids
+        authorization_flow    = data.authentik_flow.authorization.id
+        invalidation_flow     = data.authentik_flow.invalidation.id
+        access_token_validity = "hours=8"
+      }
+      resource "authentik_application" "nsadmin" {
+        name              = "PowerDNS Admin {{ .Values.cluster.name }}"
+        slug              = "{{ include "bjw-s.common.lib.chart.names.fullname" . }}-{{ .Values.cluster.name }}"
+        meta_launch_url   = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}"
+        protocol_provider = authentik_provider_oauth2.nsadmin.id
+      }
+      resource "authentik_policy_binding" "network_access" {
+        target = authentik_application.nsadmin.uuid
+        group  = data.authentik_group.network.id
+        order  = 0
+      }
+      output "client_id" {
+        value     = authentik_provider_oauth2.nsadmin.client_id
+        sensitive = true
+      }
+      output "client_secret" {
+        value     = random_password.client_secret.result
+        sensitive = true
+      }
+{{- end }}

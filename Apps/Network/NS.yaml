@@ -18,6 +18,8 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    powerdnsAdmin:
+                      hostname: 'nsadmin.core-dc1-talos-prod.dc1.yxl.resolvemy.host'
                     nameserver:
                       domain: 'ns4.resolvemy.host'
                       address:
@@ -27,6 +29,8 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    powerdnsAdmin:
+                      hostname: 'nsadmin.core-home1-talos-prod.home1.yvr.resolvemy.host'
                     nameserver:
                       domain: 'ns2.resolvemy.host'
                       dns:
@@ -111,6 +115,11 @@ spec:
                       {{ end }}
                       purelb.io/service-group: '{{ .values.nameserver.address.serviceGroup }}'
                       {{ end }}
+
+                powerdnsAdmin:
+                  route:
+                    hostnames:
+                      - '{{ .values.powerdnsAdmin.hostname }}'
 
       destination:
         server: '{{ .server }}'
