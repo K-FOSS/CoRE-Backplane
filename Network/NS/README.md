@@ -39,7 +39,7 @@ the two-per-site replica count as deployed pod capacity.
 
 The chart renders:
 
-- [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
+- [PowerDNS Authoritative Server 5.1.4](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.4)
   backed by PostgreSQL and exposed on TCP and UDP port 53 through PureLB in
   DC1 and KubeVIP in Home1. The
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md)
@@ -135,7 +135,7 @@ also delay visibility of database or API changes for up to five minutes. Use
 change must be visible immediately; this clears cache state but does not alter
 zone data.
 
-The upgrade from 4.9.14 to 5.1.3 follows the
+The upgrade from 4.9.14 to 5.1.4 follows the
 [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html).
 PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query.
 During upgrade verification, test a harmless RFC 2136 update and rollback,
