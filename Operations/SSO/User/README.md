@@ -103,7 +103,7 @@ generated password is 16 characters.
 | `spec.ldaps.uri` | URI prefix used in the emitted `ldapsURI`; defaults to `ldaps://`. |
 | `spec.psql.enabled` | Enables PostgreSQL role/grant reconciliation. |
 | `spec.psql.hostname` | PostgreSQL host included in the emitted `psqlURI`; defaults to `psql-int.mylogin.space`. |
-| `spec.psql.uri` | URI scheme/prefix included in the emitted `psqlURI`; defaults to `postgres://`. |
+| `spec.psql.uri` | SQLAlchemy PostgreSQL URI scheme/prefix included in the emitted `psqlURI`; defaults to `postgresql://`. |
 | `spec.psql.createUserDatabase` | Creates a database named after the username unless set to `false`; schema default is `true`. |
 | `spec.psql.databases[]` | Existing databases on which grants are applied. |
 | `spec.psql.crossplane.*Provider` | Overrides PostgreSQL provider configuration names. |
@@ -120,6 +120,11 @@ generated password is 16 characters.
 | `spec.s3.crossplane.*Provider` | Overrides MinIO/S3 provider configuration names. |
 | `spec.writeConnectionSecretToRef.name` | Claim connection Secret written in the claim namespace. |
 
+`spec.psql.uri` controls only the URI published in `psqlURI`; PostgreSQL
+resource creation uses the selected provider configs. Use `postgresql://` for
+SQLAlchemy clients; existing claims with an explicit `postgres://` value must
+be updated because XRD default changes do not rewrite stored claim values.
+
 ### Schema fields that are not implemented
 
 The XRD currently exposes more intent than the Composition consumes:
@@ -131,11 +136,6 @@ The XRD currently exposes more intent than the Composition consumes:
 - `mysql` and `mongodb` have schemas but create no resources or connection
   details.
 - `AVoIP` is not consumed.
-- `psql.uri` only prefixes the emitted `psqlURI`; it does not configure the
-  PostgreSQL managed resource connection. Select that database controller
-  with `psql.crossplane.crossplaneProvider` and the Terraform grants provider
-  with `psql.crossplane.terraformProvider`.
-
 Do not rely on these fields until both the composition and this document are
 updated. Schema acceptance is not evidence that a feature is implemented.
 

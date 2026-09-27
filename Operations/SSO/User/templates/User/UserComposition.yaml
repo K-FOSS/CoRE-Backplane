@@ -88,7 +88,7 @@ spec:
                   psql:
                     hostname: {{ default "psql-int.mylogin.space" .observed.composite.resource.spec.psql.hostname }}
                     port: 5432
-                    uri: postgres://
+                    uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
 
                   mqtts:
                     hostname: mqtt.mylogin.space

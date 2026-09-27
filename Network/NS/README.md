@@ -114,6 +114,9 @@ it from `ns-core-nsadmin-creds`, and [Stakater Reloader's Secret annotation](htt
 restarts the app when that Secret changes. These credentials are not pushed to
 the shared Vault database path. Claim deletion orphans its PostgreSQL
 resources, so removal needs a separate database and role cleanup decision.
+The claim explicitly uses SQLAlchemy's `postgresql://` URI scheme; PowerDNS-Admin's
+[v0.5.1 release notes](https://github.com/PowerDNS-Admin/PowerDNS-Admin/releases/tag/v0.5.1)
+document that SQLAlchemy 1.4 removed support for the old `postgres://` form.
 
 The current PostgreSQL topology makes `core-dc1-talos-prod` a physical standby
 of the writable Home1 hub. A standby cannot accept the role/database writes
