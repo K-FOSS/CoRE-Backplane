@@ -182,6 +182,19 @@ changes and complete requested deployments through Argo CD. See the
 [authorization boundaries](AGENTS.md#standing-git-and-reconciliation-authorization)
 and [Git/Argo CD procedure](docs/OPERATIONS.md#agent-git-and-argo-cd-procedure).
 
+### Commit messages
+
+Use Conventional Commit subjects in the form `type(scope): summary`, with a
+lowercase type such as `feat`, `fix`, `chore`, or `docs` and a short, specific
+summary. Scope names mirror repository paths in dotted form and keep the
+component's capitalization. For the network platform stack, use `Network.Base`
+for changes to the implementation under `Network/Base/` and
+`Apps.Network.Base` for changes to its fleet deployment entry point under
+`Apps/Network/`. Use a more specific scope such as `Network.Base.Cilium` when
+the change is limited to that component. Related, coordinated changes may name
+both scopes, for example `feat(Apps.Network.Base, Network.Base): ...`. Avoid
+bare or nonstandard subjects such as `fix`, `ffix`, or `work on things`.
+
 Before changing a chart:
 
 1. Identify its owning ApplicationSet under `Apps/` and the clusters selected

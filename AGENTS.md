@@ -59,6 +59,23 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   do not require a cluster sync. Follow the detailed
   [Git and Argo CD operating procedure](docs/OPERATIONS.md#agent-git-and-argo-cd-procedure).
 
+## Commit message conventions
+
+- Write commit subjects in Conventional Commit form: `type(scope): summary`.
+  Use a lowercase standard type such as `feat`, `fix`, `chore`, `docs`,
+  `refactor`, `test`, or `perf`; use `!` for a breaking change and explain it
+  in the body or footer.
+- Use a concise, specific summary after the colon. Keep the subject focused on
+  the change and avoid bare subjects such as `fix`, `oops`, or `work`.
+- Scope names follow repository paths in dotted form, preserving component
+  capitalization. For example, use `Network.Base` for the network platform
+  stack and `Apps.Network.Base` for its fleet/ApplicationSet entry point.
+  Prefer the most specific component scope when a change is contained within
+  one component, such as `Network.Base.Cilium`; use a comma-separated list of
+  related scopes when a commit intentionally changes coordinated components.
+- Use one subject for one cohesive change. Do not add a scope that does not
+  correspond to a changed component or deployment layer.
+
 ## Documentation
 
 - Documentation for every external chart, image, plugin, controller, provider,
