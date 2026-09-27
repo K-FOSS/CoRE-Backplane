@@ -1,43 +1,214 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
+{{- if and (gt (int .Values.chrony.replicas) 1) (not .Values.ntsScaling.enabled) }}
+{{- fail "chrony.replicas greater than one requires ntsScaling.enabled=true" }}
+{{- end }}
+{{- if and (gt (int .Values.chrony.replicas) 1) (not .Values.keyAuthority.enabled) }}
+{{- fail "chrony.replicas greater than one requires keyAuthority.enabled=true" }}
+{{- end }}
+{{- if and .Values.nts.enabled (not .Values.nts.secretName) }}
+{{- fail "nts.secretName is required when NTS is enabled" }}
+{{- end }}
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled (ne (int .Values.chrony.ntsrotate) 0) }}
+{{- fail "chrony.ntsrotate must be 0 when shared NTS key scaling is enabled" }}
+{{- end }}
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled (not .Values.keyAuthority.enabled) }}
+{{- fail "ntsScaling.enabled requires keyAuthority.enabled=true" }}
+{{- end }}
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled (ne .Values.keyAuthority.canonicalKey.accessMode "ReadWriteMany") }}
+{{- fail "the canonical NTS key PVC must use ReadWriteMany" }}
+{{- end }}
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled (not .Values.keyAuthority.canonicalKey.existingClaim) (not .Values.keyAuthority.canonicalKey.size) }}
+{{- fail "canonical NTS key storage requires a size or existingClaim" }}
+{{- end }}
+
 {{- define "core-network-time.commonValues" -}}
 global:
   nameOverride: {{ .Values.global.nameOverride | quote }}
   fullnameOverride: {{ .Values.global.nameOverride | quote }}
 
 controllers:
-  main:
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled .Values.keyAuthority.enabled }}
+  key-authority:
     type: 'deployment'
-    replicas: {{ .Values.ntp.replicas }}
+    replicas: 1
+    strategy: 'Recreate'
+    annotations:
+      argocd.argoproj.io/sync-wave: '1'
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 101
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: 'RuntimeDefault'
+      terminationGracePeriodSeconds: 30
+    containers:
+      main:
+        image:
+          repository: {{ .Values.keyAuthority.image.repository | quote }}
+          tag: {{ .Values.keyAuthority.image.tag | quote }}
+          pullPolicy: {{ .Values.keyAuthority.image.pullPolicy }}
+        command:
+          - '/bin/sh'
+          - '-c'
+          - |
+            set -eu
+            umask 077
+            mkdir -p '/etc/chrony'
+            printf '%s\n' \
+              'port 0' \
+              'bindaddress 127.0.0.1' \
+              'ntsport 4460' \
+              'ntsdumpdir /var/lib/nts-authority' \
+              'ntsrotate '"$NTS_ROTATE" \
+              'ntsprocesses '"$NTS_PROCESSES" \
+              'maxntsconnections '"$MAX_NTS_CONNECTIONS" \
+              'ntsservercert /etc/chrony-tls/tls.crt' \
+              'ntsserverkey /etc/chrony-tls/tls.key' \
+              'cmdport 0' > /etc/chrony/chrony.conf
+            exec chronyd -x -U -d -L "$LOG_LEVEL" -f /etc/chrony/chrony.conf
+        env:
+          - name: 'NTS_ROTATE'
+            value: {{ .Values.keyAuthority.rotationInterval | quote }}
+          - name: 'NTS_PROCESSES'
+            value: {{ .Values.chrony.ntsprocesses | quote }}
+          - name: 'MAX_NTS_CONNECTIONS'
+            value: {{ .Values.chrony.maxntsconnections | quote }}
+          - name: 'LOG_LEVEL'
+            value: {{ .Values.ntp.logLevel | quote }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ['ALL']
+          privileged: false
+          readOnlyRootFilesystem: true
+        resources:
+{{ toYaml .Values.keyAuthority.resources | nindent 10 }}
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command: ['/bin/sh', '-c', "test -s /var/lib/nts-authority/ntskeys && test \"$(stat -c %a /var/lib/nts-authority/ntskeys)\" = 600"]
+              periodSeconds: 30
+              timeoutSeconds: 5
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - '/bin/sh'
+                  - '-c'
+                  - |
+                    set -eu
+                    key='/var/lib/nts-authority/ntskeys'
+                    test -s "$key"
+                    test "$(stat -c %a "$key")" = 600
+                    age=$(( $(date +%s) - $(stat -c %Y "$key") ))
+                    test "$age" -ge 0
+                    test "$age" -le $((NTS_ROTATE * 2))
+              periodSeconds: 15
+              timeoutSeconds: 5
+{{- end }}
+  chrony:
+    type: 'statefulset'
+    replicas: {{ .Values.chrony.replicas }}
     strategy: 'RollingUpdate'
+    annotations:
+      argocd.argoproj.io/sync-wave: '3'
+    podDisruptionBudget:
+{{ toYaml .Values.chrony.podDisruptionBudget | nindent 6 }}
+    statefulset:
+      podManagementPolicy: 'Parallel'
+      serviceName:
+        identifier: 'main'
+      persistentVolumeClaimRetentionPolicy:
+        whenDeleted: 'Retain'
+        whenScaled: 'Retain'
+      volumeClaimTemplates:
+        - name: 'chrony-state'
+          accessMode: 'ReadWriteOnce'
+          size: {{ .Values.chrony.stateSize | quote }}
+{{- with .Values.chrony.stateStorageClass }}
+          storageClass: {{ . | quote }}
+{{- end }}
+          advancedMounts:
+            main:
+              - path: '/var/lib/chrony'
+            exporter: []
+            permissions: []
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+            key-sync-init:
+              - path: '/var/lib/chrony'
+            key-sync:
+              - path: '/var/lib/chrony'
+{{- end }}
     initContainers:
       permissions:
         image:
           repository: {{ .Values.images.permissions.repository | quote }}
           tag: {{ .Values.images.permissions.tag | quote }}
           pullPolicy: {{ .Values.images.permissions.pullPolicy }}
+        command: ['/bin/sh', '-c', "chown 100:101 /run/chrony && chmod 770 /run/chrony"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add: ['CHOWN', 'FOWNER']
+            drop: ['ALL']
+          privileged: false
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+      key-sync-init:
+        image:
+          repository: {{ .Values.images.chrony.repository | quote }}
+          tag: {{ .Values.images.chrony.tag | quote }}
+          pullPolicy: {{ .Values.images.chrony.pullPolicy }}
         command:
           - '/bin/sh'
           - '-c'
           - |
             set -eu
-            chown '100:101' '/run/chrony'
-            chmod '0770' '/run/chrony'
+            canonical='/var/lib/nts-canonical/ntskeys'
+            local='/var/lib/chrony/ntskeys'
+            attempt=0
+            while [ "$attempt" -lt 60 ]; do
+              if [ -s "$canonical" ] && [ "$(stat -c %a "$canonical")" = 600 ] && [ "$(stat -c %u:%g "$canonical")" = '100:101' ]; then
+                tmp="${local}.tmp.$$"
+                cp "$canonical" "$tmp"
+                chmod 600 "$tmp"
+                sync
+                mv -f "$tmp" "$local"
+                test -s "$local"
+                exit 0
+              fi
+              attempt=$((attempt + 1))
+              sleep 2
+            done
+            exit 1
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            add:
-              - 'CHOWN'
-              - 'FOWNER'
-            drop:
-              - 'ALL'
+            drop: ['ALL']
           privileged: false
-          runAsNonRoot: false
-          runAsUser: 0
-          runAsGroup: 0
+          runAsNonRoot: true
+          runAsUser: 100
+          runAsGroup: 101
+{{- end }}
     pod:
       automountServiceAccountToken: false
+      affinity:
+        podAntiAffinity:
+{{ toYaml .Values.chrony.antiAffinity | nindent 10 }}
+      topologySpreadConstraints:
+{{ toYaml .Values.chrony.topologySpreadConstraints | nindent 8 }}
       securityContext:
         fsGroup: 101
         runAsNonRoot: true
@@ -53,6 +224,14 @@ controllers:
           tag: {{ .Values.images.chrony.tag | quote }}
           pullPolicy: {{ .Values.images.chrony.pullPolicy }}
         ports:
+          - name: 'ntp'
+            containerPort: 123
+            protocol: 'UDP'
+{{- if .Values.nts.enabled }}
+          - name: 'nts'
+            containerPort: 4460
+            protocol: 'TCP'
+{{- end }}
           - name: 'command'
             containerPort: 323
             protocol: 'UDP'
@@ -61,36 +240,35 @@ controllers:
           - '-c'
           - |
             set -eu
+            umask 077
+            mkdir -p '/etc/chrony'
             printf '%s\n' '# Generated by the chart; do not edit in the pod.' > /etc/chrony/chrony.conf
             printf 'minsources %s\n' "$MINSOURCES" >> /etc/chrony/chrony.conf
             while IFS='|' read -r source_type hostname iburst nts maxsources; do
               [ -n "$hostname" ] || continue
               printf '%s %s' "$source_type" "$hostname" >> /etc/chrony/chrony.conf
-              if [ "$iburst" = 'true' ]; then
-                printf ' iburst' >> /etc/chrony/chrony.conf
-              fi
-              if [ "$nts" = 'true' ]; then
-                printf ' nts' >> /etc/chrony/chrony.conf
-              fi
-              if [ -n "$maxsources" ]; then
-                printf ' maxsources %s' "$maxsources" >> /etc/chrony/chrony.conf
-              fi
+              [ "$iburst" = 'true' ] && printf ' iburst' >> /etc/chrony/chrony.conf
+              [ "$nts" = 'true' ] && printf ' nts' >> /etc/chrony/chrony.conf
+              [ -n "$maxsources" ] && printf ' maxsources %s' "$maxsources" >> /etc/chrony/chrony.conf
               printf '\n' >> /etc/chrony/chrony.conf
             done <<EOF
             $NTP_SOURCES
             EOF
-            if [ "$NOCLIENTLOG" = 'true' ]; then
-              printf '%s\n' 'noclientlog' >> /etc/chrony/chrony.conf
-            fi
             printf '%s\n' 'allow all' 'driftfile /var/lib/chrony/chrony.drift' >> /etc/chrony/chrony.conf
             printf '%s\n' 'bindcmdaddress 0.0.0.0' 'cmdport 323' 'opencommands tracking sources clients' >> /etc/chrony/chrony.conf
-{{- range .Values.ntp.cmdAllowCidrs }}
+{{- range .Values.ntp.dashboardCommandCidrs }}
             printf '%s\n' 'cmdallow {{ . }}' >> /etc/chrony/chrony.conf
 {{- end }}
             printf '%s\n' 'bindcmdaddress /run/chrony/chronyd.sock' >> /etc/chrony/chrony.conf
-            printf '%s\n' 'ntsdumpdir /var/lib/chrony' >> /etc/chrony/chrony.conf
-            printf '%s\n' 'ntsservercert /etc/chrony-tls/tls.crt' >> /etc/chrony/chrony.conf
-            printf '%s\n' 'ntsserverkey /etc/chrony-tls/tls.key' >> /etc/chrony/chrony.conf
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+            printf '%s\n' 'ntsrotate 0' 'ntsdumpdir /var/lib/chrony' 'ntsntpserver {{ .Values.ntp.domain }}' >> /etc/chrony/chrony.conf
+{{- else if .Values.nts.enabled }}
+            printf '%s\n' 'ntsrotate {{ .Values.chrony.ntsrotate }}' 'ntsdumpdir /var/lib/chrony' >> /etc/chrony/chrony.conf
+{{- end }}
+            printf '%s\n' 'ntsprocesses '"$NTS_PROCESSES" 'maxntsconnections '"$MAX_NTS_CONNECTIONS" >> /etc/chrony/chrony.conf
+{{- if .Values.nts.enabled }}
+            printf '%s\n' 'ntsservercert /etc/chrony-tls/tls.crt' 'ntsserverkey /etc/chrony-tls/tls.key' >> /etc/chrony/chrony.conf
+{{- end }}
             exec chronyd -x -U -d -L "$LOG_LEVEL" -f /etc/chrony/chrony.conf
         env:
           - name: 'NTP_SOURCES'
@@ -100,6 +278,10 @@ controllers:
 {{- end }}
           - name: 'MINSOURCES'
             value: {{ .Values.ntp.minsources | quote }}
+          - name: 'NTS_PROCESSES'
+            value: {{ .Values.chrony.ntsprocesses | quote }}
+          - name: 'MAX_NTS_CONNECTIONS'
+            value: {{ .Values.chrony.maxntsconnections | quote }}
           - name: 'NOCLIENTLOG'
             value: {{ .Values.ntp.noClientLog | quote }}
           - name: 'LOG_LEVEL'
@@ -107,47 +289,50 @@ controllers:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            drop:
-              - 'ALL'
+            drop: ['ALL']
           privileged: false
           readOnlyRootFilesystem: true
         resources:
-{{ toYaml .Values.ntp.resources | nindent 10 }}
+{{ toYaml .Values.chrony.resources | nindent 10 }}
         probes:
           liveness:
             enabled: true
             custom: true
             spec:
               exec:
-                command:
-                  - 'chronyc'
-                  - '-n'
-                  - 'tracking'
-              initialDelaySeconds: 15
+                command: ['/bin/sh', '-c', 'chronyc tracking >/dev/null 2>&1']
+              initialDelaySeconds: 30
               periodSeconds: 30
               timeoutSeconds: 5
-              failureThreshold: 3
           readiness:
             enabled: true
             custom: true
             spec:
               exec:
                 command:
-                  - 'chronyc'
-                  - '-n'
-                  - 'tracking'
-              initialDelaySeconds: 15
+                  - '/bin/sh'
+                  - '-c'
+                  - |
+                    set -eu
+{{- if .Values.nts.enabled }}
+                    test -s /var/lib/chrony/ntskeys
+                    test "$(stat -c %a /var/lib/chrony/ntskeys)" = 600
+{{- end }}
+                    chronyc tracking | grep -q 'Leap status[[:space:]]*: Normal'
+                    grep -Eq '(^|:)007B[[:space:]]' /proc/net/udp /proc/net/udp6
+{{- if .Values.nts.enabled }}
+                    grep -Eq '(^|:)116C[[:space:]]' /proc/net/tcp /proc/net/tcp6
+{{- end }}
+              initialDelaySeconds: 30
               periodSeconds: 15
               timeoutSeconds: 5
-              failureThreshold: 3
+              failureThreshold: 4
       exporter:
         image:
           repository: {{ .Values.images.exporter.repository | quote }}
           tag: {{ .Values.images.exporter.tag | quote }}
           pullPolicy: {{ .Values.images.exporter.pullPolicy }}
-        args:
-          - '--chrony.address=127.0.0.1:323'
-          - '--collector.sourcestats'
+        args: ['--chrony.address=127.0.0.1:323', '--collector.sourcestats']
         ports:
           - name: 'metrics'
             containerPort: 9123
@@ -155,8 +340,7 @@ controllers:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            drop:
-              - 'ALL'
+            drop: ['ALL']
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -169,10 +353,88 @@ controllers:
           requests:
             cpu: '10m'
             memory: '16Mi'
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+      key-sync:
+        image:
+          repository: {{ .Values.images.chrony.repository | quote }}
+          tag: {{ .Values.images.chrony.tag | quote }}
+          pullPolicy: {{ .Values.images.chrony.pullPolicy }}
+        command:
+          - '/bin/sh'
+          - '-c'
+          - |
+            set -eu
+            canonical='/var/lib/nts-canonical/ntskeys'
+            local='/var/lib/chrony/ntskeys'
+            status='/run/key-sync/status'
+            mkdir -p '/run/key-sync'
+            loaded=0
+            backoff={{ .Values.keyAuthority.retryInitialSeconds }}
+            sync_interval={{ .Values.keyAuthority.syncInterval }}
+            while :; do
+              wait_for=$backoff
+              [ "$loaded" = 1 ] && wait_for=$sync_interval
+              if [ -s "$canonical" ]; then
+                mode=$(stat -c %a "$canonical" 2>/dev/null || true)
+                owner=$(stat -c %u:%g "$canonical" 2>/dev/null || true)
+                if [ "$mode" = 600 ] && [ "$owner" = '100:101' ]; then
+                  generation="$(stat -c '%Y:%s' "$canonical")"
+                  current="$(stat -c '%Y:%s' "$local" 2>/dev/null || true)"
+                  if [ "$loaded" = 0 ] || [ "$generation" != "$current" ]; then
+                    tmp="${local}.tmp.$$"
+                    backup="${local}.bak.$$"
+                    [ -s "$local" ] && cp "$local" "$backup" || true
+                    cp "$canonical" "$tmp"
+                    chmod 600 "$tmp"
+                    sync
+                    mv -f "$tmp" "$local"
+                    if chronyc rekey >/dev/null 2>&1 && chronyc tracking >/dev/null 2>&1; then
+                      printf '%s\n' "$generation" > "$status"
+                      rm -f "$backup"
+                      loaded=1
+                      backoff={{ .Values.keyAuthority.retryInitialSeconds }}
+                      wait_for=$sync_interval
+                    else
+                      [ -s "$backup" ] && mv -f "$backup" "$local" || true
+                      wait_for=$backoff
+                    fi
+                  fi
+                fi
+              fi
+              sleep "$wait_for"
+              if [ "$wait_for" = "$backoff" ] && [ "$backoff" -lt {{ .Values.keyAuthority.retryMaxSeconds }} ]; then
+                backoff=$((backoff * 2))
+                [ "$backoff" -le {{ .Values.keyAuthority.retryMaxSeconds }} ] || backoff={{ .Values.keyAuthority.retryMaxSeconds }}
+              fi
+            done
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ['ALL']
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 100
+          runAsGroup: 101
+        resources:
+{{ toYaml .Values.keySync.resources | nindent 10 }}
+        probes:
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command: ['/bin/sh', '-c', 'test -s /run/key-sync/status']
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 4
+{{- end }}
   ntp-dashboard:
     type: 'deployment'
     replicas: 1
     strategy: 'Recreate'
+    annotations:
+      argocd.argoproj.io/sync-wave: '5'
     pod:
       automountServiceAccountToken: false
       securityContext:
@@ -202,8 +464,7 @@ controllers:
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
-            drop:
-              - 'ALL'
+            drop: ['ALL']
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
@@ -231,19 +492,15 @@ controllers:
               periodSeconds: 15
               timeoutSeconds: 5
         resources:
-          limits:
-            cpu: '250m'
-            memory: '256Mi'
-          requests:
-            cpu: '25m'
-            memory: '64Mi'
+{{ toYaml .Values.dashboard.resources | nindent 10 }}
+
 service:
   main:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
-    controller: 'main'
+    controller: 'chrony'
     primary: true
     type: 'LoadBalancer'
-    #loadBalancerClass: 'purelb.io/purelb'
+    annotations: {{ .Values.service.main.annotations | toYaml | nindent 6 }}
     externalTrafficPolicy: 'Local'
     labels:
       wan-mode: 'public'
@@ -253,17 +510,18 @@ service:
         primary: true
         port: 123
         protocol: 'UDP'
-      metrics:
-        enabled: false
+{{- if .Values.nts.enabled }}
       nts:
         port: 4460
         protocol: 'TCP'
-
+{{- end }}
   metrics:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-metrics'
-    controller: 'main'
+    controller: 'chrony'
     type: 'ClusterIP'
     primary: false
+    annotations:
+      argocd.argoproj.io/sync-wave: '6'
     labels:
       app.kubernetes.io/component: 'ntp-metrics'
     ports:
@@ -272,12 +530,32 @@ service:
         port: 9123
         protocol: 'TCP'
         targetPort: 'metrics'
-
+  chrony-command:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-chrony-command'
+    controller: 'chrony'
+    type: 'ClusterIP'
+    primary: false
+    annotations:
+      argocd.argoproj.io/sync-wave: '4'
+    sessionAffinity: 'ClientIP'
+    sessionAffinityConfig:
+      clientIP:
+        timeoutSeconds: {{ .Values.dashboard.commandService.sessionAffinityTimeoutSeconds }}
+    labels:
+      app.kubernetes.io/component: 'chrony-command'
+    ports:
+      command:
+        primary: true
+        port: 323
+        protocol: 'UDP'
+        targetPort: 323
   ntp-dashboard:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
     controller: 'ntp-dashboard'
     type: 'ClusterIP'
     primary: false
+    annotations:
+      argocd.argoproj.io/sync-wave: '5'
     labels:
       app.kubernetes.io/component: 'ntp-dashboard'
     ports:
@@ -287,28 +565,12 @@ service:
         protocol: 'TCP'
         targetPort: 'dashboard'
 
-  chrony-command:
-    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-chrony-command'
-    controller: 'main'
-    type: 'ClusterIP'
-    primary: false
-    sessionAffinity: 'ClientIP'
-    sessionAffinityConfig:
-      clientIP:
-        timeoutSeconds: {{ .Values.ntp.cmdSessionAffinityTimeoutSeconds }}
-    labels:
-      app.kubernetes.io/component: 'chrony-command'
-    ports:
-      command:
-        primary: true
-        port: 323
-        protocol: 'UDP'
-        targetPort: 323
-
 route:
   ntp-dashboard:
     enabled: true
     kind: 'HTTPRoute'
+    annotations:
+      argocd.argoproj.io/sync-wave: '5'
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
     labels:
       wan-mode: 'public'
@@ -331,49 +593,108 @@ persistence:
     medium: 'Memory'
     sizeLimit: '1Mi'
     advancedMounts:
-      main:
+      chrony:
         main:
           - path: '/etc/chrony'
-        permissions:
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled .Values.keyAuthority.enabled }}
+      key-authority:
+        main:
           - path: '/etc/chrony'
+{{- end }}
   chrony-run:
     type: 'emptyDir'
     medium: 'Memory'
     sizeLimit: '1Mi'
     advancedMounts:
-      main:
+      chrony:
         main:
           - path: '/run/chrony'
         permissions:
           - path: '/run/chrony'
-  chrony-state:
-    type: 'persistentVolumeClaim'
-    accessMode: 'ReadWriteOnce'
-    size: '1Gi'
-    retain: true
-    advancedMounts:
-      main:
-        main:
-          - path: '/var/lib/chrony'
-        permissions:
-          - path: '/var/lib/chrony'
-  nts-tls:
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+        key-sync-init:
+          - path: '/run/chrony'
+        key-sync:
+          - path: '/run/chrony'
+{{- end }}
+  chrony-tls:
+    enabled: {{ .Values.nts.enabled }}
     type: 'secret'
     name: {{ .Values.nts.secretName | quote }}
     defaultMode: 0440
     advancedMounts:
-      main:
+      chrony:
         main:
           - path: '/etc/chrony-tls'
             readOnly: true
+        exporter: []
+        permissions: []
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+        key-sync-init: []
+        key-sync: []
+{{- end }}
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled .Values.keyAuthority.enabled }}
+      key-authority:
+        main:
+          - path: '/etc/chrony-tls'
+            readOnly: true
+{{- end }}
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+  nts-canonical:
+    type: 'persistentVolumeClaim'
+    retain: true
+    annotations:
+      argocd.argoproj.io/sync-wave: '0'
+{{- if .Values.keyAuthority.canonicalKey.existingClaim }}
+    existingClaim: {{ .Values.keyAuthority.canonicalKey.existingClaim | quote }}
+{{- else }}
+    accessMode: {{ .Values.keyAuthority.canonicalKey.accessMode | quote }}
+    size: {{ .Values.keyAuthority.canonicalKey.size | quote }}
+{{- with .Values.keyAuthority.canonicalKey.storageClass }}
+    storageClass: {{ . | quote }}
+{{- end }}
+{{- end }}
+    advancedMounts:
+      key-authority:
+        main:
+          - path: '/var/lib/nts-authority'
+      chrony:
+        main: []
+        exporter: []
+        permissions: []
+        key-sync-init:
+          - path: '/var/lib/nts-canonical'
+            readOnly: true
+        key-sync:
+          - path: '/var/lib/nts-canonical'
+            readOnly: true
+{{- end }}
+  key-sync-status:
+    type: 'emptyDir'
+    medium: 'Memory'
+    sizeLimit: '1Mi'
+    advancedMounts:
+      chrony:
+        main: []
+        exporter: []
+        permissions: []
+        key-sync-init: []
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled }}
+        key-sync:
+          - path: '/run/key-sync'
+{{- else }}
+        key-sync: []
+{{- end }}
   ntp-dashboard-data:
     type: 'persistentVolumeClaim'
     accessMode: 'ReadWriteOnce'
     size: '1Gi'
     retain: true
+    annotations:
+      argocd.argoproj.io/sync-wave: '0'
     advancedMounts:
       ntp-dashboard:
-        ntp-dashboard:
+        main:
           - path: '/app/data'
   ntp-dashboard-tmp:
     type: 'emptyDir'
@@ -381,16 +702,14 @@ persistence:
     sizeLimit: '16Mi'
     advancedMounts:
       ntp-dashboard:
-        ntp-dashboard:
+        main:
           - path: '/tmp'
 
 networkpolicies:
-  main:
+  chrony:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
-    controller: 'main'
-    policyTypes:
-      - 'Ingress'
-      - 'Egress'
+    controller: 'chrony'
+    policyTypes: ['Ingress', 'Egress']
     rules:
       ingress:
         - from:
@@ -399,8 +718,10 @@ networkpolicies:
           ports:
             - port: 'ntp'
               protocol: 'UDP'
+{{- if .Values.nts.enabled }}
             - port: 'nts'
               protocol: 'TCP'
+{{- end }}
         - from:
             - namespaceSelector:
                 matchLabels:
@@ -433,12 +754,14 @@ networkpolicies:
           ports:
             - port: 123
               protocol: 'UDP'
+{{- if .Values.nts.enabled }}
+            - port: 4460
+              protocol: 'TCP'
+{{- end }}
   ntp-dashboard:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-ntp-dashboard'
     controller: 'ntp-dashboard'
-    policyTypes:
-      - 'Ingress'
-      - 'Egress'
+    policyTypes: ['Ingress', 'Egress']
     rules:
       ingress:
         - from:
@@ -466,12 +789,19 @@ networkpolicies:
         - to:
             - podSelector:
                 matchLabels:
-                  app.kubernetes.io/controller: 'main'
+                  app.kubernetes.io/controller: 'chrony'
                   app.kubernetes.io/name: {{ .Values.global.nameOverride | quote }}
                   app.kubernetes.io/instance: {{ .Release.Name | quote }}
           ports:
             - port: 'command'
               protocol: 'UDP'
+{{- if and .Values.nts.enabled .Values.ntsScaling.enabled .Values.keyAuthority.enabled }}
+  key-authority:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-key-authority'
+    controller: 'key-authority'
+    policyTypes: ['Ingress', 'Egress']
+    rules: {}
+{{- end }}
 {{- end -}}
 
 {{- $commonValues := include "core-network-time.commonValues" . | fromYaml -}}

@@ -1,133 +1,84 @@
-# Public YXL NTP
+# CoRE-Backplane Network/Time Stack
 
-This rendering unit deploys a two-replica [chrony](https://chrony-project.org/documentation.html)
-NTP server through the [BJW-S common library chart](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common).
-It is owned by [`Apps/Network/Time.yaml`](../../Apps/Network/Time.yaml) and is
-currently selected only for `core-dc1-talos-prod` in YXL.
+This chart is a fresh-install design for a horizontally scalable [Chrony](https://chrony-project.org/documentation.html) NTP/NTS service. It is rendered through the [BJW-S common library chart](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common) and owned by [`Apps/Network/Time.yaml`](../../Apps/Network/Time.yaml). It does not migrate, copy, or import state from an existing installation.
 
-The Service is UDP/123 only, uses PureLB's `anycast` service group, explicitly
-requests `66.165.222.123`, and uses `externalTrafficPolicy: Local`. The pod is
-non-root, read-only-rootfs, capability-free, tokenless, and has a default-deny
-NetworkPolicy: public clients can send only NTP; egress is limited to DNS and
-UDP/123 upstream time servers. Client logging is enabled (`NOCLIENTLOG=false`)
-so Chrony can retain client activity for operational review.
-Kubernetes applies `fsGroup: 101` to the
-memory-backed configuration/runtime volumes and reapplies the ownership on
-every pod start. The rootless `100:101` user can also write the retained 1Gi
-`ReadWriteOnce` PVC mounted at `/var/lib/chrony`; see the Kubernetes
-[`fsGroupChangePolicy` documentation](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/#set-the-security-context-for-a-pod).
+## Topology
 
-The image is the immutable amd64 digest of the upstream
-[`simonrupf/docker-chronyd`](https://github.com/simonrupf/docker-chronyd) image,
-using its separate [NTS-enabled image variant](https://github.com/simonrupf/docker-chronyd#enable-network-time-security-nts-separate--nts-image).
-The default Alpine 3.24 image omits NTS support. The NTS variant runs chronyd
-as a non-root `chrony` user and supports the chart's runtime. The chart bypasses the image entrypoint because it attempts a
-privileged `chown` on `/run/chrony`; instead, the rootless user writes the
-generated config to `/etc/chrony` and starts chronyd without system-clock
-control. A short-lived init container assigns the memory-backed directories to
-UID/GID `100:101` and provides a writable `/run` memory volume; the rootless
-process creates `/run/chrony` with Chrony's required `0770` permissions
-before starting. The init container uses a pinned BusyBox image so its root
-ownership setup is independent of the Chrony image's entrypoint and user. This
-preserves the chart's `NTP_SOURCES`, `MINSOURCES`, `NOCLIENTLOG`, and
-`LOG_LEVEL` settings while allowing writes to the volumes.
+The default installation contains one singleton `key-authority` Deployment, two `chrony` StatefulSet replicas (each with a local chrony-exporter), one retained RWX PVC containing only canonical `ntskeys`, one retained RWO PVC per serving replica, and one retained RWO PVC plus memory-backed `/tmp` for the singleton NTP Dashboard. It also creates a public PureLB/anycast LoadBalancer for UDP/123 and TCP/4460, a private ClusterIP `chrony-command` Service for UDP/323, an internal metrics Service, and the existing ServiceMonitor/Grafana path.
 
-NTS is enabled for `syncmy.date`: Chrony serves NTS Key Establishment on
-TCP/4460 using the cert-manager-generated `syncmydate-default-certificates`
-Secret. The certificate and private key are mounted read-only and are
-readable by Chrony's UID/GID `100:101`; NTS cookie keys are persisted in the
-existing PVC. Chrony requires `ntsservercert` and
-`ntsserverkey` to enable the NTS-KE port; see the upstream
-[`chrony.conf` NTS directives](https://chrony-project.org/doc/4.8/chrony.conf.html#ntsservercert).
+The public Service selects only serving Chrony pods and keeps `externalTrafficPolicy: Local`. A PureLB node must therefore have a local Ready serving endpoint to accept externally routed traffic correctly. The key authority has no Service and is never selected by either public or command Service.
 
-## Reconciliation and verification
+## NTS cookie-key authority
 
-Argo CD renders this chart with the ApplicationSet merge and applies it to
-`core-prod`. PureLB must have an `anycast` service group/pool containing the
-requested address, and upstream routing/firewall policy must permit public UDP
-123. After sync, verify the Service address and local endpoints, then inspect
-chrony state with `chronyc tracking` and `chronyc sources` in the pod. From an
-external network, query `66.165.222.123` with an NTP client; a healthy server
-should not report stratum 16.
+TLS certificate/private-key material authenticates NTS-KE. The `ntskeys` file is separate symmetric cookie-key material used after NTS-KE. Sharing the TLS Secret alone cannot make replicas interoperate.
 
-The source configuration uses Cloudflare and Google time services. Configure
-the upstream sources and their `iburst`/`nts` options with the `ntp.sources`
-array, and the public hostname base with `ntp.domain`, in `values.yaml`. Roll
-back through
-Git and Argo CD; removing the Application does not remove the upstream route,
-PureLB pool allocation, or external firewall rules. The state PVC is retained
-when this release is removed; delete it deliberately only after confirming
-Chrony drift and NTS-cookie data is no longer needed. NTS clients also require
-TCP/4460 to be permitted to the public service in upstream firewall policy.
+The singleton key authority runs the pinned [NTS-enabled Chrony image](https://github.com/simonrupf/docker-chronyd#enable-network-time-security-nts-separate--nts-image) with automatic rotation and writes the retained `ntskeys` file to the dedicated RWX PVC. It is loopback-bound, has no public NTP/NTS endpoint, receives no ingress, and has no network Service. Only this workload mounts the canonical PVC read-write. The PVC must be an actual RWX claim, including when `existingClaim` is used.
 
-## Metrics and Grafana
+Each serving pod mounts that PVC read-only. Its key-sync sidecar validates ownership, mode, non-empty content, and generation; copies the file through a fsynced temporary file and atomic rename; calls local `chronyc rekey`; and records only generation/status data. The first successful load is required for readiness. A temporary authority outage does not restart a pod or discard its already-loaded keyset.
 
-Each Chrony pod also runs the pinned amd64 build of the
-[`chrony_exporter`](https://github.com/SuperQ/chrony_exporter) beside Chrony.
-The exporter queries Chrony's pod-local command endpoint at `127.0.0.1:323`
-and exposes TCP/9123 only through the internal `*-metrics` ClusterIP Service.
-Chrony retains its Unix command socket at `/run/chrony/chronyd.sock` for local
-administration, NTS key reloading, and health checks. The remote command port
-is available only through the internal UDP/323 Service and is restricted by
-both the Chrony `cmdallow` CIDRs and NetworkPolicy. NetworkPolicy enforces
-dashboard workload identity; `cmdallow` provides Chrony's address-level
-authorization. The
-NetworkPolicy permits metrics only from `core-prod`, where the central
-[Grafana Alloy ServiceMonitor receiver](../../Observability/Collectors/README.md)
-scrapes it and forwards the metrics to Mimir. The exporter image is
-[published on Docker Hub](https://hub.docker.com/r/superque/chrony-exporter-linux-amd64)
-and is pinned by digest in `values.yaml`.
+`ntsrotate: 0` is enforced for serving replicas, preventing independent rotation, concurrent canonical writers, and cross-replica NTS failures. The authority retains Chrony's current, previous, and subsequent rotation keys. Canonical key material is sensitive secret material and requires protected, tested backups. Losing it invalidates existing NTS cookies but does not affect time correctness; clients must repeat NTS-KE.
 
-The `ServiceMonitor` is Git-managed and the dashboard ConfigMap has the
-`grafana_dashboard` label used by the deployed
-[Grafana dashboard sidecar](https://github.com/grafana/helm-charts/tree/main/charts/grafana#sidecar-for-dashboards),
-so the `Chrony NTP` dashboard is imported automatically. It covers the
-exporter's tracking stratum, offset, root dispersion, and root delay metrics.
-The upstream [Chrony dashboard 19186](https://grafana.com/grafana/dashboards/19186-chrony/)
-is an alternative import if a richer dashboard is preferred.
+## Per-replica state and security
 
-After Argo sync, verify the `ServiceMonitor` target and the `chrony_*` series
-in Grafana/Mimir. A failed target usually means the pod is not listening on
-the Unix socket or the metrics ingress rule is being evaluated by the CNI;
-the public NTP Service intentionally does not expose TCP/9123.
+`/var/lib/chrony` is not shared RWX: it contains writable drift, upstream NTS client cookies, source histories, local cookie-key state, and PID-related state. A per-replica RWO claim gives those paths independent ownership. The runtime directory `/run/chrony` is a memory-backed emptyDir for the Unix command socket and PID/runtime files. The local socket is used by `chronyc rekey`, health checks, and the exporter; it is never mounted by the Dashboard.
 
-## NightHawkATL NTP Dashboard
+All workloads are tokenless, rootless, read-only-rootfs where applicable, capability-dropped, and use RuntimeDefault seccomp. No SSH server, SSH key, password, sudo configuration, command adapter, migration Job, or legacy compatibility resource is created.
 
-The [NightHawkATL NTP Dashboard](https://github.com/NightHawkATL/ntp-dashboard)
-is published at `https://dash.syncmy.date` in a separate singleton Deployment
-using a `ReadWriteOnce` data PVC and a `Recreate` rollout. It is rootless,
-read-only-rootfs, and does not mount Chrony's state or Unix command socket. Its
-image is pinned to the amd64 digest published for the upstream
-[`nighthawkatl/ntp-dashboard` image](https://hub.docker.com/r/nighthawkatl/ntp-dashboard).
-The `dash.syncmy.date` route remains protected by a fail-closed Authentik
-SecurityPolicy and its proxy application remains restricted to the `Server
-Admins` group.
+## Chrony command interface and policies
 
-The pinned image digest is not compatible with the requested native remote
-Chrony command-port mode. Its source supports only local shell execution of
-`chronyc` or a remote SSH session; it has no Chrony host/port environment
-variable or `config.json` network-command mode. No unsupported setting, SSH
-server, credential, or adapter is added here. Consequently, the chart-side
-UDP/323 endpoint is prepared, but this pinned dashboard image cannot retrieve
-remote `tracking`, `sources`, or `clients` until the image gains native UDP
-Chrony support or is replaced with an approved compatible image.
+Serving pods use:
 
-When a compatible dashboard is used, its queries will be pinned by the
-internal Service's `ClientIP` session affinity to one Ready Chrony replica.
-`tracking` and `sources` then describe that replica, and `clients` contains
-only clients observed by it—not an aggregate cluster-wide list. Prometheus/
-Mimir remains the authoritative aggregate view; if the selected replica
-disappears, Kubernetes may move traffic to another Ready replica.
+    bindcmdaddress 0.0.0.0
+    bindcmdaddress /run/chrony/chronyd.sock
+    cmdport 323
+    cmdallow <configured dashboard pod CIDR>
+    opencommands tracking sources clients
 
-## NTPinfo
+The command Service exposes UDP/323 only, uses `ClientIP` session affinity, and has the configurable timeout `dashboard.commandService.sessionAffinityTimeoutSeconds`. NetworkPolicy allows UDP/323 only from the Dashboard pod and allows the Dashboard only DNS, that command Service path, and its existing Authentik ingress dependencies. `cmdallow` is address-level Chrony authorization; NetworkPolicy supplies workload-identity enforcement. Configure the narrowest pod CIDR that can be used by the Dashboard. UDP/323 and exporter metrics are never public, and public ingress remains UDP/123 plus TCP/4460.
 
-NTPinfo is not included in this change. The upstream
-[NTPinfo project](https://github.com/NTPinfo/NTPinfo) is a multi-component
-application requiring PostgreSQL, RIPE Atlas API credentials, a MaxMind
-GeoLite dataset, and its compiled `ntp-nts` submodule/toolchain; it does not
-provide a suitable immutable public runtime image that can be deployed here
-without inventing production secrets or an unreviewed build. Provisioning
-`ntpinfo.syncmy.date` therefore requires a Vault-backed secret mapping for
-those credentials plus an approved pinned image/build artifact. The hostname
-is not added to the existing public NTP Service because NTPinfo is an HTTP
-application and needs its own Gateway route and application lifecycle.
+`tracking` and `sources` describe the selected Chrony replica. `clients` is only the client list observed by that replica, not an aggregate cluster-wide list. Prometheus/Mimir remains authoritative for aggregate metrics. If the selected replica disappears, Kubernetes may move the Dashboard's command traffic to another Ready replica.
+
+## Dashboard status and verified image limitation
+
+The [NightHawkATL NTP Dashboard](https://github.com/NightHawkATL/ntp-dashboard) remains a separate singleton Recreate Deployment, with its retained data PVC, dedicated memory-backed `/tmp`, `https://dash.syncmy.date`, fail-closed Authentik protection, and Server Admins restriction. The TICC-DASH workload and `clients.syncmy.date` route/resources are absent. The Dashboard has no Chrony state, canonical-key, or Unix socket mount.
+
+Before editing, the exact pinned Dashboard image was inspected. Its source supports only local `chronyc` subprocess mode or SSH mode; its `config.json` schema has no remote Chrony host/port setting, and the image does not contain a native UDP command-port client. The pinned image bundles Chrony/chronyc 4.8, which matches the pinned Chrony image (also 4.8), but that does not solve the Dashboard transport limitation. No unsupported environment variable or SSH fallback has been introduced. Therefore remote Dashboard tracking, sources, and clients are a material operator-blocked acceptance item until an approved Dashboard image with native UDP/323 support replaces this digest.
+
+## Installation and verification
+
+The owning ApplicationSet/certificate stack supplies the NTS TLS Secret named by
+`nts.secretName`; it is not a chart-local Secret or a manual credential input.
+Configure the canonical PVC with an RWX storage class or
+`keyAuthority.canonicalKey.existingClaim`. The repository's
+[`Lab/Storage` RWX example](../../Lab/Storage/README.md) shows the local
+Longhorn RWX pattern; use the storage class available to the target cluster.
+The actual Dashboard source pod CIDR belongs in
+`ntp.dashboardCommandCidrs`. Review PureLB annotations/address allocation and
+upstream firewall rules for UDP/123 and TCP/4460. Install as a new Argo
+application; sync waves are storage/references (0), authority (1), serving
+pods (3), Services (4), Dashboard (5), and monitoring (6).
+
+After installation, verify through an approved administrative path:
+
+    chronyc authdata
+    chronyc ntpdata syncmy.date
+
+Expected steady state is Mode NTS, Atmp 0, NAK 0, Cook 8, Authenticated Yes, Leap status Normal, and increasing valid responses. A fresh one-shot test is:
+
+    sudo chronyd -Q -t 10 'server syncmy.date iburst nts'
+
+The existing test client must be re-keyed or restarted; old cookies are expected to become invalid. Do not treat a normal load-balanced request as proof of which replicas handled NTS-KE and NTP.
+
+## Cross-replica and rotation test plan
+
+Use a temporary per-pod Service, direct pod networking, or an NTS client that can choose separate NTS-KE and NTP destinations. Do not run this from Git or against a live cluster as part of chart validation. Deliberately establish NTS-KE through replica A, send authenticated NTP to B, then reverse B-to-A; repeat after authority rotation, after every pod reports a new key generation, and after restarting one replica. Confirm each pod loads the current keyset and becomes Ready only after local `chrony rekey` succeeds. Separately verify that network commands that change Chrony state remain rejected.
+
+The command Service's session affinity normally keeps Dashboard requests on one backend. A readiness loss or endpoint change is the expected failover mechanism.
+
+## Monitoring, recovery, and uninstall
+
+Chrony-exporter remains beside every serving replica and is scraped through the internal ServiceMonitor. Alert on authority readiness, canonical key age, sync/rekey failures, key-generation mismatch, NTS-KE failures, NAKs, unsynchronized replicas, invalid leap status, and public local-endpoint loss.
+
+Back up the canonical key PVC as sensitive material and separately back up the certificate Secret through the repository's secret-management system. The [Chrony 4.8 NTS directives](https://chrony-project.org/doc/4.8/chrony.conf.html#ntsservercert) define the cookie-key rotation and reload behavior. If the canonical store is lost, provision a fresh authority/keyset and re-key clients; do not restore it into Git, a ConfigMap, logs, or values. Chrony time service remains correct while clients repeat NTS-KE.
+
+Uninstall removes workloads and Services according to Helm/Argo ownership but retained PVCs remain for deliberate operator cleanup. Never delete canonical keys or Dashboard data until backup, client re-keying, and service retirement are confirmed. No migration or blue/green cutover is provided.

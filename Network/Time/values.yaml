@@ -22,7 +22,6 @@ images:
     pullPolicy: 'IfNotPresent'
 
 ntp:
-  replicas: 1
   # Upstream NTP sources and their Chrony options.
   sources:
     - hostname: 'time.cloudflare.com'
@@ -46,13 +45,22 @@ ntp:
       nts: false
       maxsources: 2
   minsources: 3
-  # Pod CIDRs permitted to use Chrony's UDP/323 monitoring interface.
-  cmdAllowCidrs:
+  # Pod CIDRs permitted to use Chrony's UDP/323 monitoring interface. These
+  # must cover the source addresses used by the dashboard pod.
+  dashboardCommandCidrs:
     - '172.20.48.0/21'
-  cmdSessionAffinityTimeoutSeconds: 10800
   domain: 'syncmy.date'
   logLevel: '1'
   noClientLog: false
+
+chrony:
+  replicas: 2
+  # Serving replicas must never generate independent cookie keys.
+  ntsrotate: 0
+  ntsprocesses: 2
+  maxntsconnections: 100
+  stateSize: '1Gi'
+  stateStorageClass: ''
   resources:
     limits:
       cpu: '250m'
@@ -63,7 +71,77 @@ ntp:
       memory: '32Mi'
       ephemeral-storage: '16Mi'
 
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: 'kubernetes.io/hostname'
+      whenUnsatisfiable: 'DoNotSchedule'
+  antiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - topologyKey: 'kubernetes.io/hostname'
+        labelSelector:
+          matchExpressions:
+            - key: 'app.kubernetes.io/controller'
+              operator: 'In'
+              values:
+                - 'chrony'
+  podDisruptionBudget:
+    minAvailable: 1
+
+ntsScaling:
+  enabled: true
+
+keyAuthority:
+  enabled: true
+  image:
+    repository: 'simonrupf/chronyd'
+    tag: '0.9.2-nts@sha256:b0d477f68c5df76e448ad4132c7a187fc6dddb8a18095911c0b0bcf3c8fd050d'
+    pullPolicy: 'IfNotPresent'
+  rotationInterval: '2592000'
+  syncInterval: 60
+  retryInitialSeconds: 2
+  retryMaxSeconds: 60
+  canonicalKey:
+    size: '64Mi'
+    # The shared Longhorn RWX class follows the repository's Lab/Storage
+    # pattern. Override this when the target cluster provides another RWX
+    # StorageClass, or set existingClaim instead.
+    storageClass: 'longhorn-rwx'
+    existingClaim: ''
+    accessMode: 'ReadWriteMany'
+  resources:
+    limits:
+      cpu: '100m'
+      memory: '128Mi'
+      ephemeral-storage: '64Mi'
+    requests:
+      cpu: '10m'
+      memory: '32Mi'
+      ephemeral-storage: '16Mi'
+
+keySync:
+  resources:
+    limits:
+      cpu: '50m'
+      memory: '64Mi'
+      ephemeral-storage: '32Mi'
+    requests:
+      cpu: '5m'
+      memory: '16Mi'
+      ephemeral-storage: '8Mi'
+
+dashboard:
+  commandService:
+    sessionAffinityTimeoutSeconds: 10800
+  resources:
+    limits:
+      cpu: '250m'
+      memory: '256Mi'
+    requests:
+      cpu: '25m'
+      memory: '64Mi'
+
 nts:
+  enabled: true
   secretName: 'syncmydate-default-certificates'
 
 # The owning ApplicationSet supplies the public PureLB address and anycast
