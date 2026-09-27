@@ -24,10 +24,15 @@ defaultPodOptions:
 
 controllers:
   main:
+    annotations:
+      secret.reloader.stakater.com/reload: 'pgpool-config'
     type: deployment
     replicas: 3
     revisionHistoryLimit: 3
     strategy: RollingUpdate
+    rollingUpdate:
+      surge: 1
+      unavailable: '0%'
     containers:
       main:
         enabled: false

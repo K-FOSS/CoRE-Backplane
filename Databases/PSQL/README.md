@@ -68,6 +68,17 @@ disabled, strict error handling and a bounded connection timeout; the pod
 receives Service traffic only when an attached primary is reported. This
 chart-owned script replaces the image's non-POSIX `grep | wc` check and is
 delivered through the existing externally rendered `pgpool-config` Secret.
+PGPool's Deployment explicitly opts in to the installed
+[Stakater Reloader](../../Operations/Configuration/README.md) for the named
+`pgpool-config` Secret using its
+[secret reload annotation](https://docs.stakater.com/reloader/latest/reference/annotations.html).
+When External Secrets updates that Secret from the rendered configuration,
+Reloader triggers a Deployment rollout. The
+[rolling update](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment)
+keeps all three existing replicas available and permits one surge replica;
+readiness gates each replacement and the PCP smart-stop hook drains the old
+pod. During rollout, plan for up to four PGPool replicas and a corresponding
+temporary pooled backend budget of 1024 connections.
 
 The default PGPool capacity is 64 children with four cached connection pools
 across three PGPool replicas. This gives a worst-case pooled backend budget of
@@ -164,9 +175,12 @@ and label data from registered Argo CD cluster Secrets. The one entry with
 `values.hub: true` supplies its cluster name, datacenter and region to the exact
 `psql.standbyHost` value in every render, while every other entry becomes a
 standby. The same cluster entries provide the main PostgreSQL instance count
-through `values.replicas`: the hub currently uses two instances and standbys use
-one. Exactly one hub is required and ApplicationSet templating fails if the
-list contains zero or multiple hubs.
+through `values.replicas`: the checked-in desired topology currently places the
+hub at `core-home1-talos-prod` in YVR with `values.replicas: '3'`, rendered as
+three PostgreSQL instances. The DC1 Talos and k3s targets each use one instance.
+This describes desired configuration and does not by itself prove live
+readiness. Exactly one hub is required and ApplicationSet templating fails if
+the list contains zero or multiple hubs.
 
 To move the hub, set the former entry's `values.hub` to `false` and the new
 entry's value to `true` in the same Git change. After Argo CD reconciliation,
