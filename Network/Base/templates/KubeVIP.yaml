@@ -174,6 +174,13 @@ spec:
               value: 'false'
             - name: enable_upnp
               value: {{ .Values.kubeVip.upnp.enabled | toString | quote }}
+          {{- if $network.resourceName }}
+          resources:
+            requests:
+              {{ $network.resourceName | quote }}: 1
+            limits:
+              {{ $network.resourceName | quote }}: 1
+          {{- end }}
           securityContext:
             capabilities:
               add: ['NET_ADMIN', 'NET_RAW']

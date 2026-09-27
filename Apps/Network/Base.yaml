@@ -281,6 +281,8 @@ spec:
                         template:
                           spec:
                             initContainers:
+                              - name: install-multus-binary
+                                image: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
                               - name: install-dhcp-cni
                                 image: rancher/hardened-cni-plugins:v1.9.1-build20260511
                                 env:
@@ -325,10 +327,6 @@ spec:
                       - op: replace
                         path: /spec/template/spec/volumes/8/hostPath/path
                         value: /var/run/netns/
-
-                      - op: replace
-                        path: /spec/template/spec/initContainers/0/image
-                        value: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
 
                       - op: replace
                         path: /spec/template/spec/containers/0/image

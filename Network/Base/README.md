@@ -76,7 +76,9 @@ configure IPAM, MTU, VLAN, and related options. Any IPAM configuration must
 allocate unique attachment addresses across nodes and preserve API connectivity.
 Home1's node affinity restricts KubeVIP DaemonSet pods to nodes `srv2`, `srv3`,
 and `hpc3` (their `kubernetes.io/hostname` label values); the cloud-provider
-Deployment remains independently scheduled.
+Deployment remains independently scheduled. On an SR-IOV attachment, each pod
+requests one device from the selected resource pool so Multus can pass its VF
+PCI address to SR-IOV CNI.
 Home1 reserves `10.0.0.39-10.0.0.49` as its LoadBalancer VIP range on VLAN 150.
 Exclude these addresses from DHCP allocation and keep them unused by other
 static hosts.
