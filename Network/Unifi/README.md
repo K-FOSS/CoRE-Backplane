@@ -6,8 +6,11 @@ database, secrets, ingress, DNS and storage. It is owned by
 cluster.
 
 It includes the controller workload, device/client service ports, Gateway
-route, persistent data/certificates, MongoDB user integration, ExternalSecret
-and PushSecret resources.
+TLS and TCP routes, persistent data/certificates, MongoDB user integration,
+ExternalSecret and PushSecret resources. The
+[Gateway API TCPRoute](https://gateway-api.sigs.k8s.io/reference/api-types/tcproute/)
+attaches to the `tcp-unifi` listener on `main-gw` and sends UniFi inform
+traffic on port 8080 to this chart's `unifi-lb` Service.
 
 The chart also runs the [UnPoller Prometheus exporter](https://github.com/unpoller/unpoller)
 as a controller sidecar. UnPoller polls the controller through loopback and
