@@ -201,3 +201,36 @@ omits `type`, so reconciliation did not replace the old pods. The
 only waits for replacement. This chart now explicitly owns `type: RollingUpdate`
 and retains the upstream `maxUnavailable: 100%` default. This also makes the
 strategy explicit for DC1; only Home1 is synced for this rollout.
+
+#### Home1 rollout result, 2026-09-27
+
+Argo CD application `core-home1-talos-prod-storage-base` reconciled revision
+`62b313af9851bbe6aa7a40b0ae9e6a1d64b922ea` and completed its post-upgrade hook;
+the final state is `Synced`, `Healthy`, and `Succeeded`. All five managers, the
+driver deployer, UI, CSI deployments and node plugin run 1.12.1 and are ready.
+The 1.12.1 engine image is ready on all five nodes. Existing volumes retain
+their 1.11.3 engine image; automatic engine upgrade limit remains `0`.
+
+After the update, 58 volumes were attached and healthy, 47 detached and unknown,
+and one detached and faulted. The faulted volume is the existing production S3
+PVC. Its failed replica on `srv2` remains present and stopped, with the same
+1.11.3 image and original failure timestamps. This confirms the upgrade did
+not delete that replica; it does not recover or validate S3 data. The three
+previously degraded volumes became healthy. The four Home1 lab file-browser and
+writer pods are ready after restart. No new Longhorn backup resources were
+created; no S3 backup or restore was run.
+
+The first manager rollout attempt waited because the prior live DaemonSet had
+`OnDelete`. An Argo operation termination then stalled. The single incident
+patch setting the DaemonSet strategy to the Git-published `RollingUpdate`
+value let the chart's post-upgrade hook replace managers and complete. This
+was reconciled through Argo to the same declared strategy. A later Argo
+comparison timed out while checking the Longhorn admission Service; after all
+five webhook endpoints were ready, the same revision synced successfully. The
+GPUStack Kueue webhook also briefly refused admission and recovered before the
+successful sync. No admission bypass, pod deletion command, salvage, engine
+upgrade, or data-volume mutation was used.
+
+The local `main` branch now matches `origin/main` at this revision. All
+pre-existing staged, unstaged and untracked work was restored after rebasing;
+it remains outside the committed rollout changes.
