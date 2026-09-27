@@ -326,7 +326,8 @@ See Forgejo's [LDAP behavior](https://forgejo.org/docs/latest/user/authenticatio
 and [authentication-source CLI](https://forgejo.org/docs/latest/admin/command-line/#admin-auth-add-ldap).
 
 Each site also reconciles a separate Authentik OAuth2/OIDC provider and
-application named `forgejo-<cluster>`. Its only redirect URI is the strict
+application displayed as `Forgejo`, with the unique slug `forgejo-<cluster>`.
+Its only redirect URI is the strict
 `https://<site-hostname>/user/oauth2/authentik/callback` callback. Forgejo uses
 the application-specific discovery document and requests only `email` and
 `profile` in addition to OpenID Connect's required `openid` scope. The
