@@ -74,6 +74,16 @@ bypass branch protections. If the remote advances, incorporate the change in
 the isolated task branch and repeat affected validation before publishing. Use
 a PR when repository protection or the user requires one.
 
+Treat a commit as published once it may have reached any remote. Do not amend
+or rebase published history; publish a corrective follow-up commit instead.
+After fetching, verify that the intended upstream tip is an ancestor of `HEAD`
+and that the complete outgoing range contains only task commits before pushing.
+If the workspace askpass integration reports a missing or unavailable prompt,
+stop retrying and leave the outgoing commits intact. Do not print, inspect,
+copy, replace, or log credential values, disable askpass, or switch credential
+helpers to bypass the configured authentication flow. Report that the workspace
+authentication prompt needs to be restored.
+
 ### Reconcile through Argo CD
 
 Record the full published commit SHA and sync that revision. Inspect any

@@ -458,6 +458,27 @@ shared secret, and then start and verify the replacement runner.
 
 ## TODO
 
+- Implement browser-approved Git authentication from Eclipse Che to each
+  site's Forgejo instance. Currently Forgejo uses Authentik OIDC for browser
+  sign-in, while Che's SCM OAuth configuration covers GitHub and GitLab; there
+  is no documented or verified Forgejo OAuth-to-Git credential handoff. Evaluate
+  Forgejo's pre-registered `git-credential-oauth` application and the helper's
+  browser callback from a remote DevWorkspace, then integrate it with Che's
+  askpass/credential prompt outside the
+  [CoRE-Docker Che/Devfile workspace image](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/Core-Docker).
+  The target flow authenticates the user through Forgejo/Authentik and gives
+  HTTPS Git operations a Forgejo OAuth credential; do not use an Authentik ID
+  token, browser cookie, PAT, image-baked credential, or project-stored token
+  as a substitute. Define per-user token caching, expiry/revocation and cleanup.
+  Test clone, fetch and push from a remote workspace, including browser
+  handoff, cancellation, workspace restart, and credential revocation. For
+  repositories mirrored to public forges, establish Forgejo as the receive
+  authority and fan out only after it accepts a push, using separate scoped
+  credentials; never forward Forgejo tokens, browser cookies or askpass data to
+  a mirror. Review the Forgejo [OAuth application configuration](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/),
+  [authentication-source documentation](https://forgejo.org/docs/latest/user/authentication/),
+  [`git-credential-oauth`](https://github.com/hickford/git-credential-oauth),
+  and [Git credential-helper behavior](https://git-scm.com/docs/gitcredentials).
 - Add a shared Forgejo Actions cache server for Development runners, with
   persistent storage and runner `cache.external_server` configuration. Use the
   upstream [runner configuration reference](https://forgejo.org/docs/latest/admin/actions/configuration/)

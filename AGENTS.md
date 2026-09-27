@@ -38,6 +38,18 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 - Confirm the intended remote and branch, fetch before publishing, review the
   exact outgoing diff, and use a normal fast-forward push. Respect branch
   protections and required checks; use the required PR workflow when applicable.
+- Keep published history immutable. Never amend or rebase a commit that may
+  have reached a remote; publish corrections as follow-up commits. After
+  fetching, confirm the intended upstream tip is an ancestor of `HEAD` and
+  review the complete outgoing range to ensure it contains only this task's
+  commits. If the upstream is not an ancestor of `HEAD`, follow the
+  canonical-checkout procedure in `docs/OPERATIONS.md`; do not force-push or
+  rewrite published history.
+- Use the canonical workspace's configured Git authentication and askpass flow.
+  Never print, read, copy, or replace stored credentials, disable askpass, or
+  switch credential helpers to work around a missing prompt. If the configured
+  askpass integration cannot communicate, stop retrying, preserve outgoing
+  commits, and report that the workspace authentication prompt must be restored.
 - Reconcile the reviewed, published commit through the owning Argo CD layers.
   Select only the necessary parent ApplicationSet resources and affected child
   applications. Inspect sync hooks and dependency ordering before choosing

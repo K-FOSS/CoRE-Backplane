@@ -27,3 +27,11 @@ Disable activity tracking in the Development CheCluster to roll back the
 feature. Avoid downgrading the CRD/controller while its new fields are in use.
 Removing this operator does not establish that workspace storage was removed;
 inspect CheCluster and DevWorkspace finalizers and PVC retention before deletion.
+
+## TODO
+
+- Add the Che-side integration for browser-approved Forgejo Git credentials.
+  Keep the askpass/browser handoff in the Backplane Development/Che and Forgejo
+  configuration, outside the CoRE-Docker Che/Devfile workspace image. The
+  cross-stack security requirements and validation plan are tracked in the
+  [Development TODO](../../Development/README.md#todo).
