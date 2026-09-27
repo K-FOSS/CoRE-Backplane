@@ -109,6 +109,8 @@ VLAN 150 and skips DHCP default-route installation so Cilium remains the pod's
 default route. The Multus DaemonSet installs the DHCP CNI binary and runs its
 required daemon only while KubeVIP is enabled. Ensure the VLAN 150 DHCP server
 has enough leases and excludes `10.0.0.39-10.0.0.49`, the Service VIP pool.
+The daemon sidecar receives host-to-container mount propagation for `/run/netns`
+so it can enter the `nsfs` mounts created by the container runtime.
 `.35` is a single address, so it cannot be statically assigned to every
 DaemonSet pod; use a DHCP reservation for one specific VF MAC only if a fixed
 lease at `.35` is required. Do not reuse NATPuncher's static `10.0.0.10/24`
