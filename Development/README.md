@@ -179,6 +179,11 @@ S3-compatible image/chart storage. It is exposed through the
 direct Docker API and token paths to Harbor core and ordinary UI paths to the
 portal.
 
+The YXL Harbor route also accepts `registry.writemy.codes` as an alternate
+hostname. The cluster-qualified hostname remains Harbor's canonical
+`externalURL`; the alternate hostname is routed to the same core and portal
+services and is included in the YXL Authentik OIDC callback allow-list.
+
 The ApplicationSet injects per-cluster `psql-local`, Dragonfly, S3, LDAP, and
 public endpoints plus a cluster-qualified Helm release name. Every enabled
 site has its own `harbor-<cluster>` PostgreSQL role and database.
@@ -210,12 +215,12 @@ site-local claim and rollback path has been verified.
 Harbor uses the target site's TLS-enabled `dragonfly-core` endpoint. Its
 logical allocations are recorded in
 [`Storage/Dragonfly/CoRE/README.md`](../Storage/Dragonfly/CoRE/README.md).
-Harbor chart 1.18.2 cannot render `redis.external.existingSecret` offline
+Harbor chart 1.19.2 cannot render `redis.external.existingSecret` offline
 because it uses Helm `lookup`. The `harbor-redis-config` ExternalSecret and
 ApplicationSet Kustomize patches therefore supply runtime URLs and the job
 service config from a Secret, without putting the password in rendered
-ConfigMaps. See the upstream [Harbor chart source](https://github.com/goharbor/harbor-helm/tree/v1.18.2)
-and [high-availability guidance](https://github.com/goharbor/harbor-helm/blob/v1.18.2/docs/High%20Availability.md).
+ConfigMaps. See the upstream [Harbor chart source](https://github.com/goharbor/harbor-helm/tree/v1.19.2)
+and [high-availability guidance](https://github.com/goharbor/harbor-helm/blob/v1.19.2/docs/High%20Availability.md).
 
 A Terraform `ProviderConfig` uses the Harbor admin credential. Two Workspaces
 then:
@@ -276,7 +281,9 @@ organizations. Forgejo 16 has no separate organization-contributions toggle.
 The chart removes only the disposable stale `/data/git/.ssh/environment` file
 before Forgejo's rootless initialization chmods the persistent SSH directory;
 if the PVC denies unlinking it, repair that file's ownership at the storage
-layer before retrying the deployment.
+layer before retrying the deployment. The Forgejo image digest must match the
+chart's `rootless: true` image suffix; a digest from the non-rootless image can
+silently select a different entrypoint and filesystem layout.
 
 The site-local `forgejo-user` claim provisions the matching PostgreSQL role
 and database on `psql-local` through both

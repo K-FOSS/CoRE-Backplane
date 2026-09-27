@@ -24,3 +24,13 @@ sheet](https://forgejo.org/docs/latest/admin/config-cheat-sheet/) for
 `ENDLESS_TASK_TIMEOUT` and the [Forgejo Runner configuration
 reference](https://forgejo.org/docs/latest/admin/actions/configuration/) for
 the runner timeout fields.
+
+## Forgejo rollout strategy
+
+Forgejo is intentionally configured with a `RollingUpdate` strategy using
+`maxSurge: '100%'` and `maxUnavailable: '0'` for a smooth replacement. The
+upstream chart warns that RollingUpdate can cause issues because Forgejo is not
+HA-ready and the deployment remains single-replica. Keep the shared persistent
+storage available to the temporary overlap and verify database connectivity,
+readiness, login, repository access, and Actions after reconciliation. Do not
+increase the replica count as part of this change.
