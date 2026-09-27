@@ -47,6 +47,24 @@ spec:
       data "authentik_group" "network" {
         name = "Network"
       }
+      resource "authentik_provider_proxy" "nsadmin_forward_auth" {
+        name               = "PowerDNS Admin Forward Auth {{ .Values.cluster.name }}"
+        mode               = "forward_single"
+        external_host      = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+      resource "authentik_application" "nsadmin_forward_auth" {
+        name              = "PowerDNS Admin Forward Auth {{ .Values.cluster.name }}"
+        slug              = "{{ include "bjw-s.common.lib.chart.names.fullname" . }}-{{ .Values.cluster.name }}-forward-auth"
+        meta_launch_url   = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}"
+        protocol_provider = authentik_provider_proxy.nsadmin_forward_auth.id
+      }
+      resource "authentik_policy_binding" "network_forward_auth" {
+        target = authentik_application.nsadmin_forward_auth.uuid
+        group  = data.authentik_group.network.id
+        order  = 0
+      }
       resource "authentik_provider_oauth2" "nsadmin" {
         name          = "PowerDNS Admin {{ .Values.cluster.name }}"
         client_id     = random_password.client_id.result

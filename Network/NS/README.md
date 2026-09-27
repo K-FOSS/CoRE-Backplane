@@ -99,10 +99,16 @@ PowerDNS-Admin can become ready. PowerDNS connects to the
 [cluster-local Pgpool `psql` Service](../../Databases/PSQL/README.md) using the
 FQDN injected by the ApplicationSet; its database credentials remain
 secret-backed. PowerDNS-Admin uses the internal PowerDNS API Service and
-handles UI authentication itself with Authentik OIDC or LDAP. Gateway
-forward-auth is no longer used for this route; Authentik's OIDC application
-policy limits OIDC login to the `Network` group, while LDAP retains its
-PowerDNS-Admin role mapping.
+is protected by the shared Authentik forward-auth outpost through a fail-closed
+Envoy Gateway `SecurityPolicy`. The Authentik proxy application and the native
+OIDC application are both restricted to the `Network` group. After the proxy
+admits the request, PowerDNS-Admin handles its own OIDC or LDAP login and role
+mapping. The policy uses Authentik's
+[proxy provider](https://docs.goauthentik.io/add-secure-apps/providers/proxy/)
+through Envoy Gateway's
+[external authorization](https://gateway.envoyproxy.io/v1.8/tasks/security/ext-auth/)
+integration. The generated HTTPRoute backend targets the full Service name
+`ns-core-nsadmin`, rather than the chart's short logical service identifier.
 
 PowerDNS-Admin's PostgreSQL connection is independent at each site. The
 `Apps/Network/NS.yaml` injects the site-local `psql-local.<cluster>.<datacenter>.<region>.mylogin.space`
