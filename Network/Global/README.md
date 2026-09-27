@@ -7,7 +7,8 @@ injects the unique `home1` and `dc1` geotags and selects only registered CoRE
 bare-metal infrastructure clusters. Argo CD renders the pinned
 [k8gb chart v1.0.0](https://github.com/k8gb-io/k8gb/tree/v1.0.0/chart/k8gb),
 which installs the controller, its CRDs, and its local CoreDNS component in
-the `k8gb` namespace.
+the `k8gb` namespace. The chart owns that namespace and creates it at sync wave
+`-2` so namespaced RBAC resources have a namespace before they reconcile.
 
 ## Current deployment scope
 
