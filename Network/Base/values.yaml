@@ -1101,6 +1101,27 @@ purelb:
   gobgp:
     enabled: true
 
+# Optional service VIPs advertised on a secondary Multus network. A VIP pool
+# and site-specific network attachment must be supplied before enabling.
+kubeVip:
+  enabled: false
+  image: 'ghcr.io/kube-vip/kube-vip:v1.2.2'
+  cloudProviderImage: 'ghcr.io/kube-vip/kube-vip-cloud-provider:v0.0.12'
+  loadBalancerClass: 'kube-vip.io/kube-vip-class'
+  vipRange: ''
+  interfaceName: 'wan0'
+  network:
+    name: 'kube-vip-wan'
+    resourceName: ''
+    # This is the CNI plugin object passed through to Multus. Add an IPAM
+    # plugin only when it can allocate unique addresses across nodes.
+    plugin:
+      type: 'sriov'
+      vlan: 150
+      mtu: 1500
+  upnp:
+    enabled: false
+
 envoy-gw:
   enabled: true
   podDisruptionBudget:

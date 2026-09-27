@@ -47,6 +47,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | [SR-IOV Network Operator](https://github.com/k8snetworkplumbingwg/sriov-network-operator) | Optional Helm dependency. It is disabled in `values.yaml`; the standalone SR-IOV CNI and device plugin remain enabled independently. |
 | [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/latest/) with [Cloudflare](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/cloudflare/) | Enabled Helm dependency publishing public records selected by `wan-mode=public`. Credentials come from the referenced Kubernetes Secret and must not be committed here. |
 | [PureLB](https://purelb.gitlab.io/purelb/) | Enabled Helm dependency using the Cilium announcer and `purelb.io/purelb` load-balancer class. |
+| [KubeVIP](https://kube-vip.io/docs/usage/kubernetes-services/) and [kube-vip-cloud-provider](https://kube-vip.io/docs/usage/cloud-provider/) | Optional LoadBalancer implementation using ARP on a Multus secondary network. Separate load-balancer class `kube-vip.io/kube-vip-class`; disabled by default. See the [KubeVIP source and releases](https://github.com/kube-vip/kube-vip) and [cloud-provider source](https://github.com/kube-vip/kube-vip-cloud-provider). |
 | [Envoy Gateway](https://gateway.envoyproxy.io/docs/) | Enabled OCI Helm dependency with two replicas and Backend and EnvoyPatchPolicy extension APIs. Follow its [Helm installation and upgrade guidance](https://gateway.envoyproxy.io/docs/install/install-helm/). |
 | [FRR-K8s](https://github.com/metallb/frr-k8s) | Enabled Helm dependency. The ApplicationSet replaces its startup daemon configuration and permits incoming BGP connections. |
 
@@ -58,9 +59,40 @@ references on every change, and pin both before treating a render as reproducibl
 ## Values and generated resources
 
 The primary value groups are `cilium`, `sriov-network-operator`, `cf-dns`,
-`sriovDevicePlugin`, `purelb`, `envoy-gw`, and `frr-k8s`. Site-specific values
+`sriovDevicePlugin`, `purelb`, `kubeVip`, `envoy-gw`, and `frr-k8s`. Site-specific values
 belong in the owning ApplicationSet rather than as additional literals in this
 directory.
+
+`kubeVip.enabled` is false in the chart and both site generator entries. The
+Home1 entry describes the existing YVR UPnP WAN attachment pattern: SR-IOV
+resource `intel.com/intel_x540_netdevice_port0`, VLAN 150, MTU 1500. The resource
+is used by the node device plugin, and Multus injects its device request from the
+NetworkAttachmentDefinition annotation. When enabled, the generated KubeVIP DaemonSet uses
+the secondary interface `wan0` for ARP VIP advertisement while retaining its
+primary Cilium interface for Kubernetes API access. The CNI `plugin` map is
+passed through, so a site can choose a supported bridge or SR-IOV CNI and
+configure IPAM, MTU, VLAN, and related options. Any IPAM configuration must
+allocate unique attachment addresses across nodes and preserve API connectivity.
+
+When enabling the addon, set `kubeVip.vipRange` to an explicitly reserved CIDR
+or range on that L2 network. Rendering fails if the addon is enabled without a
+pool or (for SR-IOV) a device-plugin resource name. The pool configures the
+cloud provider's `range-global`; it must not overlap existing allocations or
+the router's DHCP/static leases. Services opt into this
+allocator and advertiser with
+`spec.type: LoadBalancer` and
+`spec.loadBalancerClass: kube-vip.io/kube-vip-class`; this keeps KubeVIP separate
+from the existing PureLB class. The cloud provider assigns addresses, and the
+KubeVIP agent advertises them with ARP. See the upstream [pool configuration](https://kube-vip.io/docs/usage/cloud-provider/)
+and [class behavior](https://kube-vip.io/docs/usage/kubernetes-services/).
+
+KubeVIP's native UPnP support is independently off by default at
+`kubeVip.upnp.enabled`. If deliberately enabled, only Services annotated
+`kube-vip.io/forwardUPNP: 'true'` request port mappings; this uses KubeVIP's own
+image and gateway client. The existing NATPuncher job remains a separate static
+mapping owner. Before enabling native UPnP, verify YVR gateway behavior,
+conflicts with NATPuncher mappings, and the public exposure of each selected
+Service. See [KubeVIP UPnP service exposure](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
 
 `sriovDevicePlugin.resourceList` is required and must contain at least one
 device-plugin resource-pool object. Its objects are passed to the upstream
@@ -101,6 +133,9 @@ The device plugin advertises resources but does not create VFs or bind drivers.
 - SR-IOV-capable hardware with VFs created and bound to referenced drivers.
 - Reachable BGP peers, unique cluster IDs, correct CIDRs, and valid cluster-mesh
   endpoints.
+- To enable KubeVIP, a reserved service VIP pool on the selected attachment L2,
+  a working SR-IOV resource on each eligible node (when using SR-IOV), and
+  verified return routing from the YVR gateway are required.
 - An existing DNS-provider Secret and least-privilege Cloudflare token for
   ExternalDNS. Never place its value in Git or rendered validation output.
 

@@ -18,6 +18,8 @@ spec:
               elements:
                 - name: core-dc1-talos-prod
                   values:
+                    kubeVip:
+                      enabled: false
                     kubeDNS:
                       upstreams: ['1.1.1.1', '8.8.8.8']
                     nodePortNetwork: 172.31.241.0/24
@@ -67,6 +69,14 @@ spec:
 
                 - name: core-home1-talos-prod
                   values:
+                    kubeVip:
+                      enabled: false
+                      network:
+                        resourceName: 'intel.com/intel_x540_netdevice_port0'
+                        plugin:
+                          type: 'sriov'
+                          vlan: 150
+                          mtu: 1500
                     kubeDNS:
                       upstreams: ['1.1.1.1', '8.8.8.8']
                     nodePortNetwork: 172.31.193.0/24
@@ -215,6 +225,9 @@ spec:
                   enabled: true
                   clusterDomain: '{{ .values.clusterDomain }}'
                   {{- nindent 2 (toYaml .values.kubeDNS) }}
+
+                kubeVip:
+                  {{- nindent 2 (toYaml .values.kubeVip) }}
 
                 envoy-gw:
                   config:
