@@ -57,7 +57,7 @@ spec:
       resource "authentik_application" "nsadmin_forward_auth" {
         name              = "PowerDNS Admin Forward Auth {{ .Values.cluster.name }}"
         slug              = "{{ include "bjw-s.common.lib.chart.names.fullname" . }}-{{ .Values.cluster.name }}-forward-auth"
-        meta_launch_url   = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}"
+        meta_launch_url   = "blank://blank"
         protocol_provider = authentik_provider_proxy.nsadmin_forward_auth.id
       }
       resource "authentik_policy_binding" "network_forward_auth" {
@@ -89,6 +89,7 @@ spec:
       resource "authentik_application" "nsadmin" {
         name              = "PowerDNS Admin {{ .Values.cluster.name }}"
         slug              = "{{ include "bjw-s.common.lib.chart.names.fullname" . }}-{{ .Values.cluster.name }}"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
         meta_launch_url   = "https://{{ index .Values.powerdnsAdmin.route.hostnames 0 }}"
         protocol_provider = authentik_provider_oauth2.nsadmin.id
       }
