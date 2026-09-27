@@ -86,13 +86,9 @@ from the existing PureLB class. The cloud provider assigns addresses, and the
 KubeVIP agent advertises them with ARP. See the upstream [pool configuration](https://kube-vip.io/docs/usage/cloud-provider/)
 and [class behavior](https://kube-vip.io/docs/usage/kubernetes-services/).
 
-KubeVIP's native UPnP support is independently off by default at
-`kubeVip.upnp.enabled`. If deliberately enabled, only Services annotated
-`kube-vip.io/forwardUPNP: 'true'` request port mappings; this uses KubeVIP's own
-image and gateway client. The existing NATPuncher job remains a separate static
-mapping owner. Before enabling native UPnP, verify YVR gateway behavior,
-conflicts with NATPuncher mappings, and the public exposure of each selected
-Service. See [KubeVIP UPnP service exposure](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
+The NATPuncher UPnP configuration is used only as a reference for the YVR WAN
+attachment. This addon does not create UPnP port mappings; it advertises Service
+VIPs on the attached network using ARP.
 
 `sriovDevicePlugin.resourceList` is required and must contain at least one
 device-plugin resource-pool object. Its objects are passed to the upstream
