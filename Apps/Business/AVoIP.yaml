@@ -125,11 +125,15 @@ spec:
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
 
+                {{- if hasKey .values "faxDID" }}
                 fax:
                   did: '{{ .values.faxDID }}'
-                
+                {{- end }}
+
+                {{- if hasKey .values "avoipDID" }}
                 avoip:
                   did: '{{ .values.avoipDID }}'
+                {{- end }}
 
                 kamailio:
                   advertisedHost: 'sip.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
