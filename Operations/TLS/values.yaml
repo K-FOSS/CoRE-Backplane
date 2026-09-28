@@ -19,6 +19,13 @@ cert-manager:
 
   enableCertificateOwnerRef: true
 
+  # Keep ACME propagation checks off cluster-local kube-dns. These resolvers
+  # are used for both DNS-01 and HTTP-01 challenge checks.
+  extraArgs:
+    - '--dns01-recursive-nameservers-only'
+    - '--dns01-recursive-nameservers=1.1.1.1:53,1.0.0.1:53,9.9.9.9:53'
+    - '--acme-http01-solver-nameservers=1.1.1.1:53,1.0.0.1:53,9.9.9.9:53'
+
   config:
     apiVersion: controller.config.cert-manager.io/v1alpha1
     kind: ControllerConfiguration

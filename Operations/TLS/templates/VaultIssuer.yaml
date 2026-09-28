@@ -5,10 +5,10 @@ metadata:
 spec:
   vault:
     path: pki_int/sign/core
-    #
-    # TODO: Setup internal routes and HTTPs for Vault and other services with valid let's encrypt
-    #
-    server: http://vault.dc1.resolvemy.host:8200
+    # Resolve the Vault service inside the destination cluster. The TLS
+    # ApplicationSet uses the cluster name as the Helm release name, so this
+    # remains local for both Talos clusters instead of depending on DC1 DNS.
+    server: 'http://{{ trimSuffix "-tls" .Release.Name }}-core-vault-prod.core-prod.svc.cluster.local:8200'
     auth:
       tokenSecretRef:
         name: certmanager-tls-vault-token

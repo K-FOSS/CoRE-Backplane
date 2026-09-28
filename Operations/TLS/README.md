@@ -21,6 +21,13 @@ The controller remains leader-elected, so this protects the API and certificate
 reconciliation paths during an upgrade without creating competing active
 controllers.
 
+ACME propagation checks use only Cloudflare `1.1.1.1`/`1.0.0.1` and Quad9
+`9.9.9.9` on port 53 for DNS-01 and HTTP-01. The
+[cert-manager DNS-01 configuration](https://cert-manager.io/docs/configuration/acme/dns01/)
+documents why `--dns01-recursive-nameservers-only` is required to prevent the
+controller from falling back to cluster-local recursive DNS. This does not
+change Kubernetes API or Vault service discovery, which still uses cluster DNS.
+
 ## Dependencies
 
 - Vault/External Secrets for issuer credentials.
