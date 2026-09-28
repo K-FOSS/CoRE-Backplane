@@ -1,6 +1,19 @@
 cert-manager:
   fullnameOverride: cert-manager
 
+  # Keep an available webhook and controller during a rolling upgrade on both
+  # Talos clusters. cert-manager uses leader election, so the extra controller
+  # replica is a standby rather than a second active reconciler.
+  replicaCount: 2
+  strategy:
+    type: 'RollingUpdate'
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
   crds:
     enabled: true
 
@@ -21,6 +34,15 @@ cert-manager:
     enabled: false
 
   webhook:
+    replicaCount: 2
+    strategy:
+      type: 'RollingUpdate'
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    podDisruptionBudget:
+      enabled: true
+      minAvailable: 1
     config:
       apiVersion: webhook.config.cert-manager.io/v1alpha1
       kind: WebhookConfiguration
