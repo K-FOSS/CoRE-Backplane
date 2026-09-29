@@ -19,7 +19,7 @@ cluster:
 dnsdist:
   enabled: false
   replicas: 2
-  configRevision: 'e50399cd2'
+  configRevision: 'forward-1.1.1.1'
   image:
     repository: 'powerdns/dnsdist-21'
     tag: '2.1.1'
@@ -42,6 +42,9 @@ dnsdist:
       - '10.0.0.0/8'
       - '172.16.0.0/12'
       - '192.168.0.0/16'
+  forward:
+    enabled: true
+    backend: '1.1.1.1:53'
   service:
     type: 'LoadBalancer'
     loadBalancerClass: ''

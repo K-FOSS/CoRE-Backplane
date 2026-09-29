@@ -6,6 +6,7 @@
 {{- end }}
 {{- $k8gbBackend := default (printf "%s.k8gb.svc.%s:53" $k8gbServiceName .Values.cluster.kubernetesDomain) .Values.dnsdist.k8gb.backend }}
 {{- $recursiveBackend := default (printf "kube-dns.kube-system.svc.%s:53" .Values.cluster.kubernetesDomain) .Values.dnsdist.recursive.backend }}
+{{- $forwardBackend := .Values.dnsdist.forward.backend }}
 {{- $authoritativeHost := trimSuffix ":53" $authoritativeBackend }}
 {{- $k8gbHost := trimSuffix ":53" $k8gbBackend }}
 {{- $recursiveHost := trimSuffix ":53" $recursiveBackend }}
@@ -48,6 +49,12 @@ data:
     -- false-negative dnsdist UDP health check against its dual-stack VIP.
     addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', nil, nil, nil)
 {{- end }}
+{{- if .Values.dnsdist.forward.enabled }}
+{{- $forwardHost := trimSuffix ":53" $forwardBackend }}
+    -- Queries outside the authoritative, K8GB, and private recursive rules
+    -- are intentionally forwarded to the configured public resolver.
+    addBackend('{{ $forwardHost }}', 'forwarder', 'forwarder', nil, nil, nil)
+{{- end }}
 
 {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
     addAction(QNameSuffixRule({
@@ -64,6 +71,10 @@ data:
 {{- range $index, $network := .Values.dnsdist.recursive.allowedNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
     }), PoolAction('recursive'))
 {{- end }}
+{{- if .Values.dnsdist.forward.enabled }}
+    addAction(AllRule(), PoolAction('forwarder'))
+{{- else }}
     addAction(AllRule(), PoolAction('authoritative'))
+{{- end }}
     setServerPolicy(firstAvailable)
 {{- end }}
