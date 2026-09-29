@@ -13,6 +13,8 @@ controllers:
     strategy: RollingUpdate
     pod:
       automountServiceAccountToken: false
+      annotations:
+        core.mylogin.space/dnsdist-config-revision: {{ .Values.dnsdist.configRevision | quote }}
       dnsConfig:
         options:
           - name: ndots
