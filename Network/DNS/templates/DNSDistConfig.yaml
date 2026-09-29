@@ -44,7 +44,7 @@ data:
     addBackend('{{ $authoritativeHost }}', 'authoritative', 'authoritative', 'SOA', nil, '{{ .Values.dnsdist.authoritative.healthCheckName }}')
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
 {{- if .Values.dnsdist.recursive.enabled }}
-    addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', 'AAAA', nil, 'a.root-servers.net.')
+    addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', 'A', nil, '{{ .Values.dnsdist.recursive.healthCheckName }}')
 {{- end }}
 
 {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
