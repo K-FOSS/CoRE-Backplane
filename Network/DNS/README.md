@@ -23,10 +23,17 @@ are rendered from [`values.yaml`](values.yaml) and
 
 `resolvemy.host.` is sent to the local `ns-core` PowerDNS Service. K8GB zones
 are sent to the K8GB CoreDNS Service when listed in
-`dnsdist.k8gb.zones`. Recursive requests are sent to the cluster-domain-qualified
-cluster DNS Service only for the CIDRs in `dnsdist.recursive.allowedNetworks`;
-other public requests remain in the authoritative pool so the public endpoint
-is not an open resolver.
+`dnsdist.k8gb.zones`. Backend Service names use
+`cluster.kubernetesDomain` (the active CoreDNS configuration may use
+`k8s.<site>.resolvemy.host` alongside `cluster.local`), while `cluster.domain`
+remains the external/site cluster identity. dnsdist resolves those Service
+names with `getAddressInfo()` before registering IP backends. Recursive
+requests are sent to the cluster-domain-qualified cluster DNS Service only for
+the CIDRs in `dnsdist.recursive.allowedNetworks`; other public requests remain
+in the authoritative pool so the public endpoint is not an open resolver.
+
+The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
+configuration so fully qualified internal Service names are resolved directly.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
 KubeVIP with UPnP forwarding. YXL/DC1 intentionally retains the legacy

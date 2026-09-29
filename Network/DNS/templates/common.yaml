@@ -13,6 +13,10 @@ controllers:
     strategy: RollingUpdate
     pod:
       automountServiceAccountToken: false
+      dnsConfig:
+        options:
+          - name: ndots
+            value: '0'
       securityContext:
         fsGroup: 953
         fsGroupChangePolicy: OnRootMismatch

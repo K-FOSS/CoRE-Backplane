@@ -1,7 +1,10 @@
 {{- if .Values.dnsdist.enabled }}
-{{- $authoritativeBackend := default (printf "ns-core.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.domain) .Values.dnsdist.authoritative.backend }}
-{{- $k8gbBackend := default (printf "core-network-global-coredns.k8gb.svc.%s:53" .Values.cluster.domain) .Values.dnsdist.k8gb.backend }}
-{{- $recursiveBackend := default (printf "kube-dns.kube-system.svc.%s:53" .Values.cluster.domain) .Values.dnsdist.recursive.backend }}
+{{- $authoritativeBackend := default (printf "ns-core.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.kubernetesDomain) .Values.dnsdist.authoritative.backend }}
+{{- $k8gbBackend := default (printf "core-network-global-coredns.k8gb.svc.%s:53" .Values.cluster.kubernetesDomain) .Values.dnsdist.k8gb.backend }}
+{{- $recursiveBackend := default (printf "kube-dns.kube-system.svc.%s:53" .Values.cluster.kubernetesDomain) .Values.dnsdist.recursive.backend }}
+{{- $authoritativeHost := trimSuffix ":53" $authoritativeBackend }}
+{{- $k8gbHost := trimSuffix ":53" $k8gbBackend }}
+{{- $recursiveHost := trimSuffix ":53" $recursiveBackend }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,32 +20,27 @@ data:
     setLocal('{{ .Values.dnsdist.listenAddress }}:{{ .Values.dnsdist.port }}')
     setACL({'0.0.0.0/0', '::/0'})
 
-    newServer({
-      address='{{ $authoritativeBackend }}',
-      name='authoritative',
-      pool='authoritative',
-      checkType='SOA',
-      checkName='{{ .Values.dnsdist.authoritative.healthCheckName }}',
-      mustResolve=true
-    })
-    newServer({
-      address='{{ $k8gbBackend }}',
-      name='k8gb',
-      pool='k8gb',
-      checkType='SOA',
-      checkName='{{ .Values.dnsdist.k8gb.healthCheckName }}',
-      mustResolve=true
-    })
+    local function addBackend(hostname, name, pool, checkType, checkClass, checkName)
+      getAddressInfo(hostname, function(_, addresses)
+        for _, address in ipairs(addresses) do
+          local backend = {
+            address=address:toString(),
+            name=name,
+            pool=pool,
+            checkType=checkType,
+            mustResolve=true
+          }
+          if checkClass ~= nil then backend.checkClass=checkClass end
+          if checkName ~= nil then backend.checkName=checkName end
+          newServer(backend)
+        end
+      end)
+    end
+
+    addBackend('{{ $authoritativeHost }}', 'authoritative', 'authoritative', 'SOA', nil, '{{ .Values.dnsdist.authoritative.healthCheckName }}')
+    addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
 {{- if .Values.dnsdist.recursive.enabled }}
-    newServer({
-      address='{{ $recursiveBackend }}',
-      name='recursive',
-      pool='recursive',
-      checkType='AAAA',
-      checkClass=DNSClass.CHAOS,
-      checkName='a.root-servers.net.',
-      mustResolve=true
-    })
+    addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', 'AAAA', DNSClass.CHAOS, 'a.root-servers.net.')
 {{- end }}
 
 {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
