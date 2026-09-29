@@ -159,6 +159,14 @@ spec:
                   namespace: 'core-{{ .values.environment }}'
                   sectionName: 'https-myloginspace'
 
+                {{- if eq .values.clusterName 'core-home1-talos-prod' }}
+                serviceOptions:
+                  rtpengine-media:
+                    loadBalancerClass: 'kube-vip.io/kube-vip-class'
+                    annotations:
+                      kube-vip.io/forwardUPNP: 'true'
+                {{- end }}
+
                 jitsi:
                   domain: 'meet.mylogin.space'
                   tls:
