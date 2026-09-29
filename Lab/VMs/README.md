@@ -165,11 +165,15 @@ Each top-level network becomes a NAD:
 | `type` | CNI type; defaults to `sriov`. |
 | `vlan`, `mtu` | Included in the CNI configuration when set. |
 | `sriov.device` | Required for SR-IOV; used as the NAD resource annotation and VM resource allocation. |
+| `sriov.trust` | Optional boolean; configures SR-IOV VF trust mode as `on` or `off`. |
+| `sriov.spoofchk` | Optional boolean; configures SR-IOV VF spoof checking as `on` or `off`. |
 | `bridge` | Bridge name when `type: bridge`. |
 
 For SR-IOV networks, the chart tracks the full network definition and lets
-KubeVirt request the resource named in the NAD annotation. A VM network entry
-can add a stable `macAddress`.
+KubeVirt request the resource named in the NAD annotation. `trust` and
+`spoofchk` are passed to the [SR-IOV CNI](https://github.com/k8snetworkplumbingwg/sriov-cni)
+as its `trust` and `spoofchk` settings. A VM network entry can add a stable
+`macAddress`.
 
 `podNetwork.enabled: true` adds KubeVirt's masquerade interface. It is the only
 interface through which this chart exposes ports with Kubernetes Services.
