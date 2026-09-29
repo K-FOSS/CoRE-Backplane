@@ -31,19 +31,67 @@ spec:
       tls:
         mode: Passthrough
 
-    - name: sip-tls
+    - name: sip-udp
+      allowedRoutes:
+        namespaces:
+          from: All
+      port: 5060
+      protocol: UDP
+
+    - name: sip-tcp
+      allowedRoutes:
+        namespaces:
+          from: All
+      port: 5060
+      protocol: TCP
+
+    - name: sips-tls
       allowedRoutes:
         namespaces:
           from: All
       port: 5061
       protocol: TLS
       tls:
-        mode: Terminate
-        certificateRefs:
-          - group: ''
-            kind: Secret
-            name: resolvemyhost-default-certificates
-            namespace: core-prod
+        mode: Passthrough
+
+    # - name: smtp-tcp
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
+    #   port: 25
+    #   protocol: TCP
+
+    # - name: submission-tcp
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
+    #   port: 587
+    #   protocol: TCP
+
+    # - name: submissions-tls
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
+    #   port: 465
+    #   protocol: TLS
+    #   tls:
+    #     mode: Passthrough
+
+    # - name: imap-tcp
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
+    #   port: 143
+    #   protocol: TCP
+
+    # - name: imaps-tls
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
+    #   port: 993
+    #   protocol: TLS
+    #   tls:
+    #     mode: Passthrough
 
     - name: https-myloginspace
       port: 443
@@ -123,54 +171,52 @@ spec:
           from: All
 
     #
-    # Palworld 
+    # Palworld
     #
-    - name: palworld
-      port: 8211
-      protocol: UDP
-      allowedRoutes:
-        namespaces:
-          from: All
+    # - name: palworld
+    #   port: 8211
+    #   protocol: UDP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
 
     #
     # Minecraft
     #
-    - name: minecraftjava
-      port: 25565
-      protocol: TCP
-      allowedRoutes:
-        namespaces:
-          from: All
+    # - name: minecraftjava
+    #   port: 25565
+    #   protocol: TCP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
 
+    # - name: minecraftbedrocktcp
+    #   port: 19132
+    #   protocol: TCP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
 
-    - name: minecraftbedrocktcp
-      port: 19132
-      protocol: TCP
-      allowedRoutes:
-        namespaces:
-          from: All
+    # - name: minecraftbedrockudp
+    #   port: 19132
+    #   protocol: UDP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
 
+    # - name: dhcp
+    #   port: 67
+    #   protocol: UDP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
 
-    - name: minecraftbedrockudp
-      port: 19132
-      protocol: UDP
-      allowedRoutes:
-        namespaces:
-          from: All
-
-    - name: dhcp
-      port: 67
-      protocol: UDP
-      allowedRoutes:
-        namespaces:
-          from: All
-
-    - name: tftp
-      port: 69
-      protocol: UDP
-      allowedRoutes:
-        namespaces:
-          from: All
+    # - name: tftp
+    #   port: 69
+    #   protocol: UDP
+    #   allowedRoutes:
+    #     namespaces:
+    #       from: All
 
     - name: tls-dns
       port: 853

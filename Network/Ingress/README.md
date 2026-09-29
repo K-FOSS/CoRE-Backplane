@@ -30,6 +30,14 @@ for every public hostname it terminates. Its certificate list includes the
 `core-home1-talos-prod`; adding the certificate to a shared listener does not
 create a route on other clusters.
 
+The shared Gateway exposes dedicated SIP, mail, and IMAP listener sections for
+cross-namespace `UDPRoute`, `TCPRoute`, and `TLSRoute` attachments:
+`sip-udp`/`sip-tcp` on `5060` and `sips-tls` on `5061`. The SMTP and IMAP
+listener definitions are currently commented out pending application route
+backends. The TLS listeners use passthrough mode because the attached
+`TLSRoute` owns the backend TLS flow; certificates and route backend Services
+remain owned by the application charts.
+
 Verify Gateway/HTTPRoute `Accepted`, `Programmed` and `ResolvedRefs`, DNS, SNI
 and certificate chains, redirects, backend health, and login/logout flows.
 Avoid changing shared listeners, policies, DNS and certificates in one
