@@ -43,13 +43,19 @@ data:
 {{- end }}
 
 {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
-    addAction(QNameSuffixRule({{ .Values.dnsdist.authoritative.zones | toJson }}), PoolAction('authoritative'))
+    addAction(QNameSuffixRule({
+{{- range $index, $zone := .Values.dnsdist.authoritative.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
+    }), PoolAction('authoritative'))
 {{- end }}
 {{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
-    addAction(QNameSuffixRule({{ .Values.dnsdist.k8gb.zones | toJson }}), PoolAction('k8gb'))
+    addAction(QNameSuffixRule({
+{{- range $index, $zone := .Values.dnsdist.k8gb.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
+    }), PoolAction('k8gb'))
 {{- end }}
 {{- if .Values.dnsdist.recursive.enabled }}
-    addAction(NetmaskGroupRule({{ .Values.dnsdist.recursive.allowedNetworks | toJson }}), PoolAction('recursive'))
+    addAction(NetmaskGroupRule({
+{{- range $index, $network := .Values.dnsdist.recursive.allowedNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
+    }), PoolAction('recursive'))
 {{- end }}
     addAction(AllRule(), PoolAction('authoritative'))
     setServerPolicy(firstAvailable)
