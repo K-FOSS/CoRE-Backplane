@@ -1,6 +1,10 @@
 {{- if .Values.dnsdist.enabled }}
 {{- $authoritativeBackend := default (printf "ns-core.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.kubernetesDomain) .Values.dnsdist.authoritative.backend }}
-{{- $k8gbBackend := default (printf "core-network-global-coredns.k8gb.svc.%s:53" .Values.cluster.kubernetesDomain) .Values.dnsdist.k8gb.backend }}
+{{- $k8gbServiceName := "core-network-global-coredns" }}
+{{- if .Values.cluster.name }}
+{{- $k8gbServiceName = printf "%s-network-global-%s-coredns" .Values.cluster.name .Values.cluster.environment }}
+{{- end }}
+{{- $k8gbBackend := default (printf "%s.k8gb.svc.%s:53" $k8gbServiceName .Values.cluster.kubernetesDomain) .Values.dnsdist.k8gb.backend }}
 {{- $recursiveBackend := default (printf "kube-dns.kube-system.svc.%s:53" .Values.cluster.kubernetesDomain) .Values.dnsdist.recursive.backend }}
 {{- $authoritativeHost := trimSuffix ":53" $authoritativeBackend }}
 {{- $k8gbHost := trimSuffix ":53" $k8gbBackend }}
