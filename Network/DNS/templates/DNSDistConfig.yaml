@@ -44,7 +44,9 @@ data:
     addBackend('{{ $authoritativeHost }}', 'authoritative', 'authoritative', 'SOA', nil, '{{ .Values.dnsdist.authoritative.healthCheckName }}')
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
 {{- if .Values.dnsdist.recursive.enabled }}
-    addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', 'A', nil, '{{ .Values.dnsdist.recursive.healthCheckName }}')
+    -- kube-dns is a Kubernetes Service with ready CoreDNS endpoints; avoid a
+    -- false-negative dnsdist UDP health check against its dual-stack VIP.
+    addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', nil, nil, nil)
 {{- end }}
 
 {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
