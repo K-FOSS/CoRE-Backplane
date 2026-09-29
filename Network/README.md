@@ -21,6 +21,7 @@ or a physical host can PXE boot.
 | [Insight](Insight/README.md) | OpenNMS Horizon/Minion monitoring, flow collection and time-series integration. | `Apps/Network/Insight.yaml` |
 | [NATPuncher](NATPuncher/README.md) | CoTURN STUN/TURN service. | `Apps/Network/NATPuncher.yaml` |
 | [NS](NS/README.md) | PowerDNS and PowerDNS-Admin authoritative DNS. | `Apps/Network/NS.yaml` |
+| [DNS](DNS/README.md) | dnsdist public DNS front door for authoritative, K8GB and restricted recursive backends. | `Apps/Network/DNS.yaml` |
 | [PrivateNetworking](PrivateNetworking/README.md) | NetBird and optional/transitional Netmaker overlays. | `Apps/Network/PrivateNetworking.yaml` |
 | [RDNS](RDNS/README.md) | CoreDNS reverse DNS and PowerDNS integration. | No direct ApplicationSet currently found. |
 | [RouteServer](RouteServer/README.md) | FRR route reflectors/servers and routing policy. | `Apps/Network/RouteReflector.yaml` |

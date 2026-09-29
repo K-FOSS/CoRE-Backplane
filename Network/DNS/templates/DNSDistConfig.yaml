@@ -1,0 +1,56 @@
+{{- if .Values.dnsdist.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dnsdist-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: 'dnsdist'
+    app.kubernetes.io/instance: {{ .Release.Name | quote }}
+data:
+  dnsdist.conf: |
+    -- PowerDNS dnsdist is the public DNS front door. Routing is deliberately
+    -- explicit so the public Service cannot become an open recursive resolver.
+    setLocal('{{ .Values.dnsdist.listenAddress }}:{{ .Values.dnsdist.port }}')
+    setACL({'0.0.0.0/0', '::/0'})
+
+    newServer({
+      address='{{ .Values.dnsdist.authoritative.backend }}',
+      name='authoritative',
+      pool='authoritative',
+      checkType='SOA',
+      checkName='{{ .Values.dnsdist.authoritative.healthCheckName }}',
+      mustResolve=true
+    })
+    newServer({
+      address='{{ .Values.dnsdist.k8gb.backend }}',
+      name='k8gb',
+      pool='k8gb',
+      checkType='SOA',
+      checkName='{{ .Values.dnsdist.k8gb.healthCheckName }}',
+      mustResolve=true
+    })
+{{- if .Values.dnsdist.recursive.enabled }}
+    newServer({
+      address='{{ .Values.dnsdist.recursive.backend }}',
+      name='recursive',
+      pool='recursive',
+      checkType='AAAA',
+      checkClass=DNSClass.CHAOS,
+      checkName='a.root-servers.net.',
+      mustResolve=true
+    })
+{{- end }}
+
+{{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
+    addAction(QNameSuffixRule({{ .Values.dnsdist.authoritative.zones | toJson }}), PoolAction('authoritative'))
+{{- end }}
+{{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
+    addAction(QNameSuffixRule({{ .Values.dnsdist.k8gb.zones | toJson }}), PoolAction('k8gb'))
+{{- end }}
+{{- if .Values.dnsdist.recursive.enabled }}
+    addAction(NetmaskGroupRule({{ .Values.dnsdist.recursive.allowedNetworks | toJson }}), PoolAction('recursive'))
+{{- end }}
+    addAction(AllRule(), PoolAction('authoritative'))
+    setServerPolicy(firstAvailable)
+{{- end }}

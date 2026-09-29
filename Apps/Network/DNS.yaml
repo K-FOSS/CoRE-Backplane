@@ -1,0 +1,95 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: core-backplane-network-dns
+  namespace: argocd
+spec:
+  goTemplate: true
+  generators:
+    - merge:
+        mergeKeys:
+          - name
+        generators:
+          - list:
+              elements:
+                - name: core-home1-talos-prod
+                  values:
+                    dnsdistEnabled: true
+                    nameserver:
+                      domain: 'ns2.resolvemy.host'
+                      dnsTarget: <path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>
+                      loadBalancerClass: 'kube-vip.io/kube-vip-class'
+                      ipv4: ''
+                      serviceGroup: ''
+                      serviceType: 'ClusterIP'
+                - name: core-dc1-talos-prod
+                  values:
+                    dnsdistEnabled: false
+                    nameserver:
+                      domain: 'ns4.resolvemy.host'
+                      dnsTarget: ''
+                      loadBalancerClass: 'purelb.io/purelbv2'
+                      ipv4: '66.165.222.100'
+                      serviceGroup: 'anycast'
+                      serviceType: 'LoadBalancer'
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/computetype: 'baremetal'
+                  resolvemy.host/nodetype: 'infra'
+              values:
+                clusterName: '{{ .name }}'
+                environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: '{{ .values.clusterName }}-network-dns-{{ .values.environment }}'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+    spec:
+      project: core
+      syncPolicy:
+        syncOptions:
+          - ServerSideApply=true
+          - CreateNamespace=true
+      source:
+        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        path: Network/DNS
+        targetRevision: HEAD
+        plugin:
+          name: argocd-lovely-plugin
+          env:
+            - name: LOVELY_HELM_MERGE
+              value: |-
+                dnsdist:
+                  enabled: {{ .values.dnsdistEnabled }}
+                  authoritative:
+                    backend: 'ns-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:53'
+                    zones:
+                      - 'resolvemy.host.'
+                  k8gb:
+                    backend: 'core-network-global-coredns.k8gb.svc.cluster.local:53'
+                    zones: []
+                  service:
+                    loadBalancerClass: '{{ .values.nameserver.loadBalancerClass }}'
+                    annotations:
+                      external-dns.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
+                      external-dns.alpha.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
+                      {{ if .values.nameserver.dnsTarget }}
+                      external-dns.kubernetes.io/target: '{{ .values.nameserver.dnsTarget }}'
+                      external-dns.alpha.kubernetes.io/target: '{{ .values.nameserver.dnsTarget }}'
+                      {{ end }}
+                      {{ if eq .values.nameserver.loadBalancerClass "kube-vip.io/kube-vip-class" }}
+                      kube-vip.io/forwardUPNP: 'true'
+                      {{ end }}
+                      {{ if eq .values.nameserver.loadBalancerClass "purelb.io/purelbv2" }}
+                      purelb.io/addresses: '{{ .values.nameserver.ipv4 }}'
+                      purelb.io/allow-local: 'true'
+                      purelb.io/service-group: '{{ .values.nameserver.serviceGroup }}'
+                      {{ end }}
+      destination:
+        server: '{{ .server }}'
+        namespace: k8gb

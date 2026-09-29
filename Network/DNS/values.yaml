@@ -1,0 +1,35 @@
+# dnsdist is the public DNS front door for the site. PowerDNS remains the
+# authoritative database-backed server, while K8GB CoreDNS serves only the
+# delegated zones configured below. Recursive forwarding is restricted to the
+# explicitly listed private networks; the public listener is not an open
+# resolver by default.
+dnsdist:
+  enabled: false
+  image:
+    repository: 'powerdns/dnsdist-20'
+    tag: '2.0.2'
+    pullPolicy: 'IfNotPresent'
+  listenAddress: '0.0.0.0'
+  port: 53
+  authoritative:
+    backend: 'ns-core.core-prod.svc.cluster.local:53'
+    healthCheckName: 'resolvemy.host.'
+    zones:
+      - 'resolvemy.host.'
+  k8gb:
+    backend: 'core-network-global-coredns.k8gb.svc.cluster.local:53'
+    healthCheckName: 'resolvemy.host.'
+    zones: []
+  recursive:
+    enabled: true
+    backend: 'kube-dns.kube-system.svc.cluster.local:53'
+    allowedNetworks:
+      - '10.0.0.0/8'
+      - '172.16.0.0/12'
+      - '192.168.0.0/16'
+  service:
+    type: 'LoadBalancer'
+    loadBalancerClass: ''
+    loadBalancerIP: ''
+    externalTrafficPolicy: 'Local'
+    annotations: {}

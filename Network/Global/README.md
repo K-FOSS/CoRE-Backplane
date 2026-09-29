@@ -1,4 +1,4 @@
-# Global network services
+# CoRE-Backplane Network/Global Stack
 
 This chart starts the k8gb global load-balancing control plane in the two
 registered production infrastructure clusters. The owning
@@ -15,33 +15,34 @@ the `k8gb` namespace. The chart owns that namespace and creates it at sync wave
 This is the control-plane foundation. The chart creates the current `k8gb.io`
 CRDs, disables installation of the legacy `k8gb.absa.oss` CRDs, and enables
 Gateway API integration. It sets the distinct per-site `clusterGeoTag` and
-`extGslbClustersGeoTags` values.
+`extGslbClustersGeoTags` values. Public DNS exposure is owned separately by
+the [Network/DNS stack](../DNS/README.md).
 
 No `ZoneDelegation` or `Gslb` resources are created. The chart has no static
-DNS zones, the embedded ExternalDNS is disabled, and k8gb CoreDNS uses a
-`ClusterIP` Service. Therefore this installation does not publish public DNS,
-delegate zones, or globally balance application traffic. These safeguards
-remain in place until the public DNS path is configured and verified.
+DNS zones and the embedded ExternalDNS is disabled. K8GB CoreDNS remains an
+internal `ClusterIP` backend; the separate Network/DNS stack may route
+configured zones to it.
 
 ## DNS prerequisites before enabling a global service
 
 Each participating k8gb CoreDNS server must have an externally reachable DNS
-address for the parent zone's NS and glue records. DC1's existing authoritative
-DNS Service currently has public address `66.165.222.100`; Home1's equivalent
-Service is `10.1.1.153`, a private address. The current Home1 address cannot be
-published as a public nameserver. A public or deliberately private, routed
-DNS design must be established for both sites before enabling zone delegation.
+address for the parent zone's NS and glue records. YXL/DC1 retains the legacy
+PowerDNS PureLB endpoint at `66.165.222.100`; the Network/DNS stack owns the
+YVR endpoint through KubeVIP with UPnP forwarding. The actual YVR WAN target
+must be verified from outside the site before publishing glue.
 
 The operator-provided authoritative DNS topology is `ns1.resolvemy.host`
 through `ns4.resolvemy.host`, with two names assigned to DC1 and two to YVR.
-The service is owned by the [Network/NS PowerDNS chart](../NS/README.md).
+The underlying authoritative service is owned by the [Network/NS PowerDNS
+chart](../NS/README.md), while its public port-53 exposure is owned by
+[Network/DNS](../DNS/README.md).
 That chart currently runs one PowerDNS workload pod per cluster, so the
 two-per-site statement describes the assigned nameservers, not observed pod
 replicas. The Network/NS ApplicationSet currently emits `ns4` to DC1 and `ns2`
 to YVR; the records for the other names and their site assignments must be
-verified in the authoritative zone. The live Home1/YVR Service address is
-private, so existing nameserver records do not by themselves prove that
-k8gb's CoreDNS endpoint can be reached publicly. Confirm each name's actual
+verified in the authoritative zone. The live Home1/YVR endpoint must still be
+checked externally, so existing nameserver records do not by themselves prove
+that k8gb's CoreDNS endpoint can be reached publicly. Confirm each name's actual
 A/AAAA target, its serving site's address, the parent zone's authoritative
 owner, and external UDP/TCP port 53 reachability before creating delegation
 or glue.
@@ -75,8 +76,8 @@ The k8gb controller manages its CRDs and local CoreDNS configuration. It does
 not create cross-cluster workloads, load-balancer addresses, DNS credentials,
 or parent-zone delegation in this initial configuration.
 
-After reconciliation, verify both child Applications, k8gb Deployment and
-CoreDNS readiness, CRD establishment, the site geotags, and that no
+After reconciliation, verify both child Applications, K8GB and CoreDNS
+readiness, CRD establishment, the site geotags, and that no
 `ZoneDelegation` or `Gslb` resources exist. Once DNS prerequisites are met,
 verify ZoneDelegation status, generated DNSEndpoints, Cloudflare/provider
 records, authoritative UDP/TCP answers from outside each site, and the actual

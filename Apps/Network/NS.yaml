@@ -22,6 +22,7 @@ spec:
                       hostname: 'nsadmin.core-dc1-talos-prod.dc1.yxl.resolvemy.host'
                     nameserver:
                       domain: 'ns4.resolvemy.host'
+                      serviceType: 'LoadBalancer'
                       address:
                         ipv4: 66.165.222.100
                         serviceGroup: anycast
@@ -33,6 +34,7 @@ spec:
                       hostname: 'nsadmin.core-home1-talos-prod.home1.yvr.resolvemy.host'
                     nameserver:
                       domain: 'ns2.resolvemy.host'
+                      serviceType: 'ClusterIP'
                       dns:
                         target: <path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>
                       address:
@@ -96,6 +98,7 @@ spec:
 
                 service:
                   main:
+                    type: '{{ .values.nameserver.serviceType }}'
                     {{ if .values.nameserver.address.loadBalancerClass }}
                     loadBalancerClass: '{{ .values.nameserver.address.loadBalancerClass }}'
                     {{ end }}
@@ -116,7 +119,7 @@ spec:
                       purelb.io/addresses: '{{ .values.nameserver.address.ipv4 }}'
                       purelb.io/allow-local: 'true'
                       {{ if .values.nameserver.address.sharedIP.enabled }}
-                      purelb.io/allow-shared-ip: '{{ .values.nameserver.address.sharedIP.key }}' 
+                      purelb.io/allow-shared-ip: '{{ .values.nameserver.address.sharedIP.key }}'
                       {{ end }}
                       purelb.io/service-group: '{{ .values.nameserver.address.serviceGroup }}'
                       {{ end }}

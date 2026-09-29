@@ -210,9 +210,11 @@ service:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
     controller: main
     primary: true
-    type: LoadBalancer
+    type: {{ default "LoadBalancer" .Values.service.main.type }}
     loadBalancerClass: {{ .Values.service.main.loadBalancerClass | quote }}
+    {{- if eq (default "LoadBalancer" .Values.service.main.type) "LoadBalancer" }}
     externalTrafficPolicy: Local
+    {{- end }}
     labels:
       wan-mode: public
       lan-mode: private
