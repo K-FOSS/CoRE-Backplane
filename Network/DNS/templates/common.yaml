@@ -14,6 +14,11 @@ controllers:
     pod:
       automountServiceAccountToken: false
       securityContext:
+        fsGroup: 953
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+        runAsUser: 953
+        runAsGroup: 953
         seccompProfile:
           type: RuntimeDefault
     containers:
@@ -35,6 +40,8 @@ controllers:
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
         resources:
 {{ toYaml .Values.dnsdist.resources | nindent 10 }}
         probes:
