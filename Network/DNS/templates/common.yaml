@@ -1,0 +1,96 @@
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "core-network-dns.commonValues" -}}
+global:
+  nameOverride: 'dnsdist'
+  fullnameOverride: 'dnsdist'
+  createDefaultServiceAccount: false
+
+controllers:
+  main:
+    type: deployment
+    replicas: {{ .Values.dnsdist.replicas }}
+    strategy: RollingUpdate
+    pod:
+      automountServiceAccountToken: false
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+    containers:
+      main:
+        image:
+          repository: {{ .Values.dnsdist.image.repository | quote }}
+          tag: {{ .Values.dnsdist.image.tag | quote }}
+          pullPolicy: {{ .Values.dnsdist.image.pullPolicy }}
+        args:
+          - '-C'
+          - '/etc/dnsdist/dnsdist.conf'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            add:
+              - NET_BIND_SERVICE
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+{{ toYaml .Values.dnsdist.resources | nindent 10 }}
+        probes:
+          readiness:
+            enabled: true
+            type: TCP
+            port: dns-tcp
+            spec:
+              periodSeconds: 10
+          liveness:
+            enabled: true
+            type: TCP
+            port: dns-tcp
+            spec:
+              periodSeconds: 20
+
+service:
+  main:
+    controller: main
+    primary: true
+    forceRename: 'dnsdist'
+    type: {{ .Values.dnsdist.service.type }}
+    externalTrafficPolicy: {{ .Values.dnsdist.service.externalTrafficPolicy }}
+    loadBalancerClass: {{ .Values.dnsdist.service.loadBalancerClass | quote }}
+    loadBalancerIP: {{ .Values.dnsdist.service.loadBalancerIP | quote }}
+    annotations:
+{{ toYaml .Values.dnsdist.service.annotations | nindent 6 }}
+    ports:
+      dns-udp:
+        primary: true
+        port: {{ .Values.dnsdist.port }}
+        targetPort: dns-udp
+        protocol: UDP
+      dns-tcp:
+        primary: false
+        port: {{ .Values.dnsdist.port }}
+        targetPort: dns-tcp
+        protocol: TCP
+
+persistence:
+  config:
+    type: custom
+    volumeSpec:
+      configMap:
+        name: 'dnsdist-config'
+    advancedMounts:
+      main:
+        main:
+          - path: '/etc/dnsdist/dnsdist.conf'
+            subPath: 'dnsdist.conf'
+            readOnly: true
+
+{{- end -}}
+
+{{- if .Values.dnsdist.enabled }}
+{{- $commonValues := include "core-network-dns.commonValues" . | fromYaml -}}
+{{- $_ := merge .Values $commonValues -}}
+{{ include "bjw-s.common.loader.generate" . }}
+{{- end }}

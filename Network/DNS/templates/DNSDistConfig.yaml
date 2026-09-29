@@ -1,4 +1,7 @@
 {{- if .Values.dnsdist.enabled }}
+{{- $authoritativeBackend := default (printf "ns-core.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.domain) .Values.dnsdist.authoritative.backend }}
+{{- $k8gbBackend := default (printf "core-network-global-coredns.k8gb.svc.%s:53" .Values.cluster.domain) .Values.dnsdist.k8gb.backend }}
+{{- $recursiveBackend := default (printf "kube-dns.kube-system.svc.%s:53" .Values.cluster.domain) .Values.dnsdist.recursive.backend }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -15,7 +18,7 @@ data:
     setACL({'0.0.0.0/0', '::/0'})
 
     newServer({
-      address='{{ .Values.dnsdist.authoritative.backend }}',
+      address='{{ $authoritativeBackend }}',
       name='authoritative',
       pool='authoritative',
       checkType='SOA',
@@ -23,7 +26,7 @@ data:
       mustResolve=true
     })
     newServer({
-      address='{{ .Values.dnsdist.k8gb.backend }}',
+      address='{{ $k8gbBackend }}',
       name='k8gb',
       pool='k8gb',
       checkType='SOA',
@@ -32,7 +35,7 @@ data:
     })
 {{- if .Values.dnsdist.recursive.enabled }}
     newServer({
-      address='{{ .Values.dnsdist.recursive.backend }}',
+      address='{{ $recursiveBackend }}',
       name='recursive',
       pool='recursive',
       checkType='AAAA',

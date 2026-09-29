@@ -42,6 +42,8 @@ spec:
                 clusterName: '{{ .name }}'
                 environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
+                datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+                region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
   syncPolicy:
     preserveResourcesOnDeletion: true
   template:
@@ -64,14 +66,18 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
+                cluster:
+                  name: '{{ .values.clusterName }}'
+                  domain: '{{ .values.clusterDomain }}'
+                  environment: '{{ .values.environment }}'
+                  datacenter: '{{ .values.datacenter }}'
+                  region: '{{ .values.region }}'
                 dnsdist:
                   enabled: {{ .values.dnsdistEnabled }}
                   authoritative:
-                    backend: 'ns-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:53'
                     zones:
                       - 'resolvemy.host.'
                   k8gb:
-                    backend: 'core-network-global-coredns.k8gb.svc.cluster.local:53'
                     zones: []
                   service:
                     loadBalancerClass: '{{ .values.nameserver.loadBalancerClass }}'

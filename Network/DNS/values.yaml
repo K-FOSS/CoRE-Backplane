@@ -3,8 +3,21 @@
 # delegated zones configured below. Recursive forwarding is restricted to the
 # explicitly listed private networks; the public listener is not an open
 # resolver by default.
+global:
+  nameOverride: 'dnsdist'
+  fullnameOverride: 'dnsdist'
+  createDefaultServiceAccount: false
+
+cluster:
+  name: ''
+  domain: 'cluster.local'
+  environment: 'prod'
+  datacenter: ''
+  region: ''
+
 dnsdist:
   enabled: false
+  replicas: 2
   image:
     repository: 'powerdns/dnsdist-21'
     tag: '2.1.1'
@@ -12,17 +25,17 @@ dnsdist:
   listenAddress: '0.0.0.0'
   port: 53
   authoritative:
-    backend: 'ns-core.core-prod.svc.cluster.local:53'
+    backend: ''
     healthCheckName: 'resolvemy.host.'
     zones:
       - 'resolvemy.host.'
   k8gb:
-    backend: 'core-network-global-coredns.k8gb.svc.cluster.local:53'
+    backend: ''
     healthCheckName: 'resolvemy.host.'
     zones: []
   recursive:
     enabled: true
-    backend: 'kube-dns.kube-system.svc.cluster.local:53'
+    backend: ''
     allowedNetworks:
       - '10.0.0.0/8'
       - '172.16.0.0/12'
@@ -33,3 +46,12 @@ dnsdist:
     loadBalancerIP: ''
     externalTrafficPolicy: 'Local'
     annotations: {}
+  resources:
+    limits:
+      cpu: '500m'
+      memory: '256Mi'
+      ephemeral-storage: '128Mi'
+    requests:
+      cpu: '50m'
+      memory: '64Mi'
+      ephemeral-storage: '32Mi'

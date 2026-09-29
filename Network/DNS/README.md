@@ -8,6 +8,11 @@ the [Network/NS stack](../NS/README.md), K8GB CoreDNS remains owned by
 [Network/Global](../Global/README.md), and cluster-recursive CoreDNS remains
 owned by [Network/Base](../Base/README.md).
 
+The dnsdist Deployment and Services are generated through the pinned
+[BJW-S common library chart 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common).
+The dnsdist ConfigMap remains a direct chart resource because its Lua routing
+configuration is specific to this stack.
+
 ## Routing and exposure
 
 The [official PowerDNS dnsdist image](https://hub.docker.com/r/powerdns/dnsdist-21)
@@ -18,9 +23,10 @@ are rendered from [`values.yaml`](values.yaml) and
 
 `resolvemy.host.` is sent to the local `ns-core` PowerDNS Service. K8GB zones
 are sent to the K8GB CoreDNS Service when listed in
-`dnsdist.k8gb.zones`. Recursive requests are sent to cluster DNS only for the
-CIDRs in `dnsdist.recursive.allowedNetworks`; other public requests remain in
-the authoritative pool so the public endpoint is not an open resolver.
+`dnsdist.k8gb.zones`. Recursive requests are sent to the cluster-domain-qualified
+cluster DNS Service only for the CIDRs in `dnsdist.recursive.allowedNetworks`;
+other public requests remain in the authoritative pool so the public endpoint
+is not an open resolver.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
 KubeVIP with UPnP forwarding. YXL/DC1 intentionally retains the legacy
