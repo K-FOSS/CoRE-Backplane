@@ -88,6 +88,11 @@ YVR and legacy K3s spoke renders disable them. The DC1 hub sets the chart's
 `avoip-prod` dummy interface. Home1 and legacy K3s explicitly disable the
 Cilium egress gateway policy.
 
+Each matrix entry explicitly injects the RTPEngine media range
+`11000–11050`, where the chart treats `max` as exclusive and renders UDP
+ports `11000–11049` on the public media Service. Keep this range aligned with
+the carrier/firewall and any per-site load-balancer exposure.
+
 The upstream [AVoIP chart source](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP)
 defines these network values and renders Cilium egress policies for RTPEngine
 and, when enabled, FreeSWITCH. Before enabling sync, render the upstream
