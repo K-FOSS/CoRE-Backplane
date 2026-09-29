@@ -298,6 +298,10 @@ spec:
                     vms:
                       - name: windows-lab
                         uefi: true
+                        cpus:
+                          cores: 4
+                          sockets: 1
+                          threads: 2
                         boot:
                           mode: uefi
                           secureBoot: true
@@ -307,7 +311,7 @@ spec:
                           kubernetes.io/hostname: 'hpc3'
                         disk:
                           enabled: true
-                          size: 128Gi
+                          size: 200Gi
                         networks:
                           - name: wan-home
 
@@ -349,6 +353,9 @@ spec:
                         disk:
                           enabled: true
                           size: 20Gi
+                          source:
+                            pvc:
+                              name: 'rootdisk-template'
                         networks:
                           - name: wan-home
                             macAddress: '02:01:50:00:00:01'
