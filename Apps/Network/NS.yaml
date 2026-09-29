@@ -37,9 +37,6 @@ spec:
                       serviceType: 'ClusterIP'
                       dns:
                         target: <path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>
-                      address:
-                        loadBalancerClass: 'kube-vip.io/kube-vip-class'
-                        
           - clusters:
               selector:
                 matchLabels:
@@ -99,7 +96,7 @@ spec:
                 service:
                   main:
                     type: '{{ .values.nameserver.serviceType }}'
-                    {{ if .values.nameserver.address.loadBalancerClass }}
+                    {{ if and (eq .values.nameserver.serviceType "LoadBalancer") .values.nameserver.address.loadBalancerClass }}
                     loadBalancerClass: '{{ .values.nameserver.address.loadBalancerClass }}'
                     {{ end }}
                     annotations:
@@ -112,10 +109,10 @@ spec:
                       external-dns.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
                       # TODO(external-dns-017): Remove the legacy annotation after upgrading ExternalDNS.
                       external-dns.alpha.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'
-                      {{ if eq .values.nameserver.address.loadBalancerClass "kube-vip.io/kube-vip-class" }}
+                      {{ if and (eq .values.nameserver.serviceType "LoadBalancer") (eq .values.nameserver.address.loadBalancerClass "kube-vip.io/kube-vip-class") }}
                       kube-vip.io/forwardUPNP: 'true'
                       {{ end }}
-                      {{ if not .values.nameserver.address.loadBalancerClass }}
+                      {{ if and (eq .values.nameserver.serviceType "LoadBalancer") (not .values.nameserver.address.loadBalancerClass) }}
                       purelb.io/addresses: '{{ .values.nameserver.address.ipv4 }}'
                       purelb.io/allow-local: 'true'
                       {{ if .values.nameserver.address.sharedIP.enabled }}
