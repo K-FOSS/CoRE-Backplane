@@ -17,15 +17,12 @@ The operator-provided authoritative DNS topology is `ns1.resolvemy.host`
 through `ns4.resolvemy.host`, with two names assigned to DC1 and two to YVR.
 All four are part of this Network/NS PowerDNS service. The ApplicationSet
 currently emits `ns4.resolvemy.host` at DC1 address `66.165.222.100` and
-`ns2.resolvemy.host` at Home1/YVR. Home1 is configured to use the
-[KubeVIP Service class](https://kube-vip.io/docs/usage/kubernetes-services/)
-and its VLAN 150 pool (`10.0.0.39-10.0.0.49`);
-the previous PureLB address `10.1.1.153` remains live until Argo CD reconciles
-this change. Confirm the assigned address and external reachability before
-publishing it as a public DNS target. The Home1 Service also opts into KubeVIP
-UPnP forwarding, which maps its DNS ports (TCP and UDP 53) through the YVR
-gateway; this depends on the enabled KubeVIP UPnP support and a working UPnP
-gateway. See the upstream [UPnP service instructions](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
+`ns2.resolvemy.host` at Home1/YVR. Home1 uses a `ClusterIP` nameserver Service;
+its public DNS target is supplied through the YVR ExternalDNS target annotation,
+not through KubeVIP, UPnP, or PureLB. DC1 remains the LoadBalancer site using
+the assigned PureLB address `66.165.222.100` and service group `anycast`.
+Confirm the live DNS target and external reachability before relying on either
+site for delegation.
 The current values do not emit the other two names, so verify their live
 records and site assignments against the authoritative zone before relying on
 them for delegation.
