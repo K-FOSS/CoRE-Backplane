@@ -342,6 +342,21 @@ spec:
                           - name: conntrack-sync
                             macAddress: '02:10:00:00:02:01'
 
+                      - name: testvm
+                        installing: false
+                        podNetwork:
+                          enabled: false
+                        disk:
+                          enabled: true
+                          size: 20Gi
+                        networks:
+                          - name: wan-home
+                            macAddress: '02:01:50:00:00:01'
+                          - name: home2-rt1
+                            macAddress: '02:00:30:00:00:01'
+                          - name: conntrack-sync
+                            macAddress: '02:10:00:00:00:01'
+
                       - name: transit-lab2
                         installing: false
                         cpus:
@@ -426,7 +441,7 @@ spec:
                           macAddress: '02:01:04:02:02:01'
                         networks:
                           - name: management
-                            macAddress: '02:00:01:00:00:01'
+                            macAddress: '02:00:01:00:20:01'
                         ports:
                           - name: ssh
                             port: 22
