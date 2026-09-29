@@ -10,8 +10,9 @@ owned by [Network/Base](../Base/README.md).
 
 ## Routing and exposure
 
-The [official PowerDNS dnsdist image](https://hub.docker.com/r/powerdns/dnsdist-20)
-is pinned to `2.0.2`. Its [downstream health checks and server-pool model](https://www.dnsdist.org/guides/downstreams.html)
+The [official PowerDNS dnsdist image](https://hub.docker.com/r/powerdns/dnsdist-21)
+is pinned to `2.1.1`, the latest verified Docker image tag. Its [downstream
+health checks and server-pool model](https://www.dnsdist.org/guides/downstreams.html)
 are rendered from [`values.yaml`](values.yaml) and
 [`templates/DNSDistConfig.yaml`](templates/DNSDistConfig.yaml).
 
