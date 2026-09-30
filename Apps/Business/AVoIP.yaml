@@ -203,16 +203,9 @@ spec:
                 {{- end }}
                 {{- end }}
                 {{- if eq .values.region "yxl" }}
-                  rtpengine-media:
-                    annotations:
-                      purelb.io/addresses: '{{ .values.rtpengineMediaAddress }}'
-                      purelb.io/allow-local: 'true'
-                      purelb.io/service-group: 'core-public'
+                {{- toYaml (dict "rtpengine-media" (dict "annotations" (dict "purelb.io/addresses" .values.rtpengineMediaAddress "purelb.io/allow-local" "true" "purelb.io/service-group" "core-public"))) | nindent 18 }}
                 {{- else if eq .values.region "yvr" }}
-                  rtpengine-media:
-                    loadBalancerClass: 'kube-vip.io/kube-vip-class'
-                    annotations:
-                      kube-vip.io/forwardUPNP: 'true'
+                {{- toYaml (dict "rtpengine-media" (dict "loadBalancerClass" "kube-vip.io/kube-vip-class" "annotations" (dict "kube-vip.io/forwardUPNP" "true"))) | nindent 18 }}
                 {{- end }}
 
                 {{- if eq .values.type "spoke" }}
