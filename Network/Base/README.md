@@ -64,6 +64,13 @@ The primary value groups are `cilium`, `hubble`, `sriov-network-operator`, `cf-d
 belong in the owning ApplicationSet rather than as additional literals in this
 directory.
 
+Cilium path MTU discovery is enabled with TCP Packetization Layer PMTUD set to
+`always`, so agents continuously use packetization-layer probing rather than
+waiting for a suspected PMTU black hole. The [Cilium Helm values reference](https://docs.cilium.io/en/stable/helm-values/)
+and [PMTU tuning guidance](https://docs.cilium.io/en/stable/operations/performance/tuning/)
+describe the mode and its trade-offs. Verify the effective value with
+`cilium-dbg config` after reconciliation.
+
 The DC1 entry in the owning ApplicationSet enables the Cilium Hubble node agent
 through `cilium.hubble.enabled` and enables Hubble TLS. Hubble Relay and Hubble
 UI remain disabled, so this change exposes flow collection on the agents without
