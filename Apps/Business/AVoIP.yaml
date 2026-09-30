@@ -171,6 +171,11 @@ spec:
                 {{- end }}
 
                 kamailio:
+                {{- if hasKey .values "kamailio" }}
+                {{- with .values.kamailio }}
+                {{- toYaml . | nindent 2 }}
+                {{- end }}
+                {{- end }}
                   advertisedHost: 'sip.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
 
                 network:
