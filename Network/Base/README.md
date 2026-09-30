@@ -39,7 +39,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 
 | Component | Source and behavior |
 | --- | --- |
-| [Cilium](https://docs.cilium.io/en/stable/) | Helm dependency providing the primary CNI, cluster mesh, BGP control plane, and local `CiliumEgressGatewayPolicy`. See [BGP resources](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-configuration/) and [egress gateway](https://docs.cilium.io/en/stable/network/egress-gateway/egress-gateway/). |
+| [Cilium](https://docs.cilium.io/en/stable/) | Helm dependency providing the primary CNI, cluster mesh, BGP control plane, Hubble node agents, and local `CiliumEgressGatewayPolicy`. See [BGP resources](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-configuration/), [Hubble](https://docs.cilium.io/en/stable/observability/), and [egress gateway](https://docs.cilium.io/en/stable/network/egress-gateway/egress-gateway/). |
 | [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) | Remote Kustomize resource installing thick Multus and the NetworkAttachmentDefinition CRD. The ApplicationSet patches its images, resources, and host network-namespace path. |
 | [CNI DHCP IPAM](https://www.cni.dev/plugins/current/ipam/dhcp/) | Installed conditionally into Multus' host CNI binary directory and served by a DHCP daemon sidecar when KubeVIP is enabled. |
 | [Multus dynamic networks controller](https://github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller) | Remote Kustomize resource installing the per-node dynamic attachment controller. |
@@ -59,10 +59,18 @@ references on every change, and pin both before treating a render as reproducibl
 
 ## Values and generated resources
 
-The primary value groups are `cilium`, `sriov-network-operator`, `cf-dns`,
+The primary value groups are `cilium`, `hubble`, `sriov-network-operator`, `cf-dns`,
 `sriovDevicePlugin`, `purelb`, `kubeVip`, `envoy-gw`, and `frr-k8s`. Site-specific values
 belong in the owning ApplicationSet rather than as additional literals in this
 directory.
+
+The DC1 entry in the owning ApplicationSet enables the Cilium Hubble node agent
+through `cilium.hubble.enabled` and enables Hubble TLS. Hubble Relay and Hubble
+UI remain disabled, so this change exposes flow collection on the agents without
+adding a shared relay or dashboard endpoint. Verify the effective setting with
+`cilium-dbg status` or the Cilium ConfigMap after reconciliation; the [Hubble CLI
+guide](https://docs.cilium.io/en/stable/observability/hubble/hubble-cli/)
+describes querying flows once a relay is intentionally deployed.
 
 `kubeVip.enabled` is false in the chart and DC1 generator entry; it is enabled
 for Home1. The Home1 entry describes the YVR UPnP WAN attachment: SR-IOV

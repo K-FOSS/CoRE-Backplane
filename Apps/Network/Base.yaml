@@ -18,6 +18,10 @@ spec:
               elements:
                 - name: core-dc1-talos-prod
                   values:
+                    hubble:
+                      enabled: true
+                      tls:
+                        enabled: true
                     kubeVip:
                       enabled: false
                     kubeDNS:
@@ -239,6 +243,10 @@ spec:
                     # clusters and in the range of 1 to 255. Only required for Cluster Mesh,
                     # may be 0 if Cluster Mesh is not used.
                     id: {{ .values.clusterId }}
+                  {{- with .values.hubble }}
+                  hubble:
+                    {{- toYaml . | nindent 20 }}
+                  {{- end }}
 
                 kubeDNS:
                   enabled: true
