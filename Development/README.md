@@ -536,6 +536,22 @@ an alias that reads Argo CD's initial admin password. Treat this as
 operator-specific and security-sensitive; it is not a general profile for all
 users.
 
+The `CheAIToolRegistry` template registers the upstream-maintained [Claude
+Code](https://github.com/che-incubator/che-ai-tool-images/tree/main/dockerfiles/claude-code),
+[Gemini CLI](https://github.com/che-incubator/che-ai-tool-images/tree/main/dockerfiles/gemini-cli),
+and [OpenCode](https://github.com/che-incubator/che-ai-tool-images/tree/main/dockerfiles/opencode)
+injector images with Che's dashboard. The registry is a Technology Preview
+feature in [Che's AI provider documentation](https://eclipse.dev/che/docs/stable/administration-guide/configuring-ai-providers/).
+The `next` injector tags intentionally follow the upstream development images;
+move them to reviewed immutable release references before treating this feature
+as production-stable. Users enter provider API keys through Che's AI Providers
+page; no key is stored in this stack.
+
+The default provider is controlled by `che.aiToolRegistry.defaultAiProviders`.
+Disable `che.aiToolRegistry.enabled` to hide the AI Provider selector. Existing
+user API-key Secrets are not deleted when the registry is disabled, consistent
+with Che's documented behavior.
+
 Codex activity uses the native [Che machine-exec CLI watcher](https://github.com/eclipse-che/che-machine-exec/blob/7.122.0/timeout/CLI-WATCHER.md).
 The operator dependency in `IDE/Che` is pinned to 7.122.0 because 7.121.0
 lacks this watcher and its CheCluster fields. `che.cliActivityTracker` enables

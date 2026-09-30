@@ -1,0 +1,74 @@
+{{- if and .Values.che.enabled .Values.che.aiToolRegistry.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'ai-tool-registry'
+  namespace: 'eclipse-che'
+  labels:
+    app.kubernetes.io/component: 'ai-tool-registry'
+    app.kubernetes.io/part-of: 'che.eclipse.org'
+data:
+  registry.json: |-
+    {
+      "providers": [
+        {
+          "id": "anthropic/claude",
+          "name": "Claude",
+          "publisher": "Anthropic",
+          "description": "Anthropic Claude AI coding assistant for terminal-based autonomous coding and debugging.",
+          "docsUrl": "https://docs.anthropic.com/en/docs/get-started",
+          "tags": ["Tech-Preview"]
+        },
+        {
+          "id": "google/gemini",
+          "name": "Gemini",
+          "publisher": "Google",
+          "description": "Google Gemini AI assistant for terminal chat, code generation, and agentic workflows.",
+          "docsUrl": "https://ai.google.dev/gemini-api/docs/quickstart",
+          "tags": ["Tech-Preview"]
+        },
+        {
+          "id": "opencodeai/opencode",
+          "name": "OpenCode",
+          "publisher": "opencode.ai",
+          "description": "Open-source terminal AI coding agent supporting multiple hosted and local model providers.",
+          "docsUrl": "https://opencode.ai/docs",
+          "tags": ["Tech-Preview"]
+        }
+      ],
+      "tools": [
+        {
+          "providerId": "anthropic/claude",
+          "tag": "next",
+          "name": "Claude Code",
+          "url": "https://claude.ai/code",
+          "binary": "claude",
+          "pattern": "init",
+          "injectorImage": "quay.io/che-incubator/dashboard-ai/claude-code:next",
+          "envVarName": "ANTHROPIC_API_KEY"
+        },
+        {
+          "providerId": "google/gemini",
+          "tag": "next",
+          "name": "Gemini CLI",
+          "url": "https://github.com/google-gemini/gemini-cli",
+          "binary": "gemini",
+          "pattern": "bundle",
+          "injectorImage": "quay.io/che-incubator/dashboard-ai/gemini-cli:next",
+          "envVarName": "GEMINI_API_KEY",
+          "setupCommand": "mkdir -p \"$HOME/.gemini\" && test -f \"$HOME/.gemini/projects.json\" || echo '{\"projects\":{}}' > \"$HOME/.gemini/projects.json\""
+        },
+        {
+          "providerId": "opencodeai/opencode",
+          "tag": "next",
+          "name": "OpenCode",
+          "url": "https://opencode.ai",
+          "binary": "opencode",
+          "pattern": "init",
+          "injectorImage": "quay.io/che-incubator/dashboard-ai/opencode:next",
+          "envVarName": "GOOGLE_GENERATIVE_AI_API_KEY"
+        }
+      ],
+      "defaultAiProviders": {{ toJson .Values.che.aiToolRegistry.defaultAiProviders }}
+    }
+{{- end }}
