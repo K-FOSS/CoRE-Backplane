@@ -99,6 +99,10 @@ Home1 reserves `10.0.0.39-10.0.0.49` as its LoadBalancer VIP range on VLAN 150.
 Exclude these addresses from DHCP allocation and keep them unused by other
 static hosts.
 
+Home1 sets KubeVIP's `vip_subnet` to `24,64`, corresponding to `/24` for IPv4
+and `/64` for IPv6 when advertising VIPs. The chart default remains `32,128`.
+See the upstream [KubeVIP flags and environment variables](https://kube-vip.io/docs/installation/flags/).
+
 When enabling the addon, set `kubeVip.vipRange` to an explicitly reserved CIDR
 or range on that L2 network. Rendering fails if the addon is enabled without a
 pool or (for SR-IOV) a device-plugin resource name. The pool configures the
