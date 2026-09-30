@@ -42,6 +42,26 @@ spec:
                               ciliumEgressGatewayEnabled: false
                               kamailio:
                                 enabled: true
+                                publicExposure:
+                                  enabled: true
+                                  sip:
+                                    enabled: true
+                                    tcpEnabled: true
+                                    udpEnabled: true
+                                    directService:
+                                      enabled: true
+                                    udpRoute:
+                                      enabled: false
+                              serviceOptions:
+                                kamailio-pub:
+                                  type: 'LoadBalancer'
+                                  labels:
+                                    wan-mode: 'public'
+                                    lan-mode: 'private'
+                                  annotations:
+                                    purelb.io/allow-local: 'true'
+                                    purelb.io/service-group: 'core-public'
+                                  loadBalancerClass: ''
                           - name: 'core-home1-talos-prod'
                             values:
                               type: 'spoke'
