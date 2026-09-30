@@ -109,6 +109,13 @@ the current node while the API is unavailable, stopping ARP announcements
 until a leader is elected again. KubeVIP removes IPv6 VIPs immediately during
 leadership loss. See the upstream [VIP preservation behavior](https://kube-vip.io/docs/modes/arp/#vip-preservation-on-leadership-loss).
 
+KubeVIP retains ARP mode and enables its in-pod IPVS load balancer with
+`masquerade` forwarding. The pod uses the nftables backend for its
+iptables-compatible rules through `iptables_backend: 'nft'`; the DaemonSet's
+`NET_ADMIN` capability allows these changes within the pod network namespace.
+See the upstream [KubeVIP load-balancing configuration](https://kube-vip.io/docs/about/architecture/#control-plane-load-balancing)
+and [iptables backend setting](https://kube-vip.io/docs/installation/flags/).
+
 When enabling the addon, set `kubeVip.vipRange` to an explicitly reserved CIDR
 or range on that L2 network. Rendering fails if the addon is enabled without a
 pool or (for SR-IOV) a device-plugin resource name. The pool configures the

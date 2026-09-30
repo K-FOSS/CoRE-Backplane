@@ -176,6 +176,12 @@ spec:
               value: {{ .Values.kubeVip.leaderElection.retryPeriod | quote }}
             - name: vip_preserve_on_leadership_loss
               value: {{ .Values.kubeVip.leaderElection.preserveVipOnLeadershipLoss | quote }}
+            - name: lb_enable
+              value: {{ .Values.kubeVip.loadBalancer.enabled | toString | quote }}
+            - name: lb_fwdmethod
+              value: {{ .Values.kubeVip.loadBalancer.forwardingMethod | quote }}
+            - name: iptables_backend
+              value: {{ .Values.kubeVip.loadBalancer.iptablesBackend | quote }}
             - name: lb_class_name
               value: {{ $class | quote }}
             - name: lb_class_only
