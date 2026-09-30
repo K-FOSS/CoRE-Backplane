@@ -197,8 +197,10 @@ spec:
                     max: {{ .values.rtpengineMediaPortMax }}
 
                 serviceOptions:
+                {{- if hasKey .values "serviceOptions" }}
                 {{- with .values.serviceOptions }}
-                {{ toYaml . | nindent 18 }}
+                {{- toYaml . | nindent 18 }}
+                {{- end }}
                 {{- end }}
                 {{- if eq .values.region "yxl" }}
                   rtpengine-media:
