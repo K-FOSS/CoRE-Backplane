@@ -64,12 +64,24 @@ spec:
                               ciliumEgressGatewayEnabled: false
                               kamailio:
                                 publicExposure:
+                                  enabled: true
                                   sip:
+                                    enabled: true
                                     udpEnabled: true
+                                    tcpEnabled: true
                                     directService:
                                       enabled: true
                                     udpRoute:
                                       enabled: false
+                              serviceOptions:
+                                kamailio-pub:
+                                  type: 'LoadBalancer'
+                                  labels:
+                                    wan-mode: 'public'
+                                    lan-mode: 'private'
+                                  annotations:
+                                    kube-vip.io/forwardUPNP: 'true'
+                                  loadBalancerClass: 'kube-vip.io/kube-vip-class'
                           - name: 'dc1-k3s-node1'
                             values:
                               type: 'spoke'
