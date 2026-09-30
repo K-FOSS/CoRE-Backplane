@@ -158,6 +158,10 @@ spec:
           command: ['/kube-vip']
           args: ['manager']
           env:
+            - name: vip_nodename
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: vip_arp
               value: 'true'
             - name: svc_enable
