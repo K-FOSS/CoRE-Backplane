@@ -199,13 +199,13 @@ spec:
                 serviceOptions:
                 {{- if hasKey .values "serviceOptions" }}
                 {{- with .values.serviceOptions }}
-                {{- toYaml . | nindent 18 }}
+                {{- toYaml . | nindent 2 }}
                 {{- end }}
                 {{- end }}
                 {{- if eq .values.region "yxl" }}
-                {{- toYaml (dict "rtpengine-media" (dict "annotations" (dict "purelb.io/addresses" .values.rtpengineMediaAddress "purelb.io/allow-local" "true" "purelb.io/service-group" "core-public"))) | nindent 18 }}
+                {{- toYaml (dict "rtpengine-media" (dict "annotations" (dict "purelb.io/addresses" .values.rtpengineMediaAddress "purelb.io/allow-local" "true" "purelb.io/service-group" "core-public"))) | nindent 2 }}
                 {{- else if eq .values.region "yvr" }}
-                {{- toYaml (dict "rtpengine-media" (dict "loadBalancerClass" "kube-vip.io/kube-vip-class" "annotations" (dict "kube-vip.io/forwardUPNP" "true"))) | nindent 18 }}
+                {{- toYaml (dict "rtpengine-media" (dict "loadBalancerClass" "kube-vip.io/kube-vip-class" "annotations" (dict "kube-vip.io/forwardUPNP" "true"))) | nindent 2 }}
                 {{- end }}
 
                 {{- if eq .values.type "spoke" }}
