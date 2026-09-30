@@ -5,9 +5,9 @@ TLS, PVC-backed snapshots and a long-lived S3 service-account credential. It is
 owned by
 `Apps/Storage/Dragonfly/CoRE.yaml`.
 
-Dragonfly keeps scheduled snapshots in a per-replica `ssd-storage` PVC mounted
-at `/data`. The optional `tiering` PVC is a separate performance/data-tier
-volume and is disabled by default. See the [Dragonfly operator snapshot and
+Dragonfly creates snapshots every 30 minutes in a per-replica `130Gi`
+`ssd-storage` PVC mounted at `/data`. The optional `tiering` PVC is a separate
+performance/data-tier volume and is disabled by default. See the [Dragonfly operator snapshot and
 PVC documentation](https://github.com/dragonflydb/dragonfly-operator) and the [Dragonfly SSD tiering
 overview](https://www.dragonflydb.io/blog/a-preview-of-dragonfly-ssd-tiering)
 for the upstream behavior.
@@ -38,6 +38,7 @@ they are not global database numbers across clusters.
 | --- | --- | --- |
 | `0` | Argo CD, n8n, Grafana Live, Harbor core | Shared default database used by clients that do not expose a database selector. Harbor 1.18.2 requires its core database to remain `0`; do not allocate other new consumers here. |
 | `25` | Rspamd | Dedicated mail filtering state. Owned by `Business/Mail` and allocated independently on every Mail target. |
+| `51` | Kamailio TOPOS | Dedicated SIP topology state. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP) and allocated independently on every AVoIP target. |
 | `70` | Harbor job service | Dedicated Harbor asynchronous job queue. Owned by `Development`. |
 | `71` | Harbor registry | Dedicated Harbor registry metadata cache. Owned by `Development`. |
 | `72` | Harbor Trivy adapter | Reserved for Harbor vulnerability-scanner cache if Trivy is enabled. Owned by `Development`. |
@@ -57,6 +58,10 @@ they are not global database numbers across clusters.
 | `154` | CoTURN | Dedicated CoTURN allocation/status state. Owned by [`Network/NATPuncher`](https://github.com/K-FOSS/CoRE-Backplane/tree/main/Network/NATPuncher). |
 | `189` | n8n | Dedicated n8n external Redis state. Owned by [`Business/Automation`](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation). |
 
+The [Sharing chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Sharing)
+uses logical database `2` on a separate, chart-owned Dragonfly instance. It is
+not part of the shared `dragonfly-core` allocation table above; the dedicated
+instance provides independent credentials and lifecycle for Kutt and Zipline.
 
 Numeric databases prevent accidental key collisions but are not a security or
 resource-isolation boundary: all consumers still share the Dragonfly process,
