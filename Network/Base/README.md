@@ -103,6 +103,12 @@ Home1 sets KubeVIP's `vip_subnet` to `24,64`, corresponding to `/24` for IPv4
 and `/64` for IPv6 when advertising VIPs. The chart default remains `32,128`.
 See the upstream [KubeVIP flags and environment variables](https://kube-vip.io/docs/installation/flags/).
 
+KubeVIP uses a 600-second lease, a 540-second renewal deadline, and a 5-second
+retry period. `vip_preserve_on_leadership_loss` keeps the IPv4 VIP assigned to
+the current node while the API is unavailable, stopping ARP announcements
+until a leader is elected again. KubeVIP removes IPv6 VIPs immediately during
+leadership loss. See the upstream [VIP preservation behavior](https://kube-vip.io/docs/modes/arp/#vip-preservation-on-leadership-loss).
+
 When enabling the addon, set `kubeVip.vipRange` to an explicitly reserved CIDR
 or range on that L2 network. Rendering fails if the addon is enabled without a
 pool or (for SR-IOV) a device-plugin resource name. The pool configures the
