@@ -561,9 +561,10 @@ The watcher also detects other terminal CLI work using upstream defaults.
 
 `che-codex-activity` is a [globally synchronized workspace ConfigMap](https://eclipse.dev/che/docs/stable/administration-guide/configuring-a-user-namespace/).
 It mounts `/home/user/.noidle` at workspace startup and explicitly treats
-`codex` as non-interactive: even a Codex process waiting for input prevents
-idling until it exits. PID 1 and processes without a user terminal are not
-covered by this native watcher. Project `.noidle` files and
+`codex`, `claude`, and `opencode` as non-interactive: even a Codex, Claude Code,
+or OpenCode process waiting for input prevents idling until it exits. PID 1
+and processes without a user terminal are not covered by this native watcher.
+Project `.noidle` files and
 `CLI_ACTIVITY_TRACKER_CONFIG` override the home configuration.
 The mount-on-start annotation prevents this ConfigMap from restarting active
 sessions. Existing workspaces need a planned restart with a 7.122.0 editor
