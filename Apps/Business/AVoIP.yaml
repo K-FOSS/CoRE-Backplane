@@ -40,6 +40,23 @@ spec:
                               avoipDID: '<path:CORE0_SITE1/data/AVoIP/YXL/DC1#AVoIPNumber>'
                               egressIP: '66.165.222.103'
                               ciliumEgressGatewayEnabled: false
+                              kamailio:
+                                publicExposure:
+                                  sip:
+                                    udpEnabled: true
+                                    directService:
+                                      enabled: true
+                                    udpRoute:
+                                      enabled: false
+                              serviceOptions:
+                                kamailio-udp:
+                                  labels:
+                                    wan-mode: 'public'
+                                    lan-mode: 'private'
+                                  annotations:
+                                    purelb.io/allow-local: 'true'
+                                    purelb.io/service-group: 'core-public'
+                                  loadBalancerClass: ''
 
                           - name: 'core-home1-talos-prod'
                             values:
@@ -55,6 +72,22 @@ spec:
                               faxDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
                               avoipDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#AVoIPNumber>'
                               ciliumEgressGatewayEnabled: false
+                              kamailio:
+                                publicExposure:
+                                  sip:
+                                    udpEnabled: true
+                                    directService:
+                                      enabled: true
+                                    udpRoute:
+                                      enabled: false
+                              serviceOptions:
+                                kamailio-udp:
+                                  labels:
+                                    wan-mode: 'public'
+                                    lan-mode: 'private'
+                                  annotations:
+                                    kube-vip.io/forwardUPNP: 'true'
+                                  loadBalancerClass: 'kube-vip.io/kube-vip-class'
 
                           - name: 'dc1-k3s-node1'
                             values:
