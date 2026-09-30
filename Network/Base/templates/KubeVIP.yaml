@@ -184,6 +184,21 @@ spec:
           securityContext:
             capabilities:
               add: ['NET_ADMIN', 'NET_RAW']
+        {{- if .Values.kubeVip.debugSidecar.enabled }}
+        - name: netshoot
+          image: {{ .Values.kubeVip.debugSidecar.image | quote }}
+          imagePullPolicy: {{ .Values.kubeVip.debugSidecar.imagePullPolicy | quote }}
+          command:
+            {{- toYaml .Values.kubeVip.debugSidecar.command | nindent 12 }}
+          args:
+            {{- toYaml .Values.kubeVip.debugSidecar.args | nindent 12 }}
+          {{- with .Values.kubeVip.debugSidecar.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          securityContext:
+            {{- toYaml .Values.kubeVip.debugSidecar.securityContext | nindent 12 }}
+        {{- end }}
       tolerations:
         - operator: Exists
 {{- end }}

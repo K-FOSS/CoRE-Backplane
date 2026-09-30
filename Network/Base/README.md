@@ -49,6 +49,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/latest/) with [Cloudflare](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/cloudflare/) | Enabled Helm dependency publishing public records selected by `wan-mode=public`. Credentials come from the referenced Kubernetes Secret and must not be committed here. |
 | [PureLB](https://purelb.gitlab.io/purelb/) | Enabled Helm dependency using the Cilium announcer and `purelb.io/purelb` load-balancer class. |
 | [KubeVIP](https://kube-vip.io/docs/usage/kubernetes-services/) and [kube-vip-cloud-provider](https://kube-vip.io/docs/usage/cloud-provider/) | Optional LoadBalancer implementation using ARP on a Multus secondary network. Separate load-balancer class `kube-vip.io/kube-vip-class`; disabled by default. See the [KubeVIP source and releases](https://github.com/kube-vip/kube-vip) and [cloud-provider source](https://github.com/kube-vip/kube-vip-cloud-provider). |
+| [netshoot](https://github.com/nicolaka/netshoot) | Optional `netshoot` diagnostic sidecar in the KubeVIP DaemonSet. It shares the pod network namespace and is enabled for Home1; its image is pinned to `ghcr.io/nicolaka/netshoot:v0.16`. |
 | [Envoy Gateway](https://gateway.envoyproxy.io/docs/) | Enabled OCI Helm dependency with two replicas and Backend and EnvoyPatchPolicy extension APIs. Follow its [Helm installation and upgrade guidance](https://gateway.envoyproxy.io/docs/install/install-helm/). |
 | [FRR-K8s](https://github.com/metallb/frr-k8s) | Enabled Helm dependency. The ApplicationSet replaces its startup daemon configuration and permits incoming BGP connections. |
 
@@ -117,6 +118,12 @@ and ARP advertisement. A LoadBalancer Service requests a UPnP port mapping only
 when annotated `kube-vip.io/forwardUPNP: 'true'`; the exposed Service port is
 then forwarded by the gateway to the Service VIP. See the upstream
 [UPnP service configuration](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
+
+Home1 also enables the KubeVIP `netshoot` sidecar for network diagnostics. It
+runs `sleep infinity`, shares the KubeVIP pod's primary and `wan0` network
+namespaces, and grants only `NET_ADMIN` and `NET_RAW` for commands such as
+`ip`, `tcpdump`, and packet probes. Disable `kubeVip.debugSidecar` after the
+diagnostic window.
 
 Each KubeVIP DaemonSet pod needs a distinct WAN IP for DHCP and UPnP. Home1 uses
 the [CNI DHCP IPAM plugin](https://www.cni.dev/plugins/current/ipam/dhcp/) on

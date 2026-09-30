@@ -1122,6 +1122,21 @@ kubeVip:
       type: 'sriov'
       vlan: 150
       mtu: 1500
+  # Optional diagnostic container sharing the KubeVIP pod network namespace.
+  debugSidecar:
+    enabled: false
+    image: 'ghcr.io/nicolaka/netshoot:v0.16'
+    imagePullPolicy: 'IfNotPresent'
+    command: ['/bin/sh', '-c']
+    args: ['sleep infinity']
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      privileged: false
+      readOnlyRootFilesystem: false
+      runAsNonRoot: false
+      capabilities:
+        add: ['NET_ADMIN', 'NET_RAW']
   upnp:
     enabled: false
 envoy-gw:
