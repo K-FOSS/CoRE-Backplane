@@ -196,15 +196,17 @@ spec:
                     min: {{ .values.rtpengineMediaPortMin }}
                     max: {{ .values.rtpengineMediaPortMax }}
 
-                {{- if eq .values.region "yxl" }}
                 serviceOptions:
+                {{- with .values.serviceOptions }}
+                {{ toYaml . | nindent 18 }}
+                {{- end }}
+                {{- if eq .values.region "yxl" }}
                   rtpengine-media:
                     annotations:
                       purelb.io/addresses: '{{ .values.rtpengineMediaAddress }}'
                       purelb.io/allow-local: 'true'
                       purelb.io/service-group: 'core-public'
                 {{- else if eq .values.region "yvr" }}
-                serviceOptions:
                   rtpengine-media:
                     loadBalancerClass: 'kube-vip.io/kube-vip-class'
                     annotations:
