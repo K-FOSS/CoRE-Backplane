@@ -60,6 +60,8 @@ data:
     CHAIN="100"
     WAN="${WAN_INTERFACE}"
     HANDOFF="${HANDOFF_INTERFACE}"
+    CILIUM="${CILIUM_INTERFACE}"
+    PRIVATE_CIDRS="${PRIVATE_ROUTE_CIDRS}"
     RANGE="${VIP_RANGE}"
     INTERVAL="${RECONCILE_INTERVAL}"
     START_IP="${RANGE%-*}"
@@ -132,6 +134,27 @@ data:
       printf '%s\n' "${summary}" | grep -q 'mirred' || return 1
       printf '%s\n' "${summary}" | grep -qi 'redirect' || return 1
       printf '%s\n' "${summary}" | grep -q "${HANDOFF}" || return 1
+    }
+
+    ensure_private_routes() {
+      gateway="$(ip -4 route show default dev "${CILIUM}" 2>/dev/null | awk '$1 == "default" && $3 != "" {print $3; exit}')"
+      if [ -z "${gateway}" ]; then
+        log "interface=${CILIUM} operation=private-route-discovery vip=- pref=- handle=- exit=1 stderr=no IPv4 Cilium gateway found"
+        return 1
+      fi
+
+      for cidr in ${PRIVATE_CIDRS}; do
+        current="$(ip -4 route show exact "${cidr}" 2>/dev/null | head -n 1)"
+        if printf '%s\n' "${current}" | grep -Fq "via ${gateway} dev ${CILIUM}"; then
+          log "interface=${CILIUM} operation=private-route-keep vip=${cidr} pref=- handle=- exit=0 stderr=via ${gateway}"
+          continue
+        fi
+
+        route_stderr="$(ip -4 route replace "${cidr}" via "${gateway}" dev "${CILIUM}" metric 50 2>&1)"
+        route_rc=$?
+        route_stderr="$(printf '%s' "${route_stderr}" | tr '\n' ' ')"
+        log "interface=${CILIUM} operation=private-route-replace vip=${cidr} pref=50 handle=- exit=${route_rc} stderr=${route_stderr} gateway=${gateway}"
+      done
     }
 
     cleanup_legacy_vip() {
@@ -214,9 +237,11 @@ data:
     if ! ensure_clsact; then
       log "interface=${WAN} operation=initialize vip=- pref=- handle=- exit=1 stderr=unable to establish clsact; retrying"
     fi
+    ensure_private_routes || true
 
     while :; do
       ensure_clsact || true
+      ensure_private_routes || true
       n="${START}"
       while [ "${n}" -le "${END}" ]; do
         vip="${PREFIX}.${n}"
@@ -415,6 +440,10 @@ spec:
               value: {{ .Values.kubeVip.interfaceName | quote }}
             - name: HANDOFF_INTERFACE
               value: {{ $handoff.interfaceName | quote }}
+            - name: CILIUM_INTERFACE
+              value: {{ $handoff.ciliumInterfaceName | quote }}
+            - name: PRIVATE_ROUTE_CIDRS
+              value: {{ join " " $handoff.privateRouteCIDRs | quote }}
             - name: VIP_RANGE
               value: {{ $vipRange | quote }}
             - name: RECONCILE_INTERVAL
