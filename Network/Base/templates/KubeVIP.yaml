@@ -337,6 +337,7 @@ spec:
         app.kubernetes.io/name: kube-vip
       annotations:
         k8s.v1.cni.cncf.io/networks: {{ list (dict "name" $network.name "interface" (required "kubeVip.interfaceName is required" .Values.kubeVip.interfaceName)) (dict "name" $handoff.networkName "interface" $handoff.interfaceName) | toJson | quote }}
+        kube-vip.core-backplane/reconciler-version: {{ $handoff.reconcilerVersion | quote }}
     spec:
       serviceAccountName: kube-vip
       {{- with .Values.kubeVip.affinity }}
