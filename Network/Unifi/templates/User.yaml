@@ -16,6 +16,11 @@ spec:
 
   mongodb:
     enabled: true
+    hostname: '{{ .Values.cluster.name }}-rs0.core-{{ .Values.env }}.svc.{{ .Values.cluster.domain }}'
+    port: '27017'
+    replicaSet: 'rs0'
+    crossplane:
+      terraformProvider: 'mongodb-prod-tf'
 
     databases:
       - unifi

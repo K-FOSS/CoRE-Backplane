@@ -171,13 +171,6 @@ service:
     type: 'ClusterIP'
     ipFamilyPolicy:
     ipFamilies: []
-    annotations:
-      external-dns.kubernetes.io/hostname: '{{ .Values.hostname }}'
-      # TODO(external-dns-023): Remove the legacy annotation after upgrading ExternalDNS.
-      external-dns.alpha.kubernetes.io/hostname: '{{ .Values.hostname }}'
-    labels:
-      wan-mode: 'public'
-      lan-mode: 'private'
     ports:
       inform:
         enabled: true
