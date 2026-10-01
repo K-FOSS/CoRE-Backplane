@@ -49,6 +49,11 @@ spec:
             {{- $psqlDatabase := "psql-db" }}
             {{- $psqlTF := "psql-tf" }}
 
+            #
+            # MongoDB
+            #
+            {{- $mongoTF := "mongo-tf" }}
+
             {{- $kubeTest := "kube-test" }}
             ---
             apiVersion: tf.upbound.io/v1beta1
@@ -89,6 +94,13 @@ spec:
                     hostname: {{ default "psql-int.mylogin.space" .observed.composite.resource.spec.psql.hostname }}
                     port: 5432
                     uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
+
+                  mongodb:
+                    hostname: {{ default (printf "%s-rs0.core-%s.svc.%s" (required "cluster.name is required for MongoDB service discovery" $.Values.cluster.name) (required "env is required for MongoDB service discovery" $.Values.env) (required "cluster.domain is required for MongoDB service discovery" $.Values.cluster.domain)) .observed.composite.resource.spec.mongodb.hostname }}
+                    port: {{ default $.Values.mongodb.port .observed.composite.resource.spec.mongodb.port }}
+                    replicaSet: {{ default $.Values.mongodb.replicaSet .observed.composite.resource.spec.mongodb.replicaSet }}
+                    uri: {{ default "mongodb://" .observed.composite.resource.spec.mongodb.uri }}
+                    database: {{ index .observed.composite.resource.spec.mongodb.databases 0 }}
 
                   mqtts:
                     hostname: mqtt.mylogin.space
@@ -163,6 +175,17 @@ spec:
                       hostname = string
                       port = string
                       uri = string
+                    })
+                  }
+
+                  variable "mongodb" {
+                    description = "MongoDB Configuration"
+                    type        = object({
+                      hostname = string
+                      port = string
+                      uri = string
+                      replicaSet = string
+                      database = string
                     })
                   }
 
@@ -294,6 +317,25 @@ spec:
 
                   output "psqlURI" {
                     value = "${var.psql.uri}${local.username}:${local.password}@${var.psql.hostname}:${var.psql.port}/${local.databaseName}"
+                    sensitive = true
+                  }
+
+                  #
+                  # MongoDB
+                  #
+
+                  output "mongoHostname" {
+                    value = var.mongodb.hostname
+                    sensitive = false
+                  }
+
+                  output "mongoPort" {
+                    value = var.mongodb.port
+                    sensitive = false
+                  }
+
+                  output "mongoURI" {
+                    value = "${var.mongodb.uri}${urlencode(local.username)}:${urlencode(local.password)}@${var.mongodb.hostname}:${var.mongodb.port}/${var.mongodb.database}?replicaSet=${var.mongodb.replicaSet}&authMechanism=PLAIN&authSource=external&readPreference=primary"
                     sensitive = true
                   }
 
@@ -958,6 +1000,83 @@ spec:
             ---
             {{- end }}
             {{- end }}
+
+            {{- if and .observed.composite.resource.spec.mongodb.enabled (ne $.observed.resources nil) }}
+            {{- $tfUserCredsWorkspace := getComposedResource . $userCredsWorkspace }}
+            {{ if eq (getResourceCondition "Ready" (index .observed.resources $userCredsWorkspace)).Status "True" }}
+            apiVersion: tf.upbound.io/v1beta1
+            kind: Workspace
+            metadata:
+              annotations:
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation $mongoTF }}
+
+            spec:
+              providerConfigRef:
+                name: {{ default $.Values.mongodb.terraform.provider .observed.composite.resource.spec.mongodb.crossplane.terraformProvider }}
+
+              writeConnectionSecretToRef:
+                name: {{ .observed.composite.resource.metadata.uid }}-mongo-tf
+                namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+
+              managementPolicies:
+                - Observe
+                - Create
+                - Update
+
+              deletionPolicy: Orphan
+
+              forProvider:
+                source: Inline
+                varmap:
+                  username: '{{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.username | b64dec }}'
+                  databases:
+                    {{- range $databaseName := .observed.composite.resource.spec.mongodb.databases }}
+                    - {{ $databaseName }}
+                    {{- end }}
+
+                module: | # hcl
+                  variable "username" {
+                    description = "LDAP service identity username"
+                    type        = string
+                  }
+
+                  variable "databases" {
+                    description = "MongoDB databases the LDAP identity may access"
+                    type        = set(string)
+                    default     = []
+                  }
+
+                  locals {
+                    role_name = "cn=${var.username},ou=virtual-groups,dc=ldap,dc=mylogin,dc=space"
+                  }
+
+                  resource "mongodb_role" "user" {
+                    role = local.role_name
+                    db   = "admin"
+
+                    privileges = [
+                      for database in var.databases : {
+                        resource = { db = database, collection = "" }
+                        actions  = ["find", "update", "insert", "remove"]
+                      }
+                    ]
+
+                    roles = concat(
+                      flatten([
+                        for database in var.databases : [
+                          { role = "readWrite", db = database },
+                          { role = "dbOwner", db = database },
+                        ]
+                      ]),
+                      [
+                        { role = "clusterMonitor", db = "admin" },
+                      ]
+                    )
+                  }
+            ---
+            {{- end }}
+            {{- end }}
             ---
             apiVersion: meta.gotemplating.fn.crossplane.io/v1alpha1
             kind: CompositeConnectionDetails
@@ -972,6 +1091,11 @@ spec:
               {{- if .observed.composite.resource.spec.psql.enabled }}
               database: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.database }}
               psqlURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.psqlURI }}
+              {{- end }}
+              {{- if .observed.composite.resource.spec.mongodb.enabled }}
+              mongoHostname: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.mongoHostname }}
+              mongoPort: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.mongoPort }}
+              mongoURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.mongoURI }}
               {{- end }}
               {{- if .observed.composite.resource.spec.s3.enabled }}
               S3Hostname: {{ ( index $.observed.resources $tfMinio ).connectionDetails.S3Endpoint }}

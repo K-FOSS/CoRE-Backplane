@@ -16,7 +16,7 @@ Secrets are namespaced.
 
 | API | Implementation | Current state |
 | --- | --- | --- |
-| `User.mylogin.space/v1alpha1` | `sso-user` pipeline Composition | Active. Creates an Authentik identity and can add PostgreSQL and S3 resources. |
+| `User.mylogin.space/v1alpha1` | `sso-user` pipeline Composition | Active. Creates an Authentik identity and can add PostgreSQL, MongoDB, and S3 resources. |
 | `BucketCredential.mylogin.space/v1alpha1` | `sso-s3-credentials` resource-mode Composition | Present, but appears incomplete/legacy. Do not use for new consumers without testing it. |
 | `Group.mylogin.space/v1alpha1` | Commented templates | Not installed. |
 | `Tenant.mylogin.space/v1alpha1` | Commented XRD | Not installed. |
@@ -36,6 +36,8 @@ User claim
        |
        +-> optional PostgreSQL Role, Database, and grants
        |
+       +-> optional MongoDB LDAP role and database grants
+       |
        +-> optional MinIO buckets, policy, LDAP attachment,
            temporary S3 credentials, and long-lived service-account keys
 ```
@@ -47,7 +49,8 @@ Workspace's connection details.
 
 All reconciliation is declarative, but it crosses several controllers:
 Crossplane, the Go-templating function, provider-terraform, the Authentik
-Terraform provider, provider-sql, and the MinIO provider. An Argo CD
+Terraform provider, provider-sql, the RiskIdent MongoDB provider, and the
+MinIO provider. An Argo CD
 application being `Synced` only proves that the API definitions were applied;
 it does not prove a `User` claim completed.
 
@@ -59,14 +62,21 @@ it does not prove a `User` claim completed.
   `ProviderConfig` named `authentik`.
 - An Authentik group named `LDAPService`.
 - For `spec.psql.enabled`: provider-sql PostgreSQL CRDs plus the Terraform and
-  Crossplane ProviderConfigs selected by the claim.
+  Crossplane ProviderConfigs selected by the claim. The provider's
+  [PostgreSQL Database API](https://pkg.go.dev/github.com/crossplane-contrib/provider-sql/apis/cluster/postgresql/v1alpha1)
+  defines the `lcCollate` and `lcCType` fields used for database creation.
 - For `spec.s3.enabled`: the MinIO `Bucket` CRD plus the Terraform and
   Crossplane ProviderConfigs selected by the claim. The Terraform provider
   must support the
   [`minio_iam_service_account` resource](https://registry.terraform.io/providers/aminueza/minio/3.2.2/docs/resources/iam_service_account)
   when long-lived credentials are requested.
+- For `spec.mongodb.enabled`: the active `mongodb-prod-tf` Terraform
+  ProviderConfig, its `RiskIdent/mongodb-driver` provider, and network access
+  to the MongoDB replica set. The [MongoDB LDAP authorization
+  model](https://www.mongodb.com/docs/manual/core/security-ldap-external/)
+  must continue to return the virtual-group DN used by the role Workspace.
 - Network and credentials allowing those providers to reach Authentik,
-  PostgreSQL, and MinIO.
+  PostgreSQL, MongoDB, and MinIO.
 
 Defaults are defined in [`values.yaml`](values.yaml). In particular, the
 default provider names are environment-specific and must exist on every
@@ -105,8 +115,17 @@ generated password is 16 characters.
 | `spec.psql.hostname` | PostgreSQL host included in the emitted `psqlURI`; defaults to `psql-int.mylogin.space`. |
 | `spec.psql.uri` | SQLAlchemy PostgreSQL URI scheme/prefix included in the emitted `psqlURI`; defaults to `postgresql://`. |
 | `spec.psql.createUserDatabase` | Creates a database named after the username unless set to `false`; schema default is `true`. |
+| `spec.psql.lcCollate` | Sets the `LC_COLLATE` locale on a new user database; defaults to `'C'`. Existing databases are not changed. |
+| `spec.psql.lcCType` | Sets the `LC_CTYPE` locale on a new user database; defaults to `'C'`. Existing databases are not changed. |
 | `spec.psql.databases[]` | Existing databases on which grants are applied. |
 | `spec.psql.crossplane.*Provider` | Overrides PostgreSQL provider configuration names. |
+| `spec.mongodb.enabled` | Enables the MongoDB LDAP role and requested database grants. |
+| `spec.mongodb.hostname` | Optional override for the MongoDB replica-set Service used in `mongoURI`; when omitted, the Composition derives `<cluster>-rs0.core-<environment>.svc.<cluster-domain>` from injected cluster values. |
+| `spec.mongodb.port` | MongoDB port used in the emitted `mongoURI`; defaults to `'27017'`. |
+| `spec.mongodb.replicaSet` | Replica-set name used in the emitted `mongoURI`; defaults to `'rs0'`. |
+| `spec.mongodb.uri` | MongoDB URI scheme/prefix; defaults to `mongodb://`. |
+| `spec.mongodb.databases[]` | Databases granted to the LDAP virtual-group role; at least one is required when MongoDB is enabled. |
+| `spec.mongodb.crossplane.terraformProvider` | Overrides the MongoDB Terraform ProviderConfig; defaults to `mongodb-prod-tf`. |
 | `spec.s3.enabled` | Enables bucket, policy, and LDAP-policy reconciliation. |
 | `spec.s3.region` | Region used for created buckets; defaults to `us-east-1`. |
 | `spec.s3.createUserBucket` | Creates a username-named bucket unless explicitly `false`. |
@@ -133,11 +152,17 @@ The XRD currently exposes more intent than the Composition consumes:
   `true`, so Authentik creates a service account.
 - `groups` is honored in addition to the mandatory `LDAPService` group. Every
   named group must already exist in Authentik.
-- `mysql` and `mongodb` have schemas but create no resources or connection
-  details.
+- `mysql` remains schema-only and creates no resources or connection details.
 - `AVoIP` is not consumed.
-Do not rely on these fields until both the composition and this document are
-updated. Schema acceptance is not evidence that a feature is implemented.
+
+MongoDB is implemented through the active MongoDB Terraform provider path. It
+creates an LDAP authorization role named
+`cn=<username>,ou=virtual-groups,dc=ldap,dc=mylogin,dc=space`, grants
+`readWrite` and `dbOwner` on each requested database, and adds `clusterMonitor`
+on `admin`. MongoDB maps returned LDAP group DNs to roles on `admin`; see the
+[MongoDB LDAP authorization documentation](https://www.mongodb.com/docs/manual/core/security-ldap-external/).
+The role Workspace uses the pinned [RiskIdent MongoDB Terraform provider
+v0.2.1](https://pkg.go.dev/github.com/RiskIdent/terraform-provider-mongodb-driver).
 
 ## PostgreSQL provisioning
 
@@ -155,6 +180,8 @@ spec:
   psql:
     enabled: true
     createUserDatabase: true
+    lcCollate: 'C'
+    lcCType: 'C'
     databases:
       - gitlab_shared
   writeConnectionSecretToRef:
@@ -166,7 +193,9 @@ When enabled, the composition:
 1. Creates a provider-sql `Role` with login privileges and the generated
    Authentik password.
 2. By default creates a database named after the lowercase username, owned by
-   that role.
+   that role. New databases use `C` for both `LC_COLLATE` and `LC_CTYPE` by
+   default. Existing databases are not changed if these fields are later
+   modified.
 3. Uses a Terraform Workspace to grant `CREATE`, `CONNECT`, and `TEMPORARY` on
    listed databases, plus broad privileges on their public schema, tables,
    and sequences.
@@ -274,6 +303,9 @@ published by the final `CompositeConnectionDetails` object:
 | `ldapsURI` | Always; contains only the LDAP endpoint, despite being marked sensitive upstream. |
 | `database` | When PostgreSQL is enabled; the created database name. |
 | `psqlURI` | When PostgreSQL is enabled; connection URI using the configured host, port, scheme, username, password, and database. |
+| `mongoHostname` | When MongoDB is enabled; cluster-specific MongoDB replica-set Service FQDN derived from the injected cluster name, environment, and cluster domain. |
+| `mongoPort` | When MongoDB is enabled; configured MongoDB port. |
+| `mongoURI` | When MongoDB is enabled; connection URI for the first requested database using LDAP PLAIN authentication. |
 | `S3Hostname` | Only when S3 is enabled and the MinIO attachment Workspace emits it. |
 
 The XRD advertises additional connection keys, but the current pipeline does

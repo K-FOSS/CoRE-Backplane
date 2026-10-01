@@ -160,14 +160,37 @@ spec:
 
                 mongodb:
                   type: object
+                  x-kubernetes-validations:
+                    - rule: '!self.enabled || (has(self.databases) && size(self.databases) > 0)'
+                      message: 'mongodb.databases must contain at least one database when mongodb.enabled is true'
                   properties:
                     enabled:
                       type: boolean
                       default: false
 
+                    hostname:
+                      type: string
+                      default: '{{ .Values.mongodb.hostname }}'
+
+                    port:
+                      type: string
+                      default: {{ .Values.mongodb.port }}
+
+                    replicaSet:
+                      type: string
+                      default: {{ .Values.mongodb.replicaSet }}
+
                     uri:
                       type: string
                       default: mongodb://
+
+                    crossplane:
+                      type: object
+                      default: {}
+                      properties:
+                        terraformProvider:
+                          type: string
+                          default: {{ .Values.mongodb.terraform.provider }}
 
                     databases:
                       type: array

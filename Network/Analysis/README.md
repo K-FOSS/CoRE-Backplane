@@ -15,11 +15,12 @@ the `User` claim for the IVRE service identity. Workloads use the [BJW-S common
 library chart](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common).
 
 The `User` claim declares the intended MongoDB database allocation as `ivre`.
-The current [User Composition](../../Operations/SSO/User/README.md) schema
-accepts MongoDB fields, but its implemented provisioning path is not yet
-validated for MongoDB. Activation therefore requires verifying that the
-connection Secret named by the ApplicationSet contains a usable `mongoURI`;
-the chart intentionally fails rendering when that reference is absent.
+The [User Composition](../../Operations/SSO/User/README.md) creates the
+LDAP-authorized MongoDB role through the active `mongodb-prod-tf` Terraform
+ProviderConfig and publishes `mongoURI` in the stable claim Secret. Activation
+still requires verifying that the role Workspace is Ready and that the Secret
+contains a usable `mongoURI`; the chart intentionally fails rendering when the
+Secret reference is absent.
 
 ## Data flow and initial scope
 
