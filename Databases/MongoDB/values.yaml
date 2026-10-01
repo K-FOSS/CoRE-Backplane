@@ -1,5 +1,9 @@
 env: 'prod'
 
+restore:
+  # Recovery manifests are deployment-specific and must be enabled deliberately.
+  enabled: false
+
 mongodb:
   service:
     anycast:
@@ -80,6 +84,12 @@ psmdb-db:
     rs0:
       name: rs0
       size: 3
+
+      affinity:
+        antiAffinityTopologyKey: 'kubernetes.io/hostname'
+
+      podDisruptionBudget:
+        maxUnavailable: 1
 
       priorityClass: 'tier2-priority'
 
