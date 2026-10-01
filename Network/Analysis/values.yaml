@@ -1,0 +1,52 @@
+---
+global:
+  nameOverride: 'network-analysis'
+
+images:
+  web:
+    repository: 'ivre/web'
+    tag: 'v0.9.21@sha256:ef5a6752caa30bfacb133d850b267bdf472cc51a328849f7cd79107791b3b681'
+    pullPolicy: 'IfNotPresent'
+  uwsgi:
+    repository: 'ivre/web-uwsgi'
+    tag: 'v0.9.21@sha256:376d691feeebeb39fec59708801fe439c95505a1a8ebb6f3cc2c3947261a09c5'
+    pullPolicy: 'IfNotPresent'
+  doku:
+    repository: 'ivre/web-doku'
+    tag: 'v0.9.21@sha256:8f176c99486e7e3d8c0fc88e02b8e52bc8a14afbc0006e7383c18674450aa636'
+    pullPolicy: 'IfNotPresent'
+  client:
+    repository: 'ivre/client'
+    tag: 'v0.9.21@sha256:7fa326e7c0b2eddc4ec4686ca5c490517bcc2fec6ffe584292a52be385da9f0e'
+    pullPolicy: 'IfNotPresent'
+  mcp:
+    repository: 'ivre/web-mcp'
+    tag: 'latest@sha256:ea37856c7bd04806932ff8a66b045d4f1fce06d17ffab33e90103062c63b66a5'
+    pullPolicy: 'IfNotPresent'
+
+database:
+  # The User claim is the authoritative source for this Secret. The current
+  # User Composition does not yet implement MongoDB provisioning; keep this
+  # required so the stack cannot start with an accidental default database.
+  connectionSecretName: ''
+  connectionSecretKey: 'mongoURI'
+
+web:
+  enabled: true
+
+client:
+  enabled: false
+
+scanner:
+  enabled: false
+
+storage:
+  dokuwiki:
+    size: '1Gi'
+    storageClass: ''
+
+gateway:
+  hostname: 'ivre.internal.mylogin.space'
+  parentRef:
+    name: 'main-gw'
+    namespace: 'core-prod'

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-config'
+  namespace: '{{ .Release.Namespace }}'
+data:
+  ivre.conf: |
+    import os
+
+    DB = os.environ['IVRE_DB']
+    WEB_MODULES = ['view', 'active', 'passive', 'dns', 'rir', 'flow']

@@ -1,0 +1,257 @@
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+global:
+  nameOverride: '{{ default .Release.Name .Values.global.nameOverride }}'
+
+controllers:
+  uwsgi:
+    enabled: {{ .Values.web.enabled }}
+    strategy: RollingUpdate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.images.uwsgi.repository }}'
+          tag: '{{ .Values.images.uwsgi.tag }}'
+          pullPolicy: '{{ .Values.images.uwsgi.pullPolicy }}'
+        env:
+          - name: IVRE_CONF
+            value: '/etc/ivre/ivre.conf'
+          - name: IVRE_DB
+            valueFrom:
+              secretKeyRef:
+                name: '{{ required "database.connectionSecretName is required" .Values.database.connectionSecretName }}'
+                key: '{{ .Values.database.connectionSecretKey }}'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        probes:
+          readiness:
+            enabled: false
+          liveness:
+            enabled: false
+          startup:
+            enabled: false
+        resources:
+          requests:
+            cpu: '25m'
+            memory: '128Mi'
+          limits:
+            cpu: '500m'
+            memory: '512Mi'
+
+  doku:
+    enabled: {{ .Values.web.enabled }}
+    strategy: Recreate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.images.doku.repository }}'
+          tag: '{{ .Values.images.doku.tag }}'
+          pullPolicy: '{{ .Values.images.doku.pullPolicy }}'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        probes:
+          readiness:
+            enabled: false
+          liveness:
+            enabled: false
+          startup:
+            enabled: false
+
+  web:
+    enabled: {{ .Values.web.enabled }}
+    strategy: RollingUpdate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.images.web.repository }}'
+          tag: '{{ .Values.images.web.tag }}'
+          pullPolicy: '{{ .Values.images.web.pullPolicy }}'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        probes:
+          liveness:
+            enabled: false
+          readiness:
+            enabled: false
+          startup:
+            enabled: false
+
+  client:
+    enabled: {{ .Values.client.enabled }}
+    strategy: Recreate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.images.client.repository }}'
+          tag: '{{ .Values.images.client.tag }}'
+          pullPolicy: '{{ .Values.images.client.pullPolicy }}'
+        command:
+          - '/bin/sh'
+          - '-c'
+        args:
+          - 'trap : TERM INT; sleep infinity & wait'
+        env:
+          - name: IVRE_CONF
+            value: '/etc/ivre/ivre.conf'
+          - name: IVRE_DB
+            valueFrom:
+              secretKeyRef:
+                name: '{{ required "database.connectionSecretName is required" .Values.database.connectionSecretName }}'
+                key: '{{ .Values.database.connectionSecretKey }}'
+
+  mcp:
+    enabled: {{ .Values.web.enabled }}
+    strategy: RollingUpdate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.images.mcp.repository }}'
+          tag: '{{ .Values.images.mcp.tag }}'
+          pullPolicy: '{{ .Values.images.mcp.pullPolicy }}'
+        env:
+          - name: IVRE_CONF
+            value: '/etc/ivre/ivre.conf'
+          - name: IVRE_DB
+            valueFrom:
+              secretKeyRef:
+                name: '{{ required "database.connectionSecretName is required" .Values.database.connectionSecretName }}'
+                key: '{{ .Values.database.connectionSecretKey }}'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+        probes:
+          readiness:
+            enabled: false
+          liveness:
+            enabled: false
+          startup:
+            enabled: false
+
+service:
+  uwsgi:
+    enabled: {{ .Values.web.enabled }}
+    forceRename: 'ivreuwsgi'
+    controller: uwsgi
+    primary: false
+    type: ClusterIP
+    ports:
+      uwsgi:
+        enabled: true
+        primary: true
+        port: 3031
+        protocol: TCP
+  doku:
+    enabled: {{ .Values.web.enabled }}
+    forceRename: 'ivredoku'
+    controller: doku
+    primary: false
+    type: ClusterIP
+    ports:
+      fastcgi:
+        enabled: true
+        primary: true
+        port: 8000
+        protocol: TCP
+  mcp:
+    enabled: {{ .Values.web.enabled }}
+    forceRename: 'ivremcp'
+    controller: mcp
+    primary: false
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 9100
+        protocol: HTTP
+  web:
+    enabled: {{ .Values.web.enabled }}
+    controller: web
+    primary: true
+    type: ClusterIP
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 80
+        protocol: HTTP
+
+persistence:
+  config:
+    enabled: true
+    type: 'configMap'
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
+    advancedMounts:
+      uwsgi:
+        main:
+          - path: '/etc/ivre/ivre.conf'
+            subPath: 'ivre.conf'
+            readOnly: true
+      {{- if .Values.web.enabled }}
+      mcp:
+        main:
+          - path: '/etc/ivre/ivre.conf'
+            subPath: 'ivre.conf'
+            readOnly: true
+      {{- end }}
+      {{- if .Values.client.enabled }}
+      client:
+        main:
+          - path: '/etc/ivre/ivre.conf'
+            subPath: 'ivre.conf'
+            readOnly: true
+      {{- end }}
+  dokuwiki:
+    enabled: {{ or .Values.web.enabled .Values.client.enabled }}
+    type: 'persistentVolumeClaim'
+    existingClaim: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-dokuwiki'
+    advancedMounts:
+      doku:
+        main:
+          - path: '/var/www/dokuwiki/data'
+
+route:
+  web:
+    enabled: {{ .Values.web.enabled }}
+    kind: HTTPRoute
+    annotations:
+      forecastle.stakater.com/expose: 'true'
+      forecastle.stakater.com/instance: 'core'
+      forecastle.stakater.com/appName: 'IVRE Network Analysis'
+      forecastle.stakater.com/group: 'Security'
+    labels:
+      lan-mode: 'private'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: 'Gateway'
+        name: '{{ .Values.gateway.parentRef.name }}'
+        namespace: '{{ .Values.gateway.parentRef.namespace }}'
+    hostnames:
+      - '{{ .Values.gateway.hostname }}'
+    rules:
+      - matches:
+          - path:
+              type: 'PathPrefix'
+              value: '/'
+        backendRefs:
+          - identifier: web
+            port: 80
+            weight: 1
+{{- end }}
+
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}

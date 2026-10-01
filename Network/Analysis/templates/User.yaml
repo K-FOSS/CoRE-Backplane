@@ -1,0 +1,20 @@
+{{- if or .Values.web.enabled .Values.client.enabled }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}'
+  namespace: '{{ .Release.Namespace }}'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  name: 'IVRE Network Analysis'
+  username: 'ivre-{{ .Release.Namespace }}'
+  groups:
+    - 'LDAPService'
+  mongodb:
+    enabled: true
+    databases:
+      - 'ivre'
+  writeConnectionSecretToRef:
+    name: '{{ required "database.connectionSecretName is required" .Values.database.connectionSecretName }}'
+{{- end }}

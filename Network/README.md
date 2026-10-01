@@ -14,6 +14,7 @@ or a physical host can PXE boot.
 | --- | --- | --- |
 | [Base](Base/README.md) | Cilium, BGP, SR-IOV, load balancing, Gateway and ExternalDNS foundations. | `Apps/Network/Base.yaml` |
 | [BareMetal](BareMetal/README.md) | Tinkerbell and static artifacts used by physical provisioning. | `Apps/Network/BareMetal.yaml` |
+| [Analysis](Analysis/README.md) | IVRE web-based network reconnaissance and analysis foundation. | `Apps/Network/Analysis.yaml` |
 | [ClusterBroker](ClusterBroker/README.md) | Submariner broker and broker credentials. | No direct ApplicationSet currently found. |
 | [Filter](Filter/README.md) | Containerized IPv4/IPv6 filtering/routing function. | `Apps/Network/Filter.yaml` |
 | [Ingress](Ingress/README.md) | Envoy Gateway, shared gateways, routes and authentication policy. | `Apps/Network/Ingress.yaml` |
@@ -73,6 +74,10 @@ The newer monitoring and time stacks are documented in their substacks:
 - [Time](Time/README.md): Chrony NTP/NTS, PureLB exposure, metrics, and
   authenticated dashboards. Owned by
   [`Apps/Network/Time.yaml`](../Apps/Network/Time.yaml).
+- [Analysis](Analysis/README.md): IVRE web-based network reconnaissance and
+  analysis foundation, with scanner and packet-sensor capabilities intentionally
+  staged for explicit follow-on configuration. Owned by
+  [`Apps/Network/Analysis.yaml`](../Apps/Network/Analysis.yaml).
 
 ## Change safety
 

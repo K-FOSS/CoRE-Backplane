@@ -1,0 +1,18 @@
+{{- if or .Values.web.enabled .Values.client.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dokuwiki'
+  namespace: '{{ .Release.Namespace }}'
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - 'ReadWriteOnce'
+  resources:
+    requests:
+      storage: '{{ .Values.storage.dokuwiki.size }}'
+  {{- with .Values.storage.dokuwiki.storageClass }}
+  storageClassName: '{{ . }}'
+  {{- end }}
+{{- end }}
