@@ -43,6 +43,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) | Remote Kustomize resource installing thick Multus and the NetworkAttachmentDefinition CRD. The ApplicationSet patches its images, resources, and host network-namespace path. |
 | [CNI DHCP IPAM](https://www.cni.dev/plugins/current/ipam/dhcp/) | Installed conditionally into Multus' host CNI binary directory and served by a DHCP daemon sidecar when KubeVIP is enabled. |
 | [Multus dynamic networks controller](https://github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller) | Remote Kustomize resource installing the per-node dynamic attachment controller. |
+| [CNI bridge plugin](https://www.cni.dev/plugins/current/main/bridge/) | Creates the unaddressed node-side `kvip-cilium0` bridge and pod-side `handoff0` veth attachment used only for ingress redirection. |
 | [SR-IOV CNI](https://github.com/k8snetworkplumbingwg/sriov-cni) | Remote Kustomize resource installing the SR-IOV CNI binary on nodes. |
 | [SR-IOV network device plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin) | Remote Kustomize resource plus Helm-rendered `sriovdp-config`. The owning ApplicationSet supplies its resource pools through `sriovDevicePlugin.resourceList`. The patch in `kustomization.yaml` sets the `kube-sriovdp` CPU request to `16m`; memory and limits retain upstream values. |
 | [SR-IOV Network Operator](https://github.com/k8snetworkplumbingwg/sriov-network-operator) | Optional Helm dependency. It is disabled in `values.yaml`; the standalone SR-IOV CNI and device plugin remain enabled independently. |
@@ -103,18 +104,17 @@ Home1 sets KubeVIP's `vip_subnet` to `24,64`, corresponding to `/24` for IPv4
 and `/64` for IPv6 when advertising VIPs. The chart default remains `32,128`.
 See the upstream [KubeVIP flags and environment variables](https://kube-vip.io/docs/installation/flags/).
 
-KubeVIP uses a 600-second lease, a 540-second renewal deadline, and a 5-second
-retry period. `vip_preserve_on_leadership_loss` keeps the IPv4 VIP assigned to
+KubeVIP uses a 180-second lease, a 150-second renewal deadline, and a 30-second
+retry period. It receives the elected pod's node name through `vip_nodename`.
+`vip_preserve_on_leadership_loss` keeps the IPv4 VIP assigned to
 the current node while the API is unavailable, stopping ARP announcements
 until a leader is elected again. KubeVIP removes IPv6 VIPs immediately during
 leadership loss. See the upstream [VIP preservation behavior](https://kube-vip.io/docs/modes/arp/#vip-preservation-on-leadership-loss).
 
-KubeVIP retains ARP mode and enables its in-pod IPVS load balancer with
-`masquerade` forwarding. The pod uses the nftables backend for its
-iptables-compatible rules through `iptables_backend: 'nft'`; the DaemonSet's
-`NET_ADMIN` capability allows these changes within the pod network namespace.
-See the upstream [KubeVIP load-balancing configuration](https://kube-vip.io/docs/about/architecture/#control-plane-load-balancing)
-and [iptables backend setting](https://kube-vip.io/docs/installation/flags/).
+KubeVIP is limited to ARP VIP ownership, election, and UPnP. Its former
+`lb_enable`, masquerade, and nftables settings are intentionally not rendered;
+Service forwarding belongs to Cilium's kube-proxy replacement and DSR path.
+This keeps the pod-local WAN namespace from becoming a second load balancer.
 
 When enabling the addon, set `kubeVip.vipRange` to an explicitly reserved CIDR
 or range on that L2 network. Rendering fails if the addon is enabled without a
@@ -135,6 +135,60 @@ and ARP advertisement. A LoadBalancer Service requests a UPnP port mapping only
 when annotated `kube-vip.io/forwardUPNP: 'true'`; the exposed Service port is
 then forwarded by the gateway to the Service VIP. See the upstream
 [UPnP service configuration](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
+
+When enabled, KubeVIP also receives `handoff0` from the
+`kube-vip-cilium-handoff` bridge NetworkAttachmentDefinition. The bridge CNI
+creates the node-side `kvip-cilium0` bridge without an L3 address or default
+route. The Home1 ClusterNode Cilium overrides include that bridge alongside each
+node's existing datapath devices, so Cilium attaches its host ingress datapath
+there without changing the shared Helm device setting.
+The `cilium-handoff` sidecar runs [tc](https://man7.org/linux/man-pages/man8/tc.8.html)
+with `mirred egress redirect`, never `mirror`. It removes the configured pool's
+redirects and recreates them only for VIP addresses currently present on the
+local pod's `wan0`; this follows kube-vip leadership and removes stale rules on
+failover. It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP, source
+addresses, or Service backends.
+
+The checked-in Cilium values select `loadBalancer.mode: dsr`,
+`loadBalancer.dsrDispatch: geneve`, and `kubeProxyReplacement: 'true'`.
+Confirm the effective runtime state before testing with:
+
+    kubectl -n kube-system exec ds/cilium -- cilium-dbg config --all | \
+      grep -Ei 'bpf-lb-mode|bpf-lb-dsr|routing-mode|tunnel'
+
+    kubectl -n kube-system exec ds/cilium -- cilium-dbg status
+
+    kubectl -n kube-system exec ds/cilium -- \
+      cilium-dbg bpf lb list --frontends | grep -E '10\.0\.0\.(39|40|41)'
+
+The repository is configured for full DSR, not hybrid; runtime output is
+authoritative. A hybrid runtime would require documenting TCP DSR separately
+from UDP, because SIP/RTPEngine UDP behavior must not be inferred from TCP.
+Geneve permits a selected backend on another node; the backend need not share
+the kube-vip pod's node. Prove the return source and interface with a backend
+capture before declaring success.
+
+## Handoff validation and rollback
+
+Inside the elected KubeVIP pod, inspect `ip -br addr`, `ip route`,
+`tc -s filter show dev wan0 ingress`, `tcpdump -ni wan0`, and
+`tcpdump -ni handoff0`. On the host inspect
+`tc filter show dev kvip-cilium0 ingress`, the Cilium LB frontend/backend maps,
+and `cilium-dbg monitor`. Test TCP 5061, UDP 5060, UDP 11000-11079, and TCP/UDP
+53 independently. For TCP, capture the Flowroute source on Kamailio and verify
+the DSR response leaves with the Service identity through the normal external
+route. Repeat after deleting the elected pod: the Lease, VIP/ARP ownership,
+redirect rules, UPnP mapping, and new SIP session must all move.
+
+An Arris UPnP gateway must be tested, not assumed, to associate the direct
+DSR response (`10.0.0.41:5061`) with its inbound NAT state. If it rejects that
+response, the result is a gateway limitation; do not add SNAT as an implicit
+fallback.
+
+Rollback by reverting the handoff change through Git and allowing Argo CD to
+reconcile. Before rollback, confirm that no external test is in progress. The
+old kube-vip pod returns to its single `wan0` attachment and Cilium's existing
+Service configuration remains unchanged.
 
 Home1 also enables the KubeVIP `netshoot` sidecar for network diagnostics. It
 runs `sleep infinity`, shares the KubeVIP pod's primary and `wan0` network

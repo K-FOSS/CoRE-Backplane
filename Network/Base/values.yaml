@@ -1118,10 +1118,6 @@ kubeVip:
     renewDeadline: '150'
     retryPeriod: '30'
     preserveVipOnLeadershipLoss: 'true'
-  loadBalancer:
-    enabled: true
-    forwardingMethod: 'masquerade'
-    iptablesBackend: 'nft'
   affinity: {}
   network:
     name: 'kube-vip-wan'
@@ -1132,6 +1128,11 @@ kubeVip:
       type: 'sriov'
       vlan: 150
       mtu: 1500
+  handoff:
+    networkName: 'kube-vip-cilium-handoff'
+    interfaceName: 'handoff0'
+    bridgeName: 'kvip-cilium0'
+    reconcileInterval: '1s'
   # Optional diagnostic container sharing the KubeVIP pod network namespace.
   debugSidecar:
     enabled: false

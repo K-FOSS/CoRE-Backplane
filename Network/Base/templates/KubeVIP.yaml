@@ -14,6 +14,10 @@
 {{- fail "kubeVip.network.resourceName is required for an SR-IOV network" }}
 {{- end }}
 {{- $config := merge (dict "cniVersion" "1.0.0" "name" $network.name) $plugin }}
+{{- $handoff := required "kubeVip.handoff is required when kubeVip.enabled is true" .Values.kubeVip.handoff }}
+{{- if not (contains "-" $vipRange) }}
+{{- fail "kubeVip.vipRange must use start-end notation for the handoff reconciler" }}
+{{- end }}
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -34,6 +38,52 @@ metadata:
   {{- end }}
 spec:
   config: {{ $config | toJson | quote }}
+---
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: {{ required "kubeVip.handoff.networkName is required" $handoff.networkName }}
+  namespace: kube-system
+spec:
+  config: {{ dict "cniVersion" "1.0.0" "name" $handoff.networkName "type" "bridge" "bridge" (required "kubeVip.handoff.bridgeName is required" $handoff.bridgeName) "isGateway" false "ipMasq" false "hairpinMode" true "promiscMode" true "ipam" (dict "type" "none") | toJson | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-vip-cilium-handoff
+  namespace: kube-system
+data:
+  reconcile.sh: |
+    #!/bin/sh
+    set -eu
+    WAN="${WAN_INTERFACE}"
+    HANDOFF="${HANDOFF_INTERFACE}"
+    RANGE="${VIP_RANGE}"
+    INTERVAL="${RECONCILE_INTERVAL}"
+    START_IP="${RANGE%-*}"
+    PREFIX="${START_IP%.*}"
+    START="${START_IP##*.}"
+    END="${RANGE##*.}"
+    tc qdisc replace dev "${WAN}" clsact
+    while :; do
+      n="${START}"
+      while [ "${n}" -le "${END}" ]; do
+        tc filter del dev "${WAN}" ingress pref "$((100 + n))" 2>/dev/null || true
+        n=$((n + 1))
+      done
+      ip -4 -o addr show dev "${WAN}" scope global | awk '{print $4}' | cut -d/ -f1 |
+        while read -r address; do
+          [ -n "${address}" ] || continue
+          base="${address%.*}"
+          octet="${address##*.}"
+          [ "${base}" = "${PREFIX}" ] || continue
+          [ "${octet}" -ge "${START}" ] && [ "${octet}" -le "${END}" ] || continue
+          tc filter replace dev "${WAN}" ingress protocol ip pref "$((100 + octet))" \
+            flower dst_ip "${address}/32" \
+            action mirred egress redirect dev "${HANDOFF}"
+        done
+      sleep "${INTERVAL}"
+    done
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -144,7 +194,7 @@ spec:
       labels:
         app.kubernetes.io/name: kube-vip
       annotations:
-        k8s.v1.cni.cncf.io/networks: {{ list (dict "name" $network.name "interface" (required "kubeVip.interfaceName is required" .Values.kubeVip.interfaceName)) | toJson | quote }}
+        k8s.v1.cni.cncf.io/networks: {{ list (dict "name" $network.name "interface" (required "kubeVip.interfaceName is required" .Values.kubeVip.interfaceName)) (dict "name" $handoff.networkName "interface" $handoff.interfaceName) | toJson | quote }}
     spec:
       serviceAccountName: kube-vip
       {{- with .Values.kubeVip.affinity }}
@@ -180,12 +230,6 @@ spec:
               value: {{ .Values.kubeVip.leaderElection.retryPeriod | quote }}
             - name: vip_preserve_on_leadership_loss
               value: {{ .Values.kubeVip.leaderElection.preserveVipOnLeadershipLoss | quote }}
-            - name: lb_enable
-              value: {{ .Values.kubeVip.loadBalancer.enabled | toString | quote }}
-            - name: lb_fwdmethod
-              value: {{ .Values.kubeVip.loadBalancer.forwardingMethod | quote }}
-            - name: iptables_backend
-              value: {{ .Values.kubeVip.loadBalancer.iptablesBackend | quote }}
             - name: lb_class_name
               value: {{ $class | quote }}
             - name: lb_class_only
@@ -219,6 +263,35 @@ spec:
           securityContext:
             {{- toYaml .Values.kubeVip.debugSidecar.securityContext | nindent 12 }}
         {{- end }}
+        - name: cilium-handoff
+          image: {{ .Values.kubeVip.debugSidecar.image | quote }}
+          imagePullPolicy: {{ .Values.kubeVip.debugSidecar.imagePullPolicy | quote }}
+          command: ['/bin/sh', '/etc/kube-vip-handoff/reconcile.sh']
+          env:
+            - name: WAN_INTERFACE
+              value: {{ .Values.kubeVip.interfaceName | quote }}
+            - name: HANDOFF_INTERFACE
+              value: {{ $handoff.interfaceName | quote }}
+            - name: VIP_RANGE
+              value: {{ $vipRange | quote }}
+            - name: RECONCILE_INTERVAL
+              value: {{ $handoff.reconcileInterval | quote }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: false
+            capabilities:
+              add: ['NET_ADMIN', 'NET_RAW']
+          volumeMounts:
+            - name: kube-vip-handoff
+              mountPath: /etc/kube-vip-handoff
+              readOnly: true
+      volumes:
+        - name: kube-vip-handoff
+          configMap:
+            name: kube-vip-cilium-handoff
+            defaultMode: 0555
       tolerations:
         - operator: Exists
 {{- end }}
