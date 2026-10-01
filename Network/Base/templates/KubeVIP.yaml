@@ -157,6 +157,34 @@ data:
       done
     }
 
+    ensure_cilium_default_route() {
+      gateway="$(ip -4 route show default dev "${CILIUM}" 2>/dev/null | awk '$1 == "default" && $3 != "" {print $3; exit}')"
+      if [ -z "${gateway}" ]; then
+        log "interface=${CILIUM} operation=default-route-discovery vip=0.0.0.0/0 pref=- handle=- exit=1 stderr=no IPv4 Cilium gateway found"
+        return 1
+      fi
+
+      current="$(ip -4 route show default dev "${CILIUM}" 2>/dev/null | head -n 1)"
+      if ! printf '%s\n' "${current}" | grep -Fq "via ${gateway} dev ${CILIUM}"; then
+        route_stderr="$(ip -4 route replace default via "${gateway}" dev "${CILIUM}" metric 50 2>&1)"
+        route_rc=$?
+        route_stderr="$(printf '%s' "${route_stderr}" | tr '\n' ' ')"
+        log "interface=${CILIUM} operation=default-route-replace vip=0.0.0.0/0 pref=50 handle=- exit=${route_rc} stderr=${route_stderr} gateway=${gateway}"
+      fi
+
+      while ip -4 route show default dev "${WAN}" 2>/dev/null | grep -q '^default '; do
+        route_stderr="$(ip -4 route del default dev "${WAN}" 2>&1)"
+        route_rc=$?
+        route_stderr="$(printf '%s' "${route_stderr}" | tr '\n' ' ')"
+        log "interface=${WAN} operation=default-route-delete vip=0.0.0.0/0 pref=- handle=- exit=${route_rc} stderr=${route_stderr}"
+        [ "${route_rc}" -eq 0 ] || break
+      done
+
+      if ! ip -4 route show default dev "${WAN}" 2>/dev/null | grep -q '^default '; then
+        log "interface=${CILIUM} operation=default-route-keep vip=0.0.0.0/0 pref=50 handle=- exit=0 stderr=wan default absent"
+      fi
+    }
+
     cleanup_legacy_vip() {
       vip="${1}"
       octet="${vip##*.}"
@@ -237,10 +265,12 @@ data:
     if ! ensure_clsact; then
       log "interface=${WAN} operation=initialize vip=- pref=- handle=- exit=1 stderr=unable to establish clsact; retrying"
     fi
+    ensure_cilium_default_route || true
     ensure_private_routes || true
 
     while :; do
       ensure_clsact || true
+      ensure_cilium_default_route || true
       ensure_private_routes || true
       n="${START}"
       while [ "${n}" -le "${END}" ]; do
