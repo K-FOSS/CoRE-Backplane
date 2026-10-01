@@ -1013,7 +1013,10 @@ spec:
 
             spec:
               providerConfigRef:
-                name: {{ .observed.composite.resource.spec.mongodb.crossplane.terraformProvider }}
+                # Older User claims may predate the nested MongoDB provider
+                # field. Keep them bound to the shared provider until the
+                # claim is explicitly updated with an override.
+                name: {{ default "mongodb-prod-tf" .observed.composite.resource.spec.mongodb.crossplane.terraformProvider }}
 
               writeConnectionSecretToRef:
                 name: {{ .observed.composite.resource.metadata.uid }}-mongo-tf
