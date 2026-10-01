@@ -30,6 +30,27 @@ dhcp:
   identity:
     # The owning ApplicationSet must provide a stable site DHCP service IP.
     ipv4: ''
+  global:
+    enabled: false
+  address: ''
+  service:
+    local:
+      enabled: false
+    global:
+      forceRename: 'dhcp-core'
+      enabled: false
+      controller: 'main'
+      primary: true
+      type: 'LoadBalancer'
+      externalTrafficPolicy: 'Local'
+      labels: {}
+      annotations: {}
+      ports:
+        dhcp-udp:
+          enabled: true
+          primary: true
+          port: 67
+          protocol: 'UDP'
   interfaces:
     - 'eth0'
   replicas: 3

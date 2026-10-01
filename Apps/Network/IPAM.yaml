@@ -21,6 +21,9 @@ spec:
 
                     dhcp:
                       enabled: true
+                      global:
+                        enabled: true
+                      address: '10.1.1.67'
                       identity:
                         ipv4: '66.165.222.112'
                       servers:
@@ -50,6 +53,9 @@ spec:
 
                     dhcp:
                       enabled: true
+                      global:
+                        enabled: true
+                      address: '10.1.1.67'
                       identity:
                         ipv4: '66.165.222.112'
                       servers:
@@ -149,8 +155,24 @@ spec:
 
                 dhcp:
                   enabled: {{ .values.dhcp.enabled }}
+                  global:
+                    enabled: {{ default false .values.dhcp.global.enabled }}
+                  address: '{{ default "" .values.dhcp.address }}'
                   identity:
                     ipv4: '{{ .values.dhcp.identity.ipv4 }}'
+
+                  service:
+                    global:
+                      enabled: {{ default false .values.dhcp.global.enabled }}
+                      {{ if .values.dhcp.global.enabled }}
+                      annotations:
+                        purelb.io/addresses: '{{ .values.dhcp.address }}'
+                        purelb.io/allow-local: 'true'
+                        purelb.io/allow-shared-ip: 'dhcp.resolvemy.host'
+                        service.cilium.io/affinity: 'local'
+                        service.cilium.io/global: 'true'
+                        service.cilium.io/global-sync-endpoint-slices: 'true'
+                      {{ end }}
 
                   servers:
                     dhcp4: {{ .values.dhcp.servers.dhcp4 }}
@@ -184,6 +206,9 @@ spec:
                   clusterDomain: {{ .values.clusterDomain }}
 
                   replicaCount: {{ default 1 .values.netbox.replicas }}
+
+                  externalDatabase:
+                    host: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
 
                   tasksDatabase:
                     host: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space

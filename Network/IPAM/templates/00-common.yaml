@@ -110,22 +110,7 @@ controllers:
 
 service:
   main:
-    forceRename: 'dhcp-core'
-    enabled: true
-    controller: 'main'
-    primary: true
-    type: 'LoadBalancer'
-    externalTrafficPolicy: 'Local'
-    annotations:
-      purelb.io/addresses: '10.1.1.67'
-      purelb.io/allow-local: 'true'
-      purelb.io/allow-shared-ip: 'dhcp.resolvemy.host'
-    ports:
-      dhcp-udp:
-        enabled: true
-        primary: true
-        port: 67
-        protocol: 'UDP'
+{{- toYaml .Values.dhcp.service.global | nindent 4 }}
 
 persistence:
   configs:
