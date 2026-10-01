@@ -130,7 +130,7 @@ data:
       printf '%s\n' "${summary}" | grep -q 'flower' || return 1
       printf '%s\n' "${summary}" | grep -Eq "dst_ip ${3}(/32)?([[:space:]]|$)" || return 1
       printf '%s\n' "${summary}" | grep -q 'mirred' || return 1
-      printf '%s\n' "${summary}" | grep -q 'redirect' || return 1
+      printf '%s\n' "${summary}" | grep -qi 'redirect' || return 1
       printf '%s\n' "${summary}" | grep -q "${HANDOFF}" || return 1
     }
 
