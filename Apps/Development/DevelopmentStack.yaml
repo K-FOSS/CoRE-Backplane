@@ -347,7 +347,7 @@ spec:
                         value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/92'
 
                 renovate:
-                  enabled: {{ .values.forgejo.enabled }}
+                  enabled: {{ and .values.forgejo.enabled (not (or (eq .values.region "yvr") (eq .values.region "yxl"))) }}
                   endpoint: 'https://{{ .values.forgejo.hostname }}'
 
                 forgejoRunner:
