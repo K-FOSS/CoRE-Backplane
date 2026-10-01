@@ -29,12 +29,9 @@ spec:
                   resolvemy.host/computetype: 'baremetal'
                   resolvemy.host/nodetype: 'infra'
               values:
-                cluster:
-                  name: '{{ .name }}'
+                clusterName: '{{ .name }}'
+                clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 environment: 'prod'
-                cluster:
-                  name: '{{ .name }}'
-                  domain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
@@ -45,7 +42,7 @@ spec:
 
   template:
     metadata:
-      name: '{{ .values.cluster.name }}-unifi-{{ .values.environment }}'
+      name: '{{ .values.clusterName }}-unifi-{{ .values.environment }}'
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
@@ -68,8 +65,8 @@ spec:
                 env: '{{ .values.environment }}'
                 domain: '{{ .values.domain }}'
                 cluster:
-                  name: '{{ .values.cluster.name }}'
-                  domain: '{{ .values.cluster.domain }}'
+                  name: '{{ .values.clusterName }}'
+                  domain: '{{ .values.clusterDomain }}'
 
       destination:
         server: '{{ .server }}'
