@@ -96,7 +96,7 @@ spec:
                     uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
 
                   mongodb:
-                    hostname: {{ default (printf "%s-rs0.core-%s.svc.%s" (required "cluster.name is required for MongoDB service discovery" $.Values.cluster.name) (required "env is required for MongoDB service discovery" $.Values.env) (required "cluster.domain is required for MongoDB service discovery" $.Values.cluster.domain)) .observed.composite.resource.spec.mongodb.hostname }}
+                    hostname: {{ default (printf "%s-rs0.core-%s.svc.%s" $.Values.cluster.name $.Values.env $.Values.cluster.domain) .observed.composite.resource.spec.mongodb.hostname }}
                     port: {{ default $.Values.mongodb.port .observed.composite.resource.spec.mongodb.port }}
                     replicaSet: {{ default $.Values.mongodb.replicaSet .observed.composite.resource.spec.mongodb.replicaSet }}
                     uri: {{ default "mongodb://" .observed.composite.resource.spec.mongodb.uri }}
