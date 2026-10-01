@@ -73,6 +73,12 @@ and [PMTU tuning guidance](https://docs.cilium.io/en/stable/operations/performan
 describe the mode and its trade-offs. Verify the effective value with
 `cilium-dbg config` after reconciliation.
 
+Cilium extended IP protocols are enabled through `cilium.extraConfig` so
+protocols without transport-layer ports, including VRRP and IGMP, can be
+handled by the datapath. See Cilium's [extended IP protocol guidance](https://docs.cilium.io/en/stable/security/policy/host/)
+and verify `enable-extended-ip-protocols` with `cilium-dbg config` after
+reconciliation.
+
 The DC1 entry in the owning ApplicationSet enables the Cilium Hubble node agent
 through `cilium.hubble.enabled` and enables Hubble TLS. Hubble Relay and Hubble
 UI remain disabled, so this change exposes flow collection on the agents without
@@ -106,10 +112,10 @@ See the upstream [KubeVIP flags and environment variables](https://kube-vip.io/d
 
 KubeVIP uses a 180-second lease, a 150-second renewal deadline, and a 30-second
 retry period. It receives the elected pod's node name through `vip_nodename`.
-`vip_preserve_on_leadership_loss` keeps the IPv4 VIP assigned to
-the current node while the API is unavailable, stopping ARP announcements
-until a leader is elected again. KubeVIP removes IPv6 VIPs immediately during
-leadership loss. See the upstream [VIP preservation behavior](https://kube-vip.io/docs/modes/arp/#vip-preservation-on-leadership-loss).
+`vip_preserve_on_leadership_loss` is disabled so the handoff controller does not
+mistake a preserved stale address for current Service ownership. KubeVIP removes
+the VIP on leadership loss and a new leader re-advertises it. See the upstream
+[VIP preservation behavior](https://kube-vip.io/docs/modes/arp/#vip-preservation-on-leadership-loss).
 
 KubeVIP is limited to ARP VIP ownership, election, and UPnP. Its former
 `lb_enable`, masquerade, and nftables settings are intentionally not rendered;
@@ -139,15 +145,15 @@ then forwarded by the gateway to the Service VIP. See the upstream
 When enabled, KubeVIP also receives `handoff0` from the
 `kube-vip-cilium-handoff` bridge NetworkAttachmentDefinition. The bridge CNI
 creates the node-side `kvip-cilium0` bridge without an L3 address or default
-route. The Home1 ClusterNode Cilium overrides include that bridge alongside each
-node's existing datapath devices, so Cilium attaches its host ingress datapath
-there without changing the shared Helm device setting.
+route. The host-side Cilium configuration must continue to include that bridge;
+this stack does not override the existing Cilium device selection. The observed
+Home1 runtime configuration is `devices=eno1,kvip-cilium0`.
 The `cilium-handoff` sidecar runs [tc](https://man7.org/linux/man-pages/man8/tc.8.html)
 with `mirred egress redirect`, never `mirror`. It removes the configured pool's
-redirects and recreates them only for VIP addresses currently present on the
-local pod's `wan0`; this follows kube-vip leadership and removes stale rules on
-failover. It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP, source
-addresses, or Service backends.
+redirects only for VIP addresses currently present on the local pod's `wan0`;
+each managed VIP is reconciled independently and stale rules are removed one at
+a time on failover. It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP,
+source addresses, or Service backends.
 
 The checked-in Cilium values select `loadBalancer.mode: dsr`,
 `loadBalancer.dsrDispatch: geneve`, and `kubeProxyReplacement: 'true'`.
