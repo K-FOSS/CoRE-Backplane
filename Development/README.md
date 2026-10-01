@@ -407,10 +407,13 @@ Both Forgejo sites run runners in the dedicated
 for each Forgejo target in each site, so each Forgejo instance has runners in
 both sites. Forgejo itself remains in `core-prod`. The owning ApplicationSet
 enables runners independently from the Forgejo target, and each runner accepts
-one job at a time and serves the `docker` and `ubuntu-latest` labels. Both labels use the same
-digest-pinned Forgejo mirror of the upstream
-[Node 24 Bookworm container image](https://github.com/nodejs/docker-node/tree/main/24/bookworm)
-so common Node-based actions work without relying on a mutable default image.
+one job at a time and serves the `docker` and `ubuntu-latest` labels. Both
+labels use the same digest-pinned
+[YXL Forgejo `action-runner:ubuntu24` job image](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/Core-Docker/src/branch/main/Images/ActionRunner),
+which provides the Docker CLI, Git, Node.js, and Python 3 required by the
+current workflows. The image is published only in the DC1 YXL Forgejo
+registry, so runners in both sites must retain network and registry access to
+that endpoint.
 The runner also exposes the DinD sidecar's Docker CLI to job containers, so
 Docker-based JavaScript actions such as
 [Docker Setup QEMU](https://github.com/docker/setup-qemu-action) can reach the
