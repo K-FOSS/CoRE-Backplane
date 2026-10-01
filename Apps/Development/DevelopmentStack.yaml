@@ -17,95 +17,104 @@ spec:
           - name
 
         generators:
-          - list:
-              elements:
-                - name: core-dc1-talos-prod
-                  values:
-                    hub: false
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - clusters:
+                          - name: core-dc1-talos-prod
+                            values:
+                              hub: false
 
-                    gitlab:
-                      enabled: false
+                              gitlab:
+                                enabled: false
 
-                    crddocs:
-                      enabled: false
+                              crddocs:
+                                enabled: false
 
-                    harbor:
-                      enabled: true
+                              harbor:
+                                enabled: true
 
-                    forgejo:
-                      enabled: true
-                      runners: true
-                      hostname: 'forge.core-dc1-talos-prod.dc1.yxl.writemy.codes'
-                    runnerLocations:
-                      - name: 'core-dc1-talos-prod'
-                      - name: 'core-home1-talos-prod'
+                              forgejo:
+                                enabled: true
+                                runners: true
+                                hostname: 'forge.core-dc1-talos-prod.dc1.yxl.writemy.codes'
+                              runnerLocations:
+                                - name: 'core-dc1-talos-prod'
+                                - name: 'core-home1-talos-prod'
 
-                    artifacthub:
-                      enabled: false
+                              artifacthub:
+                                enabled: false
 
-                    mqttx:
-                      enabled: false
+                              mqttx:
+                                enabled: false
 
-                    che:
-                      enabled: false
+                              che:
+                                enabled: false
+                                callbackUrl: 'https://ide.core-dc1-talos-prod.dc1.yxl.writemy.codes/api/oauth/callback'
 
-                - name: core-home1-talos-prod
-                  values:
-                    hub: false
+                          - name: core-home1-talos-prod
+                            values:
+                              hub: false
 
-                    gitlab:
-                      enabled: false
+                              gitlab:
+                                enabled: false
 
-                    crddocs:
-                      enabled: false
+                              crddocs:
+                                enabled: false
 
-                    mqttx:
-                      enabled: false
+                              mqttx:
+                                enabled: false
 
-                    harbor:
-                      enabled: true
+                              harbor:
+                                enabled: true
 
-                    forgejo:
-                      enabled: true
-                      runners: true
-                      hostname: 'slop.writemy.codes'
-                    runnerLocations:
-                      - name: 'core-dc1-talos-prod'
-                      - name: 'core-home1-talos-prod'
+                              forgejo:
+                                enabled: true
+                                runners: true
+                                hostname: 'slop.writemy.codes'
+                              runnerLocations:
+                                - name: 'core-dc1-talos-prod'
+                                - name: 'core-home1-talos-prod'
 
-                    artifacthub:
-                      enabled: false
+                              artifacthub:
+                                enabled: false
 
-                    che:
-                      enabled: true
+                              che:
+                                enabled: true
+                                callbackUrl: 'https://ide.core-home1-talos-prod.home1.yxl.writemy.codes/api/oauth/callback'
 
-                - name: dc1-k3s-node1
-                  values:
-                    hub: false
+                          - name: dc1-k3s-node1
+                            values:
+                              hub: false
 
-                    gitlab:
-                      enabled: true
+                              gitlab:
+                                enabled: true
 
-                    crddocs:
-                      enabled: false
+                              crddocs:
+                                enabled: false
 
-                    mqttx:
-                      enabled: false
+                              mqttx:
+                                enabled: false
 
-                    harbor:
-                      enabled: false
+                              harbor:
+                                enabled: false
 
-                    forgejo:
-                      enabled: false
-                      runners: false
-                      hostname: 'forgejo.dc1-k3s-node1.dc1.yxl.writemy.codes'
-                    runnerLocations: []
+                              forgejo:
+                                enabled: false
+                                runners: false
+                                hostname: 'forgejo.dc1-k3s-node1.dc1.yxl.writemy.codes'
+                              runnerLocations: []
 
-                    artifacthub:
-                      enabled: false
+                              artifacthub:
+                                enabled: false
 
-                    che:
-                      enabled: false
+                              che:
+                                enabled: false
+                                callbackUrl: 'https://ide.dc1-k3s-node1.dc1.yxl.writemy.codes/api/oauth/callback'
+
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
 
           - clusters:
               selector:
@@ -116,6 +125,7 @@ spec:
                 clusterName: '{{ .name }}'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
+                domain: 'writemy.codes'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 timezone: '{{ if eq (index .metadata.labels "topology.kubernetes.io/region") "yxl" }}America/Winnipeg{{ else if eq (index .metadata.labels "topology.kubernetes.io/region") "yvr" }}America/Vancouver{{ else }}America/Vancouver{{ end }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
@@ -165,6 +175,8 @@ spec:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
+                domain: '{{ .values.domain }}'
+
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
@@ -173,6 +185,13 @@ spec:
 
                 che:
                   enabled: {{ .values.che.enabled }}
+                  peerClusters:
+                    {{- range .clusters }}
+                    {{- if .values.forgejo.enabled }}
+                    - name: '{{ .name }}'
+                      url: 'https://{{ .values.forgejo.hostname }}'
+                    {{- end }}
+                    {{- end }}
 
                 gitlab:
                   enabled: {{ .values.gitlab.enabled }}
@@ -217,6 +236,14 @@ spec:
 
                 forgejo:
                   enabled: {{ .values.forgejo.enabled }}
+                  oidcApps:
+                    {{- $domain := .values.domain }}
+                    {{- range .clusters }}
+                    {{- if .values.che.enabled }}
+                    - name: 'che-{{ .name }}'
+                      redirectUrl: '{{ .values.che.callbackUrl }}'
+                    {{- end }}
+                    {{- end }}
                   strategy:
                     type: 'RollingUpdate'
                     rollingUpdate:

@@ -275,6 +275,31 @@ deployment.
 The embedded Forgejo SSH server is disabled because the rootless image already
 starts OpenSSH on its internal port; the SSH Service remains cluster-local and
 is not routed externally. This does not prevent outbound SSH push mirrors.
+
+### CoRE Backplane mirrors
+
+The CoRE Backplane repository is hosted canonically at
+[K-FOSS/CoRE-Backplane on GitHub](https://github.com/K-FOSS/CoRE-Backplane).
+The corresponding site-local Forgejo mirrors are:
+
+| Site | Web repository | HTTPS clone URL |
+| --- | --- | --- |
+| YXL | [CoRE/CoRE-Backplane](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane) | `https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane.git` |
+| YVR | [CoRE/CoRE-Backplane](https://slop.writemy.codes/CoRE/CoRE-Backplane) | `https://slop.writemy.codes/CoRE/CoRE-Backplane.git` |
+
+These are mirrors of the GitHub repository, not separate desired-state
+authorities. The checkout's configured `origin` remains GitHub; use the
+Forgejo links for site-local browsing, clone/fetch access, and mirror-health
+checks. Do not add mirror credentials, tokens, or browser cookies to Git or
+this repository. Repository mirror settings and credentials are maintained in
+Forgejo's administration UI; consult Forgejo's
+[repository mirroring documentation](https://forgejo.org/docs/v16.0/user/repo-mirror/)
+for pull/push direction, synchronization, and the warning that push mirrors
+can overwrite their destination.
+
+When validating a mirror, compare its advertised default-branch commit with
+GitHub and inspect the Forgejo repository's mirror status. A reachable web
+page alone does not prove that branches, tags, or recent commits are current.
 Forgejo's user heatmap is enabled; it attributes activity to the contributing
 user, including contributions made in repositories owned by that user's
 organizations. Forgejo 16 has no separate organization-contributions toggle.
@@ -571,8 +596,22 @@ sessions. Existing workspaces need a planned restart with a 7.122.0 editor
 image/tooling; old editor contributions or project editor overrides may need
 updating through the dashboard before the watcher is available.
 
-Reconcile the Home1 `ide-che` operator application before the Home1
-`development` CheCluster and ConfigMap. Other Development targets disable Che.
+Reconcile the tenant's `ide-che` operator application before the per-site
+`development` CheCluster and ConfigMap. Che enablement remains an explicit
+per-site Development value. The Development ApplicationSet's existing cluster
+matrix derives `che.peerClusters` from every same-tenant matrix entry with
+`forgejo.enabled`, including its hostname, so peer URLs are not duplicated in
+the Che operator stack. The same matrix derives `forgejo.oidcApps` from every
+Che-enabled entry. A Development-chart PostSync hook registers each app with
+the site-local Forgejo API, writes the generated credentials to a scoped
+Secret, and a [PushSecret](https://external-secrets.io/latest/api/pushsecret/)
+publishes them under `IDE/Che/Forgejo/<forgejo-cluster>/<che-cluster>` in Vault.
+The Che-side [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
+pulls that record into `eclipse-che` with Che's OAuth SCM labels and the
+Forgejo endpoint. Forgejo's OAuth application endpoint and OAuth provider
+behavior are documented in the [Forgejo OAuth2 provider guide](https://forgejo.org/docs/latest/admin/advanced/oauth2-provider/)
+and [API reference](https://forgejo.org/docs/latest/user/api/).
+The separate `ide-che` stack only installs the operator and CRD.
 The operator chart is shared with other production registrations; its version
 pin is desired state there too, but only Home1 needs reconciliation for this
 workspace policy. Check the operator rollout, CheCluster `Active` status,
@@ -590,7 +629,11 @@ See the [CheCluster field reference](https://eclipse.dev/che/docs/stable/adminis
 and [7.122.0 release notes](https://github.com/eclipse-che/che/releases/tag/7.122.0).
 
 Before a Che change, test OIDC login, workspace creation, PVC attachment,
-image pull, SCM authorization, editor startup, idling, restart, and deletion.
+image pull, each generated Forgejo SCM secret and callback, SCM authorization,
+editor startup, idling, restart, and deletion. The registration hook is
+idempotent for an existing generated credential Secret; changing a redirect
+URI requires deleting that one generated Secret and allowing the reviewed
+PostSync hook to register a replacement application.
 Avoid changing workspace storage strategy without a migration plan.
 
 ## Artifact Hub

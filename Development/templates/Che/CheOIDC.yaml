@@ -1,0 +1,38 @@
+{{- if .Values.che.enabled }}
+{{- range .Values.che.peerClusters }}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: 'che-{{ .name }}-forgejo'
+  namespace: eclipse-che
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: mainvault-core
+  target:
+    name: 'forgejo-{{ .name }}-oauth-config'
+    template:
+      metadata:
+        labels:
+          app.kubernetes.io/part-of: che.eclipse.org
+          app.kubernetes.io/component: oauth-scm-configuration
+        annotations:
+          # Forgejo exposes the GitHub-compatible OAuth endpoints Che expects
+          # for custom SCM providers.
+          che.eclipse.org/oauth-scm-server: github
+          che.eclipse.org/scm-server-endpoint: '{{ .url }}'
+          che.eclipse.org/scm-github-disable-subdomain-isolation: 'true'
+  data:
+    - secretKey: id
+      remoteRef:
+        key: 'IDE/Che/Forgejo/{{ .name }}/{{ $.Values.cluster.name }}'
+        property: 'ClientID'
+    - secretKey: secret
+      remoteRef:
+        key: 'IDE/Che/Forgejo/{{ .name }}/{{ $.Values.cluster.name }}'
+        property: 'ClientSecret'
+{{- end }}
+{{- end }}

@@ -1,0 +1,146 @@
+{{- if and .Values.forgejo.enabled .Values.forgejo.oidcApps }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: 'forgejo-oidc-apps'
+  annotations:
+    argocd.argoproj.io/sync-wave: '8'
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: 'forgejo-oidc-apps'
+  annotations:
+    argocd.argoproj.io/sync-wave: '8'
+rules:
+  - apiGroups: ['']
+    resources: ['secrets']
+    verbs: ['get', 'create', 'update', 'patch']
+    resourceNames:
+      {{- range .Values.forgejo.oidcApps }}
+      - 'forgejo-oidc-app-{{ .name }}'
+      {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: 'forgejo-oidc-apps'
+  annotations:
+    argocd.argoproj.io/sync-wave: '8'
+subjects:
+  - kind: ServiceAccount
+    name: 'forgejo-oidc-apps'
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'forgejo-oidc-apps'
+{{- range .Values.forgejo.oidcApps }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: 'forgejo-oidc-app-{{ .name }}'
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  backoffLimit: 6
+  activeDeadlineSeconds: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: 'forgejo-oidc-app'
+        app.kubernetes.io/instance: 'forgejo-{{ $.Values.cluster.name }}'
+    spec:
+      serviceAccountName: 'forgejo-oidc-apps'
+      restartPolicy: OnFailure
+      automountServiceAccountToken: true
+      containers:
+        - name: 'register'
+          image: 'curlimages/curl:8.11.1'
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: 'FORGEJO_URL'
+              value: 'http://{{ $.Values.forgejo.fullnameOverride }}-http:3000'
+            - name: 'APP_NAME'
+              value: '{{ .name }}'
+            - name: 'REDIRECT_URL'
+              value: '{{ .redirectUrl }}'
+            - name: 'SECRET_NAME'
+              value: 'forgejo-oidc-app-{{ .name }}'
+            - name: 'NAMESPACE'
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: 'FORGEJO_ADMIN_USER'
+              valueFrom:
+                secretKeyRef:
+                  name: 'forgejo-admin'
+                  key: username
+            - name: 'FORGEJO_ADMIN_PASSWORD'
+              valueFrom:
+                secretKeyRef:
+                  name: 'forgejo-admin'
+                  key: password
+          command: ['/bin/sh', '-ec']
+          args:
+            - |-
+              api='https://kubernetes.default.svc'
+              auth="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
+              ca='/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
+              secret_url="${api}/api/v1/namespaces/${NAMESPACE}/secrets/${SECRET_NAME}"
+
+              existing=$(curl -fsS --cacert "${ca}" -H "${auth}" "${secret_url}" 2>/dev/null || true)
+              if printf '%s' "${existing}" | grep -q 'client_id'; then
+                echo 'Forgejo OAuth app credentials already exist.'
+                exit 0
+              fi
+
+              response=''
+              until response=$(curl -fsS --user "${FORGEJO_ADMIN_USER}:${FORGEJO_ADMIN_PASSWORD}" \
+                -H 'Content-Type: application/json' \
+                -d "{\"name\":\"${APP_NAME}\",\"confidential_client\":true,\"redirect_uris\":[\"${REDIRECT_URL}\"]}" \
+                "${FORGEJO_URL}/api/v1/user/applications/oauth2"); do
+                echo 'Waiting for the site-local Forgejo OAuth API.'
+                sleep 10
+              done
+
+              client_id=$(printf '%s' "${response}" | sed -n 's/.*"client_id":"\([^"]*\)".*/\1/p')
+              client_secret=$(printf '%s' "${response}" | sed -n 's/.*"client_secret":"\([^"]*\)".*/\1/p')
+              test -n "${client_id}" -a -n "${client_secret}"
+
+              client_id_b64=$(printf '%s' "${client_id}" | base64 | tr -d '\n')
+              client_secret_b64=$(printf '%s' "${client_secret}" | base64 | tr -d '\n')
+              payload=$(printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s","namespace":"%s"},"type":"Opaque","data":{"client_id":"%s","client_secret":"%s"}}' \
+                "${SECRET_NAME}" "${NAMESPACE}" "${client_id_b64}" "${client_secret_b64}")
+              curl -fsS --cacert "${ca}" -H "${auth}" -H 'Content-Type: application/json' \
+                -X PUT -d "${payload}" "${secret_url}"
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: 'forgejo-oidc-app-{{ .name }}-vault-sync'
+  annotations:
+    argocd.argoproj.io/sync-wave: '11'
+spec:
+  refreshInterval: '1h'
+  secretStoreRefs:
+    - name: 'mainvault-core'
+      kind: ClusterSecretStore
+  selector:
+    secret:
+      name: 'forgejo-oidc-app-{{ .name }}'
+  data:
+    - match:
+        secretKey: 'client_id'
+        remoteRef:
+          remoteKey: 'IDE/Che/Forgejo/{{ $.Values.cluster.name }}/{{ .name }}'
+          property: 'ClientID'
+    - match:
+        secretKey: 'client_secret'
+        remoteRef:
+          remoteKey: 'IDE/Che/Forgejo/{{ $.Values.cluster.name }}/{{ .name }}'
+          property: 'ClientSecret'
+{{- end }}
+{{- end }}
