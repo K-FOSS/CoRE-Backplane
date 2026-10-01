@@ -80,10 +80,11 @@ data:
 
     run_tc() {
       tc_stderr=''
-      "$@" 2>"/tmp/tc-handoff.stderr"
+      # Preserve the read-only root filesystem: redirect stdout away first,
+      # then capture stderr from the TC operation in the command substitution.
+      tc_stderr="$("$@" 2>&1 >/dev/null)"
       tc_rc=$?
-      tc_stderr="$(tr '\n' ' ' < /tmp/tc-handoff.stderr)"
-      rm -f /tmp/tc-handoff.stderr
+      tc_stderr="$(printf '%s' "${tc_stderr}" | tr '\n' ' ')"
       return 0
     }
 
