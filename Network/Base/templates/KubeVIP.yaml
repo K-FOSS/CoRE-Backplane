@@ -194,7 +194,7 @@ data:
       [ "${show_rc}" -eq 0 ] && [ -n "${summary}" ] || return 0
       if filter_is_desired "${summary}" "${legacy_pref}" "${vip}"; then
         run_tc tc filter del dev "${WAN}" ingress chain 0 \
-          pref "${legacy_pref}" handle 1
+          pref "${legacy_pref}" handle 1 flower
         log "interface=${WAN} operation=delete-legacy vip=${vip} pref=${legacy_pref} handle=1 exit=${tc_rc} stderr=${tc_stderr}"
       else
         log "interface=${WAN} operation=legacy-collision-preserved vip=${vip} pref=${legacy_pref} handle=1 exit=1 stderr=not deleting unrelated filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
@@ -246,9 +246,9 @@ data:
       fi
 
       if [ "${desired}" = false ] && [ "${actual}" = true ]; then
-        if filter_is_desired "${summary}" "${pref}" "${vip}"; then
-          run_tc tc filter del dev "${WAN}" ingress chain "${CHAIN}" \
-            pref "${pref}" handle "${handle}"
+      if filter_is_desired "${summary}" "${pref}" "${vip}"; then
+        run_tc tc filter del dev "${WAN}" ingress chain "${CHAIN}" \
+          pref "${pref}" handle "${handle}" flower
           log "interface=${WAN} operation=delete vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr}"
         else
           log "interface=${WAN} operation=collision-preserved vip=${vip} pref=${pref} handle=${handle} exit=1 stderr=not deleting unrelated filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
