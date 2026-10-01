@@ -157,6 +157,10 @@ owns standby reattachment through `auto_failback`. Recovery inventory and
 attachment errors are reported to the sidecar log. The sidecar uses the same
 pinned PGPool image and the existing operator credential Secret, and can be
 disabled with `pooler.autoRecovery.enabled`.
+PCP is bound to loopback and its Unix socket is kept in the shared
+`/tmp/pgpool` runtime volume so the sidecar can reach it after a backend
+network interruption without exposing the administrative interface outside the
+pod.
 The sidecar follows the upstream [PCP command and password-file
 interface](https://pgpool.net/docs/latest/en/html/pcp-commands.html).
 

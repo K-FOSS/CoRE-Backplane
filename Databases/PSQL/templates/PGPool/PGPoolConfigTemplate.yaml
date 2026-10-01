@@ -197,9 +197,11 @@ data:
     listen_addresses = '*'
     port = 5432
     socket_dir = '/var/run/postgresql'
-    pcp_listen_addresses = '*'
+    # Keep PCP local to the pod; the recovery sidecar shares this network
+    # namespace and does not need a remotely reachable control endpoint.
+    pcp_listen_addresses = '127.0.0.1'
     pcp_port = 9898
-    pcp_socket_dir = '/var/run/postgresql'
+    pcp_socket_dir = '/tmp/pgpool'
     pool_passwd = '/tmp/pgpool/pool_passwd'
     logdir = '/tmp/pgpool'
     status_file_dir = '/tmp/pgpool'

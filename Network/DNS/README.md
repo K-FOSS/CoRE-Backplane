@@ -22,7 +22,8 @@ are rendered from [`values.yaml`](values.yaml) and
 [`templates/DNSDistConfig.yaml`](templates/DNSDistConfig.yaml).
 
 `resolvemy.host.` is sent to the local `ns-core` PowerDNS Service. K8GB zones
-are sent to the K8GB CoreDNS Service when listed in
+are sent to the cluster-specific K8GB CoreDNS Service derived from
+`cluster.name` and `environment` when listed in
 `dnsdist.k8gb.zones`. Backend Service names use
 `cluster.kubernetesDomain` (the active CoreDNS configuration may use
 `k8s.<site>.resolvemy.host` alongside `cluster.local`), while `cluster.domain`
