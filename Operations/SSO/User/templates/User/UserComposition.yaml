@@ -96,9 +96,9 @@ spec:
                     uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
 
                   mongodb:
-                    hostname: {{ default (printf "%s-rs0.core-%s.svc.%s" $.Values.cluster.name $.Values.env $.Values.cluster.domain) .observed.composite.resource.spec.mongodb.hostname }}
-                    port: {{ default $.Values.mongodb.port .observed.composite.resource.spec.mongodb.port }}
-                    replicaSet: {{ default $.Values.mongodb.replicaSet .observed.composite.resource.spec.mongodb.replicaSet }}
+                    hostname: {{ .observed.composite.resource.spec.mongodb.hostname }}
+                    port: {{ .observed.composite.resource.spec.mongodb.port }}
+                    replicaSet: {{ .observed.composite.resource.spec.mongodb.replicaSet }}
                     uri: {{ default "mongodb://" .observed.composite.resource.spec.mongodb.uri }}
                     database: {{ index .observed.composite.resource.spec.mongodb.databases 0 }}
 
@@ -1013,7 +1013,7 @@ spec:
 
             spec:
               providerConfigRef:
-                name: {{ default $.Values.mongodb.terraform.provider .observed.composite.resource.spec.mongodb.crossplane.terraformProvider }}
+                name: {{ .observed.composite.resource.spec.mongodb.crossplane.terraformProvider }}
 
               writeConnectionSecretToRef:
                 name: {{ .observed.composite.resource.metadata.uid }}-mongo-tf

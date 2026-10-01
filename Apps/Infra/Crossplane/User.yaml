@@ -70,8 +70,11 @@ spec:
                 ldap:
                   server: {{ .values.ldapServer }}
                 mongodb:
+                  hostname: '{{ .values.clusterName }}-rs0.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}'
                   port: '27017'
                   replicaSet: 'rs0'
+                  crossplane:
+                    terraformProvider: 'mongodb-prod-tf'
                 cluster:
                   name: '{{ .values.clusterName }}'
                   domain: '{{ .values.clusterDomain }}'
