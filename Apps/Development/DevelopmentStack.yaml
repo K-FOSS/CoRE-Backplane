@@ -388,8 +388,10 @@ spec:
                   targets:
                     - name: 'core-dc1-talos-prod'
                       url: 'https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/'
+                      replicas: {{ if eq .values.region "yvr" }}0{{ else }}1{{ end }}
                     - name: 'core-home1-talos-prod'
                       url: 'https://slop.writemy.codes/'
+                      replicas: 1
 
                 crddocs:
                   enabled: {{ .values.crddocs.enabled }}

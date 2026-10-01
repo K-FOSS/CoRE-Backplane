@@ -28,10 +28,11 @@ Current fleet intent:
 | `core-home1-talos-prod` | On | On | On | On | Off | Off | Off |
 | `dc1-k3s-node1` | On | Off | Off | Off | Off | Off | Off |
 
-Hoppscotch and Renovate are not overridden by the ApplicationSet. Their
-checked-in values therefore apply: Hoppscotch is enabled and Renovate is
-disabled. The ApplicationSet sets `hub: false` for every current target, so
-hub-only credential producers do not render.
+Hoppscotch is enabled from the checked-in values. Renovate is enabled only
+when Forgejo is enabled and the target region is neither YVR nor YXL; it is
+therefore disabled for the current YVR and YXL production clusters. The
+ApplicationSet sets `hub: false` for every current target, so hub-only
+credential producers do not render.
 
 Generated Applications use server-side apply, respect configured ignore
 differences, retain three revisions, and are preserved when removed from the
@@ -443,6 +444,11 @@ no registration token, runner token, or generated runner file is stored in
 Git. Actions are explicitly enabled and unqualified actions resolve through
 `https://data.forgejo.org`.
 
+The YVR Forgejo site keeps the local `core-home1-talos-prod` runner at one
+replica but currently scales its DC1-targeted runner Deployment to zero. The
+DC1-targeted runner remains registered and its Secret is retained, so restoring
+capacity only requires changing the target replica override and reconciling.
+
 Each runner pod contains an unprivileged Forgejo Runner container and a
 privileged, digest-pinned Docker 29.3.1 DinD sidecar based on the
 [Docker Official Image source](https://github.com/docker-library/docker/tree/8d9e3502aba39127e4d12196dae16d306f76993d/29/dind).
@@ -669,22 +675,21 @@ secret rotation.
 
 ## Renovate, MQTTX, and CRD docs
 
-Renovate is enabled automatically for each site where Forgejo is enabled. Its
-CronJob runs once daily against that site's Forgejo endpoint, autodiscovers
-repositories, and creates dependency pull requests. The ExternalSecret reads
-the Renovate account's PAT from the site-local Vault path
+Renovate is enabled only for Forgejo-enabled regions outside YVR and YXL. When
+enabled, its CronJob runs once daily against that site's Forgejo endpoint,
+autodiscovers repositories, and creates dependency pull requests. The
+ExternalSecret reads the Renovate account's PAT from the site-local Vault path
 `Forgejo/<cluster>/Renovate` and publishes only `RENOVATE_TOKEN` to the
 CronJob. Create that PAT with the permissions required by Renovate's
 [Forgejo platform documentation](https://docs.renovatebot.com/modules/platform/forgejo/);
 do not put it in Git. Keep `platformAutomerge` disabled until branch protection
 and Actions checks have been verified.
 
-The two site bots are independent: YXL targets
-`forge.core-dc1-talos-prod.dc1.yxl.writemy.codes`, while YVR targets
-`slop.writemy.codes`. Verify the Vault ExternalSecret, CronJob completion,
-Renovate logs, repository autodiscovery, and a test dependency pull request at
-each site. Removing Forgejo disables the local bot but does not revoke the PAT;
-revoke that credential in Forgejo and remove its Vault record deliberately.
+The current YXL and YVR site bots are intentionally disabled. If Renovate is
+later enabled for another region, verify its Vault ExternalSecret, CronJob
+completion, logs, repository autodiscovery, and a test dependency pull request.
+Disabling or removing Forgejo does not revoke an existing Renovate PAT; revoke
+that credential in Forgejo and remove its Vault record deliberately.
 
 MQTTX is a simple web Deployment and ClusterIP Service using a moving
 `latest` image tag. Pin the tag before treating it as reproducible.

@@ -129,7 +129,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '1'
 spec:
-  replicas: {{ $.Values.forgejoRunner.replicaCount }}
+  replicas: {{ if hasKey . "replicas" }}{{ .replicas }}{{ else }}{{ $.Values.forgejoRunner.replicaCount }}{{ end }}
   strategy:
     type: Recreate
   selector:
