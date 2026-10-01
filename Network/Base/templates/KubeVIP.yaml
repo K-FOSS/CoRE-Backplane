@@ -55,7 +55,9 @@ metadata:
 data:
   reconcile.sh: |
     #!/bin/sh
-    set -eu
+    set -u
+
+    CHAIN="100"
     WAN="${WAN_INTERFACE}"
     HANDOFF="${HANDOFF_INTERFACE}"
     RANGE="${VIP_RANGE}"
@@ -64,24 +66,163 @@ data:
     PREFIX="${START_IP%.*}"
     START="${START_IP##*.}"
     END="${RANGE##*.}"
-    tc qdisc replace dev "${WAN}" clsact
+
+    timestamp() {
+      date -u '+%Y-%m-%dT%H:%M:%SZ'
+    }
+
+    log() {
+      echo "$(timestamp) handoff reconcile: $*"
+    }
+
+    tc_stderr=''
+    tc_rc=0
+
+    run_tc() {
+      tc_stderr=''
+      "$@" 2>"/tmp/tc-handoff.stderr"
+      tc_rc=$?
+      tc_stderr="$(tr '\n' ' ' < /tmp/tc-handoff.stderr)"
+      rm -f /tmp/tc-handoff.stderr
+      return 0
+    }
+
+    ensure_clsact() {
+      qdisc="$(tc qdisc show dev "${WAN}" 2>&1)"
+      qdisc_rc=$?
+      log "interface=${WAN} operation=show-qdisc vip=- pref=- handle=- exit=${qdisc_rc} stderr=$(printf '%s' "${qdisc}" | tr '\n' ' ')"
+      if [ "${qdisc_rc}" -eq 0 ] && printf '%s\n' "${qdisc}" | grep -qE '(^| )qdisc clsact '; then
+        return 0
+      fi
+
+      run_tc tc qdisc add dev "${WAN}" clsact
+      log "interface=${WAN} operation=add-clsact vip=- pref=- handle=- exit=${tc_rc} stderr=${tc_stderr}"
+      if [ "${tc_rc}" -eq 0 ]; then
+        return 0
+      fi
+
+      # EEXIST is recoverable only after the postcondition is true.
+      qdisc="$(tc qdisc show dev "${WAN}" 2>&1)"
+      if printf '%s\n' "${qdisc}" | grep -qE '(^| )qdisc clsact '; then
+        log "interface=${WAN} operation=verify-clsact vip=- pref=- handle=- exit=0 stderr=add returned EEXIST but clsact is present"
+        return 0
+      fi
+      log "interface=${WAN} operation=verify-clsact vip=- pref=- handle=- exit=1 stderr=clsact missing after add failure: $(printf '%s' "${qdisc}" | tr '\n' ' ')"
+      return 1
+    }
+
+    vip_is_owned() {
+      ip -4 -o addr show dev "${WAN}" scope global 2>/dev/null |
+        awk '{print $4}' | cut -d/ -f1 | grep -Fxq "${1}"
+    }
+
+    filter_summary() {
+      tc filter show dev "${WAN}" ingress chain "${CHAIN}" pref "${1}" handle "${2}" 2>&1
+    }
+
+    legacy_filter_summary() {
+      tc filter show dev "${WAN}" ingress chain 0 pref "${1}" handle 1 2>&1
+    }
+
+    filter_is_desired() {
+      summary="${1}"
+      printf '%s\n' "${summary}" | grep -q 'flower' || return 1
+      printf '%s\n' "${summary}" | grep -Eq "dst_ip ${3}(/32)?([[:space:]]|$)" || return 1
+      printf '%s\n' "${summary}" | grep -q 'mirred' || return 1
+      printf '%s\n' "${summary}" | grep -q 'redirect' || return 1
+      printf '%s\n' "${summary}" | grep -q "${HANDOFF}" || return 1
+    }
+
+    cleanup_legacy_vip() {
+      vip="${1}"
+      octet="${vip##*.}"
+      legacy_pref="$((100 + octet))"
+      summary="$(legacy_filter_summary "${legacy_pref}")"
+      show_rc=$?
+      [ "${show_rc}" -eq 0 ] && [ -n "${summary}" ] || return 0
+      if filter_is_desired "${summary}" "${legacy_pref}" "${vip}"; then
+        run_tc tc filter del dev "${WAN}" ingress chain 0 \
+          pref "${legacy_pref}" handle 1
+        log "interface=${WAN} operation=delete-legacy vip=${vip} pref=${legacy_pref} handle=1 exit=${tc_rc} stderr=${tc_stderr}"
+      else
+        log "interface=${WAN} operation=legacy-collision-preserved vip=${vip} pref=${legacy_pref} handle=1 exit=1 stderr=not deleting unrelated filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
+      fi
+    }
+
+    reconcile_vip() {
+      vip="${1}"
+      octet="${vip##*.}"
+      pref="$((1000 + octet))"
+      handle="${octet}"
+      desired=false
+      if vip_is_owned "${vip}"; then
+        desired=true
+      fi
+
+      summary="$(filter_summary "${pref}" "${handle}")"
+      show_rc=$?
+      actual=false
+      if [ "${show_rc}" -eq 0 ] && [ -n "${summary}" ]; then
+        actual=true
+      fi
+      log "interface=${WAN} operation=inspect vip=${vip} pref=${pref} handle=${handle} exit=${show_rc} stderr=$(printf '%s' "${summary}" | tr '\n' ' ') desired=${desired} actual=${actual}"
+
+      if [ "${desired}" = true ] && [ "${actual}" = false ]; then
+        run_tc tc filter replace dev "${WAN}" ingress chain "${CHAIN}" \
+          pref "${pref}" handle "${handle}" protocol ip flower \
+          dst_ip "${vip}/32" \
+          action mirred egress redirect dev "${HANDOFF}"
+        log "interface=${WAN} operation=replace vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr}"
+        if [ "${tc_rc}" -ne 0 ]; then
+          verify="$(filter_summary "${pref}" "${handle}")"
+          if filter_is_desired "${verify}" "${pref}" "${vip}"; then
+            log "interface=${WAN} operation=verify-after-replace vip=${vip} pref=${pref} handle=${handle} exit=0 stderr=existing filter is already desired"
+          else
+            log "interface=${WAN} operation=collision vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr} existing_filter=$(printf '%s' "${verify}" | tr '\n' ' ')"
+          fi
+        fi
+        return 0
+      fi
+
+      if [ "${desired}" = true ] && [ "${actual}" = true ]; then
+        if filter_is_desired "${summary}" "${pref}" "${vip}"; then
+          log "interface=${WAN} operation=keep vip=${vip} pref=${pref} handle=${handle} exit=0 stderr=already desired"
+        else
+          log "interface=${WAN} operation=collision vip=${vip} pref=${pref} handle=${handle} exit=1 stderr=managed identity contains another filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
+        fi
+        return 0
+      fi
+
+      if [ "${desired}" = false ] && [ "${actual}" = true ]; then
+        if filter_is_desired "${summary}" "${pref}" "${vip}"; then
+          run_tc tc filter del dev "${WAN}" ingress chain "${CHAIN}" \
+            pref "${pref}" handle "${handle}"
+          log "interface=${WAN} operation=delete vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr}"
+        else
+          log "interface=${WAN} operation=collision-preserved vip=${vip} pref=${pref} handle=${handle} exit=1 stderr=not deleting unrelated filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
+        fi
+      fi
+    }
+
+    log "interface=${WAN} operation=diagnostic-qdisc vip=- pref=- handle=- exit=0 stderr=$(tc -s -d qdisc show dev "${WAN}" 2>&1 | tr '\n' ' ')"
+    log "interface=${WAN} operation=diagnostic-filter vip=- pref=- handle=- exit=0 stderr=$(tc -s -d filter show dev "${WAN}" ingress 2>&1 | tr '\n' ' ')"
+    log "interface=${WAN} operation=diagnostic-filter-json vip=- pref=- handle=- exit=0 stderr=$(tc -j -s -d filter show dev "${WAN}" ingress 2>&1 | tr '\n' ' ')"
+    log "interface=${WAN} operation=diagnostic-actions vip=- pref=- handle=- exit=0 stderr=$(tc action ls action mirred 2>&1 | tr '\n' ' ')"
+    log "interface=${WAN} operation=diagnostic-addresses vip=- pref=- handle=- exit=0 stderr=$(ip -4 -o addr show dev "${WAN}" scope global 2>&1 | tr '\n' ' ')"
+
+    if ! ensure_clsact; then
+      log "interface=${WAN} operation=initialize vip=- pref=- handle=- exit=1 stderr=unable to establish clsact; retrying"
+    fi
+
     while :; do
+      ensure_clsact || true
       n="${START}"
       while [ "${n}" -le "${END}" ]; do
-        tc filter del dev "${WAN}" ingress pref "$((100 + n))" 2>/dev/null || true
+        vip="${PREFIX}.${n}"
+        reconcile_vip "${vip}"
+        cleanup_legacy_vip "${vip}"
         n=$((n + 1))
       done
-      ip -4 -o addr show dev "${WAN}" scope global | awk '{print $4}' | cut -d/ -f1 |
-        while read -r address; do
-          [ -n "${address}" ] || continue
-          base="${address%.*}"
-          octet="${address##*.}"
-          [ "${base}" = "${PREFIX}" ] || continue
-          [ "${octet}" -ge "${START}" ] && [ "${octet}" -le "${END}" ] || continue
-          tc filter replace dev "${WAN}" ingress protocol ip pref "$((100 + octet))" \
-            flower dst_ip "${address}/32" \
-            action mirred egress redirect dev "${HANDOFF}"
-        done
       sleep "${INTERVAL}"
     done
 ---
