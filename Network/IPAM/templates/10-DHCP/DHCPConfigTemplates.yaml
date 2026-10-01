@@ -39,6 +39,8 @@ data:
   DHCP6.jsonc: | #json
     {{- include "ipam.dhcp6.validate" . }}
     {{- $dhcp6 := deepCopy .Values.dhcp.dhcp6 }}
+    {{- $dhcp6Interfaces := get $dhcp6 "interfaces-config" }}
+    {{- $_ := set $dhcp6Interfaces "interfaces" .Values.dhcp.interfaces }}
     {{- $_ := set $dhcp6 "lease-database" (dict
       "type" "postgresql"
       "name" "__KEA_DATABASE__"
@@ -60,6 +62,19 @@ data:
   DHCP4.jsonc: | #json
     {{- include "ipam.dhcp4.validate" . }}
     {{- $dhcp4 := deepCopy .Values.dhcp.dhcp4 }}
+    {{- if and .Values.dhcp.servers.dhcp4 (not .Values.dhcp.identity.ipv4) }}
+      {{- fail "dhcp.identity.ipv4 is required when DHCPv4 is enabled" }}
+    {{- end }}
+    {{- $dhcp4Interfaces := get $dhcp4 "interfaces-config" }}
+    {{- $_ := set $dhcp4Interfaces "interfaces" .Values.dhcp.interfaces }}
+    {{- $dhcp4OptionData := default (list) (get $dhcp4 "option-data") }}
+    {{- $_ := set $dhcp4 "option-data" (append $dhcp4OptionData (dict "name" "dhcp-server-identifier" "data" .Values.dhcp.identity.ipv4)) }}
+    {{- range $logger := (default (list) (get $dhcp4 "loggers")) }}
+      {{- if $.Values.dhcp.diagnostics.enabled }}
+        {{- $_ := set $logger "severity" "DEBUG" }}
+        {{- $_ := set $logger "debuglevel" 15 }}
+      {{- end }}
+    {{- end }}
     {{- $siteClasses := list
       (dict
         "name" "tinkerbell"
@@ -72,24 +87,21 @@ data:
         "boot-file-name" .Values.dhcp.bmps.tftp.efi.path
         "next-server" .Values.dhcp.bmps.tftp.efi.address
         "option-data" (list
-          (dict "name" "tftp-server-name" "data" .Values.dhcp.bmps.tftp.efi.address)
-          (dict "name" "dhcp-server-identifier" "data" .Values.dhcp.bmps.tftp.efi.address)))
+          (dict "name" "tftp-server-name" "data" .Values.dhcp.bmps.tftp.efi.address)))
       (dict
         "name" "pxe-legacy"
         "test" "option[93].exists and not member('tinkerbell') and not member('ipxe') and option[93].hex == 0x0000"
         "next-server" .Values.dhcp.bmps.tftp.pxe.address
         "boot-file-name" .Values.dhcp.bmps.tftp.pxe.path
         "option-data" (list
-          (dict "name" "tftp-server-name" "data" .Values.dhcp.bmps.tftp.pxe.address)
-          (dict "name" "dhcp-server-identifier" "data" .Values.dhcp.bmps.tftp.pxe.address)))
+          (dict "name" "tftp-server-name" "data" .Values.dhcp.bmps.tftp.pxe.address)))
       (dict
         "name" "pxe-uefi"
         "test" "option[93].exists and not member('tinkerbell') and not member('ipxe') and not member('pxe-legacy')"
         "next-server" .Values.dhcp.bmps.tftp.efi.address
         "boot-file-name" .Values.dhcp.bmps.tftp.efi.path
         "option-data" (list
-          (dict "name" "tftp-server-name" "data" .Values.dhcp.bmps.tftp.efi.address)
-          (dict "name" "dhcp-server-identifier" "data" .Values.dhcp.bmps.tftp.efi.address)))
+          (dict "name" "tftp-server-name" "data" .Values.dhcp.bmps.tftp.efi.address)))
       (dict
         "name" "ubnt"
         "test" "option[60].exists and substring(option[60].hex,0,4) == 'ubnt'"

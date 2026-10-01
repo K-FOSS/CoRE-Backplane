@@ -21,6 +21,8 @@ spec:
 
                     dhcp:
                       enabled: true
+                      identity:
+                        ipv4: '66.165.222.112'
                       servers:
                         dhcp4: true
                         dhcp6: false
@@ -48,6 +50,8 @@ spec:
 
                     dhcp:
                       enabled: true
+                      identity:
+                        ipv4: '66.165.222.112'
                       servers:
                         dhcp4: true
                         dhcp6: false
@@ -73,6 +77,8 @@ spec:
 
                     dhcp:
                       enabled: true
+                      identity:
+                        ipv4: '10.1.1.67'
                       servers:
                         dhcp4: true
                         dhcp6: true
@@ -142,6 +148,10 @@ spec:
                   domain: {{ .values.clusterDomain }}
 
                 dhcp:
+                  enabled: {{ .values.dhcp.enabled }}
+                  identity:
+                    ipv4: '{{ .values.dhcp.identity.ipv4 }}'
+
                   servers:
                     dhcp4: {{ .values.dhcp.servers.dhcp4 }}
                     dhcp6: {{ .values.dhcp.servers.dhcp6 }}

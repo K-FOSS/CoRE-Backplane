@@ -26,7 +26,14 @@ global: {}
 # ISC Kea 3.2 documentation: https://kea.readthedocs.io/en/kea-3.2.0/
 # Tinkerbell iPXE boot flow: https://tinkerbell.org/docs/services/hegel/#ipxe
 dhcp:
-  enabled: true
+  enabled: false
+  identity:
+    # The owning ApplicationSet must provide a stable site DHCP service IP.
+    ipv4: ''
+  interfaces:
+    - 'eth0'
+  diagnostics:
+    enabled: false
   servers:
     dhcp4: true
     dhcp6: true
@@ -90,7 +97,7 @@ dhcp:
         - 'hw-address'
       interfaces-config:
         interfaces:
-          - '*'
+          - 'eth0'
         dhcp-socket-type: 'udp'
         outbound-interface: 'use-routing'
         re-detect: false
@@ -343,7 +350,7 @@ dhcp:
   dhcp6:
     interfaces-config:
       interfaces:
-        - '*'
+        - 'eth0'
       re-detect: false
     control-socket:
       socket-type: 'unix'
