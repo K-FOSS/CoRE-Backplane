@@ -14,7 +14,15 @@ defaultPodOptions:
 controllers:
   main:
     suffix: 'kea'
-    strategy: 'Recreate'
+    replicas: {{ .Values.dhcp.replicas }}
+    strategy: 'RollingUpdate'
+    rollingUpdate:
+      unavailable: 1
+      surge: 1
+    pod:
+      annotations:
+        configmap.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dhcp-tpl'
+        secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dhcp-config'
     containers:
       dhcp:
         image:
@@ -23,6 +31,8 @@ controllers:
           pullPolicy: 'IfNotPresent'
         command:
           - '/usr/local/bin/entry.sh'
+        resources:
+{{ toYaml .Values.dhcp.resources | nindent 10 }}
         probes:
           liveness:
             enabled: true
