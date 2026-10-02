@@ -1,0 +1,27 @@
+{{- if and .Values.forgejo.enabled .Values.forgejo.httpRoute.enabled }}
+# Che's GitHub Enterprise client calls /api/v3. Forgejo serves the same API
+# operations under /api/v1, so translate only that path prefix.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: '{{ .Values.forgejo.fullnameOverride }}-github-api'
+spec:
+  parentRefs:
+{{ toYaml .Values.forgejo.httpRoute.parentRefs | indent 4 }}
+  hostnames:
+{{ toYaml .Values.forgejo.httpRoute.hostnames | indent 4 }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: '/api/v3'
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: '/api/v1'
+      backendRefs:
+        - name: '{{ .Values.forgejo.fullnameOverride }}-http'
+          port: {{ .Values.forgejo.httpRoute.port }}
+{{- end }}

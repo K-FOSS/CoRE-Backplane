@@ -650,6 +650,16 @@ pulls that record into `eclipse-che` with Che's OAuth SCM labels and the
 Forgejo endpoint. Forgejo's OAuth application endpoint and OAuth provider
 behavior are documented in the [Forgejo OAuth2 provider guide](https://forgejo.org/docs/latest/admin/advanced/oauth2-provider/)
 and [API reference](https://forgejo.org/docs/latest/user/api/).
+The [Forgejo GitHub API compatibility route](templates/Forgejo/GitHubAPICompat.yaml)
+rewrites `/api/v3` requests to `/api/v1` on each enabled Forgejo hostname.
+Che 7.122's [GitHub Enterprise API client](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-factory-github-common/src/main/java/org/eclipse/che/api/factory/server/github/GithubApiClient.java)
+uses `/api/v3/user` to validate the OAuth token and `/api/v3/repos/...` for
+repository metadata, while Forgejo serves those operations under `/api/v1`.
+The dedicated [Gateway API URL rewrite](https://gateway-api.sigs.k8s.io/guides/user-guides/http-redirect-rewrite/)
+keeps the existing Forgejo root route and authentication behavior. Verify the
+compatibility HTTPRoute is accepted and `/api/v3/user` yields the same
+unauthenticated status as `/api/v1/user`; a successful Che factory connection
+also needs an authorized OAuth token and access to the repository.
 The separate `ide-che` stack only installs the operator and CRD.
 The operator chart is shared with other production registrations; its version
 pin is desired state there too, but only Home1 needs reconciliation for this
