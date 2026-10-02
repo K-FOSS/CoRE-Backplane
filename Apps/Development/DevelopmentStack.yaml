@@ -204,6 +204,12 @@ spec:
 
                   enabled: {{ .values.harbor.enabled }}
 
+                {{- if eq .values.clusterName "core-dc1-talos-prod" }}
+                  existingSecretAdminPassword: 'harbor-admin'
+                  adminCredential:
+                    vaultKey: 'Harbor/User'
+                {{- end }}
+
                 {{- if eq .values.region "yxl" }}
                   alternateHostnames:
                     - 'registry.writemy.codes'

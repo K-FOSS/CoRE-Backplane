@@ -204,14 +204,22 @@ and Authentik's [OAuth2 provider documentation](https://docs.goauthentik.io/add-
 ### Harbor credentials and post-configuration
 
 Local ExternalSecrets create Harbor's general, core, registry, job-service,
-S3, and Redis configuration credentials. Every enabled site creates a
+S3, and Redis configuration credentials. On `core-dc1-talos-prod`, a separate
+`harbor-admin` ExternalSecret reads the existing `Harbor/User` password from
+Vault. The Helm chart and Terraform Harbor ProviderConfig use that password
+for the persisted local `admin` account. The `harbor-user` password remains the
+site-local PostgreSQL and LDAP service credential; the LDAP Workspace uses a
+separate `ldap_password` ProviderConfig file. Harbor does not reset an admin
+password already stored in its database when the chart's Secret changes.
+Verify the admin API login and both Harbor Workspaces after credential changes.
+
+Every enabled site creates a
 `harbor-user` claim with PostgreSQL enabled; the claim provisions the local
 role/database through both site-local `psql-<datacenter>-<region>` providers
 and writes the stable namespace-local `harbor-user` Secret. The
 former hub PushSecret and non-hub shared credential pull are no longer part of
-the Harbor lifecycle. Existing `Harbor/User` and `Harbor/Database` values in
-Vault are not deleted by this change; retire them separately only after every
-site-local claim and rollback path has been verified.
+the database service identity lifecycle. `Harbor/User` remains required for
+the YXL admin login; `Harbor/Database` is not consumed by the current chart.
 
 Harbor uses the target site's TLS-enabled `dragonfly-core` endpoint. Its
 logical allocations are recorded in
@@ -611,9 +619,9 @@ per-site Development value. The Development ApplicationSet's existing cluster
 matrix derives `che.peerClusters` from every same-tenant matrix entry with
 `forgejo.enabled`, including its hostname, so peer URLs are not duplicated in
 the Che operator stack. The same matrix derives `forgejo.oidcApps` from every
-Che-enabled entry. A Development-chart PostSync hook registers each app with
-the site-local Forgejo API, writes the generated credentials to a scoped
-Secret, and a [PushSecret](https://external-secrets.io/latest/api/pushsecret/)
+Che-enabled entry. A Development-chart Job registers each app with
+the site-local Forgejo API, creates the generated credential Secret through
+the Kubernetes API, and a [PushSecret](https://external-secrets.io/latest/api/pushsecret/)
 publishes them under `IDE/Che/Forgejo/<forgejo-cluster>/<che-cluster>` in Vault.
 The Che-side [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
 pulls that record into `eclipse-che` with Che's OAuth SCM labels and the

@@ -4,29 +4,32 @@ kind: ServiceAccount
 metadata:
   name: 'forgejo-oidc-apps'
   annotations:
-    argocd.argoproj.io/sync-wave: '8'
+    argocd.argoproj.io/sync-wave: '-1'
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: 'forgejo-oidc-apps'
   annotations:
-    argocd.argoproj.io/sync-wave: '8'
+    argocd.argoproj.io/sync-wave: '-1'
 rules:
   - apiGroups: ['']
     resources: ['secrets']
-    verbs: ['get', 'create', 'update', 'patch']
+    verbs: ['get']
     resourceNames:
       {{- range .Values.forgejo.oidcApps }}
       - 'forgejo-oidc-app-{{ .name }}'
       {{- end }}
+  - apiGroups: ['']
+    resources: ['secrets']
+    verbs: ['create']
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: 'forgejo-oidc-apps'
   annotations:
-    argocd.argoproj.io/sync-wave: '8'
+    argocd.argoproj.io/sync-wave: '-1'
 subjects:
   - kind: ServiceAccount
     name: 'forgejo-oidc-apps'
@@ -40,13 +43,9 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: 'forgejo-oidc-app-{{ .name }}'
-  annotations:
-    argocd.argoproj.io/hook: PostSync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
-    argocd.argoproj.io/sync-wave: '10'
 spec:
   backoffLimit: 6
-  activeDeadlineSeconds: 600
+  activeDeadlineSeconds: 1800
   template:
     metadata:
       labels:
@@ -114,8 +113,8 @@ spec:
               client_secret_b64=$(printf '%s' "${client_secret}" | base64 | tr -d '\n')
               payload=$(printf '{"apiVersion":"v1","kind":"Secret","metadata":{"name":"%s","namespace":"%s"},"type":"Opaque","data":{"client_id":"%s","client_secret":"%s"}}' \
                 "${SECRET_NAME}" "${NAMESPACE}" "${client_id_b64}" "${client_secret_b64}")
-              curl -fsS --cacert "${ca}" -H "${auth}" -H 'Content-Type: application/json' \
-                -X PUT -d "${payload}" "${secret_url}"
+              curl -fsS -o /dev/null --cacert "${ca}" -H "${auth}" -H 'Content-Type: application/json' \
+                -X POST -d "${payload}" "${api}/api/v1/namespaces/${NAMESPACE}/secrets"
 ---
 apiVersion: external-secrets.io/v1alpha1
 kind: PushSecret
