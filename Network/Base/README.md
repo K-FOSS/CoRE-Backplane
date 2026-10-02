@@ -1,4 +1,4 @@
-# Network Base
+# CoRE-Backplane Network/Base Stack
 
 This rendering unit installs the foundational networking services used by CoRE
 bare-metal infrastructure clusters. It is live, site-specific desired state;
@@ -40,7 +40,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | Component | Source and behavior |
 | --- | --- |
 | [Cilium](https://docs.cilium.io/en/stable/) | Helm dependency providing the primary CNI, cluster mesh, BGP control plane, Hubble node agents, and local `CiliumEgressGatewayPolicy`. See [BGP resources](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-configuration/), [Hubble](https://docs.cilium.io/en/stable/observability/), and [egress gateway](https://docs.cilium.io/en/stable/network/egress-gateway/egress-gateway/). |
-| [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni) | Remote Kustomize resource installing thick Multus and the NetworkAttachmentDefinition CRD. The ApplicationSet patches its images, resources, and host network-namespace path. |
+| [Multus CNI](https://github.com/k8snetworkplumbingwg/multus-cni/blob/v4.3.1/docs/thick-plugin.md) | The [v4.3.1 release manifest](https://github.com/k8snetworkplumbingwg/multus-cni/blob/v4.3.1/deployments/multus-daemonset-thick.yml) installs thick Multus and the NetworkAttachmentDefinition CRD. The ApplicationSet pins both DaemonSet Multus images to the same [v4.3.1-thick package digest](https://github.com/k8snetworkplumbingwg/multus-cni/pkgs/container/multus-cni) and patches resources and the host network-namespace path. The fixed manifest release and shared multi-architecture image digest apply to DC1 and Home1; changing either requires a coordinated update. |
 | [CNI DHCP IPAM](https://www.cni.dev/plugins/current/ipam/dhcp/) | Installed conditionally into Multus' host CNI binary directory and served by a DHCP daemon sidecar when KubeVIP is enabled. |
 | [Multus dynamic networks controller](https://github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller) | Remote Kustomize resource installing the per-node dynamic attachment controller. |
 | [CNI bridge plugin](https://www.cni.dev/plugins/current/main/bridge/) | Creates the unaddressed node-side `kvip-cilium0` bridge and pod-side `handoff0` veth attachment used only for ingress redirection. |

@@ -292,8 +292,6 @@ spec:
                         template:
                           spec:
                             initContainers:
-                              - name: install-multus-binary
-                                image: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
                               - name: install-dhcp-cni
                                 image: rancher/hardened-cni-plugins:v1.9.1-build20260511
                                 env:
@@ -338,7 +336,7 @@ spec:
                     patch: |
                       - op: replace
                         path: /spec/template/spec/containers/0/image
-                        value: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
+                        value: 'ghcr.io/k8snetworkplumbingwg/multus-cni:v4.3.1-thick@sha256:a357a79359b80ddd5f4699117946cacf3b54f5baecf7944535594863e875fc25'
 
                       - op: replace
                         path: /spec/template/spec/containers/0/resources
@@ -362,6 +360,9 @@ spec:
                       spec:
                         template:
                           spec:
+                            initContainers:
+                              - name: 'install-multus-binary'
+                                image: 'ghcr.io/k8snetworkplumbingwg/multus-cni:v4.3.1-thick@sha256:a357a79359b80ddd5f4699117946cacf3b54f5baecf7944535594863e875fc25'
                             volumes:
                               # Multus runtime/device state stays separate from the /run/netns host network namespace directory.
                               - name: 'host-run-k8s-cni-cncf-io'
