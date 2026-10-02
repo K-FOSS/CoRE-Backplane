@@ -60,15 +60,15 @@ production patches.
 
 | Component | Enable value | Responsibility |
 | --- | --- | --- |
-| GitLab CE | `gitlab.enabled` | Git hosting, projects, CI application services, Gitaly/Praefect, KAS, and toolbox operations. |
-| Harbor | `harbor.enabled` | OCI registry, external object storage/database/cache integration, LDAP authentication, and public pull-through caches. |
-| Forgejo | `forgejo.enabled`, `forgejoRunner.enabled` | Site-local Git hosting backed by local PostgreSQL, Dragonfly, persistent repository storage, Authentik OIDC and LDAP, plus a site-local Actions runner. |
-| Eclipse Che | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
-| Artifact Hub | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
-| Hoppscotch | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
-| Renovate | `renovate.enabled` | Site-local scheduled dependency update discovery against the matching Forgejo instance. |
-| MQTTX | `mqttx.enabled` | Lightweight MQTT web client generated through the BJW-S common chart. |
-| CRD docs | `crddocs.enabled` | CRD documentation workload and optional identity. |
+| [GitLab CE](https://about.gitlab.com/) ([docs](https://docs.gitlab.com/ee/)) | `gitlab.enabled` | Git hosting, projects, CI application services, Gitaly/Praefect, KAS, and toolbox operations. |
+| [Harbor](https://goharbor.io/) ([docs](https://goharbor.io/docs/)) | `harbor.enabled` | OCI registry, external object storage/database/cache integration, LDAP authentication, and public pull-through caches. |
+| [Forgejo](https://forgejo.org/) ([docs](https://forgejo.org/docs/latest/)) | `forgejo.enabled`, `forgejoRunner.enabled` | Site-local Git hosting backed by local PostgreSQL, Dragonfly, persistent repository storage, Authentik OIDC and LDAP, plus a site-local [Actions runner](https://forgejo.org/docs/latest/user/actions/overview/). |
+| [Eclipse Che](https://eclipse.dev/che/) ([docs](https://eclipse.dev/che/docs/stable/)) | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
+| [Artifact Hub](https://artifacthub.io/) ([docs](https://artifacthub.io/docs/)) | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
+| [Hoppscotch](https://hoppscotch.com/) ([docs](https://docs.hoppscotch.io/)) | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
+| [Renovate](https://github.com/renovatebot/renovate) ([docs](https://docs.renovatebot.com/)) | `renovate.enabled` | Site-local scheduled dependency update discovery against the matching Forgejo instance. |
+| [MQTTX](https://mqttx.app/) ([docs](https://mqttx.app/docs)) | `mqttx.enabled` | Lightweight MQTT web client generated through the [BJW-S common chart](https://github.com/bjw-s-labs/helm-charts/tree/common-3.7.1/charts/library/common). |
+| [CRD docs](https://doc.crds.dev/) ([BJW-S docs](https://bjw-s-labs.github.io/helm-charts/)) | `crddocs.enabled` | CRD documentation workload and optional identity. |
 
 The upstream chart dependencies are declared in [`Chart.yaml`](Chart.yaml).
 GitLab, Harbor, Forgejo, Artifact Hub, Renovate, and Hoppscotch are conditional
@@ -675,15 +675,32 @@ secret rotation.
 
 ## Renovate, MQTTX, and CRD docs
 
-Renovate is enabled only for Forgejo-enabled regions outside YVR and YXL. When
-enabled, its CronJob runs once daily against that site's Forgejo endpoint,
-autodiscovers repositories, and creates dependency pull requests. The
-ExternalSecret reads the Renovate account's PAT from the site-local Vault path
-`Forgejo/<cluster>/Renovate` and publishes only `RENOVATE_TOKEN` to the
-CronJob. Create that PAT with the permissions required by Renovate's
-[Forgejo platform documentation](https://docs.renovatebot.com/modules/platform/forgejo/);
-do not put it in Git. Keep `platformAutomerge` disabled until branch protection
-and Actions checks have been verified.
+Renovate is the upstream
+[Renovate dependency-update bot](https://github.com/renovatebot/renovate),
+installed from its [Helm chart](https://docs.renovatebot.com/helm-charts/).
+The ApplicationSet enables one site-local bot only when Forgejo is enabled and
+the target region is neither YVR nor YXL. It injects the matching Forgejo
+hostname as `endpoint`; the chart appends `/api/v1` for Renovate's Forgejo API.
+
+Each enabled bot creates a daily CronJob using the configured
+`renovate/renovate:44.106.0` image. Its JavaScript configuration sets
+`platform: 'forgejo'`, `autodiscover: true`, `onboarding: false`, and
+`platformAutomerge: false`, so it discovers repositories and opens dependency
+pull requests without creating onboarding PRs or merging changes
+automatically. The chart's bundled Redis dependency is disabled.
+
+The `renovate-token` ExternalSecret reads the Renovate account PAT from the
+site-local Vault path `Forgejo/<cluster>/Renovate` and publishes only
+`RENOVATE_TOKEN` to the CronJob. Create the PAT with the scopes listed in
+Renovate's [Forgejo authentication documentation](https://docs.renovatebot.com/modules/platform/forgejo/);
+do not put it in Git. If Renovate needs to read package metadata or changelogs
+from another service, configure that credential through the supported secret or
+host-rule mechanism rather than embedding it in `config.js`.
+
+Operational verification is the Vault ExternalSecret, CronJob completion and
+logs, Forgejo repository autodiscovery, and a test dependency pull request.
+Keep `platformAutomerge` disabled until branch protection and Actions checks
+have been verified.
 
 The current YXL and YVR site bots are intentionally disabled. If Renovate is
 later enabled for another region, verify its Vault ExternalSecret, CronJob
