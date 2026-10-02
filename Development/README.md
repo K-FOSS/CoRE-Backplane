@@ -632,6 +632,8 @@ Che-enabled entry. A Development-chart Job registers each app with
 the site-local Forgejo API, creates the generated credential Secret through
 the Kubernetes API, and a [PushSecret](https://external-secrets.io/latest/api/pushsecret/)
 publishes them under `IDE/Che/Forgejo/<forgejo-cluster>/<che-cluster>` in Vault.
+The Job name uses `che-<cluster>`, while the Vault key uses `<cluster>` to match
+the Che ExternalSecret lookup.
 The Che-side [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
 pulls that record into `eclipse-che` with Che's OAuth SCM labels and the
 Forgejo endpoint. Forgejo's OAuth application endpoint and OAuth provider

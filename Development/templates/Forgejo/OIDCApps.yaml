@@ -134,12 +134,12 @@ spec:
     - match:
         secretKey: 'client_id'
         remoteRef:
-          remoteKey: 'IDE/Che/Forgejo/{{ $.Values.cluster.name }}/{{ .name }}'
+          remoteKey: 'IDE/Che/Forgejo/{{ $.Values.cluster.name }}/{{ trimPrefix "che-" .name }}'
           property: 'ClientID'
     - match:
         secretKey: 'client_secret'
         remoteRef:
-          remoteKey: 'IDE/Che/Forgejo/{{ $.Values.cluster.name }}/{{ .name }}'
+          remoteKey: 'IDE/Che/Forgejo/{{ $.Values.cluster.name }}/{{ trimPrefix "che-" .name }}'
           property: 'ClientSecret'
 {{- end }}
 {{- end }}
