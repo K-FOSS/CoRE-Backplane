@@ -18,10 +18,11 @@ Gateway API integration. It sets the distinct per-site `clusterGeoTag` and
 `extGslbClustersGeoTags` values. Public DNS exposure is owned separately by
 the [Network/DNS stack](../DNS/README.md).
 
-No `ZoneDelegation` or `Gslb` resources are created. The chart has no static
-DNS zones and the embedded ExternalDNS is disabled. K8GB CoreDNS remains an
-internal `ClusterIP` backend; the separate Network/DNS stack may route
-configured zones to it.
+The first static k8gb zone is `gslb.mylogin.space`, delegated beneath the
+`mylogin.space` parent zone. No `ZoneDelegation` or `Gslb` resources are
+created yet, and the embedded ExternalDNS remains disabled. K8GB CoreDNS
+remains an internal `ClusterIP` backend; the separate Network/DNS stack may
+route configured zones to it.
 
 ## DNS prerequisites before enabling a global service
 
