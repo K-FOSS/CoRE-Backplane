@@ -29,6 +29,21 @@ patches:
               "cniConfigDir": "/host/etc/cni/net.d",
               "multusAutoconfigDir": "/host/etc/cni/net.d",
               "multusConfigFile": "auto",
+              "delegates": [
+                {
+                  "cniVersion": "1.0.0",
+                  "name": "cilium",
+                  "plugins": [
+                    {
+                      "type": "cilium-cni",
+                      "log-file": "/var/run/cilium/cilium-cni.log"
+                    },
+                    {
+                      "type": "loopback"
+                    }
+                  ]
+                }
+              ],
               "socketDir": "/host/run/multus/"
           }
 
