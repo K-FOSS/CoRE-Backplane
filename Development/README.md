@@ -242,6 +242,15 @@ Terraform state is stored in Kubernetes Secrets. Confirm ProviderConfig
 readiness and Workspace state before changing provider versions, registry
 names, or authentication mode.
 
+The YXL proxy-cache Workspace was recreated after the five registries and
+projects already existed in Harbor. The ApplicationSet pins their observed
+Harbor API IDs as [Terraform import blocks](https://developer.hashicorp.com/terraform/language/import/single-resource)
+so the new Workspace adopts those objects into its own state. Verify the IDs
+and registry-to-project links against the Harbor API before changing the
+mapping. The provider's [registry import format](https://registry.terraform.io/providers/goharbor/harbor/3.10.19/docs/resources/registry)
+and [project import format](https://registry.terraform.io/providers/goharbor/harbor/3.10.19/docs/resources/project)
+use `/registries/<id>` and `/projects/<id>` respectively.
+
 ### Harbor change safety
 
 - Back up the Harbor database and verify S3 versioning/retention before an

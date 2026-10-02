@@ -10,6 +10,13 @@ spec:
   forProvider:
     source: Inline
     module: |
+      {{- range .Values.harbor.proxyCacheImports }}
+      import {
+        to = {{ .address }}
+        id = {{ .id | quote }}
+      }
+
+      {{- end }}
       resource "harbor_registry" "dockerhub" {
         provider_name = "docker-hub"
         name          = "docker-hub"

@@ -208,6 +208,17 @@ spec:
                   existingSecretAdminPassword: 'harbor-admin'
                   adminCredential:
                     vaultKey: 'Harbor/User'
+                  proxyCacheImports:
+                    - { address: 'harbor_registry.dockerhub', id: '/registries/1' }
+                    - { address: 'harbor_registry.k8s', id: '/registries/2' }
+                    - { address: 'harbor_registry.gcr', id: '/registries/3' }
+                    - { address: 'harbor_registry.quay', id: '/registries/4' }
+                    - { address: 'harbor_registry.ghcr', id: '/registries/5' }
+                    - { address: 'harbor_project.dockerhubcache', id: '/projects/3' }
+                    - { address: 'harbor_project.project-k8s', id: '/projects/4' }
+                    - { address: 'harbor_project.project-gcr', id: '/projects/5' }
+                    - { address: 'harbor_project.project-quay', id: '/projects/6' }
+                    - { address: 'harbor_project.project-ghcr', id: '/projects/7' }
                 {{- end }}
 
                 {{- if eq .values.region "yxl" }}
