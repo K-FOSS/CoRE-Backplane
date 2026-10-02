@@ -9,10 +9,33 @@ Important values include cluster/site identity, tenant name, replica count,
 node selector, storage class/size, domains, secret-store paths, Prometheus and
 OIDC/LDAP settings.
 
-The chart permits low replica counts and currently defaults to one replica.
-That is a single storage failure domain, not highly available object storage.
-Confirm erasure-set requirements, disks/PVC retention, free capacity and node
-placement before changing replicas or storage.
+The chart currently keeps the standalone MinIO path at one server/one PVC so
+existing object data remains attached. New PVCs use the release-scoped
+`<release>-longhorn-2` StorageClass: Longhorn v1 with two full replicas,
+`best-effort` locality, and XFS. This is storage redundancy, not MinIO
+distributed erasure coding. Two Longhorn replicas are the deliberate default
+for this data-intensive workload; Longhorn recommends two when capacity or
+performance cost matters and three or more storage nodes are available.
+
+The StorageClass does not change an existing PVC or its Longhorn volume.
+Longhorn documents that StorageClass parameters apply only at volume creation
+([StorageClass parameters](https://longhorn.io/docs/1.12.1/references/storage-class-parameters/)).
+For each existing S3 PVC, first verify the volume name, current health,
+replica placement, free capacity, and a tested backup. Then increase that
+existing Longhorn Volume's `spec.numberOfReplicas` from `1` to `2` through the
+Longhorn UI or an explicitly targeted `kubectl` change, and wait for the new
+replica to become healthy before moving on. Do not recreate the PVC or change
+its `volumeName`.
+
+Changing the MinIO setting from one server to four is a separate migration:
+the distributed Tenant creates four new PVCs and cannot consume the current
+standalone PVC as its four-volume erasure set. Keep the current standalone
+release serving data, provision a separate four-server Tenant, copy and
+verify objects, quiesce writes, run a final copy, and only then switch the
+route. Do not set `replicas: 4` in the existing ApplicationSet until that
+migration is planned and capacity/placement have been verified. See the
+[MinIO Operator Tenant documentation](https://min.io/docs/minio/kubernetes/upstream/operations/install-deploy-manage/deploy-minio-tenant.html)
+for the distributed volume model.
 
 ## Peer S3 providers
 
@@ -25,8 +48,9 @@ plus an [External Secrets ExternalSecret](https://external-secrets.io/latest/api
 
 Peer credentials are read from the configured secret store at
 `<rootPrefix>/<peer-cluster>/Credentials`, using the `AccessKey` and
-`AccessSecretKey` properties. The generated provider names are
-`s3-<peer-cluster>`, and their endpoints are
+`AccessSecretKey` properties. The generated Minio provider name is
+`s3-<peer-cluster>` and the Terraform provider name is
+`tf-s3-<peer-cluster>`. Both use the endpoint
 `https://s3.<peer-cluster>.<datacenter>.<region>.<domain>`.
 
 When adding or removing a peer, update the matrix entry for every affected

@@ -1,0 +1,14 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ printf "%s-longhorn-2" .Release.Name | trunc 63 | trimSuffix "-" }}
+provisioner: driver.longhorn.io
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+parameters:
+  dataEngine: 'v1'
+  numberOfReplicas: '2'
+  dataLocality: 'best-effort'
+  fsType: 'xfs'
+  staleReplicaTimeout: '30'

@@ -25,9 +25,9 @@ controllers:
     containers:
       minio:
         image:
-          repository: minio/minio
-          tag: RELEASE.2024-11-07T00-52-20Z
-          pullPolicy: Always
+          repository: forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/core/core-docker/minio
+          tag: release.2025-04-22t22-12-26z
+          pullPolicy: IfNotPresent
 
         args:
           - server
@@ -342,7 +342,7 @@ persistence:
     {{ end }}
 
     accessMode: ReadWriteOnce
-    storageClass: {{ .Values.s3.storage.storageClass }}
+    storageClass: {{ default (printf "%s-longhorn-2" .Release.Name | trunc 63 | trimSuffix "-") .Values.s3.storage.storageClass }}
     size: {{ .Values.s3.storage.size }}
     globalMounts:
       - path: /export
