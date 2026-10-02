@@ -15,7 +15,7 @@ metadata:
 rules:
   - apiGroups: ['']
     resources: ['secrets']
-    verbs: ['get']
+    verbs: ['get', 'patch']
     resourceNames:
       {{- range .Values.forgejo.oidcApps }}
       - 'forgejo-oidc-app-{{ .name }}'
@@ -42,7 +42,7 @@ roleRef:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: 'forgejo-oidc-app-{{ .name }}'
+  name: 'forgejo-oidc-app-{{ .name }}{{ if .jobRevision }}-{{ .jobRevision }}{{ end }}'
 spec:
   backoffLimit: 6
   activeDeadlineSeconds: 1800
@@ -68,6 +68,12 @@ spec:
               value: '{{ .redirectUrl }}'
             - name: 'SECRET_NAME'
               value: 'forgejo-oidc-app-{{ .name }}'
+            - name: 'EXISTING_CLIENT_ID'
+              valueFrom:
+                secretKeyRef:
+                  name: 'forgejo-oidc-app-{{ .name }}'
+                  key: 'client_id'
+                  optional: true
             - name: 'NAMESPACE'
               valueFrom:
                 fieldRef:
@@ -92,7 +98,34 @@ spec:
 
               existing=$(curl -fsS --cacert "${ca}" -H "${auth}" "${secret_url}" 2>/dev/null || true)
               if printf '%s' "${existing}" | grep -q 'client_id'; then
-                echo 'Forgejo OAuth app credentials already exist.'
+                client_id="${EXISTING_CLIENT_ID}"
+                applications=$(curl -fsS --user "${FORGEJO_ADMIN_USER}:${FORGEJO_ADMIN_PASSWORD}" \
+                  "${FORGEJO_URL}/api/v1/user/applications/oauth2?limit=100")
+                app_id=$(printf '%s' "${applications}" | sed 's/},{/}|{/g' | tr '|' '\n' | \
+                  grep -F "\"client_id\":\"${client_id}\"" | sed -n 's/.*"id":\([0-9][0-9]*\).*/\1/p')
+                test -n "${app_id}"
+
+                current=$(curl -fsS --user "${FORGEJO_ADMIN_USER}:${FORGEJO_ADMIN_PASSWORD}" \
+                  "${FORGEJO_URL}/api/v1/user/applications/oauth2/${app_id}")
+                if printf '%s' "${current}" | grep -Fq "\"${REDIRECT_URL}\""; then
+                  echo 'Forgejo OAuth app redirect URI is current.'
+                  exit 0
+                fi
+
+                response=$(curl -fsS --user "${FORGEJO_ADMIN_USER}:${FORGEJO_ADMIN_PASSWORD}" \
+                  -H 'Content-Type: application/json' -X PATCH \
+                  -d "{\"name\":\"${APP_NAME}\",\"confidential_client\":true,\"redirect_uris\":[\"${REDIRECT_URL}\"]}" \
+                  "${FORGEJO_URL}/api/v1/user/applications/oauth2/${app_id}")
+                client_id=$(printf '%s' "${response}" | sed -n 's/.*"client_id":"\([^"]*\)".*/\1/p')
+                client_secret=$(printf '%s' "${response}" | sed -n 's/.*"client_secret":"\([^"]*\)".*/\1/p')
+                test -n "${client_id}" -a -n "${client_secret}"
+                client_id_b64=$(printf '%s' "${client_id}" | base64 | tr -d '\n')
+                client_secret_b64=$(printf '%s' "${client_secret}" | base64 | tr -d '\n')
+                payload=$(printf '{"data":{"client_id":"%s","client_secret":"%s"}}' \
+                  "${client_id_b64}" "${client_secret_b64}")
+                curl -fsS -o /dev/null --cacert "${ca}" -H "${auth}" \
+                  -H 'Content-Type: application/merge-patch+json' -X PATCH \
+                  -d "${payload}" "${secret_url}"
                 exit 0
               fi
 

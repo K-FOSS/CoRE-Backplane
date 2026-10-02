@@ -634,6 +634,12 @@ the Kubernetes API, and a [PushSecret](https://external-secrets.io/latest/api/pu
 publishes them under `IDE/Che/Forgejo/<forgejo-cluster>/<che-cluster>` in Vault.
 The Job name uses `che-<cluster>`, while the Vault key uses `<cluster>` to match
 the Che ExternalSecret lookup.
+Home1 Che currently serves `ide.core-home1-talos-prod.home1.yvr.writemy.codes`;
+the registered callback must use that hostname and `/api/oauth/callback`.
+Changing an existing callback requires a new `jobRevision` in the ApplicationSet
+because completed Jobs do not rerun. The Job updates the existing Forgejo OAuth
+application and republishes its rotated client secret; verify both PushSecret
+and Che ExternalSecret after the update.
 The Che-side [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)
 pulls that record into `eclipse-che` with Che's OAuth SCM labels and the
 Forgejo endpoint. Forgejo's OAuth application endpoint and OAuth provider
