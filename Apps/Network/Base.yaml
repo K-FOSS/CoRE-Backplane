@@ -337,10 +337,6 @@ spec:
 
                     patch: |
                       - op: replace
-                        path: /spec/template/spec/volumes/8/hostPath/path
-                        value: /var/run/netns/
-
-                      - op: replace
                         path: /spec/template/spec/containers/0/image
                         value: ghcr.io/k8snetworkplumbingwg/multus-cni:stable-thick
 
@@ -353,6 +349,25 @@ spec:
                           requests:
                             cpu: 100m
                             memory: 256Mi
+
+                  - target:
+                      kind: DaemonSet
+                      name: kube-multus-ds
+
+                    patch: |
+                      apiVersion: apps/v1
+                      kind: DaemonSet
+                      metadata:
+                        name: kube-multus-ds
+                      spec:
+                        template:
+                          spec:
+                            volumes:
+                              # Multus runtime/device state stays separate from the /run/netns host network namespace directory.
+                              - name: 'host-run-k8s-cni-cncf-io'
+                                hostPath:
+                                  path: '/run/k8s.cni.cncf.io'
+                                  type: 'DirectoryOrCreate'
 
                   - target:
                       kind: ConfigMap
