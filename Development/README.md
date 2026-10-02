@@ -636,6 +636,11 @@ The Job name uses `che-<cluster>`, while the Vault key uses `<cluster>` to match
 the Che ExternalSecret lookup.
 Home1 Che currently serves `ide.core-home1-talos-prod.home1.yvr.writemy.codes`;
 the registered callback must use that hostname and `/api/oauth/callback`.
+The same ApplicationSet callback is injected into the Che server's
+`CHE_OAUTH_GITHUB_REDIRECTURIS` extra property. Che 7.122 otherwise omits
+`redirect_uri` from its authorization request when the request host does not
+match a configured callback, and Forgejo rejects it. See the
+[Che OAuth authenticator source](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-auth/src/main/java/org/eclipse/che/security/oauth/OAuthAuthenticator.java).
 Changing an existing callback requires a new `jobRevision` in the ApplicationSet
 because completed Jobs do not rerun. The Job updates the existing Forgejo OAuth
 application and republishes its rotated client secret; verify both PushSecret
