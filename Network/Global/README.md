@@ -19,10 +19,12 @@ Gateway API integration. It sets the distinct per-site `clusterGeoTag` and
 the [Network/DNS stack](../DNS/README.md).
 
 The first static k8gb zone is `gslb.mylogin.space`, delegated beneath the
-`mylogin.space` parent zone. No `ZoneDelegation` or `Gslb` resources are
-created yet, and the embedded ExternalDNS remains disabled. K8GB CoreDNS
-remains an internal `ClusterIP` backend; the separate Network/DNS stack may
-route configured zones to it.
+`mylogin.space` parent zone. The zone is defined in chart defaults and
+explicitly injected by the owning ApplicationSet so the Lovely merge retains
+the complete nested k8gb configuration. No `ZoneDelegation` or `Gslb`
+resources are created yet, and the embedded ExternalDNS remains disabled.
+K8GB CoreDNS remains an internal `ClusterIP` backend; the separate Network/DNS
+stack may route configured zones to it.
 
 ## DNS prerequisites before enabling a global service
 

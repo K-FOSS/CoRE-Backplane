@@ -54,8 +54,12 @@ spec:
               value: |-
                 k8gb:
                   k8gb:
-                    clusterGeoTag: '{{ .values.clusterGeoTag }}'
-                    extGslbClustersGeoTags: '{{ .values.extGslbClustersGeoTags }}'
+              clusterGeoTag: '{{ .values.clusterGeoTag }}'
+              extGslbClustersGeoTags: '{{ .values.extGslbClustersGeoTags }}'
+              dnsZones:
+                - parentZone: 'mylogin.space'
+                  loadBalancedZone: 'gslb.mylogin.space'
+                  dnsZoneNegTTL: 30
       destination:
         server: '{{ .server }}'
         namespace: k8gb
