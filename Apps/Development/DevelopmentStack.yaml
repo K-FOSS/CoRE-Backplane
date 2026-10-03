@@ -51,6 +51,7 @@ spec:
 
                               che:
                                 enabled: false
+                                githubOAuthEnabled: true
                                 callbackUrl: 'https://ide.core-dc1-talos-prod.dc1.yxl.writemy.codes/api/oauth/callback'
 
                           - name: core-home1-talos-prod
@@ -82,6 +83,9 @@ spec:
 
                               che:
                                 enabled: true
+                                # Che Server 7.122.0 has only two GitHub OAuth slots;
+                                # reserve both for the YXL and YVR Forgejo peers.
+                                githubOAuthEnabled: false
                                 callbackUrl: 'https://ide.core-home1-talos-prod.home1.yvr.writemy.codes/api/oauth/callback'
 
                           - name: dc1-k3s-node1
@@ -111,6 +115,7 @@ spec:
 
                               che:
                                 enabled: false
+                                githubOAuthEnabled: true
                                 callbackUrl: 'https://ide.dc1-k3s-node1.dc1.yxl.writemy.codes/api/oauth/callback'
 
                 - list:
@@ -185,6 +190,7 @@ spec:
 
                 che:
                   enabled: {{ .values.che.enabled }}
+                  githubOAuthEnabled: {{ .values.che.githubOAuthEnabled }}
                   callbackUrl: '{{ .values.che.callbackUrl }}'
                   peerClusters:
                     {{- range .clusters }}

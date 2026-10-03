@@ -517,26 +517,15 @@ shared secret, and then start and verify the replacement runner.
 
 ## TODO
 
-- Implement browser-approved Git authentication from Eclipse Che to each
-  site's Forgejo instance. Currently Forgejo uses Authentik OIDC for browser
-  sign-in, while Che's SCM OAuth configuration covers GitHub and GitLab; there
-  is no documented or verified Forgejo OAuth-to-Git credential handoff. Evaluate
-  Forgejo's pre-registered `git-credential-oauth` application and the helper's
-  browser callback from a remote DevWorkspace, then integrate it with Che's
-  askpass/credential prompt outside the
-  [CoRE-Docker Che/Devfile workspace image](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/Core-Docker).
-  The target flow authenticates the user through Forgejo/Authentik and gives
-  HTTPS Git operations a Forgejo OAuth credential; do not use an Authentik ID
-  token, browser cookie, PAT, image-baked credential, or project-stored token
-  as a substitute. Define per-user token caching, expiry/revocation and cleanup.
-  Test clone, fetch and push from a remote workspace, including browser
-  handoff, cancellation, workspace restart, and credential revocation. For
+- Verify YVR Forgejo clone, fetch, and push through Che's browser-approved
+  OAuth connection. YXL Forgejo clone and push have been confirmed. Include
+  browser handoff, cancellation, workspace restart, and credential revocation
+  in the YVR test, and document token expiry and cleanup behavior. For
   repositories mirrored to public forges, establish Forgejo as the receive
   authority and fan out only after it accepts a push, using separate scoped
-  credentials; never forward Forgejo tokens, browser cookies or askpass data to
-  a mirror. Review the Forgejo [OAuth application configuration](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/),
+  credentials; never forward Forgejo tokens, browser cookies, or askpass data
+  to a mirror. Review the Forgejo [OAuth application configuration](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/),
   [authentication-source documentation](https://forgejo.org/docs/latest/user/authentication/),
-  [`git-credential-oauth`](https://github.com/hickford/git-credential-oauth),
   and [Git credential-helper behavior](https://git-scm.com/docs/gitcredentials).
 - Add a shared Forgejo Actions cache server for Development runners, with
   persistent storage and runner `cache.external_server` configuration. Use the
@@ -650,6 +639,16 @@ pulls that record into `eclipse-che` with Che's OAuth SCM labels and the
 Forgejo endpoint. Forgejo's OAuth application endpoint and OAuth provider
 behavior are documented in the [Forgejo OAuth2 provider guide](https://forgejo.org/docs/latest/admin/advanced/oauth2-provider/)
 and [API reference](https://forgejo.org/docs/latest/user/api/).
+[Che Server 7.122.0 binds only two GitHub-compatible OAuth providers](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-auth-github/src/main/java/org/eclipse/che/security/oauth/GithubModule.java).
+The YVR Development ApplicationSet reserves both slots for the YXL and YVR
+Forgejo endpoints by disabling the `che-github` ExternalSecret there. Its
+operator-owned `github-oauth-config` Secret is removed with that ExternalSecret,
+so GitHub.com no longer appears as a Che OAuth connection on YVR. This does
+not change Forgejo's Authentik sign-in or existing Git repositories. Confirm
+both Forgejo entries in Che's Git Services page, authorize YVR Forgejo through
+the browser, and test clone and push from a workspace. Restore GitHub.com OAuth
+only after providing a supported third provider slot or retiring one Forgejo
+connection.
 The [Forgejo GitHub API compatibility route](templates/Forgejo/GitHubAPICompat.yaml)
 rewrites `/api/v3` requests to `/api/v1` on each enabled Forgejo hostname.
 Che 7.122's [GitHub Enterprise API client](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-factory-github-common/src/main/java/org/eclipse/che/api/factory/server/github/GithubApiClient.java)
