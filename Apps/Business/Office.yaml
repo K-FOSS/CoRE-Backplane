@@ -1,8 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-backplane-business-office
-  namespace: argocd
+  name: 'core-backplane-business-office'
+  namespace: 'argocd'
 spec:
   goTemplate: true
   # goTemplateOptions:
@@ -10,16 +10,16 @@ spec:
   generators:
     - merge:
         mergeKeys:
-          - name
+          - 'name'
 
         generators:
           - list:
               elements:
-                - name: core-home1-talos-prod
+                - name: 'core-home1-talos-prod'
                   values:
                     hub: false
 
-                    url: office.mylogin.space
+                    url: 'office.mylogin.space'
 
           - clusters:
               selector:
@@ -45,23 +45,23 @@ spec:
       name: '{{ .values.clusterName }}-business-office-{{ .values.environment }}'
 
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: .
+        argocd.argoproj.io/manifest-generate-paths: '.'
 
     spec:
-      project: core
+      project: 'core'
 
       syncPolicy:
         syncOptions:
-          - CreateNamespace=true
+          - 'CreateNamespace=true'
 
       source:
-        repoURL: https://github.com/K-FOSS/CoRE-Business.git
-        path: Office
-        targetRevision: HEAD
+        repoURL: 'https://github.com/K-FOSS/CoRE-Business.git'
+        path: 'Office'
+        targetRevision: 'HEAD'
         plugin:
-          name: argocd-lovely-plugin
+          name: 'argocd-lovely-plugin'
           env:
-            - name: LOVELY_HELM_MERGE
+            - name: 'LOVELY_HELM_MERGE'
               value: |-
                 env: '{{ .values.environment }}'
 
@@ -81,4 +81,4 @@ spec:
 
       destination:
         server: '{{ .server }}'
-        namespace: core-{{ .values.environment }}
+        namespace: 'core-{{ .values.environment }}'

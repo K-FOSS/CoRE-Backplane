@@ -225,6 +225,22 @@ from that repository into `core-prod` without ApplicationSet value overrides.
 The upstream [IT-Tools README](https://github.com/K-FOSS/CoRE-Business/blob/main/Tools/IT-Tools/README.md)
 is authoritative for prerequisites and user-facing verification.
 
+## Office
+
+[Office.yaml](Office.yaml) owns the production YVR
+deployment of the [CoRE-Business Office stack](https://github.com/K-FOSS/CoRE-Business/tree/main/Office).
+It targets `core-home1-talos-prod`, renders the upstream `Office` component
+through the Lovely plugin into `core-prod`, and configures
+`office.mylogin.space` as the Nextcloud hostname. The Office stack is therefore
+classified as an Office stack while keeping its implementation in the upstream
+Office component.
+
+The ApplicationSet preserves generated resources when removed. Before sync,
+render the upstream component with the Home1 cluster values and inspect the
+Nextcloud hostname and generated workload resources. After reconciliation,
+verify the Argo CD application, Nextcloud health, and access through the
+configured hostname.
+
 ## Social/Fediverse
 
 [Social/Fediverse.yaml](Social/Fediverse.yaml) owns the production YVR
