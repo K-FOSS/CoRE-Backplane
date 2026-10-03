@@ -39,6 +39,9 @@ spec:
                                 enabled: true
                                 runners: true
                                 hostname: 'forge.core-dc1-talos-prod.dc1.yxl.writemy.codes'
+                              giteaMirror:
+                                enabled: false
+                                hostname: 'mirror.core-dc1-talos-prod.dc1.yxl.mylogin.space'
                               runnerLocations:
                                 - name: 'core-dc1-talos-prod'
                                 - name: 'core-home1-talos-prod'
@@ -74,6 +77,9 @@ spec:
                                 enabled: true
                                 runners: true
                                 hostname: 'slop.writemy.codes'
+                              giteaMirror:
+                                enabled: true
+                                hostname: 'mirror.core-home1-talos-prod.home1.yvr.mylogin.space'
                               runnerLocations:
                                 - name: 'core-dc1-talos-prod'
                                 - name: 'core-home1-talos-prod'
@@ -108,6 +114,9 @@ spec:
                                 enabled: false
                                 runners: false
                                 hostname: 'forgejo.dc1-k3s-node1.dc1.yxl.writemy.codes'
+                              giteaMirror:
+                                enabled: false
+                                hostname: 'mirror.dc1-k3s-node1.dc1.yxl.mylogin.space'
                               runnerLocations: []
 
                               artifacthub:
@@ -371,6 +380,29 @@ spec:
                       - name: 'FORGEJO__SESSION__PROVIDER_CONFIG'
                         value: 'rediss://default:$(DRAGONFLY_PASSWORD)@dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379/92'
 
+                giteaMirror:
+                  hostname: '{{ .values.giteaMirror.hostname }}'
+
+                gitea-mirror:
+                  enabled: {{ .values.giteaMirror.enabled }}
+                  persistence:
+                    storageClass: 'ha-core-dev-{{ .values.environment }}'
+                  deployment:
+                    env:
+                      - name: 'BETTER_AUTH_SECRET'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'gitea-mirror-auth'
+                            key: 'BETTER_AUTH_SECRET'
+                      - name: 'PUBLIC_BETTER_AUTH_URL'
+                        value: 'https://{{ .values.giteaMirror.hostname }}'
+                      - name: 'AUTO_IMPORT_REPOS'
+                        value: 'false'
+                  gitea-mirror:
+                    core:
+                      betterAuthUrl: 'https://{{ .values.giteaMirror.hostname }}'
+                      betterAuthTrustedOrigins: 'https://{{ .values.giteaMirror.hostname }}'
+
                 renovate:
                   enabled: {{ and .values.forgejo.enabled (not (or (eq .values.region "yvr") (eq .values.region "yxl"))) }}
                   endpoint: 'https://{{ .values.forgejo.hostname }}'
@@ -428,6 +460,36 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                {{ if .values.giteaMirror.enabled }}
+                  - target:
+                      kind: Deployment
+                      name: 'gitea-mirror'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: 'gitea-mirror'
+                      spec:
+                        template:
+                          spec:
+                            securityContext:
+                              runAsNonRoot: true
+                              seccompProfile:
+                                type: 'RuntimeDefault'
+                            containers:
+                              - name: 'gitea-mirror'
+                                securityContext:
+                                  allowPrivilegeEscalation: false
+                                  capabilities:
+                                    drop:
+                                      - 'ALL'
+                                resources:
+                                  requests:
+                                    cpu: '100m'
+                                    memory: '256Mi'
+                                  limits:
+                                    memory: '1Gi'
+                {{ end }}
                 {{ if .values.forgejo.enabled }}
                   - target:
                       kind: Deployment

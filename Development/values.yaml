@@ -556,6 +556,43 @@ harbor:
       secret.reloader.stakater.com/reload: 'harbor-redis-config'
 
 
+# Gitea Mirror uses site-local persistent storage. The fleet ApplicationSet
+# selects its target and injects the external URL and source host.
+giteaMirror:
+  hostname: 'mirror.example.mylogin.space'
+  accessGroup: 'Developers'
+
+gitea-mirror:
+  enabled: false
+  fullnameOverride: 'gitea-mirror'
+  service:
+    clusterIP: ''
+  persistence:
+    size: '50Gi'
+  gitea-mirror:
+    existingSecret: 'gitea-mirror-encryption'
+    core:
+      betterAuthUrl: 'https://mirror.example.mylogin.space'
+      betterAuthTrustedOrigins: 'https://mirror.example.mylogin.space'
+    github:
+      username: ''
+      privateRepositories: false
+      mirrorStarred: false
+    gitea:
+      url: ''
+      username: ''
+      organization: ''
+    mirror:
+      releases: false
+      wiki: false
+      metadata: false
+      issues: false
+      pullRequests: false
+    automation:
+      schedule_enabled: false
+    cleanup:
+      enabled: false
+
 # Forgejo uses a site-local User claim, PostgreSQL, Dragonfly, and the
 # site-local S3 tenant. Production hostnames and service identities are
 # injected by the fleet ApplicationSet.

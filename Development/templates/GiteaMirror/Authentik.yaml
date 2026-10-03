@@ -1,0 +1,50 @@
+{{- if (index .Values "gitea-mirror").enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: 'gitea-mirror-authentik'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  providerConfigRef:
+    name: 'authentik'
+  forProvider:
+    source: 'Inline'
+    module: |
+      locals {
+        external_url = "https://{{ .Values.giteaMirror.hostname }}"
+      }
+
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
+
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_group" "developers" {
+        name = "{{ .Values.giteaMirror.accessGroup }}"
+      }
+
+      resource "authentik_provider_proxy" "gate" {
+        name               = "Gitea Mirror {{ .Values.cluster.name }} gate"
+        mode               = "forward_single"
+        external_host      = local.external_url
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+
+      resource "authentik_application" "gate" {
+        name              = "Gitea Mirror {{ .Values.cluster.name }} gate"
+        slug              = "gitea-mirror-{{ .Values.cluster.name }}"
+        group             = "Development"
+        protocol_provider = authentik_provider_proxy.gate.id
+      }
+
+      resource "authentik_policy_binding" "gate_developers" {
+        target = authentik_application.gate.uuid
+        group  = data.authentik_group.developers.id
+        order  = 0
+      }
+{{- end }}

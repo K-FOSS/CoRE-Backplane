@@ -1,10 +1,14 @@
-# Development stack
+# CoRE-Backplane Development Stack
 
 This chart deploys CoRE's shared software-development services. It combines
 large upstream charts for GitLab, Harbor, Forgejo, Artifact Hub, Renovate, and
 Hoppscotch with local resources for Eclipse Che, MQTTX, CRD documentation,
 identity provisioning, Vault-backed secrets, Gateway API routes, and
 Crossplane Terraform automation.
+
+The [Development ApplicationSet](../Apps/Development/DevelopmentStack.yaml)
+owns cluster selection and injected settings. See the
+[repository overview](../README.md) for the parent stack.
 
 This is a platform-specific integration chart, not a portable collection of
 upstream defaults. It assumes CoRE's domains, shared PostgreSQL, object
@@ -22,11 +26,11 @@ on each cluster.
 
 Current fleet intent:
 
-| Cluster | GitLab | Harbor | Forgejo | Che | Artifact Hub | CRD docs | MQTTX |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `core-dc1-talos-prod` | Off | On | On | Off | Off | Off | Off |
-| `core-home1-talos-prod` | On | On | On | On | Off | Off | Off |
-| `dc1-k3s-node1` | On | Off | Off | Off | Off | Off | Off |
+| Cluster | GitLab | Harbor | Forgejo | Gitea Mirror | Che | Artifact Hub | CRD docs | MQTTX |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `core-dc1-talos-prod` | Off | On | On | Off | Off | Off | Off | Off |
+| `core-home1-talos-prod` | On | On | On | On | On | Off | Off | Off |
+| `dc1-k3s-node1` | On | Off | Off | Off | Off | Off | Off | Off |
 
 Hoppscotch is enabled from the checked-in values. Renovate is enabled only
 when Forgejo is enabled and the target region is neither YVR nor YXL; it is
@@ -63,6 +67,7 @@ production patches.
 | [GitLab CE](https://about.gitlab.com/) ([docs](https://docs.gitlab.com/ee/)) | `gitlab.enabled` | Git hosting, projects, CI application services, Gitaly/Praefect, KAS, and toolbox operations. |
 | [Harbor](https://goharbor.io/) ([docs](https://goharbor.io/docs/)) | `harbor.enabled` | OCI registry, external object storage/database/cache integration, LDAP authentication, and public pull-through caches. |
 | [Forgejo](https://forgejo.org/) ([docs](https://forgejo.org/docs/latest/)) | `forgejo.enabled`, `forgejoRunner.enabled` | Site-local Git hosting backed by local PostgreSQL, Dragonfly, persistent repository storage, Authentik OIDC and LDAP, plus a site-local [Actions runner](https://forgejo.org/docs/latest/user/actions/overview/). |
+| [Gitea Mirror](https://github.com/RayLabsHQ/gitea-mirror/tree/v3.40.3/helm/gitea-mirror) ([deployment docs](https://gitea-mirror.raylabs.io/docs/deployment/)) | `gitea-mirror.enabled` | YVR-only mirror management UI behind the Authentik proxy; no repository jobs are preconfigured. |
 | [Eclipse Che](https://eclipse.dev/che/) ([docs](https://eclipse.dev/che/docs/stable/)) | `che.enabled` | Browser IDE and per-user DevWorkspaces backed by persistent storage. |
 | [Artifact Hub](https://artifacthub.io/) ([docs](https://artifacthub.io/docs/)) | `artifact-hub.enabled` | Internal artifact/catalog service with external PostgreSQL and OIDC. |
 | [Hoppscotch](https://hoppscotch.com/) ([docs](https://docs.hoppscotch.io/)) | `hoppscotch.enabled` | API development client exposed at `rest.writemy.codes`. |
@@ -514,6 +519,70 @@ after all four new runners are online, remove those legacy records deliberately.
 Rotating a CreatedOnce Secret rotates one runner identity: first stop that
 runner, remove its prior Forgejo record, allow Forgejo to reconcile the new
 shared secret, and then start and verify the replacement runner.
+
+## Gitea Mirror on the YVR primary site
+
+The [Development ApplicationSet](../Apps/Development/DevelopmentStack.yaml)
+enables [Gitea Mirror chart 3.40.3](https://github.com/RayLabsHQ/gitea-mirror/tree/v3.40.3/helm/gitea-mirror)
+only on `core-home1-talos-prod`. The instance is reached at
+`https://mirror.core-home1-talos-prod.home1.yvr.mylogin.space`. YXL and the
+legacy K3s cluster do not run this component. The chart's workload, Service,
+and 50 GiB PVC are configured in [values.yaml](values.yaml); the ApplicationSet
+injects the hostname, HTTPS auth origin, site StorageClass, and a Kustomize
+patch for restricted Pod Security and resource requests. Chart 3.40.3 cannot
+render a nonempty `deployment.resources` value because its Deployment template
+dereferences the wrong scope, so the patch supplies those resources. The chart keeps
+its SQLite database and any bare repository clones under `/app/data`, with one
+pod and a `Recreate` rollout. See the upstream [deployment and data directory
+guide](https://gitea-mirror.raylabs.io/docs/deployment/).
+
+The [runtime Secret generators](templates/GiteaMirror/Secrets.yaml) create
+independent session-signing and token-encryption secrets through External
+Secrets. Both are `CreatedOnce`; their values are supplied to the pod without
+entering Git or a chart-generated Secret. Losing the encryption Secret makes
+tokens already saved in SQLite unreadable, so restore the PVC and its Secrets
+together. A retained PVC is not erased by disabling the chart.
+
+The [HTTPRoute and Envoy SecurityPolicy](templates/GiteaMirror/Route.yaml)
+publish the hostname through `main-gw` and require the existing Authentik proxy
+with `failOpen: false`. The separate `/outpost.goauthentik.io` route handles the
+proxy callback. The [Authentik Workspace](templates/GiteaMirror/Authentik.yaml)
+creates a forward-auth application bound to the `Developers` group. Proxy
+authentication protects the entire Gitea Mirror UI, including first-account
+signup and its API. Gitea Mirror's own local account login remains enabled;
+the first authenticated Developer must create the first local account before
+using the UI. This deployment does not register Gitea Mirror's optional native
+OIDC provider. See the upstream [authentication model](https://gitea-mirror.raylabs.io/docs/authentication/)
+and Authentik's [proxy-provider documentation](https://docs.goauthentik.io/add-secure-apps/providers/proxy/).
+
+No source account, destination, token, or repository is preconfigured in the
+application database. The chart sets scheduling and cleanup off and disables
+automatic import. In the UI, select Gitea/Forgejo with
+`https://slop.writemy.codes` as the source and GitHub
+as the destination, then select only repositories whose primary is YVR. Start with
+`CoRE/CoRE-Backplane`; do not import the peer's copies as separate sources.
+Gitea Mirror supports one destination per repository. For a peer-site copy,
+configure a separate [Forgejo push mirror](https://forgejo.org/docs/latest/user/repo-mirror/)
+from the primary repository to that peer. GitHub push destinations in Gitea
+Mirror are [beta and force-update branches and tags](https://gitea-mirror.raylabs.io/docs/destinations/);
+they do not copy issues, pull requests, releases, wiki, or LFS. Review target
+ownership, token scope, and target-only branches before starting a mirror job.
+
+After reconciliation, verify the two Password generators and ExternalSecrets,
+their target Secret key names without displaying values, the Authentik
+Workspace and `Developers` binding, the route's accepted parent and Envoy
+SecurityPolicy, PVC binding, and `/api/health`. An unauthenticated request to
+the public hostname should be redirected through Authentik, and a Developer
+should reach Gitea Mirror's local login or signup. Only after configuring a
+repository in the UI, verify its source and GitHub target refs independently;
+Argo CD health and a ready pod do not establish that a mirror is correct.
+
+To stop the service, disable its ApplicationSet flag and reconcile the YVR
+child application. Its database and bare clones remain on the PVC until that
+claim is deliberately removed. Deleting the Authentik Workspace removes its
+proxy application and access binding, so keep the route protected whenever
+the UI is exposed. Restore the matching runtime Secrets with the PVC during
+recovery; do not regenerate the encryption key against an existing database.
 
 ## TODO
 
