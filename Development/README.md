@@ -299,6 +299,14 @@ The embedded Forgejo SSH server is disabled because the rootless image already
 starts OpenSSH on its internal port; the SSH Service remains cluster-local and
 is not routed externally. This does not prevent outbound SSH push mirrors.
 
+Forgejo OAuth access tokens last six hours through
+`gitea.config.oauth2.ACCESS_TOKEN_EXPIRATION_TIME: '21600'`. Forgejo applies
+this setting to every OAuth client on each instance, including Che's Git
+integration; it is not a Che-only setting. Forgejo issues refresh tokens as
+part of its OAuth flow. See Forgejo's
+[OAuth2 configuration reference](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/)
+for the access token validity setting.
+
 ### CoRE Backplane mirrors
 
 The CoRE Backplane repository is hosted canonically at
