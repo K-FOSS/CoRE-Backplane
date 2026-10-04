@@ -52,19 +52,29 @@ serving replicas available during credential rotation. The target cluster must r
 the operations configuration ApplicationSet provides it on both selected
 Talos production clusters.
 
-Mimir's query frontend and queriers use the site-local `dragonfly-core`
-Memcached-compatible listener for query-result, label, cardinality, index,
-chunk, and block-metadata caches. Mimir's OSS cache backends are Memcached, so
-the Dragonfly instance exposes port `11211` in addition to its existing
-authenticated Redis/TLS port `6379`; the cache connection is TLS-protected and
-uses the container system trust store for the public certificate. If the
-Dragonfly certificate issuer changes to a private CA, set `mimir.cache.tls.caSecretName`
-to a Secret containing the configured `caSecretKey`. Cache contents are disposable and do
-not replace Mimir's S3 blocks. This shares the Dragonfly process and memory
-limit with other site-local consumers; if cache pressure affects durable
-application state, move Mimir to a dedicated Dragonfly instance.
-See the [Mimir configuration parameters](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
-for the supported Memcached cache backends and label-result TTL settings.
+### DC1 distributed configuration and ruler
+
+The distributed profile preserves the operator's live DC1 configuration from
+2026-10-04. Dragonfly caches are disabled; result-cache TTLs remain configured
+for a future cache rollout. S3 HTTP pools allow 200 idle connections globally
+and per host. The distributed profile uses upstream multitenancy defaults,
+no blocks storage prefix, and the upstream ship-concurrency default. These
+settings differ from the retained, disabled single-binary profile.
+
+The ruler mounts the exporter-owned rulefiles ConfigMap at `/rules/core` and
+uses `ruler_storage.backend: local` with directory `/rules`. Tenant `core`
+therefore reads that ConfigMap. The writable ruler working directory is
+`/data`, separate from the read-only rule input. Compactor and Alertmanager
+also use their chart-mounted `/data` paths. See the upstream
+[ruler local-storage layout](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/#local-storage):
+local rules cannot be edited through the ruler configuration API. Update the
+exporter's rule source instead. The inactive `mimir-ruler` S3 setting remains
+for compatibility but is not the active rule source.
+
+Before reconciliation, compare the rendered `core-mimir-config` and ruler
+volume mounts with DC1. Reverting to the single-binary storage prefix or tenant
+settings changes which existing objects and series are visible; it is not a
+transparent rollback. Retain existing buckets and PVCs.
 
 ## Routing and query flow
 
@@ -191,8 +201,8 @@ deletion policies. Verify downstream conditions and actual S3 access rather
 than relying on the claim's Ready condition.
 
 The YXL blocks bucket comes from the YXL identity's `username` Secret key,
-with the `blocks` prefix; `mimir-alertmanager` and `mimir-ruler` are separate
-buckets. See [Mimir object storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
+without a blocks prefix in distributed mode. The legacy single-binary
+profile used `blocks` and separate `mimir-alertmanager` and `mimir-ruler` buckets. See [Mimir object storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
 YVR history remains available only through a deliberate recovery or migration;
 queries against the fresh YXL backend do not include it. Existing YXL objects,
 if present from an earlier deployment, are not deleted by this change.

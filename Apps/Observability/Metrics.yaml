@@ -216,13 +216,6 @@ spec:
                     enabled: false
                   rollout_operator:
                     enabled: false
-                  mimir:
-                    service:
-                      annotations:
-                        service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
-                        service.cilium.io/global: 'true'
-                        service.cilium.io/global-sync-endpoint-slices: 'true'
-                        service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
                     extraEnv:
@@ -295,16 +288,17 @@ spec:
                           name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
                     extraVolumeMounts:
                       - name: rulefiles
-                        mountPath: /data/rules
+                        mountPath: /rules/core
                   mimir:
                     structuredConfig:
-                      multitenancy_enabled: false
-                      no_auth_tenant: core
                       limits:
                         max_global_series_per_user: 5000000
                         ingestion_rate: {{ .values.mimirIngestionRate }}
                         ingestion_burst_size: {{ .values.mimirIngestionBurstSize }}
                         out_of_order_time_window: 24h
+                        results_cache_ttl: 1h
+                        results_cache_ttl_for_cardinality_query: 5m
+                        results_cache_ttl_for_labels_query: 5m
                         compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
                       common:
                         storage:
@@ -316,57 +310,21 @@ spec:
                             secret_access_key: ${AWS_SECRET_ACCESS_KEY}
                             session_token: ${AWS_SESSION_TOKEN}
                             insecure: false
-                      blocks_storage:
-                        backend: s3
-                        storage_prefix: blocks
-                        s3:
-                          bucket_name: ${S3_BUCKET}
-                        tsdb:
-                          dir: /data/tsdb
-                          ship_concurrency: {{ .values.mimirShipConcurrency }}
-                        bucket_store:
-                          index_cache:
-                            backend: memcached
-                            memcached:
-                              addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
-                              tls_enabled: true
-                              tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
-                          chunks_cache:
-                            backend: memcached
-                            memcached:
-                              addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
-                              tls_enabled: true
-                              tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
-                          metadata_cache:
-                            backend: memcached
-                            memcached:
-                              addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
-                              tls_enabled: true
-                              tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
-                      alertmanager_storage:
-                        backend: s3
-                        s3:
-                          bucket_name: mimir-alertmanager
+                            http:
+                              max_idle_connections: 200
+                              max_idle_connections_per_host: 200
                       ruler_storage:
-                        backend: s3
+                        backend: local
+                        local:
+                          directory: /rules
                         s3:
                           bucket_name: mimir-ruler
                       compactor:
-                        data_dir: /data/compactor
+                        data_dir: /data
                       ruler:
-                        rule_path: /data/rules
+                        rule_path: /data
                       alertmanager:
-                        data_dir: /data/alertmanager
-                      {{ if .values.mimirCacheEnabled }}
-                      frontend:
-                        cache_results: true
-                        results_cache:
-                          backend: memcached
-                          memcached:
-                            addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
-                            tls_enabled: true
-                            tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
-                      {{ end }}
+                        data_dir: /data
                 s3User:
                   enabled: true
                 mimirBridge:
