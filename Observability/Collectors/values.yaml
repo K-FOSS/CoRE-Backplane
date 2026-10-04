@@ -12,6 +12,31 @@ alloy-logs:
 
         otelcol.storage.file "offsets" {}
 
+        {{- if .Values.alloy.mounts.varlog }}
+        otelcol.receiver.filelog "pod_logs" {
+          include           = ["/var/log/pods/*/*/*.log"]
+          include_file_path = true
+          start_at          = "end"
+          storage           = otelcol.storage.file.offsets.handler
+          resource = {
+            cluster                = sys.env("CLUSTER"),
+            dc                     = sys.env("DC"),
+            "service.name"         = "kubernetes-pods",
+            "loki.resource.labels" = "cluster,dc,k8s.namespace.name,k8s.pod.name,k8s.container.name",
+          }
+          operators = [{
+            type = "container",
+          }]
+          retry_on_failure {
+            enabled          = true
+            max_elapsed_time = "0s"
+          }
+          output {
+            logs = [otelcol.processor.batch.logs.input]
+          }
+        }
+        {{- end }}
+
         otelcol.processor.batch "logs" {
           output {
             logs = [otelcol.exporter.otlp.gateway.input]

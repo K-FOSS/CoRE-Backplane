@@ -1,4 +1,4 @@
-# Telemetry collectors
+# CoRE-Backplane Observability/Collectors Stack
 
 This chart deploys four [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
 roles and
@@ -7,6 +7,7 @@ collectors. The
 [`core-observability-collectors` ApplicationSet](../../Apps/Observability/Collectors.yaml)
 targets `core-dc1-talos-prod`, `core-home1-talos-prod`, and `dc1-k3s-node1`,
 injecting the cluster and datacentre labels.
+See the [Observability overview](../README.md).
 
 The chart also installs the
 [`alloy-mixin`](https://github.com/portefaix/helm-charts/tree/master/charts/alloy-mixin)
@@ -159,3 +160,41 @@ Render with `helm dependency build Observability/Collectors`, `helm lint`, and
 representative ApplicationSet values. Roll back through Git/Argo CD. Removing
 the ApplicationSet preserves resources, so deletion requires an explicit
 cleanup decision.
+
+### Talos pod-log collection and recovery
+
+The [collector ApplicationSet](../../Apps/Observability/Collectors.yaml) enables
+`alloy-logs.alloy.mounts.varlog` on YXL and YVR through `podLogsEnabled`. This
+both restores the pinned Alloy chart's read-only host `/var/log` mount and
+enables the filelog receiver in [values.yaml](values.yaml). The legacy K3s
+profile keeps its existing disabled setting. The mount is supplied by the
+[Alloy chart README](https://github.com/grafana/alloy/blob/v1.17.0/operations/helm/charts/alloy/README.md)
+and [chart source](https://github.com/grafana/alloy/tree/v1.17.0/operations/helm/charts/alloy),
+without privileged mode, Kubernetes log-stream watches or API credentials.
+The Talos clusters use the standard `/var/log/pods` layout described in
+[Kubernetes logging architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
+
+The receiver uses the OpenTelemetry
+[container parser](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/operator/parser/container/README.md)
+to parse CRI timestamps, stream and partial records and derive Kubernetes
+resource metadata from the file path. It sends records to the existing batch
+processor and OTLP gateway. Cluster and datacentre are resource attributes;
+[`otelcol.exporter.loki` label hints](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.loki/)
+promote them and Kubernetes namespace, pod and container metadata to Loki
+labels `cluster`, `dc`, `k8s_namespace_name`, `k8s_pod_name` and
+`k8s_container_name`.
+
+This restores the file-reading path removed by commit `377e66e32` on
+2026-08-24. New files start at their end, so restoring collection does not
+backfill the outage. Offsets remain in the container-local Alloy storage;
+process restarts can reuse them, but replacing a Pod loses them and starts
+reading at the end again. Exporter queues are also not a durable outage buffer.
+Do not claim historical recovery from a successful rollout.
+
+Reconcile only the collector ApplicationSet, then the `alloy-logs` ConfigMap
+and DaemonSet on each Talos cluster. These resources have no sync hooks. Verify
+the host mount is read-only, receiver accepted-record and exporter sent-record
+counters increase, and Loki returns recent streams from both source clusters.
+Use a count query or stream metadata to verify without printing production log
+bodies. Disabling `podLogsEnabled` through Git removes the receiver and host
+mount; it stops new pod-log collection but does not delete stored Loki data.
