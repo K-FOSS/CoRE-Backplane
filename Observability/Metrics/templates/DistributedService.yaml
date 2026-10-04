@@ -1,0 +1,18 @@
+{{- if index .Values "mimir-distributed" "enabled" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: core-mimir
+  annotations:
+    {{- toYaml .Values.mimir.service.annotations | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http-metric
+  selector:
+    app.kubernetes.io/name: mimir
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/component: nginx
+{{- end }}

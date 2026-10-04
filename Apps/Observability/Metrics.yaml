@@ -20,7 +20,7 @@ spec:
                   values:
                     hub: false
 
-                    mode: SingleBinary
+                    mode: Distributed
 
                     mimirEnabled: true
                     mimirBridgeEnabled: true
@@ -33,13 +33,14 @@ spec:
                     mimirIngestionBurstSize: 1550000
                     mimirRetentionPeriod: 12h
                     mimirShipConcurrency: 1
+                    mimirCacheEnabled: true
 
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
 
-                    mode: SingleBinary
+                    mode: Distributed
 
                     mimirEnabled: false
                     mimirBridgeEnabled: true
@@ -49,6 +50,7 @@ spec:
                     mimirIngestionBurstSize: 1550000
                     mimirRetentionPeriod: 12h
                     mimirShipConcurrency: 1
+                    mimirCacheEnabled: true
 
           - clusters:
               selector:
@@ -204,9 +206,228 @@ spec:
                   enabled: true
                 {{ else if eq .values.mode "Distributed" }}
                 mimir-distributed:
-                  enabled: true
+                  enabled: {{ .values.mimirEnabled }}
+                  fullnameOverride: core-mimir
+                  image:
+                    repository: grafana/mimir
+                    tag: '3.1.4'
+                    pullPolicy: IfNotPresent
+                  minio:
+                    enabled: false
+                  rollout_operator:
+                    enabled: false
+                  mimir:
+                    service:
+                      annotations:
+                        service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
+                        service.cilium.io/global: 'true'
+                        service.cilium.io/global-sync-endpoint-slices: 'true'
+                        service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
+                    extraEnv:
+                      - name: AWS_ACCESS_KEY_ID
+                        valueFrom:
+                          secretKeyRef:
+                            name: {{ .values.clusterName }}-metrics-s3-creds
+                            key: AccessKey
+                      - name: AWS_SECRET_ACCESS_KEY
+                        valueFrom:
+                          secretKeyRef:
+                            name: {{ .values.clusterName }}-metrics-s3-creds
+                            key: SecretAccessKey
+                      - name: AWS_SESSION_TOKEN
+                        valueFrom:
+                          secretKeyRef:
+                            name: {{ .values.clusterName }}-metrics-s3-creds
+                            key: SessionToken
+                      - name: S3_BUCKET
+                        valueFrom:
+                          secretKeyRef:
+                            name: {{ .values.clusterName }}-metrics-creds
+                            key: username
+                  gateway:
+                    enabled: true
+                  distributor:
+                    replicas: 3
+                  ingester:
+                    replicas: 3
+                    zoneAwareReplication:
+                      enabled: false
+                    persistentVolume:
+                      enabled: true
+                      size: 50Gi
+                      storageClass: longhorn
+                      enableRetentionPolicy: true
+                      whenDeleted: Retain
+                      whenScaled: Retain
+                  querier:
+                    replicas: 3
+                  query_frontend:
+                    replicas: 3
+                  query_scheduler:
+                    replicas: 2
+                  store_gateway:
+                    replicas: 3
+                    zoneAwareReplication:
+                      enabled: false
+                    persistentVolume:
+                      enabled: true
+                      size: 2Gi
+                      storageClass: longhorn
+                      enableRetentionPolicy: true
+                      whenDeleted: Retain
+                      whenScaled: Retain
+                  compactor:
+                    replicas: 1
+                    persistentVolume:
+                      enabled: true
+                      size: 2Gi
+                      storageClass: longhorn
+                      enableRetentionPolicy: true
+                      whenDeleted: Retain
+                      whenScaled: Retain
+                  ruler:
+                    replicas: 1
+                    extraVolumes:
+                      - name: rulefiles
+                        configMap:
+                          name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
+                    extraVolumeMounts:
+                      - name: rulefiles
+                        mountPath: /data/rules
+                  mimir:
+                    structuredConfig:
+                      multitenancy_enabled: false
+                      no_auth_tenant: core
+                      limits:
+                        max_global_series_per_user: 5000000
+                        ingestion_rate: {{ .values.mimirIngestionRate }}
+                        ingestion_burst_size: {{ .values.mimirIngestionBurstSize }}
+                        out_of_order_time_window: 24h
+                        compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
+                      common:
+                        storage:
+                          backend: s3
+                          s3:
+                            endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443
+                            bucket_name: ${S3_BUCKET}
+                            access_key_id: ${AWS_ACCESS_KEY_ID}
+                            secret_access_key: ${AWS_SECRET_ACCESS_KEY}
+                            session_token: ${AWS_SESSION_TOKEN}
+                            insecure: false
+                      blocks_storage:
+                        backend: s3
+                        storage_prefix: blocks
+                        s3:
+                          bucket_name: ${S3_BUCKET}
+                        tsdb:
+                          dir: /data/tsdb
+                          ship_concurrency: {{ .values.mimirShipConcurrency }}
+                        bucket_store:
+                          index_cache:
+                            backend: memcached
+                            memcached:
+                              addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
+                              tls_enabled: true
+                              tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                          chunks_cache:
+                            backend: memcached
+                            memcached:
+                              addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
+                              tls_enabled: true
+                              tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                          metadata_cache:
+                            backend: memcached
+                            memcached:
+                              addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
+                              tls_enabled: true
+                              tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                      alertmanager_storage:
+                        backend: s3
+                        s3:
+                          bucket_name: mimir-alertmanager
+                      ruler_storage:
+                        backend: s3
+                        s3:
+                          bucket_name: mimir-ruler
+                      compactor:
+                        data_dir: /data/compactor
+                      ruler:
+                        rule_path: /data/rules
+                      alertmanager:
+                        data_dir: /data/alertmanager
+                      {{ if .values.mimirCacheEnabled }}
+                      frontend:
+                        cache_results: true
+                        results_cache:
+                          backend: memcached
+                          memcached:
+                            addresses: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
+                            tls_enabled: true
+                            tls_server_name: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
+                      {{ end }}
+                s3User:
+                  enabled: true
+                mimirBridge:
+                  enabled: {{ .values.mimirBridgeEnabled }}
+                  routeName: core-mimir
+                  upstream:
+                    service: core-mimir
+                    port: 8080
+                mimir:
+                  service:
+                    name: core-mimir
+                    annotations:
+                      service.cilium.io/affinity: '{{ .values.mimirGlobalAffinity }}'
+                      service.cilium.io/global: 'true'
+                      service.cilium.io/global-sync-endpoint-slices: 'true'
+                      service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
+                gateway:
+                  enabled: {{ .values.mimirEnabled }}
+                  routeName: core-mimir
+                  labels:
+                    wan-mode: public
+                    lan-mode: private
+                  parentRefs:
+                    - group: gateway.networking.k8s.io
+                      kind: Gateway
+                      namespace: core-prod
+                      name: main-gw
+                  hostnames:
+                    - metrics.mylogin.space
+                securityPolicy:
+                  enabled: {{ .values.mimirEnabled }}
+                  jwt:
+                    optional: false
+                    providers:
+                      - name: grafana
+                        issuer: https://idp.mylogin.space/application/o/grafana-test/
+                        remoteJWKS:
+                          cacheDuration: 3600s
+                          uri: https://idp.mylogin.space/application/o/grafana-test/jwks/
+                        claimToHeaders:
+                          - header: x-scope-orgid
+                            claim: orgID
+                        extractFrom:
+                          cookies:
+                            - core-token
+                      - name: mimir
+                        issuer: https://idp.mylogin.space/application/o/mimir-test/
+                        remoteJWKS:
+                          cacheDuration: 3600s
+                          uri: https://idp.mylogin.space/application/o/mimir-test/jwks/
+                        claimToHeaders:
+                          - header: x-scope-orgid
+                            claim: orgID
+                        extractFrom:
+                          headers:
+                            - name: Authorization
+                              valuePrefix: 'Bearer '
+                          cookies:
+                            - session_access_token
+                          params:
+                            - token
                 {{- end }}
 
       destination:

@@ -440,7 +440,7 @@ controllers:
 service:
   mimir:
     # -- Enables or disables the service
-    enabled: true
+    enabled: {{ or .Values.mimir.enabled (not (index .Values "mimir-distributed" "enabled")) }}
 
     # -- Configure which controller this service should target
     controller: {{ ternary "mimir" "mimir-bridge" .Values.mimir.enabled }}

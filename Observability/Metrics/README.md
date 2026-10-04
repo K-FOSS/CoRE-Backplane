@@ -1,41 +1,41 @@
 # CoRE-Backplane Observability/Metrics Stack
 
 This chart deploys [Grafana Mimir](https://grafana.com/docs/mimir/latest/) in
-a split monolithic mode using the
+the upstream microservices mode using the pinned
+[`mimir-distributed` chart](https://github.com/grafana/helm-charts/tree/main/charts/mimir-distributed).
+The compatibility bridge and Service remain rendered through the
 [`bjw-s common library`](https://github.com/bjw-s-labs/helm-charts/tree/main/charts/library/common).
-The pinned
-[`mimir-distributed` chart](https://github.com/grafana/helm-charts/tree/main/charts/mimir-distributed)
-is retained as an optional dependency but is disabled for every currently
-selected cluster. See the [Observability overview](../README.md).
+See the [Observability overview](../README.md).
 
 ## Ownership, targets and rendering
 
 The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metrics.yaml)
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
-site identity. YXL enables the monolithic implementation, and both sites
-enable the Mimir bridge described below. Three YXL main Mimir replicas receive
-Prometheus remote write, keep WAL/head working data on persistent local
-volumes, and ship blocks to site-local S3. Each main and querier replica is a
-StatefulSet pod with separate `ReadWriteOnce` [Longhorn-backed](https://longhorn.io/docs/latest/) claims for
-`/data` and `/tmp`; claims are retained when replicas are scaled down or the
-StatefulSets are deleted. Three separate querier replicas execute PromQL. The
-main replicas retain the query frontend and query scheduler,
-so `core-mimir` remains the entry point for both reads and writes; the scheduler
-dispatches read work to the querier StatefulSet. All three components discover
-the schedulers through the existing memberlist-backed query-scheduler ring.
-The blocks backend is explicitly configured as S3; the local claims hold TSDB
-working state and synchronized block indexes rather than being the durable
-blocks store.
+site identity. YXL enables the distributed implementation, while YVR keeps the
+remote bridge and recovery identity without local Mimir pods. Distributors,
+ingesters, queriers, query frontends, query schedulers, store-gateways,
+compactor, ruler, Alertmanager and the NGINX gateway run as separate upstream
+chart workloads. Three YXL ingesters receive Prometheus remote write, keep
+WAL/head working data on persistent [Longhorn-backed](https://longhorn.io/docs/latest/)
+claims, and ship blocks to site-local S3. Three queriers and three query
+frontends execute PromQL; two query schedulers coordinate the read path. The
+stable `core-mimir` Service selects the distributed NGINX gateway so existing
+collectors and the bridge keep their endpoint. The blocks backend remains S3;
+local claims hold working state and synchronized indexes.
 This follows Mimir's
 [query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
 and documented [query-scheduler ring discovery](https://grafana.com/docs/mimir/latest/references/architecture/components/query-scheduler/),
 and uses its documented [`-target` component selection](https://grafana.com/docs/mimir/latest/configure/about-configurations/).
 Both sites retain their S3 `User` claims and stable connection Secrets.
-YXL renders the HTTPRoute and Envoy SecurityPolicy.
+YXL renders the HTTPRoute and Envoy SecurityPolicy. When `mimirEnabled` is
+false, the distributed chart is disabled while the recovery identity remains.
 
 ## Storage and credentials
 
-The `mimir.dataVolume` and `mimir.tmpVolume` values independently support
+The distributed chart's `ingester`, `store_gateway`, and `compactor` persistence
+values use Longhorn claims with `Retain` policies. The legacy
+`mimir.dataVolume` and `mimir.tmpVolume` values remain for the disabled
+single-binary compatibility path and independently support
 `type: 'emptyDir'` or `type: 'persistentVolumeClaim'`. For node-local disk,
 use `emptyDir` with an empty `medium`; for tmpfs memory, use `emptyDir` with
 `medium: 'Memory'`. PVC mode requires `accessMode`, `size`, and
