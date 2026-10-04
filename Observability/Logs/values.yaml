@@ -93,6 +93,12 @@ loki:
 
   singleBinary:
     replicas: 3
+    service:
+      annotations: {}
+    # Preserve working data during remote-consumer scale-down and rollback.
+    persistence:
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
     terminationGracePeriodSeconds: 300
     annotations:
       reloader.stakater.com/auto: "true"

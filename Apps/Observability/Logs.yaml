@@ -20,13 +20,19 @@ spec:
                   values:
                     hub: false
 
-                    mode: SingleBinary
+                    mode: 'SingleBinary'
+                    lokiReplicas: 3
+                    lokiGlobalAffinity: 'local'
+                    lokiGlobalShared: 'true'
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
 
-                    mode: SingleBinary
+                    mode: 'SingleBinary'
+                    lokiReplicas: 0
+                    lokiGlobalAffinity: 'remote'
+                    lokiGlobalShared: 'false'
 
           - clusters:
               selector:
@@ -89,12 +95,32 @@ spec:
                 region: {{ .values.region }}
                 
                 loki:
+                  # Cilium matches global Services by namespace and name.
+                  fullnameOverride: 'loki-core'
                   deploymentMode: {{ .values.mode }}
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
                   
                   singleBinary:
-                    replicas: {{ if eq .values.mode "SingleBinary" }}3{{ else }}0{{ end }}
+                    replicas: {{ if eq .values.mode "SingleBinary" }}{{ .values.lokiReplicas }}{{ else }}0{{ end }}
+                    service:
+                      annotations:
+                        service.cilium.io/global: 'true'
+                        service.cilium.io/global-sync-endpoint-slices: 'true'
+                        service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                        service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+
+            - name: 'LOVELY_KUSTOMIZE_MERGE'
+              value: |-
+                {{ if eq .values.mode "SingleBinary" }}
+                # Loki 6.46.0 clamps singleBinary.replicas=0 to one.
+                # Apply the fleet count after Helm to preserve a remote-only site.
+                replicas:
+                  - name: 'loki-core'
+                    count: {{ .values.lokiReplicas }}
+                {{ else }}
+                {}
+                {{ end }}
 
       destination:
         server: '{{ .server }}'

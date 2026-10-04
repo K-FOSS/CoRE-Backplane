@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Loki 6.46.0 also copies singleBinary.service.annotations to loki-headless.
+# Keep its DNS/ring discovery local while exporting only the client Service.
+# The headless name is the pinned chart's default, independent of fullnameOverride.
+patches:
+  - target:
+      version: 'v1'
+      kind: Service
+      name: 'loki-headless'
+    # Its annotations contain only the inherited global-Service values.
+    patch: |-
+      - op: 'remove'
+        path: '/metadata/annotations'

@@ -21,18 +21,21 @@ spec:
                     hub: false
                     collectorReplicas: 3
                     vectorEnabled: false
+                    lokiGlobalService: 'true'
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
                     collectorReplicas: 3
                     vectorEnabled: false
+                    lokiGlobalService: 'true'
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
                     collectorReplicas: 3
                     vectorEnabled: true
+                    lokiGlobalService: 'false'
           - clusters:
               selector:
                 matchLabels:
@@ -82,7 +85,12 @@ spec:
               value: |-
                 alloy:
                   destinations:
+                    {{- if eq .values.lokiGlobalService "true" }}
+                    lokiUrl: 'http://loki-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:3100/loki/api/v1/push'
+                    {{- else }}
+                    # Legacy has no namespace-local global Service registration.
                     lokiUrl: 'http://10.44.0.196:3100/loki/api/v1/push'
+                    {{- end }}
                     mimirUrl: 'http://10.44.6.231:8080/api/v1/push'
                     tempoEndpoint: '10.44.5.232:4317'
 

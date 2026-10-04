@@ -49,9 +49,13 @@ annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
 
 The central StatefulSet converts received OTLP metrics for remote-write to
-Mimir, received OTLP logs for Loki, and exports traces to Tempo. These backends
-currently use private addresses; they are mutable operational dependencies,
-not service discovery.
+Mimir, received OTLP logs for Loki, and exports traces to Tempo. Infrastructure
+clusters send logs through the namespace-local `loki-core` DNS name. The
+[Logs stack](../Logs/README.md#global-service-ownership) uses
+[Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
+to serve DC1 Loki backends in both DC1 and Home1. The legacy collector retains
+DC1's mutable Service IP because it has no local global Service. Mimir and
+Tempo destinations remain private addresses.
 
 The same Service exposes a cluster-internal Prometheus remote-write receiver on
 port `9090`. Its
@@ -66,7 +70,7 @@ because it is a write gateway, not a Prometheus remote-read service.
 Backend shipping is configured under `alloy.destinations`: `lokiUrl` is the
 Loki push URL, `mimirUrl` is the Prometheus remote-write URL, and
 `tempoEndpoint` is the Tempo OTLP/gRPC `host:port`. The ApplicationSet
-explicitly injects all three current private endpoints into every target
+explicitly injects all three endpoints into every target
 cluster. Only the central Alloy uses these values; `alloy-logs`,
 `alloy-metrics`, and `alloy-otlp` continue to export exclusively through OTLP.
 
