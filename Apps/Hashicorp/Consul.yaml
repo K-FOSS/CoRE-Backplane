@@ -31,21 +31,18 @@ spec:
                 bootstrapExpect: '1'
                 updatePartition: '0'
 
-          # Per-cluster Consul server overrides. Values here take precedence
-          # over the defaults from the cluster generator above.
-          - list:
-              elements:
-                - name: 'core-home1-talos-prod'
-                  values:
-                    replicas: '3'
-                    bootstrapExpect: '3'
-                    updatePartition: '3'
-
-                - name: core-dc1-talos-prod
-                  values:
-                    replicas: '1'
-                    bootstrapExpect: '1'
-                    updatePartition: '0'
+          # Cluster generators keep values as the same map type under Go templates.
+          # Match the existing Home1 registration without affecting other sites.
+          - clusters:
+              selector:
+                matchLabels:
+                  mylogin.space/tenant: 'core.mylogin.space'
+                  resolvemy.host/clusterId: '1'
+                  topology.kubernetes.io/region: 'yvr'
+              values:
+                replicas: '3'
+                bootstrapExpect: '3'
+                updatePartition: '3'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
