@@ -159,8 +159,7 @@ spec:
       - '{{ .Release.Namespace }}'
   selector:
     matchLabels:
-      app.kubernetes.io/component: 'git-http'
-      app.kubernetes.io/instance: {{ .Release.Name | squote }}
+      app.kubernetes.io/service: '{{ .Release.Name }}-git-http'
   endpoints:
     - port: 'http'
       path: '/metrics'
