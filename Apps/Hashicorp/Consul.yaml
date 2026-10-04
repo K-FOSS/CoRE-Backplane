@@ -74,6 +74,12 @@ spec:
                     enabled: false
 
                   server:
+                    {{- if eq .values.clusterName "core-home1-talos-prod" }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '1Gi'
+                    {{- end }}
                     replicas: {{ .values.replicas }}
                     bootstrapExpect: {{ .values.bootstrapExpect }}
                     updatePartition: {{ .values.updatePartition }}

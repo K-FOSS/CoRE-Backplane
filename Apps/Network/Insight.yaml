@@ -40,6 +40,9 @@ spec:
                       enabled: true
                     minion:
                       enabled: true
+                      resources:
+                        requests:
+                          cpu: '100m'
                       nodeSelector:
                         core.resolvemy.host/x86-64-v3: 'true'
                       image:
@@ -138,6 +141,7 @@ spec:
                   enabled: {{ .values.minion.enabled }}
                   id: '{{ .values.minion.id }}'
                   location: '{{ .values.minion.location }}'
+                  resources: {{ dig "resources" (dict) .values.minion | toJson }}
                   coreUrl: '{{ if .values.minion.coreUrl }}{{ .values.minion.coreUrl }}{{ else }}http://core-home1-talos-prod-network-insight-prod.core-net-{{ .values.environment }}.svc.{{ .values.clusterDomain }}/opennms{{ end }}'
                   nodeSelector: {{ .values.minion.nodeSelector | toJson }}
                   image:

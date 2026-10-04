@@ -1,4 +1,4 @@
-# OpenNMS Insight
+# CoRE-Backplane Network/Insight Stack
 
 This Helm rendering unit deploys a basic, single-replica OpenNMS Horizon
 instance and site-local Minions. The owning `Apps/Network/Insight.yaml`
@@ -24,6 +24,25 @@ Kubernetes 1.31 and Helm 3.18 according to its
 The target was observed at Kubernetes 1.36.3, and the pinned
 [`lovely-vault-plugin` 1.2.5 renderer](https://github.com/crumbhole/lovely)
 contains Helm 3.21.2; verify both again before changing either dependency.
+
+## Home1 Minion resource requests
+
+[The owning ApplicationSet](../../Apps/Network/Insight.yaml) injects a Home1-only
+`minion.resources.requests.cpu: '100m'` override. The
+[common workload template](templates/common.yaml) merges `minion.resources`
+over a copy of the shared [resource defaults](values.yaml), so the OpenNMS
+core and other sites retain their existing sizing. Home1 Minion keeps its
+`2Gi` memory request and `2` CPU / `4Gi` memory limits.
+
+The October 4, 2026 Home1 sample measured about `1.4m` CPU and `2.03Gi` RAM.
+This lowers the CPU reservation from one core while retaining memory capacity;
+short snapshots do not establish polling or startup peaks. Review Minion
+registration, polling results, Kafka IPC health and trap receipt after rollout,
+as described in the [upstream Minion guide](https://docs.opennms.com/horizon/36/deployment/minion/introduction.html).
+To restore the former request, remove the Home1 override in Git and reconcile
+the owner and Home1 child application. Resource changes recreate the single
+Minion pod, briefly interrupting its work. Requests affect scheduling and CPU
+shares; see [Kubernetes resource management](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
 
 ## Site enablement and Minion
 

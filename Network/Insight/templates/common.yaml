@@ -1651,7 +1651,7 @@ persistence:
         (dict "name" "OPENNMS_HTTP_USER" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "username")))
         (dict "name" "OPENNMS_HTTP_PASS" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "password"))))
       "securityContext" (dict "capabilities" (dict "add" (list "NET_RAW")))
-      "resources" .Values.resources))))
+      "resources" (mergeOverwrite (deepCopy .Values.resources) .Values.minion.resources)))))
   "persistence" (dict
     "minion-kafka" (dict "type" "secret" "name" .Values.minion.kafka.credentialsSecretName
       "items" (list
