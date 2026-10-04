@@ -124,10 +124,14 @@ the ApplicationSet's cluster identity, not from caller-controlled parameters.
 Label APIs are enabled so discovery
 requests are scoped along with PromQL queries, and a request containing a
 conflicting matcher fails instead of silently replacing its scope. NGINX
-forwards the unprefixed path to the loopback-only filter listener before it
-contacts `core-mimir`; the filter adds Mimir's `/prometheus` prefix through its
-upstream URL. When `mimirBridge.queryFilter` is disabled, NGINX adds the same
-prefix before forwarding directly.
+sets `X-Org-ID: core` before forwarding the unprefixed path to the loopback-only
+filter listener; `prom-label-proxy` uses that header to enforce
+`org_id="core"` in PromQL and label API selectors. NGINX also preserves the
+existing `X-Scope-OrgID` tenant header for Mimir. NGINX forwards the request to
+the filter before it contacts `core-mimir`; the filter adds Mimir's
+`/prometheus` prefix through its upstream URL. When
+`mimirBridge.queryFilter` is disabled, NGINX adds the same prefix before
+forwarding directly.
 
 ## Configuration
 

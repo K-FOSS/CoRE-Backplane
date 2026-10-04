@@ -407,6 +407,8 @@ controllers:
           - -insecure-listen-address=0.0.0.0:8081
           - -label=cluster
           - -label-value={{ required "cluster.name is required when the Mimir bridge query filter is enabled" .Values.cluster.name }}
+          - -header-name=X-Org-ID
+          - -label=org_id
           - -upstream=http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }}/prometheus
         ports:
           - name: filter-cluster
@@ -777,6 +779,7 @@ configMaps:
                 proxy_read_timeout 300s;
                 proxy_set_header Connection '';
                 proxy_set_header Authorization '';
+                proxy_set_header X-Org-ID core;
                 proxy_set_header X-Scope-OrgID $http_x_scope_orgid;
                 proxy_set_header Host {{ .Values.mimirBridge.upstream.service }};
                 {{- if .Values.mimirBridge.queryFilter.enabled }}
