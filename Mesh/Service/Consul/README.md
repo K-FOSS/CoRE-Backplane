@@ -12,9 +12,10 @@ intentionally not duplicated in this chart.
 
 [The owner](../../../Apps/Hashicorp/Consul.yaml) requests three YVR servers,
 with `bootstrapExpect: '3'`. Required hostname anti-affinity distributes them
-across `srv2`, `srv3` and `hpc3`; the Home1-only `load=testing:NoSchedule`
-toleration permits the third server on `hpc3` without changing node taints.
-Other sites keep one server. A second cluster generator selects the existing
+across `srv2`, `srv3` and `hpc2`; the Home1-only `load=testing:NoSchedule`
+toleration permits the third server on `hpc2` without changing node taints.
+The third server uses the YVR control-plane node: `hpc3` lacked the hostname
+label needed for consistent anti-affinity at rollout. Other sites keep one server. A second cluster generator selects the existing
 Home1 registration using tenant, YVR region and cluster ID `1`, then overrides
 replicas, bootstrap expectation and update partition. Using cluster generators
 on both sides avoids the observed Go-template merge panic between cluster
