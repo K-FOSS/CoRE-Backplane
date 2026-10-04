@@ -14,7 +14,10 @@ intentionally not duplicated in this chart.
 with `bootstrapExpect: '3'`. Required hostname anti-affinity distributes them
 across `srv2`, `srv3` and `hpc3`; the Home1-only `load=testing:NoSchedule`
 toleration permits the third server on `hpc3` without changing node taints.
-Other sites keep one server. Each new ordinal receives a `50Gi` PVC from the
+Other sites keep one server. Site list entries use a nested `values` map so
+the Go-template merge generator overrides the cluster defaults; dotted literal
+keys did not override the observed `.values.replicas` input. See the
+[ApplicationSet merge generator](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/Generators-Merge/). Each new ordinal receives a `50Gi` PVC from the
 default storage class, observed as Longhorn with two storage replicas at YVR.
 Consul Raft voters and Longhorn volume replicas are separate redundancy layers.
 See the [upstream server scaling guidance](https://developer.hashicorp.com/consul/docs/manage/scale#number-of-consul-servers)
