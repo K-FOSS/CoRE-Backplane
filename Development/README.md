@@ -113,6 +113,7 @@ values does not replace every hardcoded reference; inspect the final render.
 | `gateway` | Intended shared Gateway configuration; some templates currently use fixed values instead. |
 | `artifact-hub`, `gitlab`, `harbor`, `forgejo`, `renovate`, `hoppscotch` | Values passed to the corresponding upstream charts. |
 | `forgejoRunner` | Site-local runner, DinD, default job image, data volumes, and resource configuration. |
+| `gitHttp` | Allowlisted smart Git clone/fetch redirects through `core-prod.writemy.codes`; see the [Git HTTP routing guide](GIT_HTTP.md). |
 | `che`, `mqttx`, `crddocs` | Feature flags for local templates. |
 
 Feature flags control both their conditional dependency and most associated
@@ -317,6 +318,14 @@ The corresponding site-local Forgejo mirrors are:
 | --- | --- | --- |
 | YXL | [CoRE/CoRE-Backplane](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane) | `https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane.git` |
 | YVR | [CoRE/CoRE-Backplane](https://slop.writemy.codes/CoRE/CoRE-Backplane) | `https://slop.writemy.codes/CoRE/CoRE-Backplane.git` |
+
+The shared clone/fetch URL is
+`https://core-prod.writemy.codes/CoRE/CoRE-Backplane.git`. Its redirect service
+prefers the receiving site's Forgejo, then other configured Forgejos, then
+the public GitHub repository. Only allowlisted smart Git read operations are
+routed. Configure repository aliases and backend owners in the ApplicationSet's
+top-level `repos` list; see the [Git HTTP routing guide](GIT_HTTP.md) for
+configuration, verification, security boundaries, and recovery.
 
 These are mirrors of the GitHub repository, not separate desired-state
 authorities. The checkout's configured `origin` remains GitHub; use the

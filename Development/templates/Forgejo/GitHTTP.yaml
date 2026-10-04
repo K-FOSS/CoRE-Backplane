@@ -1,0 +1,146 @@
+{{- define "development.gitHttp.commonValues" -}}
+{{- if .Values.gitHttp.enabled }}
+{{- $hostname := required "gitHttp.hostname is required when Git HTTP redirects are enabled" .Values.gitHttp.hostname }}
+{{- if not .Values.gitHttp.repos }}
+{{- fail "gitHttp.repos must allow at least one repository" }}
+{{- end }}
+{{- if gt (len .Values.gitHttp.repos) 16 }}
+{{- fail "gitHttp.repos supports at most sixteen repositories per HTTPRoute" }}
+{{- end }}
+{{- $config := dict "clusterName" .Values.cluster.name "sites" .Values.gitHttp.sites "repos" .Values.gitHttp.repos "probeTimeoutSeconds" .Values.gitHttp.probeTimeoutSeconds "probeCacheSeconds" .Values.gitHttp.probeCacheSeconds "maxConnections" .Values.gitHttp.maxConnections }}
+{{- $script := .Files.Get "files/git-http-router.py" }}
+controllers:
+  git-http:
+    nameOverride: 'git-http'
+    type: 'deployment'
+    replicas: {{ .Values.gitHttp.replicas }}
+    strategy: 'RollingUpdate'
+    pod:
+      automountServiceAccountToken: false
+      annotations:
+        checksum/git-http: '{{ printf "%s%s" $script ($config | toJson) | sha256sum }}'
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: 'RuntimeDefault'
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: 'kubernetes.io/hostname'
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/component: 'git-http'
+                    app.kubernetes.io/instance: {{ .Release.Name | squote }}
+    containers:
+      redirect:
+        image:
+          repository: {{ .Values.gitHttp.image.repository | squote }}
+          tag: {{ printf "%s@%s" .Values.gitHttp.image.tag .Values.gitHttp.image.digest | squote }}
+          pullPolicy: 'IfNotPresent'
+        command: ['python3', '-I', '-B', '-u', '/app/git-http-router.py', '/app/config.json']
+        ports:
+          - name: 'http'
+            containerPort: 8080
+            protocol: 'TCP'
+        securityContext:
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ['ALL']
+        resources:
+{{ toYaml .Values.gitHttp.resources | indent 10 }}
+        probes:
+          readiness:
+            enabled: true
+            type: 'HTTP'
+            path: '/healthz'
+            port: 'http'
+          liveness:
+            enabled: true
+            type: 'HTTP'
+            path: '/healthz'
+            port: 'http'
+
+service:
+  git-http:
+    nameOverride: 'git-http'
+    controller: 'git-http'
+    ports:
+      http:
+        port: 8080
+        targetPort: 'http'
+        protocol: 'TCP'
+
+configMaps:
+  git-http:
+    nameOverride: 'git-http'
+    data:
+      config.json: {{ $config | toJson | squote }}
+      git-http-router.py: |
+{{ $script | indent 8 }}
+
+persistence:
+  git-http:
+    type: 'configMap'
+    identifier: 'git-http'
+    advancedMounts:
+      git-http:
+        redirect:
+          - path: '/app'
+            readOnly: true
+
+route:
+  git-http:
+    nameOverride: 'git-http'
+    kind: HTTPRoute
+    labels:
+      wan-mode: 'public'
+      lan-mode: 'private'
+    parentRefs:
+      - group: 'gateway.networking.k8s.io'
+        kind: Gateway
+        namespace: {{ .Values.gateway.namespace | squote }}
+        name: {{ .Values.gateway.name | squote }}
+        sectionName: {{ .Values.gateway.sectionName | squote }}
+    hostnames: [{{ $hostname | squote }}]
+    rules:
+      {{- range .Values.gitHttp.repos }}
+      {{- $path := .path | default (printf "/%s.git" .repoName) }}
+      - matches:
+          - path:
+              type: 'Exact'
+              value: {{ printf "%s/info/refs" $path | squote }}
+            method: 'GET'
+            queryParams:
+              - type: 'Exact'
+                name: 'service'
+                value: 'git-upload-pack'
+          - path:
+              type: 'Exact'
+              value: {{ printf "%s/git-upload-pack" $path | squote }}
+            method: 'POST'
+        backendRefs:
+          - name: 'git-http'
+            port: 8080
+      {{- end }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.gitHttp.enabled }}
+---
+# The pinned BJW-S common 3.7.1 library does not support PodDisruptionBudgets.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: '{{ .Release.Name }}-git-http'
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: 'git-http'
+      app.kubernetes.io/instance: {{ .Release.Name | squote }}
+{{- end }}

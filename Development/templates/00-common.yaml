@@ -135,6 +135,7 @@ service:
 
 {{- end -}}
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{- $_ := mergeOverwrite .Values (include "development.gitHttp.commonValues" . | fromYaml) -}}
 
 {{/* Render the templates */}}
 {{ include "bjw-s.common.loader.generate" . }}

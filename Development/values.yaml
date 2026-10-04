@@ -17,6 +17,35 @@ datacenter: dc1
 region: yxl
 timezone: 'America/Vancouver'
 
+# Read-only smart Git HTTP redirects. The fleet ApplicationSet owns production
+# repos/sites; direct chart users can configure the same allowlist here.
+gitHttp:
+  enabled: false
+  hostname: ''
+  replicas: 2
+  probeTimeoutSeconds: 2
+  probeCacheSeconds: 5
+  maxConnections: 32
+  image:
+    repository: 'docker.io/library/python'
+    tag: '3.13.16-slim-bookworm'
+    digest: 'sha256:5024f48ba9441d4b13a95d3945abc6365538e3a31109833367a1923523c6efed'
+  resources:
+    requests:
+      cpu: '10m'
+      memory: '32Mi'
+    limits:
+      cpu: '250m'
+      memory: '128Mi'
+  # Example shape: {clusterName: 'core-home1-talos-prod', url: 'https://slop.writemy.codes'}
+  sites: []
+  # Each entry: repoName, optional path, github: {owner, weight},
+  # clusters: [{clusterName, owner, weight}]. 'path' defaults to /<repoName>.git.
+  # The fleet sets /CoRE/<repoName>.git; only anonymous public reads are allowed.
+  # Local site first, then peers, then GitHub. Higher weight sorts first within a tier;
+  # zero is still an eligible last fallback, rather than disabling a backend.
+  repos: []
+
 
 # Artifact Hub is disabled by every current fleet override. These values remain
 # as the complete intentional configuration for a future enabled deployment.
