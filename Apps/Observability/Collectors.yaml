@@ -22,7 +22,6 @@ spec:
                     collectorReplicas: 3
                     vectorEnabled: false
                     podLogsEnabled: true
-                    podLogsStartAt: 'beginning'
                     lokiGlobalService: 'true'
 
                 - name: core-home1-talos-prod
@@ -31,7 +30,6 @@ spec:
                     collectorReplicas: 3
                     vectorEnabled: false
                     podLogsEnabled: true
-                    podLogsStartAt: 'beginning'
                     lokiGlobalService: 'true'
 
                 - name: dc1-k3s-node1
@@ -40,7 +38,6 @@ spec:
                     collectorReplicas: 3
                     vectorEnabled: true
                     podLogsEnabled: false
-                    podLogsStartAt: 'end'
                     lokiGlobalService: 'false'
           - clusters:
               selector:
@@ -52,6 +49,7 @@ spec:
                 environment: 'prod'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                orgId: '{{ index .metadata.labels "mylogin.space/tenant" | trimSuffix ".mylogin.space" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
@@ -101,6 +99,7 @@ spec:
                     # the site-local endpoint is selected by Cilium affinity.
                     mimirUrl: 'http://core-mimir.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:8080/api/v1/push'
                     tempoEndpoint: '10.44.5.232:4317'
+                    orgId: '{{ .values.orgId }}'
 
                   controller:
                     replicas: {{ .values.collectorReplicas }}
@@ -124,9 +123,10 @@ spec:
 
                 alloy-logs:
                   alloy:
-                    mounts:
-                      varlog: {{ .values.podLogsEnabled }}
-                    startAt: '{{ .values.podLogsStartAt }}'
+                    podLogsEnabled: {{ .values.podLogsEnabled }}
+                    destinations:
+                      lokiUrl: 'http://{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:3100/loki/api/v1/push'
+                      orgId: '{{ .values.orgId }}'
                     extraEnv:
                       - name: DC
                         value: '{{ .values.datacenter }}'
@@ -134,8 +134,10 @@ spec:
                       - name: CLUSTER
                         value: '{{ .values.clusterName }}'
 
-                      - name: OTLP_ENDPOINT
-                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                  rbac:
+                    create: {{ .values.podLogsEnabled }}
+                  serviceAccount:
+                    automountServiceAccountToken: {{ .values.podLogsEnabled }}
 
                 alloy-metrics:
                   alloy:
