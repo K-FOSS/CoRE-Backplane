@@ -35,6 +35,11 @@ spec:
           # over the defaults from the cluster generator above.
           - list:
               elements:
+                - name: 'core-home1-talos-prod'
+                  values.replicas: '3'
+                  values.bootstrapExpect: '3'
+                  values.updatePartition: '3'
+
                 - name: core-dc1-talos-prod
                   values.replicas: '1'
                   values.bootstrapExpect: '1'
@@ -77,8 +82,32 @@ spec:
                     {{- if eq .values.clusterName "core-home1-talos-prod" }}
                     resources:
                       requests:
-                        cpu: '100m'
-                        memory: '1Gi'
+                        cpu: '1'
+                        memory: '8G'
+                    # Preserve the current reservation during expansion.
+                    # Roll out the published smaller requests after quorum is healthy.
+                    nodeSelector: ''
+                    tolerations: |-
+                      - key: 'load'
+                        operator: 'Equal'
+                        value: 'testing'
+                        effect: 'NoSchedule'
+                    affinity: |-
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: 'In'
+                                  values: ['srv2', 'srv3', 'hpc3']
+                      podAntiAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          - labelSelector:
+                              matchLabels:
+                                app: 'consul'
+                                component: 'server'
+                                release: '{{ .values.clusterName }}-consul'
+                            topologyKey: 'kubernetes.io/hostname'
                     {{- end }}
                     replicas: {{ .values.replicas }}
                     bootstrapExpect: {{ .values.bootstrapExpect }}
@@ -87,6 +116,15 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                  {{- if eq .values.clusterName "core-home1-talos-prod" }}
+                  - target:
+                      kind: StatefulSet
+                      name: '{{ .values.clusterName }}-server'
+                    patch: |-
+                      - op: add
+                        path: '/spec/template/spec/nodeSelector'
+                        value: null
+                  {{- end }}
                   - target:
                       kind: Service
                       name: {{ .values.clusterName }}-server
