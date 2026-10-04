@@ -27,17 +27,17 @@ See the [upstream server scaling guidance](https://developer.hashicorp.com/consu
 and [pinned server template](https://github.com/hashicorp/consul-k8s/blob/v1.7.0-rc1/charts/consul/templates/server-statefulset.yaml).
 
 Expansion starts at update partition `3`, retaining the existing leader while
-new servers join. Keep the observed `1` CPU / `8G` requests during this phase;
-apply resource reductions separately after three healthy voters are established.
-Then lower the partition one ordinal per Git/Argo change, verifying Raft and
-Autopilot each time, as described in the [scaling runbook](RUNBOOK.md).
+new servers join. The October 4 expansion kept the observed `1` CPU / `8G`
+requests until three healthy voters were established, then applied the smaller
+requests separately. Lower the partition one ordinal per Git/Argo change,
+verifying Raft and Autopilot each time, as described in the
+[scaling runbook](RUNBOOK.md). The steady-state partition is `0`.
 Do not reduce replicas or remove PVCs as a blind rollback after new peers join.
 
 ## Home1 resource requests
 
-The intended Home1 sizing is `100m` CPU and `1Gi` memory requests.
-During the initial three-server expansion the ApplicationSet temporarily
-retains the live `1` CPU / `8G` requests for `core-home1-talos-prod`. Other sites inherit the existing
+The ApplicationSet injects `100m` CPU and `1Gi` memory requests for each of
+the three `core-home1-talos-prod` servers, totaling `300m` CPU and `3Gi` RAM. Other sites inherit the existing
 [chart values](values.yaml). The upstream `consul.server.resources` values
 are documented in the [Consul Helm chart reference](https://developer.hashicorp.com/consul/docs/reference/k8s/helm#server)
 and the [pinned chart source](https://github.com/hashicorp/consul-k8s/tree/v1.7.0-rc1/charts/consul).
