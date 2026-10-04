@@ -1,3 +1,4 @@
+{{- if not .Values.globalServiceOnly }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -27,3 +28,4 @@ spec:
         - action: 'replace'
           replacement: '{{ .Release.Name }}'
           targetLabel: 'cluster'
+{{- end }}

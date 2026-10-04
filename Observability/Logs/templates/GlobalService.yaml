@@ -1,10 +1,10 @@
-{{- if eq .Values.loki.deploymentMode "Distributed" }}
+{{- if or .Values.globalServiceOnly (eq .Values.loki.deploymentMode "Distributed") (eq .Values.loki.deploymentMode "SimpleScalable<->Distributed") }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "loki.fullname" $.Subcharts.loki }}
+  name: {{ .Values.globalService.name }}
   labels:
-    {{- include "loki.labels" $.Subcharts.loki | nindent 4 }}
+    app.kubernetes.io/name: 'loki'
     app.kubernetes.io/component: 'gateway'
     prometheus.io/service-monitor: 'false'
   {{- with .Values.globalService.annotations }}
@@ -19,6 +19,11 @@ spec:
       protocol: 'TCP'
       targetPort: 'http-metrics'
   selector:
-    {{- include "loki.selectorLabels" $.Subcharts.loki | nindent 4 }}
+    {{- if .Values.globalServiceOnly }}
+    service.mylogin.space/global-endpoint: 'loki-core'
+    {{- else }}
+    app.kubernetes.io/name: 'loki'
+    app.kubernetes.io/instance: {{ $.Subcharts.loki.Release.Name | quote }}
     app.kubernetes.io/component: 'gateway'
+    {{- end }}
 {{- end }}

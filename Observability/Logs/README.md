@@ -9,11 +9,11 @@ collectors and consumers.
 
 ## Ownership, targets, and rendering
 
-DC1/YXL is the serving and data-bearing site. Home1/YVR renders the same
-`core-prod/loki-core` global Service with zero local component replicas and
-uses Cilium ClusterMesh to reach DC1. The ApplicationSet injects cluster
-identity, site-specific component counts, and Cilium annotations through
-`LOVELY_HELM_MERGE`.
+DC1/YXL is the only Loki deployment and data-bearing site. Home1/YVR does not
+render Loki workloads; its release renders only the `loki-core` Cilium
+global-Service endpoint shim and retains its existing S3 User claim. YVR
+collectors use ClusterMesh to reach DC1. The ApplicationSet injects cluster
+identity, component counts, and Cilium annotations through `LOVELY_HELM_MERGE`.
 
 The rendering unit includes this parent chart, the pinned
 [Loki chart 6.46.0 README](https://github.com/grafana/loki/blob/helm-loki-6.46.0/production/helm/loki/README.md),
@@ -24,15 +24,15 @@ is selected with `deploymentMode: Distributed`.
 
 | Component | DC1 replicas | Home1 replicas | Workload |
 | --- | ---: | ---: | --- |
-| Gateway | 3 | 0 | Deployment |
-| Distributor | 3 | 0 | Deployment |
-| Ingester | 3 | 0 | StatefulSet |
-| Querier | 3 | 0 | Deployment |
-| Query frontend | 2 | 0 | Deployment |
-| Query scheduler | 2 | 0 | Deployment |
-| Index gateway | 2 | 0 | StatefulSet |
-| Compactor | 1 | 0 | StatefulSet |
-| Ruler | 1 | 0 | StatefulSet |
+| Gateway | 3 | Not deployed | Deployment |
+| Distributor | 3 | Not deployed | Deployment |
+| Ingester | 3 | Not deployed | StatefulSet |
+| Querier | 3 | Not deployed | Deployment |
+| Query frontend | 2 | Not deployed | Deployment |
+| Query scheduler | 2 | Not deployed | Deployment |
+| Index gateway | 2 | Not deployed | StatefulSet |
+| Compactor | 1 | Not deployed | StatefulSet |
+| Ruler | 1 | Not deployed | StatefulSet |
 
 The simple-scalable and former single-binary targets remain at zero. Ingester
 zone awareness is disabled because this is one site; hostname anti-affinity
@@ -52,6 +52,13 @@ small direct Service preserves the existing client DNS name, port `3100`,
 Cilium pairing, and ClusterIP while selecting gateway pods. The upstream
 gateway routes API paths to their owning components. The public
 [`HTTPRoute`](templates/HTTPRoutes.yaml) uses the same stable Service.
+
+Home1's `loki.enabled: false` disables the Loki subchart completely. The parent
+chart emits the same name-only global Service there with no local workload
+selector matches (the selector uses a label absent from Loki pods), while
+retaining the existing S3 `User` claim and Authentik
+resources. This keeps the cluster-local DNS entry needed by Home1 collectors
+without running Loki there.
 
 Both sites set `service.cilium.io/global` and EndpointSlice synchronization.
 DC1 uses local affinity and shares its endpoints; Home1 uses remote affinity
@@ -137,12 +144,25 @@ names, or credentials.
 
 ## Migration and recovery
 
-Chart 6.46.0 cannot run SingleBinary and Distributed targets together. Apply
-the final commit in controlled phases: create distributed workloads while
-retaining the old StatefulSet, wait for component and ring health, switch the
-stable Service selector to gateway pods, then verify new writes and old S3
-queries. Prune the old StatefulSet only after these checks, and retain its PVCs
-through the observation window.
+Chart 6.46.0 cannot run SingleBinary and Distributed targets together. The
+rollout follows Grafana's
+[SSD-to-Distributed migration guide](https://grafana.com/docs/loki/latest/setup/migrate/ssd-to-distributed/)
+through supported transitions:
+
+1. `SingleBinary<->SimpleScalable`: run the existing three single-binary
+   replicas alongside the simple-scalable targets. `loki-core` remains on the
+   single-binary Service while the S3-backed targets warm up.
+2. `SimpleScalable<->Distributed`: after stage one is healthy, remove the
+   single-binary target, start all Distributed components beside the scalable
+   targets, and point the same `loki-core` Service at the chart gateway.
+3. `Distributed`: after checking ingestion and queries through the stable
+   Service, scale the simple-scalable targets to zero.
+
+The ingester flushes its WAL on shutdown. The transition requires temporary
+capacity for both topologies, which was checked on YXL before rollout. Keep the
+old retained single-binary PVCs through the observation window. Verify each
+stage before publishing/reconciling the next one; the next stage is not
+automatically applied until its health checks pass.
 
 If validation fails, restore the prior Git revision and point `loki-core` back
 to the three ready single-binary pods before removing distributed workloads.

@@ -1,14 +1,14 @@
 apiVersion: tf.upbound.io/v1beta1
 kind: Workspace
 metadata:
-  name: {{ include "loki.fullname" $.Subcharts.loki }}
+  name: {{ .Values.globalService.name }}
 spec:
   providerConfigRef:
     name: authentik
 
   writeConnectionSecretToRef:
     namespace: {{ .Release.Namespace }}
-    name: {{ include "loki.fullname" $.Subcharts.loki }}-sso
+    name: {{ .Values.globalService.name }}-sso
 
   forProvider:
     source: Inline

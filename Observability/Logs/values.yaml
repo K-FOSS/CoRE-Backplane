@@ -12,7 +12,10 @@ region: yxl
 externalDomain: mylogin.space
 
 globalService:
+  name: 'loki-core'
   annotations: {}
+
+globalServiceOnly: false
 
 oauth:
   indexKey: loki
@@ -25,8 +28,9 @@ oauth:
     urlBase: https://idp.mylogin.space
 
 loki:
+  enabled: true
   fullnameOverride: loki-core
-  deploymentMode: Distributed
+  deploymentMode: 'Distributed'
 
   global:
     extraArgs:
@@ -120,6 +124,8 @@ loki:
 
     ingester:
       chunk_encoding: snappy
+      wal:
+        flush_on_shutdown: true
 
     querier:
       max_concurrent: 4
@@ -130,6 +136,34 @@ loki:
     persistence:
       whenDeleted: 'Retain'
       whenScaled: 'Retain'
+    extraArgs:
+      - '-config.expand-env=true'
+    extraEnv:
+      - name: 'S3_ENDPOINT'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core'
+            key: 'S3Hostname'
+      - name: 'S3_BUCKET'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core'
+            key: 'username'
+      - name: 'S3_ACCESS_KEY'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core-s3-creds'
+            key: 'AccessKey'
+      - name: 'S3_SECRET_ACCESS_KEY'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core-s3-creds'
+            key: 'SecretAccessKey'
+      - name: 'S3_SESSION_TOKEN'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core-s3-creds'
+            key: 'SessionToken'
 
   gateway:
     enabled: true

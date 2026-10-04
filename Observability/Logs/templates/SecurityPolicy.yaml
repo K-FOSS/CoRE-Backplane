@@ -1,12 +1,12 @@
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: {{ include "loki.fullname" $.Subcharts.loki }}
+  name: {{ .Values.globalService.name }}
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: {{ include "loki.fullname" $.Subcharts.loki }}
+    name: {{ .Values.globalService.name }}
 
   jwt:
     optional: false

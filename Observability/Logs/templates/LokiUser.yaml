@@ -24,8 +24,8 @@ spec:
       - loki-admin
 
     writeCredentialsSecretRef:
-      name: {{ include "loki.fullname" $.Subcharts.loki }}-s3-creds
+      name: {{ .Values.globalService.name }}-s3-creds
       namespace: {{ .Release.Namespace }}
 
   writeConnectionSecretToRef:
-    name: {{ include "loki.fullname" $.Subcharts.loki }}
+    name: {{ .Values.globalService.name }}

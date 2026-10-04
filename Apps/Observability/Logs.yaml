@@ -20,16 +20,20 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'Distributed'
+                    mode: 'SingleBinary<->SimpleScalable'
+                    lokiReplicas: 3
+                    lokiBackendReplicas: 3
+                    lokiReadReplicas: 3
+                    lokiWriteReplicas: 3
                     lokiGatewayReplicas: 3
-                    lokiDistributorReplicas: 3
-                    lokiIngesterReplicas: 3
-                    lokiQuerierReplicas: 3
-                    lokiQueryFrontendReplicas: 2
-                    lokiQuerySchedulerReplicas: 2
-                    lokiIndexGatewayReplicas: 2
-                    lokiCompactorReplicas: 1
-                    lokiRulerReplicas: 1
+                    lokiDistributorReplicas: 0
+                    lokiIngesterReplicas: 0
+                    lokiQuerierReplicas: 0
+                    lokiQueryFrontendReplicas: 0
+                    lokiQuerySchedulerReplicas: 0
+                    lokiIndexGatewayReplicas: 0
+                    lokiCompactorReplicas: 0
+                    lokiRulerReplicas: 0
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
 
@@ -37,7 +41,13 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'Distributed'
+                    mode: 'RemoteServiceOnly'
+                    globalServiceOnly: true
+                    lokiEnabled: false
+                    lokiReplicas: 0
+                    lokiBackendReplicas: 0
+                    lokiReadReplicas: 0
+                    lokiWriteReplicas: 0
                     lokiGatewayReplicas: 0
                     lokiDistributorReplicas: 0
                     lokiIngesterReplicas: 0
@@ -92,7 +102,7 @@ spec:
 
       source:
         path: Observability/Logs
-        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        repoURL: https://slop.writemy.codes/CoRE/CoRE-Backplane.git
         targetRevision: HEAD
 
         plugin:
@@ -110,7 +120,10 @@ spec:
                 datacenter: {{ .values.datacenter }}
                 region: {{ .values.region }}
 
+                globalServiceOnly: {{ .values.globalServiceOnly | default false }}
+
                 globalService:
+                  name: 'loki-core'
                   annotations:
                     service.cilium.io/global: 'true'
                     service.cilium.io/global-sync-endpoint-slices: 'true'
@@ -118,6 +131,7 @@ spec:
                     service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
                 
                 loki:
+                  enabled: {{ if eq .values.lokiEnabled false }}false{{ else }}true{{ end }}
                   # Cilium matches global Services by namespace and name.
                   fullnameOverride: 'loki-core'
                   deploymentMode: {{ .values.mode }}
@@ -125,7 +139,19 @@ spec:
                     clusterDomain: {{ .values.clusterDomain }}
 
                   singleBinary:
-                    replicas: 0
+                    replicas: {{ .values.lokiReplicas }}
+                    service:
+                      annotations:
+                        service.cilium.io/global: 'true'
+                        service.cilium.io/global-sync-endpoint-slices: 'true'
+                        service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                        service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+                  backend:
+                    replicas: {{ .values.lokiBackendReplicas }}
+                  read:
+                    replicas: {{ .values.lokiReadReplicas }}
+                  write:
+                    replicas: {{ .values.lokiWriteReplicas }}
                   gateway:
                     replicas: {{ .values.lokiGatewayReplicas }}
                   distributor:
