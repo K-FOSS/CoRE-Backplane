@@ -42,9 +42,7 @@ alloy-logs:
         loki.write "loki" {
           endpoint {
             url = {{ required "alloy-logs.alloy.destinations.lokiUrl is required" .Values.alloy.destinations.lokiUrl | quote }}
-            headers = {
-              "X-Scope-OrgID" = {{ required "alloy-logs.alloy.destinations.orgId is required" .Values.alloy.destinations.orgId | quote }},
-            }
+            tenant_id = {{ required "alloy-logs.alloy.destinations.orgId is required" .Values.alloy.destinations.orgId | quote }}
           }
         }
 
@@ -239,9 +237,7 @@ alloy:
         loki.write "loki" {
           endpoint {
             url = {{ required "alloy.destinations.lokiUrl is required" .Values.destinations.lokiUrl | quote }}
-            headers = {
-              "X-Scope-OrgID" = {{ required "alloy.destinations.orgId is required" .Values.destinations.orgId | quote }},
-            }
+            tenant_id = {{ required "alloy.destinations.orgId is required" .Values.destinations.orgId | quote }}
           }
         }
 
