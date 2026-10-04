@@ -50,13 +50,19 @@ annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
 
 The central StatefulSet converts received OTLP metrics for remote-write to
-Mimir, received OTLP logs for Loki, and exports traces to Tempo. Infrastructure
-clusters send logs through the namespace-local `loki-core` DNS name. The
+Mimir, received OTLP logs for Loki, and exports traces to Tempo. Pod logs
+therefore follow `alloy-logs` -> the cluster-local central Alloy StatefulSet ->
+the Cilium global backend Services; they do not write directly from a node
+agent to Loki. Infrastructure clusters send logs through the namespace-local
+`loki-core` DNS name. Metrics use the matching namespace-local `core-mimir`
+DNS name, so Cilium selects the site-local Mimir endpoints while preserving
+the same path for cross-site collectors. The
 [Logs stack](../Logs/README.md#global-service-ownership) uses
 [Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
 to serve DC1 Loki backends in both DC1 and Home1. The legacy collector retains
 DC1's mutable Service IP because it has no local global Service. Mimir and
-Tempo destinations remain private addresses.
+Tempo are otherwise private endpoints; Mimir uses the Cilium global Service
+while Tempo retains its existing direct endpoint.
 
 The same Service exposes a cluster-internal Prometheus remote-write receiver on
 port `9090`. Its
@@ -185,11 +191,13 @@ labels `cluster`, `dc`, `k8s_namespace_name`, `k8s_pod_name` and
 `k8s_container_name`.
 
 This restores the file-reading path removed by commit `377e66e32` on
-2026-08-24. New files start at their end, so restoring collection does not
-backfill the outage. Offsets remain in the container-local Alloy storage;
-process restarts can reuse them, but replacing a Pod loses them and starts
-reading at the end again. Exporter queues are also not a durable outage buffer.
-Do not claim historical recovery from a successful rollout.
+2026-08-24. The Talos profiles set `startAt: 'beginning'`, so the first
+reconciled receiver reads the existing contents of discovered files instead of
+only following new writes from a chatty canary. Subsequent positions are kept
+by `otelcol.storage.file`; the chart's default storage path is pod-local, so a
+replacement Pod can reread files from the configured starting position.
+Exporter queues are not a durable outage buffer, and the initial replay should
+be monitored for Loki ingestion pressure.
 
 Reconcile only the collector ApplicationSet, then the `alloy-logs` ConfigMap
 and DaemonSet on each Talos cluster. These resources have no sync hooks. Verify

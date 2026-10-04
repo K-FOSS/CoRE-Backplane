@@ -22,6 +22,7 @@ spec:
                     collectorReplicas: 3
                     vectorEnabled: false
                     podLogsEnabled: true
+                    podLogsStartAt: 'beginning'
                     lokiGlobalService: 'true'
 
                 - name: core-home1-talos-prod
@@ -30,6 +31,7 @@ spec:
                     collectorReplicas: 3
                     vectorEnabled: false
                     podLogsEnabled: true
+                    podLogsStartAt: 'beginning'
                     lokiGlobalService: 'true'
 
                 - name: dc1-k3s-node1
@@ -38,6 +40,7 @@ spec:
                     collectorReplicas: 3
                     vectorEnabled: true
                     podLogsEnabled: false
+                    podLogsStartAt: 'end'
                     lokiGlobalService: 'false'
           - clusters:
               selector:
@@ -94,7 +97,9 @@ spec:
                     # Legacy has no namespace-local global Service registration.
                     lokiUrl: 'http://10.44.0.196:3100/loki/api/v1/push'
                     {{- end }}
-                    mimirUrl: 'http://10.44.6.231:8080/api/v1/push'
+                    # Route metrics through the Cilium global Mimir Service;
+                    # the site-local endpoint is selected by Cilium affinity.
+                    mimirUrl: 'http://core-mimir.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:8080/api/v1/push'
                     tempoEndpoint: '10.44.5.232:4317'
 
                   controller:
@@ -121,6 +126,7 @@ spec:
                   alloy:
                     mounts:
                       varlog: {{ .values.podLogsEnabled }}
+                    startAt: '{{ .values.podLogsStartAt }}'
                     extraEnv:
                       - name: DC
                         value: '{{ .values.datacenter }}'

@@ -16,7 +16,7 @@ alloy-logs:
         otelcol.receiver.filelog "pod_logs" {
           include           = ["/var/log/pods/*/*/*.log"]
           include_file_path = true
-          start_at          = "end"
+          start_at          = {{ .Values.alloy.startAt | quote }}
           storage           = otelcol.storage.file.offsets.handler
           resource = {
             cluster                = sys.env("CLUSTER"),
@@ -57,6 +57,9 @@ alloy-logs:
         }
     mounts:
       varlog: false
+    # ApplicationSet profiles set Talos collectors to beginning so existing
+    # files are sent after the receiver is restored; disabled profiles keep end.
+    startAt: 'end'
     extraEnv:
     - name: DC
       value: dc1
