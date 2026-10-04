@@ -21,7 +21,22 @@ spec:
               generators:
                 - list:
                     elements:
-                      - clusters:
+                      # Read-only Git HTTP aliases shared by both Forgejo sites.
+                      # 'owner' means a forge organization or user namespace.
+                      - repos:
+                          - repoName: 'CoRE-Backplane'
+                            path: '/CoRE/CoRE-Backplane.git'
+                            github:
+                              owner: 'K-FOSS'
+                              weight: 0
+                            clusters:
+                              - clusterName: 'core-home1-talos-prod'
+                                owner: 'CoRE'
+                                weight: 100
+                              - clusterName: 'core-dc1-talos-prod'
+                                owner: 'CoRE'
+                                weight: 100
+                        clusters:
                           - name: core-dc1-talos-prod
                             values:
                               hub: false
@@ -196,6 +211,35 @@ spec:
                 region: {{ .values.region }}
 
                 timezone: {{ .values.timezone }}
+
+                gitHttp:
+                  enabled: {{ .values.forgejo.enabled }}
+                  hostname: 'core-{{ .values.environment }}.{{ .values.domain }}'
+                  sites:
+                    {{- range .clusters }}
+                    {{- if .values.forgejo.enabled }}
+                    - clusterName: '{{ .name }}'
+                      url: 'https://{{ .values.forgejo.hostname }}'
+                    {{- end }}
+                    {{- end }}
+                  repos:
+                    {{- range .repos }}
+                    - repoName: '{{ .repoName }}'
+                      path: '{{ get . "path" | default (printf "/%s.git" .repoName) }}'
+                      {{- if get . "github" }}
+                      github:
+                        owner: '{{ .github.owner }}'
+                        weight: {{ .github.weight }}
+                      {{- end }}
+                      {{- with get . "clusters" }}
+                      clusters:
+                        {{- range . }}
+                        - clusterName: '{{ .clusterName }}'
+                          owner: '{{ .owner }}'
+                          weight: {{ .weight }}
+                        {{- end }}
+                      {{- end }}
+                    {{- end }}
 
                 che:
                   enabled: {{ .values.che.enabled }}
