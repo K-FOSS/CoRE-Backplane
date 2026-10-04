@@ -22,10 +22,10 @@ spec:
 
                     mode: SingleBinary
 
-                    mimirEnabled: false
+                    mimirEnabled: true
                     mimirBridgeEnabled: true
-                    mimirGlobalAffinity: remote
-                    mimirGlobalShared: 'false'
+                    mimirGlobalAffinity: local
+                    mimirGlobalShared: 'true'
 
                     # YXL is storage-bandwidth constrained. Bound accepted
                     # samples and serialize block uploads at this site only.
@@ -41,10 +41,10 @@ spec:
 
                     mode: SingleBinary
 
-                    mimirEnabled: true
+                    mimirEnabled: false
                     mimirBridgeEnabled: true
-                    mimirGlobalAffinity: local
-                    mimirGlobalShared: 'true'
+                    mimirGlobalAffinity: remote
+                    mimirGlobalShared: 'false'
                     mimirIngestionRate: 500000
                     mimirIngestionBurstSize: 1550000
                     mimirRetentionPeriod: 12h
@@ -140,7 +140,7 @@ spec:
                   rules:
                     configMapName: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
                     tenant: core
-                  {{- if eq .values.region "yvr" }}
+                  {{- if eq .values.region "yxl" }}
                   limits:
                     ingestionRate: {{ .values.mimirIngestionRate }}
                     ingestionBurstSize: {{ .values.mimirIngestionBurstSize }}
@@ -199,8 +199,9 @@ spec:
                           params:
                             - token
 
+                # Retain both site identities and buckets for recovery.
                 s3User:
-                  enabled: {{ .values.mimirEnabled }}
+                  enabled: true
                 {{ else if eq .values.mode "Distributed" }}
                 mimir-distributed:
                   enabled: true

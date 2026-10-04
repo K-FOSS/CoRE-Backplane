@@ -1,4 +1,4 @@
-# Mimir metrics store
+# CoRE-Backplane Observability/Metrics Stack
 
 This chart deploys [Grafana Mimir](https://grafana.com/docs/mimir/latest/) in
 a split monolithic mode using the
@@ -6,7 +6,9 @@ a split monolithic mode using the
 The pinned
 [`mimir-distributed` chart](https://github.com/grafana/helm-charts/tree/main/charts/mimir-distributed)
 is retained as an optional dependency but is disabled for every currently
-selected cluster.
+selected cluster. See the [Observability overview](../README.md).
+
+## Ownership, targets and rendering
 
 The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metrics.yaml)
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
@@ -28,8 +30,10 @@ This follows Mimir's
 [query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
 and documented [query-scheduler ring discovery](https://grafana.com/docs/mimir/latest/references/architecture/components/query-scheduler/),
 and uses its documented [`-target` component selection](https://grafana.com/docs/mimir/latest/configure/about-configurations/).
-The YXL rendering also creates the S3 `User`,
-HTTPRoute, and Envoy SecurityPolicy.
+Both sites retain their S3 `User` claims and stable connection Secrets.
+YXL renders the HTTPRoute and Envoy SecurityPolicy.
+
+## Storage and credentials
 
 The `mimir.dataVolume` and `mimir.tmpVolume` values independently support
 `type: 'emptyDir'` or `type: 'persistentVolumeClaim'`. For node-local disk,
@@ -61,6 +65,8 @@ limit with other site-local consumers; if cache pressure affects durable
 application state, move Mimir to a dedicated Dragonfly instance.
 See the [Mimir configuration parameters](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
 for the supported Memcached cache backends and label-result TTL settings.
+
+## Routing and query flow
 
 Production renders the global-query and bridge Service roles through the
 bjw-s common library. `core-mimir` is the primary Mimir Service and a
@@ -113,6 +119,8 @@ contacts `core-mimir`; the filter adds Mimir's `/prometheus` prefix through its
 upstream URL. When `mimirBridge.queryFilter` is disabled, NGINX adds the same
 prefix before forwarding directly.
 
+## Configuration
+
 The chart itself has neutral defaults for Service naming and annotations,
 object-storage endpoints, tenant/rule identity, Gateway routes, and JWT policy.
 The ApplicationSet owns the production Cilium, DNS, Gateway,
@@ -134,7 +142,7 @@ Workspace](https://github.com/crossplane-contrib/provider-terraform/blob/main/do
 then publishes selected credentials with [External Secrets
 PushSecret](https://external-secrets.io/latest/api/pushsecret/).
 
-YXL is intentionally constrained to 100,000 samples/s, a 200,000-sample burst,
+YXL is intentionally constrained to 500,000 samples/s, a 1,550,000-sample burst,
 12-hour retention, and one concurrent block upload. Rate limiting rejects
 excess samples; it does not reduce the collectors' Kubernetes watches or
 guarantee an immediate drop in sender network retries. Retention is enforced
@@ -145,6 +153,8 @@ Mimir is the destination of the monitoring data, not the origin of the high
 Kubernetes API traffic. See [Collectors](../Collectors/README.md) for the API
 watch fan-out and [Exporters](../Exporters/README.md) for the highest-volume
 metric sources.
+
+## Operations and verification
 
 Verify distributor accepted/rejected samples, active series, ingester WAL/head
 size, block upload duration, compactor deletion markers, S3 throughput, and an
@@ -162,3 +172,34 @@ Service and breaks the Headlamp endpoint; removing the global-service
 annotations stops new remote backend synchronization. Increasing retention
 does not restore blocks already deleted, and lowering rate limits creates
 intentional monitoring gaps.
+
+
+## YVR to YXL cutover and recovery
+
+The October 2026 cutover starts a fresh metrics store in YXL using its existing
+site identity, site-local S3 endpoint and new Longhorn claims. It does not copy
+YVR blocks, WAL/head data, ruler objects or Alertmanager state. The previously
+scaled-to-zero YVR StatefulSets must remain stopped. Both sites keep their
+bridge; only YXL exports local Mimir backends through the global Service.
+
+Keep the YVR `User` claim and its connection Secrets managed in Git. Its
+existing Longhorn claims have `Retain` policies on StatefulSet deletion and
+scale-down. Do not prune these claims, delete the identity or remove S3 buckets
+as part of this cutover. The [SSO User Composition](../../Operations/SSO/User)
+owns the provider resources; its S3 bucket and policy resources use orphan
+deletion policies. Verify downstream conditions and actual S3 access rather
+than relying on the claim's Ready condition.
+
+The YXL blocks bucket comes from the YXL identity's `username` Secret key,
+with the `blocks` prefix; `mimir-alertmanager` and `mimir-ruler` are separate
+buckets. See [Mimir object storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
+YVR history remains available only through a deliberate recovery or migration;
+queries against the fresh YXL backend do not include it. Existing YXL objects,
+if present from an earlier deployment, are not deleted by this change.
+
+Reconcile the owning ApplicationSet, then YXL metrics, verify S3 access and
+ready ingesters/queriers, and reconcile YVR metrics without pruning retained
+resources. Verify remote-write acceptance and queries through both site
+bridges. For rollback, stop YXL writers through Git and Argo CD before enabling
+YVR workloads and reversing global Service affinity/sharing. Retained volumes
+and buckets are recovery inputs, not proof of a tested recovery.
