@@ -20,8 +20,16 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'SingleBinary'
-                    lokiReplicas: 3
+                    mode: 'Distributed'
+                    lokiGatewayReplicas: 3
+                    lokiDistributorReplicas: 3
+                    lokiIngesterReplicas: 3
+                    lokiQuerierReplicas: 3
+                    lokiQueryFrontendReplicas: 2
+                    lokiQuerySchedulerReplicas: 2
+                    lokiIndexGatewayReplicas: 2
+                    lokiCompactorReplicas: 1
+                    lokiRulerReplicas: 1
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
 
@@ -29,8 +37,16 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'SingleBinary'
-                    lokiReplicas: 0
+                    mode: 'Distributed'
+                    lokiGatewayReplicas: 0
+                    lokiDistributorReplicas: 0
+                    lokiIngesterReplicas: 0
+                    lokiQuerierReplicas: 0
+                    lokiQueryFrontendReplicas: 0
+                    lokiQuerySchedulerReplicas: 0
+                    lokiIndexGatewayReplicas: 0
+                    lokiCompactorReplicas: 0
+                    lokiRulerReplicas: 0
                     lokiGlobalAffinity: 'remote'
                     lokiGlobalShared: 'false'
 
@@ -93,6 +109,13 @@ spec:
                   
                 datacenter: {{ .values.datacenter }}
                 region: {{ .values.region }}
+
+                globalService:
+                  annotations:
+                    service.cilium.io/global: 'true'
+                    service.cilium.io/global-sync-endpoint-slices: 'true'
+                    service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                    service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
                 
                 loki:
                   # Cilium matches global Services by namespace and name.
@@ -100,27 +123,31 @@ spec:
                   deploymentMode: {{ .values.mode }}
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
-                  
+
                   singleBinary:
-                    replicas: {{ if eq .values.mode "SingleBinary" }}{{ .values.lokiReplicas }}{{ else }}0{{ end }}
-                    service:
-                      annotations:
-                        service.cilium.io/global: 'true'
-                        service.cilium.io/global-sync-endpoint-slices: 'true'
-                        service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
-                        service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+                    replicas: 0
+                  gateway:
+                    replicas: {{ .values.lokiGatewayReplicas }}
+                  distributor:
+                    replicas: {{ .values.lokiDistributorReplicas }}
+                  ingester:
+                    replicas: {{ .values.lokiIngesterReplicas }}
+                  querier:
+                    replicas: {{ .values.lokiQuerierReplicas }}
+                  queryFrontend:
+                    replicas: {{ .values.lokiQueryFrontendReplicas }}
+                  queryScheduler:
+                    replicas: {{ .values.lokiQuerySchedulerReplicas }}
+                  indexGateway:
+                    replicas: {{ .values.lokiIndexGatewayReplicas }}
+                  compactor:
+                    replicas: {{ .values.lokiCompactorReplicas }}
+                  ruler:
+                    replicas: {{ .values.lokiRulerReplicas }}
 
             - name: 'LOVELY_KUSTOMIZE_MERGE'
               value: |-
-                {{ if eq .values.mode "SingleBinary" }}
-                # Loki 6.46.0 clamps singleBinary.replicas=0 to one.
-                # Apply the fleet count after Helm to preserve a remote-only site.
-                replicas:
-                  - name: 'loki-core'
-                    count: {{ .values.lokiReplicas }}
-                {{ else }}
                 {}
-                {{ end }}
 
       destination:
         server: '{{ .server }}'

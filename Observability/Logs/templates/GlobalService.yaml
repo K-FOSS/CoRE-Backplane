@@ -1,0 +1,24 @@
+{{- if eq .Values.loki.deploymentMode "Distributed" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "loki.fullname" $.Subcharts.loki }}
+  labels:
+    {{- include "loki.labels" $.Subcharts.loki | nindent 4 }}
+    app.kubernetes.io/component: 'gateway'
+    prometheus.io/service-monitor: 'false'
+  {{- with .Values.globalService.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  type: 'ClusterIP'
+  ports:
+    - name: 'http-metrics'
+      port: 3100
+      protocol: 'TCP'
+      targetPort: 'http-metrics'
+  selector:
+    {{- include "loki.selectorLabels" $.Subcharts.loki | nindent 4 }}
+    app.kubernetes.io/component: 'gateway'
+{{- end }}

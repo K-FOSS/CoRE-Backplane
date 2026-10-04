@@ -12,7 +12,7 @@ umbrella chart.
 | Path | Role | Current implementation |
 | --- | --- | --- |
 | [`Collectors`](Collectors/) | Receives, discovers, enriches, and forwards telemetry. | Grafana Alloy and Vector. |
-| [`Logs`](Logs/) | Stores and queries logs. | Grafana Loki in one-replica `SingleBinary` mode with S3 storage. |
+| [`Logs`](Logs/) | Stores and queries logs. | Grafana Loki in `Distributed` microservices mode with S3 storage. |
 | [`Metrics`](Metrics/) | Stores and queries metrics. | Grafana Mimir. |
 | [`Traces`](Traces/) | Stores and queries distributed traces. | Grafana Tempo in monolithic mode. |
 | [`Dashboards`](Dashboards/) | Visualization and interactive exploration. | Grafana with Authentik and LDAP integration. |

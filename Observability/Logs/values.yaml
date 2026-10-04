@@ -11,6 +11,9 @@ datacenter: dc1
 region: yxl
 externalDomain: mylogin.space
 
+globalService:
+  annotations: {}
+
 oauth:
   indexKey: loki
   groups:
@@ -23,7 +26,37 @@ oauth:
 
 loki:
   fullnameOverride: loki-core
-  deploymentMode: SingleBinary
+  deploymentMode: Distributed
+
+  global:
+    extraArgs:
+      - '-config.expand-env=true'
+    extraEnv:
+      - name: 'S3_ENDPOINT'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core'
+            key: 'S3Hostname'
+      - name: 'S3_BUCKET'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core'
+            key: 'username'
+      - name: 'S3_ACCESS_KEY'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core-s3-creds'
+            key: 'AccessKey'
+      - name: 'S3_SECRET_ACCESS_KEY'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core-s3-creds'
+            key: 'SecretAccessKey'
+      - name: 'S3_SESSION_TOKEN'
+        valueFrom:
+          secretKeyRef:
+            name: 'loki-core-s3-creds'
+            key: 'SessionToken'
 
   loki:
     auth_enabled: false
@@ -67,13 +100,13 @@ loki:
 
     schemaConfig:
       configs:
-        - from: "2024-04-01"
-          store: tsdb
-          object_store: s3
-          schema: v13
+        - from: '2024-04-01'
+          store: 'tsdb'
+          object_store: 's3'
+          schema: 'v13'
           index:
-            prefix: loki_index_
-            period: 24h
+            prefix: 'loki_index_'
+            period: '24h'
 
     compactor:
       compaction_interval: 10m
@@ -92,44 +125,65 @@ loki:
       max_concurrent: 4
 
   singleBinary:
-    replicas: 3
-    service:
-      annotations: {}
-    # Preserve working data during remote-consumer scale-down and rollback.
+    replicas: 0
+    # Preserve the former working-data PVCs for rollback and explicit cleanup.
     persistence:
       whenDeleted: 'Retain'
       whenScaled: 'Retain'
-    terminationGracePeriodSeconds: 300
-    annotations:
-      reloader.stakater.com/auto: "true"
-    extraArgs:
-      - -config.expand-env=true
-    extraEnv:
-      - name: S3_ENDPOINT
-        valueFrom:
-          secretKeyRef:
-            name: loki-core
-            key: S3Hostname
-      - name: S3_BUCKET
-        valueFrom:
-          secretKeyRef:
-            name: loki-core
-            key: username
-      - name: S3_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: loki-core-s3-creds
-            key: AccessKey
-      - name: S3_SECRET_ACCESS_KEY
-        valueFrom:
-          secretKeyRef:
-            name: loki-core-s3-creds
-            key: SecretAccessKey
-      - name: S3_SESSION_TOKEN
-        valueFrom:
-          secretKeyRef:
-            name: loki-core-s3-creds
-            key: SessionToken
+
+  gateway:
+    enabled: true
+    replicas: 3
+
+  distributor:
+    replicas: 3
+    maxUnavailable: 1
+
+  ingester:
+    replicas: 3
+    zoneAwareReplication:
+      enabled: false
+    persistence:
+      enabled: true
+      size: '10Gi'
+      enableStatefulSetAutoDeletePVC: false
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
+
+  querier:
+    replicas: 3
+    maxUnavailable: 1
+
+  queryFrontend:
+    replicas: 2
+    maxUnavailable: 1
+
+  queryScheduler:
+    replicas: 2
+
+  indexGateway:
+    replicas: 2
+    maxUnavailable: 1
+    persistence:
+      enabled: true
+      size: '10Gi'
+      enableStatefulSetAutoDeletePVC: false
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
+
+  compactor:
+    replicas: 1
+    persistence:
+      enabled: true
+      enableStatefulSetAutoDeletePVC: false
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
+
+  ruler:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: '10Gi'
 
   backend:
     replicas: 0
@@ -137,9 +191,6 @@ loki:
     replicas: 0
   write:
     replicas: 0
-
-  gateway:
-    enabled: false
 
   ingress:
     enabled: false

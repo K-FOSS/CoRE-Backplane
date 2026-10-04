@@ -1,0 +1,29 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "loki.fullname" $.Subcharts.loki }}
+  labels:
+    {{- include "loki.labels" $.Subcharts.loki | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "loki.selectorLabels" $.Subcharts.loki | nindent 6 }}
+    matchExpressions:
+      - key: 'prometheus.io/service-monitor'
+        operator: 'NotIn'
+        values:
+          - 'false'
+  endpoints:
+    - port: 'http-metrics'
+      path: '/metrics'
+      interval: '15s'
+      scheme: 'http'
+      relabelings:
+        - sourceLabels:
+            - 'job'
+          action: 'replace'
+          replacement: '{{ .Release.Namespace }}/$1'
+          targetLabel: 'job'
+        - action: 'replace'
+          replacement: '{{ .Release.Name }}'
+          targetLabel: 'cluster'

@@ -17,44 +17,13 @@ spec:
   hostnames:
     - logs.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.externalDomain }}
   rules:
-    {{- if eq .Values.loki.deploymentMode "SingleBinary" }}
     - backendRefs:
         - group: ''
           kind: Service
           name: {{ include "loki.fullname" $.Subcharts.loki }}
-          port: {{ .Values.loki.loki.server.http_listen_port | default 3100 }}
+          port: 3100
           weight: 1
       matches:
         - path:
             type: PathPrefix
             value: /
-
-    {{- else }}
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ include "loki.fullname" $.Subcharts.loki }}-distributor
-          port: 80
-          weight: 1
-      matches:
-        - path:
-            type: PathPrefix
-            value: /
-  
-    {{- range $v, $t := .Values.loki.ingress.paths }}
-    - backendRefs:
-        - group: ''
-          kind: Service
-          name: {{ include "loki.fullname" $.Subcharts.loki }}-{{ regexReplaceAll "([[:upper:]])" $v  "-${1}" | lower }}
-          port: {{ $.Values.loki.loki.server.http_listen_port }}
-          weight: 1
-
-      matches:
-        {{ range $path := $t }}
-        - path:
-            type: PathPrefix
-            value: {{ $path }}
-        {{- end -}}
-    {{- end }}
-
-    {{- end }}
