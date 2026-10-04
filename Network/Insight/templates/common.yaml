@@ -516,13 +516,14 @@ controllers:
                 function trim(value) { gsub(/^[[:space:]]+|[[:space:]]+$/, "", value); return value }
                 {
                   asn = trim($1); ip = trim($2); prefix = trim($3)
-                  if (asn ~ /^[0-9]+$/ && ip !~ /[[:space:]]/ && prefix ~ /\/[0-9]+$/) print ip "\t" asn "\t" prefix
+                  country = trim($4); registry = trim($5)
+                  if (asn ~ /^[0-9]+$/ && ip !~ /[[:space:]]/ && prefix ~ /\/[0-9]+$/ && country ~ /^[A-Za-z-]+$/ && registry ~ /^[A-Za-z0-9-]+$/) print ip "\t" asn "\t" prefix "\t" country "\t" registry
                 }
               ' "${response}" > "${updates}"
               if [ -s "${updates}" ]; then
                 : > "${sql}"
-                while IFS=$'\t' read -r ip asn prefix; do
-                  printf "INSERT INTO flow_asn_cache (ip, asn, prefix, updated_at) VALUES ('%s', %s, '%s', CURRENT_TIMESTAMP) ON CONFLICT (ip) DO UPDATE SET asn = EXCLUDED.asn, prefix = EXCLUDED.prefix, updated_at = EXCLUDED.updated_at;\n" "${ip}" "${asn}" "${prefix}" >> "${sql}"
+                while IFS=$'\t' read -r ip asn prefix country registry; do
+                  printf "INSERT INTO flow_asn_cache (ip, asn, prefix, prefix_country, prefix_registry, updated_at) VALUES ('%s', %s, '%s', '%s', '%s', CURRENT_TIMESTAMP) ON CONFLICT (ip) DO UPDATE SET asn = EXCLUDED.asn, prefix = EXCLUDED.prefix, prefix_country = EXCLUDED.prefix_country, prefix_registry = EXCLUDED.prefix_registry, updated_at = EXCLUDED.updated_at;\n" "${ip}" "${asn}" "${prefix}" "${country}" "${registry}" >> "${sql}"
                 done < "${updates}"
                 psql --host="${POSTGRES_HOST}" --port="${POSTGRES_PORT}" \
                   --username="${FLOW_DATABASE_USER}" --dbname="${FLOW_DATABASE}" \
@@ -1207,8 +1208,12 @@ configMaps:
           ip inet PRIMARY KEY,
           asn BIGINT NOT NULL,
           prefix cidr NOT NULL,
+          prefix_country TEXT,
+          prefix_registry TEXT,
           updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
+        ALTER TABLE flow_asn_cache ADD COLUMN IF NOT EXISTS prefix_country TEXT;
+        ALTER TABLE flow_asn_cache ADD COLUMN IF NOT EXISTS prefix_registry TEXT;
         CREATE INDEX IF NOT EXISTS flow_asn_cache_prefix_idx ON flow_asn_cache (prefix);
       flow-retention.sql: |
         BEGIN;
