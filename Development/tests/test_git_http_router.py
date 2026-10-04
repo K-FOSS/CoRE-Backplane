@@ -118,6 +118,18 @@ class RouterTests(unittest.TestCase):
             self.assertEqual(self.request("/healthz"), (200, None))
             probe.assert_not_called()
 
+    def test_metrics_are_internal_and_include_bounded_request_counters(self):
+        with patch.object(self.router, "probe", return_value=True):
+            self.assertEqual(self.request(), (307, "https://home.example/CoRE/CoRE-Backplane.git/info/refs?service=git-upload-pack"))
+        connection = http.client.HTTPConnection(*self.server.server_address, timeout=2)
+        connection.request("GET", "/metrics")
+        response = connection.getresponse()
+        body = response.read().decode()
+        connection.close()
+        self.assertEqual(response.status, 200)
+        self.assertIn('git_http_requests_total{method="GET",operation="info_refs",repository="CoRE-Backplane",status="307"} 1', body)
+        self.assertIn("git_http_repositories_configured 1", body)
+
     def test_higher_peer_weight_wins_but_github_stays_last(self):
         c = config()
         c["clusterName"] = "another-site"

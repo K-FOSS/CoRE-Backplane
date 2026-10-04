@@ -143,4 +143,27 @@ spec:
     matchLabels:
       app.kubernetes.io/component: 'git-http'
       app.kubernetes.io/instance: {{ .Release.Name | squote }}
+---
+# Alloy consumes ServiceMonitors; the router's metrics Service endpoint is
+# internal because the public HTTPRoute contains only Git smart-read matches.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: '{{ .Release.Name }}-git-http'
+  labels:
+    app.kubernetes.io/name: 'git-http'
+    app.kubernetes.io/component: 'monitoring'
+spec:
+  namespaceSelector:
+    matchNames:
+      - '{{ .Release.Namespace }}'
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: 'git-http'
+      app.kubernetes.io/instance: {{ .Release.Name | squote }}
+  endpoints:
+    - port: 'http'
+      path: '/metrics'
+      interval: '30s'
+      scrapeTimeout: '5s'
 {{- end }}

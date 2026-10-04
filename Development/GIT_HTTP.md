@@ -83,6 +83,38 @@ connections per replica; these are values-driven. All failed candidates return
 503. Reachability does not prove mirror freshness: compare advertised commits
 and monitor Forgejo synchronization separately.
 
+### Logs and metrics
+
+The process writes one-line JSON events to container standard output. Normal
+request events contain only the method, response status, allowlisted repository
+name, fixed operation class, selected backend, and a bounded reason code. They
+never include request paths, query strings, headers, cookies, redirect URLs, or
+request bodies. The `CoRE-Git-HTTP` server access logger remains disabled for
+the same reason. Startup events contain only the cluster name and configured
+backend counts. Alloy's Kubernetes pod-log pipeline therefore sends these
+events to the shared Loki service with the normal workload labels.
+
+The internal Service exposes Prometheus text metrics at `/metrics`; the public
+HTTPRoute has no `/metrics` match. A `ServiceMonitor` scrapes the endpoint every
+30 seconds for Alloy, using the Prometheus Operator
+[ServiceMonitor](https://prometheus-operator.dev/docs/api-reference/api/#servicemonitor)
+resource. The bounded metric families are:
+
+| Metric | Meaning |
+| --- | --- |
+| `git_http_requests_total` | Request method, fixed operation class, response status, and allowlisted repository. |
+| `git_http_backend_probes_total` | Anonymous backend probe result by configured backend name. |
+| `git_http_backend_selections_total` | Redirects that selected each backend. |
+| `git_http_backend_healthy` | Last observed health result for each backend. |
+| `git_http_repositories_configured` | Number of configured repository aliases. |
+
+The router does not expose a public metrics or log-ingest route. Alert on
+non-zero 5xx request rates, `git_http_backend_healthy == 0` for the local and
+peer backends, absent `up` for the ServiceMonitor, and a sustained increase in
+unhealthy probes. Correlate redirect events with Gateway access logs and the
+selected Forgejo's own access and mirror logs; the router deliberately omits
+client identity and URL details.
+
 ## Request and security boundaries
 
 The public URL is:
@@ -152,7 +184,8 @@ hooks. Selective sync skips unrelated hooks; inspect current operations before
 requesting a sync.
 
 Verify two ready replicas, Service endpoints, the PDB selector, HTTPRoute
-`Accepted`/`ResolvedRefs`, TLS, and DNS. Check redirects through each site's
+`Accepted`/`ResolvedRefs`, ServiceMonitor target discovery, `/metrics` output,
+JSON stdout events, TLS, and DNS. Check redirects through each site's
 Gateway and compare the `Location` with the expected local Forgejo, then run
 `git ls-remote` and clone/fetch using the shared URL. Confirm push discovery and
 unlisted paths return no redirect. Tests cover peer/GitHub fallback and all

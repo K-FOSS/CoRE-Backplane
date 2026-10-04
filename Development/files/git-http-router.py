@@ -51,6 +51,7 @@ class Router:
                 raise ValueError("Each site needs a unique cluster name and a credential-free HTTPS origin")
             sites[name] = url.rstrip("/")
         self.repos = {}
+        self.repo_names = {}
         for repo in config["repos"]:
             name = checked_name(repo["repoName"])
             path = repo.get("path", f"/{name}.git")
@@ -81,12 +82,80 @@ class Router:
                 raise ValueError("Each repository must have at least one backend")
             # Stable ordering for equal weights, with local/peer/GitHub tiers fixed.
             self.repos[path] = sorted(backends, key=lambda b: (b["tier"], -b["weight"]))
+            self.repo_names[path] = name
         if not 1 <= len(self.repos) <= 16:
             raise ValueError("Configure between one and sixteen repositories per HTTPRoute")
         self.cache = {}
         self.locks = {b["url"]: threading.Lock() for bs in self.repos.values() for b in bs}
+        self.metric_lock = threading.Lock()
+        self.request_counts = {}
+        self.probe_counts = {}
+        self.selection_counts = {}
+        self.backend_health = {}
         # Ignore environment proxy credentials and never follow an upstream redirect.
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+
+    @staticmethod
+    def _label(value):
+        return str(value).replace("\\", "\\\\").replace("\"", '\\"').replace("\n", "\\n")
+
+    def emit(self, event, **fields):
+        record = {"event": event, "cluster": self.cluster, "time": time.time()}
+        record.update(fields)
+        print(json.dumps(record, separators=(",", ":"), sort_keys=True), flush=True)
+
+    def observe_request(self, method, status, repository, operation, backend=None, reason=None):
+        key = (method, str(status), repository, operation)
+        with self.metric_lock:
+            self.request_counts[key] = self.request_counts.get(key, 0) + 1
+        self.emit("request", method=method, status=status, repository=repository,
+                  operation=operation, backend=backend or "none", reason=reason or "")
+
+    def observe_probe(self, backend, healthy):
+        result = "healthy" if healthy else "unhealthy"
+        key = (backend["name"], result)
+        with self.metric_lock:
+            self.probe_counts[key] = self.probe_counts.get(key, 0) + 1
+            self.backend_health[backend["name"]] = 1 if healthy else 0
+
+    def metrics(self):
+        with self.metric_lock:
+            requests = dict(self.request_counts)
+            probes = dict(self.probe_counts)
+            selections = dict(self.selection_counts)
+            health = dict(self.backend_health)
+        lines = [
+            "# HELP git_http_requests_total Redirect requests by result.",
+            "# TYPE git_http_requests_total counter",
+        ]
+        for (method, status, repository, operation), value in sorted(requests.items()):
+            lines.append('git_http_requests_total{method="%s",operation="%s",repository="%s",status="%s"} %d'
+                         % (self._label(method), self._label(operation), self._label(repository), self._label(status), value))
+        lines += [
+            "# HELP git_http_backend_probes_total Anonymous backend health probes.",
+            "# TYPE git_http_backend_probes_total counter",
+        ]
+        for (backend, result), value in sorted(probes.items()):
+            lines.append('git_http_backend_probes_total{backend="%s",result="%s"} %d'
+                         % (self._label(backend), result, value))
+        lines += [
+            "# HELP git_http_backend_selections_total Redirects selecting a backend.",
+            "# TYPE git_http_backend_selections_total counter",
+        ]
+        for backend, value in sorted(selections.items()):
+            lines.append('git_http_backend_selections_total{backend="%s"} %d' % (self._label(backend), value))
+        lines += [
+            "# HELP git_http_backend_healthy Last observed anonymous backend health.",
+            "# TYPE git_http_backend_healthy gauge",
+        ]
+        for backend, value in sorted(health.items()):
+            lines.append('git_http_backend_healthy{backend="%s"} %d' % (self._label(backend), value))
+        lines += [
+            "# HELP git_http_repositories_configured Allowlisted repositories.",
+            "# TYPE git_http_repositories_configured gauge",
+            "git_http_repositories_configured %d" % len(self.repos),
+        ]
+        return "\n".join(lines) + "\n"
 
     def probe(self, backend):
         url = backend["url"]
@@ -106,10 +175,16 @@ class Router:
             except (OSError, urllib.error.URLError, http.client.HTTPException, ValueError):
                 pass
             self.cache[url] = (time.monotonic() + self.ttl, healthy)
+            self.observe_probe(backend, healthy)
             return healthy
 
     def select(self, path):
-        return next((b for b in self.repos[path] if self.probe(b)), None)
+        for backend in self.repos[path]:
+            if self.probe(backend):
+                with self.metric_lock:
+                    self.selection_counts[backend["name"]] = self.selection_counts.get(backend["name"], 0) + 1
+                return backend
+        return None
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -125,7 +200,8 @@ class Handler(BaseHTTPRequestHandler):
         # Request URLs, query parameters, and headers may carry credentials.
         pass
 
-    def reply(self, status, location=None):
+    def reply(self, status, location=None, repository="unknown", operation="unknown",
+              backend=None, reason=None, log=True):
         self.send_response(status)
         self.send_header("Content-Length", "0")
         self.send_header("Cache-Control", "no-store")
@@ -133,6 +209,18 @@ class Handler(BaseHTTPRequestHandler):
         if location:
             self.send_header("Location", location)
         self.end_headers()
+        self.close_connection = True
+        if log:
+            self.server.router.observe_request(self.command, status, repository, operation, backend, reason)
+
+    def metrics(self):
+        body = self.server.router.metrics().encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
         self.close_connection = True
 
     def do_GET(self):
@@ -146,40 +234,45 @@ class Handler(BaseHTTPRequestHandler):
 
     def redirect_git(self):
         if self.command == "GET" and self.path == "/healthz":
-            return self.reply(200)
+            return self.reply(200, operation="health", log=False)
+        if self.command == "GET" and self.path == "/metrics":
+            return self.metrics()
         if len(self.path) > 2048:
-            return self.reply(414)
+            return self.reply(414, reason="request_too_large")
         try:
             parsed = urllib.parse.urlsplit(self.path)
             query = urllib.parse.parse_qs(parsed.query, keep_blank_values=True)
         except ValueError:
-            return self.reply(400)
+            return self.reply(400, reason="malformed_request")
         if parsed.scheme or parsed.netloc or parsed.fragment:
-            return self.reply(404)
+            return self.reply(404, reason="absolute_url")
         if self.command == "GET" and parsed.path.endswith("/info/refs"):
             path = parsed.path[:-len("/info/refs")]
-            operation = "info/refs"
+            operation = "info_refs"
         else:
-            path, _, operation = parsed.path.rpartition("/")
+            path, _, suffix = parsed.path.rpartition("/")
+            operation = "upload_pack" if suffix == "git-upload-pack" else "other"
         if path not in self.server.router.repos:
-            return self.reply(404)
+            return self.reply(404, reason="repository_not_allowlisted")
+        repository = self.server.router.repo_names[path]
         # Match only smart clone/fetch discovery and upload-pack RPC.
         if self.command == "GET":
             valid = parsed.path.endswith("/info/refs") and query == {"service": ["git-upload-pack"]}
         else:
-            valid = (operation == "git-upload-pack" and not parsed.query
+            valid = (operation == "upload_pack" and not parsed.query
                      and self.headers.get("Content-Type", "").split(";", 1)[0] == "application/x-git-upload-pack-request")
         if not valid:
-            return self.reply(404)
+            return self.reply(404, repository=repository, operation=operation,
+                              reason="operation_not_allowed")
         # This alias has no credential scope; use a forge's own URL for authenticated access.
         if self.headers.get("Authorization") or self.headers.get("Proxy-Authorization"):
-            return self.reply(400)
+            return self.reply(400, repository=repository, operation=operation, reason="credentials_not_allowed")
         backend = self.server.router.select(path)
         if backend is None:
-            return self.reply(503)
+            return self.reply(503, repository=repository, operation=operation, reason="no_healthy_backend")
         suffix = parsed.path[len(path):]
         location = backend["url"] + suffix + ("?" + parsed.query if parsed.query else "")
-        self.reply(307, location)
+        self.reply(307, location, repository=repository, operation=operation, backend=backend["name"])
 
 
 class Server(ThreadingHTTPServer):
@@ -212,4 +305,6 @@ class Server(ThreadingHTTPServer):
 if __name__ == "__main__":
     with open(sys.argv[1], encoding="utf-8") as config_file:
         config = json.load(config_file)
-    Server(("0.0.0.0", 8080), Router(config), config["maxConnections"]).serve_forever()
+    router = Router(config)
+    router.emit("started", repositories=len(router.repos), backends=sum(len(v) for v in router.repos.values()))
+    Server(("0.0.0.0", 8080), router, config["maxConnections"]).serve_forever()
