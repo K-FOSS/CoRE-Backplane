@@ -33,6 +33,13 @@ spec:
             type: PathPrefix
             value: /
 
+      filters:
+        - type: 'ResponseHeaderModifier'
+          responseHeaderModifier:
+            set:
+              - name: 'Permissions-Policy'
+                value: 'clipboard-read=(self), clipboard-write=(self)'
+
       timeouts:
         backendRequest: 600s
         request: 600s
