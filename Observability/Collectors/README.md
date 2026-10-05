@@ -22,7 +22,11 @@ Three signal-specific DaemonSets run on every node:
 - `alloy-logs` discovers only pods labeled `logs=loki-myloginspace`, reads
   their streams through
   [`loki.source.kubernetes`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.kubernetes/),
-  and sends them to the central Alloy Loki push endpoint.
+  retains pod UID/namespace/name/container identity with
+  [`discovery.relabel`](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.relabel/),
+  adds cluster and datacentre labels with
+  [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/),
+  converts them to OTLP, and sends them to the central Alloy OTLP/gRPC endpoint.
 - `alloy-metrics` uses
   [`prometheus.exporter.unix`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.unix/)
   against read-only host root, proc, and sys mounts and also scrapes its own
@@ -30,18 +34,17 @@ Three signal-specific DaemonSets run on every node:
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `internalTrafficPolicy: Local`.
 
-The metrics and OTLP DaemonSets batch their signals and use
+The logs, metrics, and OTLP DaemonSets batch their signals and use
 [`otelcol.exporter.otlp`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlp/)
 over plaintext OTLP/gRPC to the existing `*-collectors-alloy` Service. The root
 ApplicationSet injects the exact central service FQDN, cluster, and datacentre
-values. The log DaemonSet receives the central Alloy service endpoint and
-tenant Org ID from the same ApplicationSet; selected log streams never write
-directly to Loki.
+values. The log DaemonSet sends no Loki requests and needs no Loki URL or tenant
+ID; central Alloy alone owns backend tenant selection and writes.
 
 `alloy` is a three-replica StatefulSet with a PodDisruptionBudget. It owns
 only cluster-wide metrics discovery, backend writers, OTLP gateway processing,
-the Vector-specific infrastructure OTLP receiver, the internal Loki push API,
-and compatibility Jaeger receivers. All cluster-wide scrape components opt
+the Vector-specific infrastructure OTLP receiver, and compatibility Jaeger
+receivers. All cluster-wide scrape components opt
 into Alloy clustering, so a target is assigned to one healthy peer rather
 than scraped by every replica.
 The StatefulSet gives peers stable identities and follows Grafana's
@@ -51,10 +54,23 @@ Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
 
-The central StatefulSet receives OTLP telemetry and a Loki push API stream from
-`alloy-logs`. It sends received OTLP metrics by remote-write to Mimir, received
-logs to Loki, and traces to Tempo. The pod log path is
-`alloy-logs` -> central Alloy -> namespace-local `loki-core`; Cilium's Global
+The central StatefulSet receives OTLP telemetry from all signal DaemonSets.
+For pod logs, `loki.source.kubernetes` sends selected entries through
+[`otelcol.receiver.loki`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.loki/)
+and `otelcol.exporter.otlp` to the main Alloy OTLP/gRPC receiver. The central
+[`otelcol.processor.transform`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.processor.transform/)
+promotes the carried pod UID, namespace, pod, container, cluster, and datacentre
+values into resource attributes. The
+[`otelcol.processor.k8sattributes`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.processor.k8sattributes/)
+then matches
+the original pod UID and extracts current Kubernetes metadata before batching
+and exporting logs through
+[`otelcol.exporter.loki`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.loki/)
+to Loki. This avoids associating logs with the Alloy Logs
+agent merely because it opened the OTLP connection. Metrics go by remote-write
+to Mimir and traces go to Tempo. The pod log path is
+`alloy-logs` -> central Alloy OTLP gateway/enrichment -> namespace-local
+`loki-core`; Cilium's Global
 Service routes the final write to the Loki backends. Metrics use the matching namespace-local `core-mimir`
 DNS name, so Cilium selects the site-local Mimir endpoints while preserving
 the same path for cross-site collectors. The
@@ -65,7 +81,7 @@ DC1's mutable Service IP because it has no local global Service. Mimir and
 Tempo are otherwise private endpoints; Mimir uses the Cilium global Service
 while Tempo retains its existing direct endpoint.
 
-The same Service exposes a cluster-internal Prometheus remote-write receiver on
+The Service exposes a cluster-internal Prometheus remote-write receiver on
 port `9090`. Its
 [`prometheus.receive_http`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.receive_http/)
 endpoint is `/api/v1/metrics/write` and forwards into the existing Mimir writer,
@@ -75,30 +91,22 @@ receiver is not an HTTPRoute or LoadBalancer and performs no authentication;
 only trusted in-cluster producers may use it. Reads do not pass through Alloy
 because it is a write gateway, not a Prometheus remote-read service.
 
-The Alloy Service also exposes the cluster-internal Loki push API on port
-`3100`, implemented by
-[`loki.source.api`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.api/).
-The log DaemonSet pushes into this receiver; only the central Alloy StatefulSet
-connects to the Loki backend.
-
 Backend shipping is configured under `alloy.destinations`: `lokiUrl` is the
 Loki push URL, `mimirUrl` is the Prometheus remote-write URL, and
 `tempoEndpoint` is the Tempo OTLP/gRPC `host:port`. The ApplicationSet injects
 these endpoints and a tenant Org ID derived from the cluster tenant label
 (`core.mylogin.space` becomes `core`). The central Loki and Mimir writers send
-it as `X-Scope-OrgID`. `alloy-logs` sends to the central Alloy Loki push API on
-port `3100`, exposed only through the cluster-internal Service.
-The central receiver uses Alloy's
-[`loki.source.api`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.api/)
-component, which accepts the Loki push API and forwards records to the central
-writer. It is unauthenticated and intended for trusted in-cluster senders; it
-is not exposed through an HTTPRoute or LoadBalancer.
+it as the Loki tenant ID and Mimir `X-Scope-OrgID`. The central Alloy Service
+accepts OTLP/gRPC from trusted in-cluster agents and no longer exposes a Loki
+push API. Loki backend URLs and tenant selection remain only in central Alloy.
 
-Central Kubernetes enrichment first associates telemetry by the
-`k8s.pod.uid` resource attribute emitted by the container parser or workload,
-then falls back to the incoming connection. This prevents forwarded telemetry
-from being attributed to an Alloy DaemonSet merely because that pod opened the
-gateway connection.
+Central Kubernetes enrichment first associates logs by the original source
+pod's `k8s.pod.uid` resource attribute, then falls back to the incoming
+connection for other telemetry that lacks a pod UID. This prevents forwarded
+logs from being attributed to an Alloy DaemonSet merely because that pod opened
+the gateway connection. The transform removes its temporary bridge attributes
+after promoting them and marks cluster, datacentre, and Kubernetes resource
+attributes for Loki label conversion.
 
 Vector ingestion runs only on `dc1-k3s-node1`, which owns the static syslog
 LoadBalancer address. It accepts Cisco and iDRAC syslog over TCP or UDP on port
@@ -158,10 +166,11 @@ DaemonSet pod exposes a different node and must scrape its own local exporters.
 Verify all four Alloy component graphs and health at port `12345`, ensure all
 three central discovery peers appear in the cluster page, and confirm the
 `alloy-logs` config has exactly one pod discovery selector for
-`logs=loki-myloginspace`. Confirm its ServiceAccount can read pods and pod logs
+`logs=loki-myloginspace`, a Loki-to-OTLP bridge, and an OTLP exporter targeting
+the main Alloy service. Confirm its ServiceAccount can read pods and pod logs
 but not Secrets. Confirm the OTLP DaemonSet Service selects one ready pod on
-the caller's node and the central Alloy Loki API is reachable through only its
-cluster-internal Service, then inspect
+the caller's node and the central Alloy OTLP/gRPC service is reachable through
+only its cluster-internal Service, then inspect
 `prometheus_remote_storage_*`, Kubernetes client request, dropped sample, and
 Loki write metrics on the central StatefulSet, plus exporter queue and send
 failure metrics on every DaemonSet. Correlate API-server requests by Alloy
@@ -190,16 +199,18 @@ cleanup decision.
 The [collector ApplicationSet](../../Apps/Observability/Collectors.yaml) enables
 `podLogsEnabled` on YXL and YVR. The log DaemonSet selects pods by the
 `logs=loki-myloginspace` Kubernetes label and streams only those pod logs
-through the Kubernetes API to the central Alloy service. The legacy K3s profile
-keeps this source disabled. The chart grants the log DaemonSet only the read permissions needed
+through the Kubernetes API, converts the entries to OTLP, and sends them to the
+central Alloy OTLP/gRPC service for Kubernetes metadata enrichment and Loki
+export. The legacy K3s profile keeps this source disabled. The chart grants the log DaemonSet only the read permissions needed
 for pod discovery and `pods/log`; it mounts no host log directory. The
 Kubernetes log API behavior is described in the
 [Kubernetes logging architecture](https://kubernetes.io/docs/concepts/cluster-administration/logging/).
 
 Reconcile only the collector ApplicationSet, then the `alloy-logs` ConfigMap,
 Role/ClusterRole, ServiceAccount and DaemonSet on each Talos cluster. These
-resources have no sync hooks. Verify only labeled pods appear as targets, log
-stream and Loki write counters increase, and Loki returns recent streams from
+resources have no sync hooks. Verify only labeled pods appear as targets, the
+central transform receives their original `k8s.pod.uid`, log stream and Loki
+write counters increase, and Loki returns recent streams from
 both source clusters. Disabling `podLogsEnabled` through Git removes discovery,
 the log source and its RBAC; it stops new pod-log collection but does not delete
 stored Loki data. Kubernetes API streaming begins at the current stream

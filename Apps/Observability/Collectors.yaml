@@ -124,15 +124,15 @@ spec:
                 alloy-logs:
                   alloy:
                     podLogsEnabled: {{ .values.podLogsEnabled }}
-                    destinations:
-                      lokiUrl: 'http://{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:3100/loki/api/v1/push'
-                      orgId: '{{ .values.orgId }}'
                     extraEnv:
                       - name: DC
                         value: '{{ .values.datacenter }}'
 
                       - name: CLUSTER
                         value: '{{ .values.clusterName }}'
+
+                      - name: OTLP_ENDPOINT
+                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                   rbac:
                     create: {{ .values.podLogsEnabled }}
