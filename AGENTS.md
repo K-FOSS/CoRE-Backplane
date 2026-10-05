@@ -203,8 +203,6 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   the custom renderer and remote fetches are part of the supply chain.
 - `Chart.lock` and vendored `charts/` directories are ignored. Resolve them
   locally for validation, but do not force-add generated dependency artifacts.
-- Treat `setup.sh` as a convenience rather than a trusted reproducible
-  bootstrap until moving downloads are pinned and checksums are verified.
 
 ## Safe infrastructure changes
 
@@ -240,7 +238,7 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 - As an exception to the general quoting rule, do not quote Kubernetes
   `apiVersion` or `kind` values. In Helm `Chart.yaml` files, do not quote
   `apiVersion`, `type: application`, the chart `version`, or dependency
-  `version` values.
+  `version` values, or any env: or key/value YAML or related languages on the key/left side.
 - Prefer values-driven templates for environment-specific behavior. Retain a
   literal only for a deliberate compatibility reason and document it.
 - For every `Landing`/Forecastle-exposed service, add a
