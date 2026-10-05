@@ -36,9 +36,9 @@ Current Consul backup placement:
 
 | Argo CD cluster | Consul backup |
 | --- | --- |
-| `dc1-k3s-node1` | Enabled |
-| `core-dc1-talos-prod` | Disabled |
-| `core-home1-talos-prod` | Disabled |
+| `core-dc1-talos-prod` | Enabled; backs the YXL Consul datacenter used by main Vault |
+| `core-home1-talos-prod` | Enabled; backs the YVR Consul datacenter used by CoreVault |
+| `dc1-k3s-node1` | Disabled |
 
 The chart creates the destination namespace with the privileged Pod Security
 enforcement level. Velero's node agent needs access to host-mounted pod
@@ -165,11 +165,48 @@ When `consul.enabled` is true, the chart creates:
 - the resulting `consul-s3` Secret.
 
 The Deployment is generated through the BJW-S common library and runs
-[consul-backup-s3](https://github.com/sputnik-systems/consul-backup-s3)
-`v0.0.4` image. It continuously exports data from the configured Consul API
-endpoint to R2 using the configured S3 prefix. This chart does not create a
-`CronJob`; backup timing, object naming, and retention behavior are controlled
-by the backup application and object-store configuration.
+[`consul-backup-s3` `v0.0.4`](https://github.com/sputnik-systems/consul-backup-s3/tree/v0.0.4).
+It takes a Consul snapshot daily at `00:00` and retains snapshots for `744h`
+(31 days), explicitly configured by the Deployment arguments. It writes the
+snapshots to R2 using the configured S3 prefix. This chart does not create a
+`CronJob`; the long-running backup process owns scheduling, rotation, and
+upload. Consul snapshots are point-in-time backups of the Consul server state;
+see HashiCorp's [Consul snapshot and restore guidance](https://developer.hashicorp.com/consul/docs/manage/disaster-recovery/backup-restore).
+
+### Vault storage coverage
+
+Main Vault uses the YXL Consul datacenter and stores its data under the Consul
+path `MainVault`. CoreVault is hosted in YVR and stores its data under
+`MainCoreVault` in the YVR Consul datacenter; YXL and YVR consumers use that
+CoreVault service. These are separate Consul datacenters, so each needs its own
+snapshot stream. The `core-dc1-talos-prod` backup deployment targets YXL Consul
+and uses the `core-dc1-talos-prod` R2 prefix. The `core-home1-talos-prod`
+deployment targets YVR Consul and uses the `core-home1-talos-prod` prefix.
+
+HashiCorp documents that Vault's Consul-backed storage data is encrypted by
+Vault and recommends native Consul snapshots for this backend. Before moving
+main Vault to Integrated Storage, use the latest verified YXL Consul snapshot
+as the source-data recovery point, then follow Vault's
+[Consul-to-Raft Kubernetes migration procedure](https://developer.hashicorp.com/vault/docs/deploy/kubernetes/consul-to-raft).
+The migration must keep Vault offline while copying data. A Consul snapshot is
+not a Vault Raft snapshot and cannot be restored with `vault operator raft
+snapshot restore`.
+
+R2 also encrypts stored objects at rest with Cloudflare-managed AES-256 and
+uses TLS for client transfers, as described in its
+[data security documentation](https://developers.cloudflare.com/r2/reference/data-security/).
+This setup relies on Vault's storage encryption and R2's server-side
+encryption; it does not add customer-managed client-side encryption to the
+snapshot archive. Keep the Vault recovery keys and R2 credentials independently
+available as described below.
+
+The Consul backup's S3 credentials are read through `corevault-rootsecrets`
+from CoreVault at `Backups/Consul/S3/CloudFlare`. Since CoreVault and its
+credential path depend on the YVR Consul datacenter, keep a recovery copy of
+the R2 access credentials and CoreVault unseal material outside Vault, Consul,
+and the clusters. Do not treat the configured backup as disaster-recovery proof
+until an operator has verified a recent object in each relevant R2 prefix and
+rehearsed retrieval and restore using those independent credentials and keys.
 
 ### Consul endpoint selection
 
@@ -249,11 +286,15 @@ During recovery:
    file-system backup.
 4. Use a verified Consul snapshot and supported Consul snapshot procedures for
    the Consul state machine.
-5. Do not restore a live Consul server PVC as though it were an ordinary
+5. Restore the Consul datacenter that owns the selected Vault storage path
+   (YXL for main Vault; YVR for CoreVault). Unseal CoreVault using its
+   independently held recovery keys, then validate CoreVault transit and main
+   Vault health before restoring dependent services.
+6. Do not restore a live Consul server PVC as though it were an ordinary
    stateless workload.
-6. Do not run Velero and Consul state restores concurrently without a written
+7. Do not run Velero and Consul state restores concurrently without a written
    ordering and ownership plan.
-7. Validate Consul membership, Raft health, Autopilot, application health, and
+8. Validate Consul membership, Raft health, Autopilot, application health, and
    restored data before declaring recovery complete.
 
 Backup presence is not restore proof. Restore tests should be performed

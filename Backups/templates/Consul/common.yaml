@@ -27,6 +27,8 @@ controllers:
 
         args:
           - '--consul.address={{ .Values.consul.address }}'
+          - '--backup.schedule=0 0 * * *'
+          - '--backup.ttl=744h'
           - '--s3.bucket=$(S3_BUCKET)'
           - '--s3.endpoint=$(S3_ENDPOINT)'
           - '--s3.prefix={{ required "consul.prefix must be set to a site or cluster prefix" .Values.consul.prefix }}'
