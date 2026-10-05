@@ -14,6 +14,10 @@ is an active production service and is no longer classified as a wholly legacy
 stack. The `dc1-k3s-node1` deployment remains as a compatibility target while
 the DC1 and Home Talos deployments are production targets; its presence does
 not make the Talos deployments non-production.
+The ApplicationSet fetches the `Mail` component from the CoRE-Business
+Forgejo mirror at `https://slop.writemy.codes/CoRE/CoRE-Business.git` and
+follows `HEAD`; the GitHub links below remain the upstream component
+documentation.
 
 The merge generator limits Mail to these explicitly approved production
 clusters and requires exactly one entry to be marked as the credential hub:
@@ -148,8 +152,9 @@ explicit backup and data cleanup decision.
 the upstream [CoRE Finances chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Finances)
 for `core-home1-talos-prod` in the standard `core-prod` namespace. The chart
 is rendered through the Lovely plugin with the selected cluster identity and
-Home1 PostgreSQL provider injected. The source is pinned to the upstream
-revision that contains this chart.
+Home1 PostgreSQL provider injected. It fetches the chart from the CoRE-Business
+mirror at `https://slop.writemy.codes/CoRE/CoRE-Business.git` and follows
+`HEAD`; the upstream component documentation remains linked above.
 
 The chart deploys Firefly III with a retained 10Gi Longhorn upload PVC, a
 PostgreSQL `User` claim, an Authentik forward-auth policy, and a scheduler

@@ -18,28 +18,37 @@ spec:
           - 'name'
 
         generators:
-          - list:
-              elements:
-                - name: 'dc1-k3s-node1'
-                  values:
-                    dragonflySecretKey: 'Storage/DragonFly/CoRE/Creds'
-                    ldapServer: 'ldap-dc1.mylogin.space'
-                    psqlProvider: 'psql-dc1-yxl'
-                    s3Provider: 's3-yxl-dc1-core'
+          - matrix:
+              generators:
+                - list:
+                    elements:
+                      - clusters:
+                          - name: 'dc1-k3s-node1'
+                            values:
+                              hub: true
+                              dragonflySecretKey: 'Storage/DragonFly/CoRE/yxl/dc1/core-dc1-talos-prod/Creds'
+                              ldapServer: 'ldap-dc1.mylogin.space'
+                              psqlProvider: 'psql-dc1-yxl'
+                              s3Provider: 's3-yxl-dc1-core'
 
-                - name: 'core-dc1-talos-prod'
-                  values:
-                    dragonflySecretKey: 'Storage/DragonFly/CoRE/yxl/dc1/core-dc1-talos-prod/Creds'
-                    ldapServer: 'ldap-dc1-talos.mylogin.space'
-                    psqlProvider: 'psql-dc1-yxl'
-                    s3Provider: 's3-yxl-dc1-core'
+                          - name: 'core-dc1-talos-prod'
+                            values:
+                              hub: false
+                              dragonflySecretKey: 'Storage/DragonFly/CoRE/yxl/dc1/core-dc1-talos-prod/Creds'
+                              ldapServer: 'ldap-dc1-talos.mylogin.space'
+                              psqlProvider: 'psql-dc1-yxl'
+                              s3Provider: 's3-yxl-dc1-core'
 
-                - name: 'core-home1-talos-prod'
-                  values:
-                    dragonflySecretKey: 'Storage/DragonFly/CoRE/yvr/home1/core-home1-talos-prod/Creds'
-                    ldapServer: 'ldap-home1.mylogin.space'
-                    psqlProvider: 'psql-home1-yvr'
-                    s3Provider: 's3-yvr-home1-core'
+                          - name: 'core-home1-talos-prod'
+                            values:
+                              hub: false
+                              dragonflySecretKey: 'Storage/DragonFly/CoRE/yvr/home1/core-home1-talos-prod/Creds'
+                              ldapServer: 'ldap-home1.mylogin.space'
+                              psqlProvider: 'psql-home1-yvr'
+                              s3Provider: 's3-yvr-home1-core'
+
+                - list:
+                    elementsYaml: '{{ .clusters | toJson }}'
 
           - clusters:
               selector:
@@ -77,7 +86,7 @@ spec:
           - 'ServerSideApply=true'
 
       source:
-        repoURL: 'https://github.com/K-FOSS/CoRE-Business.git'
+        repoURL: 'https://slop.writemy.codes/CoRE/CoRE-Business.git'
         path: 'Mail'
         targetRevision: 'HEAD'
 
@@ -86,7 +95,25 @@ spec:
           env:
             - name: 'LOVELY_HELM_MERGE'
               value: |- # yaml
+                {{- $hub := dict }}
+                {{- $hubCount := 0 }}
+                {{- range .clusters }}
+                {{- if .values.hub }}
+                {{- $hub = . }}
+                {{- $hubCount = add1 $hubCount }}
+                {{- end }}
+                {{- end }}
+                {{- if ne $hubCount 1 }}
+                {{- fail "exactly one Mail ApplicationSet entry must set values.hub=true" }}
+                {{- end }}
                 clusterDNS: '{{ .values.clusterDomain }}'
+
+                cluster:
+                  name: '{{ .values.clusterName }}'
+
+                credentialsSync:
+                  enabled: true
+                  hubCluster: '{{ $hub.name }}'
 
                 site:
                   ldap:
