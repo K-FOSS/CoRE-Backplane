@@ -1,23 +1,25 @@
-# SSO User platform APIs
+# CoRE-Backplane Operations/SSO/User Stack
 
 This chart installs Crossplane APIs that turn a namespaced identity claim into
 an Authentik account and, optionally, PostgreSQL and MinIO/S3 resources. It is
 the account-provisioning layer used by platform services; it does not deploy
-Authentik, PostgreSQL, MinIO, Crossplane, or their providers.
+Authentik, PostgreSQL, MinIO, Crossplane, or their providers. The
+[Crossplane fleet owner](../../../Apps/Infra/Crossplane/User.yaml) selects its
+target clusters.
 
 The fleet entry point is
 [`Apps/Infra/Crossplane/User.yaml`](../../../Apps/Infra/Crossplane/User.yaml).
 It deploys this chart to selected infrastructure clusters in the
 `crossplane-system-prod` namespace. The XRDs and Compositions are
-cluster-scoped, while `User` and `BucketCredential` claims and their connection
-Secrets are namespaced.
+cluster-scoped, while `User` claims and their connection Secrets are
+namespaced.
 
 ## What is active
 
 | API | Implementation | Current state |
 | --- | --- | --- |
 | `User.mylogin.space/v1alpha1` | `sso-user` pipeline Composition | Active. Creates an Authentik identity and can add PostgreSQL, MongoDB, and S3 resources. |
-| `BucketCredential.mylogin.space/v1alpha1` | `sso-s3-credentials` resource-mode Composition | Present, but appears incomplete/legacy. Do not use for new consumers without testing it. |
+| `BucketCredential.mylogin.space/v1alpha1` | Removed legacy definitions | No longer rendered. No live claims, composites, or Composition were found on the inspected cluster. Use the `User` API for S3 credentials. |
 | `Group.mylogin.space/v1alpha1` | Commented templates | Not installed. |
 | `Tenant.mylogin.space/v1alpha1` | Commented XRD | Not installed. |
 
