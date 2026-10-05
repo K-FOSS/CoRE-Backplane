@@ -19,7 +19,7 @@ namespaced.
 | API | Implementation | Current state |
 | --- | --- | --- |
 | `User.mylogin.space/v1alpha1` | `sso-user` pipeline Composition | Active. Creates an Authentik identity and can add PostgreSQL, MongoDB, and S3 resources. |
-| `BucketCredential.mylogin.space/v1alpha1` | Removed legacy definitions | No longer rendered. No live claims, composites, or Composition were found on the inspected cluster. Use the `User` API for S3 credentials. |
+| `BucketCredential.mylogin.space/v1alpha1` | Retired legacy definitions | No longer rendered. DC1 K3s has the old XRD and Composition, but no claims or composites use them. Use the `User` API for S3 credentials. |
 | `Group.mylogin.space/v1alpha1` | Commented templates | Not installed. |
 | `Tenant.mylogin.space/v1alpha1` | Commented XRD | Not installed. |
 
