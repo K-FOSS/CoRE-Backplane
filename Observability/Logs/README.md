@@ -111,8 +111,26 @@ External access uses
 `logs.<cluster>.<datacentre>.<region>.<externalDomain>`. The
 [`SecurityPolicy`](templates/SecurityPolicy.yaml) validates the configured
 Authentik issuers, requires `oauth.allowedGroups`, and forwards `orgID` as
-`X-Scope-OrgID`. Loki authentication remains disabled, so trusted cluster
-networking and Envoy are the access boundaries.
+`X-Scope-OrgID`. Loki runs with `auth_enabled: true`, so every API request must
+carry a tenant ID in `X-Scope-OrgID`. Kubernetes tenants are derived from the
+cluster's `mylogin.space/tenant` label (currently `core.mylogin.space` maps to
+`core`); the Alloy writers use that tenant ID. This header selects an isolated
+Loki tenant; it is not caller authentication by itself. The public route
+continues to rely on Envoy JWT validation and the allowed Authentik groups for
+caller authentication and authorization. See Loki's
+[multi-tenancy](https://grafana.com/docs/loki/latest/operations/multi-tenancy/)
+and [authentication](https://grafana.com/docs/loki/latest/operations/authentication/)
+guides.
+
+The chart Canary uses its separate `self-monitoring` tenant when auth is
+enabled, as described in the [Loki Canary guide](https://grafana.com/docs/loki/latest/operations/loki-canary/).
+
+Logs written before tenant authentication was enabled were stored in Loki's
+single-tenant `fake` tenant because Loki ignored tenant headers in that mode.
+They remain in the existing S3 buckets and are not visible to normal `core`
+tenant queries. This change does not copy, delete, or expose those historical
+objects. Any later migration or historical-query access to `fake` needs a
+separate reviewed plan.
 
 ## Validation and operations
 
@@ -136,11 +154,12 @@ component Services, stateful PVCs retain, `loki-core` selects gateway pods on
 port `3100`, and only it has global annotations.
 
 After reconciliation, verify DC1 replica and ring health, ingestion from both
-sites, an existing query spanning pre-migration data, a new uniquely labelled
-stream, compactor/ruler S3 access, canary success, Mimir metrics, synchronized
-Home1 endpoints, accepted route/policy conditions, and rejection of an
-unauthenticated public query. Do not print production logs, generated bucket
-names, or credentials.
+sites into tenant `core`, an existing query within `core`, a new uniquely
+labelled stream, compactor/ruler S3 access, Canary success, Mimir metrics,
+synchronized Home1 endpoints, accepted route/policy conditions, rejection of
+requests without a tenant header, and rejection of an unauthenticated public
+query. Historical `fake` data remains stored but outside normal `core`
+queries. Do not print production logs, generated bucket names, or credentials.
 
 ## Migration and recovery
 
