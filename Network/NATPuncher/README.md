@@ -32,15 +32,40 @@ cluster's default implementation should be used. See the Kubernetes
 [Service documentation](https://kubernetes.io/docs/concepts/services-networking/service/)
 for the supported Service fields.
 
+CoTURN's `portRange.min` and `portRange.max` are inclusive. YVR currently uses
+the 50-port relay range `15000–15049`; the ApplicationSet also publishes that
+range through UPnP for the configured target and both TCP and UDP protocols.
+
 ## UPnP mappings
 
 When `UPNP.enabled` is true, the `upnp` controller runs a Kubernetes CronJob
 every 30 minutes. It uses `upnpc` from the
 [`kristianfjones/upnp:jobs` image](https://hub.docker.com/r/kristianfjones/upnp)
 to list existing IGD mappings and submit each entry in `UPNP.ports` with its
-interface, target, ports, protocol and lease duration. The job requests or
-renews router mappings; it does not configure Kubernetes Services or prove
-that the router accepted the mappings or forwards traffic externally.
+interface, target, ports, protocol and lease duration. Existing single-port
+entries use `internalPort` and `externalPort`. A range entry uses inclusive
+`internal.start`/`internal.end` and `external.start`/`external.end` fields:
+
+```yaml
+UPNP:
+  ports:
+    - target: '10.0.0.42'
+      internal:
+        start: 5000
+        end: 5050
+      external:
+        start: 5000
+        end: 5000
+      protocol: TCP
+      duration: 8600
+```
+
+The example maps matching internal and external ports from 5000 through 5050;
+an external range with one port is treated as the base of a same-length mapping
+range. For a translated range, provide equally sized internal and external
+ranges. The job requests or renews router mappings; it does not configure
+Kubernetes Services or prove that the router accepted the mappings or forwards
+traffic externally.
 
 The source and build documentation are in the publicly accessible DC1 Forgejo
 [`CoRE/Core-Docker` repository](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/Core-Docker).

@@ -194,13 +194,38 @@ controllers:
             upnpc -m "${IFACE}" -l 
 
             {{- range $port := .Values.UPNP.ports }}
+            {{- if hasKey $port "internal" }}
+            {{- $internalStart := int $port.internal.start }}
+            {{- $internalEnd := int $port.internal.end }}
+            {{- $externalStart := int $port.external.start }}
+            {{- $externalEnd := int $port.external.end }}
+            {{- $internalCount := int (add (sub $internalEnd $internalStart) 1) }}
+            {{- $externalCount := int (add (sub $externalEnd $externalStart) 1) }}
+            {{- if or (lt $internalStart 1) (lt $internalEnd $internalStart) (lt $externalStart 1) (lt $externalEnd $externalStart) }}
+            {{- fail (printf "UPNP.ports range must have positive, ascending ports: internal %d-%d external %d-%d" $internalStart $internalEnd $externalStart $externalEnd) }}
+            {{- end }}
+            {{- if and (gt $externalCount 1) (ne $externalCount $internalCount) }}
+            {{- fail (printf "UPNP.ports range lengths must match, or external must be a single port: internal %d-%d external %d-%d" $internalStart $internalEnd $externalStart $externalEnd) }}
+            {{- end }}
+            {{- range $offset := until $internalCount }}
+            {{- $internalPort := add $internalStart $offset }}
+            {{- $externalPort := add $externalStart $offset }}
+            echo "Ensuring UPnP {{ $port.protocol | upper }} {{ $externalPort }} -> {{ $port.target }}:{{ $internalPort }} via ${IFACE}"
+
+            upnpc \
+              -m "${IFACE}" \
+              -e "{{ $.Release.Name }} {{ $externalPort }}/{{ $port.protocol | upper }}" \
+              -a "{{ $port.target }}" "{{ $internalPort }}" "{{ $externalPort }}" "{{ $port.protocol | upper }}" {{ default 600 $port.duration }}
+            {{- end }}
+            {{- else }}
             echo "Ensuring UPnP {{ $port.protocol | upper }} {{ $port.externalPort }} -> {{ $port.target }}:{{ $port.internalPort }} via ${IFACE}"
 
             upnpc \
               -m "${IFACE}" \
               -e "{{ $.Release.Name }} {{ $port.externalPort }}/{{ $port.protocol | upper }}" \
               -a "{{ $port.target }}" "{{ $port.internalPort }}" "{{ $port.externalPort }}" "{{ $port.protocol | upper }}" {{ default 600 $port.duration }}
-            {{ end }}
+            {{- end }}
+            {{- end }}
   {{- end }}
 
 {{- if .Values.coturn.enabled }}
@@ -355,7 +380,7 @@ service:
         appProtocol:
 
 
-  {{- range untilStep (int .Values.portRange.min) (int .Values.portRange.max) 1 }}
+  {{- range untilStep (int .Values.portRange.min) (int (add (int .Values.portRange.max) 1)) 1 }}
       turn-{{ . }}:
         # -- Enables or disables the port
         enabled: true
