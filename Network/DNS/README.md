@@ -37,7 +37,12 @@ The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
 configuration so fully qualified internal Service names are resolved directly.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
-KubeVIP with UPnP forwarding. YXL/DC1 intentionally retains the legacy
+KubeVIP with the static `kube-vip.io/loadbalancerIPs: '10.0.0.40'` Service
+annotation. The annotation requests the reserved VIP from the
+[KubeVIP cloud provider](https://kube-vip.io/docs/usage/cloud-provider/);
+KubeVIP advertises it without requesting a UPnP mapping for dnsdist.
+The separate [NATPuncher stack](../NATPuncher/README.md) owns the YVR gateway's
+port-53 mappings. YXL/DC1 intentionally retains the legacy
 PowerDNS NS Service through PureLB at `66.165.222.100` with service group
 `anycast`; dnsdist is disabled there so the two Services cannot compete for
 the address. The PowerDNS Service is changed to `ClusterIP` only for YVR by
