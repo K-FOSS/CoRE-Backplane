@@ -875,6 +875,20 @@ spec:
                 {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.version .observed.composite.resource.spec.overrides.version.talos }}
                 {{ $talosVersion = .observed.composite.resource.spec.overrides.version.talos }}
                 {{- end }}
+                {{ $clusterK8sVersion := $clusterCustomResource.status.atProvider.manifest.spec.versions.kubernetes }}
+                {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.version .observed.composite.resource.spec.overrides.version.kubernetes }}
+                {{ $clusterK8sVersion = .observed.composite.resource.spec.overrides.version.kubernetes }}
+                {{- end }}
+                {{ $defaultKubeletConfig := dict "maxPods" 256 "featureGates" (dict "UserNamespacesSupport" true) }}
+                {{ $clusterKubeletConfig := dict }}
+                {{- if and $clusterCustomResource.status.atProvider.manifest.spec.kubelet $clusterCustomResource.status.atProvider.manifest.spec.kubelet.config }}
+                {{ $clusterKubeletConfig = $clusterCustomResource.status.atProvider.manifest.spec.kubelet.config }}
+                {{- end }}
+                {{ $nodeKubeletConfig := dict }}
+                {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubelet .observed.composite.resource.spec.overrides.kubelet.config }}
+                {{ $nodeKubeletConfig = .observed.composite.resource.spec.overrides.kubelet.config }}
+                {{- end }}
+                {{ $kubeletConfig := mergeOverwrite (deepCopy $defaultKubeletConfig) $clusterKubeletConfig $nodeKubeletConfig }}
                 varmap:
                   talosConfig: |
             {{ indent 8 $talosHardware.status.atProvider.manifest.spec.userData }}
@@ -926,6 +940,26 @@ spec:
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
+
+                    kubelet-conf = <<-EOT
+                      ---
+                      apiVersion: v1alpha1
+                      kind: KubeletConfig
+                      image: ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}
+                      config: {{ $kubeletConfig | toJson }}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: KubeNodeConfig
+                      nodeIP:
+                        validSubnets:
+                          {{- range $index, $network := .observed.composite.resource.spec.networks }}
+                          {{- range $addrIndex, $address := $network.addresses }}
+                          {{- if and . (not (contains ":" $address)) }}
+                          - {{ regexReplaceAll "(.*)/[1-3][0-9]" $address "${1}" }}/32
+                          {{- end }}
+                          {{- end }}
+                          {{- end }}
+                    EOT
 
                     link-script = <<-EOT
                       talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -ojson | jq -cr 'select(.spec.kind == "bridge" or .spec.kind == "bond" or (.spec.type == "ether" and (.spec.kind == "" or .spec.kind == null)))'
@@ -1213,12 +1247,8 @@ spec:
                     machine_configuration_input = var.talosConfig
                     node = var.nodeIP
                     endpoint = var.nodeIP
-                    config_patches = [
+                    config_patches = compact([
                       yamlencode({
-                        {{- $clusterK8sVersion := $clusterCustomResource.status.atProvider.manifest.spec.versions.kubernetes }}
-                        {{- if and $.observed.composite.resource.spec.overrides $.observed.composite.resource.spec.overrides.version $.observed.composite.resource.spec.overrides.version.kubernetes }}
-                        {{- $clusterK8sVersion = $.observed.composite.resource.spec.overrides.version.kubernetes }}
-                        {{- end }}
                         debug = false
                         cluster = {
                           controlPlane = {
@@ -1280,7 +1310,7 @@ spec:
                           }
                           {{- end }}
                         }
-                        machine = {
+                        machine = merge({
                           baseRuntimeSpecOverrides = {
                             process = {
                               rlimits = [
@@ -1375,6 +1405,7 @@ spec:
                             }
                           }
 
+                        }, local.installed_talos_is_1_14_or_newer ? {} : {
                           kubelet = {
                             image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
 
@@ -1411,13 +1442,9 @@ spec:
                               ]
                             }
 
-                            extraConfig = {
-                              maxPods = 256
-                              featureGates = {
-                                UserNamespacesSupport = true
-                              }
-                            }
+                            extraConfig = {{ $kubeletConfig | toJson }}
                           }
+                        }, {
                           network = {
                             hostname = "{{ $.observed.composite.resource.spec.claimRef.name }}"
 
@@ -1482,8 +1509,9 @@ spec:
                               }
                             ]
                           }
-                        }
+                        })
                       }),
+                      local.installed_talos_is_1_14_or_newer ? local.kubelet-conf : "",
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
                       {{- end }}
@@ -1505,7 +1533,7 @@ spec:
                       {{- if eq $longhornDiskConfigUsed true }}
                       local.longhorn-disk-conf,
                       {{- end }}
-                    ]
+                    ])
                   }
 
                   output "sas_drives" {

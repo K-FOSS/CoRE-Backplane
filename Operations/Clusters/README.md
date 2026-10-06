@@ -114,6 +114,32 @@ This repository also contains Argo CD tracking annotations and sync waves. In
 GitOps environments, prefer reconciliation through the owning Argo CD
 application instead of invoking Helm directly.
 
+## Kubelet configuration overrides
+
+Set `Cluster.spec.kubelet.config` to merge Kubernetes kubelet configuration
+fields over the platform defaults for every node. A
+`ClusterNode.spec.overrides.kubelet.config` value merges on top for one node.
+Use the field names from the Kubernetes
+[`KubeletConfiguration` API](https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/);
+do not include its `apiVersion` or `kind` fields.
+
+```yaml
+spec:
+  kubelet:
+    config:
+      maxPods: 384
+      shutdownGracePeriod: '30s'
+```
+
+The Composition detects the running Talos version. Talos 1.14 and newer receive
+the dedicated Talos
+[`KubeletConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeletconfig)
+and
+[`KubeNodeConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubenodeconfig)
+documents. Earlier releases receive the same effective values through the
+legacy `machine.kubelet` configuration. If the version probe cannot reach the
+node, the Composition conservatively uses the legacy form.
+
 ## Cluster-wide sysctls
 
 Set `spec.sysctls` on a `Cluster` claim to apply a kernel sysctl to every node
