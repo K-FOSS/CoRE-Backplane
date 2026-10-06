@@ -45,6 +45,17 @@ Talos resources are managed through Terraform provider workspaces, while
 Kubernetes objects are managed through Crossplane Kubernetes provider
 configurations.
 
+### BMPS control-plane placement
+
+The BMPS control plane currently runs only on the legacy k3s management
+cluster. The [`core-backplane-ops-cluster` ApplicationSet](../../Apps/Infra/Cluster.yaml)
+creates the `core-dc1-talos-prod-ops-cluster` child application there; that
+application hosts the Cluster Ops chart and reconciles the Crossplane,
+Tinkerbell, Talos, and node claims for the `core-dc1-talos` cluster. The
+managed Talos cluster is therefore a BMPS workload target, not the current
+BMPS control-plane host. Preserve this placement when refreshing or syncing
+Cluster Ops during recovery.
+
 ### Talos compute-node configuration compatibility
 
 The `cluster-node` Composition detects the installed Talos version with
@@ -194,6 +205,36 @@ maps of Cilium configuration keys to string values. The node map is merged on
 top of the cluster map and rendered as a `CiliumNodeConfig` selected by the
 node's `kubernetes.io/hostname` label. `networkInterfaces`, when set on the
 node, is rendered as the Cilium `devices` override.
+
+### Compute-node dummy interfaces
+
+Add a Linux dummy interface to an individual compute node with
+`ClusterNode.spec.networking.dummyInterfaces`. Each entry requires a stable
+`name` and may specify `mtu`, static `addresses`, and `routes`. The
+composition renders these through Talos' multi-document `DummyLinkConfig`
+patch mechanism; they are not added to the Tinkerbell physical-interface or
+DHCP inventory. Every dummy interface is also advertised by the node's
+Cilium BGP control plane using the `Interface` advertisement type.
+
+Additional per-node Cilium advertisements can be supplied with
+`ClusterNode.spec.bgp.advertisements`. See Cilium's [BGP advertisement
+reference](https://docs.cilium.io/en/stable/network/bgp-control-plane/bgp-control-plane-configuration/)
+for the supported advertisement types and selectors.
+
+```yaml
+spec:
+  networking:
+    dummyInterfaces:
+      - name: dummy0
+        addresses:
+          - '192.0.2.10/32'
+        mtu: 1500
+```
+
+See Talos' [DummyLinkConfig reference](https://docs.siderolabs.com/talos/v1.13/reference/configuration/network/dummylinkconfig)
+for the supported address, route, and link behavior. Validate the rendered
+machine configuration against the Talos version selected for the node before
+using a dummy interface for routing or service advertisement.
 
 ## Talos Longhorn volumes
 
