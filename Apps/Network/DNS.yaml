@@ -21,7 +21,7 @@ spec:
                       loadBalancerClass: 'kube-vip.io/kube-vip-class'
                       ipv4: '10.0.0.40'
                       serviceGroup: ''
-                      serviceType: 'ClusterIP'
+                      serviceType: 'LoadBalancer'
                 - name: core-dc1-talos-prod
                   values:
                     dnsdistEnabled: false
@@ -81,6 +81,7 @@ spec:
                   k8gb:
                     zones: []
                   service:
+                    type: '{{ .values.nameserver.serviceType }}'
                     loadBalancerClass: '{{ .values.nameserver.loadBalancerClass }}'
                     annotations:
                       external-dns.kubernetes.io/hostname: '{{ .values.nameserver.domain }}'

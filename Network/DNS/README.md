@@ -52,6 +52,8 @@ the address. The PowerDNS Service is changed to `ClusterIP` only for YVR by
 
 Render this chart with the target ApplicationSet values and verify the dnsdist
 ConfigMap, backend names, Service annotations, and both UDP/TCP Service ports.
+The Service targets the container ports by the matching `dns-udp` and `dns-tcp`
+names; verify both names are present on the rendered dnsdist container.
 After reconciliation, verify dnsdist and K8GB readiness, the PowerDNS backend
 Service type, external authoritative answers over UDP and TCP, and that a
 public recursive query is refused or answered authoritatively rather than
