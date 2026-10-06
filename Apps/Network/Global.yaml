@@ -17,11 +17,13 @@ spec:
                     clusterGeoTag: 'home1'
                     extGslbClustersGeoTags: 'dc1'
                     dnsdistExternalAddress: '10.0.0.40'
+                    externalNameserver: 'ns2.resolvemy.host'
                 - name: core-dc1-talos-prod
                   values:
                     clusterGeoTag: 'dc1'
                     extGslbClustersGeoTags: 'home1'
                     dnsdistExternalAddress: '66.165.222.105'
+                    externalNameserver: 'ns4.resolvemy.host'
           - clusters:
               selector:
                 matchLabels:
@@ -64,6 +66,10 @@ spec:
                       - parentZone: 'mylogin.space'
                         loadBalancedZone: 'gslb.mylogin.space'
                         dnsZoneNegTTL: 30
+                        extraPlugins:
+                          - 'rewrite stop name exact ns1.dns.gslb.mylogin.space {{ .values.externalNameserver }} answer auto'
+                          - 'rewrite stop name exact hostmaster.gslb.mylogin.space august.mylogin.space answer auto'
+                          - 'rewrite stop name exact hostmaster.mylogin.space august.mylogin.space answer auto'
       destination:
         server: '{{ .server }}'
         namespace: k8gb

@@ -35,6 +35,15 @@ with the corresponding [Network/DNS ApplicationSet](../../Apps/Network/DNS.yaml)
 addresses; each address must route both DNS traffic to dnsdist and application
 traffic as required by K8GB.
 
+The CoreDNS external-zone answer is rewritten per site so the delegated zone
+advertises `ns2.resolvemy.host` from YVR and `ns4.resolvemy.host` from YXL,
+matching the authoritative nameserver services in the [Network/NS
+ApplicationSet](../../Apps/Network/NS.yaml). The SOA mailbox is published as
+the DNS RNAME `august.mylogin.space.` (the mailbox `augy@mylogin.space`).
+These rewrites affect the K8GB CoreDNS answer; the authoritative `resolvemy.host`
+nameserver records and their public reachability remain owned by Network/NS
+and Network/DNS.
+
 ## DNS prerequisites before enabling a global service
 
 Each participating k8gb CoreDNS server must have an externally reachable DNS
