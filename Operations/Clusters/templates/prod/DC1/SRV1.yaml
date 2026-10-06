@@ -94,6 +94,15 @@ spec:
         - 1.1.1.1
 
   overrides:
+    # Temporary Longhorn recovery override. Restore imagefs.available to 15%
+    # only after storage cleanup has created sufficient headroom; do not
+    # restore it while free space remains below that threshold.
+    kubelet:
+      config:
+        mergeDefaultEvictionSettings: true
+        evictionHard:
+          imagefs.available: '8%'
+
     cni:
       cilium:
         configOverrides:
