@@ -149,10 +149,14 @@ route. The host-side Cilium configuration must continue to include that bridge;
 this stack does not override the existing Cilium device selection. The observed
 Home1 runtime configuration is `devices=eno1,kvip-cilium0`.
 The `cilium-handoff` sidecar runs [tc](https://man7.org/linux/man-pages/man8/tc.8.html)
-with `mirred egress redirect`, never `mirror`. It removes the configured pool's
-redirects only for VIP addresses currently present on the local pod's `wan0`;
-each managed VIP is reconciled independently and stale rules are removed one at
-a time on failover. It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP,
+with `mirred egress redirect`, never `mirror`. For each VIP in the configured
+pool currently owned on `wan0`, it verifies the chain 100 redirect to `handoff0`
+before adding a matching chain 0 `goto chain 100` entry. Both filters use IPv4
+flower preference `1000 + last octet`; the redirect handle is the last octet
+and the entry handle is `1` (shown in hexadecimal by `tc`). This recognizes the
+temporary `10.0.0.40` entry at preference 1040, handle `0x1`. The reconciler
+preserves unrelated filters and removes an entry before its redirect on ownership
+loss. It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP,
 source addresses, or Service backends.
 
 The checked-in Cilium values select `loadBalancer.mode: dsr`,
@@ -177,7 +181,8 @@ capture before declaring success.
 ## Handoff validation and rollback
 
 Inside the elected KubeVIP pod, inspect `ip -br addr`, `ip route`,
-`tc -s filter show dev wan0 ingress`, `tcpdump -ni wan0`, and
+`tc -s filter show dev wan0 ingress chain 0`,
+`tc -s filter show dev wan0 ingress chain 100`, `tcpdump -ni wan0`, and
 `tcpdump -ni handoff0`. On the host inspect
 `tc filter show dev kvip-cilium0 ingress`, the Cilium LB frontend/backend maps,
 and `cilium-dbg monitor`. Test TCP 5061, UDP 5060, UDP 11000-11079, and TCP/UDP

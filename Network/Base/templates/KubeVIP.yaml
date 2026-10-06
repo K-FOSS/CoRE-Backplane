@@ -57,7 +57,8 @@ data:
     #!/bin/sh
     set -u
 
-    CHAIN="100"
+    CHAIN='100'
+    ENTRY_CHAIN='0'
     WAN="${WAN_INTERFACE}"
     HANDOFF="${HANDOFF_INTERFACE}"
     CILIUM="${CILIUM_INTERFACE}"
@@ -119,21 +120,54 @@ data:
         awk '{print $4}' | cut -d/ -f1 | grep -Fxq "${1}"
     }
 
-    filter_summary() {
-      tc filter show dev "${WAN}" ingress chain "${CHAIN}" pref "${1}" handle "${2}" 2>&1
-    }
-
     legacy_filter_summary() {
       tc filter show dev "${WAN}" ingress chain 0 pref "${1}" handle 1 2>&1
     }
 
-    filter_is_desired() {
-      summary="${1}"
-      printf '%s\n' "${summary}" | grep -q 'flower' || return 1
-      printf '%s\n' "${summary}" | grep -Eq "dst_ip ${3}(/32)?([[:space:]]|$)" || return 1
-      printf '%s\n' "${summary}" | grep -q 'mirred' || return 1
-      printf '%s\n' "${summary}" | grep -qi 'redirect' || return 1
-      printf '%s\n' "${summary}" | grep -q "${HANDOFF}" || return 1
+    # tc prints flower handles in hex even when the CLI accepted decimal.
+    # Inspect the entire preference: a different classifier or a second filter
+    # at our preference is a collision, not an invitation to replace it.
+    inspect_filter() {
+      inspect_chain="${1}"
+      inspect_pref="${2}"
+      inspect_handle="${3}"
+      inspect_vip="${4}"
+      inspect_mode="${5}"
+      inspect_hex="$(printf '%x' "${inspect_handle}")"
+      inspect_output="$(tc filter show dev "${WAN}" ingress chain "${inspect_chain}" pref "${inspect_pref}" 2>&1)"
+      inspect_rc=$?
+      filter_state='error'
+      if [ "${inspect_rc}" -ne 0 ]; then
+        log "interface=${WAN} operation=inspect-${inspect_mode} vip=${inspect_vip} chain=${inspect_chain} pref=${inspect_pref} handle=${inspect_handle} exit=${inspect_rc} stderr=$(printf '%s' "${inspect_output}" | tr '\n' ' ')"
+        return 0
+      fi
+      if [ -z "${inspect_output}" ]; then
+        filter_state='absent'
+        return 0
+      fi
+      # One parent header and one handle header are normal tc flower output.
+      handle_count="$(printf '%s\n' "${inspect_output}" | grep -c '^filter .* handle ' || true)"
+      if [ "${handle_count}" -ne 1 ] ||
+         ! printf '%s\n' "${inspect_output}" | grep -Eq "^filter protocol ip pref ${inspect_pref} flower chain ${inspect_chain} handle 0x0*${inspect_hex}([[:space:]]|$)"; then
+        filter_state='collision'
+      elif ! printf '%s\n' "${inspect_output}" | grep -Eq "dst_ip ${inspect_vip}(/32)?([[:space:]]|$)"; then
+        filter_state='collision'
+      elif [ "${inspect_mode}" = 'redirect' ]; then
+        if printf '%s\n' "${inspect_output}" | grep -q 'mirred' &&
+           printf '%s\n' "${inspect_output}" | grep -qi 'redirect' &&
+           printf '%s\n' "${inspect_output}" | grep -Fq "${HANDOFF}"; then
+          filter_state='desired'
+        else
+          filter_state='collision'
+        fi
+      elif printf '%s\n' "${inspect_output}" | grep -Eq 'gact action goto chain 100([[:space:]]|$)'; then
+        filter_state='desired'
+      else
+        filter_state='collision'
+      fi
+      if [ "${filter_state}" = 'collision' ]; then
+        log "interface=${WAN} operation=collision vip=${inspect_vip} chain=${inspect_chain} pref=${inspect_pref} handle=${inspect_handle} exit=1 stderr=$(printf '%s' "${inspect_output}" | tr '\n' ' ')"
+      fi
     }
 
     ensure_private_routes() {
@@ -192,7 +226,12 @@ data:
       summary="$(legacy_filter_summary "${legacy_pref}")"
       show_rc=$?
       [ "${show_rc}" -eq 0 ] && [ -n "${summary}" ] || return 0
-      if filter_is_desired "${summary}" "${legacy_pref}" "${vip}"; then
+      if printf '%s\n' "${summary}" | grep -Eq "^filter protocol ip pref ${legacy_pref} flower chain 0 handle 0x0*1([[:space:]]|$)" &&
+         [ "$(printf '%s\n' "${summary}" | grep -c '^filter .* handle ' || true)" -eq 1 ] &&
+         printf '%s\n' "${summary}" | grep -Eq "dst_ip ${vip}(/32)?([[:space:]]|$)" &&
+         printf '%s\n' "${summary}" | grep -q 'mirred' &&
+         printf '%s\n' "${summary}" | grep -qi 'redirect' &&
+         printf '%s\n' "${summary}" | grep -Fq "${HANDOFF}"; then
         run_tc tc filter del dev "${WAN}" ingress chain 0 \
           pref "${legacy_pref}" handle 1 flower
         log "interface=${WAN} operation=delete-legacy vip=${vip} pref=${legacy_pref} handle=1 exit=${tc_rc} stderr=${tc_stderr}"
@@ -201,57 +240,91 @@ data:
       fi
     }
 
+    # Call only after inspect_filter. Always inspect again after a mutation;
+    # tc's exit code alone does not establish the required postcondition.
+    add_filter() {
+      add_chain="${1}"
+      add_pref="${2}"
+      add_handle="${3}"
+      add_vip="${4}"
+      add_mode="${5}"
+      if [ "${add_mode}" = 'redirect' ]; then
+        run_tc tc filter add dev "${WAN}" ingress chain "${add_chain}" \
+          protocol ip pref "${add_pref}" handle "${add_handle}" flower \
+          dst_ip "${add_vip}/32" action mirred egress redirect dev "${HANDOFF}"
+      else
+        run_tc tc filter add dev "${WAN}" ingress chain "${add_chain}" \
+          protocol ip pref "${add_pref}" handle "${add_handle}" flower \
+          dst_ip "${add_vip}/32" action goto chain "${CHAIN}"
+      fi
+      add_rc="${tc_rc}"
+      log "interface=${WAN} operation=add-${add_mode} vip=${add_vip} chain=${add_chain} pref=${add_pref} handle=${add_handle} exit=${add_rc} stderr=${tc_stderr}"
+      inspect_filter "${add_chain}" "${add_pref}" "${add_handle}" "${add_vip}" "${add_mode}"
+      if [ "${filter_state}" = 'desired' ]; then
+        return 0
+      fi
+      log "interface=${WAN} operation=verify-add-${add_mode} vip=${add_vip} chain=${add_chain} pref=${add_pref} handle=${add_handle} exit=1 stderr=postcondition ${filter_state}; add exit ${add_rc}"
+      return 1
+    }
+
+    delete_filter() {
+      delete_chain="${1}"
+      delete_pref="${2}"
+      delete_handle="${3}"
+      delete_vip="${4}"
+      delete_mode="${5}"
+      run_tc tc filter del dev "${WAN}" ingress chain "${delete_chain}" \
+        protocol ip pref "${delete_pref}" handle "${delete_handle}" flower
+      delete_rc="${tc_rc}"
+      log "interface=${WAN} operation=delete-${delete_mode} vip=${delete_vip} chain=${delete_chain} pref=${delete_pref} handle=${delete_handle} exit=${delete_rc} stderr=${tc_stderr}"
+      inspect_filter "${delete_chain}" "${delete_pref}" "${delete_handle}" "${delete_vip}" "${delete_mode}"
+      if [ "${filter_state}" = 'absent' ]; then
+        return 0
+      fi
+      log "interface=${WAN} operation=verify-delete-${delete_mode} vip=${delete_vip} chain=${delete_chain} pref=${delete_pref} handle=${delete_handle} exit=1 stderr=postcondition ${filter_state}; delete exit ${delete_rc}"
+      return 1
+    }
+
+    remove_unverified_entry() {
+      inspect_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry'
+      if [ "${filter_state}" = 'desired' ]; then
+        delete_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry' || true
+      fi
+    }
+
     reconcile_vip() {
       vip="${1}"
       octet="${vip##*.}"
       pref="$((1000 + octet))"
-      handle="${octet}"
-      desired=false
+      redirect_handle="${octet}"
+      entry_handle='1'
       if vip_is_owned "${vip}"; then
-        desired=true
-      fi
-
-      summary="$(filter_summary "${pref}" "${handle}")"
-      show_rc=$?
-      actual=false
-      if [ "${show_rc}" -eq 0 ] && [ -n "${summary}" ]; then
-        actual=true
-      fi
-      log "interface=${WAN} operation=inspect vip=${vip} pref=${pref} handle=${handle} exit=${show_rc} stderr=$(printf '%s' "${summary}" | tr '\n' ' ') desired=${desired} actual=${actual}"
-
-      if [ "${desired}" = true ] && [ "${actual}" = false ]; then
-        run_tc tc filter replace dev "${WAN}" ingress chain "${CHAIN}" \
-          pref "${pref}" handle "${handle}" protocol ip flower \
-          dst_ip "${vip}/32" \
-          action mirred egress redirect dev "${HANDOFF}"
-        log "interface=${WAN} operation=replace vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr}"
-        if [ "${tc_rc}" -ne 0 ]; then
-          verify="$(filter_summary "${pref}" "${handle}")"
-          if filter_is_desired "${verify}" "${pref}" "${vip}"; then
-            log "interface=${WAN} operation=verify-after-replace vip=${vip} pref=${pref} handle=${handle} exit=0 stderr=existing filter is already desired"
-          else
-            log "interface=${WAN} operation=collision vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr} existing_filter=$(printf '%s' "${verify}" | tr '\n' ' ')"
-          fi
-        fi
-        return 0
-      fi
-
-      if [ "${desired}" = true ] && [ "${actual}" = true ]; then
-        if filter_is_desired "${summary}" "${pref}" "${vip}"; then
-          log "interface=${WAN} operation=keep vip=${vip} pref=${pref} handle=${handle} exit=0 stderr=already desired"
-        else
-          log "interface=${WAN} operation=collision vip=${vip} pref=${pref} handle=${handle} exit=1 stderr=managed identity contains another filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
-        fi
-        return 0
-      fi
-
-      if [ "${desired}" = false ] && [ "${actual}" = true ]; then
-      if filter_is_desired "${summary}" "${pref}" "${vip}"; then
-        run_tc tc filter del dev "${WAN}" ingress chain "${CHAIN}" \
-          pref "${pref}" handle "${handle}" flower
-          log "interface=${WAN} operation=delete vip=${vip} pref=${pref} handle=${handle} exit=${tc_rc} stderr=${tc_stderr}"
-        else
-          log "interface=${WAN} operation=collision-preserved vip=${vip} pref=${pref} handle=${handle} exit=1 stderr=not deleting unrelated filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
+        inspect_filter "${CHAIN}" "${pref}" "${redirect_handle}" "${vip}" 'redirect'
+        case "${filter_state}" in
+          desired) ;;
+          absent)
+            if ! add_filter "${CHAIN}" "${pref}" "${redirect_handle}" "${vip}" 'redirect'; then
+              remove_unverified_entry
+              return 0
+            fi ;;
+          *) remove_unverified_entry; return 0 ;;
+        esac
+        # This also repairs a missing entry beside an existing redirect.
+        inspect_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry'
+        case "${filter_state}" in
+          desired) ;;
+          absent) add_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry' || true ;;
+        esac
+      else
+        inspect_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry'
+        case "${filter_state}" in
+          desired) delete_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry' || return 0 ;;
+          absent) ;;
+          *) return 0 ;;
+        esac
+        inspect_filter "${CHAIN}" "${pref}" "${redirect_handle}" "${vip}" 'redirect'
+        if [ "${filter_state}" = 'desired' ]; then
+          delete_filter "${CHAIN}" "${pref}" "${redirect_handle}" "${vip}" 'redirect' || true
         fi
       fi
     }
