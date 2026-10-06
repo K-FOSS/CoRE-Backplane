@@ -275,8 +275,10 @@ spec:
                 UPNP:
                   {{ nindent 2 (toYaml .values.UPNP) }}
 
+                {{- with .values.portRange }}
                 portRange:
-                  {{ nindent 2 (toYaml .values.portRange) }}
+                  {{ nindent 2 (toYaml .) }}
+                {{- end }}
 
                 datacenter: {{ .values.datacenter }}
 

@@ -35,6 +35,7 @@ for the supported Service fields.
 CoTURN's `portRange.min` and `portRange.max` are inclusive. YVR currently uses
 the 50-port relay range `15000–15049`; the ApplicationSet also publishes that
 range through UPnP for the configured target and both TCP and UDP protocols.
+DC1 leaves `portRange` unset and uses the chart default of `15000–16000`.
 
 ## UPnP mappings
 
