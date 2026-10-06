@@ -73,15 +73,15 @@ data:
   rules.lua: |
     function reloadConfig()
       setRules({
-    {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
-        newRuleAction(QNameSuffixRule({
-    {{- range $index, $zone := .Values.dnsdist.authoritative.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
-        }), PoolAction('authoritative')),
-    {{- end }}
     {{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
         newRuleAction(QNameSuffixRule({
     {{- range $index, $zone := .Values.dnsdist.k8gb.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
         }), PoolAction('k8gb')),
+    {{- end }}
+    {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
+        newRuleAction(QNameSuffixRule({
+    {{- range $index, $zone := .Values.dnsdist.authoritative.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
+        }), PoolAction('authoritative')),
     {{- end }}
     {{- if .Values.dnsdist.recursive.enabled }}
         newRuleAction(NetmaskGroupRule({

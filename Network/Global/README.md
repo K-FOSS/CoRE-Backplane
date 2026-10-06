@@ -18,27 +18,29 @@ Gateway API integration. It sets the distinct per-site `clusterGeoTag` and
 `extGslbClustersGeoTags` values. Public DNS exposure is owned separately by
 the [Network/DNS stack](../DNS/README.md).
 
-The first static k8gb zone is `gslb.mylogin.space`, delegated beneath the
-`mylogin.space` parent zone. The zone is defined in chart defaults and
-explicitly injected by the owning ApplicationSet so the Lovely merge retains
-the complete nested k8gb configuration. No `ZoneDelegation` or `Gslb`
+The static k8gb zones are `gslb.mylogin.space` and `gslb.mylogin.social`,
+under the `mylogin.space` and `mylogin.social` parent zones respectively. Both
+zones are defined in chart defaults and explicitly injected by the owning
+ApplicationSet so the Lovely merge retains the complete nested k8gb
+configuration. No `ZoneDelegation` or `Gslb`
 resources are created yet, and the embedded ExternalDNS remains disabled.
 K8GB CoreDNS remains an internal `ClusterIP` backend; the separate Network/DNS
-stack may route configured zones to it.
+stack routes configured zones to it when dnsdist is enabled.
 
 The ApplicationSet sets `k8gb.clusterExposedIPs` to the address served by the
 site's dnsdist front door: `10.0.0.40` for home1/YVR and `66.165.222.105` for
 dc1/YXL. This makes K8GB publish the dnsdist-reachable address for delegation
-glue and local application records while dnsdist continues forwarding
-`gslb.mylogin.space` to the internal CoreDNS Service. Keep these values aligned
+glue and local application records while dnsdist forwards both `gslb` zones to
+the internal CoreDNS Service. Keep these values aligned
 with the corresponding [Network/DNS ApplicationSet](../../Apps/Network/DNS.yaml)
 addresses; each address must route both DNS traffic to dnsdist and application
 traffic as required by K8GB.
 
 The [Global ApplicationSet](../../Apps/Network/Global.yaml) injects a Lovely
 Kustomize patch into the rendered CoreDNS ConfigMap. Its `template` directives
-serve apex NS and SOA answers with `ns2.resolvemy.host` from YVR and
-`ns4.resolvemy.host` from YXL, matching the nameserver assignments in the
+serve apex NS and SOA answers for both `gslb` zones with
+`ns2.resolvemy.host` from YVR and `ns4.resolvemy.host` from YXL, matching the
+nameserver assignments in the
 [Network/NS ApplicationSet](../../Apps/Network/NS.yaml). Each site configures
 `hostmasterEmail: 'augy@mail.mylogin.space'` in the ApplicationSet matrix; the
 patch renders it as the SOA RNAME `augy.mail.mylogin.space.`. The pinned K8GB chart does
@@ -104,7 +106,9 @@ or parent-zone delegation in this initial configuration.
 
 After reconciliation, verify both child Applications, K8GB and CoreDNS
 readiness, CRD establishment, the site geotags, and that no
-`ZoneDelegation` or `Gslb` resources exist. Once DNS prerequisites are met,
+`ZoneDelegation` or `Gslb` resources exist. Adding `gslb.mylogin.social` to the
+static configuration does not create parent-zone NS delegation or a globally
+served application hostname. Once DNS prerequisites are met,
 verify ZoneDelegation status, generated DNSEndpoints, Cloudflare/provider
 records, authoritative UDP/TCP answers from outside each site, and the actual
 application failover before treating a hostname as globally served.

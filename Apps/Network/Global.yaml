@@ -68,6 +68,9 @@ spec:
                       - parentZone: 'mylogin.space'
                         loadBalancedZone: 'gslb.mylogin.space'
                         dnsZoneNegTTL: 30
+                      - parentZone: 'mylogin.social'
+                        loadBalancedZone: 'gslb.mylogin.social'
+                        dnsZoneNegTTL: 30
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
@@ -100,6 +103,16 @@ spec:
                               template IN SOA gslb.mylogin.space {
                                   match ^gslb[.]mylogin[.]space[.]$
                                   answer "gslb.mylogin.space. 30 IN SOA {{ .values.externalNameserver }}. {{ .values.hostmasterEmail | replace "@" "." }}. 1 7200 1800 86400 30"
+                                  fallthrough
+                              }
+                              template IN NS gslb.mylogin.social {
+                                  match ^gslb[.]mylogin[.]social[.]$
+                                  answer "gslb.mylogin.social. 30 IN NS {{ .values.externalNameserver }}."
+                                  fallthrough
+                              }
+                              template IN SOA gslb.mylogin.social {
+                                  match ^gslb[.]mylogin[.]social[.]$
+                                  answer "gslb.mylogin.social. 30 IN SOA {{ .values.externalNameserver }}. {{ .values.hostmasterEmail | replace "@" "." }}. 1 7200 1800 86400 30"
                                   fallthrough
                               }
                               k8s_crd {

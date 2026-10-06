@@ -21,11 +21,13 @@ health checks and server-pool model](https://www.dnsdist.org/guides/downstreams.
 are rendered from [`values.yaml`](values.yaml) and
 [`templates/DNSDistConfig.yaml`](templates/DNSDistConfig.yaml).
 
-`resolvemy.host.` is sent to the local `ns-core` PowerDNS Service.
-`gslb.mylogin.space` is sent to the cluster-specific K8GB CoreDNS Service
-derived from
-`cluster.name` and `environment` when listed in
-`dnsdist.k8gb.zones`. Backend Service names use
+`resolvemy.host.` and `mylogin.social.` are sent to the local `ns-core`
+PowerDNS Service. The more specific `gslb.mylogin.space` and
+`gslb.mylogin.social` zones are sent to the cluster-specific K8GB CoreDNS
+Service derived from `cluster.name` and `environment` when listed in
+`dnsdist.k8gb.zones`. The GSLB suffix rules precede the parent-zone
+authoritative rules so `gslb.mylogin.social` reaches K8GB. Backend Service
+names use
 `cluster.kubernetesDomain` (the active CoreDNS configuration may use
 `k8s.<site>.resolvemy.host` alongside `cluster.local`), while `cluster.domain`
 remains the external/site cluster identity. dnsdist resolves those Service
