@@ -16,15 +16,16 @@ PREF = '1040'
 
 def filter_text(chain, kind):
     handle = '0x28' if kind == 'redirect' else '0x1'
-    action = ('mirred (Egress Redirect to device handoff0)'
+    action = ('mirred (Egress Redirect to device handoff0) stolen'
               if kind == 'redirect' else 'gact action goto chain 100')
-    return (f'filter protocol ip pref {PREF} flower chain {chain}\n'
-            f'filter protocol ip pref {PREF} flower chain {chain} handle {handle}\n'
-            f'  dst_ip {VIP}\n  action order 1: {action}\n')
+    return (f'filter protocol ip flower\n'
+            f'filter protocol ip flower handle {handle}\n'
+            f'eth_type ipv4\ndst_ip {VIP}\nnot_in_hw\n'
+            f'action order 1: {action}\n')
 
 
 FIXTURE = '''#!/usr/bin/env python3
-import json, os, pathlib, signal, sys
+import json, os, pathlib, re, signal, sys
 p = pathlib.Path(os.environ['FIXTURE_DIR'])
 name = pathlib.Path(sys.argv[0]).name
 a = sys.argv[1:]
@@ -37,9 +38,15 @@ if name == 'ip':
             print('1: wan0 inet 10.0.0.40/32 scope global wan0')
     elif a[:3] == ['-4', 'route', 'show'] and 'default' in a:
         if 'eth0' in a:
-            print('default via 10.1.0.1 dev eth0')
+            print('default via 10.1.0.1 mtu 8950')
+            if not (p / 'missing_metric').exists() or (p / 'route_replaced').exists():
+                print('default via 10.1.0.1 metric 50')
     elif a[:3] == ['-4', 'route', 'show']:
         print('10.0.0.0/8 via 10.1.0.1 dev eth0')
+    elif a[:3] == ['-4', 'route', 'replace']:
+        (p / 'route_replaced').touch()
+        with (p / 'operations').open('a') as log:
+            log.write('route-replace\\n')
     sys.exit(0)
 if name != 'tc':
     sys.exit(1)
@@ -59,8 +66,30 @@ state_path = p / 'state.json'
 state = json.loads(state_path.read_text())
 key = chain + ':' + pref
 if op == 'show':
+    if 'chain' not in a or 'pref' not in a or a[a.index('protocol') + 1] != 'ip':
+        sys.exit(3)
     if key in state:
-        print(state[key], end='')
+        value = state[key]
+        if '-j' in a and not (p / 'no_tc_json').exists():
+            handle = int(re.search(r'handle 0x([0-9a-f]+)', value).group(1), 16)
+            vip = re.search(r'dst_ip ([0-9.]+)', value).group(1)
+            if 'mirred' in value:
+                dest = re.search(r'to device ([^ )]+)', value).group(1)
+                action = dict(kind='mirred', mirred_action='redirect',
+                              direction='egress', to_dev=dest)
+            else:
+                target = int(re.search(r'goto chain ([0-9]+)', value).group(1))
+                action = dict(kind='gact', control_action=dict(type='goto', chain=target))
+            print(json.dumps([dict(kind='flower'), dict(kind='flower', options=dict(
+                handle=handle, keys=dict(eth_type='ipv4', dst_ip=vip), actions=[action]))]))
+        elif '-j' in a:
+            sys.exit(1)
+        else:
+            print(value, end='')
+    elif '-j' in a and not (p / 'no_tc_json').exists():
+        print('[]')
+    elif '-j' in a:
+        sys.exit(1)
     sys.exit(0)
 with (p / 'operations').open('a') as log:
     log.write(op + ' ' + key + '\\n')
@@ -74,9 +103,10 @@ if op == 'add':
     handle = '0x28' if chain == '100' else '0x1'
     action = ('mirred (Egress Redirect to device handoff0)'
               if chain == '100' else 'gact action goto chain 100')
-    state[key] = (f'filter protocol ip pref {pref} flower chain {chain}\\n'
-                  f'filter protocol ip pref {pref} flower chain {chain} handle {handle}\\n'
-                  f'  dst_ip 10.0.0.40\\n  action order 1: {action}\\n')
+    state[key] = (f'filter protocol ip flower\\n'
+                  f'filter protocol ip flower handle {handle}\\n'
+                  f'eth_type ipv4\\ndst_ip 10.0.0.40\\nnot_in_hw\\n'
+                  f'action order 1: {action}\\n')
 else:
     state.pop(key, None)
 state_path.write_text(json.dumps(state))
@@ -120,6 +150,31 @@ class HandoffTest(unittest.TestCase):
         self.assertEqual(ops, ['add 0:1040'])
         self.assertEqual(self.run_once()[1], ops)
 
+    def test_fresh_install_and_repeated_reconciliation(self):
+        (self.path / 'owned').touch()
+        state, ops = self.run_once()
+        self.assertEqual(set(state), {'100:1040', '0:1040'})
+        self.assertEqual(ops, ['add 100:1040', 'add 0:1040'])
+        self.assertEqual(self.run_once()[1], ops)
+
+    def test_exact_human_output_without_json(self):
+        (self.path / 'owned').touch()
+        (self.path / 'no_tc_json').touch()
+        self.state_path.write_text(json.dumps({'100:1040': filter_text('100', 'redirect')}))
+        state, ops = self.run_once()
+        self.assertIn('0:1040', state)
+        self.assertEqual(ops, ['add 0:1040'])
+        self.assertEqual(self.run_once()[1], ops)
+
+    def test_equivalent_manual_entry_is_kept(self):
+        (self.path / 'owned').touch()
+        self.state_path.write_text(json.dumps({
+            '100:1040': filter_text('100', 'redirect'),
+            '0:1040': filter_text('0', 'entry')}))
+        state, ops = self.run_once()
+        self.assertEqual(set(state), {'100:1040', '0:1040'})
+        self.assertEqual(ops, [])
+
     def test_ownership_loss_deletes_entry_first(self):
         self.state_path.write_text(json.dumps({
             '0:1040': filter_text('0', 'entry'),
@@ -127,6 +182,16 @@ class HandoffTest(unittest.TestCase):
         state, ops = self.run_once()
         self.assertEqual(state, {})
         self.assertEqual(ops, ['del 0:1040', 'del 100:1040'])
+
+    def test_existing_metric_fifty_route_is_kept(self):
+        _, ops = self.run_once()
+        self.assertEqual(ops, [])
+
+    def test_missing_metric_fifty_route_is_replaced_once(self):
+        (self.path / 'missing_metric').touch()
+        _, ops = self.run_once()
+        self.assertEqual(ops, ['route-replace'])
+        self.assertEqual(self.run_once()[1], ops)
 
     def test_failed_redirect_prevents_entry(self):
         (self.path / 'owned').touch()
@@ -142,13 +207,13 @@ class HandoffTest(unittest.TestCase):
         self.assertEqual(state, {})
         self.assertEqual(ops, ['add 100:1040'])
 
-    def test_unverified_redirect_removes_stale_entry(self):
+    def test_unverified_redirect_preserves_existing_entry(self):
         (self.path / 'owned').touch()
         (self.path / 'fail_redirect').touch()
         self.state_path.write_text(json.dumps({'0:1040': filter_text('0', 'entry')}))
         state, ops = self.run_once()
-        self.assertEqual(state, {})
-        self.assertEqual(ops, ['add 100:1040', 'del 0:1040'])
+        self.assertEqual(state, {'0:1040': filter_text('0', 'entry')})
+        self.assertEqual(ops, ['add 100:1040'])
 
     def test_unrelated_collision_preserved(self):
         (self.path / 'owned').touch()
@@ -166,6 +231,22 @@ class HandoffTest(unittest.TestCase):
         state, ops = self.run_once()
         self.assertEqual(state['0:1040'], unrelated)
         self.assertEqual(ops, [])
+
+    def test_wrong_handle_collision_preserved(self):
+        (self.path / 'owned').touch()
+        unrelated = filter_text('100', 'redirect').replace('handle 0x28', 'handle 0x29')
+        self.state_path.write_text(json.dumps({'100:1040': unrelated}))
+        state, ops = self.run_once()
+        self.assertEqual(state, {'100:1040': unrelated})
+        self.assertEqual(ops, [])
+
+    def test_legacy_cleanup_does_not_touch_entry_preference(self):
+        self.state_path.write_text(json.dumps({
+            '0:140': filter_text('0', 'redirect').replace('handle 0x28', 'handle 0x1'),
+            '0:1040': filter_text('0', 'entry')}))
+        state, ops = self.run_once()
+        self.assertEqual(state, {})
+        self.assertEqual(ops, ['del 0:1040', 'del 0:140'])
 
 
 if __name__ == '__main__':

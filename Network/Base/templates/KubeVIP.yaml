@@ -120,13 +120,10 @@ data:
         awk '{print $4}' | cut -d/ -f1 | grep -Fxq "${1}"
     }
 
-    legacy_filter_summary() {
-      tc filter show dev "${WAN}" ingress chain 0 pref "${1}" handle 1 2>&1
-    }
-
     # tc prints flower handles in hex even when the CLI accepted decimal.
-    # Inspect the entire preference: a different classifier or a second filter
-    # at our preference is a collision, not an invitation to replace it.
+    # chain, protocol and preference are scoped by tc's query. Its filtered
+    # text omits chain and preference, so inspect the returned classifier and
+    # handle rather than expecting those query arguments in the header.
     inspect_filter() {
       inspect_chain="${1}"
       inspect_pref="${2}"
@@ -134,7 +131,44 @@ data:
       inspect_vip="${4}"
       inspect_mode="${5}"
       inspect_hex="$(printf '%x' "${inspect_handle}")"
-      inspect_output="$(tc filter show dev "${WAN}" ingress chain "${inspect_chain}" pref "${inspect_pref}" 2>&1)"
+      if command -v jq >/dev/null 2>&1; then
+        inspect_json="$(tc -j filter show dev "${WAN}" ingress chain "${inspect_chain}" protocol ip pref "${inspect_pref}" 2>&1)"
+        inspect_json_rc=$?
+        if [ "${inspect_json_rc}" -eq 0 ] && printf '%s\n' "${inspect_json}" | jq -e 'type == "array"' >/dev/null 2>&1; then
+          if printf '%s\n' "${inspect_json}" | jq -e 'length == 0' >/dev/null 2>&1; then
+            filter_state='absent'
+          elif printf '%s\n' "${inspect_json}" | jq -e \
+              --arg vip "${inspect_vip}" --arg handoff "${HANDOFF}" \
+              --arg mode "${inspect_mode}" --argjson handle "${inspect_handle}" \
+              --argjson target "${CHAIN}" '
+              [.[] | select(.options != null)] as $filters |
+              ($filters | length) == 1 and
+              $filters[0].kind == "flower" and
+              $filters[0].options.handle == $handle and
+              $filters[0].options.keys.eth_type == "ipv4" and
+              $filters[0].options.keys.dst_ip == $vip and
+              ($filters[0].options.actions | length) == 1 and
+              (if $mode == "redirect" then
+                $filters[0].options.actions[0].kind == "mirred" and
+                $filters[0].options.actions[0].mirred_action == "redirect" and
+                $filters[0].options.actions[0].direction == "egress" and
+                $filters[0].options.actions[0].to_dev == $handoff
+              else
+                $filters[0].options.actions[0].kind == "gact" and
+                $filters[0].options.actions[0].control_action.type == "goto" and
+                $filters[0].options.actions[0].control_action.chain == $target
+              end)
+            ' >/dev/null 2>&1; then
+            filter_state='desired'
+          else
+            filter_state='collision'
+            log "interface=${WAN} operation=collision vip=${inspect_vip} chain=${inspect_chain} pref=${inspect_pref} handle=${inspect_handle} exit=1 stderr=${inspect_json}"
+          fi
+          return 0
+        fi
+      fi
+      # Older tc or images without jq fall back to the scoped text query.
+      inspect_output="$(tc filter show dev "${WAN}" ingress chain "${inspect_chain}" protocol ip pref "${inspect_pref}" 2>&1)"
       inspect_rc=$?
       filter_state='error'
       if [ "${inspect_rc}" -ne 0 ]; then
@@ -148,7 +182,7 @@ data:
       # One parent header and one handle header are normal tc flower output.
       handle_count="$(printf '%s\n' "${inspect_output}" | grep -c '^filter .* handle ' || true)"
       if [ "${handle_count}" -ne 1 ] ||
-         ! printf '%s\n' "${inspect_output}" | grep -Eq "^filter protocol ip pref ${inspect_pref} flower chain ${inspect_chain} handle 0x0*${inspect_hex}([[:space:]]|$)"; then
+         ! printf '%s\n' "${inspect_output}" | grep -Eq "^filter protocol ip flower handle 0x0*${inspect_hex}([[:space:]]|$)"; then
         filter_state='collision'
       elif ! printf '%s\n' "${inspect_output}" | grep -Eq "dst_ip ${inspect_vip}(/32)?([[:space:]]|$)"; then
         filter_state='collision'
@@ -198,8 +232,21 @@ data:
         return 1
       fi
 
-      current="$(ip -4 route show default dev "${CILIUM}" 2>/dev/null | head -n 1)"
-      if ! printf '%s\n' "${current}" | grep -Fq "via ${gateway} dev ${CILIUM}"; then
+      current="$(ip -4 route show default dev "${CILIUM}" 2>/dev/null)"
+      # Route replacement with metric 50 can coexist with a lower-metric
+      # default. Search every returned route instead of repeatedly checking
+      # only the first line.
+      if ! printf '%s\n' "${current}" | awk -v gateway="${gateway}" '
+        $1 == "default" {
+          via = 0; metric = 0
+          for (i = 2; i < NF; i++) {
+            if ($i == "via" && $(i + 1) == gateway) via = 1
+            if ($i == "metric" && $(i + 1) == "50") metric = 1
+          }
+          if (via && metric) found = 1
+        }
+        END { exit !found }
+      '; then
         route_stderr="$(ip -4 route replace default via "${gateway}" dev "${CILIUM}" metric 50 2>&1)"
         route_rc=$?
         route_stderr="$(printf '%s' "${route_stderr}" | tr '\n' ' ')"
@@ -223,20 +270,11 @@ data:
       vip="${1}"
       octet="${vip##*.}"
       legacy_pref="$((100 + octet))"
-      summary="$(legacy_filter_summary "${legacy_pref}")"
-      show_rc=$?
-      [ "${show_rc}" -eq 0 ] && [ -n "${summary}" ] || return 0
-      if printf '%s\n' "${summary}" | grep -Eq "^filter protocol ip pref ${legacy_pref} flower chain 0 handle 0x0*1([[:space:]]|$)" &&
-         [ "$(printf '%s\n' "${summary}" | grep -c '^filter .* handle ' || true)" -eq 1 ] &&
-         printf '%s\n' "${summary}" | grep -Eq "dst_ip ${vip}(/32)?([[:space:]]|$)" &&
-         printf '%s\n' "${summary}" | grep -q 'mirred' &&
-         printf '%s\n' "${summary}" | grep -qi 'redirect' &&
-         printf '%s\n' "${summary}" | grep -Fq "${HANDOFF}"; then
+      inspect_filter "${ENTRY_CHAIN}" "${legacy_pref}" 1 "${vip}" 'redirect'
+      if [ "${filter_state}" = 'desired' ]; then
         run_tc tc filter del dev "${WAN}" ingress chain 0 \
-          pref "${legacy_pref}" handle 1 flower
+          protocol ip pref "${legacy_pref}" handle 1 flower
         log "interface=${WAN} operation=delete-legacy vip=${vip} pref=${legacy_pref} handle=1 exit=${tc_rc} stderr=${tc_stderr}"
-      else
-        log "interface=${WAN} operation=legacy-collision-preserved vip=${vip} pref=${legacy_pref} handle=1 exit=1 stderr=not deleting unrelated filter: $(printf '%s' "${summary}" | tr '\n' ' ')"
       fi
     }
 
@@ -285,13 +323,6 @@ data:
       return 1
     }
 
-    remove_unverified_entry() {
-      inspect_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry'
-      if [ "${filter_state}" = 'desired' ]; then
-        delete_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry' || true
-      fi
-    }
-
     reconcile_vip() {
       vip="${1}"
       octet="${vip##*.}"
@@ -304,10 +335,9 @@ data:
           desired) ;;
           absent)
             if ! add_filter "${CHAIN}" "${pref}" "${redirect_handle}" "${vip}" 'redirect'; then
-              remove_unverified_entry
               return 0
             fi ;;
-          *) remove_unverified_entry; return 0 ;;
+          *) return 0 ;;
         esac
         # This also repairs a missing entry beside an existing redirect.
         inspect_filter "${ENTRY_CHAIN}" "${pref}" "${entry_handle}" "${vip}" 'entry'

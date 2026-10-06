@@ -156,7 +156,13 @@ flower preference `1000 + last octet`; the redirect handle is the last octet
 and the entry handle is `1` (shown in hexadecimal by `tc`). This recognizes the
 temporary `10.0.0.40` entry at preference 1040, handle `0x1`. The reconciler
 preserves unrelated filters and removes an entry before its redirect on ownership
-loss. It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP,
+loss. If redirect verification fails, it preserves an existing matching entry
+and retries without installing a new one. It checks scoped `tc` JSON when
+available, because filtered human-readable
+output can omit chain and preference. The Cilium default-route check searches
+all routes returned for `eth0` and keeps an existing route via the selected
+gateway with metric 50, even when `ip route` omits `dev eth0` from that output.
+It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP,
 source addresses, or Service backends.
 
 The checked-in Cilium values select `loadBalancer.mode: dsr`,
