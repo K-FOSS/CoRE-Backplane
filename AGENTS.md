@@ -259,6 +259,12 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 - Validate every parser boundary touched by a change, including Helm templates,
   Kustomize output, Crossplane Go templates, embedded Terraform HCL, scripts,
   Talos configuration, and Kubernetes YAML.
+- In YAML block scalars containing generated configuration, indent Helm or Go
+  template control blocks (`if`, `else`, `range`, `end`, and inline variable
+  assignments) at the same level as the generated content they control. Keep
+  whitespace trimming markers when needed, but do not place those source
+  directives at the outer template column when their output belongs inside the
+  block scalar.
 - For Helm/Lovely changes, resolve dependencies, run `helm lint`, render with
   representative values and injected layers, and inspect affected resources.
 - Validate Kubernetes API versions and CRDs against the controllers installed
