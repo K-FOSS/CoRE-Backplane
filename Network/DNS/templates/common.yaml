@@ -12,6 +12,7 @@ controllers:
     replicas: {{ .Values.dnsdist.replicas }}
     strategy: RollingUpdate
     pod:
+      shareProcessNamespace: true
       automountServiceAccountToken: false
       annotations:
         core.mylogin.space/dnsdist-config-revision: {{ .Values.dnsdist.configRevision | quote }}
@@ -70,6 +71,49 @@ controllers:
             port: 53
             spec:
               periodSeconds: 20
+      reloader:
+        image:
+          repository: {{ .Values.dnsdist.image.repository | quote }}
+          tag: {{ .Values.dnsdist.image.tag | quote }}
+          pullPolicy: {{ .Values.dnsdist.image.pullPolicy | quote }}
+        command:
+          - '/bin/sh'
+          - '-ec'
+        args:
+          - |
+            config_hash() {
+              sha256sum /etc/dnsdist/dnsdist.conf /etc/dnsdist/rules.lua \
+                | sha256sum | awk '{print $1}'
+            }
+            last="$(config_hash)"
+            while :; do
+              current="$(config_hash)"
+              if [ "${current}" != "${last}" ]; then
+                pid="$(pidof dnsdist | awk '{print $1}')"
+                if [ -n "${pid}" ]; then
+                  kill -TERM "${pid}"
+                fi
+                last="${current}"
+              fi
+              sleep 2
+            done
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
+        resources:
+          requests:
+            cpu: '5m'
+            memory: '16Mi'
+          limits:
+            cpu: '50m'
+            memory: '64Mi'
 
 service:
   main:
@@ -105,8 +149,10 @@ persistence:
     advancedMounts:
       main:
         main:
-          - path: '/etc/dnsdist/dnsdist.conf'
-            subPath: 'dnsdist.conf'
+          - path: '/etc/dnsdist'
+            readOnly: true
+        reloader:
+          - path: '/etc/dnsdist'
             readOnly: true
 
 {{- end -}}

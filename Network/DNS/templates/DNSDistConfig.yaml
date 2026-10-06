@@ -56,25 +56,32 @@ data:
     addBackend('{{ $forwardHost }}', 'forwarder', 'forwarder', nil, nil, nil)
     {{- end }}
 
+    dofile('/etc/dnsdist/rules.lua')
+  rules.lua: |
+    function reloadConfig()
+      setRules({
     {{- if gt (len .Values.dnsdist.authoritative.zones) 0 }}
-    addAction(QNameSuffixRule({
+        newRuleAction(QNameSuffixRule({
     {{- range $index, $zone := .Values.dnsdist.authoritative.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
-    }), PoolAction('authoritative'))
+        }), PoolAction('authoritative')),
     {{- end }}
     {{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
-    addAction(QNameSuffixRule({
+        newRuleAction(QNameSuffixRule({
     {{- range $index, $zone := .Values.dnsdist.k8gb.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
-    }), PoolAction('k8gb'))
+        }), PoolAction('k8gb')),
     {{- end }}
     {{- if .Values.dnsdist.recursive.enabled }}
-    addAction(NetmaskGroupRule({
+        newRuleAction(NetmaskGroupRule({
     {{- range $index, $network := .Values.dnsdist.recursive.allowedNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
-    }), PoolAction('recursive'))
+        }), PoolAction('recursive')),
     {{- end }}
     {{- if .Values.dnsdist.forward.enabled }}
-    addAction(AllRule(), PoolAction('forwarder'))
+        newRuleAction(AllRule(), PoolAction('forwarder'))
     {{- else }}
-    addAction(AllRule(), PoolAction('authoritative'))
+        newRuleAction(AllRule(), PoolAction('authoritative'))
     {{- end }}
+      })
     setServerPolicy(firstAvailable)
+    end
+    reloadConfig()
     {{- end }}

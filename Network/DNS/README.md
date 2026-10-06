@@ -36,6 +36,12 @@ in the authoritative pool so the public endpoint is not an open resolver.
 
 The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
 configuration so fully qualified internal Service names are resolved directly.
+The pod also runs a same-image configuration watcher. Kubernetes projects
+updates to the mounted ConfigMap directory; the watcher detects changes to
+`dnsdist.conf` or `rules.lua` and terminates only the dnsdist container so
+Kubernetes restarts that process inside the existing Pod. This avoids a Pod
+rollout for configuration-only changes. The Deployment uses two replicas so
+the Service retains another dnsdist endpoint while one process restarts.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
 KubeVIP with the static `kube-vip.io/loadbalancerIPs: '10.0.0.40'` Service
@@ -60,6 +66,14 @@ Service type, external authoritative answers over UDP and TCP, and that a
 public recursive query is refused or answered authoritatively rather than
 recursively. Verify the YVR WAN target externally before publishing glue or
 delegating a child zone.
+
+When changing the generated dnsdist configuration, verify the ConfigMap data,
+the watcher and dnsdist container restart timestamps, both ready endpoints, and
+the affected answers. The watcher is intentionally limited to restarting the
+dnsdist process; it does not mutate the desired configuration or expose a
+remote control socket. See the [dnsdist configuration and runtime guidance](https://www.dnsdist.org/running.html)
+and [PowerDNS dnsdist container documentation](https://github.com/PowerDNS/pdns/tree/master/dockerdata)
+for the upstream behavior this arrangement relies on.
 
 To roll back the public front door, remove or disable this ApplicationSet only
 after restoring an intentional public port-53 owner. The PowerDNS Service will
