@@ -944,15 +944,6 @@ spec:
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
 
-                    kubelet-legacy-conf = <<-EOT
-                      machine:
-                        kubelet:
-                          $patch: delete
-                      cluster:
-                        allowSchedulingOnControlPlanes:
-                          $patch: delete
-                    EOT
-
                     kubelet-conf = <<-EOT
                       ---
                       apiVersion: v1alpha1
@@ -1275,6 +1266,9 @@ spec:
                       yamlencode({
                         debug = false
                         cluster = {
+                          allowSchedulingOnControlPlanes = local.installed_talos_is_1_14_or_newer ? {
+                            "$patch" = "delete"
+                          } : true
                           controlPlane = {
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
                           }
@@ -1429,7 +1423,11 @@ spec:
                             }
                           }
 
-                        }, local.installed_talos_is_1_14_or_newer ? {} : {
+                        }, local.installed_talos_is_1_14_or_newer ? {
+                          kubelet = {
+                            "$patch" = "delete"
+                          }
+                        } : {}, local.installed_talos_is_1_14_or_newer ? {} : {
                           kubelet = {
                             image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
 
@@ -1535,7 +1533,6 @@ spec:
                           }
                         })
                       }),
-                      local.installed_talos_is_1_14_or_newer ? local.kubelet-legacy-conf : "",
                       local.installed_talos_is_1_14_or_newer ? local.kubelet-conf : "",
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
