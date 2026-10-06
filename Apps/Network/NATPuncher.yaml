@@ -46,6 +46,9 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    portRange:
+                      min: 15000
+                      max: 15049
                     UPNP:
                       enabled: true
 
@@ -182,6 +185,26 @@ spec:
                           externalPort: 51011
                           protocol: UDP
                           duration: 8600
+
+                        - target: 10.0.0.42
+                          internal:
+                            start: 15000
+                            end: 15049
+                          external:
+                            start: 15000
+                            end: 15049
+                          protocol: TCP
+                          duration: 8600
+
+                        - target: 10.0.0.42
+                          internal:
+                            start: 15000
+                            end: 15049
+                          external:
+                            start: 15000
+                            end: 15049
+                          protocol: UDP
+                          duration: 8600
                     CoTurn:
                       enabled: true
                       service:
@@ -251,6 +274,9 @@ spec:
 
                 UPNP:
                   {{ nindent 2 (toYaml .values.UPNP) }}
+
+                portRange:
+                  {{ nindent 2 (toYaml .values.portRange) }}
 
                 datacenter: {{ .values.datacenter }}
 
