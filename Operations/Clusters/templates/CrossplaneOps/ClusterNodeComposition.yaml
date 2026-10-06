@@ -940,6 +940,9 @@ spec:
                     intended_talos_version = try(regex("[0-9]+\\.[0-9]+\\.[0-9]+", var.intendedTalosVersion), "0.0.0")
                     intended_talos_parts = split(".", local.intended_talos_version)
                     installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
+                    node_kubelet_override_requested = {{ if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubelet .observed.composite.resource.spec.overrides.kubelet.config }}true{{ else }}false{{ end }}
+                    node_has_longhorn_disks = {{ if and .observed.composite.resource.spec.storage .observed.composite.resource.spec.storage.longhornDisks }}true{{ else }}false{{ end }}
+                    use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.node_kubelet_override_requested && !local.node_has_longhorn_disks
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
@@ -1272,7 +1275,7 @@ spec:
                       yamlencode({
                         debug = false
                         cluster = {
-                          allowSchedulingOnControlPlanes = local.installed_talos_is_1_14_or_newer ? null : true
+                          allowSchedulingOnControlPlanes = local.use_v1_14_kubelet_documents ? null : true
                           controlPlane = {
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
                           }
@@ -1427,9 +1430,9 @@ spec:
                             }
                           }
 
-                        }, local.installed_talos_is_1_14_or_newer ? {
+                        }, local.use_v1_14_kubelet_documents ? {
                           kubelet = null
-                        } : {}, local.installed_talos_is_1_14_or_newer ? {} : {
+                        } : {}, local.use_v1_14_kubelet_documents ? {} : {
                           kubelet = {
                             image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
 
@@ -1535,8 +1538,8 @@ spec:
                           }
                         })
                       }),
-                      local.installed_talos_is_1_14_or_newer ? local.legacy-kubelet-cleanup : "",
-                      local.installed_talos_is_1_14_or_newer ? local.kubelet-conf : "",
+                      local.use_v1_14_kubelet_documents ? local.legacy-kubelet-cleanup : "",
+                      local.use_v1_14_kubelet_documents ? local.kubelet-conf : "",
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
                       {{- end }}
