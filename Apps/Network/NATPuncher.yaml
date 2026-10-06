@@ -28,6 +28,18 @@ spec:
                       enabled: false
                     CoTurn:
                       enabled: true
+                      service:
+                        type: 'LoadBalancer'
+                        annotations:
+                          purelb.io/allow-shared-ip: 'main-gw.resolvemy.host'
+                          purelb.io/service-group: 'main-public'
+                          purelb.io/addresses: '66.165.222.101'
+                          external-dns.kubernetes.io/hostname: 'nat.mylogin.space'
+                          # TODO(external-dns-022): Remove the legacy annotation after upgrading ExternalDNS.
+                          external-dns.alpha.kubernetes.io/hostname: 'nat.mylogin.space'
+                        labels:
+                          wan-mode: 'public'
+                          lan-mode: 'private'
                     Tunneler:
                       hub: true
 
@@ -172,6 +184,17 @@ spec:
                           duration: 8600
                     CoTurn:
                       enabled: true
+                      service:
+                        type: 'LoadBalancer'
+                        loadBalancerClass: 'kube-vip.io/kube-vip-class'
+                        annotations:
+                          kube-vip.io/loadbalancerIPs: '10.0.0.46'
+                          external-dns.kubernetes.io/hostname: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
+                          # TODO(external-dns-022): Remove the legacy annotation after upgrading ExternalDNS.
+                          external-dns.alpha.kubernetes.io/hostname: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
+                        labels:
+                          wan-mode: 'public'
+                          lan-mode: 'private'
                     Tunneler:
                       hub: true
           - clusters:
@@ -207,7 +230,7 @@ spec:
 
       source:
         path: Network/NATPuncher
-        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        repoURL: https://slop.writemy.codes/CoRE/CoRE-Backplane.git
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
