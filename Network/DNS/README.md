@@ -51,10 +51,10 @@ annotation. The annotation requests the reserved VIP from the
 [KubeVIP cloud provider](https://kube-vip.io/docs/usage/cloud-provider/);
 KubeVIP advertises it without requesting a UPnP mapping for dnsdist.
 The separate [NATPuncher stack](../NATPuncher/README.md) owns the YVR gateway's
-port-53 mappings. YXL/DC1 intentionally retains the legacy
-PowerDNS NS Service through PureLB at `66.165.222.100` with service group
-`anycast`; dnsdist is disabled there so the two Services cannot compete for
-the address. The PowerDNS Service is changed to `ClusterIP` only for YVR by
+port-53 mappings. YXL/DC1 retains the legacy PowerDNS NS Service through
+PureLB at `66.165.222.100` with service group `anycast` and runs dnsdist at
+`66.165.222.105`; the Services have distinct addresses. The PowerDNS Service
+is changed to `ClusterIP` only for YVR by
 [`Apps/Network/NS.yaml`](../../Apps/Network/NS.yaml).
 
 ## Verification and recovery

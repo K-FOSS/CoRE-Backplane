@@ -22,8 +22,9 @@ The static k8gb zones are `gslb.mylogin.space` and `gslb.mylogin.social`,
 under the `mylogin.space` and `mylogin.social` parent zones respectively. Both
 zones are defined in chart defaults and explicitly injected by the owning
 ApplicationSet so the Lovely merge retains the complete nested k8gb
-configuration. No `ZoneDelegation` or `Gslb`
-resources are created yet, and the embedded ExternalDNS remains disabled.
+configuration. K8GB generates a `ZoneDelegation` for each static zone; no
+application `Gslb` resources are created yet, and the embedded ExternalDNS
+remains disabled.
 K8GB CoreDNS remains an internal `ClusterIP` backend; the separate Network/DNS
 stack routes configured zones to it when dnsdist is enabled.
 
@@ -55,9 +56,10 @@ records and public reachability remain owned by Network/NS and Network/DNS.
 
 Each participating k8gb CoreDNS server must have an externally reachable DNS
 address for the parent zone's NS and glue records. YXL/DC1 retains the legacy
-PowerDNS PureLB endpoint at `66.165.222.100`; the Network/DNS stack owns the
-YVR endpoint through KubeVIP with UPnP forwarding. The actual YVR WAN target
-must be verified from outside the site before publishing glue.
+PowerDNS PureLB endpoint at `66.165.222.100` and runs dnsdist separately at
+`66.165.222.105`. The Network/DNS stack owns the YVR endpoint through KubeVIP
+with UPnP forwarding. The actual YVR WAN target must be verified from outside
+the site before publishing glue.
 
 The operator-provided authoritative DNS topology is `ns1.resolvemy.host`
 through `ns4.resolvemy.host`, with two names assigned to DC1 and two to YVR.
@@ -87,10 +89,11 @@ verify TXT ownership behavior before enabling it. The existing Network/Base
 Cloudflare ExternalDNS Secret is namespace-scoped and does not grant access to
 the PowerDNS API.
 
-When those prerequisites are ready, deploy a `ZoneDelegation` in each cluster
-that serves the child zone and a matching `Gslb` referencing the same
-Gateway/Service in each participating site. Dynamic zones let k8gb activate
-CoreDNS only for zones that have participating workloads. Follow the
+When those prerequisites are ready, deploy a matching `Gslb` referencing the
+same Gateway/Service in each participating site. For additional dynamic zones,
+deploy a `ZoneDelegation` in each cluster that serves the child zone. Dynamic
+zones let k8gb activate CoreDNS only for zones that have participating
+workloads. Follow the
 [ZoneDelegation guide](https://www.k8gb.io/latest/dynamic_zones/),
 [Gslb strategies](https://www.k8gb.io/latest/strategy/),
 [resource reference guide](https://www.k8gb.io/latest/resource_ref/), and
@@ -105,13 +108,21 @@ not create cross-cluster workloads, load-balancer addresses, DNS credentials,
 or parent-zone delegation in this initial configuration.
 
 After reconciliation, verify both child Applications, K8GB and CoreDNS
-readiness, CRD establishment, the site geotags, and that no
-`ZoneDelegation` or `Gslb` resources exist. Adding `gslb.mylogin.social` to the
-static configuration does not create parent-zone NS delegation or a globally
-served application hostname. Once DNS prerequisites are met,
+readiness, CRD establishment, the site geotags, the generated
+`ZoneDelegation` status, and that no application `Gslb` resources exist.
+Adding `gslb.mylogin.social` to the static configuration does not guarantee
+working public delegation or a globally served application hostname. Once DNS
+prerequisites are met,
 verify ZoneDelegation status, generated DNSEndpoints, Cloudflare/provider
 records, authoritative UDP/TCP answers from outside each site, and the actual
 application failover before treating a hostname as globally served.
+
+On 2026-10-06, the DC1 dnsdist address `66.165.222.105` answered authoritative
+NS and SOA queries for `gslb.mylogin.social`, while public recursive resolvers
+still returned the `mylogin.social` parent SOA for a child-zone SOA query. The
+legacy DC1 PowerDNS address `66.165.222.100` refused the child query, and the
+Home1 WAN address did not respond to the external UDP probe. Public delegation
+and both sites' external reachability therefore remain unverified.
 
 Argo CD preserves resources if this ApplicationSet is removed. Removing k8gb
 may leave CRDs, custom resources, DNS zones, and delegation records behind.
