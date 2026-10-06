@@ -8,6 +8,30 @@ The ApplicationSet injects the site-specific settings. Chart defaults are in
 [`values.yaml`](values.yaml), and workload resources are rendered by
 [`templates/common.yaml`](templates/common.yaml).
 
+## CoTURN service configuration
+
+The chart exposes the CoTURN Service settings under `coturn.service`:
+
+```yaml
+coturn:
+  enabled: true
+  service:
+    type: 'LoadBalancer'
+    loadBalancerClass: ''
+    annotations: {}
+    labels:
+      wan-mode: 'public'
+```
+
+The [NATPuncher ApplicationSet](../../Apps/Network/NATPuncher.yaml) overrides
+these generic defaults with the YXL PureLB class, public address, DNS names,
+and dashboard labels. Keep site-specific load-balancer annotations and labels
+in that ApplicationSet rather than in the chart defaults. `loadBalancerClass`
+selects the Kubernetes load-balancer implementation; leave it empty when the
+cluster's default implementation should be used. See the Kubernetes
+[Service documentation](https://kubernetes.io/docs/concepts/services-networking/service/)
+for the supported Service fields.
+
 ## UPnP mappings
 
 When `UPNP.enabled` is true, the `upnp` controller runs a Kubernetes CronJob

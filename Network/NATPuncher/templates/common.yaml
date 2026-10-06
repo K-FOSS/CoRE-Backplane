@@ -248,7 +248,12 @@ service:
     primary: true
 
     # -- Set the service type
-    type: LoadBalancer
+    type: {{ .Values.coturn.service.type }}
+
+    {{- if eq .Values.coturn.service.type "LoadBalancer" }}
+    # -- Set the load balancer implementation class
+    loadBalancerClass: {{ .Values.coturn.service.loadBalancerClass | quote }}
+    {{- end }}
 
     # -- Specify the externalTrafficPolicy for the service. Options: Cluster, Local
     # -- [[ref](https://kubernetes.io/docs/tutorials/services/source-ip/)]
@@ -259,20 +264,11 @@ service:
     # -- The ip families that should be used. Options: IPv4, IPv6
     ipFamilies: []
 
-    # # -- Provide additional annotations which may be required.
-    annotations:
-      purelb.io/allow-shared-ip: main-gw.resolvemy.host
-      purelb.io/service-group: main-public
-      purelb.io/allow-local: 'true'
-      purelb.io/addresses: '{{ $.Values.networking.publicAddress }}'
-      external-dns.kubernetes.io/hostname: 'nat.mylogin.space'
-      # TODO(external-dns-022): Remove the legacy annotation after upgrading ExternalDNS.
-      external-dns.alpha.kubernetes.io/hostname: 'nat.mylogin.space'
+    # -- Provide additional annotations which may be required.
+    annotations: {{ toYaml .Values.coturn.service.annotations | nindent 6 }}
 
     # -- Provide additional labels which may be required.
-    labels:
-      wan-mode: public
-      lan-mode: private
+    labels: {{ toYaml .Values.coturn.service.labels | nindent 6 }}
 
     # -- Allow adding additional match labels
     extraSelectorLabels: {}
