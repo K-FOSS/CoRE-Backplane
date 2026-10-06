@@ -25,7 +25,9 @@ spec:
       logLevel: INFO
       extraProperties:
         CHE_OIDC_USERNAME__CLAIM: preferred_username
-        'CHE_OAUTH_GITHUB_REDIRECTURIS': '{{ required "che.callbackUrl is required when Che is enabled" .Values.che.callbackUrl }}'
+        CHE_OAUTH_GITHUB_REDIRECTURIS: '{{ required "che.callbackUrl is required when Che is enabled" .Values.che.callbackUrl }}'
+        #CHE_FORCE_REFRESH_PERSONAL_ACCESS_TOKEN: 'true'
+        CHE_SYSTEM_ADMIN__NAME: '{{ required "che.systemAdminName is required when Che is enabled" .Values.che.systemAdminName }}'
 
     dashboard:
       deployment:
