@@ -76,7 +76,7 @@ spec:
 
       source:
         path: Network/Ingress
-        repoURL: https://github.com/K-FOSS/CoRE-Backplane.git
+        repoURL: https://slop.writemy.codes/CoRE/CoRE-Backplane.git
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
@@ -95,7 +95,6 @@ spec:
                   service:
                     annotations:
                       purelb.io/addresses: '{{ .values.gateway.address.ipv4 }}'
-                      purelb.io/allow-local: 'true'
                       {{ if .values.gateway.address.sharedIP.enabled }}
                       purelb.io/allow-shared-ip: '{{ .values.gateway.address.sharedIP.key }}' 
                       {{ end }}
