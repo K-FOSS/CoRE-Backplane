@@ -16,10 +16,12 @@ spec:
                   values:
                     clusterGeoTag: 'home1'
                     extGslbClustersGeoTags: 'dc1'
+                    dnsdistExternalAddress: '10.0.0.40'
                 - name: core-dc1-talos-prod
                   values:
                     clusterGeoTag: 'dc1'
                     extGslbClustersGeoTags: 'home1'
+                    dnsdistExternalAddress: '66.165.222.105'
           - clusters:
               selector:
                 matchLabels:
@@ -56,6 +58,8 @@ spec:
                   k8gb:
                     clusterGeoTag: '{{ .values.clusterGeoTag }}'
                     extGslbClustersGeoTags: '{{ .values.extGslbClustersGeoTags }}'
+                    clusterExposedIPs:
+                      - '{{ .values.dnsdistExternalAddress }}'
                     dnsZones:
                       - parentZone: 'mylogin.space'
                         loadBalancedZone: 'gslb.mylogin.space'

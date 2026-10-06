@@ -26,6 +26,15 @@ resources are created yet, and the embedded ExternalDNS remains disabled.
 K8GB CoreDNS remains an internal `ClusterIP` backend; the separate Network/DNS
 stack may route configured zones to it.
 
+The ApplicationSet sets `k8gb.clusterExposedIPs` to the address served by the
+site's dnsdist front door: `10.0.0.40` for home1/YVR and `66.165.222.105` for
+dc1/YXL. This makes K8GB publish the dnsdist-reachable address for delegation
+glue and local application records while dnsdist continues forwarding
+`gslb.mylogin.space` to the internal CoreDNS Service. Keep these values aligned
+with the corresponding [Network/DNS ApplicationSet](../../Apps/Network/DNS.yaml)
+addresses; each address must route both DNS traffic to dnsdist and application
+traffic as required by K8GB.
+
 ## DNS prerequisites before enabling a global service
 
 Each participating k8gb CoreDNS server must have an externally reachable DNS
