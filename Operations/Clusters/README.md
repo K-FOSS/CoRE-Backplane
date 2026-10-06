@@ -49,12 +49,12 @@ configurations.
 
 The BMPS control plane currently runs only on the legacy k3s management
 cluster. The [`core-backplane-ops-cluster` ApplicationSet](../../Apps/Infra/Cluster.yaml)
-creates the `core-dc1-talos-prod-ops-cluster` child application there; that
-application hosts the Cluster Ops chart and reconciles the Crossplane,
-Tinkerbell, Talos, and node claims for the `core-dc1-talos` cluster. The
-managed Talos cluster is therefore a BMPS workload target, not the current
-BMPS control-plane host. Preserve this placement when refreshing or syncing
-Cluster Ops during recovery.
+creates the `dc1-k3s-node1-ops-cluster` child application on legacy k3s. That
+application owns the live `srv1.dc1.yxl.resolvemy.host` node claim and its
+Crossplane/Terraform reconciliation for `core-dc1-talos`. A separate
+`core-dc1-talos-prod-ops-cluster` child application targets the managed Talos
+cluster; it is not the owner of the live srv1 claim. Preserve this distinction
+when refreshing or syncing Cluster Ops during recovery.
 
 ### Talos compute-node configuration compatibility
 
