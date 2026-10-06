@@ -151,6 +151,13 @@ documents. Earlier releases receive the same effective values through the
 legacy `machine.kubelet` configuration. If the version probe cannot reach the
 node, the Composition conservatively uses the legacy form.
 
+For Talos v1.14, the node Workspace first removes the inherited legacy
+`machine.kubelet` and `cluster.allowSchedulingOnControlPlanes` fields with
+Talos [strategic-merge delete patches](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/system-configuration/patching),
+then applies the new documents. Control-plane schedulability is preserved by
+removing the default control-plane taint through `KubeNodeConfig`, as described
+in the [Talos control-plane workload guide](https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane).
+
 ## Cluster-wide sysctls
 
 Set `spec.sysctls` on a `Cluster` claim to apply a kernel sysctl to every node

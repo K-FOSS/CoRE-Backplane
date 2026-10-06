@@ -953,6 +953,11 @@ spec:
                       ---
                       apiVersion: v1alpha1
                       kind: KubeNodeConfig
+                      {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
+                      taints:
+                        node-role.kubernetes.io/control-plane:
+                          $patch: delete
+                      {{- end }}
                       nodeIP:
                         validSubnets:
                           {{- range $index, $network := .observed.composite.resource.spec.networks }}
@@ -962,6 +967,15 @@ spec:
                           {{- end }}
                           {{- end }}
                           {{- end }}
+                    EOT
+
+                    legacy-kubelet-cleanup = <<-EOT
+                      machine:
+                        kubelet:
+                          $patch: delete
+                      cluster:
+                        allowSchedulingOnControlPlanes:
+                          $patch: delete
                     EOT
 
                     link-script = <<-EOT
@@ -1517,6 +1531,7 @@ spec:
                           }
                         })
                       }),
+                      local.installed_talos_is_1_14_or_newer ? local.legacy-kubelet-cleanup : "",
                       local.installed_talos_is_1_14_or_newer ? local.kubelet-conf : "",
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
