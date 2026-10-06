@@ -943,6 +943,7 @@ spec:
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
+                    legacy-node-labels = try(tomap(yamldecode(split("\n---", var.talosConfig)[0]).machine.nodeLabels), {})
 
                     kubelet-conf = <<-EOT
                       ---
@@ -953,6 +954,7 @@ spec:
                       ---
                       apiVersion: v1alpha1
                       kind: KubeNodeConfig
+                      labels: ${jsonencode(local.legacy-node-labels)}
                       {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                       taints:
                         node-role.kubernetes.io/control-plane:
@@ -972,6 +974,8 @@ spec:
                     legacy-kubelet-cleanup = <<-EOT
                       machine:
                         kubelet:
+                          $patch: delete
+                        nodeLabels:
                           $patch: delete
                       cluster:
                         allowSchedulingOnControlPlanes:

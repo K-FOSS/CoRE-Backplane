@@ -152,9 +152,12 @@ legacy `machine.kubelet` configuration. If the version probe cannot reach the
 node, the Composition conservatively uses the legacy form.
 
 For Talos v1.14, the node Workspace first removes the inherited legacy
-`machine.kubelet` and `cluster.allowSchedulingOnControlPlanes` fields with
+`machine.kubelet`, `machine.nodeLabels`, and
+`cluster.allowSchedulingOnControlPlanes` fields with
 Talos [strategic-merge delete patches](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/system-configuration/patching),
-then applies the new documents. Control-plane schedulability is preserved by
+then applies the new documents. The inherited node labels are carried into
+`KubeNodeConfig`, including the control-plane external-load-balancer exclusion.
+Control-plane schedulability is preserved by
 removing the default control-plane taint through `KubeNodeConfig`, as described
 in the [Talos control-plane workload guide](https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane).
 
