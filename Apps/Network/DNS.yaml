@@ -24,7 +24,7 @@ spec:
                       serviceType: 'LoadBalancer'
                 - name: core-dc1-talos-prod
                   values:
-                    dnsdistEnabled: false
+                    dnsdistEnabled: true
                     nameserver:
                       domain: 'ns4.resolvemy.host'
                       dnsTarget: ''
@@ -79,7 +79,8 @@ spec:
                     zones:
                       - 'resolvemy.host.'
                   k8gb:
-                    zones: []
+                    zones:
+                      - 'gslb.mylogin.space'
                   service:
                     type: '{{ .values.nameserver.serviceType }}'
                     loadBalancerClass: '{{ .values.nameserver.loadBalancerClass }}'
