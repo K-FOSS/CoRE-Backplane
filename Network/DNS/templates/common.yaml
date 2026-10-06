@@ -12,7 +12,6 @@ controllers:
     replicas: {{ .Values.dnsdist.replicas }}
     strategy: RollingUpdate
     pod:
-      shareProcessNamespace: true
       automountServiceAccountToken: false
       annotations:
         core.mylogin.space/dnsdist-config-revision: {{ .Values.dnsdist.configRevision | quote }}
@@ -86,13 +85,15 @@ controllers:
                 | sha256sum | awk '{print $1}'
             }
             last="$(config_hash)"
+            publish() {
+              printf '%s\n' "$1" > /run/dnsdist/reload.tmp
+              mv /run/dnsdist/reload.tmp /run/dnsdist/reload
+            }
+            publish "${last}"
             while :; do
               current="$(config_hash)"
               if [ "${current}" != "${last}" ]; then
-                pid="$(pidof dnsdist | awk '{print $1}')"
-                if [ -n "${pid}" ]; then
-                  kill -TERM "${pid}"
-                fi
+                publish "${current}"
                 last="${current}"
               fi
               sleep 2
@@ -154,6 +155,14 @@ persistence:
         reloader:
           - path: '/etc/dnsdist'
             readOnly: true
+  runtime:
+    type: emptyDir
+    advancedMounts:
+      main:
+        main:
+          - path: '/run/dnsdist'
+        reloader:
+          - path: '/run/dnsdist'
 
 {{- end -}}
 

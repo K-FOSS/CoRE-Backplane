@@ -57,6 +57,19 @@ data:
     {{- end }}
 
     dofile('/etc/dnsdist/rules.lua')
+    reloadConfig()
+    local reloadMarker = ''
+    function maintenance()
+      local markerFile = io.open('/run/dnsdist/reload', 'r')
+      if markerFile == nil then return end
+      local marker = markerFile:read('*l')
+      markerFile:close()
+      if marker ~= nil and marker ~= reloadMarker then
+        dofile('/etc/dnsdist/rules.lua')
+        reloadConfig()
+        reloadMarker = marker
+      end
+    end
   rules.lua: |
     function reloadConfig()
       setRules({
@@ -83,5 +96,4 @@ data:
       })
     setServerPolicy(firstAvailable)
     end
-    reloadConfig()
     {{- end }}
