@@ -1266,9 +1266,7 @@ spec:
                       yamlencode({
                         debug = false
                         cluster = {
-                          allowSchedulingOnControlPlanes = local.installed_talos_is_1_14_or_newer ? {
-                            "$patch" = "delete"
-                          } : true
+                          allowSchedulingOnControlPlanes = local.installed_talos_is_1_14_or_newer ? null : true
                           controlPlane = {
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
                           }
@@ -1424,9 +1422,7 @@ spec:
                           }
 
                         }, local.installed_talos_is_1_14_or_newer ? {
-                          kubelet = {
-                            "$patch" = "delete"
-                          }
+                          kubelet = null
                         } : {}, local.installed_talos_is_1_14_or_newer ? {} : {
                           kubelet = {
                             image = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
