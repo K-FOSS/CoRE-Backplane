@@ -35,14 +35,19 @@ with the corresponding [Network/DNS ApplicationSet](../../Apps/Network/DNS.yaml)
 addresses; each address must route both DNS traffic to dnsdist and application
 traffic as required by K8GB.
 
-The CoreDNS external-zone answer is rewritten per site so the delegated zone
-advertises `ns2.resolvemy.host` from YVR and `ns4.resolvemy.host` from YXL,
-matching the authoritative nameserver services in the [Network/NS
-ApplicationSet](../../Apps/Network/NS.yaml). The SOA mailbox is published as
-the DNS RNAME `august.mylogin.space.` (the mailbox `augy@mylogin.space`).
-These rewrites affect the K8GB CoreDNS answer; the authoritative `resolvemy.host`
-nameserver records and their public reachability remain owned by Network/NS
-and Network/DNS.
+The [Global ApplicationSet](../../Apps/Network/Global.yaml) injects a Lovely
+Kustomize patch into the rendered CoreDNS ConfigMap. Its `template` directives
+serve apex NS and SOA answers with `ns2.resolvemy.host` from YVR and
+`ns4.resolvemy.host` from YXL, matching the nameserver assignments in the
+[Network/NS ApplicationSet](../../Apps/Network/NS.yaml). Each site configures
+`hostmasterEmail: 'augy@mail.mylogin.space'` in the ApplicationSet matrix; the
+patch renders it as the SOA RNAME `augy.mail.mylogin.space.`. The pinned K8GB chart does
+not render `dnsZones[].extraPlugins`, so the patch replaces the full static
+Corefile while retaining K8GB's generated `../dynamic/*.conf` import. Recheck
+the patch against the chart's Corefile on upgrades. [CoreDNS template
+behavior](https://coredns.io/plugins/template/) documents the exact apex
+matches and fallthrough to K8GB's records. Authoritative `resolvemy.host`
+records and public reachability remain owned by Network/NS and Network/DNS.
 
 ## DNS prerequisites before enabling a global service
 

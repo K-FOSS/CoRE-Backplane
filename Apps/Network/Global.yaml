@@ -18,12 +18,14 @@ spec:
                     extGslbClustersGeoTags: 'dc1'
                     dnsdistExternalAddress: '10.0.0.40'
                     externalNameserver: 'ns2.resolvemy.host'
+                    hostmasterEmail: 'augy@mail.mylogin.space'
                 - name: core-dc1-talos-prod
                   values:
                     clusterGeoTag: 'dc1'
                     extGslbClustersGeoTags: 'home1'
                     dnsdistExternalAddress: '66.165.222.105'
                     externalNameserver: 'ns4.resolvemy.host'
+                    hostmasterEmail: 'augy@mail.mylogin.space'
           - clusters:
               selector:
                 matchLabels:
@@ -66,10 +68,47 @@ spec:
                       - parentZone: 'mylogin.space'
                         loadBalancedZone: 'gslb.mylogin.space'
                         dnsZoneNegTTL: 30
-                        extraPlugins:
-                          - 'rewrite stop name exact ns1.dns.gslb.mylogin.space {{ .values.externalNameserver }} answer auto'
-                          - 'rewrite stop name exact hostmaster.gslb.mylogin.space august.mylogin.space answer auto'
-                          - 'rewrite stop name exact hostmaster.mylogin.space august.mylogin.space answer auto'
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      version: 'v1'
+                      kind: ConfigMap
+                      name: '{{ .values.clusterName }}-network-global-{{ .values.environment }}-coredns'
+                      namespace: 'k8gb'
+                    patch: |-
+                      - op: 'replace'
+                        path: '/data/Corefile'
+                        value: |
+                          .:5353 {
+                            health
+                            reload 30s 15s
+                            ready
+                          }
+                          (k8gbplugins) {
+                              errors
+                              health
+                              reload 30s 15s
+                              ready
+                              prometheus 0.0.0.0:9153
+                              forward . /etc/resolv.conf
+                              template IN NS gslb.mylogin.space {
+                                  match ^gslb[.]mylogin[.]space[.]$
+                                  answer "gslb.mylogin.space. 30 IN NS {{ .values.externalNameserver }}."
+                                  fallthrough
+                              }
+                              template IN SOA gslb.mylogin.space {
+                                  match ^gslb[.]mylogin[.]space[.]$
+                                  answer "gslb.mylogin.space. 30 IN SOA {{ .values.externalNameserver }}. {{ .values.hostmasterEmail | replace "@" "." }}. 1 7200 1800 86400 30"
+                                  fallthrough
+                              }
+                              k8s_crd {
+                                  filter k8gb.io/dnstype=local
+                                  negttl 30
+                                  loadbalance weight
+                              }
+                          }
+                          import ../dynamic/*.conf
       destination:
         server: '{{ .server }}'
         namespace: k8gb
