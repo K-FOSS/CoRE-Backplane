@@ -22,6 +22,12 @@ spec:
                       ipv4: '10.0.0.40'
                       serviceGroup: ''
                       serviceType: 'LoadBalancer'
+                    dnsdistForwardNetworks:
+                      - '10.0.0.0/24'
+                    dnsdistHostOverrides:
+                      - hostname: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
+                        addresses:
+                          - '10.0.0.19'
                 - name: core-dc1-talos-prod
                   values:
                     dnsdistEnabled: true
@@ -31,6 +37,8 @@ spec:
                       ipv4: '66.165.222.105'
                       serviceGroup: 'anycast'
                       serviceType: 'LoadBalancer'
+                    dnsdistForwardNetworks: []
+                    dnsdistHostOverrides: []
           - clusters:
               selector:
                 matchLabels:
@@ -85,6 +93,19 @@ spec:
                     zones:
                       - 'gslb.mylogin.space'
                       - 'gslb.mylogin.social'
+                  forward:
+                    clientNetworks:
+                      {{ range .values.dnsdistForwardNetworks }}
+                      - '{{ . }}'
+                      {{ end }}
+                  hostOverrides:
+                    {{ range .values.dnsdistHostOverrides }}
+                    - hostname: '{{ .hostname }}'
+                      addresses:
+                        {{ range .addresses }}
+                        - '{{ . }}'
+                        {{ end }}
+                    {{ end }}
                   service:
                     type: '{{ .values.nameserver.serviceType }}'
                     loadBalancerClass: '{{ .values.nameserver.loadBalancerClass }}'

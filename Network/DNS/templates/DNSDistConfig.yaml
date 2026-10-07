@@ -73,6 +73,16 @@ data:
   rules.lua: |
     function reloadConfig()
       setRules({
+    {{- range .Values.dnsdist.hostOverrides }}
+        newRuleAction(QNameRule({{ printf "%s." (trimSuffix "." .hostname) | quote }}), SpoofAction({
+    {{- range $index, $address := .addresses }}{{ if $index }}, {{ end }}{{ $address | quote }}{{ end }}
+        })),
+    {{- end }}
+    {{- if gt (len .Values.dnsdist.forward.clientNetworks) 0 }}
+        newRuleAction(NetmaskGroupRule({
+    {{- range $index, $network := .Values.dnsdist.forward.clientNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
+        }), PoolAction('forwarder')),
+    {{- end }}
     {{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
         newRuleAction(QNameSuffixRule({
     {{- range $index, $zone := .Values.dnsdist.k8gb.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}

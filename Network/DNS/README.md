@@ -34,7 +34,20 @@ remains the external/site cluster identity. dnsdist resolves those Service
 names with `getAddressInfo()` before registering IP backends. Recursive
 requests are sent to the cluster-domain-qualified cluster DNS Service only for
 the CIDRs in `dnsdist.recursive.allowedNetworks`; other public requests remain
-in the authoritative pool so the public endpoint is not an open resolver.
+in the authoritative pool so the public endpoint is not an open resolver. The
+YVR ApplicationSet routes `10.0.0.0/24` to the `forwarder` pool before the
+authoritative, K8GB, and recursive rules. That pool contains only Cloudflare's
+`1.1.1.1:53` backend, so matching queries are forwarded to Cloudflare. Other
+private networks retain the cluster-recursive rule.
+
+YVR defines an exact-name override through `dnsdistHostOverrides` in the
+ApplicationSet list entry. The hostname is the Vault-backed YVR public
+hostname and its A response is `10.0.0.19`. dnsdist's
+[`QNameRule`](https://www.dnsdist.org/reference/selectors.html) and
+[`SpoofAction`](https://www.dnsdist.org/reference/actions.html) answer matching
+A queries locally. This override precedes all forwarding and zone rules. Add
+further addresses to the entry's `addresses` list to spoof additional A or
+AAAA records.
 
 The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
 configuration so fully qualified internal Service names are resolved directly.
