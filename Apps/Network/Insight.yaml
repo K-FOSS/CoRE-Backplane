@@ -66,6 +66,7 @@ spec:
                 environment: '{{ index .metadata.labels "resolvemy.host/env" }}'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                orgId: '{{ index .metadata.labels "mylogin.space/tenant" | trimSuffix ".mylogin.space" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
@@ -121,6 +122,7 @@ spec:
                   enabled: true
                   writeUrl: 'http://{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:9090/api/v1/metrics/write'
                   readUrl: 'http://core-mimir.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:8080/prometheus/api/v1'
+                  orgId: '{{ .values.orgId }}'
 
                 flow:
                   enabled: {{ .values.opennms.enabled }}

@@ -1374,6 +1374,9 @@ configMaps:
       org.opennms.plugins.tss.prometheus.cfg: |
         writeUrl={{ required "timeseries.writeUrl is required when external time-series storage is enabled" .Values.timeseries.writeUrl }}
         readUrl={{ required "timeseries.readUrl is required when external time-series storage is enabled" .Values.timeseries.readUrl }}
+        {{- with .Values.timeseries.orgId }}
+        organizationId={{ .Values.timeseries.orgId }}
+        {{- end }}
         maxConcurrentHttpConnections={{ int .Values.timeseries.maxConcurrentHttpConnections }}
         writeTimeoutInMs={{ int .Values.timeseries.writeTimeoutInMs }}
         readTimeoutInMs={{ int .Values.timeseries.readTimeoutInMs }}
