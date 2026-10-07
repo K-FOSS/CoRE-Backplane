@@ -30,7 +30,6 @@ spec:
           template: | # yaml 
             {{`
             {{ $userCredsWorkspace := "user-creds-ws" }}
-            {{ $mongodb := .observed.composite.resource.spec.mongodb }}
 
             #
             # Minio
@@ -96,13 +95,14 @@ spec:
                     port: 5432
                     uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
 
-                  
+                  {{- if and .observed.composite.resource.spec.mongodb .observed.composite.resource.spec.mongodb.enabled }}
                   mongodb:
-                    hostname: {{ if $mongodb }}{{ default .Values.mongodb.hostname $mongodb.hostname }}{{ else }}{{ .Values.mongodb.hostname }}{{ end }}
-                    port: {{ if $mongodb }}{{ default .Values.mongodb.port $mongodb.port }}{{ else }}{{ .Values.mongodb.port }}{{ end }}
-                    replicaSet: {{ if $mongodb }}{{ default .Values.mongodb.replicaSet $mongodb.replicaSet }}{{ else }}{{ .Values.mongodb.replicaSet }}{{ end }}
-                    uri: {{ if $mongodb }}{{ default "mongodb://" $mongodb.uri }}{{ else }}mongodb://{{ end }}
-                    database: {{ if and $mongodb $mongodb.enabled }}{{ index $mongodb.databases 0 }}{{ else }}admin{{ end }}
+                    hostname: {{ toJson .observed.composite.resource.spec.mongodb.hostname }}
+                    port: {{ toJson .observed.composite.resource.spec.mongodb.port }}
+                    replicaSet: {{ toJson .observed.composite.resource.spec.mongodb.replicaSet }}
+                    uri: {{ toJson .observed.composite.resource.spec.mongodb.uri }}
+                    database: {{ toJson (index .observed.composite.resource.spec.mongodb.databases 0) }}
+                  {{- end }}
 
                   mqtts:
                     hostname: mqtt.mylogin.space
@@ -189,6 +189,7 @@ spec:
                       replicaSet = string
                       database = string
                     })
+                    default     = null
                   }
 
                   variable "s3" {
@@ -327,17 +328,17 @@ spec:
                   #
 
                   output "mongoHostname" {
-                    value = var.mongodb.hostname
+                    value = var.mongodb == null ? null : var.mongodb.hostname
                     sensitive = false
                   }
 
                   output "mongoPort" {
-                    value = var.mongodb.port
+                    value = var.mongodb == null ? null : var.mongodb.port
                     sensitive = false
                   }
 
                   output "mongoURI" {
-                    value = "${var.mongodb.uri}${urlencode(local.username)}:${urlencode(local.password)}@${var.mongodb.hostname}:${var.mongodb.port}/${var.mongodb.database}?replicaSet=${var.mongodb.replicaSet}&authMechanism=PLAIN&authSource=external&readPreference=primary"
+                    value = var.mongodb == null ? null : "${var.mongodb.uri}${urlencode(local.username)}:${urlencode(local.password)}@${var.mongodb.hostname}:${var.mongodb.port}/${var.mongodb.database}?replicaSet=${var.mongodb.replicaSet}&authMechanism=PLAIN&authSource=external&readPreference=primary"
                     sensitive = true
                   }
 

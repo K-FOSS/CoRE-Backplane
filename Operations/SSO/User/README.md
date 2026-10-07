@@ -47,7 +47,9 @@ User claim
 The base Terraform Workspace generates a random username when `spec.username`
 is absent, generates a password, resolves `LDAPService` plus any groups in
 `spec.groups`, and creates the Authentik user. Later resources wait for that
-Workspace's connection details.
+Workspace's connection details. It receives a MongoDB input only when
+`spec.mongodb.enabled` is true. Otherwise that optional Terraform input and
+its outputs are null, and no MongoDB connection keys are published.
 
 All reconciliation is declarative, but it crosses several controllers:
 Crossplane, the Go-templating function, provider-terraform, the Authentik
@@ -329,8 +331,10 @@ kubectl -n core-prod get secret example-service \
 
 ## Fleet rollout and debug claim
 
-`Apps/Infra/Crossplane/User.yaml` currently targets two named infrastructure
-clusters. It injects only the `debug` value. When `debug: true`,
+The [fleet ApplicationSet](../../../Apps/Infra/Crossplane/User.yaml) selects
+three named infrastructure clusters and injects the LDAP server, MongoDB
+service address, provider configuration, cluster identity, and `debug` value.
+When `debug: true`,
 `templates/User/Debugging/UserLab.yaml` creates a live test `User` with
 PostgreSQL enabled. This is not merely verbose logging: it provisions an
 identity and database resources.
