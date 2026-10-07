@@ -95,12 +95,15 @@ spec:
                     port: 5432
                     uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
 
+                  
+                  {{- if and .observed.composite.resource.spec.mongodb .observed.composite.resource.spec.mongodb.enabled }}
                   mongodb:
                     hostname: {{ .observed.composite.resource.spec.mongodb.hostname }}
                     port: {{ .observed.composite.resource.spec.mongodb.port }}
                     replicaSet: {{ .observed.composite.resource.spec.mongodb.replicaSet }}
                     uri: {{ default "mongodb://" .observed.composite.resource.spec.mongodb.uri }}
                     database: {{ index .observed.composite.resource.spec.mongodb.databases 0 }}
+                  {{- end }}
 
                   mqtts:
                     hostname: mqtt.mylogin.space
