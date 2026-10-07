@@ -176,6 +176,25 @@ spec:
                   enabled: {{ eq .values.region "yvr" }}
                   clusterName: '{{ .values.clusterName }}'
 
+                livekit:
+                  enabled: {{ eq .values.region "yvr" }}
+                  hostname: 'livekit-{{ .values.region }}.mylogin.space'
+                  redis:
+                    remoteRef:
+                      key: 'Storage/DragonFly/CoRE/{{ .values.region }}/{{ .values.datacenter }}/{{ .values.clusterName }}/Creds'
+                  media:
+                    service:
+                      loadBalancerClass: '{{ if eq .values.region "yvr" }}kube-vip.io/kube-vip-class{{ end }}'
+                      annotations:
+                        kube-vip.io/forwardUPNP: 'true'
+
+                livekit-server:
+                  livekit:
+                    redis:
+                      address: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:6379'
+                      tls:
+                        server_name: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+
                 {{- if hasKey .values "faxDID" }}
                 fax:
                   did: '{{ .values.faxDID }}'

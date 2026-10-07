@@ -98,6 +98,14 @@ signaling and media components from the chart's pinned AIO Talk image; the
 chart's Talk route, media Service, and External Secret configuration remain
 owned by the upstream [AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
 
+The separate `livekit` workload is also enabled for YVR at
+`livekit-yvr.mylogin.space`. It uses the site-local Dragonfly TLS endpoint and
+database `155`, with kube-vip UPnP forwarding for UDP `7882` and TCP `7881`.
+Its API credentials are managed by the chart's External Secret resources and
+must remain in Vault rather than this repository. The upstream chart documents
+the [LiveKit Server deployment and verification](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP#livekit-server)
+and the [official LiveKit Helm chart](https://github.com/livekit/livekit-helm/tree/master/livekit-server).
+
 Each matrix entry explicitly injects the RTPEngine media range
 `11000–11050`, where the chart treats `max` as exclusive and renders UDP
 ports `11000–11049` on the public media Service. Keep this range aligned with
