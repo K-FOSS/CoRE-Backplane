@@ -15,6 +15,9 @@ controllers:
       automountServiceAccountToken: false
       annotations:
         core.mylogin.space/dnsdist-config-revision: {{ .Values.dnsdist.configRevision | quote }}
+        {{ if .Values.dnsdist.cnameFilter.enabled }}
+        core.mylogin.space/cname-filter-revision: {{ printf "%t|%s|%s" .Values.dnsdist.cnameFilter.enabled .Values.dnsdist.cnameFilter.target .Values.dnsdist.cnameFilter.address | sha256sum | quote }}
+        {{ end }}
       dnsConfig:
         options:
           - name: ndots
@@ -115,6 +118,45 @@ controllers:
           limits:
             cpu: '50m'
             memory: '64Mi'
+      {{- if .Values.dnsdist.cnameFilter.enabled }}
+      cname-filter:
+        image:
+          repository: {{ .Values.dnsdist.cnameFilter.recursorImage.repository | quote }}
+          tag: {{ .Values.dnsdist.cnameFilter.recursorImage.tag | quote }}
+          pullPolicy: {{ .Values.dnsdist.cnameFilter.recursorImage.pullPolicy | quote }}
+        args:
+          - '--config-dir=/etc/powerdns'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
+        resources:
+          requests:
+            cpu: '25m'
+            memory: '64Mi'
+          limits:
+            cpu: '250m'
+            memory: '256Mi'
+        probes:
+          readiness:
+            enabled: true
+            type: TCP
+            port: 5353
+            spec:
+              periodSeconds: 10
+          liveness:
+            enabled: true
+            type: TCP
+            port: 5353
+            spec:
+              periodSeconds: 20
+      {{- end }}
 
 service:
   main:
@@ -155,6 +197,27 @@ persistence:
         reloader:
           - path: '/etc/dnsdist'
             readOnly: true
+  recursor-config:
+    type: custom
+    volumeSpec:
+      configMap:
+        name: 'dnsdist-config'
+    advancedMounts:
+      main:
+        cname-filter:
+          - path: '/etc/powerdns/recursor.yml'
+            subPath: 'recursor.yml'
+            readOnly: true
+          - path: '/etc/powerdns/cname-filter.lua'
+            subPath: 'cname-filter.lua'
+            readOnly: true
+  recursor-runtime:
+    type: emptyDir
+    advancedMounts:
+      main:
+        cname-filter:
+          - path: '/var/run/pdns-recursor'
+          - path: '/tmp'
   runtime:
     type: emptyDir
     advancedMounts:

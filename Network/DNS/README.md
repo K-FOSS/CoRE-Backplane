@@ -33,24 +33,31 @@ names use
 remains the external/site cluster identity. dnsdist resolves those Service
 names with `getAddressInfo()` before registering IP backends. Recursive
 requests are sent to the cluster-domain-qualified cluster DNS Service only for
-the CIDRs in `dnsdist.recursive.allowedNetworks`; other public requests remain
-in the authoritative pool so the public endpoint is not an open resolver. The
-YVR ApplicationSet routes `10.0.0.0/24` to the `forwarder` pool before the
-authoritative, K8GB, and recursive rules. That pool contains only Cloudflare's
-`1.1.1.1:53` backend, so matching queries are forwarded to Cloudflare. Other
-private networks retain the cluster-recursive rule.
+the CIDRs in `dnsdist.recursive.allowedNetworks`. The YVR ApplicationSet routes
+`10.0.0.0/24` to the filtered pool before the authoritative, K8GB, and
+recursive rules. That pool terminates in the loopback Recursor, which forwards
+queries to Cloudflare. Other clients continue through the existing zone,
+private recursive, and direct Cloudflare rules.
 
-YVR defines exact-name overrides through `dnsdistHostOverrides` in the
-ApplicationSet list entry. Both `idp.mylogin.space.` and the Vault-backed YVR
-public hostname return `10.0.0.19` for A queries. The direct `idp.mylogin.space.`
-rule is needed because Cloudflare resolves the CNAME chain as part of the
-upstream response; overriding only the CNAME target cannot change that answer.
-dnsdist's
-[`QNameRule`](https://www.dnsdist.org/reference/selectors.html) and
-[`SpoofAction`](https://www.dnsdist.org/reference/actions.html) answer matching
-A queries locally. This override precedes all forwarding and zone rules. Add
-further addresses to the entry's `addresses` list to spoof additional A or
-AAAA records.
+YVR sends `10.0.0.0/24` queries to a loopback-only PowerDNS Recursor sidecar
+in each dnsdist pod. The Recursor forwards recursive lookups to Cloudflare and
+uses its [`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)
+and [DNS record editing API](https://docs.powerdns.com/recursor/lua-scripting/dnsrecord.html)
+to inspect completed answers. If an A response contains a CNAME to the
+Vault-backed YVR `PublicHostname` injected as `dnsdist.cnameFilter.target`, it
+removes the returned CNAME chain and terminal records, then returns one A
+record for the original queried name at `dnsdist.cnameFilter.address`
+(`10.0.0.19`). This covers any alias whose CNAME points at the Vault-provided
+hostname, including aliases whose names are not known to the ApplicationSet.
+Other query types and unrelated CNAMEs are returned unchanged. The
+`dnsdistHostOverrides` entries still handle direct queries for
+`idp.mylogin.space.` and the Vault-backed YVR public hostname.
+
+The Recursor listens only on `127.0.0.1:5353`, permits loopback clients, and is
+not exposed by a Service. Only the YVR ApplicationSet enables the sidecar; its
+`10.0.0.0/24` client route selects the sidecar-backed forwarder pool. DNSSEC
+signatures for rewritten responses are removed with the original chain, so
+those synthesized A answers are unsigned.
 
 The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
 configuration so fully qualified internal Service names are resolved directly.
@@ -85,11 +92,13 @@ public recursive query is refused or answered authoritatively rather than
 recursively. Verify the YVR WAN target externally before publishing glue or
 delegating a child zone.
 
-When changing the generated dnsdist configuration, verify the ConfigMap data,
+When changing the generated DNS configuration, verify the ConfigMap data,
 the watcher marker, both ready endpoints, and the affected answers. The watcher
 only publishes the file hash; dnsdist performs the rule replacement and does
 not expose a remote control socket. See the [dnsdist configuration and runtime guidance](https://www.dnsdist.org/running.html)
-and [PowerDNS dnsdist container documentation](https://github.com/PowerDNS/pdns/tree/master/dockerdata)
+and [PowerDNS dnsdist container documentation](https://github.com/PowerDNS/pdns/tree/master/dockerdata),
+the [PowerDNS Recursor Docker image](https://hub.docker.com/r/powerdns/pdns-recursor-53),
+and [Recursor YAML settings](https://docs.powerdns.com/recursor/yamlsettings.html)
 for the upstream behavior this arrangement relies on.
 
 To roll back the public front door, remove or disable this ApplicationSet only

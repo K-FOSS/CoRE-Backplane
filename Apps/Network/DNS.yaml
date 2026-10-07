@@ -24,6 +24,10 @@ spec:
                       serviceType: 'LoadBalancer'
                     dnsdistForwardNetworks:
                       - '10.0.0.0/24'
+                    dnsdistCnameFilter:
+                      enabled: true
+                      target: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
+                      address: '10.0.0.19'
                     dnsdistHostOverrides:
                       - hostname: 'idp.mylogin.space.'
                         addresses:
@@ -41,6 +45,10 @@ spec:
                       serviceGroup: 'anycast'
                       serviceType: 'LoadBalancer'
                     dnsdistForwardNetworks: []
+                    dnsdistCnameFilter:
+                      enabled: false
+                      target: 'unused.invalid.'
+                      address: '10.0.0.19'
                     dnsdistHostOverrides: []
           - clusters:
               selector:
@@ -85,6 +93,10 @@ spec:
                   region: '{{ .values.region }}'
                 dnsdist:
                   enabled: {{ .values.dnsdistEnabled }}
+                  cnameFilter:
+                    enabled: {{ .values.dnsdistCnameFilter.enabled | default false }}
+                    target: '{{ .values.dnsdistCnameFilter.target | default "unused.invalid." }}'
+                    address: '{{ .values.dnsdistCnameFilter.address | default "10.0.0.19" }}'
                   authoritative:
                     zones:
                       - 'resolvemy.host.'

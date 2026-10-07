@@ -19,6 +19,43 @@ metadata:
     app.kubernetes.io/name: 'dnsdist'
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
 data:
+  {{ if .Values.dnsdist.cnameFilter.enabled }}
+  recursor.yml: |
+    incoming:
+      listen:
+        - '127.0.0.1:5353'
+      allow_from:
+        - '127.0.0.1/32'
+    recursor:
+      forward_zones_recurse:
+        - zone: '.'
+          forwarders:
+            - '1.1.1.1'
+      lua_dns_script: '/etc/powerdns/cname-filter.lua'
+  cname-filter.lua: |
+    local cnameFilter = newDN({{ .Values.dnsdist.cnameFilter.target | quote }})
+    local cnameFilterAddress = {{ .Values.dnsdist.cnameFilter.address | quote }}
+    function postresolve(dq)
+      if dq.qtype ~= pdns.A then return false end
+      local records = dq:getRecords()
+      local matched = false
+      for _, record in pairs(records) do
+        if record.place == 1 and record.type == pdns.CNAME and newDN(record:getContent()) == cnameFilter then
+          matched = true
+          break
+        end
+      end
+      if not matched then return false end
+      local retained = {}
+      for _, record in pairs(records) do
+        if record.place == 0 then table.insert(retained, record) end
+      end
+      dq:setRecords(retained)
+      dq.rcode = 0
+      dq:addAnswer(pdns.A, cnameFilterAddress, 60)
+      return true
+    end
+  {{ end }}
   dnsdist.conf: |
     -- PowerDNS dnsdist is the public DNS front door. Routing is deliberately
     -- explicit so the public Service cannot become an open recursive resolver.
@@ -52,8 +89,11 @@ data:
     {{- if .Values.dnsdist.forward.enabled }}
     {{- $forwardHost := trimSuffix ":53" $forwardBackend }}
     -- Queries outside the authoritative, K8GB, and private recursive rules
-    -- are intentionally forwarded to the configured public resolver.
+    -- use Cloudflare directly; the YVR filter is a separate client-selected pool.
     addBackend('{{ $forwardHost }}', 'forwarder', 'forwarder', nil, nil, nil)
+    {{- if .Values.dnsdist.cnameFilter.enabled }}
+    newServer({address='127.0.0.1:5353', name='cname-filter', pool='filtered'})
+    {{- end }}
     {{- end }}
 
     dofile('/etc/dnsdist/rules.lua')
@@ -81,7 +121,7 @@ data:
     {{- if gt (len (default (list) .Values.dnsdist.forward.clientNetworks)) 0 }}
         newRuleAction(NetmaskGroupRule({
     {{- range $index, $network := .Values.dnsdist.forward.clientNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
-        }), PoolAction('forwarder')),
+        }), PoolAction('{{ if .Values.dnsdist.cnameFilter.enabled }}filtered{{ else }}forwarder{{ end }}')),
     {{- end }}
     {{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
         newRuleAction(QNameSuffixRule({
