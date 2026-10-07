@@ -40,6 +40,15 @@ powerdns:
       cpu: 100m
       memory: 128Mi
       ephemeral-storage: 32Mi
+  apiResources:
+    limits:
+      cpu: '500m'
+      memory: '256Mi'
+      ephemeral-storage: '256Mi'
+    requests:
+      cpu: '50m'
+      memory: '64Mi'
+      ephemeral-storage: '32Mi'
 
   # Active PowerDNS settings only. Database credentials and the API key are
   # injected from Secrets and must not be added here.
@@ -69,18 +78,16 @@ powerdns:
     default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
     gpgsql-dnssec=
 
-    # Cache backend answers for brief database interruptions. Purge with
-    # pdns_control when a verified update must be visible immediately.
-    cache-ttl=300
-    query-cache-ttl=300
-    negquery-cache-ttl=300
+    # Disable PowerDNS caches so API changes are reflected immediately.
+    cache-ttl=0
+    query-cache-ttl=0
+    negquery-cache-ttl=0
+    dnssec-key-cache-ttl=0
+    zone-cache-refresh-interval=0
+    zone-metadata-cache-ttl=0
 
-    # API endpoint consumed by PowerDNS-Admin. API enablement and
-    # authentication are supplied by web.conf from an ExternalSecret.
-    webserver=yes
-    webserver-address=0.0.0.0
-    webserver-allow-from=0.0.0.0/0
-    webserver-port=8081
+    # The API is isolated in the PowerDNS-Admin pod's localhost sidecar.
+    webserver=no
 
     # Logging and version disclosure
     loglevel=3

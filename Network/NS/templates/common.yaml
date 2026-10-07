@@ -75,7 +75,7 @@ controllers:
     strategy: RollingUpdate
     pod:
       annotations:
-        secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds'
+        secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds,{{ include "bjw-s.common.lib.chart.names.fullname" . }}-secrets'
       dnsConfig:
         options:
           - name: ndots
@@ -92,7 +92,7 @@ controllers:
           - name: SIGNUP_ENABLED
             value: 'False'
           - name: PDNS_API_URL
-            value: 'http://{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-webservice:8081'
+            value: 'http://127.0.0.1:8081'
           - name: PDNS_API_KEY
             valueFrom:
               secretKeyRef:
@@ -185,6 +185,61 @@ controllers:
             enabled: false
         resources:
 {{ toYaml .Values.powerdnsAdmin.resources | nindent 10 }}
+      pdns-api:
+        image:
+          repository: {{ .Values.images.powerdns.repository | quote }}
+          tag: {{ .Values.images.powerdns.tag | quote }}
+          pullPolicy: {{ .Values.images.powerdns.pullPolicy }}
+        command:
+          - /usr/local/sbin/pdns_server
+        args:
+          - --config-dir=/etc/pdns
+          - --include-dir=/etc/pdns/conf.d
+          - --disable-syslog=yes
+          - --socket-dir=/tmp
+          - --launch=gpgsql
+          - --load-modules=libgpgsqlbackend.so
+          - --gpgsql-host={{ required "powerdns.database.host must be injected by the owning ApplicationSet" .Values.powerdns.database.host }}
+          - --gpgsql-port={{ .Values.powerdns.database.port }}
+          - --gpgsql-dbname={{ .Values.powerdns.database.name }}
+          - --gpgsql-user=$(USERNAME)
+          - --gpgsql-password=$(PASSWORD)
+          - --local-address=127.0.0.1
+          - --local-port=5300
+          - --cache-ttl=0
+          - --query-cache-ttl=0
+          - --negquery-cache-ttl=0
+          - --dnssec-key-cache-ttl=0
+          - --zone-cache-refresh-interval=0
+          - --zone-metadata-cache-ttl=0
+          - --webserver=yes
+          - --webserver-address=127.0.0.1
+          - --webserver-allow-from=127.0.0.1
+          - --webserver-port=8081
+        env:
+          - name: USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: username
+          - name: PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-creds'
+                key: password
+        workingDir: /etc/pdns
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
+        resources:
+{{ toYaml .Values.powerdns.apiResources | nindent 10 }}
 
 service:
   nsadmin:
@@ -197,15 +252,6 @@ service:
         port: 80
         protocol: HTTP
         appProtocol: http
-  webservice:
-    controller: main
-    type: ClusterIP
-    clusterIP: None
-    ports:
-      http:
-        primary: false
-        port: 8081
-        protocol: HTTP
   main:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}'
     controller: main
@@ -262,6 +308,9 @@ persistence:
       main:
         main:
           - path: /tmp
+      nsadmin:
+        pdns-api:
+          - path: /tmp
   config:
     type: custom
     volumeSpec:
@@ -282,8 +331,8 @@ persistence:
           - key: web.conf
             path: web.conf
     advancedMounts:
-      main:
-        main:
+      nsadmin:
+        pdns-api:
           - path: /etc/pdns/conf.d/web.conf
             readOnly: true
             subPath: web.conf

@@ -40,7 +40,10 @@ The chart renders:
   backed by PostgreSQL and exposed on TCP and UDP port 53 through PureLB in
   DC1 and KubeVIP in Home1. The
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md)
-  is pinned to its multi-architecture manifest digest.
+  is pinned to its multi-architecture manifest digest. PowerDNS-Admin's pod
+  also runs the same pinned image as a local API sidecar. That sidecar connects
+  to the authoritative database and binds its API and DNS listener to pod
+  localhost only; the authoritative pod's API is disabled.
 - [PowerDNS-Admin 2026.08.1](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v2026.08.1)
   provides forward and reverse zone management against this PowerDNS API. Its
   [official multi-architecture image](https://hub.docker.com/r/powerdnsadmin/pda-legacy/tags)
@@ -95,8 +98,11 @@ Secrets must populate the referenced Kubernetes Secrets before PowerDNS and
 PowerDNS-Admin can become ready. PowerDNS connects to the
 [cluster-local Pgpool `psql` Service](../../Databases/PSQL/README.md) using the
 FQDN injected by the ApplicationSet; its database credentials remain
-secret-backed. PowerDNS-Admin uses the internal PowerDNS API Service and
-is protected by the shared Authentik forward-auth outpost through a fail-closed
+secret-backed. PowerDNS-Admin uses `http://127.0.0.1:8081` to reach its local
+PowerDNS sidecar; no Kubernetes Service exposes this API. The
+sidecar mounts the ExternalSecret-generated API key configuration and shares
+the PowerDNS database credentials. PowerDNS-Admin is protected by the shared
+Authentik forward-auth outpost through a fail-closed
 Envoy Gateway `SecurityPolicy`. The Authentik proxy application and the native
 OIDC application are restricted to the `Network` group. The native PowerDNS
 Admin application is displayed as `DNS Admin` and grouped in Authentik under
@@ -139,7 +145,9 @@ operational; rendering the manifests does not establish that prerequisite.
 The Authentik provider credentials are generated per site by the
 [Authentik Terraform provider](https://registry.terraform.io/providers/goauthentik/authentik/latest/docs/resources/provider_oauth2)
 Workspace and written to its local `ns-core-nsadmin-oidc` connection
-Secret, consumed by the PowerDNS-Admin container. The provider registers strict
+Secret, consumed by the PowerDNS-Admin container. The pod also reloads when the
+authoritative API-key Secret changes, so the sidecar rereads its mounted
+configuration. The provider registers strict
 `/oidc/authorized` and `/oidc/logged-out` URLs for that site's hostname. Keep
 these callback URLs aligned if the hostname or OIDC routes change.
 
@@ -156,11 +164,26 @@ Resolve dependencies and validate both Helm branches before merging:
 ```sh
 helm dependency build .
 helm lint . --set hub=false \
-  --set powerdns.database.host=psql.core-prod.svc.cluster.local
+  --set cluster.name=core-dc1-talos-prod \
+  --set powerdns.database.host=psql.core-prod.svc.cluster.local \
+  --set psql.hostname=psql-local.core-dc1-talos-prod.dc1.yxl.mylogin.space \
+  --set psql.crossplaneProvider=psql-dc1-yxl \
+  --set psql.terraformProvider=psql-dc1-yxl \
+  --set service.main.type=LoadBalancer
 helm template ns-core . --namespace core-prod --set hub=false \
-  --set powerdns.database.host=psql.core-prod.svc.cluster.local >/tmp/ns.yaml
+  --set cluster.name=core-dc1-talos-prod \
+  --set powerdns.database.host=psql.core-prod.svc.cluster.local \
+  --set psql.hostname=psql-local.core-dc1-talos-prod.dc1.yxl.mylogin.space \
+  --set psql.crossplaneProvider=psql-dc1-yxl \
+  --set psql.terraformProvider=psql-dc1-yxl \
+  --set service.main.type=LoadBalancer >/tmp/ns.yaml
 helm template ns-core . --namespace core-prod --set hub=true \
-  --set powerdns.database.host=psql.core-prod.svc.cluster.local >/tmp/ns-hub.yaml
+  --set cluster.name=core-dc1-talos-prod \
+  --set powerdns.database.host=psql.core-prod.svc.cluster.local \
+  --set psql.hostname=psql-local.core-dc1-talos-prod.dc1.yxl.mylogin.space \
+  --set psql.crossplaneProvider=psql-dc1-yxl \
+  --set psql.terraformProvider=psql-dc1-yxl \
+  --set service.main.type=LoadBalancer >/tmp/ns-hub.yaml
 ```
 
 Use representative ApplicationSet-injected values when reviewing Service
@@ -178,13 +201,13 @@ creates them with the new immutable selectors while preserving the Services,
 ConfigMap, routes, and credentials. Confirm both replacements are ready before
 continuing with the DNS checks above.
 
-PowerDNS retains packet-cache, positive backend-query, and negative
-backend-query results for 300 seconds. This allows it to continue answering
-with the cached backend value during brief database interruptions, but it can
-also delay visibility of database or API changes for up to five minutes. Use
-`pdns_control purge` inside the authoritative-server pod when a verified
-change must be visible immediately; this clears cache state but does not alter
-zone data.
+Both the authoritative server and the PowerDNS-Admin API sidecar set packet,
+positive backend-query, negative backend-query, DNSSEC-key, zone-list, and
+zone-metadata cache TTLs to zero. This makes changes visible without waiting
+for an in-memory cache to expire, at the cost of querying PostgreSQL for each
+authoritative request. PowerDNS documents these cache controls in its
+[authoritative settings](https://doc.powerdns.com/authoritative/settings.html)
+and [performance guide](https://doc.powerdns.com/authoritative/performance.html).
 
 The upgrade from 4.9.14 to 5.1.4 follows the
 [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html).
