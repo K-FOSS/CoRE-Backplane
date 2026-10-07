@@ -30,6 +30,7 @@ spec:
           template: | # yaml 
             {{`
             {{ $userCredsWorkspace := "user-creds-ws" }}
+            {{ $mongodb := .observed.composite.resource.spec.mongodb }}
 
             #
             # Minio
@@ -96,14 +97,12 @@ spec:
                     uri: {{ default "postgresql://" .observed.composite.resource.spec.psql.uri }}
 
                   
-                  {{- if and .observed.composite.resource.spec.mongodb .observed.composite.resource.spec.mongodb.enabled }}
                   mongodb:
-                    hostname: {{ .observed.composite.resource.spec.mongodb.hostname }}
-                    port: {{ .observed.composite.resource.spec.mongodb.port }}
-                    replicaSet: {{ .observed.composite.resource.spec.mongodb.replicaSet }}
-                    uri: {{ default "mongodb://" .observed.composite.resource.spec.mongodb.uri }}
-                    database: {{ index .observed.composite.resource.spec.mongodb.databases 0 }}
-                  {{- end }}
+                    hostname: {{ if $mongodb }}{{ default .Values.mongodb.hostname $mongodb.hostname }}{{ else }}{{ .Values.mongodb.hostname }}{{ end }}
+                    port: {{ if $mongodb }}{{ default .Values.mongodb.port $mongodb.port }}{{ else }}{{ .Values.mongodb.port }}{{ end }}
+                    replicaSet: {{ if $mongodb }}{{ default .Values.mongodb.replicaSet $mongodb.replicaSet }}{{ else }}{{ .Values.mongodb.replicaSet }}{{ end }}
+                    uri: {{ if $mongodb }}{{ default "mongodb://" $mongodb.uri }}{{ else }}mongodb://{{ end }}
+                    database: {{ if and $mongodb $mongodb.enabled }}{{ index $mongodb.databases 0 }}{{ else }}admin{{ end }}
 
                   mqtts:
                     hostname: mqtt.mylogin.space
