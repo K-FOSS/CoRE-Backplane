@@ -43,7 +43,8 @@ The chart renders:
   is pinned to its multi-architecture manifest digest. PowerDNS-Admin's pod
   also runs the same pinned image as a local API sidecar. That sidecar connects
   to the authoritative database and binds its API and DNS listener to pod
-  localhost only; the authoritative pod's API is disabled.
+  localhost only. Its two-line `pdns.conf` includes the API-key settings from
+  the mounted ExternalSecret; the authoritative pod's API is disabled.
 - [PowerDNS-Admin 2026.08.1](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v2026.08.1)
   provides forward and reverse zone management against this PowerDNS API. Its
   [official multi-architecture image](https://hub.docker.com/r/powerdnsadmin/pda-legacy/tags)

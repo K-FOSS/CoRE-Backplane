@@ -194,7 +194,6 @@ controllers:
           - /usr/local/sbin/pdns_server
         args:
           - --config-dir=/etc/pdns
-          - --include-dir=/etc/pdns/conf.d
           - --disable-syslog=yes
           - --socket-dir=/tmp
           - --launch=gpgsql
@@ -336,6 +335,17 @@ persistence:
           - path: /etc/pdns/conf.d/web.conf
             readOnly: true
             subPath: web.conf
+  apiConfig:
+    type: custom
+    volumeSpec:
+      configMap:
+        name: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-api-config'
+    advancedMounts:
+      nsadmin:
+        pdns-api:
+          - path: /etc/pdns/pdns.conf
+            readOnly: true
+            subPath: pdns.conf
 
 configMaps:
   config:
@@ -343,6 +353,12 @@ configMaps:
     data:
       pdns.conf: |
 {{- .Values.powerdns.config | nindent 8 }}
+  apiConfig:
+    forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-api-config'
+    data:
+      pdns.conf: |
+        config-dir=/etc/pdns
+        include-dir=/etc/pdns/conf.d
 {{- end -}}
 
 {{- $commonValues := include "core-network-nameserver.commonValues" . | fromYaml -}}
