@@ -782,14 +782,14 @@ vector:
       address: 0.0.0.0:8686
 
     sources:
-      network_syslog_udp:
+      net_syslog_udp:
         type: socket
         address: 0.0.0.0:1514
         mode: udp
         max_length: 102400
         host_key: source_address
 
-      network_syslog_tcp:
+      net_syslog_tcp:
         type: socket
         address: 0.0.0.0:1514
         mode: tcp
@@ -818,13 +818,13 @@ vector:
       tag_network_syslog_udp:
         type: remap
         inputs:
-          - network_syslog_udp
+          - net_syslog_udp
         source: '.network_transport = "udp"'
 
       tag_network_syslog_tcp:
         type: remap
         inputs:
-          - network_syslog_tcp
+          - net_syslog_tcp
         source: '.network_transport = "tcp"'
 
       normalize_network_syslog:
