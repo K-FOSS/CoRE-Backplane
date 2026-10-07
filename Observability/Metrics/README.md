@@ -21,7 +21,11 @@ claims, and ship blocks to site-local S3. Three queriers and three query
 frontends execute PromQL; two query schedulers coordinate the read path. The
 stable `core-mimir` Service selects the distributed NGINX gateway so existing
 collectors and the bridge keep their endpoint. The blocks backend remains S3;
-local claims hold working state and synchronized indexes.
+local claims hold working state and synchronized indexes. The distributed
+configuration explicitly sets `blocks_storage.backend: s3` and its bucket name
+alongside the shared S3 client. The Mimir `User` claim provisions the
+`mimir-blocks` and `mimir-alertmanager` buckets. Alertmanager uses its named
+bucket, while ruler storage remains local at `/rules`.
 This follows Mimir's
 [query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
 and documented [query-scheduler ring discovery](https://grafana.com/docs/mimir/latest/references/architecture/components/query-scheduler/),
@@ -59,7 +63,9 @@ The distributed profile preserves the operator's live DC1 configuration from
 for a future cache rollout. S3 HTTP pools allow 200 idle connections globally
 and per host. The distributed profile uses upstream multitenancy defaults,
 no blocks storage prefix, and the upstream ship-concurrency default. These
-settings differ from the retained, disabled single-binary profile.
+settings differ from the retained, disabled single-binary profile. The S3
+layout follows Grafana's [distributed chart production configuration
+guide](https://grafana.com/docs/helm-charts/mimir-distributed/latest/run-production-environment-with-helm/#configure-mimir-to-use-object-storage).
 
 The ruler mounts the exporter-owned rulefiles ConfigMap at `/rules/core` and
 uses `ruler_storage.backend: local` with directory `/rules`. Tenant `core`
