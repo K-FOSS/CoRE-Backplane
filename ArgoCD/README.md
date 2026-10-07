@@ -1,10 +1,14 @@
-# Argo CD chart
+# CoRE-Backplane ArgoCD Stack
 
 This directory installs the Argo CD control plane used to reconcile CoRE
-Backplane. It combines the upstream `argo-cd` chart, the
-`capi2argo-cluster-operator` chart, local Gateway API and External Secrets
-resources, Authentik OIDC provisioning, and a Kustomize patch that adds the
-Lovely config-management plugin to the repository server.
+Backplane. The [`core-argocd` ApplicationSet](../Apps/Infra/ArgoCD/ArogCDProd.yaml)
+owns the deployment, and the [repository overview](../README.md) describes the
+parent platform. The upstream
+[Argo CD Helm chart](https://github.com/argoproj/argo-helm/tree/main/charts/argo-cd)
+and [CAPI-to-Argo cluster operator](https://github.com/dntosas/capi2argo-cluster-operator)
+are combined with local Gateway API and External Secrets resources, Authentik
+OIDC provisioning, and a Kustomize patch that adds the Lovely configuration
+management plugin to the repository server.
 
 This is a self-management path: an existing Argo CD instance applies an
 Application that upgrades Argo CD itself. Treat rendering, secret
@@ -60,6 +64,7 @@ details into that Secret.
 | Notifications controller | Enabled by the upstream chart values. |
 | External Redis | Dragonfly endpoint injected by the ApplicationSet; in-chart Redis and Redis HA are disabled. |
 | CAPI-to-Argo cluster operator | Registers Cluster API-managed clusters with Argo CD. |
+| Local home1 cluster registration | Registers the local cluster at `https://kubernetes.default.svc` with the Argo CD Application controller's in-cluster identity and the labels consumed by the fleet ApplicationSets. |
 | Authentik Workspace | Creates the Argo CD OAuth provider/application and writes OIDC outputs to `argocd-secret`. |
 | Lovely plugin | Renders Helm/Kustomize content and resolves Vault-backed placeholders. |
 
@@ -85,6 +90,13 @@ The upstream Argo CD chart expands `$OIDC_*` references in `oidc.config` from
 keys in `argocd-secret`. A healthy Argo CD workload therefore does not prove
 that OIDC, Redis, or plugin generation is healthy; check each Secret producer
 and consumer separately.
+
+The `cluster-core-home1-talos-prod` registration is rendered from
+[`templates/HomeCluster.yaml`](templates/HomeCluster.yaml). It targets the
+local Kubernetes API service and sets `config` to an empty object so Argo CD
+uses the Application controller's in-cluster credentials. This avoids retaining a
+separate client certificate in Argo CD's cluster Secret. Its labels preserve
+the selectors and cluster metadata used by the production ApplicationSets.
 
 Required external APIs and controllers include External Secrets, the
 `corevault-rootsecrets` ClusterSecretStore, Crossplane's Terraform provider
@@ -167,6 +179,13 @@ a hard dependency, which keeps the chart deployable at sites that use
 different node names.
 
 ## Rendering and validation
+
+The current dependency pin is `argo-cd` chart `10.9.7`, which deploys Argo CD
+`v3.5.4`. From the previous deployed `v3.3.6`, review the upstream
+[v3.3 to v3.4 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.5/operator-manual/upgrading/3.3-3.4/)
+and [v3.4 to v3.5 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.5/operator-manual/upgrading/3.4-3.5/).
+Argo CD 3.5 bundles Helm 4, so review rendered application differences for
+Helm-based sources as part of an upgrade.
 
 Update chart dependencies only when intentionally changing locked dependency
 versions:

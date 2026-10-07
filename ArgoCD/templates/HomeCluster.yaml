@@ -1,0 +1,25 @@
+{{- if .Values.clusterRegistration.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cluster-{{ .Values.cluster.name }}
+  namespace: 'argocd'
+  labels:
+    argocd.argoproj.io/secret-type: 'cluster'
+    cluster.kubernetes.io/domain: '{{ .Values.cluster.domain }}'
+    mylogin.space/hub: 'false'
+    mylogin.space/tenant: 'core.mylogin.space'
+    resolvemy.host/clusterId: '1'
+    resolvemy.host/clustertype: 'infra'
+    resolvemy.host/computetype: 'baremetal'
+    resolvemy.host/dc: '{{ .Values.datacenter }}'
+    resolvemy.host/env: 'prod'
+    resolvemy.host/nodetype: 'infra'
+    topology.kubernetes.io/region: '{{ .Values.region }}'
+    topology.kubernetes.io/zone: 'yvr-home1'
+type: Opaque
+stringData:
+  name: '{{ .Values.cluster.name }}'
+  server: 'https://kubernetes.default.svc'
+  config: '{}'
+{{- end }}
