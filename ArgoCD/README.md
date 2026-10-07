@@ -95,8 +95,9 @@ The `cluster-core-home1-talos-prod` registration is rendered from
 [`templates/HomeCluster.yaml`](templates/HomeCluster.yaml). It targets the
 local Kubernetes API service and sets `config` to an empty object so Argo CD
 uses the Application controller's in-cluster credentials. This avoids retaining a
-separate client certificate in Argo CD's cluster Secret. Its labels preserve
-the selectors and cluster metadata used by the production ApplicationSets.
+separate client certificate in Argo CD's cluster Secret. The chart enables
+`cluster.inClusterEnabled` for this local endpoint. Its labels preserve the
+selectors and cluster metadata used by the production ApplicationSets.
 
 Required external APIs and controllers include External Secrets, the
 `corevault-rootsecrets` ClusterSecretStore, Crossplane's Terraform provider
