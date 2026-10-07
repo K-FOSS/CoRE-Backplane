@@ -40,9 +40,12 @@ authoritative, K8GB, and recursive rules. That pool contains only Cloudflare's
 `1.1.1.1:53` backend, so matching queries are forwarded to Cloudflare. Other
 private networks retain the cluster-recursive rule.
 
-YVR defines an exact-name override through `dnsdistHostOverrides` in the
-ApplicationSet list entry. The hostname is the Vault-backed YVR public
-hostname and its A response is `10.0.0.19`. dnsdist's
+YVR defines exact-name overrides through `dnsdistHostOverrides` in the
+ApplicationSet list entry. Both `idp.mylogin.space.` and the Vault-backed YVR
+public hostname return `10.0.0.19` for A queries. The direct `idp.mylogin.space.`
+rule is needed because Cloudflare resolves the CNAME chain as part of the
+upstream response; overriding only the CNAME target cannot change that answer.
+dnsdist's
 [`QNameRule`](https://www.dnsdist.org/reference/selectors.html) and
 [`SpoofAction`](https://www.dnsdist.org/reference/actions.html) answer matching
 A queries locally. This override precedes all forwarding and zone rules. Add
