@@ -985,6 +985,12 @@ spec:
                           $patch: delete
                     EOT
 
+                    registry-cleanup = <<-EOT
+                      machine:
+                        registries:
+                          $patch: delete
+                    EOT
+
                     link-script = <<-EOT
                       talosctl get --talosconfig=./talos-config -n ${var.nodeIP} linkstatus -ojson | jq -cr 'select(.spec.kind == "bridge" or .spec.kind == "bond" or (.spec.type == "ether" and (.spec.kind == "" or .spec.kind == null)))'
                     EOT
@@ -1352,10 +1358,6 @@ spec:
                               ]
                             }
                           }
-                          registries = {
-                            mirrors = {
-                            }
-                          }
                           sysctls = {
                             "user.max_user_namespaces"            = "65536"
                             "net.core.somaxconn"                  = "65535"
@@ -1540,6 +1542,7 @@ spec:
                       }),
                       local.use_v1_14_kubelet_documents ? local.legacy-kubelet-cleanup : "",
                       local.use_v1_14_kubelet_documents ? local.kubelet-conf : "",
+                      local.registry-cleanup,
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
                       {{- end }}

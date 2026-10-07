@@ -164,6 +164,12 @@ Control-plane schedulability is preserved by
 removing the default control-plane taint through `KubeNodeConfig`, as described
 in the [Talos control-plane workload guide](https://docs.siderolabs.com/talos/v1.14/deploy-and-manage-workloads/workloads-on-controlplane).
 
+The same Workspace always removes inherited `machine.registries` settings with
+a Talos strategic-merge delete patch. Nodes therefore use Talos's default
+registry endpoints instead of registry mirrors or credentials embedded in the
+base machine configuration. This patch applies independently of the kubelet
+document migration and removes the entire registry configuration on each node.
+
 ## Cluster-wide sysctls
 
 Set `spec.sysctls` on a `Cluster` claim to apply a kernel sysctl to every node
