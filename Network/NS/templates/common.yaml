@@ -335,7 +335,7 @@ persistence:
           - path: /etc/pdns/conf.d/web.conf
             readOnly: true
             subPath: web.conf
-  apiConfig:
+  api-config:
     type: custom
     volumeSpec:
       configMap:
@@ -353,7 +353,7 @@ configMaps:
     data:
       pdns.conf: |
 {{- .Values.powerdns.config | nindent 8 }}
-  apiConfig:
+  api-config:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-api-config'
     data:
       pdns.conf: |
