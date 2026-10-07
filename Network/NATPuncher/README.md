@@ -37,6 +37,8 @@ the 50-port relay range `15000–15049`; the ApplicationSet also publishes that
 range through UPnP for the configured target and both TCP and UDP protocols.
 The YVR LiveKit kube-vip address `10.0.0.43` is also published through UPnP
 for TCP `7881` and UDP `7882`, matching the live LiveKit media Service.
+The YVR CoTURN kube-vip address `10.0.0.46` is published for both TCP and UDP
+`3478`, matching the live CoTURN Service.
 DC1 leaves `portRange` unset and uses the chart default of `15000–16000`.
 
 ## UPnP mappings
