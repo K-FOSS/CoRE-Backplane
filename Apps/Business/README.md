@@ -92,6 +92,12 @@ YVR and legacy K3s spoke renders disable them. The DC1 hub sets the chart's
 `avoip-prod` dummy interface. Home1 and legacy K3s explicitly disable the
 Cilium egress gateway policy.
 
+The ApplicationSet enables the chart's `talkHpb` workload only for YVR and
+passes the selected cluster name to its guard. This deploys the Home1 Talk
+signaling and media components from the chart's pinned AIO Talk image; the
+chart's Talk route, media Service, and External Secret configuration remain
+owned by the upstream [AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
+
 Each matrix entry explicitly injects the RTPEngine media range
 `11000–11050`, where the chart treats `max` as exclusive and renders UDP
 ports `11000–11049` on the public media Service. Keep this range aligned with

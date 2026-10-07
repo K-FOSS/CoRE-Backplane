@@ -172,6 +172,10 @@ spec:
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
 
+                talkHpb:
+                  enabled: {{ eq .values.region "yvr" }}
+                  clusterName: '{{ .values.clusterName }}'
+
                 {{- if hasKey .values "faxDID" }}
                 fax:
                   did: '{{ .values.faxDID }}'
