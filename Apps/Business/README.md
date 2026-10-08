@@ -89,8 +89,11 @@ The Asterisk and FreeSWITCH components are enabled on the DC1 hub and Home1
 spoke; the legacy K3s spoke disables them. The FreeSWITCH fax station
 identifier is set through `freeswitch.fax.ident` to a region-specific
 `<REGION>-CoRE` value (for example, `YXL-CoRE`), while the fax DID remains
-sourced from Vault through the chart's top-level `fax.did` value. YVR also
-enables one `private-sbc` Kamailio instance alongside the existing
+sourced from Vault through the chart's top-level `fax.did` value. YVR enables
+`freeswitch.fax.g711Only` for the reported working G.711 fax path; DC1 keeps
+the chart's T.38-capable default. The upstream [fax identity and routing notes](https://github.com/K-FOSS/CoRE-Business/blob/main/AVoIP/docs/SIP-IDENTITY.md)
+describe the current behavior and remaining live verification. YVR also enables
+one `private-sbc` Kamailio instance alongside the existing
 three-replica carrier instance. Its TOPOS state uses Dragonfly database `52`,
 allocated in the shared registry; the chart's default empty private peer and
 route lists fail closed until a separately reviewed client and extension
