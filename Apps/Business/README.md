@@ -121,10 +121,12 @@ must remain in Vault rather than this repository. The upstream chart documents
 the [LiveKit Server deployment and verification](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP#livekit-server)
 and the [official LiveKit Helm chart](https://github.com/livekit/livekit-helm/tree/master/livekit-server).
 
-Each matrix entry explicitly injects the RTPEngine media range
-`11000–11050`, where the chart treats `max` as exclusive and renders UDP
-ports `11000–11049` on the public media Service. Keep this range aligned with
-the carrier/firewall and any per-site load-balancer exposure.
+Each matrix entry explicitly injects the RTPEngine media range, where the
+chart treats `max` as exclusive and renders UDP ports from `min` through
+`max - 1` on the public media Service. The current ranges are `11000–11299`
+for DC1, `11000–11279` for Home1, and `11000–11249` for the legacy K3s target.
+Keep these ranges aligned with the carrier/firewall and any per-site
+load-balancer exposure.
 
 The upstream [AVoIP chart source](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP)
 defines these network values and renders Cilium egress policies for RTPEngine
