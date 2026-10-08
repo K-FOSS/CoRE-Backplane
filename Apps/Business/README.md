@@ -89,7 +89,12 @@ The Asterisk and FreeSWITCH components are enabled on the DC1 hub and Home1
 spoke; the legacy K3s spoke disables them. The FreeSWITCH fax station
 identifier is set through `freeswitch.fax.ident` to a region-specific
 `<REGION>-CoRE` value (for example, `YXL-CoRE`), while the fax DID remains
-sourced from Vault through the chart's top-level `fax.did` value.
+sourced from Vault through the chart's top-level `fax.did` value. YVR also
+enables one `private-sbc` Kamailio instance alongside the existing
+three-replica carrier instance. Its TOPOS state uses Dragonfly database `52`,
+allocated in the shared registry; the chart's default empty private peer and
+route lists fail closed until a separately reviewed client and extension
+routing configuration is added.
 `network.externalIP` and `network.egressIP` to `66.165.222.120` and enables
 `network.ciliumEgressGateway`. That address is assigned to the DC1 node's
 `avoip-prod` dummy interface. Home1 and legacy K3s explicitly disable the

@@ -85,6 +85,25 @@ spec:
                                     udpEnabled: true
                                     directService:
                                       enabled: true
+                                instances:
+                                  - name: 'carrier'
+                                    enabled: true
+                                    role: 'carrier-sbc'
+                                    replicas: 3
+                                    publicExposure:
+                                      enabled: true
+                                      sip:
+                                        udpEnabled: true
+                                        directService:
+                                          enabled: true
+                                  - name: 'internal'
+                                    enabled: true
+                                    role: 'private-sbc'
+                                    replicas: 1
+                                    topology:
+                                      redis:
+                                        database: 52
+                                        secretName: 'avoip-kamailio-internal-topos'
                               serviceOptions:
                                 kamailio-pub:
                                   type: 'LoadBalancer'
