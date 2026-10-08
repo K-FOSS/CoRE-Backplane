@@ -35,10 +35,18 @@ for the supported Service fields.
 CoTURN's `portRange.min` and `portRange.max` are inclusive. YVR currently uses
 the 50-port relay range `15000–15049`; the ApplicationSet also publishes that
 range through UPnP for the configured target and both TCP and UDP protocols.
-The YVR LiveKit kube-vip address `10.0.0.43` is also published through UPnP
-for TCP `7881` and UDP `7882`, matching the live LiveKit media Service.
-The YVR CoTURN kube-vip address `10.0.0.46` is published for both TCP and UDP
-`3478`, matching the live CoTURN Service.
+The AVoIP RTPEngine media range is published separately as UDP
+`11000–11279` to the KubeVIP VLAN 150 address `10.0.0.39`; keep the inclusive
+UPnP end aligned with the AVoIP chart's exclusive `max` of `11280` in the
+[Business ApplicationSet](../../Apps/Business/AVoIP.yaml).
+
+The YVR LiveKit KubeVIP address `10.0.0.43` is also published through UPnP
+for TCP `7881` and UDP `7882`, matching the live LiveKit media Service. CoTURN
+uses the KubeVIP VLAN 150 address `10.0.0.46`; NATPuncher must keep that VIP's
+TCP and UDP `3478` UPnP mappings aligned with the CoTURN Service. The KubeVIP
+agent's VLAN 150 UPnP attachment and service forwarding behavior are described
+in the [Network Base runbook](../Base/README.md#values-and-generated-resources).
+See also KubeVIP's [Service UPnP configuration](https://kube-vip.io/docs/usage/kubernetes-services/#using-upnp-to-expose-a-service-to-the-outside-world).
 DC1 leaves `portRange` unset and uses the chart default of `15000–16000`.
 
 ## UPnP mappings
