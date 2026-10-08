@@ -72,6 +72,31 @@ spec:
                               rtpengineMediaPortMin: 11000
                               rtpengineMediaPortMax: 11080
                               asteriskEnabled: true
+                              asterisk:
+                                sipCore:
+                                  enabled: true
+                                  hostname: 'sipcore.mylogin.space'
+                                  gatewaySectionName: 'https-myloginspace'
+
+                                  allowedOrigins:
+                                    - 'https://home.mylogin.space'
+
+                                  httpPort: 8088
+                                  echoExtension: '9090'
+
+                                  secretStoreRef:
+                                    kind: 'ClusterSecretStore'
+                                    name: 'corevault-rootsecrets'
+
+                                  extensions:
+                                    - number: '7101'
+                                      maxContacts: 2
+                                      secret:
+                                        remoteKey: 'AVoIP/SIPCore/YVR/Home1/7101'
+                                        property: 'Password'
+
+                                      allowCallsTo:
+                                        - '9090'
                               freeswitchEnabled: true
                               faxDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
                               avoipDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#AVoIPNumber>'
@@ -186,6 +211,11 @@ spec:
                   type: '{{ .values.type }}'
 
                 asterisk:
+                {{- if hasKey .values "asterisk" }}
+                {{- with .values.asterisk }}
+                {{- toYaml . | nindent 2 }}
+                {{- end }}
+                {{- end }}
                   enabled: {{ .values.asteriskEnabled }}
 
                 freeswitch:
