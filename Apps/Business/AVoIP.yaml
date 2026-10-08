@@ -171,6 +171,8 @@ spec:
 
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
+                  fax:
+                    ident: '{{ upper .values.region }}-CoRE'
 
                 talkHpb:
                   enabled: {{ eq .values.region "yvr" }}
@@ -198,7 +200,6 @@ spec:
                 {{- if hasKey .values "faxDID" }}
                 fax:
                   did: '{{ .values.faxDID }}'
-                  identifier: '{{ upper .values.region }}-CoRE'
                 {{- end }}
 
                 {{- if hasKey .values "avoipDID" }}

@@ -86,9 +86,10 @@ Kamailio advertised host is
 `sip.<cluster>.<datacenter>.<region>.resolvemy.host`, built from the selected
 cluster name and its registered datacentre and region.
 The Asterisk and FreeSWITCH components are enabled on the DC1 hub and Home1
-spoke; the legacy K3s spoke disables them. Fax identifiers are region-specific
-`<REGION>-CoRE` values (for example, `YXL-CoRE`), while site DIDs remain sourced
-from Vault.
+spoke; the legacy K3s spoke disables them. The FreeSWITCH fax station
+identifier is set through `freeswitch.fax.ident` to a region-specific
+`<REGION>-CoRE` value (for example, `YXL-CoRE`), while the fax DID remains
+sourced from Vault through the chart's top-level `fax.did` value.
 `network.externalIP` and `network.egressIP` to `66.165.222.120` and enables
 `network.ciliumEgressGateway`. That address is assigned to the DC1 node's
 `avoip-prod` dummy interface. Home1 and legacy K3s explicitly disable the
