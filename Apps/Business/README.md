@@ -71,6 +71,10 @@ individually migrated and documented.
 
 [AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the
 [CoRE-Business AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
+The ApplicationSet pins its source to CoRE-Business commit
+[`3903653a588e5f49e402e632cf0802c09ac90533`](https://github.com/K-FOSS/CoRE-Business/commit/3903653a588e5f49e402e632cf0802c09ac90533)
+so the reviewed opt-in registrar and outbound pilot code cannot change under a
+moving branch reference.
 It is prepared for the YVR `core-home1-talos-prod` and DC1
 `core-dc1-talos-prod` clusters, plus the legacy `dc1-k3s-node1` cluster, and
 renders into each cluster's `core-prod` namespace. Its matrix models
