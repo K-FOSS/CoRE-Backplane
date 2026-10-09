@@ -40,6 +40,7 @@ they are not global database numbers across clusters.
 | `25` | Rspamd | Dedicated mail filtering state. Owned by `Business/Mail` and allocated independently on every Mail target. |
 | `51` | Kamailio TOPOS | Dedicated SIP topology state. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP) and allocated independently on every AVoIP target. |
 | `52` | Kamailio internal TOPOS | Dedicated topology state for the YVR private Kamailio instance. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP). |
+| `53` | Kamailio internal WebSocket TOPOS | Dedicated topology state for the three-replica YVR internal WebSocket Kamailio instance. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP). |
 | `70` | Harbor job service | Dedicated Harbor asynchronous job queue. Owned by `Development`. |
 | `71` | Harbor registry | Dedicated Harbor registry metadata cache. Owned by `Development`. |
 | `72` | Harbor Trivy adapter | Reserved for Harbor vulnerability-scanner cache if Trivy is enabled. Owned by `Development`. |
