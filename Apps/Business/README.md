@@ -2,22 +2,23 @@
 
 The ApplicationSets in this directory are the fleet owners for production
 business workloads rendered from the
-[CoRE-Business repository](https://github.com/K-FOSS/CoRE-Business). They
+[CoRE-Business repository](https://slop.writemy.codes/CoRE/CoRE-Business). They
 select registered Argo CD clusters, inject the site-specific values required by
 each chart, and reconcile into the target cluster's `core-prod` namespace.
+YVR Forgejo owns the canonical `main` branch; each ApplicationSet either pins
+an immutable commit or follows that branch as specified below.
 
 ## Mail
 
 [Mail.yaml](Mail.yaml) owns the production
-[CoRE Mail chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Mail). Mail
+[CoRE Mail chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Mail). Mail
 is an active production service and is no longer classified as a wholly legacy
 stack. The `dc1-k3s-node1` deployment remains as a compatibility target while
 the DC1 and Home Talos deployments are production targets; its presence does
 not make the Talos deployments non-production.
-The ApplicationSet fetches the `Mail` component from the CoRE-Business
-Forgejo mirror at `https://slop.writemy.codes/CoRE/CoRE-Business.git` and
-follows `HEAD`; the GitHub links below remain the upstream component
-documentation.
+The ApplicationSet fetches the `Mail` component from the canonical YVR
+Forgejo repository at `https://slop.writemy.codes/CoRE/CoRE-Business.git` and
+follows `HEAD`; linked component documentation is from that same repository.
 
 The merge generator limits Mail to these explicitly approved production
 clusters and requires exactly one entry to be marked as the credential hub:
@@ -44,7 +45,7 @@ each site.
 
 Component ownership, mail flow, prerequisites, and user-facing checks are
 documented in the
-[Mail operations README](https://github.com/K-FOSS/CoRE-Business/blob/main/Mail/README.md).
+[Mail operations README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Mail/README.md).
 This document and `Mail.yaml` are authoritative for current fleet ownership and
 target selection. The chart still follows mutable `HEAD`, preserves generated
 resources when a target is removed, and contains shared public mail-address and
@@ -70,11 +71,11 @@ individually migrated and documented.
 ## AVoIP
 
 [AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the
-[CoRE-Business AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
-The ApplicationSet pins its source to CoRE-Business commit
-[`3903653a588e5f49e402e632cf0802c09ac90533`](https://github.com/K-FOSS/CoRE-Business/commit/3903653a588e5f49e402e632cf0802c09ac90533)
-so the reviewed opt-in registrar and outbound pilot code cannot change under a
-moving branch reference.
+[CoRE-Business AVoIP chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP).
+The ApplicationSet reads the YVR Forgejo main repository at immutable commit
+[`07cd7375f5f99671750bfa643d57240ae0c187b2`](https://slop.writemy.codes/CoRE/CoRE-Business/commit/07cd7375f5f99671750bfa643d57240ae0c187b2).
+Update this pin only after reviewing the upstream chart changes and rendering
+the selected target values.
 It is prepared for the YVR `core-home1-talos-prod` and DC1
 `core-dc1-talos-prod` clusters, plus the legacy `dc1-k3s-node1` cluster, and
 renders into each cluster's `core-prod` namespace. Its matrix models
@@ -95,13 +96,24 @@ identifier is set through `freeswitch.fax.ident` to a region-specific
 `<REGION>-CoRE` value (for example, `YXL-CoRE`), while the fax DID remains
 sourced from Vault through the chart's top-level `fax.did` value. YVR enables
 `freeswitch.fax.g711Only` for the reported working G.711 fax path; DC1 keeps
-the chart's T.38-capable default. The upstream [fax identity and routing notes](https://github.com/K-FOSS/CoRE-Business/blob/main/AVoIP/docs/SIP-IDENTITY.md)
-describe the current behavior and remaining live verification. YVR also enables
-one `private-sbc` Kamailio instance alongside the existing
-three-replica carrier instance. Its TOPOS state uses Dragonfly database `52`,
-allocated in the shared registry; the chart's default empty private peer and
-route lists fail closed until a separately reviewed client and extension
-routing configuration is added.
+the chart's T.38-capable default. The upstream [fax identity and routing notes](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP/docs/SIP-IDENTITY.md)
+describe the current behavior and remaining live verification. YVR enables the
+three-replica carrier Kamailio instance and two separate `private-sbc`
+instances: a one-replica internal SBC using Dragonfly database `52`, and a
+three-replica `internal-websocket` instance with WebSocket HA enabled in pilot
+mode using database `53` and topology Secret name
+`avoip-kamailio-internal-ws-topos`. The internal SBC uses
+`avoip-kamailio-internal-topos`. Both allocations are recorded in the
+[shared Dragonfly registry](../../Storage/Dragonfly/CoRE/README.md). The chart
+renders one ExternalSecret per instance. Both use the site-local Dragonfly
+credential reference, while each generated `server` key includes that
+instance's database number. The distinct Secret names prevent one instance's
+TOPOS configuration from replacing the other's. The
+chart's `asterisk.sipCore.ingressKamailioInstance` selects
+`internal-websocket` for the Home Assistant WebSocket ingress while
+`asterisk.sipCore.kamailioInstance` remains on `internal` for Asterisk's SIP
+path. The chart's default empty private peer and route lists fail closed until
+a separately reviewed client and extension routing configuration is added.
 `network.externalIP` and `network.egressIP` to `66.165.222.120` and enables
 `network.ciliumEgressGateway`. That address is assigned to the DC1 node's
 `avoip-prod` dummy interface. Home1 and legacy K3s explicitly disable the
@@ -111,14 +123,14 @@ The ApplicationSet enables the chart's `talkHpb` workload only for YVR and
 passes the selected cluster name to its guard. This deploys the Home1 Talk
 signaling and media components from the chart's pinned AIO Talk image; the
 chart's Talk route, media Service, and External Secret configuration remain
-owned by the upstream [AVoIP chart](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP).
+owned by the upstream [AVoIP chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP).
 
 The separate `livekit` workload is also enabled for YVR at
 `livekit-yvr.mylogin.space`. It uses the site-local Dragonfly TLS endpoint and
 database `155`, with kube-vip UPnP forwarding for UDP `7882` and TCP `7881`.
 Its API credentials are managed by the chart's External Secret resources and
 must remain in Vault rather than this repository. The upstream chart documents
-the [LiveKit Server deployment and verification](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP#livekit-server)
+the [LiveKit Server deployment and verification](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP#livekit-server)
 and the [official LiveKit Helm chart](https://github.com/livekit/livekit-helm/tree/master/livekit-server).
 
 Each matrix entry explicitly injects the RTPEngine media range, where the
@@ -128,7 +140,7 @@ for DC1, `11000–11279` for Home1, and `11000–11249` for the legacy K3s targe
 Keep these ranges aligned with the carrier/firewall and any per-site
 load-balancer exposure.
 
-The upstream [AVoIP chart source](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP)
+The upstream [AVoIP chart source](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP)
 defines these network values and renders Cilium egress policies for RTPEngine
 and, when enabled, FreeSWITCH. Before enabling sync, render the upstream
 `AVoIP` path for DC1 and Home1 with their injected values and confirm that only
@@ -143,13 +155,13 @@ AVoIP data were cleaned up.
 ## Projects
 
 [Projects.yaml](Projects.yaml) owns the production YVR deployment of the
-[CoRE Projects chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Projects).
+[CoRE Projects chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Projects).
 Its matrix selects `core-home1-talos-prod` as the main hub and renders the
 application in `core-prod` with the `projects.mylogin.space` hostname. The
 OpenProject PostgreSQL and S3 Secret references are derived from the selected
 cluster and production environment; no credential values are stored here.
 
-The upstream [Projects README](https://github.com/K-FOSS/CoRE-Business/blob/main/Projects/README.md)
+The upstream [Projects README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Projects/README.md)
 documents chart prerequisites and user-facing verification. Before sync,
 render the chart with the registered Home1 cluster values and inspect the
 Secret references, PostgreSQL, object-storage, Deployment, Service, and
@@ -160,7 +172,7 @@ cleanup decision.
 ## Personal/Fitness
 
 [Personal/Fitness.yaml](Personal/Fitness.yaml) owns the YVR deployment of the
-[CoRE openGym chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Fitness)
+[CoRE openGym chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Fitness)
 in the dedicated `core-fitness-prod` namespace. It targets
 `core-home1-talos-prod`, injects the registered cluster name, datacentre, and
 region into the Lovely renderer, and attaches the `gym.mylogin.space` route to
@@ -168,7 +180,7 @@ the shared `core-prod/main-gw` HTTPS listener. The chart uses its own passkey
 identity and does not consume PostgreSQL, External Secrets, or the Backplane
 `User` resource.
 
-The upstream [openGym README](https://github.com/K-FOSS/CoRE-Business/blob/main/Personal/Fitness/README.md)
+The upstream [openGym README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Fitness/README.md)
 documents prerequisites, the retained data and media PVCs, and operational
 verification. Before sync, render the chart with the Home1 values and inspect
 the two PVCs, Deployments, Services, and HTTPRoute. After reconciliation,
@@ -180,7 +192,7 @@ explicit backup and data cleanup decision.
 ## Personal/Finances
 
 [Personal/Finances.yaml](Personal/Finances.yaml) owns the YVR deployment of
-the upstream [CoRE Finances chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Finances)
+the upstream [CoRE Finances chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Finances)
 for `core-home1-talos-prod` in the standard `core-prod` namespace. The chart
 is rendered through the Lovely plugin with the selected cluster identity and
 Home1 PostgreSQL provider injected. It fetches the chart from the CoRE-Business
@@ -202,7 +214,7 @@ include an explicit data-retention and cleanup decision.
 ## Personal/History
 
 [Personal/History.yaml](Personal/History.yaml) owns the YVR deployment of the
-upstream [CoRE Personal History chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/History),
+upstream [CoRE Personal History chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/History),
 which packages [Dawarich](https://dawarich.app/) in the `core-history-prod`
 namespace. The ApplicationSet targets `core-home1-talos-prod`, pins the source
 to the chart revision that introduced the stack, injects the site-local
@@ -212,12 +224,12 @@ PostgreSQL providers, and attaches `dawarich.mylogin.space` to the shared
 The chart creates the PostgreSQL `User` claim, Authentik OIDC Workspace,
 Dragonfly ExternalSecret, and three retained Longhorn PVCs for public data,
 watched imports, and application storage. Dawarich uses Dragonfly logical
-database `153`, registered in the [Dragonfly allocation registry](https://github.com/K-FOSS/CoRE-Backplane/blob/main/Storage/Dragonfly/CoRE/README.md);
+database `153`, registered in the [Dragonfly allocation registry](https://slop.writemy.codes/CoRE/CoRE-Backplane/src/branch/main/Storage/Dragonfly/CoRE/README.md);
 database `152` remains reserved for SnapOtter. The Dragonfly password is read
 from the chart's derived site-local Vault path, and no credential value is
 stored here.
 
-The upstream [Personal History README](https://github.com/K-FOSS/CoRE-Business/blob/main/Personal/History/README.md)
+The upstream [Personal History README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/History/README.md)
 documents chart prerequisites and user-facing checks. Before sync, render the
 pinned chart with the Home1 values and inspect the User, Workspace,
 ExternalSecret, Deployments, Services, HTTPRoute, and PVCs. After
@@ -230,13 +242,13 @@ explicit data-retention and cleanup decision.
 ## Personal/Tasks
 
 [Personal/Tasks.yaml](Personal/Tasks.yaml) owns the production YVR deployment of
-the [CoRE Personal Tasks chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/Tasks)
+the [CoRE Personal Tasks chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Tasks)
 in the standard `core-prod` namespace. It targets
 `core-home1-talos-prod`, injects the registered cluster name, datacentre, and
 region into the Lovely renderer, and attaches the chart's route to the shared
 `core-prod/main-gw` HTTPS listener.
 
-The upstream [Personal Tasks README](https://github.com/K-FOSS/CoRE-Business/blob/main/Personal/Tasks/README.md)
+The upstream [Personal Tasks README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Tasks/README.md)
 is authoritative for chart prerequisites and user-facing verification. The
 ApplicationSet preserves generated resources on removal; decommissioning must
 therefore include an explicit data-retention and cleanup decision.
@@ -244,27 +256,27 @@ therefore include an explicit data-retention and cleanup decision.
 ## Landing
 
 [Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
-the [CoRE-Business Landing component](https://github.com/K-FOSS/CoRE-Business/tree/main/Landing).
+the [CoRE-Business Landing component](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Landing).
 It selects YVR bare-metal infrastructure clusters and reconciles the component
 from that repository through the Lovely renderer into `core-prod`. The
 ApplicationSet injects the selected environment, region, datacentre, and
 cluster name/domain from the registered Argo CD cluster into the chart.
-The upstream [Landing README](https://github.com/K-FOSS/CoRE-Business/blob/main/Landing/README.md)
+The upstream [Landing README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Landing/README.md)
 is authoritative for its prerequisites and user-facing verification.
 
 ## Tools/IT-Tools
 
 [Tools/IT-Tools.yaml](Tools/IT-Tools.yaml) owns the production YVR deployment
-rendered from the [CoRE-Business IT-Tools component](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/IT-Tools).
+rendered from the [CoRE-Business IT-Tools component](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/IT-Tools).
 It selects YVR bare-metal infrastructure clusters and reconciles the component
 from that repository into `core-prod` without ApplicationSet value overrides.
-The upstream [IT-Tools README](https://github.com/K-FOSS/CoRE-Business/blob/main/Tools/IT-Tools/README.md)
+The upstream [IT-Tools README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/IT-Tools/README.md)
 is authoritative for prerequisites and user-facing verification.
 
 ## Office
 
 [Office.yaml](Office.yaml) owns the production YVR
-deployment of the [CoRE-Business Office stack](https://github.com/K-FOSS/CoRE-Business/tree/main/Office).
+deployment of the [CoRE-Business Office stack](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Office).
 It targets `core-home1-talos-prod`, renders the upstream `Office` component
 through the Lovely plugin into `core-prod`, and configures
 `office.mylogin.space` as the Nextcloud hostname. The Office stack is therefore
@@ -280,7 +292,7 @@ configured hostname.
 ## Social/Fediverse
 
 [Social/Fediverse.yaml](Social/Fediverse.yaml) owns the production YVR
-deployment rendered from the [CoRE Fediverse chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Social/Fediverse).
+deployment rendered from the [CoRE Fediverse chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Social/Fediverse).
 It is restricted to `core-home1-talos-prod` and reconciles into `core-prod`
 through the Lovely renderer. The ApplicationSet patches the selected
 environment, region, datacentre, and cluster name/domain into the chart values.
@@ -295,7 +307,7 @@ authoritative in its upstream component directory; federation uses the
 ## Social/Matrix
 
 [Social/Matrix.yaml](Social/Matrix.yaml) owns the production YVR deployment
-rendered from the [CoRE Matrix component](https://github.com/K-FOSS/CoRE-Business/tree/main/Social/Matrix).
+rendered from the [CoRE Matrix component](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Social/Matrix).
 It targets `core-home1-talos-prod`, follows the upstream `HEAD` revision, and
 reconciles into `core-prod` through the Lovely renderer. The ApplicationSet
 injects the selected environment, site, cluster identity, and shared HTTPS
@@ -305,12 +317,12 @@ upstream component.
 ## Conversions
 
 [Tools/Conversions.yaml](Tools/Conversions.yaml) owns the production
-[CoRE Conversions chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Conversions)
+[CoRE Conversions chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/Conversions)
 for the single YVR target `core-home1-talos-prod`. The chart runs
 [SnapOtter 2.2.0](https://github.com/snapotter-hq/SnapOtter/releases/tag/v2.2.0)
 at `https://conotter.mylogin.space`; its upstream deployment and recovery
 requirements are documented in the
-[Conversions README](https://github.com/K-FOSS/CoRE-Business/blob/main/Tools/Conversions/README.md).
+[Conversions README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/Conversions/README.md).
 
 The ApplicationSet injects the selected cluster name, datacentre, and region
 into the Lovely Helm merge. This is intentionally a single persistent
@@ -331,7 +343,7 @@ be explicit and coordinated with data backup, identity, and database cleanup.
 ## Passwords
 
 [Tools/VaultWarden.yaml](Tools/VaultWarden.yaml) owns the production
-[CoRE Vaultwarden chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Passwords/VaultWarden)
+[CoRE Vaultwarden chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Passwords/VaultWarden)
 on three explicitly selected clusters. `dc1-k3s-node1` is the credential hub;
 `core-dc1-talos-prod` and `core-home1-talos-prod` are spokes. All three serve
 the production `passwords.mylogin.space` endpoint and connect to the PGPool
@@ -350,7 +362,7 @@ to the chart's configured Vault record. Each Talos spoke omits the claim and
 uses an ExternalSecret to reproduce the same stable connection Secret before
 Vaultwarden starts. No credential values are stored in this repository.
 
-The [Vaultwarden operations README](https://github.com/K-FOSS/CoRE-Business/blob/main/Passwords/VaultWarden/README.md)
+The [Vaultwarden operations README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Passwords/VaultWarden/README.md)
 documents component behavior, prerequisites, credential flow, and validation.
 This document and `Tools/VaultWarden.yaml` are authoritative for the current
 hub and target selection. Removing the hub, changing `hubCluster`, or rotating

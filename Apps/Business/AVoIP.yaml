@@ -82,6 +82,8 @@ spec:
                                     - 'https://home.mylogin.space'
 
                                   httpPort: 8088
+                                  kamailioInstance: 'internal'
+                                  ingressKamailioInstance: 'internal-websocket'
                                   echoExtension: '9090'
 
                                   secretStoreRef:
@@ -138,7 +140,7 @@ spec:
                                     topology:
                                       redis:
                                         database: 53
-                                        secretName: 'avoip-kamailio-internal-topos'
+                                        secretName: 'avoip-kamailio-internal-ws-topos'
                                     websocketHA:
                                       enabled: true
                                       pilot: true
@@ -205,7 +207,7 @@ spec:
       source:
         repoURL: 'https://slop.writemy.codes/CoRE/CoRE-Business.git'
         path: 'AVoIP'
-        targetRevision: 'HEAD'
+        targetRevision: '07cd7375f5f99671750bfa643d57240ae0c187b2'
 
         plugin:
           name: 'argocd-lovely-plugin'

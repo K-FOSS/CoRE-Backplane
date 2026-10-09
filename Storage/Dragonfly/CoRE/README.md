@@ -38,9 +38,9 @@ they are not global database numbers across clusters.
 | --- | --- | --- |
 | `0` | Argo CD, n8n, Grafana Live, Harbor core | Shared default database used by clients that do not expose a database selector. Harbor 1.18.2 requires its core database to remain `0`; do not allocate other new consumers here. |
 | `25` | Rspamd | Dedicated mail filtering state. Owned by `Business/Mail` and allocated independently on every Mail target. |
-| `51` | Kamailio TOPOS | Dedicated SIP topology state. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP) and allocated independently on every AVoIP target. |
-| `52` | Kamailio internal TOPOS | Dedicated topology state for the YVR private Kamailio instance. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP). |
-| `53` | Kamailio internal WebSocket TOPOS | Dedicated topology state for the three-replica YVR internal WebSocket Kamailio instance. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP). |
+| `51` | Kamailio TOPOS | Dedicated SIP topology state. Owned by [`Business/AVoIP`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP) and allocated independently on every AVoIP target. |
+| `52` | Kamailio internal TOPOS | Dedicated topology state for the YVR private Kamailio instance. Owned by [`Business/AVoIP`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP). |
+| `53` | Kamailio internal WebSocket TOPOS | Dedicated topology state for the three-replica YVR internal WebSocket Kamailio instance. Owned by [`Business/AVoIP`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP). |
 | `70` | Harbor job service | Dedicated Harbor asynchronous job queue. Owned by `Development`. |
 | `71` | Harbor registry | Dedicated Harbor registry metadata cache. Owned by `Development`. |
 | `72` | Harbor Trivy adapter | Reserved for Harbor vulnerability-scanner cache if Trivy is enabled. Owned by `Development`. |
@@ -53,14 +53,14 @@ they are not global database numbers across clusters.
 | `92` | Forgejo sessions | Dedicated Forgejo session store. Owned by `Development`. |
 | `132` | Grafana | Dedicated Grafana remote cache. Owned by `Observability/Dashboards`; Grafana Live remains on DB `0`. |
 | `133` | Immich Photos | Dedicated Immich job queue and cache. Owned by `Media/Photos`. |
-| `150` | OpenWebUI cache | Dedicated OpenWebUI application cache. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
-| `151` | OpenWebUI websocket manager | Dedicated OpenWebUI websocket-manager state. Owned by [`Business/AI`](https://github.com/K-FOSS/CoRE-Business/tree/main/AI). |
-| `152` | SnapOtter | Dedicated SnapOtter/BullMQ queues and processing state. Owned by [`Business/Conversions`](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Conversions). |
-| `153` | Dawarich | Dedicated Dawarich queues and processing state. Owned by [`Business/Personal/History`](https://github.com/K-FOSS/CoRE-Business/tree/main/Personal/History). |
-| `154` | CoTURN | Dedicated CoTURN allocation/status state. Owned by [`Network/NATPuncher`](https://github.com/K-FOSS/CoRE-Backplane/tree/main/Network/NATPuncher). |
-| `189` | n8n | Dedicated n8n external Redis state. Owned by [`Business/Automation`](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation). |
+| `150` | OpenWebUI cache | Dedicated OpenWebUI application cache. Owned by [`Business/AI`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI). |
+| `151` | OpenWebUI websocket manager | Dedicated OpenWebUI websocket-manager state. Owned by [`Business/AI`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI). |
+| `152` | SnapOtter | Dedicated SnapOtter/BullMQ queues and processing state. Owned by [`Business/Conversions`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/Conversions). |
+| `153` | Dawarich | Dedicated Dawarich queues and processing state. Owned by [`Business/Personal/History`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/History). |
+| `154` | CoTURN | Dedicated CoTURN allocation/status state. Owned by [`Network/NATPuncher`](https://slop.writemy.codes/CoRE/CoRE-Backplane/src/branch/main/Network/NATPuncher). |
+| `189` | n8n | Dedicated n8n external Redis state. Owned by [`Business/Automation`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Automation). |
 
-The [Sharing chart](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/Sharing)
+The [Sharing chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/Sharing)
 uses logical database `2` on a separate, chart-owned Dragonfly instance. It is
 not part of the shared `dragonfly-core` allocation table above; the dedicated
 instance provides independent credentials and lifecycle for Kutt and Zipline.

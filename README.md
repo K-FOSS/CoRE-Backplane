@@ -80,22 +80,23 @@ areas apart.
 
 The ApplicationSets in [`Apps/Business/`](Apps/Business/) deploy the
 site-specific workload charts maintained in the
-[K-FOSS/CoRE-Business GitHub repository](https://github.com/K-FOSS/CoRE-Business).
+[CoRE-Business repository on YVR Forgejo](https://slop.writemy.codes/CoRE/CoRE-Business),
+the canonical source for its `main` branch.
 The currently referenced CoRE-Business chart directories are
-[Automation](https://github.com/K-FOSS/CoRE-Business/tree/main/Automation),
-[Terminal](https://github.com/K-FOSS/CoRE-Business/tree/main/Terminal),
-[AVoIP](https://github.com/K-FOSS/CoRE-Business/tree/main/AVoIP),
-[ERP](https://github.com/K-FOSS/CoRE-Business/tree/main/ERP),
-[Mail](https://github.com/K-FOSS/CoRE-Business/tree/main/Mail),
-[Projects](https://github.com/K-FOSS/CoRE-Business/tree/main/Projects),
-[AI](https://github.com/K-FOSS/CoRE-Business/tree/main/AI),
-[Ambient](https://github.com/K-FOSS/CoRE-Business/tree/main/Ambient),
-[Browsers](https://github.com/K-FOSS/CoRE-Business/tree/main/Browsers),
-[CyberChef](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/CyberChef),
-[Desktop](https://github.com/K-FOSS/CoRE-Business/tree/main/Desktop),
-[DrawIO](https://github.com/K-FOSS/CoRE-Business/tree/main/Tools/DrawIO),
-[Office](https://github.com/K-FOSS/CoRE-Business/tree/main/Office), and
-[VaultWarden](https://github.com/K-FOSS/CoRE-Business/tree/main/Passwords/VaultWarden).
+[Automation](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Automation),
+[Terminal](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Terminal),
+[AVoIP](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP),
+[ERP](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/ERP),
+[Mail](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Mail),
+[Projects](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Projects),
+[AI](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI),
+[Ambient](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Ambient),
+[Browsers](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Browsers),
+[CyberChef](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/CyberChef),
+[Desktop](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Desktop),
+[DrawIO](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Tools/DrawIO),
+[Office](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Office), and
+[VaultWarden](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Passwords/VaultWarden).
 
 ## Identity and secrets
 

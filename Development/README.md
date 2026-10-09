@@ -308,37 +308,35 @@ part of its OAuth flow. See Forgejo's
 [OAuth2 configuration reference](https://forgejo.org/docs/v16.0/admin/config-cheat-sheet/)
 for the access token validity setting.
 
-### CoRE Backplane mirrors
+### CoRE repositories on Forgejo
 
-The CoRE Backplane repository is hosted canonically at
-[K-FOSS/CoRE-Backplane on GitHub](https://github.com/K-FOSS/CoRE-Backplane).
-The corresponding site-local Forgejo mirrors are:
+YVR Forgejo at `slop.writemy.codes` is the canonical home for the `main`
+branches of both CoRE repositories. GitHub and the YXL Forgejo are mirrors and
+must not be treated as desired-state authorities.
 
-| Site | Web repository | HTTPS clone URL |
-| --- | --- | --- |
-| YXL | [CoRE/CoRE-Backplane](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane) | `https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane.git` |
-| YVR | [CoRE/CoRE-Backplane](https://slop.writemy.codes/CoRE/CoRE-Backplane) | `https://slop.writemy.codes/CoRE/CoRE-Backplane.git` |
+| Repository | YVR canonical web repository | HTTPS clone URL | YXL mirror |
+| --- | --- | --- | --- |
+| CoRE-Backplane | [CoRE/CoRE-Backplane](https://slop.writemy.codes/CoRE/CoRE-Backplane) | `https://slop.writemy.codes/CoRE/CoRE-Backplane.git` | [YXL Forgejo](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/CoRE-Backplane) |
+| CoRE-Business | [CoRE/CoRE-Business](https://slop.writemy.codes/CoRE/CoRE-Business) | `https://slop.writemy.codes/CoRE/CoRE-Business.git` | — |
 
-The shared clone/fetch URL is
+The shared CoRE-Backplane clone/fetch URL is
 `https://core-prod.writemy.codes/CoRE/CoRE-Backplane.git`. Its redirect service
-prefers the receiving site's Forgejo, then other configured Forgejos, then
-the public GitHub repository. Only allowlisted smart Git read operations are
-routed. Configure repository aliases and backend owners in the ApplicationSet's
+can route to site-local Forgejos for availability; it does not change which
+repository owns `main`. Only allowlisted smart Git read operations are routed.
+Configure repository aliases and backend owners in the ApplicationSet's
 top-level `repos` list; see the [Git HTTP routing guide](GIT_HTTP.md) for
 configuration, verification, security boundaries, and recovery.
 
-These are mirrors of the GitHub repository, not separate desired-state
-authorities. The checkout's configured `origin` remains GitHub; use the
-Forgejo links for site-local browsing, clone/fetch access, and mirror-health
-checks. Do not add mirror credentials, tokens, or browser cookies to Git or
-this repository. Repository mirror settings and credentials are maintained in
-Forgejo's administration UI; consult Forgejo's
+Use the YVR Forgejo repositories for browsing and Git operations. Do not add
+mirror credentials, tokens, or browser cookies to Git or this repository.
+Repository mirror settings and credentials are maintained in Forgejo's
+administration UI; consult Forgejo's
 [repository mirroring documentation](https://forgejo.org/docs/v16.0/user/repo-mirror/)
 for pull/push direction, synchronization, and the warning that push mirrors
 can overwrite their destination.
 
 When validating a mirror, compare its advertised default-branch commit with
-GitHub and inspect the Forgejo repository's mirror status. A reachable web
+the YVR Forgejo canonical branch and inspect the mirror status. A reachable web
 page alone does not prove that branches, tags, or recent commits are current.
 Forgejo's user heatmap is enabled; it attributes activity to the contributing
 user, including contributions made in repositories owned by that user's

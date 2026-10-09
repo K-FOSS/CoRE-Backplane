@@ -33,7 +33,8 @@ The generated Application:
 
 - belongs to the Argo CD `core` project;
 - reads `Management/Kubernetes` from
-  `https://github.com/K-FOSS/CoRE-Backplane.git` at the moving `HEAD`
+  the canonical YVR Forgejo repository
+  `https://slop.writemy.codes/CoRE/CoRE-Backplane.git` at the moving `HEAD`
   revision;
 - renders through the
   [`argocd-lovely-plugin`](https://github.com/crumbhole/lovely-vault-plugin#readme)
