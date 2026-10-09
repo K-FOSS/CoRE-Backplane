@@ -74,27 +74,14 @@ spec:
 
                     domain: consul.{{ .values.tenant }}
 
-                    enabled: {{ ne .values.clusterName "dc1-k3s-node1" }}
+                    enabled: true
                   
                   dns:
                     enabled: false
 
                   {{- if eq .values.clusterName "dc1-k3s-node1" }}
                   client:
-                    enabled: true
-                    join:
-                      - 'consul.core-dc1-talos-prod.dc1.yxl.mylogin.space'
-                    resources:
-                      requests:
-                        cpu: '100m'
-                        memory: '100Mi'
-                      limits:
-                        cpu: '100m'
-
-                  externalServers:
-                    enabled: true
-                    hosts:
-                      - 'consul.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                    enabled: false
 
                   ui:
                     enabled: false
@@ -102,7 +89,12 @@ spec:
 
                   server:
                     {{- if eq .values.clusterName "dc1-k3s-node1" }}
-                    enabled: false
+                    enabled: true
+                    extraConfig: |-
+                      {
+                        "retry_join": ["consul.core-dc1-talos-prod.dc1.yxl.mylogin.space"]
+                      }
+                    affinity: ''
                     {{- end }}
                     {{- if eq .values.clusterName "core-dc1-talos-prod" }}
                     affinity: |-
@@ -143,9 +135,9 @@ spec:
                                 release: '{{ .values.clusterName }}-consul'
                             topologyKey: 'kubernetes.io/hostname'
                     {{- end }}
-                    replicas: {{ .values.replicas }}
-                    bootstrapExpect: {{ .values.bootstrapExpect }}
-                    updatePartition: {{ if eq .values.clusterName "core-dc1-talos-prod" }}1{{ else }}{{ .values.updatePartition }}{{ end }}
+                    replicas: {{ if eq .values.clusterName "dc1-k3s-node1" }}2{{ else }}{{ .values.replicas }}{{ end }}
+                    updatePartition: {{ .values.updatePartition }}
+                    bootstrapExpect: {{ if or (eq .values.clusterName "core-dc1-talos-prod") (eq .values.clusterName "dc1-k3s-node1") }}3{{ else }}{{ .values.bootstrapExpect }}{{ end }}
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
@@ -154,8 +146,8 @@ spec:
                   - target:
                       group: apps
                       version: v1
-                      kind: DaemonSet
-                      name: '{{ .values.clusterName }}-client'
+                      kind: StatefulSet
+                      name: '{{ .values.clusterName }}-server'
                     patch: |-
                       - op: remove
                         path: '/spec/template/spec/containers/0/resources/limits/memory'
