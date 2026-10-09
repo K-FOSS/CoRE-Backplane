@@ -34,6 +34,16 @@ verifying Raft and Autopilot each time, as described in the
 [scaling runbook](RUNBOOK.md). The steady-state partition is `0`.
 Do not reduce replicas or remove PVCs as a blind rollback after new peers join.
 
+## YXL server placement
+
+The YXL child application `core-dc1-talos-prod-consul` keeps one Consul server
+and assigns weight `100` to the `srv7` hostname through preferred node affinity.
+This is a scheduler preference: if `srv7` cannot host the pod, Kubernetes may
+place it on another eligible node. The policy is injected by the owning
+[ApplicationSet](../../../Apps/Hashicorp/Consul.yaml); other sites are
+unaffected. The hostname follows the YXL node identity documented in the
+[cluster environment](../../../Operations/Clusters/ENVIRONMENT.md).
+
 ## Home1 resource requests
 
 The ApplicationSet injects `100m` CPU and `1Gi` memory requests for each of
