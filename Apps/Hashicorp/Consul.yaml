@@ -77,7 +77,34 @@ spec:
                   dns:
                     enabled: false
 
+                  {{- if eq .values.clusterName "dc1-k3s-node1" }}
+                  global:
+                    enabled: false
+
+                  client:
+                    enabled: true
+                    join:
+                      - 'consul.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '100Mi'
+                      limits:
+                        cpu: '100m'
+
+                  externalServers:
+                    enabled: true
+                    hosts:
+                      - 'consul.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+
+                  ui:
+                    enabled: false
+                  {{- end }}
+
                   server:
+                    {{- if eq .values.clusterName "dc1-k3s-node1" }}
+                    enabled: false
+                    {{- end }}
                     {{- if eq .values.clusterName "core-dc1-talos-prod" }}
                     affinity: |-
                       nodeAffinity:
@@ -119,11 +146,31 @@ spec:
                     {{- end }}
                     replicas: {{ .values.replicas }}
                     bootstrapExpect: {{ .values.bootstrapExpect }}
-                    updatePartition: {{ .values.updatePartition }}
+                    updatePartition: {{ if eq .values.clusterName "core-dc1-talos-prod" }}1{{ else }}{{ .values.updatePartition }}{{ end }}
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                  {{- if eq .values.clusterName "dc1-k3s-node1" }}
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: DaemonSet
+                      name: '{{ .values.clusterName }}-client'
+                    patch: |-
+                      - op: remove
+                        path: '/spec/template/spec/containers/0/resources/limits/memory'
+                  {{- end }}
+                  {{- if eq .values.clusterName "core-dc1-talos-prod" }}
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: StatefulSet
+                      name: '{{ .values.clusterName }}-server'
+                    patch: |-
+                      - op: remove
+                        path: '/spec/template/spec/containers/0/resources/limits/memory'
+                  {{- end }}
                   {{- if eq .values.clusterName "core-home1-talos-prod" }}
                   - target:
                       kind: StatefulSet
@@ -133,6 +180,7 @@ spec:
                         path: '/spec/template/spec/nodeSelector'
                         value: null
                   {{- end }}
+                  {{- if ne .values.clusterName "dc1-k3s-node1" }}
                   - target:
                       kind: Service
                       name: {{ .values.clusterName }}-server
@@ -148,6 +196,7 @@ spec:
                           external-dns.kubernetes.io/hostname: 'consul.{{ .values.domain }}'
                           # TODO(external-dns-012): Remove the legacy annotation after upgrading ExternalDNS.
                           external-dns.alpha.kubernetes.io/hostname: consul.{{ .values.domain }}
+                  {{- end }}
 
       destination:
         server: '{{ .server }}'

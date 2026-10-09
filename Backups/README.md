@@ -40,6 +40,14 @@ Current Consul backup placement:
 | `core-home1-talos-prod` | Enabled; backs the YVR Consul datacenter used by CoreVault |
 | `dc1-k3s-node1` | Disabled |
 
+The k3s row is the current Git configuration. At the October 9, 2026 live
+inspection, `dc1-k3s-node1` still had a `consul-backup` Deployment carrying
+the `dc1-k3s-node1-backups` tracking label and pointing directly to the Talos
+Consul endpoint. The current chart values no longer render that Deployment,
+but it remains live until its owning Application successfully prunes it. Keep
+the Talos endpoint available for that existing consumer until cleanup is
+planned and verified separately.
+
 The chart creates the destination namespace with the privileged Pod Security
 enforcement level. Velero's node agent needs access to host-mounted pod
 volumes, so changing this namespace policy can prevent file-system backups from
@@ -216,7 +224,16 @@ Unless a per-cluster override is supplied, the ApplicationSet derives:
 <cluster-name>-server.core-<environment>.svc.cluster.local:8500
 ```
 
-For the currently enabled cluster this becomes:
+The explicit production overrides point the enabled backups at the Talos YXL
+and Home1 YVR Consul servers. Consul backups remain disabled for
+`dc1-k3s-node1`, so the generic fallback below is not used there. The k3s
+Consul client agents join the Talos Consul datacenter through the endpoint
+configured by the [Consul ApplicationSet](../Apps/Hashicorp/Consul.yaml).
+
+The generic fallback would derive the old k3s-local address below, but its
+Consul server is being disabled as part of the client-agent join. Do not enable
+Consul backups for `dc1-k3s-node1` without explicitly pointing them to the
+Talos server:
 
 ```text
 dc1-k3s-node1-server.core-prod.svc.cluster.local:8500

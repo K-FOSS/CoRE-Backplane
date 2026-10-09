@@ -36,13 +36,45 @@ Do not reduce replicas or remove PVCs as a blind rollback after new peers join.
 
 ## YXL server placement
 
-The YXL child application `core-dc1-talos-prod-consul` keeps one Consul server
-and assigns weight `100` to the `srv7` hostname through preferred node affinity.
-This is a scheduler preference: if `srv7` cannot host the pod, Kubernetes may
-place it on another eligible node. The policy is injected by the owning
+The YXL Talos child application `core-dc1-talos-prod-consul` keeps one Consul
+server and assigns weight `100` to the `srv7` hostname through preferred node
+affinity. This is a scheduler preference: if `srv7` cannot host the pod,
+Kubernetes may place it on another eligible node. The Talos server keeps its
+`1` CPU and `8G` memory requests and `8` CPU limit, with no memory limit. Its
+rolling-update partition is `1` to avoid restarting the current singleton just
+to apply a preference it already satisfies. The live server was on `srv7` at
+the October 9 inspection; a later pod replacement will use the preferred
+placement. Before scaling or rolling out additional servers, adjust the
+partition as directed by the [scaling runbook](RUNBOOK.md).
+
+The placement and resource rules are injected by the owning
 [ApplicationSet](../../../Apps/Hashicorp/Consul.yaml); other sites are
 unaffected. The hostname follows the YXL node identity documented in the
 [cluster environment](../../../Operations/Clusters/ENVIRONMENT.md).
+
+## DC1 k3s Consul clients
+
+At the October 9, 2026 inspection, `dc1-k3s-node1` had its legacy Consul
+server StatefulSet scaled to zero and a retained `10Gi` server PVC. The desired
+configuration disables that local server and its UI, then runs Consul clients
+on k3s nodes in the existing `dc1` datacenter. The clients use
+`consul.core-dc1-talos-prod.dc1.yxl.mylogin.space` for LAN gossip discovery;
+the chart's `externalServers` values point its Kubernetes components to the
+same server endpoint. The [Consul chart reference](https://developer.hashicorp.com/consul/docs/reference/k8s/helm#externalservers)
+requires this external-server setup to disable the local server, and requires
+`client.join` when clients are enabled. See HashiCorp's [external server
+installation guide](https://developer.hashicorp.com/consul/docs/deploy/server/k8s/external)
+for the chart's external-server model.
+
+The Talos server Service publishes the server pod endpoint and exposes TCP/UDP
+`8301` for LAN gossip plus TCP `8500` and `8502` for HTTP and gRPC. The k3s
+client agents use their routable pod addresses; `client.exposeGossipPorts`
+remains disabled. The k3s client containers request `100m` CPU and `100Mi`
+memory and retain a `100m` CPU limit, with no memory limit. The legacy server
+PVC uses `whenDeleted: Retain`; keep it as recovery data and do not remove it
+as part of joining the Talos datacenter. Restarting that old server from its
+saved state would require a separate recovery plan. The deployment-wide
+requests and limits follow the [Kubernetes resource management guide](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/).
 
 ## Home1 resource requests
 
