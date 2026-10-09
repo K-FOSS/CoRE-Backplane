@@ -126,11 +126,18 @@ spec:
                                   - name: 'internal'
                                     enabled: true
                                     role: 'private-sbc'
-                                    replicas: 2
+                                    replicas: 1
                                     topology:
                                       redis:
                                         database: 52
                                         secretName: 'avoip-kamailio-internal-topos'
+                                  - name: 'internal-websocket'
+                                    enabled: true
+                                    role: 'private-sbc'
+                                    replicas: 3
+                                    websocketHA:
+                                      enabled: true
+                                      pilot: true
                               serviceOptions:
                                 kamailio-pub:
                                   type: 'LoadBalancer'
