@@ -73,14 +73,13 @@ spec:
                     datacenter: {{ .values.datacenter }}
 
                     domain: consul.{{ .values.tenant }}
+
+                    enabled: {{ ne .values.clusterName "dc1-k3s-node1" }}
                   
                   dns:
                     enabled: false
 
                   {{- if eq .values.clusterName "dc1-k3s-node1" }}
-                  global:
-                    enabled: false
-
                   client:
                     enabled: true
                     join:
