@@ -73,8 +73,10 @@ downtime explicitly; preserve the Consul source and any created PVCs. The
 chart's server update strategy is `OnDelete`, so a ConfigMap update alone does
 not switch a running pod from Consul to Raft. The YVR migration phase applies
 a temporary resource-level `Force=true,Replace=true` option solely to replace
-that StatefulSet; remove it with the migration init container after the copy
-is verified so later syncs do not recreate Vault.
+that StatefulSet. The YVR Application also temporarily disables server-side
+diff because its dry-run rejects the immutable claim-template change. Remove
+both temporary settings with the migration init container after the copy is
+verified so later syncs do not recreate Vault.
 
 ## Operational verification
 
