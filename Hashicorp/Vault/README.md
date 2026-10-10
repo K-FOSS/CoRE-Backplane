@@ -71,8 +71,10 @@ Enabling Vault data storage adds a StatefulSet `volumeClaimTemplate`, which is
 immutable on the existing release. Plan the StatefulSet replacement and pod
 downtime explicitly; preserve the Consul source and any created PVCs. The
 chart's server update strategy is `OnDelete`, so a ConfigMap update alone does
-not switch a running pod from Consul to Raft. Do not use a force or replace
-sync as a shortcut for the migration sequence.
+not switch a running pod from Consul to Raft. The YVR migration phase applies
+a temporary resource-level `Force=true,Replace=true` option solely to replace
+that StatefulSet; remove it with the migration init container after the copy
+is verified so later syncs do not recreate Vault.
 
 ## Operational verification
 
