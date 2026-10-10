@@ -146,6 +146,12 @@ changes the generated provider or RBAC policy.
 Resource customizations suppress known controller-written or status-only
 differences. Every new ignore rule expands the set of drift Argo CD will not
 report; review those changes as policy changes, not cosmetic tuning.
+ClusterRole rules are ignored when controllers manage them dynamically, except
+for CDI's `cdi-operator-cluster` role. CDI [v1.66.1](https://github.com/kubevirt/containerized-data-importer/releases/tag/v1.66.1)
+adds operator permissions required to manage its metrics and pprof RBAC; the
+exception lets Argo CD detect and apply those upgrade permissions. See the
+[CDI operator documentation](https://github.com/kubevirt/containerized-data-importer/tree/main/doc)
+and [Argo CD diff customization documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/diffing/).
 
 ## Networking
 

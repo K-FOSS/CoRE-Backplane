@@ -165,11 +165,11 @@ argo-cd:
         - '.spec.volumeClaimTemplates[]?.apiVersion'
         - '.spec.volumeClaimTemplates[]?.kind'
 
-      # a lot of things produce cluster roles and dynamically set rules
-      # knative, triggermesh, ?
+      # Some operators dynamically manage ClusterRole rules. Keep CDI's
+      # operator role observable so version upgrades can add required grants.
       resource.customizations.ignoreDifferences.rbac.authorization.k8s.io_ClusterRole: | #yaml
         jqPathExpressions:
-        - '.rules'
+        - 'select(.metadata.name != "cdi-operator-cluster") | .rules'
 
       # Configuration to customize resource behavior (optional) can be configured via splitted sub keys.
       # Keys are in the form: resource.customizations.ignoreDifferences.<group_kind>, resource.customizations.health.<group_kind>
