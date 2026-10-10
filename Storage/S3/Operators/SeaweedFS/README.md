@@ -1,4 +1,4 @@
-# CoRE-Backplane Storage/S3/SeaweedFS/Operator Stack
+# CoRE-Backplane Storage/S3/Operators/SeaweedFS Stack
 
 This YXL-only stack installs the SeaweedFS controller and its CRDs. It is
 owned by the [operator ApplicationSet](../../../../Apps/Storage/S3/SeaweedFS-Operator.yaml)
@@ -11,7 +11,9 @@ The ApplicationSet selects core bare-metal infrastructure clusters labelled
 official [SeaweedFS Operator Helm chart](https://github.com/seaweedfs/seaweedfs-operator)
 version `0.1.43` (operator application `1.0.40`) into the dedicated
 `seaweedfs-operator-system` namespace. The chart owns the CRDs, controller,
-webhook and cluster RBAC. Its image is selected by the chart's immutable
+webhook and cluster RBAC. Its shortened fullname keeps webhook hook Job names
+within Kubernetes label limits while the Helm release remains distinct per
+cluster. Its image is selected by the chart's immutable
 release version but its values expose a tag rather than a digest.
 
 ## Reconciliation and removal
@@ -25,9 +27,9 @@ ServiceMonitor and CSI resources.
 Build and validate from the repository root:
 
 ```bash
-helm dependency build Storage/S3/SeaweedFS/Operator
-helm lint Storage/S3/SeaweedFS/Operator
-helm template seaweedfs-operator-yxl Storage/S3/SeaweedFS/Operator --namespace seaweedfs-operator-system
+helm dependency build Storage/S3/Operators/SeaweedFS
+helm lint Storage/S3/Operators/SeaweedFS
+helm template seaweedfs-operator-yxl Storage/S3/Operators/SeaweedFS --namespace seaweedfs-operator-system
 ```
 
 After sync, verify the Deployment and webhook are healthy and the Seaweed CRDs
