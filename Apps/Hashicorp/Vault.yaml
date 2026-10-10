@@ -110,6 +110,17 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
+                  {{- if eq .values.clusterName "core-dc1-talos-prod" }}
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: StatefulSet
+                      name: core-dc1-talos-prod-core-vault-prod
+                    patch: |-
+                      - op: replace
+                        path: /spec/replicas
+                        value: 0
+                  {{- end }}
                   - target:
                       kind: Service
                       name: {{ .values.clusterName }}-core-vault-{{ .values.environment }}
