@@ -1,0 +1,32 @@
+cluster:
+  name: core-dc1-talos-prod
+  domain: cluster.local
+
+environment: 'prod'
+datacenter: 'dc1'
+region: 'yxl'
+domain: 'mylogin.space'
+
+seaweed:
+  image: 'docker.io/chrislusf/seaweedfs@sha256:4e61d15fd35994cb1e43e1e553dff106794841fd9a99ade2fc8c8bfce4d7872d'
+  name: 'seaweedfs-yxl'
+  volumeReplicas: 3
+  volumeSize: '20Gi'
+  masterSize: '1Gi'
+  filerSize: '2Gi'
+  storageClass:
+    dataReplicas: '1'
+    metadataReplicas: '2'
+  oidc:
+    secretStoreRef:
+      kind: 'ClusterSecretStore'
+      name: 'mainvault-core'
+    remoteKey: 'Minio/OIDC'
+    clientIdProperty: 'OIDCClientID'
+    clientSecretProperty: 'OIDCClientSecret'
+    issuer: 'https://idp.mylogin.space/application/o/minio-s3-yxl-dc1-core-s3/'
+    adminPolicyClaim: 'consoleAdmin'
+  endpoint: 's3-seaweed.yxl.mylogin.space'
+
+longhorn:
+  provisioner: 'driver.longhorn.io'

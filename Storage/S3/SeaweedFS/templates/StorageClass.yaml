@@ -1,0 +1,31 @@
+{{- $name := .Values.seaweed.name -}}
+{{- $prefix := printf "%s-longhorn" $name | trunc 48 | trimSuffix "-" -}}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: '{{ $prefix }}-data'
+provisioner: '{{ .Values.longhorn.provisioner }}'
+allowVolumeExpansion: true
+reclaimPolicy: 'Retain'
+volumeBindingMode: 'WaitForFirstConsumer'
+parameters:
+  dataEngine: 'v1'
+  numberOfReplicas: '{{ .Values.seaweed.storageClass.dataReplicas }}'
+  dataLocality: 'best-effort'
+  fsType: 'xfs'
+  staleReplicaTimeout: '30'
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: '{{ $prefix }}-metadata'
+provisioner: '{{ .Values.longhorn.provisioner }}'
+allowVolumeExpansion: true
+reclaimPolicy: 'Retain'
+volumeBindingMode: 'WaitForFirstConsumer'
+parameters:
+  dataEngine: 'v1'
+  numberOfReplicas: '{{ .Values.seaweed.storageClass.metadataReplicas }}'
+  dataLocality: 'best-effort'
+  fsType: 'xfs'
+  staleReplicaTimeout: '30'

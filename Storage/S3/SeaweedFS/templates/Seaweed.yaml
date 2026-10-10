@@ -1,0 +1,67 @@
+apiVersion: seaweed.seaweedfs.com/v1
+kind: Seaweed
+metadata:
+  name: '{{ .Values.seaweed.name }}'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  image: '{{ .Values.seaweed.image }}'
+  volumeServerDiskCount: 1
+  master:
+    replicas: 3
+    extraArgs:
+      - '-defaultReplication=001'
+    persistence:
+      enabled: true
+      storageClassName: '{{ printf "%s-longhorn-metadata" .Values.seaweed.name }}'
+      accessModes:
+        - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: '{{ .Values.seaweed.masterSize }}'
+  volume:
+    replicas: {{ .Values.seaweed.volumeReplicas }}
+    requests:
+      storage: '{{ .Values.seaweed.volumeSize }}'
+    storageClassName: '{{ printf "%s-longhorn-data" .Values.seaweed.name }}'
+  filer:
+    replicas: 1
+    persistence:
+      enabled: true
+      storageClassName: '{{ printf "%s-longhorn-metadata" .Values.seaweed.name }}'
+      accessModes:
+        - 'ReadWriteOnce'
+      resources:
+        requests:
+          storage: '{{ .Values.seaweed.filerSize }}'
+    s3:
+      enabled: true
+    iam: true
+    volumes:
+      - name: 'iam-config'
+        secret:
+          secretName: '{{ .Values.seaweed.name }}-iam'
+    volumeMounts:
+      - name: 'iam-config'
+        mountPath: '/etc/seaweedfs/iam'
+        readOnly: true
+    extraArgs:
+      - '-s3.iam.config=/etc/seaweedfs/iam/iam.json'
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: '{{ .Values.seaweed.name }}-s3'
+  labels:
+    wan-mode: 'public'
+spec:
+  parentRefs:
+    - name: 'main-gw'
+      namespace: 'core-prod'
+      sectionName: 'https-myloginspace'
+  hostnames:
+    - '{{ .Values.seaweed.endpoint }}'
+  rules:
+    - backendRefs:
+        - name: '{{ .Values.seaweed.name }}-filer'
+          port: 8333

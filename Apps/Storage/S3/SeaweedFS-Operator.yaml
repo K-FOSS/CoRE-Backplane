@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 'core-backplane-storage-s3-seaweedfs-operator-yxl'
+  namespace: 'argocd'
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+            resolvemy.host/dc: 'dc1'
+            topology.kubernetes.io/region: 'yxl'
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: '{{ .name }}-core-storage-s3-seaweedfs-operator-{{ index .metadata.labels "resolvemy.host/env" }}'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: '.'
+    spec:
+      project: 'core'
+      syncPolicy:
+        syncOptions:
+          - 'ServerSideApply=true'
+          - 'CreateNamespace=true'
+      source:
+        path: 'Storage/S3/SeaweedFS/Operator'
+        repoURL: 'https://github.com/K-FOSS/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
+        plugin:
+          name: 'argocd-lovely-plugin'
+      destination:
+        server: '{{ .server }}'
+        namespace: 'seaweedfs-operator-system'
