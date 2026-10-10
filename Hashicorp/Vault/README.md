@@ -24,17 +24,19 @@ for parameter behavior.
 
 ## Current and desired backend layout
 
-YXL currently uses Consul storage at path `MainVault`. The YVR ApplicationSet
-is configured for three Vault replicas with integrated Raft on local PVCs;
-its Raft peers discover one another through YVR's own headless service. This
-does not create cross-cluster Raft replication. YXL remains on its existing
-Consul configuration until a later coordinated change.
+YXL currently uses Consul storage at path `MainVault`. Before the YVR copy,
+the YXL Vault StatefulSet is scaled to zero so no Vault server can write to
+the source while migration runs. YVR first runs as one Raft member on its
+local PVC. After the copy and unseal are verified, remove the migration
+initContainer and ConfigMap, then scale YVR to three replicas. Those peers
+discover each other through YVR's headless service; this does not create
+cross-cluster Raft replication.
 
-Both current releases use the same Consul `MainVault` data. After the YVR data
-migration, YVR's Raft state and YXL's Consul state will be separate copies and
-can diverge. Do not treat both endpoints as writable sources of the same Vault
-state after that cutover. Consumer routing and the later YXL migration remain
-separate operational work.
+Both releases currently use the same Consul `MainVault` data. After migration,
+YVR's Raft state and the retained YXL Consul state will be separate copies.
+YXL remains scaled to zero; do not treat the two storage backends as writable
+copies of the same Vault state. Consumer routing to YVR must be verified before
+the YXL Vault is considered retired.
 
 Vault's transit seal remains backed by CoreVault. Raft storage does not replace
 that seal dependency or the existing
@@ -57,6 +59,13 @@ configured ID. The chart sets node IDs from pod names. Bring up the migrated
 YVR member first, verify unseal and data, and then allow the remaining YVR
 members to join through `retry_join`. Do not initialize a second independent
 Raft cluster from the same Consul data.
+
+The migration phase is rendered by the YVR ApplicationSet as one replica plus
+a `vault-storage-migration` init container and ConfigMap. The migration file
+uses source path `MainVault`, destination `/vault/data`, and node ID
+`core-home1-talos-prod-core-vault-prod-0`. The init container mounts the same
+PVC as the Vault server. Remove this migration-only configuration before
+scaling up; otherwise each new pod would try to migrate the source again.
 
 Enabling Vault data storage adds a StatefulSet `volumeClaimTemplate`, which is
 immutable on the existing release. Plan the StatefulSet replacement and pod

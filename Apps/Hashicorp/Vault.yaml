@@ -70,7 +70,7 @@ spec:
                       size: '50Gi'
                       storageClass: 'vault-longhorn'
                     ha:
-                      replicas: 3
+                      replicas: 1
                       raft:
                         enabled: true
                         setNodeId: true
@@ -101,6 +101,24 @@ spec:
                             mount_path = "transit/"
                             tls_skip_verify = "true"
                           }
+                    storageMigration:
+                      enabled: true
+                    extraVolumes:
+                      - name: 'storage-migration'
+                        type: 'configMap'
+                    extraInitContainers:
+                      - name: 'vault-storage-migration'
+                        image: 'hashicorp/vault:1.13.1'
+                        imagePullPolicy: 'IfNotPresent'
+                        command: ['/bin/sh', '-ec']
+                        args:
+                          - '/bin/vault operator migrate -config=/vault/storage-migration/migrate.hcl'
+                        volumeMounts:
+                          - name: 'data'
+                            mountPath: '/vault/data'
+                          - name: 'userconfig-storage-migration'
+                            mountPath: '/vault/storage-migration'
+                            readOnly: true
                 {{- end }}
 
                 global:

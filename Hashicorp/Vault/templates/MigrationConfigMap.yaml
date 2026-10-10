@@ -1,0 +1,22 @@
+{{- if and (eq .Release.Name "core-home1-talos-prod-core-vault-prod") .Values.vault.server.storageMigration.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vault-storage-migration
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+data:
+  migrate.hcl: |-
+    storage_source "consul" {
+      path = "MainVault"
+      service = "MainVault"
+      address = "consul.core-dc1-talos-prod.dc1.yxl.mylogin.space:8500"
+    }
+
+    storage_destination "raft" {
+      path = "/vault/data"
+      node_id = "core-home1-talos-prod-core-vault-prod-0"
+    }
+
+    cluster_addr = "https://core-home1-talos-prod-core-vault-prod-0.core-home1-talos-prod-core-vault-prod-internal.core-prod.svc.cluster.local:8201"
+{{- end }}
