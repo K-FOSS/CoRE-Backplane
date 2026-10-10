@@ -62,7 +62,6 @@ spec:
               value: |-
                 hub: {{ .values.hub }}
 
-                {{- if eq .values.clusterName "core-home1-talos-prod" }}
                 vault:
                   server:
                     dataStorage:
@@ -117,7 +116,6 @@ spec:
                           - name: 'userconfig-storage-migration'
                             mountPath: '/vault/storage-migration'
                             readOnly: true
-                {{- end }}
 
                 global:
                   corevault:
@@ -135,7 +133,7 @@ spec:
                     patch: |-
                       - op: replace
                         path: /spec/replicas
-                        value: 0
+                        value: 1
                   {{- end }}
                   - target:
                       kind: Service
