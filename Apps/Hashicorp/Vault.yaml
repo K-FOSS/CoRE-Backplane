@@ -45,7 +45,6 @@ spec:
 
       annotations:
         argocd.argoproj.io/manifest-generate-paths: .
-        argocd.argoproj.io/compare-options: 'ServerSideDiff=false'
 
     spec:
       project: core
@@ -66,6 +65,7 @@ spec:
                 {{- if eq .values.clusterName "core-home1-talos-prod" }}
                 vault:
                   server:
+                    enabled: false
                     dataStorage:
                       enabled: true
                       size: '50Gi'
@@ -127,19 +127,6 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
-                  {{- if eq .values.clusterName "core-home1-talos-prod" }}
-                  # Temporary: replace the existing StatefulSet to add immutable volumeClaimTemplates.
-                  - target:
-                      group: apps
-                      version: v1
-                      kind: StatefulSet
-                      name: core-home1-talos-prod-core-vault-prod
-                    patch: |-
-                      - op: add
-                        path: /metadata/annotations
-                        value:
-                          argocd.argoproj.io/sync-options: 'Force=true,Replace=true'
-                  {{- end }}
                   {{- if eq .values.clusterName "core-dc1-talos-prod" }}
                   - target:
                       group: apps
