@@ -34,6 +34,8 @@ spec:
                     mimirRetentionPeriod: 12h
                     mimirShipConcurrency: 1
                     mimirCacheEnabled: true
+                    mimirS3Backend: 'minio'
+                    mimirGarageEnabled: true
 
 
                 - name: core-home1-talos-prod
@@ -51,6 +53,8 @@ spec:
                     mimirRetentionPeriod: 12h
                     mimirShipConcurrency: 1
                     mimirCacheEnabled: true
+                    mimirS3Backend: 'minio'
+                    mimirGarageEnabled: false
 
           - clusters:
               selector:
@@ -118,6 +122,11 @@ spec:
                 mimir:
                   enabled: {{ .values.mimirEnabled }}
                   tenant: core
+                  storage:
+                    backend: '{{ .values.mimirS3Backend }}'
+                    region: '{{ if eq .values.mimirS3Backend "garage" }}garage{{ else }}us-east-1{{ end }}'
+                    insecure: {{ if eq .values.mimirS3Backend "garage" }}true{{ else }}false{{ end }}
+                    s3Endpoint: 's3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443'
                   service:
                     # Cilium correlates global Services by namespace and name.
                     # YXL selects local Mimir Pods; Home1 intentionally has no
@@ -128,8 +137,6 @@ spec:
                       service.cilium.io/global: 'true'
                       service.cilium.io/global-sync-endpoint-slices: 'true'
                       service.cilium.io/shared: '{{ .values.mimirGlobalShared }}'
-                  storage:
-                    s3Endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443
                   cache:
                     enabled: true
                     address: 'dragonfly-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:11211'
@@ -153,6 +160,10 @@ spec:
 
                 mimirBridge:
                   enabled: {{ .values.mimirBridgeEnabled }}
+
+                garage:
+                  enabled: {{ .values.mimirGarageEnabled }}
+                  clusterName: 'observability-garage'
 
                 gateway:
                   enabled: {{ .values.mimirEnabled }}
@@ -218,27 +229,53 @@ spec:
                     enabled: false
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
+                    podAnnotations:
+                      secret.reloader.stakater.com/reload: '{{ if eq .values.mimirS3Backend "garage" }}mimir-garage-s3{{ else }}{{ .values.clusterName }}-metrics-s3-creds,{{ .values.clusterName }}-metrics-creds{{ end }}'
                     extraEnv:
+                      {{- if eq .values.mimirS3Backend "garage" }}
+                      - name: AWS_ACCESS_KEY_ID
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'mimir-garage-s3'
+                            key: 'access-key-id'
+                      - name: AWS_SECRET_ACCESS_KEY
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'mimir-garage-s3'
+                            key: 'secret-access-key'
+                      - name: AWS_SESSION_TOKEN
+                        value: ''
+                      - name: S3_BUCKET
+                        value: 'mimir-blocks'
+                      - name: S3_ENDPOINT
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'mimir-garage-s3'
+                            key: 'host'
+                      {{- else }}
                       - name: AWS_ACCESS_KEY_ID
                         valueFrom:
                           secretKeyRef:
                             name: {{ .values.clusterName }}-metrics-s3-creds
-                            key: AccessKey
+                            key: 'AccessKey'
                       - name: AWS_SECRET_ACCESS_KEY
                         valueFrom:
                           secretKeyRef:
                             name: {{ .values.clusterName }}-metrics-s3-creds
-                            key: SecretAccessKey
+                            key: 'SecretAccessKey'
                       - name: AWS_SESSION_TOKEN
                         valueFrom:
                           secretKeyRef:
                             name: {{ .values.clusterName }}-metrics-s3-creds
-                            key: SessionToken
+                            key: 'SessionToken'
                       - name: S3_BUCKET
                         valueFrom:
                           secretKeyRef:
                             name: {{ .values.clusterName }}-metrics-creds
-                            key: username
+                            key: 'username'
+                      - name: S3_ENDPOINT
+                        value: 's3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443'
+                      {{- end }}
                   gateway:
                     enabled: true
                   distributor:
@@ -304,12 +341,13 @@ spec:
                         storage:
                           backend: s3
                           s3:
-                            endpoint: s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443
+                            endpoint: ${S3_ENDPOINT}
+                            region: '{{ if eq .values.mimirS3Backend "garage" }}garage{{ else }}us-east-1{{ end }}'
                             bucket_name: ${S3_BUCKET}
                             access_key_id: ${AWS_ACCESS_KEY_ID}
                             secret_access_key: ${AWS_SECRET_ACCESS_KEY}
                             session_token: ${AWS_SESSION_TOKEN}
-                            insecure: false
+                            insecure: {{ if eq .values.mimirS3Backend "garage" }}true{{ else }}false{{ end }}
                             http:
                               max_idle_connections: 200
                               max_idle_connections_per_host: 200
@@ -335,6 +373,9 @@ spec:
                         data_dir: /data
                 s3User:
                   enabled: true
+                garage:
+                  enabled: {{ .values.mimirGarageEnabled }}
+                  clusterName: 'observability-garage'
                 mimirBridge:
                   enabled: {{ .values.mimirBridgeEnabled }}
                   routeName: core-mimir

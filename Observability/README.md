@@ -14,6 +14,7 @@ umbrella chart.
 | [`Collectors`](Collectors/) | Receives, discovers, enriches, and forwards telemetry. | Grafana Alloy and Vector. |
 | [`Logs`](Logs/) | Stores and queries logs. | Grafana Loki in `Distributed` microservices mode with S3 storage. |
 | [`Metrics`](Metrics/) | Stores and queries metrics. | Grafana Mimir. |
+| [`Common`](Common/) | Provides shared observability infrastructure. | YXL Garage object storage for Mimir. |
 | [`Traces`](Traces/) | Stores and queries distributed traces. | Grafana Tempo in monolithic mode. |
 | [`Dashboards`](Dashboards/) | Visualization and interactive exploration. | Grafana with Authentik and LDAP integration. |
 | [`Exporters`](Exporters/) | Exposes Kubernetes and platform metrics for collection. | `kube-prometheus-stack`. |
@@ -24,7 +25,7 @@ umbrella chart.
 Every stack has a component guide: [Collectors](Collectors/README.md),
 [Dashboards](Dashboards/README.md), [Exporters](Exporters/README.md),
 [Kubernetes resource metrics](Kubernetes/README.md), [Logs](Logs/README.md),
-[Metrics](Metrics/README.md), [SLO](SLO/README.md),
+[Metrics](Metrics/README.md), [Common](Common/README.md), [SLO](SLO/README.md),
 [Status](Status/README.md), and [Traces](Traces/README.md).
 
 ## Telemetry flow

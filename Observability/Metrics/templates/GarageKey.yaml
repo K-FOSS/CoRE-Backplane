@@ -1,0 +1,27 @@
+{{- if .Values.garage.enabled }}
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: 'mimir-garage-s3'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  clusterRef:
+    name: {{ .Values.garage.clusterName | squote }}
+  bucketPermissions:
+    - bucketRef:
+        name: 'mimir-blocks'
+      read: true
+      write: true
+    - bucketRef:
+        name: 'mimir-alertmanager'
+      read: true
+      write: true
+  secretTemplate:
+    name: {{ .Values.garage.s3SecretName | squote }}
+    accessKeyIdKey: 'access-key-id'
+    secretAccessKeyKey: 'secret-access-key'
+    hostKey: 'host'
+    includeEndpoint: true
+    includeRegion: true
+{{- end }}

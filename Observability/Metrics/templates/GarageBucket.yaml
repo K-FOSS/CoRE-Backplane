@@ -1,0 +1,23 @@
+{{- if .Values.garage.enabled }}
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: 'mimir-blocks'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  clusterRef:
+    name: {{ .Values.garage.clusterName | squote }}
+  deletionPolicy: 'Retain'
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: 'mimir-alertmanager'
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+spec:
+  clusterRef:
+    name: {{ .Values.garage.clusterName | squote }}
+  deletionPolicy: 'Retain'
+{{- end }}

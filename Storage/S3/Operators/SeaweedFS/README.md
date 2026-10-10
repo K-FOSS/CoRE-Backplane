@@ -2,7 +2,7 @@
 
 This YXL-only stack installs the SeaweedFS controller and its CRDs. It is
 owned by the [operator ApplicationSet](../../../../Apps/Storage/S3/SeaweedFS-Operator.yaml)
-and supports the separate [SeaweedFS workload](../README.md).
+and supports the separate [SeaweedFS workload](../../SeaweedFS/README.md).
 
 ## Ownership, target and rendering
 

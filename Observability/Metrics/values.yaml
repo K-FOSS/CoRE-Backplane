@@ -34,7 +34,10 @@ mimir:
     annotations: {}
 
   storage:
+    backend: 'minio'
     s3Endpoint: ''
+    region: 'us-east-1'
+    insecure: false
 
   cache:
     enabled: false
@@ -153,6 +156,11 @@ securityPolicy:
 
 s3User:
   enabled: false
+
+garage:
+  enabled: false
+  clusterName: 'observability-garage'
+  s3SecretName: 'mimir-garage-s3'
 
 # No selected cluster currently uses the distributed dependency. Keep its
 # condition explicit without copying thousands of upstream default values.

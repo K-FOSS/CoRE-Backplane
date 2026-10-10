@@ -24,7 +24,7 @@ collectors and the bridge keep their endpoint. The blocks backend remains S3;
 local claims hold working state and synchronized indexes. The distributed
 configuration explicitly sets `blocks_storage.backend: s3` and its bucket name
 alongside the shared S3 client. The Mimir `User` claim provisions the
-`mimir-blocks` and `mimir-alertmanager` buckets. Alertmanager uses its named
+`mimir-blocks` and `mimir-alertmanager` MinIO buckets. Alertmanager uses its named
 bucket, while ruler storage remains local at `/rules`.
 This follows Mimir's
 [query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
@@ -33,6 +33,27 @@ and uses its documented [`-target` component selection](https://grafana.com/docs
 Both sites retain their S3 `User` claims and stable connection Secrets.
 YXL renders the HTTPRoute and Envoy SecurityPolicy. When `mimirEnabled` is
 false, the distributed chart is disabled while the recovery identity remains.
+
+## Garage object storage
+
+The YXL Metrics chart owns Garage buckets `mimir-blocks` and
+`mimir-alertmanager` and a GarageKey scoped to those buckets. The operator
+creates the S3 credential Secret `mimir-garage-s3`; Mimir's Garage backend
+configuration reads its access key, secret key and cluster-local endpoint from
+that Secret. Garage itself is owned by the
+[Garage Operator stack](../../Storage/S3/Operators/Garage/README.md) and the
+[Observability/Common cluster chart](../Common/README.md). Reconcile those
+applications before Metrics so the Garage CRDs and cluster exist first.
+
+YXL currently keeps `mimir.storage.backend: 'minio'` because the live Mimir
+blocks are in MinIO. Garage buckets and credentials can be prepared alongside
+that backend. Before changing the YXL ApplicationSet value to `'garage'`, copy
+and verify all retained Mimir objects, including blocks and Alertmanager
+objects, from MinIO to the corresponding Garage buckets. A backend switch
+without that copy makes existing data unavailable to Mimir; keep the original
+MinIO buckets and credentials until queries confirm the copied history is
+visible. The GarageKey has only read/write rights to the two Mimir buckets and
+cannot administer the Garage cluster.
 
 ## Storage and credentials
 

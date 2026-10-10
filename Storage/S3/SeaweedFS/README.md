@@ -15,7 +15,9 @@ creation. The ApplicationSet preserves its generated Application's resources
 when removed.
 
 The [workload chart](Chart.yaml) renders the Seaweed custom resource, storage
-classes, OIDC Secret and route. A separate YXL-only
+classes, OIDC Secret and route. The shared
+[S3 operator charts](../Operators/README.md) directory contains this
+operator's chart. A separate YXL-only
 [operator ApplicationSet](../../../../Apps/Storage/S3/SeaweedFS-Operator.yaml)
 owns the official [SeaweedFS Operator chart](https://github.com/seaweedfs/seaweedfs-operator)
 at version `0.1.43` (application `1.0.40`), including CRDs, controller,
@@ -69,9 +71,9 @@ Build and inspect both charts from the repository root:
 helm dependency build Storage/S3/SeaweedFS
 helm lint Storage/S3/SeaweedFS
 helm template seaweedfs-yxl Storage/S3/SeaweedFS --namespace core-prod
-helm dependency build Storage/S3/SeaweedFS/Operator
-helm lint Storage/S3/SeaweedFS/Operator
-helm template seaweedfs-operator-yxl Storage/S3/SeaweedFS/Operator --namespace seaweedfs-operator-system
+helm dependency build Storage/S3/Operators/SeaweedFS
+helm lint Storage/S3/Operators/SeaweedFS
+helm template seaweedfs-operator-yxl Storage/S3/Operators/SeaweedFS --namespace seaweedfs-operator-system
 git diff --check -- Apps/Storage/S3/SeaweedFS.yaml Storage/S3
 ```
 

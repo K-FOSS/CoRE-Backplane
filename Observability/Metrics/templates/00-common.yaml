@@ -4,6 +4,12 @@
 {{- define "app-template.hardcodedValues" -}}
 {{- $dataVolumeIsPVC := eq .Values.mimir.dataVolume.type "persistentVolumeClaim" -}}
 {{- $tmpVolumeIsPVC := eq .Values.mimir.tmpVolume.type "persistentVolumeClaim" -}}
+{{- if and .Values.mimir.enabled (not (has .Values.mimir.storage.backend (list "minio" "garage"))) -}}
+{{- fail "mimir.storage.backend must be minio or garage" -}}
+{{- end -}}
+{{- if and .Values.mimir.enabled (eq .Values.mimir.storage.backend "garage") (not .Values.garage.enabled) -}}
+{{- fail "garage.enabled must be true when Mimir uses the Garage backend" -}}
+{{- end -}}
 
 {{- if and .Values.mimir.enabled (ne .Values.mimir.dataVolume.type "emptyDir") (ne .Values.mimir.dataVolume.type "persistentVolumeClaim") }}
 {{- fail "mimir.dataVolume.type must be emptyDir or persistentVolumeClaim" }}
@@ -24,7 +30,7 @@ controllers:
   {{- if .Values.mimir.enabled }}
   mimir:
     annotations:
-      secret.reloader.stakater.com/reload: '{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds'
+      secret.reloader.stakater.com/reload: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds{{ end }}'
 
     # For Deployments, valid values are Recreate (default) and RollingUpdate.
     # For StatefulSets, valid values are OnDelete and RollingUpdate (default).
@@ -126,26 +132,44 @@ controllers:
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
-                name: {{ $.Release.Name }}-s3-creds
-                key: AccessKey
+                name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
+                key: '{{ if eq .Values.mimir.storage.backend "garage" }}access-key-id{{ else }}AccessKey{{ end }}'
 
           - name: AWS_SECRET_ACCESS_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ $.Release.Name }}-s3-creds
-                key: SecretAccessKey
+                name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
+                key: '{{ if eq .Values.mimir.storage.backend "garage" }}secret-access-key{{ else }}SecretAccessKey{{ end }}'
 
           - name: AWS_SESSION_TOKEN
+            {{- if eq .Values.mimir.storage.backend "garage" }}
+            value: ''
+            {{- else }}
             valueFrom:
               secretKeyRef:
                 name: {{ $.Release.Name }}-s3-creds
                 key: SessionToken
+            {{- end }}
+
+          - name: S3_ENDPOINT
+            {{- if eq .Values.mimir.storage.backend "garage" }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.garage.s3SecretName }}
+                key: 'host'
+            {{- else }}
+            value: {{ required "mimir.storage.s3Endpoint is required when the MinIO backend is selected" .Values.mimir.storage.s3Endpoint | quote }}
+            {{- end }}
 
           - name: S3_BUCKET
+            {{- if eq .Values.mimir.storage.backend "garage" }}
+            value: 'mimir-blocks'
+            {{- else }}
             valueFrom:
               secretKeyRef:
                 name: {{ $.Release.Name }}-creds
                 key: username
+            {{- end }}
 
         probes:
           startup:
@@ -182,7 +206,7 @@ controllers:
 
   querier:
     annotations:
-      secret.reloader.stakater.com/reload: '{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds'
+      secret.reloader.stakater.com/reload: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds,{{ $.Release.Name }}-creds{{ end }}'
 
     type: {{ if or $dataVolumeIsPVC $tmpVolumeIsPVC }}'statefulset'{{ else }}'deployment'{{ end }}
     strategy: RollingUpdate
@@ -282,26 +306,44 @@ controllers:
           - name: AWS_ACCESS_KEY_ID
             valueFrom:
               secretKeyRef:
-                name: {{ $.Release.Name }}-s3-creds
-                key: AccessKey
+                name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
+                key: '{{ if eq .Values.mimir.storage.backend "garage" }}access-key-id{{ else }}AccessKey{{ end }}'
 
           - name: AWS_SECRET_ACCESS_KEY
             valueFrom:
               secretKeyRef:
-                name: {{ $.Release.Name }}-s3-creds
-                key: SecretAccessKey
+                name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
+                key: '{{ if eq .Values.mimir.storage.backend "garage" }}secret-access-key{{ else }}SecretAccessKey{{ end }}'
 
           - name: AWS_SESSION_TOKEN
+            {{- if eq .Values.mimir.storage.backend "garage" }}
+            value: ''
+            {{- else }}
             valueFrom:
               secretKeyRef:
                 name: {{ $.Release.Name }}-s3-creds
                 key: SessionToken
+            {{- end }}
+
+          - name: S3_ENDPOINT
+            {{- if eq .Values.mimir.storage.backend "garage" }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.garage.s3SecretName }}
+                key: 'host'
+            {{- else }}
+            value: {{ required "mimir.storage.s3Endpoint is required when the MinIO backend is selected" .Values.mimir.storage.s3Endpoint | quote }}
+            {{- end }}
 
           - name: S3_BUCKET
+            {{- if eq .Values.mimir.storage.backend "garage" }}
+            value: 'mimir-blocks'
+            {{- else }}
             valueFrom:
               secretKeyRef:
                 name: {{ $.Release.Name }}-creds
                 key: username
+            {{- end }}
 
         probes:
           startup:
@@ -624,16 +666,17 @@ configMaps:
           results_cache_ttl_for_cardinality_query: '{{ .Values.mimir.cache.cardinalityTtl }}'
           {{ end }}
 
-        # Configure Mimir to use Minio as object storage backend.
+        # Configure the selected S3-compatible backend for Mimir.
         common:
           storage:
             backend: s3
             s3:
-              endpoint: {{ required "mimir.storage.s3Endpoint is required when mimir is enabled" .Values.mimir.storage.s3Endpoint }}
+              endpoint: "${S3_ENDPOINT}"
+              region: '{{ .Values.mimir.storage.region }}'
               access_key_id: "${AWS_ACCESS_KEY_ID}"
               secret_access_key: "${AWS_SECRET_ACCESS_KEY}"
               session_token: "${AWS_SESSION_TOKEN}"
-              insecure: false
+              insecure: {{ .Values.mimir.storage.insecure }}
               bucket_name: ${S3_BUCKET}
               http:
                 max_idle_connections: 200

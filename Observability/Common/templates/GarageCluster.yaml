@@ -1,0 +1,33 @@
+{{- if .Values.garage.enabled }}
+apiVersion: garage.rajsingh.info/v1beta2
+kind: GarageCluster
+metadata:
+  name: {{ .Values.garage.name | squote }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  image: {{ .Values.garage.image | squote }}
+  zone: {{ .Values.garage.zone | squote }}
+  replication:
+    factor: {{ int .Values.garage.replicationFactor }}
+    consistencyMode: 'consistent'
+  rpcSecretRef:
+    name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+    key: 'rpc-secret'
+  admin:
+    adminTokenSecretRef:
+      name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+      key: 'admin-token'
+  storage:
+    replicas: {{ int .Values.garage.storageReplicas }}
+    metadata:
+      size: {{ .Values.garage.metadataSize | quote }}
+      storageClassName: {{ .Values.garage.metadataStorageClass | squote }}
+    data:
+      size: {{ .Values.garage.dataSize | quote }}
+      storageClassName: {{ .Values.garage.dataStorageClass | squote }}
+    pvcRetentionPolicy:
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
+{{- end }}
