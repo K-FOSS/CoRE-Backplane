@@ -13,9 +13,9 @@ namespace. It renders the pinned
 [HashiCorp Vault Helm chart](https://developer.hashicorp.com/vault/docs/deploy/kubernetes/helm)
 dependency at version `0.24.1`.
 
-The YVR Vault chart owns the YVR-only `vault-longhorn` StorageClass, ordered
-before the StatefulSet. Each YVR Vault pod requests one 50Gi ReadWriteOnce
-PVC. Longhorn keeps two volume replicas per PVC, and
+The Vault chart owns the site-local `vault-longhorn` StorageClass, ordered
+before the StatefulSet. Each Vault pod requests one 50Gi ReadWriteOnce PVC.
+Longhorn keeps two volume replicas per PVC, and
 `migratable: 'false'` leaves Longhorn live volume migration disabled. The
 class uses `Retain` so deleting a claim does not automatically delete its
 backing volume. See Longhorn's
@@ -24,19 +24,19 @@ for parameter behavior.
 
 ## Current and desired backend layout
 
-YXL currently uses Consul storage at path `MainVault`. Before the YVR copy,
-the YXL Vault StatefulSet is scaled to zero so no Vault server can write to
-the source while migration runs. YVR first runs as one Raft member on its
-local PVC. After the copy and unseal are verified, remove the migration
-initContainer and ConfigMap, then scale YVR to three replicas. Those peers
-discover each other through YVR's headless service; this does not create
-cross-cluster Raft replication.
+YXL Consul at path `MainVault` is the migration source. The first migration
+target is a single YXL Raft member on its 50Gi PVC. YVR is held at zero during
+this phase; its existing PVC is retained and is not started from the in
+progress copy. The migration init container and ConfigMap are rendered only for
+the YXL release, with destination node ID
+`core-dc1-talos-prod-core-vault-prod-0`.
 
-Both releases currently use the same Consul `MainVault` data. After migration,
-YVR's Raft state and the retained YXL Consul state will be separate copies.
-YXL remains scaled to zero; do not treat the two storage backends as writable
-copies of the same Vault state. Consumer routing to YVR must be verified before
-the YXL Vault is considered retired.
+Keep YXL at one replica until Vault reports Raft storage, unsealing works, and
+representative data reads and writes succeed. Do not run Vault against the
+Consul source while migration runs. The Consul source and a verified snapshot
+must remain available until recovery is proven. Any later YVR rollout must be
+planned as its own Raft membership or data migration; Vault's Raft peers do not
+automatically span the two sites.
 
 Vault's transit seal remains backed by CoreVault. Raft storage does not replace
 that seal dependency or the existing
@@ -44,7 +44,7 @@ that seal dependency or the existing
 
 ## Consul migration and recovery
 
-Changing the YVR Helm storage stanza does not copy the Consul data. Before
+Changing the YXL Helm storage stanza does not copy the Consul data. Before
 reconciling the backend switch, take and verify a Consul snapshot, schedule
 Vault downtime, and run HashiCorp's documented
 [Consul-to-Raft migration](https://developer.hashicorp.com/vault/docs/concepts/integrated-storage/migrate-consul-storage)
@@ -54,34 +54,31 @@ until Vault data and recovery have been verified. The
 [`vault operator migrate` reference](https://developer.hashicorp.com/vault/docs/commands/operator/migrate)
 describes the source/destination configuration and command.
 
-The migration destination's Raft node ID must match the first YVR pod's
-configured ID. The chart sets node IDs from pod names. Bring up the migrated
-YVR member first, verify unseal and data, and then allow the remaining YVR
-members to join through `retry_join`. Do not initialize a second independent
-Raft cluster from the same Consul data.
+The migration destination's Raft node ID must match the first YXL pod's
+configured ID. The chart sets node IDs from pod names. Bring up only the
+migrated YXL member first and verify unseal and data before adding any other
+Raft members. Do not initialize a second independent Raft cluster from the
+same Consul data.
 
-The migration phase is rendered by the YVR ApplicationSet as one replica plus
+The migration phase is rendered by the ApplicationSet as one YXL replica plus
 a `vault-storage-migration` init container and ConfigMap. The migration file
 uses source path `MainVault`, destination `/vault/data`, and node ID
-`core-home1-talos-prod-core-vault-prod-0`. The init container mounts the same
-PVC as the Vault server. Remove this migration-only configuration before
-scaling up; otherwise each new pod would try to migrate the source again.
+`core-dc1-talos-prod-core-vault-prod-0`. The init container mounts the same PVC
+as the Vault server. Remove this migration-only configuration before scaling
+up; otherwise each new pod would try to migrate the source again.
 
 Enabling Vault data storage adds a StatefulSet `volumeClaimTemplate`, which is
-immutable on the existing release. Plan the StatefulSet replacement and pod
-downtime explicitly; preserve the Consul source and any created PVCs. The
-chart's server update strategy is `OnDelete`, so a ConfigMap update alone does
-not switch a running pod from Consul to Raft. For the migration, disable the
-YVR server in desired state and use a resource-selective prune of only its
-StatefulSet. Then re-enable the server with the migration init container and
-create a new StatefulSet with the PVC template. Keep the ConfigMaps, Services,
-and other application resources intact during the prune stage.
+immutable on an existing release. YXL's Main Vault StatefulSet is currently
+absent, so the first YXL sync creates it with its PVC. The existing YVR
+StatefulSet is scaled to zero; preserve its PVC while the YXL migration is
+evaluated. The chart's server update strategy is `OnDelete`, so a ConfigMap
+update alone does not switch a running pod from Consul to Raft.
 
 ## Operational verification
 
-After migration, verify that YVR reports Raft storage, all three YVR peers are
+After migration, verify that YXL reports Raft storage, its single member is
 healthy, the leader is stable, and transit auto-unseal works. Read and write a
 representative non-secret test value through the Vault API, verify the
-`mainvault-core` External Secrets store and its consumers, inspect all three
-PVCs and Longhorn replica health, and test the snapshot/restore procedure.
-Argo CD health and pod readiness alone do not prove the migration succeeded.
+`mainvault-core` External Secrets store and its consumers, inspect the YXL PVC
+and Longhorn replica health, and test the snapshot/restore procedure. Argo CD
+health and pod readiness alone do not prove the migration succeeded.

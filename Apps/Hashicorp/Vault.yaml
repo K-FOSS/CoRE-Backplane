@@ -37,7 +37,6 @@ spec:
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
                 domain: '{{ .name }}.{{ index .metadata.labels "resolvemy.host/dc" }}.{{ index .metadata.labels "topology.kubernetes.io/region" }}.mylogin.space'
-                replicas: '1'
 
   template:
     metadata:
@@ -84,9 +83,11 @@ spec:
 
                           storage "raft" {
                             path = "/vault/data"
+                            {{ if eq .values.clusterName "core-home1-talos-prod" }}
                             retry_join {
                               leader_api_addr = "http://core-home1-talos-prod-core-vault-prod-internal.core-prod.svc.cluster.local:8200"
                             }
+                            {{ end }}
                           }
 
                           disable_mlock = true
@@ -100,6 +101,7 @@ spec:
                             mount_path = "transit/"
                             tls_skip_verify = "true"
                           }
+                    {{ if eq .values.clusterName "core-dc1-talos-prod" }}
                     extraVolumes:
                       - name: 'storage-migration'
                         type: 'configMap'
@@ -116,6 +118,7 @@ spec:
                           - name: 'userconfig-storage-migration'
                             mountPath: '/vault/storage-migration'
                             readOnly: true
+                    {{ end }}
 
                 global:
                   corevault:
@@ -124,16 +127,16 @@ spec:
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
                 patches:
-                  {{- if eq .values.clusterName "core-dc1-talos-prod" }}
+                  {{- if eq .values.clusterName "core-home1-talos-prod" }}
                   - target:
                       group: apps
                       version: v1
                       kind: StatefulSet
-                      name: core-dc1-talos-prod-core-vault-prod
+                      name: core-home1-talos-prod-core-vault-prod
                     patch: |-
                       - op: replace
                         path: /spec/replicas
-                        value: 1
+                        value: 0
                   {{- end }}
                   - target:
                       kind: Service
