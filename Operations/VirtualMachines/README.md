@@ -16,3 +16,19 @@ Virtualization requires hardware virtualization, device access, storage
 classes and network attachments. Validate operator/CRD compatibility, live
 migration prerequisites, CDI imports, VM console access, disruption behavior
 and backups before upgrades.
+
+## CDI utility pod resources
+
+The CDI `podResourceRequirements` setting applies to its clone, import and
+upload utility pods. This stack requests `100m` CPU and `60M` memory, with
+limits of `4` CPU and `600M` memory. CDI uses these values when it creates
+utility pods; pods already running keep their existing resources. See the
+[CDI configuration reference](https://github.com/kubevirt/containerized-data-importer/blob/v1.66.1/doc/cdi-config.md)
+and [CDI quota guidance](https://github.com/kubevirt/containerized-data-importer/blob/v1.66.1/doc/quota.md).
+
+When a clone restarts, compare the `cdi-clone-source` pod's last termination
+with the matching upload server's logs. A source pod can complete its stream
+and still fail when the upload server cannot write the extracted disk to
+`/data`; check the PVC access mode, volume ownership and CSI driver's
+`fsGroupPolicy`. The CPU limit does not resolve a destination filesystem
+permission failure.
