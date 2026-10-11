@@ -1,6 +1,10 @@
 ---
 {{- include "bjw-s.common.loader.init" . }}
 
+{{- if ne (default "LoadBalancer" .Values.service.main.type) "LoadBalancer" -}}
+{{- $_ := unset .Values.service.main "externalTrafficPolicy" -}}
+{{- end -}}
+
 {{- define "core-network-nameserver.commonValues" -}}
 global:
   nameOverride: {{ default .Release.Name .Values.global.nameOverride | quote }}
