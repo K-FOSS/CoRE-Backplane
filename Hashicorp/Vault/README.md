@@ -74,13 +74,12 @@ new `vault-data-50-migrate3` claim, while the previous `data`, `vault-data`,
 the migration an empty Raft destination without deleting earlier PVCs. The
 50Gi request fits the currently schedulable YXL Longhorn disks while keeping
 the configured two replicas. The
-StatefulSet replacement uses `Force=true,Replace=true` only during this
-migration revision. Server-side diff is disabled for this StatefulSet during
-replacement because Kubernetes rejects a dry-run update that combines removal
-of the old init-container mount with the immutable claim-template change. After
-the Job succeeds, verify the copied data, remove the migration resources and
-temporary Argo annotations, then scale the StatefulSet to one replica while
-retaining `vault-data-50-migrate3`.
+StatefulSet and Job replacement use `Force=true,Replace=true` only during this
+migration revision. Server-side diff is disabled for both resources during
+replacement because Kubernetes rejects dry-run updates to the immutable claim
+template and Job pod template. After the Job succeeds, verify the copied data,
+remove the migration resources and temporary Argo annotations, then scale the
+StatefulSet to one replica while retaining `vault-data-50-migrate3`.
 
 Run the migration once against the fresh claim while Vault is offline. After
 the Job completes successfully, verify Raft storage, unseal, and
