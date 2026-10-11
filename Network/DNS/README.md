@@ -35,7 +35,9 @@ names with `getAddressInfo()` before registering IP backends. The
 authoritative backend uses Network/NS's headless `ns-core-discovery` Service,
 which returns the ready PowerDNS Pod addresses. dnsdist health-checks each Pod
 with an SOA query for `resolvemy.host.` and uses round-robin selection across
-the healthy replicas. This avoids probing the public nameserver LoadBalancer
+the healthy replicas using dnsdist's
+[round-robin server policy](https://www.dnsdist.org/guides/serverselection.html).
+This avoids probing the public nameserver LoadBalancer
 IP or hiding an unhealthy replica behind one ClusterIP. dnsdist refreshes the
 headless Service addresses every 30 seconds and adds or removes individual
 backends as NS Pods become ready or are replaced. Recursive requests are sent
