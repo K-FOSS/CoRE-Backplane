@@ -198,11 +198,12 @@ controllers:
           - --socket-dir=/tmp
           - --launch=gpgsql
           - --load-modules=libgpgsqlbackend.so
-          - --gpgsql-host={{ required "powerdns.database.host must be injected by the owning ApplicationSet" .Values.powerdns.database.host }}
+          - --gpgsql-host=psql-int.mylogin.space
           - --gpgsql-port={{ .Values.powerdns.database.port }}
           - --gpgsql-dbname={{ .Values.powerdns.database.name }}
           - --gpgsql-user=$(USERNAME)
           - --gpgsql-password=$(PASSWORD)
+          - --gpgsql-dnssec=yes
           - --local-address=127.0.0.1
           - --local-port=5300
           - --cache-ttl=0
