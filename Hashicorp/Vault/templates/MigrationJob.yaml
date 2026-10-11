@@ -3,6 +3,8 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: vault-storage-migration
+  annotations:
+    argocd.argoproj.io/sync-options: 'Force=true,Replace=true'
 spec:
   backoffLimit: 0
   template:
@@ -32,7 +34,7 @@ spec:
       volumes:
         - name: 'data'
           persistentVolumeClaim:
-            claimName: 'vault-data-100-migrate2-core-dc1-talos-prod-core-vault-prod-0'
+            claimName: 'vault-data-50-migrate3-core-dc1-talos-prod-core-vault-prod-0'
         - name: 'storage-migration'
           configMap:
             name: 'storage-migration'
