@@ -65,7 +65,7 @@ spec:
                   server:
                     dataStorage:
                       enabled: true
-                      size: '200Gi'
+                      size: '100Gi'
                       storageClass: 'vault-longhorn'
                     ha:
                       replicas: 1
@@ -138,13 +138,13 @@ spec:
                     patch: |-
                       - op: replace
                         path: /spec/volumeClaimTemplates/0/metadata/name
-                        value: 'vault-data'
+                        value: 'vault-data-100'
                       - op: replace
                         path: /spec/template/spec/containers/0/volumeMounts/0/name
-                        value: 'vault-data'
+                        value: 'vault-data-100'
                       - op: replace
                         path: /spec/template/spec/initContainers/0/volumeMounts/0/name
-                        value: 'vault-data'
+                        value: 'vault-data-100'
                       - op: add
                         path: /spec/persistentVolumeClaimRetentionPolicy
                         value:
