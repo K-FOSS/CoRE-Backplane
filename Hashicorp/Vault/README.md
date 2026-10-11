@@ -66,31 +66,32 @@ one-shot `vault-storage-migration` Job plus ConfigMap. The Job mounts a new
 120Gi claim while Vault is stopped, resets any stale Consul migration lock,
 then runs the migration once. Resetting only clears the Consul lock; it does
 not clear the destination. A failed Job does not retry against its partially
-populated destination. The migration file
-uses source path `MainVault`, destination `/vault/data`, and node ID
+populated destination. The migration file uses source path `MainVault`,
+destination `/vault/data`, and node ID
 `core-dc1-talos-prod-core-vault-prod-0`. The YXL migration StatefulSet mounts a
 new `vault-data-50-migrate3` claim, while the previous `data`, `vault-data`,
 `vault-data-100`, and `vault-data-100-migrate2` claims are retained. This gives
 the migration an empty Raft destination without deleting earlier PVCs. The
 120Gi request expands the active YXL destination PVC in place while
-preserving its volume and current migration process. The Longhorn StorageClass
-allows expansion and keeps the configured two replicas. Before scaling up the
-StatefulSet after migration, set its claim template to the same 120Gi size.
-The StatefulSet and Job replacement use `Force=true,Replace=true` only during this
-migration revision. Server-side diff is disabled for both resources during
-replacement because Kubernetes rejects dry-run updates to the immutable claim
-template and Job pod template. After the Job succeeds, verify the copied data,
-remove the migration resources and temporary Argo annotations, then scale the
-StatefulSet to one replica while retaining `vault-data-50-migrate3`.
+preserving its volume and migration process. The Longhorn StorageClass allows
+expansion and keeps the configured two replicas. The StatefulSet claim
+template must request the same 120Gi before startup.
 
-Run the migration once against the fresh claim while Vault is offline. After
-the Job completes successfully, verify Raft storage, unseal, and
-representative data reads before publishing the steady-state revision. That
-revision removes the migration Job and ConfigMap, keeping
-`vault-data-50-migrate3` as YXL's persistent local storage. Do not retry the
-migration
-against a populated destination or remove either PVC until the migrated data
-has been verified against the retained Consul source and snapshot.
+The YXL migration Job completed with all keys migrated. The next rollout keeps
+the Job and ConfigMap while bringing up one Raft member, with a 120Gi claim
+template and the existing `vault-data-50-migrate3` PVC. Keep the temporary
+`Force=true,Replace=true` StatefulSet annotation for this replacement because
+Kubernetes treats the claim template as immutable. Server-side diff is disabled
+for the StatefulSet and Job during migration because Kubernetes rejects dry-run
+updates to their immutable templates. After Raft status, auto-unseal, and
+representative data have been verified, remove the migration Job and ConfigMap
+and the temporary replacement annotations. Keep the PVC manifest annotated
+`Prune=false` so cleanup cannot delete the migrated data.
+
+Run the migration once against the fresh claim while Vault is offline. Do not
+retry the migration against a populated destination or remove either PVC until
+the migrated data has been verified against the retained Consul source and
+snapshot.
 
 Enabling Vault data storage adds a StatefulSet `volumeClaimTemplate`, which is
 immutable on an existing release. The migration revision replaces the current

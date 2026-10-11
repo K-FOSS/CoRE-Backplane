@@ -65,7 +65,7 @@ spec:
                   server:
                     dataStorage:
                       enabled: true
-                      size: '50Gi'
+                      size: '{{ if eq .values.clusterName "core-dc1-talos-prod" }}120Gi{{ else }}50Gi{{ end }}'
                       storageClass: 'vault-longhorn'
                     ha:
                       replicas: 1
@@ -128,7 +128,7 @@ spec:
                         value: 'vault-data-50-migrate3'
                       - op: replace
                         path: /spec/replicas
-                        value: 0
+                        value: 1
                       - op: add
                         path: /spec/persistentVolumeClaimRetentionPolicy
                         value:
