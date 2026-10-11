@@ -1,0 +1,39 @@
+{{- if eq .Release.Name "core-dc1-talos-prod-core-vault-prod" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vault-storage-migration
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: 'srv7'
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: migrate
+          image: 'hashicorp/vault:1.13.1'
+          imagePullPolicy: 'IfNotPresent'
+          command:
+            - '/bin/sh'
+            - '-ec'
+          args:
+            - >-
+              /bin/vault operator migrate -config=/vault/storage-migration/migrate.hcl -reset
+              && /bin/vault operator migrate -config=/vault/storage-migration/migrate.hcl
+          volumeMounts:
+            - name: 'data'
+              mountPath: '/vault/data'
+            - name: 'storage-migration'
+              mountPath: '/vault/storage-migration'
+              readOnly: true
+      volumes:
+        - name: 'data'
+          persistentVolumeClaim:
+            claimName: 'vault-data-100-migrate2-core-dc1-talos-prod-core-vault-prod-0'
+        - name: 'storage-migration'
+          configMap:
+            name: 'storage-migration'
+{{- end }}

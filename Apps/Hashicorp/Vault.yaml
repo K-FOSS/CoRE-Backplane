@@ -102,24 +102,8 @@ spec:
                             tls_skip_verify = "true"
                           }
                     {{ if eq .values.clusterName "core-dc1-talos-prod" }}
-                    extraVolumes:
-                      - name: 'storage-migration'
-                        type: 'configMap'
                     nodeSelector:
                       kubernetes.io/hostname: 'srv7'
-                    extraInitContainers:
-                      - name: 'vault-storage-migration'
-                        image: 'hashicorp/vault:1.13.1'
-                        imagePullPolicy: 'IfNotPresent'
-                        command: ['/bin/sh', '-ec']
-                        args:
-                          - '/bin/vault operator migrate -config=/vault/storage-migration/migrate.hcl'
-                        volumeMounts:
-                          - name: 'data'
-                            mountPath: '/vault/data'
-                          - name: 'userconfig-storage-migration'
-                            mountPath: '/vault/storage-migration'
-                            readOnly: true
                     {{ end }}
 
                 global:
@@ -138,13 +122,13 @@ spec:
                     patch: |-
                       - op: replace
                         path: /spec/volumeClaimTemplates/0/metadata/name
-                        value: 'vault-data-100'
+                        value: 'vault-data-100-migrate2'
                       - op: replace
                         path: /spec/template/spec/containers/0/volumeMounts/0/name
-                        value: 'vault-data-100'
+                        value: 'vault-data-100-migrate2'
                       - op: replace
-                        path: /spec/template/spec/initContainers/0/volumeMounts/0/name
-                        value: 'vault-data-100'
+                        path: /spec/replicas
+                        value: 0
                       - op: add
                         path: /spec/persistentVolumeClaimRetentionPolicy
                         value:
@@ -154,6 +138,7 @@ spec:
                         path: /metadata/annotations
                         value:
                           argocd.argoproj.io/sync-options: 'Force=true,Replace=true'
+                          argocd.argoproj.io/sync-wave: '-2'
                   {{- end }}
                   {{- if eq .values.clusterName "core-home1-talos-prod" }}
                   - target:
