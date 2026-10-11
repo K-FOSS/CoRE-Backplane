@@ -79,9 +79,55 @@ data:
       end)
     end
 
+    local authoritativeHealthCheckName = '{{ .Values.dnsdist.authoritative.healthCheckName }}'
+    local authoritativeResolutionPending = false
+    local authoritativeRefreshCount = 0
+
+    local function syncAuthoritativeBackends(_, addresses)
+      authoritativeResolutionPending = false
+      if #addresses == 0 then return end
+
+      local desired = {}
+      for _, address in ipairs(addresses) do
+        local backendAddress = address:toString()
+        desired['ns-pod-' .. backendAddress] = backendAddress
+      end
+
+      local current = {}
+      for _, backend in ipairs(getServers()) do
+        local name = backend:getName()
+        if string.sub(name, 1, 7) == 'ns-pod-' then
+          current[name] = backend
+        end
+      end
+
+      for name, backendAddress in pairs(desired) do
+        if current[name] == nil then
+          newServer({
+            address=backendAddress,
+            name=name,
+            pool='authoritative',
+            checkType='SOA',
+            checkName=authoritativeHealthCheckName,
+            mustResolve=true
+          })
+        end
+      end
+
+      for name, backend in pairs(current) do
+        if desired[name] == nil then rmServer(backend) end
+      end
+    end
+
+    local function refreshAuthoritativeBackends()
+      if authoritativeResolutionPending then return end
+      authoritativeResolutionPending = true
+      getAddressInfo('{{ $authoritativeHost }}', syncAuthoritativeBackends)
+    end
+
+    refreshAuthoritativeBackends()
     -- Network/NS discovery is a headless Service: each ready PowerDNS Pod is
     -- an independent backend, so dnsdist can health-check and balance replicas.
-    addBackend('{{ $authoritativeHost }}', 'authoritative', 'authoritative', 'SOA', nil, '{{ .Values.dnsdist.authoritative.healthCheckName }}')
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
     {{- if .Values.dnsdist.recursive.enabled }}
     -- kube-dns is a Kubernetes Service with ready CoreDNS endpoints; avoid a
@@ -102,14 +148,21 @@ data:
     reloadConfig()
     local reloadMarker = ''
     function maintenance()
+      authoritativeRefreshCount = authoritativeRefreshCount + 1
+      if authoritativeRefreshCount >= 30 then
+        authoritativeRefreshCount = 0
+        refreshAuthoritativeBackends()
+      end
+
       local markerFile = io.open('/run/dnsdist/reload', 'r')
-      if markerFile == nil then return end
-      local marker = markerFile:read('*l')
-      markerFile:close()
-      if marker ~= nil and marker ~= reloadMarker then
-        dofile('/etc/dnsdist/rules.lua')
-        reloadConfig()
-        reloadMarker = marker
+      if markerFile ~= nil then
+        local marker = markerFile:read('*l')
+        markerFile:close()
+        if marker ~= nil and marker ~= reloadMarker then
+          dofile('/etc/dnsdist/rules.lua')
+          reloadConfig()
+          reloadMarker = marker
+        end
       end
     end
   rules.lua: |

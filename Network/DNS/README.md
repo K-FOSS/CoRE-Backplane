@@ -36,8 +36,10 @@ authoritative backend uses Network/NS's headless `ns-core-discovery` Service,
 which returns the ready PowerDNS Pod addresses. dnsdist health-checks each Pod
 with an SOA query for `resolvemy.host.` and uses round-robin selection across
 the healthy replicas. This avoids probing the public nameserver LoadBalancer
-IP or hiding an unhealthy replica behind one ClusterIP. Recursive
-requests are sent to the cluster-domain-qualified cluster DNS Service only for
+IP or hiding an unhealthy replica behind one ClusterIP. dnsdist refreshes the
+headless Service addresses every 30 seconds and adds or removes individual
+backends as NS Pods become ready or are replaced. Recursive requests are sent
+to the cluster-domain-qualified cluster DNS Service only for
 the CIDRs in `dnsdist.recursive.allowedNetworks`. The YVR ApplicationSet routes
 `10.0.0.0/24` to the filtered pool before the authoritative, K8GB, and
 recursive rules. That pool terminates in the loopback Recursor, which forwards
@@ -73,9 +75,9 @@ and replaces the routing rules in place. Listening sockets and the dnsdist
 process remain open, so routing-rule changes do not restart the process or roll
 out the Pod. Changes to `dnsdist.conf`, including the downstream backend
 addresses and health checks, require updating `dnsdist.configRevision` to roll
-the Deployment and reload the backend set. The Network/NS headless Service
-change advances that revision so dnsdist discovers all ready PowerDNS Pods on
-startup.
+the Deployment and load the new configuration. The Network/NS headless Service
+change advances that revision so dnsdist starts with all ready PowerDNS Pods;
+the periodic resolver keeps that set current as Pods change.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
 KubeVIP with the static `kube-vip.io/loadbalancerIPs: '10.0.0.40'` Service
