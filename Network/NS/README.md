@@ -51,6 +51,12 @@ The chart renders:
   to the authoritative database and binds its API and DNS listener to pod
   localhost only. Its two-line `pdns.conf` includes the API-key settings from
   the mounted ExternalSecret; the authoritative pod's API is disabled.
+  Both PowerDNS processes use the shared `powerdns.defaultSoaContent` value
+  (`ns.resolvemy.host bots.@ 0 300 60 600 300`) when a zone is created without
+  an SOA record. PowerDNS replaces `@` in the RNAME with the created zone name,
+  producing the `bots@<zone>` contact. This default affects newly created zones
+  only; it does not rewrite existing SOA records. See the upstream
+  [`default-soa-content` setting](https://doc.powerdns.com/authoritative/settings.html#default-soa-content).
 - [PowerDNS-Admin 2026.08.1](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v2026.08.1)
   provides forward and reverse zone management against this PowerDNS API. Its
   [official multi-architecture image](https://hub.docker.com/r/powerdnsadmin/pda-legacy/tags)

@@ -33,6 +33,7 @@ images:
     pullPolicy: IfNotPresent
 
 powerdns:
+  defaultSoaContent: 'ns.resolvemy.host bots.@ 0 300 60 600 300'
   database:
     # Required: the owning ApplicationSet injects the psql.<service domain>
     # FQDN for the cluster-local Pgpool service on each target.
@@ -80,7 +81,7 @@ powerdns:
     forward-dnsupdate=yes
     expand-alias=yes
     disable-axfr=yes
-    default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
+    default-soa-content={{ .Values.powerdns.defaultSoaContent }}
     gpgsql-dnssec=yes
 
     # Cache complete authoritative DNS responses

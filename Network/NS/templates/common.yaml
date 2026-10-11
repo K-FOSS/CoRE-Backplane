@@ -209,6 +209,7 @@ controllers:
           - --gpgsql-user=$(USERNAME)
           - --gpgsql-password=$(PASSWORD)
           - --gpgsql-dnssec=yes
+          - '--default-soa-content={{ .Values.powerdns.defaultSoaContent }}'
           - --local-address=127.0.0.1
           - --local-port=5300
           - --cache-ttl=0
@@ -375,7 +376,7 @@ configMaps:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-config'
     data:
       pdns.conf: |
-{{- .Values.powerdns.config | nindent 8 }}
+{{- tpl .Values.powerdns.config . | nindent 8 }}
   api-config:
     forceRename: '{{ include "bjw-s.common.lib.chart.names.fullname" $ }}-api-config'
     data:
