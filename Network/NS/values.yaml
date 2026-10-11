@@ -80,9 +80,13 @@ powerdns:
     dnsupdate=yes
     forward-dnsupdate=yes
     expand-alias=yes
-    disable-axfr=yes
+    # Require per-zone authorization for unsigned transfers. TSIG-authorized
+    # transfers are configured separately on the specific zone.
+    allow-axfr-ips=
     default-soa-content={{ .Values.powerdns.defaultSoaContent }}
     gpgsql-dnssec=yes
+    # Include externally managed ZSK DNSKEY records in signed DNSKEY sets.
+    direct-dnskey=yes
 
     # Cache complete authoritative DNS responses
     cache-ttl=86400

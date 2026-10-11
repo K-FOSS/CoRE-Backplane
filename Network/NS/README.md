@@ -170,6 +170,54 @@ External Secrets CRDs, PureLB, Gateway API and Envoy Gateway CRDs, ExternalDNS,
 and valid public delegation and glue records. Secret values must remain in the
 secret stores and must not be placed in Git or rendered validation output.
 
+## DNSSEC and Cloudflare multi-signer
+
+Both the public PowerDNS process and the NSAdmin API sidecar use the
+DNSSEC-enabled PostgreSQL backend (`gpgsql-dnssec=yes`). PowerDNS-Admin uses
+that API to manage DNSSEC for individual zones; this backend setting enables
+the capability but does not sign every zone automatically. The main server
+also sets `direct-dnskey=yes`, which includes externally supplied DNSKEY
+records in a signed zone's DNSKEY set. This is needed to publish Cloudflare's
+ZSK for RFC 8901 model 2 multi-signer DNSSEC. See the upstream
+[PowerDNS generic SQL backend](https://doc.powerdns.com/authoritative/backends/generic-sql.html),
+[DNSSEC migration and direct DNSKEY behavior](https://doc.powerdns.com/authoritative/dnssec/migration.html),
+and [PowerDNS-Admin](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v2026.08.1).
+
+AXFR is available for a secondary provider, while unsigned transfers are
+denied by default (`allow-axfr-ips=`). For `mylogin.social`, provision a
+dedicated TSIG key in the PowerDNS backend and authorize that key only for
+`mylogin.social` with the zone's `TSIG-ALLOW-AXFR` metadata. Configure the same
+key name, secret, and algorithm on the Cloudflare secondary peer. PowerDNS
+TSIG authorization bypasses its source-IP AXFR ACL, so keep the key exclusive
+to this zone and rotate it if it is exposed. Do not put its secret in Git or
+rendered manifests. See [PowerDNS TSIG transfer authorization](https://doc.powerdns.com/authoritative/tsig.html),
+[PowerDNS zone metadata](https://doc.powerdns.com/authoritative/domainmetadata.html#tsig-allow-axfr),
+and [Cloudflare secondary DNS setup](https://developers.cloudflare.com/dns/zone-setups/zone-transfers/cloudflare-as-secondary/setup/).
+
+Cloudflare Secondary DNS must be enabled for the account by Cloudflare. For
+the model 2 setup, first create the secondary zone and complete a successful
+transfer while the existing delegation remains in place. Enable DNSSEC with
+live signing and Multi-signer DNSSEC at Cloudflare. At the PowerDNS primary,
+enable DNSSEC for `mylogin.social`, publish Cloudflare's ZSK as a DNSKEY record,
+and add Cloudflare's authoritative NS records at the zone apex. Add the
+PowerDNS ZSK to Cloudflare's DNSKEY set and the PowerDNS NS records to the
+Cloudflare zone. Verify that both authorities return their own signatures and
+both providers' ZSKs in the DNSKEY RRset, and that Cloudflare has received the
+complete zone, before changing registrar delegation. Then publish a DS for
+each provider's KSK at the registrar and delegate to the nameservers from both
+providers. Follow Cloudflare's [multi-signer setup](https://developers.cloudflare.com/dns/dnssec/multi-signer-dnssec/setup/)
+and [RFC 8901 model 2](https://www.rfc-editor.org/rfc/rfc8901.html), including
+their TTL waits and API requirements. Cloudflare currently gates Secondary
+DNS on account enablement; confirm availability and the account plan before
+starting.
+
+This repository change only prepares PowerDNS to serve DNSSEC and authenticated
+transfers. It does not enable signing on the live `mylogin.social` zone, create
+or exchange keys, create the Cloudflare secondary zone, or alter registrar DS
+and NS records. Those steps require the actual Cloudflare ZSK, a securely
+provisioned TSIG secret, verified transfers, and coordinated parent-zone
+changes; a DS mismatch can make the domain fail DNSSEC validation.
+
 ## Validation and operations
 
 Resolve dependencies and validate both Helm branches before merging:
