@@ -70,8 +70,12 @@ The pod also runs a same-image configuration watcher. Kubernetes projects
 updates to the mounted ConfigMap directory; the watcher publishes a hash marker
 and dnsdist's one-second `maintenance()` hook detects it, reloads `rules.lua`,
 and replaces the routing rules in place. Listening sockets and the dnsdist
-process remain open, so configuration-only changes do not restart the process
-or roll out the Pod.
+process remain open, so routing-rule changes do not restart the process or roll
+out the Pod. Changes to `dnsdist.conf`, including the downstream backend
+addresses and health checks, require updating `dnsdist.configRevision` to roll
+the Deployment and reload the backend set. The Network/NS headless Service
+change advances that revision so dnsdist discovers all ready PowerDNS Pods on
+startup.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
 KubeVIP with the static `kube-vip.io/loadbalancerIPs: '10.0.0.40'` Service
