@@ -85,21 +85,46 @@ data:
     setLocal('{{ .Values.dnsdist.listenAddress }}:{{ .Values.dnsdist.port }}')
     setACL({'0.0.0.0/0', '::/0'})
 
+    local pendingBackendHealthChecks = {}
+    local function addHealthCheckedBackend(backend)
+      backend.healthCheckMode='up'
+      backend.checkInterval={{ .Values.dnsdist.healthCheckIntervalSeconds }}
+      backend.maxCheckFailures={{ .Values.dnsdist.healthCheckMaxFailures }}
+      backend.rise={{ .Values.dnsdist.healthCheckRise }}
+      newServer(backend)
+      pendingBackendHealthChecks[backend.name] = {{ .Values.dnsdist.healthCheckWarmupSeconds }}
+    end
+
     local function addBackend(hostname, name, pool, checkType, checkClass, checkName)
       getAddressInfo(hostname, function(_, addresses)
         for _, address in ipairs(addresses) do
           local backend = {
             address=address:toString(),
-            name=name,
+            name=name .. '-' .. address:toString(),
             pool=pool,
             checkType=checkType,
             mustResolve=true
           }
           if checkClass ~= nil then backend.checkClass=checkClass end
           if checkName ~= nil then backend.checkName=checkName end
-          newServer(backend)
+          addHealthCheckedBackend(backend)
         end
       end)
+    end
+
+    local function startPendingBackendHealthChecks()
+      for name, remaining in pairs(pendingBackendHealthChecks) do
+        if remaining <= 1 then
+          for _, backend in pairs(getServers()) do
+            if backend:getName() == name then
+              backend:setActiveAuto(true)
+            end
+          end
+          pendingBackendHealthChecks[name] = nil
+        else
+          pendingBackendHealthChecks[name] = remaining - 1
+        end
+      end
     end
 
     local authoritativeHealthCheckName = '{{ .Values.dnsdist.authoritative.healthCheckName }}'
@@ -127,7 +152,7 @@ data:
 
       for name, backendAddress in pairs(desired) do
         if current[name] == nil then
-          newServer({
+          addHealthCheckedBackend({
             address=backendAddress,
             name=name,
             pool='authoritative',
@@ -139,7 +164,10 @@ data:
       end
 
       for name, backend in pairs(current) do
-        if desired[name] == nil then rmServer(backend) end
+        if desired[name] == nil then
+          pendingBackendHealthChecks[name] = nil
+          rmServer(backend)
+        end
       end
     end
 
@@ -169,7 +197,7 @@ data:
 
       for name, backendAddress in pairs(desired) do
         if current[name] == nil then
-          newServer({
+          addHealthCheckedBackend({
             address=backendAddress,
             name=name,
             pool='recursive',
@@ -181,7 +209,10 @@ data:
       end
 
       for name, backend in pairs(current) do
-        if desired[name] == nil then rmServer(backend) end
+        if desired[name] == nil then
+          pendingBackendHealthChecks[name] = nil
+          rmServer(backend)
+        end
       end
     end
 
@@ -200,6 +231,7 @@ data:
     reloadConfig()
     local reloadMarker = ''
     function maintenance()
+      startPendingBackendHealthChecks()
       authoritativeRefreshCount = authoritativeRefreshCount + 1
       if authoritativeRefreshCount >= 30 then
         authoritativeRefreshCount = 0

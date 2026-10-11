@@ -18,7 +18,14 @@ cluster:
 dnsdist:
   enabled: false
   replicas: 2
-  configRevision: 'ns-headless-recursive-discovery-1'
+  configRevision: 'backend-healthcheck-warmup-20s-1'
+  # Newly discovered backends stay eligible while Kubernetes readiness
+  # confirms their listener, then dnsdist starts active SOA health checks.
+  healthCheckWarmupSeconds: 20
+  # Require consecutive failures/successes to reduce transient health flaps.
+  healthCheckIntervalSeconds: 1
+  healthCheckMaxFailures: 2
+  healthCheckRise: 2
   image:
     repository: 'powerdns/dnsdist-21'
     tag: '2.1.1'

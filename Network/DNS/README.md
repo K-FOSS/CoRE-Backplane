@@ -137,6 +137,14 @@ allows a rollout to pause safely when the cluster cannot schedule the surge
 Pod, rather than removing a serving replica to make room. The readiness checks
 confirm listener startup; dnsdist's downstream health checks independently
 remove failed authoritative and recursive backends from query selection.
+Newly discovered backends remain eligible during a configurable 20-second
+warmup, relying on Kubernetes readiness while their processes finish
+initializing. dnsdist then starts active SOA checks at one-second intervals;
+two consecutive failures mark a backend down and two consecutive successes
+are required for recovery. These settings are in `dnsdist.healthCheck*` in
+[`values.yaml`](values.yaml) and apply to authoritative, recursive, and K8GB
+backends. This uses dnsdist's documented
+[`healthCheckMode` and `setActiveAuto()` behavior](https://www.dnsdist.org/guides/downstreams.html).
 
 Render this chart with the target ApplicationSet values and verify the DNS
 ConfigMap, both Deployments and their replicas, the Recursor NetworkPolicy,
