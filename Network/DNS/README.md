@@ -22,10 +22,13 @@ health checks and server-pool model](https://www.dnsdist.org/guides/downstreams.
 are rendered from [`values.yaml`](values.yaml) and
 [`templates/DNSDistConfig.yaml`](templates/DNSDistConfig.yaml).
 
-`resolvemy.host.` and `mylogin.social.` are sent to the local `ns-core`
-PowerDNS Service. The more specific `gslb.mylogin.space` and
-`gslb.mylogin.social` zones are sent to the cluster-specific K8GB CoreDNS
-Service derived from `cluster.name` and `environment` when listed in
+`syncmy.date.` and `mylogin.social.` are sent to the local `ns-core`
+PowerDNS Service. `resolvemy.host.` is deliberately omitted from the local
+authoritative suffix list; queries from the site LANs use the Recursor and can
+follow delegations to private authoritative servers. The more specific
+`gslb.mylogin.space` and `gslb.mylogin.social` zones are sent to the
+cluster-specific K8GB CoreDNS Service derived from `cluster.name` and
+`environment` when listed in
 `dnsdist.k8gb.zones`. The GSLB suffix rules precede the parent-zone
 authoritative rules so `gslb.mylogin.social` reaches K8GB. Backend Service
 names use
@@ -35,7 +38,7 @@ remains the external/site cluster identity. dnsdist resolves those Service
 names with `getAddressInfo()` before registering IP backends. The
 authoritative backend uses Network/NS's headless `ns-core-discovery` Service,
 which returns the ready PowerDNS Pod addresses. dnsdist health-checks each Pod
-with an SOA query for `resolvemy.host.` and uses round-robin selection across
+with an SOA query for `mylogin.social.` and uses round-robin selection across
 the healthy replicas using dnsdist's
 [round-robin server policy](https://www.dnsdist.org/guides/serverselection.html).
 This avoids probing the public nameserver LoadBalancer
@@ -45,7 +48,8 @@ backends as NS Pods become ready or are replaced. The recursive pool discovers
 the ready PowerDNS Recursor Pod addresses through its own IPv4 headless
 Service, health-checks each with an SOA query for `.`, and round-robins across
 healthy replicas. DNSDist uses that pool only for the site LAN CIDRs injected
-by the ApplicationSet: `10.0.0.0/24` in YVR and `172.16.51.0/24` in YXL/DC1.
+by the ApplicationSet:
+`10.0.0.0/24` in YVR and `172.16.51.0/24` in YXL/DC1.
 Queries outside those networks and the configured authoritative zones fall
 through to the authoritative pool, so the public listener does not provide
 open recursion.
@@ -68,6 +72,16 @@ fails, following PowerDNS's
 The full DNSSEC validation mode and the TCP, socket, and cache limits are
 configured through the Recursor's
 [YAML settings](https://doc.powerdns.com/recursor/yamlsettings.html).
+
+The Recursor permits outgoing DNS queries to RFC 1918 and IPv6 ULA addresses so
+delegations for domains with private authoritative nameservers can resolve. Its
+`outgoing.dont_query` list continues to block loopback, link-local, and
+documentation/reserved address ranges. This exception applies to recursive
+lookups generally, because the Recursor cannot identify which private
+nameservers belong to locally owned domains before following a delegation.
+Incoming recursion remains limited to the site LAN networks through dnsdist
+and the Recursor ACL. See PowerDNS's [`dont-query` setting](https://doc.powerdns.com/recursor/settings.html#dont-query)
+for the destination filtering behavior.
 
 YVR enables an additional
 [`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)

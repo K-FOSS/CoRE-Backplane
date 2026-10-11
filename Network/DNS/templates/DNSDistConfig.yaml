@@ -52,6 +52,8 @@ data:
       validation: {{ .Values.dnsdist.recursor.dnssecValidation | quote }}
     outgoing:
       tcp_fast_open_connect: {{ .Values.dnsdist.recursor.outgoingTcpFastOpenConnect }}
+      dont_query:
+{{ toYaml .Values.dnsdist.recursor.dontQuery | nindent 8 }}
     {{- if .Values.dnsdist.cnameFilter.enabled }}
   cname-filter.lua: |
     local cnameFilter = newDN({{ .Values.dnsdist.cnameFilter.target | quote }})

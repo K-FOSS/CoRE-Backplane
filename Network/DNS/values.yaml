@@ -27,9 +27,9 @@ dnsdist:
   port: 53
   authoritative:
     backend: ''
-    healthCheckName: 'resolvemy.host.'
+    healthCheckName: 'mylogin.social.'
     zones:
-      - 'resolvemy.host.'
+      - 'mylogin.social.'
   k8gb:
     backend: ''
     healthCheckName: 'resolvemy.host.'
@@ -65,6 +65,26 @@ dnsdist:
     tcpFastOpenQueue: 256
     reusePort: true
     outgoingTcpFastOpenConnect: true
+    dontQuery:
+      - '127.0.0.0/8'
+      - '100.64.0.0/10'
+      - '169.254.0.0/16'
+      - '0.0.0.0/8'
+      - '192.0.0.0/24'
+      - '192.0.2.0/24'
+      - '198.51.100.0/24'
+      - '203.0.113.0/24'
+      - '240.0.0.0/4'
+      - '::1/128'
+      - 'fe80::/10'
+      - '::/96'
+      - '::ffff:0:0/96'
+      - '100::/64'
+      - '2001:db8::/32'
+      - '!10.0.0.0/8'
+      - '!172.16.0.0/12'
+      - '!192.168.0.0/16'
+      - '!fc00::/7'
     threads: 2
     tcpThreads: 1
     socketDirectory: '/var/run/pdns-recursor'
