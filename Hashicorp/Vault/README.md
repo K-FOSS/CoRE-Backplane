@@ -14,8 +14,9 @@ namespace. It renders the pinned
 dependency at version `0.24.1`.
 
 The Vault chart owns the site-local `vault-longhorn` StorageClass, ordered
-before the StatefulSet. Each Vault pod requests one 50Gi ReadWriteOnce PVC.
-Longhorn keeps two volume replicas per PVC, and
+before the StatefulSet. YVR's existing Vault PVC is 50Gi; the YXL migration
+target requests a 200Gi ReadWriteOnce PVC. Longhorn keeps two volume replicas
+per PVC, and
 `migratable: 'false'` leaves Longhorn live volume migration disabled. The
 class uses `Retain` so deleting a claim does not automatically delete its
 backing volume. See Longhorn's
@@ -63,16 +64,29 @@ same Consul data.
 The migration phase is rendered by the ApplicationSet as one YXL replica plus
 a `vault-storage-migration` init container and ConfigMap. The migration file
 uses source path `MainVault`, destination `/vault/data`, and node ID
-`core-dc1-talos-prod-core-vault-prod-0`. The init container mounts the same PVC
-as the Vault server. Remove this migration-only configuration before scaling
-up; otherwise each new pod would try to migrate the source again.
+`core-dc1-talos-prod-core-vault-prod-0`. The YXL migration StatefulSet mounts a
+new `vault-data` claim, while the previous `data` claim is retained. This gives
+the migration an empty Raft destination without deleting the failed attempt's
+PVC. The StatefulSet replacement uses `Force=true,Replace=true` only during
+this migration revision; remove that option together with the migration
+container and ConfigMap once Vault is running from the new PVC.
+
+Run the migration once against the fresh claim while Vault is offline. After
+the init container exits successfully, verify Raft storage, unseal, and
+representative data reads before publishing the steady-state revision. That
+revision removes the migration init container and ConfigMap, keeping
+`vault-data` as YXL's persistent local storage. Do not retry the migration
+against a populated destination or remove either PVC until the migrated data
+has been verified against the retained Consul source and snapshot.
 
 Enabling Vault data storage adds a StatefulSet `volumeClaimTemplate`, which is
-immutable on an existing release. YXL's Main Vault StatefulSet is currently
-absent, so the first YXL sync creates it with its PVC. The existing YVR
-StatefulSet is scaled to zero; preserve its PVC while the YXL migration is
-evaluated. The chart's server update strategy is `OnDelete`, so a ConfigMap
-update alone does not switch a running pod from Consul to Raft.
+immutable on an existing release. The migration revision replaces the current
+YXL StatefulSet because its `data` claim already contains Raft state. Its
+retention policy keeps that old claim, and the new template creates a separate
+`vault-data` claim. The existing YVR StatefulSet is scaled to zero; preserve
+its PVC while the YXL migration is evaluated. The chart's server update
+strategy is `OnDelete`, so a ConfigMap update alone does not switch a running
+pod from Consul to Raft.
 
 ## Operational verification
 
