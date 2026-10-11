@@ -15,7 +15,7 @@ dependency at version `0.24.1`.
 
 The Vault chart owns the site-local `vault-longhorn` StorageClass, ordered
 before the StatefulSet. YVR's existing Vault PVC is 50Gi; the YXL migration
-target requests a 50Gi ReadWriteOnce PVC. Longhorn keeps two volume replicas
+target requests a 120Gi ReadWriteOnce PVC. Longhorn keeps two volume replicas
 per PVC, and
 `migratable: 'false'` leaves Longhorn live volume migration disabled. The
 class uses `Retain` so deleting a claim does not automatically delete its
@@ -26,7 +26,7 @@ for parameter behavior.
 ## Current and desired backend layout
 
 YXL Consul at path `MainVault` is the migration source. The first migration
-target is a single YXL Raft member on its 50Gi PVC. YVR is held at zero during
+target is a single YXL Raft member on its 120Gi PVC. YVR is held at zero during
 this phase; its existing PVC is retained and is not started from the in
 progress copy. The migration init container and ConfigMap are rendered only for
 the YXL release, with destination node ID
@@ -63,7 +63,7 @@ same Consul data.
 
 The migration phase holds the YXL StatefulSet at zero replicas and renders a
 one-shot `vault-storage-migration` Job plus ConfigMap. The Job mounts a new
-50Gi claim while Vault is stopped, resets any stale Consul migration lock,
+120Gi claim while Vault is stopped, resets any stale Consul migration lock,
 then runs the migration once. Resetting only clears the Consul lock; it does
 not clear the destination. A failed Job does not retry against its partially
 populated destination. The migration file
@@ -72,9 +72,11 @@ uses source path `MainVault`, destination `/vault/data`, and node ID
 new `vault-data-50-migrate3` claim, while the previous `data`, `vault-data`,
 `vault-data-100`, and `vault-data-100-migrate2` claims are retained. This gives
 the migration an empty Raft destination without deleting earlier PVCs. The
-50Gi request fits the currently schedulable YXL Longhorn disks while keeping
-the configured two replicas. The
-StatefulSet and Job replacement use `Force=true,Replace=true` only during this
+120Gi request expands the active YXL destination PVC in place while
+preserving its volume and current migration process. The Longhorn StorageClass
+allows expansion and keeps the configured two replicas. Before scaling up the
+StatefulSet after migration, set its claim template to the same 120Gi size.
+The StatefulSet and Job replacement use `Force=true,Replace=true` only during this
 migration revision. Server-side diff is disabled for both resources during
 replacement because Kubernetes rejects dry-run updates to the immutable claim
 template and Job pod template. After the Job succeeds, verify the copied data,
