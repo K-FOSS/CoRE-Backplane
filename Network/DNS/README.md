@@ -127,6 +127,17 @@ is changed to `ClusterIP` only for YVR by
 
 ## Verification and recovery
 
+The two-replica dnsdist Deployment and three-replica Recursor Deployment use
+rolling updates with one surge Pod and zero unavailable replicas. Their
+startup probes allow up to five minutes for the DNS listeners to open, and
+readiness checks require TCP connections to succeed before a Pod is included
+as a Service endpoint. PodDisruptionBudgets keep at least one dnsdist and two
+Recursor Pods available during voluntary disruptions. This
+allows a rollout to pause safely when the cluster cannot schedule the surge
+Pod, rather than removing a serving replica to make room. The readiness checks
+confirm listener startup; dnsdist's downstream health checks independently
+remove failed authoritative and recursive backends from query selection.
+
 Render this chart with the target ApplicationSet values and verify the DNS
 ConfigMap, both Deployments and their replicas, the Recursor NetworkPolicy,
 headless backend names, Service annotations, and UDP/TCP ports.

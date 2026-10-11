@@ -67,17 +67,40 @@ controllers:
 {{ toYaml .Values.powerdns.resources | nindent 10 }}
         probes:
           liveness:
-            enabled: false
+            enabled: true
+            type: TCP
+            port: 53
+            spec:
+              periodSeconds: 15
+              timeoutSeconds: 2
+              failureThreshold: 6
           readiness:
-            enabled: false
+            enabled: true
+            type: TCP
+            port: 53
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 3
           startup:
-            enabled: false
+            enabled: true
+            type: TCP
+            port: 53
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 60
 
   nsadmin:
     type: deployment
     replicas: 1
     revisionHistoryLimit: 3
     strategy: RollingUpdate
+    rollingUpdate:
+      surge: 1
+      unavailable: '0'
+    podDisruptionBudget:
+      minAvailable: 1
     pod:
       annotations:
         secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-nsadmin-creds,{{ include "bjw-s.common.lib.chart.names.fullname" . }}-secrets'
@@ -180,14 +203,27 @@ controllers:
             port: 80
             path: /
             spec:
-              initialDelaySeconds: 0
-              periodSeconds: 10
+              periodSeconds: 15
+              timeoutSeconds: 2
+              failureThreshold: 6
+          readiness:
+            enabled: true
+            type: HTTP
+            port: 80
+            path: /
+            spec:
+              periodSeconds: 5
               timeoutSeconds: 2
               failureThreshold: 3
-          readiness:
-            enabled: false
           startup:
-            enabled: false
+            enabled: true
+            type: HTTP
+            port: 80
+            path: /
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 60
         resources:
 {{ toYaml .Values.powerdnsAdmin.resources | nindent 10 }}
       pdns-api:
@@ -244,6 +280,31 @@ controllers:
           runAsNonRoot: true
           runAsUser: 953
           runAsGroup: 953
+        probes:
+          liveness:
+            enabled: true
+            type: TCP
+            port: 8081
+            spec:
+              periodSeconds: 15
+              timeoutSeconds: 2
+              failureThreshold: 6
+          readiness:
+            enabled: true
+            type: TCP
+            port: 8081
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 3
+          startup:
+            enabled: true
+            type: TCP
+            port: 8081
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 60
         resources:
 {{ toYaml .Values.powerdns.apiResources | nindent 10 }}
 

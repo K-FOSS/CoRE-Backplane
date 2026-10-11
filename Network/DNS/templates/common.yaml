@@ -12,6 +12,11 @@ controllers:
     forceRename: 'dnsdist'
     replicas: {{ .Values.dnsdist.replicas }}
     strategy: RollingUpdate
+    rollingUpdate:
+      surge: 1
+      unavailable: '0'
+    podDisruptionBudget:
+      minAvailable: 1
     pod:
       automountServiceAccountToken: false
       annotations:
@@ -71,6 +76,14 @@ controllers:
             port: 53
             spec:
               periodSeconds: 20
+          startup:
+            enabled: true
+            type: TCP
+            port: 53
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 60
       reloader:
         image:
           repository: {{ .Values.dnsdist.image.repository | quote }}
@@ -120,6 +133,11 @@ controllers:
     type: deployment
     replicas: {{ .Values.dnsdist.recursor.replicas }}
     strategy: RollingUpdate
+    rollingUpdate:
+      surge: 1
+      unavailable: '0'
+    podDisruptionBudget:
+      minAvailable: 2
     affinity:
       podAntiAffinity:
         preferredDuringSchedulingIgnoredDuringExecution:
@@ -191,6 +209,14 @@ controllers:
             port: {{ .Values.dnsdist.recursor.port }}
             spec:
               periodSeconds: 20
+          startup:
+            enabled: true
+            type: TCP
+            port: {{ .Values.dnsdist.recursor.port }}
+            spec:
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 60
 
 service:
   main:

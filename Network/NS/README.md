@@ -34,6 +34,18 @@ before treating that count as available capacity. The main LoadBalancer
 Service's `externalTrafficPolicy` is configurable through
 `service.main.externalTrafficPolicy` and currently defaults to `Cluster`, so
 traffic can reach ready endpoints on other nodes.
+The PowerDNS Deployment uses a one-Pod surge and zero unavailable Pods for
+rollouts, with readiness gated on its DNS listener and a startup probe allowing
+up to five minutes for initialization. A PodDisruptionBudget keeps at least
+two replicas available during voluntary disruptions. The single-replica
+NSAdmin Deployment also uses surge-before-unavailable behavior and waits for
+its HTTP endpoint and local PowerDNS API sidecar before receiving route traffic
+and allows up to five minutes to start. Its disruption budget prevents
+voluntary eviction while the single replica has no replacement. Rollouts can
+remain pending if the cluster lacks room for the surge Pod, which preserves the
+serving replicas until capacity is available. Kubernetes documents
+[Deployment rolling updates](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment)
+and [PodDisruptionBudgets](https://kubernetes.io/docs/tasks/run-application/configure-pdb/).
 The chart also publishes those ready Pods through the headless
 `ns-core-discovery` Service. Network/DNS resolves that Service into individual
 PowerDNS backends, health-checks each backend, and round-robins queries across
