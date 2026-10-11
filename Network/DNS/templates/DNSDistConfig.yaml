@@ -1,5 +1,5 @@
 {{- if .Values.dnsdist.enabled }}
-{{- $authoritativeBackend := default (printf "ns-core.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.kubernetesDomain) .Values.dnsdist.authoritative.backend }}
+{{- $authoritativeBackend := default (printf "ns-core-discovery.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.kubernetesDomain) .Values.dnsdist.authoritative.backend }}
 {{- $k8gbServiceName := "core-network-global-coredns" }}
 {{- if .Values.cluster.name }}
 {{- $k8gbServiceName = printf "%s-network-global-%s-coredns" .Values.cluster.name .Values.cluster.environment }}
@@ -79,6 +79,8 @@ data:
       end)
     end
 
+    -- Network/NS discovery is a headless Service: each ready PowerDNS Pod is
+    -- an independent backend, so dnsdist can health-check and balance replicas.
     addBackend('{{ $authoritativeHost }}', 'authoritative', 'authoritative', 'SOA', nil, '{{ .Values.dnsdist.authoritative.healthCheckName }}')
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
     {{- if .Values.dnsdist.recursive.enabled }}
@@ -145,5 +147,6 @@ data:
     {{- end }}
       })
     setServerPolicy(firstAvailable)
+    setPoolServerPolicy(roundrobin, 'authoritative')
     end
     {{- end }}

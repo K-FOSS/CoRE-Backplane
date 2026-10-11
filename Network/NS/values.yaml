@@ -4,6 +4,14 @@ global:
   # The workloads do not call the Kubernetes API.
   createDefaultServiceAccount: false
 
+controllers:
+  main:
+    replicas: 3
+
+service:
+  main:
+    externalTrafficPolicy: 'Cluster'
+
 # ApplicationSets override this per target cluster.
 hub: false
 

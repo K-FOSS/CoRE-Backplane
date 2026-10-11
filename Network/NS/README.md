@@ -28,11 +28,17 @@ records and site assignments against the authoritative zone before relying on
 them for delegation.
 
 Keep the logical nameserver set distinct from PowerDNS pod replicas. The
-current `Network/NS` workload template leaves the PowerDNS controller at its
-BJW-S default of one replica per cluster, and live inspection found one
-`ns-core-main` pod in each cluster. It does not currently run two PowerDNS
-pods per site. Update and verify that workload separately before describing
-the two-per-site replica count as deployed pod capacity.
+`Network/NS` values now request three `ns-core-main` replicas per cluster.
+Verify the generated Deployment and ready endpoints in each target cluster
+before treating that count as available capacity. The main LoadBalancer
+Service's `externalTrafficPolicy` is configurable through
+`service.main.externalTrafficPolicy` and currently defaults to `Cluster`, so
+traffic can reach ready endpoints on other nodes.
+The chart also publishes those ready Pods through the headless
+`ns-core-discovery` Service. Network/DNS resolves that Service into individual
+PowerDNS backends, health-checks each backend, and round-robins queries across
+the healthy replicas. The public `ns-core` Service remains the external
+nameserver endpoint.
 
 The chart renders:
 

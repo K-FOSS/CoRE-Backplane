@@ -31,7 +31,12 @@ names use
 `cluster.kubernetesDomain` (the active CoreDNS configuration may use
 `k8s.<site>.resolvemy.host` alongside `cluster.local`), while `cluster.domain`
 remains the external/site cluster identity. dnsdist resolves those Service
-names with `getAddressInfo()` before registering IP backends. Recursive
+names with `getAddressInfo()` before registering IP backends. The
+authoritative backend uses Network/NS's headless `ns-core-discovery` Service,
+which returns the ready PowerDNS Pod addresses. dnsdist health-checks each Pod
+with an SOA query for `resolvemy.host.` and uses round-robin selection across
+the healthy replicas. This avoids probing the public nameserver LoadBalancer
+IP or hiding an unhealthy replica behind one ClusterIP. Recursive
 requests are sent to the cluster-domain-qualified cluster DNS Service only for
 the CIDRs in `dnsdist.recursive.allowedNetworks`. The YVR ApplicationSet routes
 `10.0.0.0/24` to the filtered pool before the authoritative, K8GB, and

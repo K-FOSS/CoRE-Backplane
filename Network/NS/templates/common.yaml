@@ -8,6 +8,7 @@ global:
 
 controllers:
   main:
+    replicas: {{ .Values.controllers.main.replicas }}
     strategy: RollingUpdate
     pod:
       automountServiceAccountToken: false
@@ -259,11 +260,24 @@ service:
     type: {{ default "LoadBalancer" .Values.service.main.type }}
     {{- if eq (default "LoadBalancer" .Values.service.main.type) "LoadBalancer" }}
     loadBalancerClass: {{ .Values.service.main.loadBalancerClass | quote }}
-    externalTrafficPolicy: Local
+    externalTrafficPolicy: {{ .Values.service.main.externalTrafficPolicy | quote }}
     {{- end }}
     labels:
       wan-mode: public
       lan-mode: private
+    ports:
+      dns-udp:
+        primary: true
+        port: 53
+        protocol: UDP
+      dns-tcp:
+        primary: false
+        port: 53
+        protocol: TCP
+  discovery:
+    controller: main
+    type: ClusterIP
+    clusterIP: 'None'
     ports:
       dns-udp:
         primary: true
