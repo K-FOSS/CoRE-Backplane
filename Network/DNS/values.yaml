@@ -1,8 +1,7 @@
 # dnsdist is the public DNS front door for the site. PowerDNS remains the
 # authoritative database-backed server, while K8GB CoreDNS serves only the
 # delegated zones configured below. Recursive forwarding is restricted to the
-# explicitly listed private networks; the public listener is not an open
-# resolver by default.
+# explicitly listed site networks; the public listener is not an open resolver.
 global:
   nameOverride: 'dnsdist'
   fullnameOverride: 'dnsdist'
@@ -19,7 +18,7 @@ cluster:
 dnsdist:
   enabled: false
   replicas: 2
-  configRevision: 'ns-headless-refresh-1'
+  configRevision: 'ns-headless-recursive-discovery-1'
   image:
     repository: 'powerdns/dnsdist-21'
     tag: '2.1.1'
@@ -40,22 +39,60 @@ dnsdist:
   recursive:
     enabled: true
     backend: ''
-    allowedNetworks:
+    allowedNetworks: []
+  recursor:
+    replicas: 3
+    image:
+      repository: 'powerdns/pdns-recursor-54'
+      tag: '5.4.7'
+      pullPolicy: 'IfNotPresent'
+    listenAddress: '0.0.0.0'
+    port: 53
+    allowFrom:
       - '10.0.0.0/8'
+      - '100.64.0.0/10'
+      - '169.254.0.0/16'
       - '172.16.0.0/12'
       - '192.168.0.0/16'
-  forward:
-    enabled: true
-    backend: '1.1.1.1:53'
-    clientNetworks: []
+      - '127.0.0.0/8'
+      - '::1/128'
+      - 'fc00::/7'
+      - 'fe80::/10'
+    maxTcpClients: 128
+    maxTcpPerClient: 8
+    maxTcpQueriesPerConnection: 100
+    maxConcurrentRequestsPerTcpConnection: 10
+    tcpFastOpenQueue: 256
+    reusePort: true
+    outgoingTcpFastOpenConnect: true
+    threads: 2
+    tcpThreads: 1
+    socketDirectory: '/var/run/pdns-recursor'
+    socketMode: '0600'
+    dnssecValidation: 'validate'
+    sysctls:
+      net.ipv4.tcp_rmem: '4096 262144 67108864'
+      net.ipv4.tcp_wmem: '4096 262144 67108864'
+    recordCache:
+      maxEntries: 100000
+      refreshOnTtlPerc: 10
+      serveStaleExtensions: 120
+    packetCache:
+      maxEntries: 50000
+      ttl: 60
+      negativeTtl: 30
+      servfailTtl: 5
+    resources:
+      requests:
+        cpu: '100m'
+        memory: '128Mi'
+      limits:
+        cpu: '1000m'
+        memory: '512Mi'
   cnameFilter:
     enabled: false
     target: 'unused.invalid.'
     address: '10.0.0.19'
-    recursorImage:
-      repository: 'powerdns/pdns-recursor-53'
-      tag: '5.3.9'
-      pullPolicy: 'IfNotPresent'
   hostOverrides: []
   service:
     type: 'LoadBalancer'

@@ -22,7 +22,7 @@ spec:
                       ipv4: '10.0.0.40'
                       serviceGroup: ''
                       serviceType: 'LoadBalancer'
-                    dnsdistForwardNetworks:
+                    dnsdistRecursiveNetworks:
                       - '10.0.0.0/24'
                     dnsdistCnameFilter:
                       enabled: true
@@ -44,7 +44,8 @@ spec:
                       ipv4: '66.165.222.105'
                       serviceGroup: 'anycast'
                       serviceType: 'LoadBalancer'
-                    dnsdistForwardNetworks: []
+                    dnsdistRecursiveNetworks:
+                      - '172.16.51.0/24'
                     dnsdistCnameFilter:
                       enabled: false
                       target: 'unused.invalid.'
@@ -108,9 +109,9 @@ spec:
                     zones:
                       - 'gslb.mylogin.space'
                       - 'gslb.mylogin.social'
-                  forward:
-                    clientNetworks:
-                      {{ range .values.dnsdistForwardNetworks }}
+                  recursive:
+                    allowedNetworks:
+                      {{ range .values.dnsdistRecursiveNetworks }}
                       - '{{ . }}'
                       {{ end }}
                   hostOverrides:

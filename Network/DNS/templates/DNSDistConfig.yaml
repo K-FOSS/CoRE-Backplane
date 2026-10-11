@@ -5,8 +5,7 @@
 {{- $k8gbServiceName = printf "%s-network-global-%s-coredns" .Values.cluster.name .Values.cluster.environment }}
 {{- end }}
 {{- $k8gbBackend := default (printf "%s.k8gb.svc.%s:53" $k8gbServiceName .Values.cluster.kubernetesDomain) .Values.dnsdist.k8gb.backend }}
-{{- $recursiveBackend := default (printf "kube-dns.kube-system.svc.%s:53" .Values.cluster.kubernetesDomain) .Values.dnsdist.recursive.backend }}
-{{- $forwardBackend := .Values.dnsdist.forward.backend }}
+{{- $recursiveBackend := default (printf "recursor-discovery.k8gb.svc.%s:%v" .Values.cluster.kubernetesDomain .Values.dnsdist.recursor.port) .Values.dnsdist.recursive.backend }}
 {{- $authoritativeHost := trimSuffix ":53" $authoritativeBackend }}
 {{- $k8gbHost := trimSuffix ":53" $k8gbBackend }}
 {{- $recursiveHost := trimSuffix ":53" $recursiveBackend }}
@@ -19,19 +18,41 @@ metadata:
     app.kubernetes.io/name: 'dnsdist'
     app.kubernetes.io/instance: {{ .Release.Name | quote }}
 data:
-  {{ if .Values.dnsdist.cnameFilter.enabled }}
   recursor.yml: |
     incoming:
       listen:
-        - '127.0.0.1:5353'
+        - '{{ .Values.dnsdist.recursor.listenAddress }}:{{ .Values.dnsdist.recursor.port }}'
       allow_from:
-        - '127.0.0.1/32'
+{{ toYaml .Values.dnsdist.recursor.allowFrom | nindent 8 }}
+      max_tcp_clients: {{ .Values.dnsdist.recursor.maxTcpClients }}
+      max_tcp_per_client: {{ .Values.dnsdist.recursor.maxTcpPerClient }}
+      max_tcp_queries_per_connection: {{ .Values.dnsdist.recursor.maxTcpQueriesPerConnection }}
+      max_concurrent_requests_per_tcp_connection: {{ .Values.dnsdist.recursor.maxConcurrentRequestsPerTcpConnection }}
+      tcp_fast_open: {{ .Values.dnsdist.recursor.tcpFastOpenQueue }}
+      reuseport: {{ .Values.dnsdist.recursor.reusePort }}
+      pdns_distributes_queries: false
     recursor:
-      forward_zones_recurse:
-        - zone: '.'
-          forwarders:
-            - '1.1.1.1'
+      threads: {{ .Values.dnsdist.recursor.threads }}
+      tcp_threads: {{ .Values.dnsdist.recursor.tcpThreads }}
+      socket_dir: {{ .Values.dnsdist.recursor.socketDirectory | quote }}
+      socket_mode: {{ .Values.dnsdist.recursor.socketMode | quote }}
+      {{- if .Values.dnsdist.cnameFilter.enabled }}
       lua_dns_script: '/etc/powerdns/cname-filter.lua'
+      {{- end }}
+    recordcache:
+      max_entries: {{ .Values.dnsdist.recursor.recordCache.maxEntries }}
+      refresh_on_ttl_perc: {{ .Values.dnsdist.recursor.recordCache.refreshOnTtlPerc }}
+      serve_stale_extensions: {{ .Values.dnsdist.recursor.recordCache.serveStaleExtensions }}
+    packetcache:
+      max_entries: {{ .Values.dnsdist.recursor.packetCache.maxEntries }}
+      ttl: {{ .Values.dnsdist.recursor.packetCache.ttl }}
+      negative_ttl: {{ .Values.dnsdist.recursor.packetCache.negativeTtl }}
+      servfail_ttl: {{ .Values.dnsdist.recursor.packetCache.servfailTtl }}
+    dnssec:
+      validation: {{ .Values.dnsdist.recursor.dnssecValidation | quote }}
+    outgoing:
+      tcp_fast_open_connect: {{ .Values.dnsdist.recursor.outgoingTcpFastOpenConnect }}
+    {{- if .Values.dnsdist.cnameFilter.enabled }}
   cname-filter.lua: |
     local cnameFilter = newDN({{ .Values.dnsdist.cnameFilter.target | quote }})
     local cnameFilterAddress = {{ .Values.dnsdist.cnameFilter.address | quote }}
@@ -55,7 +76,7 @@ data:
       dq:addAnswer(pdns.A, cnameFilterAddress, 60)
       return true
     end
-  {{ end }}
+    {{- end }}
   dnsdist.conf: |
     -- PowerDNS dnsdist is the public DNS front door. Routing is deliberately
     -- explicit so the public Service cannot become an open recursive resolver.
@@ -81,6 +102,7 @@ data:
 
     local authoritativeHealthCheckName = '{{ .Values.dnsdist.authoritative.healthCheckName }}'
     local authoritativeResolutionPending = false
+    local recursiveResolutionPending = false
     local authoritativeRefreshCount = 0
 
     local function syncAuthoritativeBackends(_, addresses)
@@ -125,25 +147,53 @@ data:
       getAddressInfo('{{ $authoritativeHost }}', syncAuthoritativeBackends)
     end
 
+    local function syncRecursiveBackends(_, addresses)
+      recursiveResolutionPending = false
+      if #addresses == 0 then return end
+
+      local desired = {}
+      for _, address in ipairs(addresses) do
+        local backendAddress = address:toString()
+        desired['recursor-pod-' .. backendAddress] = backendAddress
+      end
+
+      local current = {}
+      for _, backend in ipairs(getServers()) do
+        local name = backend:getName()
+        if string.sub(name, 1, 13) == 'recursor-pod-' then
+          current[name] = backend
+        end
+      end
+
+      for name, backendAddress in pairs(desired) do
+        if current[name] == nil then
+          newServer({
+            address=backendAddress,
+            name=name,
+            pool='recursive',
+            checkType='SOA',
+            checkName='.',
+            mustResolve=true
+          })
+        end
+      end
+
+      for name, backend in pairs(current) do
+        if desired[name] == nil then rmServer(backend) end
+      end
+    end
+
+    local function refreshRecursiveBackends()
+      if recursiveResolutionPending then return end
+      recursiveResolutionPending = true
+      getAddressInfo('{{ $recursiveHost }}', syncRecursiveBackends)
+    end
+
     refreshAuthoritativeBackends()
+    refreshRecursiveBackends()
     -- Network/NS discovery is a headless Service: each ready PowerDNS Pod is
     -- an independent backend, so dnsdist can health-check and balance replicas.
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
-    {{- if .Values.dnsdist.recursive.enabled }}
-    -- kube-dns is a Kubernetes Service with ready CoreDNS endpoints; avoid a
-    -- false-negative dnsdist UDP health check against its dual-stack VIP.
-    addBackend('{{ $recursiveHost }}', 'recursive', 'recursive', nil, nil, nil)
-    {{- end }}
-    {{- if .Values.dnsdist.forward.enabled }}
-    {{- $forwardHost := trimSuffix ":53" $forwardBackend }}
-    -- Queries outside the authoritative, K8GB, and private recursive rules
-    -- use Cloudflare directly; the YVR filter is a separate client-selected pool.
-    addBackend('{{ $forwardHost }}', 'forwarder', 'forwarder', nil, nil, nil)
-    {{- if .Values.dnsdist.cnameFilter.enabled }}
-    newServer({address='127.0.0.1:5353', name='cname-filter', pool='filtered'})
-    {{- end }}
-    {{- end }}
-
     dofile('/etc/dnsdist/rules.lua')
     reloadConfig()
     local reloadMarker = ''
@@ -152,6 +202,7 @@ data:
       if authoritativeRefreshCount >= 30 then
         authoritativeRefreshCount = 0
         refreshAuthoritativeBackends()
+        refreshRecursiveBackends()
       end
 
       local markerFile = io.open('/run/dnsdist/reload', 'r')
@@ -173,11 +224,6 @@ data:
     {{- range $index, $address := .addresses }}{{ if $index }}, {{ end }}{{ $address | quote }}{{ end }}
         })),
     {{- end }}
-    {{- if gt (len (default (list) .Values.dnsdist.forward.clientNetworks)) 0 }}
-        newRuleAction(NetmaskGroupRule({
-    {{- range $index, $network := .Values.dnsdist.forward.clientNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
-        }), PoolAction('{{ if .Values.dnsdist.cnameFilter.enabled }}filtered{{ else }}forwarder{{ end }}')),
-    {{- end }}
     {{- if gt (len .Values.dnsdist.k8gb.zones) 0 }}
         newRuleAction(QNameSuffixRule({
     {{- range $index, $zone := .Values.dnsdist.k8gb.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
@@ -193,13 +239,10 @@ data:
     {{- range $index, $network := .Values.dnsdist.recursive.allowedNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
         }), PoolAction('recursive')),
     {{- end }}
-    {{- if .Values.dnsdist.forward.enabled }}
-        newRuleAction(AllRule(), PoolAction('forwarder'))
-    {{- else }}
         newRuleAction(AllRule(), PoolAction('authoritative'))
-    {{- end }}
       })
     setServerPolicy(firstAvailable)
     setPoolServerPolicy(roundrobin, 'authoritative')
+    setPoolServerPolicy(roundrobin, 'recursive')
     end
     {{- end }}

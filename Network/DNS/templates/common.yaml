@@ -15,9 +15,6 @@ controllers:
       automountServiceAccountToken: false
       annotations:
         core.mylogin.space/dnsdist-config-revision: {{ .Values.dnsdist.configRevision | quote }}
-        {{ if .Values.dnsdist.cnameFilter.enabled }}
-        core.mylogin.space/cname-filter-revision: {{ printf "%t|%s|%s" .Values.dnsdist.cnameFilter.enabled .Values.dnsdist.cnameFilter.target .Values.dnsdist.cnameFilter.address | sha256sum | quote }}
-        {{ end }}
       dnsConfig:
         options:
           - name: ndots
@@ -118,45 +115,81 @@ controllers:
           limits:
             cpu: '50m'
             memory: '64Mi'
-      {{- if .Values.dnsdist.cnameFilter.enabled }}
-      cname-filter:
+  recursor:
+    type: deployment
+    replicas: {{ .Values.dnsdist.recursor.replicas }}
+    strategy: RollingUpdate
+    affinity:
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              topologyKey: 'kubernetes.io/hostname'
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/controller: 'recursor'
+    pod:
+      automountServiceAccountToken: false
+      annotations:
+        core.mylogin.space/recursor-config-revision: {{ toYaml .Values.dnsdist.recursor | sha256sum | quote }}
+        {{ if .Values.dnsdist.cnameFilter.enabled }}
+        core.mylogin.space/cname-filter-revision: {{ printf "%t|%s|%s" .Values.dnsdist.cnameFilter.enabled .Values.dnsdist.cnameFilter.target .Values.dnsdist.cnameFilter.address | sha256sum | quote }}
+        {{ end }}
+      securityContext:
+        fsGroup: 953
+        fsGroupChangePolicy: OnRootMismatch
+        runAsNonRoot: true
+        runAsUser: 953
+        runAsGroup: 953
+        seccompProfile:
+          type: RuntimeDefault
+        sysctls:
+{{- range $name, $value := .Values.dnsdist.recursor.sysctls }}
+          - name: {{ $name | quote }}
+            value: {{ $value | quote }}
+{{- end }}
+    containers:
+      recursor:
         image:
-          repository: {{ .Values.dnsdist.cnameFilter.recursorImage.repository | quote }}
-          tag: {{ .Values.dnsdist.cnameFilter.recursorImage.tag | quote }}
-          pullPolicy: {{ .Values.dnsdist.cnameFilter.recursorImage.pullPolicy | quote }}
+          repository: {{ .Values.dnsdist.recursor.image.repository | quote }}
+          tag: {{ .Values.dnsdist.recursor.image.tag | quote }}
+          pullPolicy: {{ .Values.dnsdist.recursor.image.pullPolicy | quote }}
         args:
           - '--config-dir=/etc/powerdns'
+        ports:
+          - name: 'recursor-udp'
+            containerPort: {{ .Values.dnsdist.recursor.port }}
+            protocol: 'UDP'
+          - name: 'recursor-tcp'
+            containerPort: {{ .Values.dnsdist.recursor.port }}
+            protocol: 'TCP'
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
+            add:
+              - NET_BIND_SERVICE
             drop:
-              - 'ALL'
+              - ALL
           privileged: false
           readOnlyRootFilesystem: true
           runAsNonRoot: true
           runAsUser: 953
           runAsGroup: 953
         resources:
-          requests:
-            cpu: '25m'
-            memory: '64Mi'
-          limits:
-            cpu: '250m'
-            memory: '256Mi'
+{{ toYaml .Values.dnsdist.recursor.resources | nindent 10 }}
         probes:
           readiness:
             enabled: true
             type: TCP
-            port: 5353
+            port: {{ .Values.dnsdist.recursor.port }}
             spec:
               periodSeconds: 10
           liveness:
             enabled: true
             type: TCP
-            port: 5353
+            port: {{ .Values.dnsdist.recursor.port }}
             spec:
               periodSeconds: 20
-      {{- end }}
 
 service:
   main:
@@ -182,6 +215,51 @@ service:
         port: {{ .Values.dnsdist.port }}
         targetPort: 'dns-tcp'
         protocol: 'TCP'
+  recursor:
+    controller: recursor
+    forceRename: 'recursor-discovery'
+    type: ClusterIP
+    clusterIP: 'None'
+    ipFamilyPolicy: 'SingleStack'
+    ipFamilies: ['IPv4']
+    ports:
+      recursor-udp:
+        enabled: true
+        primary: true
+        port: {{ .Values.dnsdist.recursor.port }}
+        targetPort: 'recursor-udp'
+        protocol: 'UDP'
+      recursor-tcp:
+        enabled: true
+        primary: false
+        port: {{ .Values.dnsdist.recursor.port }}
+        targetPort: 'recursor-tcp'
+        protocol: 'TCP'
+
+networkpolicies:
+  recursor:
+    forceRename: 'dnsdist-recursor'
+    controller: recursor
+    policyTypes: ['Ingress', 'Egress']
+    rules:
+      ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                  app.kubernetes.io/controller: 'main'
+                  app.kubernetes.io/name: 'dnsdist'
+                  app.kubernetes.io/instance: {{ .Release.Name | quote }}
+          ports:
+            - protocol: 'UDP'
+              port: {{ .Values.dnsdist.recursor.port }}
+            - protocol: 'TCP'
+              port: {{ .Values.dnsdist.recursor.port }}
+      egress:
+        - ports:
+            - protocol: 'UDP'
+              port: 53
+            - protocol: 'TCP'
+              port: 53
 
 persistence:
   config:
@@ -203,19 +281,21 @@ persistence:
       configMap:
         name: 'dnsdist-config'
     advancedMounts:
-      main:
-        cname-filter:
+      recursor:
+        recursor:
           - path: '/etc/powerdns/recursor.yml'
             subPath: 'recursor.yml'
             readOnly: true
+          {{- if .Values.dnsdist.cnameFilter.enabled }}
           - path: '/etc/powerdns/cname-filter.lua'
             subPath: 'cname-filter.lua'
             readOnly: true
+          {{- end }}
   recursor-runtime:
     type: emptyDir
     advancedMounts:
-      main:
-        cname-filter:
+      recursor:
+        recursor:
           - path: '/var/run/pdns-recursor'
           - path: '/tmp'
   runtime:

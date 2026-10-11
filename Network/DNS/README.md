@@ -5,8 +5,9 @@ site-local public DNS front door. The owning
 [`Apps/Network/DNS.yaml`](../../Apps/Network/DNS.yaml) ApplicationSet injects
 the site exposure and backend values. Authoritative PowerDNS remains owned by
 the [Network/NS stack](../NS/README.md), K8GB CoreDNS remains owned by
-[Network/Global](../Global/README.md), and cluster-recursive CoreDNS remains
-owned by [Network/Base](../Base/README.md).
+[Network/Global](../Global/README.md), and cluster service discovery remains
+owned by [Network/Base](../Base/README.md). A separate PowerDNS Recursor
+Deployment provides site-local general recursion for explicitly allowed LANs.
 
 The dnsdist Deployment and Services are generated through the pinned
 [BJW-S common library chart 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common).
@@ -40,17 +41,36 @@ the healthy replicas using dnsdist's
 This avoids probing the public nameserver LoadBalancer
 IP or hiding an unhealthy replica behind one ClusterIP. dnsdist refreshes the
 headless Service addresses every 30 seconds and adds or removes individual
-backends as NS Pods become ready or are replaced. Recursive requests are sent
-to the cluster-domain-qualified cluster DNS Service only for
-the CIDRs in `dnsdist.recursive.allowedNetworks`. The YVR ApplicationSet routes
-`10.0.0.0/24` to the filtered pool before the authoritative, K8GB, and
-recursive rules. That pool terminates in the loopback Recursor, which forwards
-queries to Cloudflare. Other clients continue through the existing zone,
-private recursive, and direct Cloudflare rules.
+backends as NS Pods become ready or are replaced. The recursive pool discovers
+the ready PowerDNS Recursor Pod addresses through its own IPv4 headless
+Service, health-checks each with an SOA query for `.`, and round-robins across
+healthy replicas. DNSDist uses that pool only for the site LAN CIDRs injected
+by the ApplicationSet: `10.0.0.0/24` in YVR and `172.16.51.0/24` in YXL/DC1.
+Queries outside those networks and the configured authoritative zones fall
+through to the authoritative pool, so the public listener does not provide
+open recursion.
 
-YVR sends `10.0.0.0/24` queries to a loopback-only PowerDNS Recursor sidecar
-in each dnsdist pod. The Recursor forwards recursive lookups to Cloudflare and
-uses its [`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)
+The Recursor runs as a separate three-replica Deployment at both sites. It
+performs full iterative resolution, validates DNSSEC, and accepts inbound DNS
+only from private addresses. A NetworkPolicy further restricts ingress to
+DNSDist Pods and egress to upstream DNS over UDP/TCP port 53. Incoming TCP is
+limited to 128 concurrent clients, eight per client, and 100 queries per
+connection. It uses `SO_REUSEPORT`, a 256-entry TCP Fast Open queue, and TCP
+Fast Open for outbound authoritative connections. Pod TCP buffers are tuned
+with namespaced sysctls; the Talos node configuration enables
+`net.ipv4.tcp_fastopen=3` and the corresponding node TCP buffer limits.
+
+The Recursor has a 100,000-entry record cache and 50,000-entry packet cache.
+It refreshes records asynchronously when they reach 10% of their original TTL
+and can serve expired records for up to one hour when an upstream refresh
+fails, following PowerDNS's
+[Serve Stale behavior](https://doc.powerdns.com/recursor/appendices/internals.html#serve-stale).
+The full DNSSEC validation mode and the TCP, socket, and cache limits are
+configured through the Recursor's
+[YAML settings](https://doc.powerdns.com/recursor/yamlsettings.html).
+
+YVR enables an additional
+[`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)
 and [DNS record editing API](https://docs.powerdns.com/recursor/lua-scripting/dnsrecord.html)
 to inspect completed answers. If an A response contains a CNAME to the
 Vault-backed YVR `PublicHostname` injected as `dnsdist.cnameFilter.target`, it
@@ -62,11 +82,9 @@ Other query types and unrelated CNAMEs are returned unchanged. The
 `dnsdistHostOverrides` entries still handle direct queries for
 `idp.mylogin.space.` and the Vault-backed YVR public hostname.
 
-The Recursor listens only on `127.0.0.1:5353`, permits loopback clients, and is
-not exposed by a Service. Only the YVR ApplicationSet enables the sidecar; its
-`10.0.0.0/24` client route selects the sidecar-backed forwarder pool. DNSSEC
-signatures for rewritten responses are removed with the original chain, so
-those synthesized A answers are unsigned.
+DNSSEC signatures for rewritten responses are removed with the original chain,
+so those synthesized A answers are unsigned. YXL/DC1 runs the same Recursor
+configuration without this rewrite.
 
 The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
 configuration so fully qualified internal Service names are resolved directly.
@@ -95,8 +113,9 @@ is changed to `ClusterIP` only for YVR by
 
 ## Verification and recovery
 
-Render this chart with the target ApplicationSet values and verify the dnsdist
-ConfigMap, backend names, Service annotations, and both UDP/TCP Service ports.
+Render this chart with the target ApplicationSet values and verify the DNS
+ConfigMap, both Deployments and their replicas, the Recursor NetworkPolicy,
+headless backend names, Service annotations, and UDP/TCP ports.
 The Service targets the container ports by the matching `dns-udp` and `dns-tcp`
 names; verify both names are present on the rendered dnsdist container.
 After reconciliation, verify dnsdist and K8GB readiness, the PowerDNS backend
@@ -110,9 +129,11 @@ the watcher marker, both ready endpoints, and the affected answers. The watcher
 only publishes the file hash; dnsdist performs the rule replacement and does
 not expose a remote control socket. See the [dnsdist configuration and runtime guidance](https://www.dnsdist.org/running.html)
 and [PowerDNS dnsdist container documentation](https://github.com/PowerDNS/pdns/tree/master/dockerdata),
-the [PowerDNS Recursor Docker image](https://hub.docker.com/r/powerdns/pdns-recursor-53),
-and [Recursor YAML settings](https://docs.powerdns.com/recursor/yamlsettings.html)
-for the upstream behavior this arrangement relies on.
+the [PowerDNS Recursor 5.4 image](https://hub.docker.com/r/powerdns/pdns-recursor-54),
+[Recursor YAML settings](https://doc.powerdns.com/recursor/yamlsettings.html),
+[DNSSEC validation](https://doc.powerdns.com/recursor/dnssec.html),
+[performance and TCP Fast Open](https://doc.powerdns.com/recursor/performance.html#tcp-fast-open-support),
+and [Kubernetes Pod sysctls](https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/).
 
 To roll back the public front door, remove or disable this ApplicationSet only
 after restoring an intentional public port-53 owner. The PowerDNS Service will
