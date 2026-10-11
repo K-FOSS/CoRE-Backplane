@@ -71,19 +71,27 @@ powerdns:
     dnsupdate=yes
     forward-dnsupdate=yes
     expand-alias=yes
-    disable-axfr=no
-    allow-axfr-ips=172.16.0.0/12
-    allow-dnsupdate-from=172.16.0.0/12,10.0.0.0/8
+    disable-axfr=yes
     default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
-    gpgsql-dnssec=
+    gpgsql-dnssec=yes
 
-    # Disable PowerDNS caches so API changes are reflected immediately.
-    cache-ttl=0
-    query-cache-ttl=0
+    # Cache complete authoritative DNS responses
+    cache-ttl=86400
+
+    # Cache successful PostgreSQL backend lookups
+    query-cache-ttl=86400
+
+    # Avoid negative backend caching while records are created
     negquery-cache-ttl=0
-    dnssec-key-cache-ttl=0
-    zone-cache-refresh-interval=0
-    zone-metadata-cache-ttl=0
+
+    # Cache DNSSEC keys retrieved from PostgreSQL
+    dnssec-key-cache-ttl=3600
+
+    # Keep detecting newly created/deleted zones
+    zone-cache-refresh-interval=300
+
+    # Cache zone metadata
+    zone-metadata-cache-ttl=3600
 
     # The API is isolated in the PowerDNS-Admin pod's localhost sidecar.
     webserver=no
