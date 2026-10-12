@@ -1,0 +1,22 @@
+{{- if hasPrefix "core-" .Release.Namespace }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: 'core-vault-{{ trimPrefix "core-" .Release.Namespace }}'
+  labels:
+    app.kubernetes.io/name: 'vault'
+  annotations:
+    service.cilium.io/global: 'true'
+    service.cilium.io/global-sync-endpoint-slices: 'true'
+spec:
+  type: 'ClusterIP'
+  ports:
+    - name: 'http'
+      port: 8200
+      protocol: 'TCP'
+      targetPort: 8200
+  selector:
+    app.kubernetes.io/name: 'vault'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    component: 'server'
+{{- end }}

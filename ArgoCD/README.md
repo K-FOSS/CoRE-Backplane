@@ -91,6 +91,16 @@ keys in `argocd-secret`. A healthy Argo CD workload therefore does not prove
 that OIDC, Redis, or plugin generation is healthy; check each Secret producer
 and consumer separately.
 
+`argocd-vault-config` points the Lovely replacer at
+`core-vault-<environment>.core-<environment>.svc.<cluster-domain>`. The Vault
+ApplicationSet creates that same-name Service in YXL and YVR with Cilium Global
+Service annotations, so the repo-server uses ClusterMesh service discovery
+instead of the public Vault hostname. The [Cilium Global Services guide](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
+documents the matching Service names and namespaces required across clusters.
+The upstream [Lovely plugin README](https://github.com/crumbhole/argocd-lovely-plugin)
+and [Vault-enabled plugin variation](https://github.com/crumbhole/argocd-lovely-plugin/blob/main/doc/variations.md)
+describe the sidecar that consumes `VAULT_ADDR` and resolves Vault placeholders.
+
 The `cluster-core-home1-talos-prod` registration is rendered from
 [`templates/HomeCluster.yaml`](templates/HomeCluster.yaml). It targets the
 local Kubernetes API service and sets `config` to an empty object so Argo CD

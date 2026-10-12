@@ -23,6 +23,12 @@ backing volume. See Longhorn's
 [StorageClass parameter reference](https://longhorn.io/docs/1.13.0/references/storage-class-parameters/)
 for parameter behavior.
 
+Each Vault release also creates a `core-vault-<environment>` Service in its
+`core-<environment>` namespace. The identical YXL and YVR Services carry
+Cilium's global-service annotations, allowing ClusterMesh clients such as the
+Argo CD Lovely Vault replacer to reach the active Vault endpoint through local
+cluster DNS. See Cilium's [Global Services documentation](https://docs.cilium.io/en/stable/network/clustermesh/global-services/).
+
 ## Current and desired backend layout
 
 YXL Consul at path `MainVault` is the migration source. The first migration
