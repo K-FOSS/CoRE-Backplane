@@ -91,6 +91,12 @@ keys in `argocd-secret`. A healthy Argo CD workload therefore does not prove
 that OIDC, Redis, or plugin generation is healthy; check each Secret producer
 and consumer separately.
 
+The repo-server Deployment carries the
+`secret.reloader.stakater.com/reload: argocd-vault-config` annotation. Stakater
+Reloader rolls the repo-server pods when External Secrets updates the Vault
+configuration Secret, refreshing the Lovely sidecar's environment from the
+new Vault token or endpoint.
+
 `argocd-vault-config` points the Lovely replacer at
 `core-vault-<environment>.core-<environment>.svc.<cluster-domain>`. The Vault
 ApplicationSet creates that same-name Service in YXL and YVR with Cilium Global
