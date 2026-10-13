@@ -19,6 +19,7 @@ spec:
                       - clusters:
                           - name: core-dc1-talos-prod
                             values:
+                              mastodonUploadTmpEnabled: false
                               backupTargets:
                                 - targetCluster: 'core-dc1-talos-prod'
                                   name: 'local'
@@ -39,6 +40,7 @@ spec:
                                   local: false
                           - name: core-home1-talos-prod
                             values:
+                              mastodonUploadTmpEnabled: true
                               backupTargets:
                                 - targetCluster: 'core-home1-talos-prod'
                                   name: 'local'
@@ -109,6 +111,9 @@ spec:
                 datacenter: {{ .values.datacenter }}
 
                 region: {{ .values.region }}
+
+                mastodonUploadTmp:
+                  enabled: {{ .values.mastodonUploadTmpEnabled }}
 
                 backupTargets:
                   {{- range .values.backupTargets }}

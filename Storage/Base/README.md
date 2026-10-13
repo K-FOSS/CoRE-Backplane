@@ -1,7 +1,7 @@
 # Storage Base chart
 
 This chart deploys Longhorn and CoRE storage classes, UI routing and
-authentication policy. It is owned by `Apps/Storage/Base.yaml`.
+authentication policy. It is owned by the [Base ApplicationSet](../../Apps/Storage/Base.yaml).
 
 ## Components
 
@@ -11,6 +11,14 @@ authentication policy. It is owned by `Apps/Storage/Base.yaml`.
   and [versioned Helm values](https://longhorn.io/docs/1.12.1/references/helm-values/).
 - Default and SSD-oriented storage classes.
 - Deployment-specific non-redundant storage class.
+- Home1's `mastodon-upload-rwx` class for the Mastodon temporary upload PVC.
+  It follows the site's default Longhorn V1 replica and filesystem settings,
+  but sets `migratable: 'false'` as required for a generic filesystem
+  [`ReadWriteMany` volume](https://longhorn.io/docs/1.12.1/nodes-and-volumes/volumes/rwx-volumes/).
+  The [Base ApplicationSet](../../Apps/Storage/Base.yaml) enables it only on
+  `core-home1-talos-prod`; the class uses `Delete` reclaim policy and allows
+  PVC expansion. Verify the class parameters and a bound RWX claim before
+  switching Mastodon web and Sidekiq to the shared volume.
 - Authentik/security policy and HTTPRoute for the Longhorn UI.
 - Longhorn backup `User` claims for local and Matrix-configured peer S3
   ProviderConfigs.

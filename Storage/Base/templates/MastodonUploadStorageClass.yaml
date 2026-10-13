@@ -1,0 +1,18 @@
+{{- if .Values.mastodonUploadTmp.enabled }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: '{{ .Values.mastodonUploadTmp.name }}'
+provisioner: 'driver.longhorn.io'
+allowVolumeExpansion: true
+reclaimPolicy: 'Delete'
+volumeBindingMode: 'Immediate'
+parameters:
+  dataEngine: '{{ .Values.longhorn.persistence.dataEngine }}'
+  dataLocality: '{{ .Values.longhorn.persistence.defaultDataLocality }}'
+  disableRevisionCounter: '{{ .Values.longhorn.persistence.disableRevisionCounter }}'
+  fsType: '{{ .Values.longhorn.persistence.defaultFsType }}'
+  migratable: 'false'
+  numberOfReplicas: '{{ .Values.longhorn.persistence.defaultClassReplicaCount }}'
+  staleReplicaTimeout: '30'
+{{- end }}
