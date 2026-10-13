@@ -30,7 +30,10 @@ change Kubernetes API or Vault service discovery, which still uses cluster DNS.
 
 ## Dependencies
 
-- Vault/External Secrets for issuer credentials.
+- The Cilium global Service `core-vault-prod.core-prod.svc.cluster.local` for
+  Vault connectivity, plus External Secrets for issuer credentials. The
+  service is published by the [Vault stack](../../Hashicorp/Vault/README.md)
+  across the two sites using Cilium ClusterMesh.
 - Cloudflare DNS credentials for applicable ACME challenges.
 - Reachable ACME and Vault endpoints.
 - Correct DNS zones, trust bundles and Gateway consumers.

@@ -5,10 +5,9 @@ metadata:
 spec:
   vault:
     path: pki_int/sign/core
-    # Resolve the Vault service inside the destination cluster. The TLS
-    # ApplicationSet uses the cluster name as the Helm release name, so this
-    # remains local for both Talos clusters instead of depending on DC1 DNS.
-    server: 'http://{{ trimSuffix "-tls" .Release.Name }}-core-vault-prod.core-prod.svc.cluster.local:8200'
+    # The Vault stack publishes this stable service through Cilium ClusterMesh
+    # in both sites, so the issuer can use the same address on every cluster.
+    server: 'http://core-vault-prod.core-prod.svc.cluster.local:8200'
     auth:
       tokenSecretRef:
         name: certmanager-tls-vault-token
