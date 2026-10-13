@@ -9,7 +9,9 @@ currently selects the Talos clusters `core-dc1-talos-prod` and
 ## Ownership, targets and rendering
 
 The ApplicationSet renders this chart into the `cert-manager` namespace on
-each selected cluster. The chart pins [cert-manager 1.21.2](https://cert-manager.io/docs/releases/release-notes/release-notes-1.21/)
+each selected cluster and injects that cluster's `cluster.kubernetes.io/domain`
+label into Helm as `clusterDomain`. The Vault Issuer uses that suffix for the
+Cilium global Service DNS name. The chart pins [cert-manager 1.21.2](https://cert-manager.io/docs/releases/release-notes/release-notes-1.21/)
 and [trust-manager 0.25.0](https://github.com/cert-manager/trust-manager/releases/tag/v0.25.0)
 from the [Jetstack Helm repository](https://charts.jetstack.io/). Exact pins
 keep both clusters on the same tested dependency set; do not replace them with

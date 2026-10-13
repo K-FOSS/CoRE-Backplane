@@ -7,7 +7,7 @@ spec:
     path: pki_int/sign/core
     # The Vault stack publishes this stable service through Cilium ClusterMesh
     # in both sites, so the issuer can use the same address on every cluster.
-    server: 'http://core-vault-prod.core-prod.svc.cluster.local:8200'
+    server: 'http://core-vault-prod.core-prod.svc.{{ .Values.clusterDomain }}:8200'
     auth:
       tokenSecretRef:
         name: certmanager-tls-vault-token
