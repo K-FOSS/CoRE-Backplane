@@ -36,8 +36,8 @@ spec:
                               asteriskEnabled: true
                               freeswitchEnabled: true
                               externalIP: '66.165.222.103'
-                              faxDID: '<path:CORE0_SITE1/data/AVoIP/YXL/DC1#FaxNumber>'
-                              avoipDID: '<path:CORE0_SITE1/data/AVoIP/YXL/DC1#AVoIPNumber>'
+                              asteriskDID: '<path:CORE0_SITE1/data/AVoIP/YXL/DC1#FaxNumber>'
+                              ivrDID: '<path:CORE0_SITE1/data/AVoIP/YXL/DC1#AVoIPNumber>'
                               egressIP: '66.165.222.103'
                               ciliumEgressGatewayEnabled: false
                               kamailio:
@@ -175,8 +175,8 @@ spec:
                                         - '66'
                                         - '1234'
                               freeswitchEnabled: true
-                              faxDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
-                              avoipDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#AVoIPNumber>'
+                              asteriskDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
+                              ivrDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#AVoIPNumber>'
                               ciliumEgressGatewayEnabled: false
                               kamailio:
                                 enabled: true
@@ -398,14 +398,14 @@ spec:
                       tls:
                         server_name: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
 
-                {{- if hasKey .values "faxDID" }}
-                fax:
-                  did: '{{ .values.faxDID }}'
+                {{- if or (hasKey .values "asteriskDID") (hasKey .values "ivrDID") }}
+                dids:
+                {{- if hasKey .values "asteriskDID" }}
+                  asterisk: '{{ .values.asteriskDID }}'
                 {{- end }}
-
-                {{- if hasKey .values "avoipDID" }}
-                avoip:
-                  did: '{{ .values.avoipDID }}'
+                {{- if hasKey .values "ivrDID" }}
+                  ivr: '{{ .values.ivrDID }}'
+                {{- end }}
                 {{- end }}
 
                 kamailio:
