@@ -419,11 +419,15 @@ spec:
                       tls:
                         server_name: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
 
+                {{- if hasKey .values "ivrDID" }}
                 avoip:
                   did: '{{ .values.ivrDID }}'
+                {{- end }}
 
+                {{- if hasKey .values "asteriskDID" }}
                 fax:
                   did: '{{ .values.asteriskDID }}'
+                {{- end }}
 
                 kamailio:
                 {{- if hasKey .values "kamailio" }}
