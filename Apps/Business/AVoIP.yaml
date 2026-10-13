@@ -386,11 +386,11 @@ spec:
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
                   highAvailability:
-                    enabled: {{ or (eq .values.region "yxl") (eq .values.region "yvr") }}
+                    enabled: {{ and .values.freeswitchEnabled (or (eq .values.region "yxl") (eq .values.region "yvr")) }}
                     replicas: 2
                     minAvailable: 1
                   flowrouteOutbound:
-                    enabled: {{ or (eq .values.region "yxl") (eq .values.region "yvr") }}
+                    enabled: {{ and .values.freeswitchEnabled (or (eq .values.region "yxl") (eq .values.region "yvr")) }}
                     regionalHost: '{{ if eq .values.region "yxl" }}us-east-va.sip.flowroute.com{{ else }}us-west-or.sip.flowroute.com{{ end }}'
                   interSite:
                     enabled: {{ eq .values.region "yvr" }}
