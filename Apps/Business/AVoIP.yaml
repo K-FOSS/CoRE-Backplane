@@ -83,6 +83,10 @@ spec:
                                           allowedUsers: []
                                       transfers:
                                         - peerName: 'yvr'
+                                          destinationDID: 'avoip'
+                                          destinationExtension: '7102'
+                                        - peerName: 'yvr'
+                                          destinationDID: 'fax'
                                           destinationExtension: '7101'
                                     publicExposure:
                                       enabled: true
@@ -147,6 +151,10 @@ spec:
                               asterisk:
                                 sipCore:
                                   enabled: true
+                                  outboundNANP:
+                                    enabled: true
+                                    extensions:
+                                      - '7101'
                                   hostname: 'sipcore.mylogin.space'
                                   gatewaySectionName: 'https-myloginspace'
 
@@ -200,7 +208,11 @@ spec:
                                         enabled: true
                                         issuerName: 'core-tls-vault'
                                       calls:
-                                        enabled: false
+                                        enabled: true
+                                        mode: 'nanp'
+                                        extensions:
+                                          - '7101'
+                                        callerId: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
                                       peer:
                                         cidr: '172.20.56.0/21'
                                         sanHostname: 'core-home1-talos-prod-business-avoip-prod-avo-kamailio-internal.core-prod.svc.k8s.home1.resolvemy.host'
@@ -217,6 +229,7 @@ spec:
                                           serverName: 'sip-outbound.core-dc1-talos-prod.dc1.yxl.resolvemy.host'
                                           allowedUsers:
                                             - '7101'
+                                            - '7102'
                                     publicExposure:
                                       enabled: true
                                       sip:
@@ -245,7 +258,11 @@ spec:
                                         enabled: true
                                         issuerName: 'core-tls-vault'
                                       calls:
-                                        enabled: false
+                                        enabled: true
+                                        mode: 'nanp'
+                                        extensions:
+                                          - '7101'
+                                        callerId: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
                                       peer:
                                         cidr: '172.20.56.0/21'
                                         sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
@@ -372,6 +389,10 @@ spec:
                     enabled: {{ eq .values.region "yvr" }}
                     peerName: 'yxl'
                     extension: '7101'
+                    ivrExtension: '7102'
+                  ivr:
+                    enabled: {{ eq .values.region "yvr" }}
+                    extensions: ['7101', '9090', '66', '1234']
                   fax:
                     ident: '{{ upper .values.region }}-CoRE'
 
@@ -398,15 +419,11 @@ spec:
                       tls:
                         server_name: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
 
-                {{- if or (hasKey .values "asteriskDID") (hasKey .values "ivrDID") }}
-                dids:
-                {{- if hasKey .values "asteriskDID" }}
-                  asterisk: '{{ .values.asteriskDID }}'
-                {{- end }}
-                {{- if hasKey .values "ivrDID" }}
-                  ivr: '{{ .values.ivrDID }}'
-                {{- end }}
-                {{- end }}
+                avoip:
+                  did: '{{ .values.ivrDID }}'
+
+                fax:
+                  did: '{{ .values.asteriskDID }}'
 
                 kamailio:
                 {{- if hasKey .values "kamailio" }}
