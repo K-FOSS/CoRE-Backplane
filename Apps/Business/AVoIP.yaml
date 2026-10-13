@@ -119,6 +119,17 @@ spec:
                                     enabled: true
                                     role: 'carrier-sbc'
                                     replicas: 3
+                                    carrierOutbound:
+                                      enabled: true
+                                      gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k8s.home1.resolvemy.host'
+                                      sniHost: 'sip-outbound.core-home1-talos-prod.home1.yvr.resolvemy.host'
+                                      calls:
+                                        enabled: false
+                                      peer:
+                                        cidr: '172.20.56.0/21'
+                                        sanHostname: 'core-home1-talos-prod-business-avoip-prod-avo-kamailio-internal.core-prod.svc.k8s.home1.resolvemy.host'
+                                        serviceHost: 'core-home1-talos-prod-business-avoip-prod-avo-kamailio-internal.core-prod.svc.k8s.home1.resolvemy.host'
+                                        controller: 'kamailio-internal'
                                     publicExposure:
                                       enabled: true
                                       sip:
@@ -139,6 +150,24 @@ spec:
                                       redis:
                                         database: 52
                                         secretName: 'avoip-kamailio-internal-topos'
+                                    carrierOutbound:
+                                      enabled: true
+                                      gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k8s.home1.resolvemy.host'
+                                      sniHost: 'sip-outbound.core-home1-talos-prod.home1.yvr.resolvemy.host'
+                                      calls:
+                                        enabled: false
+                                      peer:
+                                        cidr: '172.20.56.0/21'
+                                        sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                        serviceHost: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                        controller: 'kamailio'
+                                    privateRouting:
+                                      peers:
+                                        - name: 'carrier'
+                                          controller: 'kamailio'
+                                          cidr: '172.20.56.0/21'
+                                          sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                          allowedUsers: []
                                   - name: 'internal-websocket'
                                     enabled: true
                                     role: 'private-sbc'
