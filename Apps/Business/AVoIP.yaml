@@ -72,6 +72,19 @@ spec:
                                         serviceHost: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio-internal.core-prod.svc.k3s.dc1.resolvemy.host'
                                         controller: 'kamailio-internal'
                                         secretName: 'core-dc1-talos-prod-business-avoip-p-kamailio-internal-sip-mtls'
+                                    interSite:
+                                      peers:
+                                        - name: 'yvr'
+                                          cidr: '172.20.56.0/21'
+                                          sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                          serviceIP: '10.44.7.136'
+                                          serviceHost: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                          serverName: 'sip-outbound.core-home1-talos-prod.home1.yvr.resolvemy.host'
+                                          allowedUsers: []
+                                      transfers:
+                                        - fromDID: '{{ .values.avoipDID }}'
+                                          peerName: 'yvr'
+                                          destinationExtension: '7101'
                                     publicExposure:
                                       enabled: true
                                       sip:
@@ -195,6 +208,16 @@ spec:
                                         serviceHost: 'core-home1-talos-prod-business-avoip-prod-avo-kamailio-internal.core-prod.svc.k8s.home1.resolvemy.host'
                                         controller: 'kamailio-internal'
                                         secretName: 'core-home1-talos-prod-business-avoip-kamailio-internal-sip-mtls'
+                                    interSite:
+                                      peers:
+                                        - name: 'yxl'
+                                          cidr: '172.20.48.0/22'
+                                          sanHostname: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k3s.dc1.resolvemy.host'
+                                          serviceIP: '10.44.3.190'
+                                          serviceHost: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k3s.dc1.resolvemy.host'
+                                          serverName: 'sip-outbound.core-dc1-talos-prod.dc1.yxl.resolvemy.host'
+                                          allowedUsers:
+                                            - '7101'
                                     publicExposure:
                                       enabled: true
                                       sip:
@@ -346,6 +369,10 @@ spec:
 
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
+                  interSite:
+                    enabled: {{ eq .values.region "yvr" }}
+                    peerName: 'yxl'
+                    extension: '7101'
                   fax:
                     ident: '{{ upper .values.region }}-CoRE'
 
