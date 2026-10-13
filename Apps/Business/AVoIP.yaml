@@ -46,12 +46,72 @@ spec:
                                   enabled: true
                                   sip:
                                     enabled: true
-                                    tcpEnabled: true
+                                    tcpEnabled: false
                                     udpEnabled: false
                                     directService:
                                       enabled: false
                                     udpRoute:
                                       enabled: false
+                                instances:
+                                  - name: 'carrier'
+                                    enabled: true
+                                    role: 'carrier-sbc'
+                                    replicas: 3
+                                    carrierOutbound:
+                                      enabled: true
+                                      gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k3s.dc1.resolvemy.host'
+                                      sniHost: 'sip-outbound.core-dc1-talos-prod.dc1.yxl.resolvemy.host'
+                                      clientIdentity:
+                                        enabled: true
+                                        issuerName: 'core-tls-vault'
+                                      calls:
+                                        enabled: false
+                                      peer:
+                                        cidr: '172.20.48.0/22'
+                                        sanHostname: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio-internal.core-prod.svc.k3s.dc1.resolvemy.host'
+                                        serviceHost: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio-internal.core-prod.svc.k3s.dc1.resolvemy.host'
+                                        controller: 'kamailio-internal'
+                                        secretName: 'core-dc1-talos-prod-business-avoip-p-kamailio-internal-sip-mtls'
+                                    publicExposure:
+                                      enabled: true
+                                      sip:
+                                        enabled: true
+                                        tcpEnabled: false
+                                        udpEnabled: false
+                                        directService:
+                                          enabled: false
+                                        udpRoute:
+                                          enabled: false
+                                  - name: 'internal'
+                                    enabled: true
+                                    role: 'private-sbc'
+                                    replicas: 1
+                                    topology:
+                                      redis:
+                                        database: 52
+                                        secretName: 'avoip-kamailio-internal-topos'
+                                    carrierOutbound:
+                                      enabled: true
+                                      gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k3s.dc1.resolvemy.host'
+                                      sniHost: 'sip-outbound.core-dc1-talos-prod.dc1.yxl.resolvemy.host'
+                                      clientIdentity:
+                                        enabled: true
+                                        issuerName: 'core-tls-vault'
+                                      calls:
+                                        enabled: false
+                                      peer:
+                                        cidr: '172.20.48.0/22'
+                                        sanHostname: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k3s.dc1.resolvemy.host'
+                                        serviceHost: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k3s.dc1.resolvemy.host'
+                                        controller: 'kamailio'
+                                        secretName: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio-sip-mtls'
+                                    privateRouting:
+                                      peers:
+                                        - name: 'carrier'
+                                          controller: 'kamailio'
+                                          cidr: '172.20.48.0/22'
+                                          sanHostname: 'core-dc1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k3s.dc1.resolvemy.host'
+                                          allowedUsers: []
                               serviceOptions:
                                 kamailio-pub:
                                   type: 'LoadBalancer'
@@ -123,6 +183,9 @@ spec:
                                       enabled: true
                                       gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k8s.home1.resolvemy.host'
                                       sniHost: 'sip-outbound.core-home1-talos-prod.home1.yvr.resolvemy.host'
+                                      clientIdentity:
+                                        enabled: true
+                                        issuerName: 'core-tls-vault'
                                       calls:
                                         enabled: false
                                       peer:
@@ -130,6 +193,7 @@ spec:
                                         sanHostname: 'core-home1-talos-prod-business-avoip-prod-avo-kamailio-internal.core-prod.svc.k8s.home1.resolvemy.host'
                                         serviceHost: 'core-home1-talos-prod-business-avoip-prod-avo-kamailio-internal.core-prod.svc.k8s.home1.resolvemy.host'
                                         controller: 'kamailio-internal'
+                                        secretName: 'core-home1-talos-prod-business-avoip-kamailio-internal-sip-mtls'
                                     publicExposure:
                                       enabled: true
                                       sip:
@@ -154,6 +218,9 @@ spec:
                                       enabled: true
                                       gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k8s.home1.resolvemy.host'
                                       sniHost: 'sip-outbound.core-home1-talos-prod.home1.yvr.resolvemy.host'
+                                      clientIdentity:
+                                        enabled: true
+                                        issuerName: 'core-tls-vault'
                                       calls:
                                         enabled: false
                                       peer:
@@ -161,6 +228,7 @@ spec:
                                         sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
                                         serviceHost: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
                                         controller: 'kamailio'
+                                        secretName: 'core-home1-talos-prod-business-avoip-kamailio-sip-mtls'
                                     privateRouting:
                                       peers:
                                         - name: 'carrier'
