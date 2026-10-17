@@ -17,6 +17,16 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   operators, Crossplane providers/functions, Terraform Workspaces, Cluster
   API, Tinkerbell, Talos, or external services. `Synced`, an accepted manifest,
   or a composite `Ready` condition alone does not prove the outcome is healthy.
+- When an IP literal in repository documentation or configuration falls within
+  a production cluster IP range declared under
+  `Operations/Clusters/templates/prod`, use `kubectl --context logged-user`
+  (the YVR context) to identify its Service or pod before editing the
+  reference. Prefer a stable Service DNS name or resource reference when it
+  preserves the consumer's expected behavior. Keep literal IPs when the field
+  requires an address, or when a replacement's cross-cluster DNS and routing
+  behavior has not been established. If the address is not present in the YVR
+  cluster, do not infer its owner; identify the correct target cluster or leave
+  it unchanged and report the limitation.
 - Normal changes flow through Git and Argo CD. Direct live-cluster mutations
   are incident actions only and must be recorded and reconciled back to Git or
   deliberately removed afterward.
