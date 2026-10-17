@@ -36,8 +36,7 @@ spec:
                               asteriskEnabled: true
                               asterisk:
                                 voicemail:
-                                  enabled: true
-                                  mailbox: '7101'
+                                  enabled: false
                               freeswitchEnabled: true
                               externalIP: '66.165.222.103'
                               asteriskDID: '<path:CORE0_SITE1/data/AVoIP/YXL/DC1#FaxNumber>'
@@ -404,7 +403,7 @@ spec:
                     extension: '7101'
                     ivrExtension: '7102'
                   ivr:
-                    enabled: true
+                    enabled: {{ ne .values.region "yxl" }}
                     extensions: {{ if eq .values.region "yvr" }}['7101', '9090', '66', '1234']{{ else }}['7101']{{ end }}
                   fax:
                     ident: '{{ upper .values.region }}-CoRE'
