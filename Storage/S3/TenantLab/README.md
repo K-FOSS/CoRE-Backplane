@@ -9,14 +9,27 @@ Important values include cluster/site identity, tenant name, replica count,
 node selector, storage class/size, domains, secret-store paths, Prometheus and
 OIDC/LDAP settings.
 
-For the standalone one-server deployment, `s3.storage.volumeName` binds the
-chart-managed PVC to an existing PV by setting `spec.volumeName`. Use the PV's
-Kubernetes name (a Longhorn PV name is commonly the Longhorn volume name). The
-PV must be available for this claim, have compatible capacity and access
-modes, and reference a compatible storage class. `s3.storage.existingClaim`
-mounts an existing PVC instead; set only one of these values. Neither setting
-imports or changes the underlying Longhorn volume. Check the PV/PVC binding and
-Longhorn volume health before allowing MinIO to start.
+For the standalone one-server deployment, set `s3.storage.volumeName` to the
+existing Longhorn Volume CR name. The chart creates a cluster-scoped PV whose
+`spec.csi.volumeHandle` points to that volume, then binds it to the chart-managed
+PVC in the release namespace. It sets the PV reclaim policy to `Retain` so
+removing the claim does not delete the Longhorn volume. The configured capacity,
+filesystem type, data engine and replica attributes must match the existing
+Longhorn volume. The PV storage class matches the chart-created storage class;
+this class is used for PV/PVC matching and does not provision this static PV.
+
+Longhorn requires an existing volume to be detached before a new pod uses it
+([PV/PVC creation for an existing volume](https://longhorn.io/docs/1.12.1/nodes-and-volumes/volumes/create-volumes/)).
+Verify that the volume is detached and healthy, and that no workload uses it,
+before reconciling the PV and allowing MinIO to start. `s3.storage.existingClaim`
+mounts an existing PVC instead; set only one of these values. A Longhorn volume
+name is not a PVC name, and the volume itself remains in `longhorn-system` while
+the MinIO PVC is in the release namespace.
+
+The PV uses `Retain`. Removing the claim leaves the Longhorn volume and PV data
+in place; the released PV retains its claim reference and requires an explicit
+recovery or cleanup decision before reuse. Do not delete the Longhorn Volume CR
+or the PV when preserving the data.
 
 The chart currently keeps the standalone MinIO path at one server/one PVC so
 existing object data remains attached. New PVCs use the release-scoped

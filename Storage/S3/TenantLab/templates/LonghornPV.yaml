@@ -1,0 +1,27 @@
+{{- if and .Values.s3.storage.enabled .Values.s3.storage.volumeName (lt (int .Values.s3.replicas) 3) }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.s3.storage.volumeName | squote }}
+spec:
+  capacity:
+    storage: {{ .Values.s3.storage.size | squote }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ default (printf "%s-longhorn-2" .Release.Name | trunc 63 | trimSuffix "-") .Values.s3.storage.storageClass | squote }}
+  claimRef:
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: {{ include "bjw-s.common.lib.chart.names.fullname" . | squote }}
+    namespace: {{ .Release.Namespace | squote }}
+  csi:
+    driver: driver.longhorn.io
+    fsType: {{ .Values.s3.storage.fsType | squote }}
+    volumeAttributes:
+      {{- range $key, $value := .Values.s3.storage.volumeAttributes }}
+      {{ $key }}: {{ $value | squote }}
+      {{- end }}
+    volumeHandle: {{ .Values.s3.storage.volumeName | squote }}
+{{- end }}

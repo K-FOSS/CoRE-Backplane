@@ -1,5 +1,9 @@
 {{- include "bjw-s.common.loader.init" . }}
 
+{{- if and .Values.s3.storage.volumeName (ge (int .Values.s3.replicas) 3) }}
+{{- fail "s3.storage.volumeName is only supported by the standalone MinIO deployment" }}
+{{- end }}
+
 {{- define "app-template.hardcodedValues" -}}
 # Set the nameOverride based on the release name if no override has been set
 {{ if not .Values.global.nameOverride }}

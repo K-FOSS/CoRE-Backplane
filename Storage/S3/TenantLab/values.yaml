@@ -42,6 +42,13 @@ s3:
     # Leave empty to let Kubernetes provision a new volume.
     volumeName: ''
 
+    # These values must match the existing Longhorn volume when volumeName is set.
+    fsType: 'xfs'
+    volumeAttributes:
+      dataEngine: 'v1'
+      numberOfReplicas: '2'
+      staleReplicaTimeout: '20'
+
     # Mount an existing PVC instead of creating a PVC managed by this chart.
     existingClaim: ''
 
