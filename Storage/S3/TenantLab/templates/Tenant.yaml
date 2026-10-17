@@ -337,12 +337,18 @@ persistence:
     annotations:
       argocd.argoproj.io/sync-options: 'Delete=false,Prune=false'
     mountPath: 
+    {{- if and .Values.s3.storage.existingClaim .Values.s3.storage.volumeName }}
+    {{- fail "s3.storage.existingClaim and s3.storage.volumeName cannot both be set" }}
+    {{- end }}
     {{ with .Values.s3.storage.existingClaim }}
-    existingClaim: {{ . }}
+    existingClaim: {{ . | quote }}
     {{ end }}
 
     accessMode: ReadWriteOnce
     storageClass: {{ default (printf "%s-longhorn-2" .Release.Name | trunc 63 | trimSuffix "-") .Values.s3.storage.storageClass }}
+    {{ with .Values.s3.storage.volumeName }}
+    volumeName: {{ . | quote }}
+    {{ end }}
     size: {{ .Values.s3.storage.size }}
     globalMounts:
       - path: /export

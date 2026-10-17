@@ -9,6 +9,15 @@ Important values include cluster/site identity, tenant name, replica count,
 node selector, storage class/size, domains, secret-store paths, Prometheus and
 OIDC/LDAP settings.
 
+For the standalone one-server deployment, `s3.storage.volumeName` binds the
+chart-managed PVC to an existing PV by setting `spec.volumeName`. Use the PV's
+Kubernetes name (a Longhorn PV name is commonly the Longhorn volume name). The
+PV must be available for this claim, have compatible capacity and access
+modes, and reference a compatible storage class. `s3.storage.existingClaim`
+mounts an existing PVC instead; set only one of these values. Neither setting
+imports or changes the underlying Longhorn volume. Check the PV/PVC binding and
+Longhorn volume health before allowing MinIO to start.
+
 The chart currently keeps the standalone MinIO path at one server/one PVC so
 existing object data remains attached. New PVCs use the release-scoped
 `<release>-longhorn-2` StorageClass: Longhorn v1 with two full replicas,
