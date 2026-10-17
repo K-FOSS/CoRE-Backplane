@@ -211,7 +211,7 @@ delete the base policy only after replacing its grants at the consumers.
    `policyAuditMode: true`. Enable `bpf.events.policyVerdict.enabled` and verify
    an observation path using `cilium-dbg monitor --type policy-verdict`, or
    configure Hubble with TLS and scoped access. Preserve normal drop events.
-   Resolve and validate the exact Cilium 1.20.2 chart before relying on keys.
+   Resolve and validate the exact Cilium 1.20.3 chart before relying on keys.
 3. Sync that site's network Application through Argo CD. Verify the effective
    configuration on every agent, including node overrides, and wait for its
    controlled rollout. Other Applications must not roll out incidentally.
