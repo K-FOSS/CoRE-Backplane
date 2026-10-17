@@ -72,8 +72,8 @@ individually migrated and documented.
 
 [AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the
 [CoRE-Business AVoIP chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP).
-The ApplicationSet reads the YVR Forgejo main repository at immutable commit
-[`07cd7375f5f99671750bfa643d57240ae0c187b2`](https://slop.writemy.codes/CoRE/CoRE-Business/commit/07cd7375f5f99671750bfa643d57240ae0c187b2).
+The ApplicationSet reads the CoRE-Business repository at immutable commit
+[`5995410414950cbc7850d051a927cda6361b5104`](https://slop.writemy.codes/CoRE/CoRE-Business/commit/5995410414950cbc7850d051a927cda6361b5104).
 Update this pin only after reviewing the upstream chart changes and rendering
 the selected target values.
 It is prepared for the YVR `core-home1-talos-prod` and DC1
