@@ -12,6 +12,10 @@ controllers:
   {{- if .Values.coturn.enabled }}
   coturn:
     strategy: RollingUpdate
+    pod:
+      annotations:
+        configmap.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-config'
+        secret.reloader.stakater.com/reload: 'dragonfly-core-password,natpuncher-turn-auth'
 
     containers:
       main:
