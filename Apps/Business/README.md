@@ -143,9 +143,11 @@ sourced from Vault through the chart's top-level `fax.did` value. YVR enables
 the chart's T.38-capable default. The upstream [fax identity and routing notes](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP/docs/SIP-IDENTITY.md)
 describe the current behavior and remaining live verification. YXL keeps
 Asterisk enabled for its other call handling but disables local Asterisk
-voicemail and the local FreeSWITCH IVR. The YXL voice DID continues over the
-existing carrier mTLS route to YVR's IVR, where `*97` reaches YVR's voicemail
-login. YVR enables the
+voicemail and the local FreeSWITCH IVR. Both sites use the AVoIP Admin catalog
+for inbound DID destinations. The current catalog sends the voice DID to YVR
+extension `67` and the other DID to YVR extension `66`; YXL uses the existing
+carrier mTLS peer for that handoff. No ApplicationSet DID transfer list is
+injected. YVR enables the
 three-replica carrier Kamailio instance and two separate `private-sbc`
 instances: a one-replica internal SBC using Dragonfly database `52`, and a
 three-replica `internal-websocket` instance with WebSocket HA enabled in pilot
