@@ -87,6 +87,14 @@ URL `https://sms.resolvemy.host/providers/<provider-id>/inbound`. Definitions
 remain administrator-managed; this credential mapping does not create or replace
 a provider definition, import numbers, change Twilio callbacks, or enable SIP
 routing. Account API credentials do not configure SIP trunk digest credentials.
+The YVR AVoIP values also provision `twilio-west` as a non-registering
+[Twilio Elastic SIP Trunking](https://www.twilio.com/docs/sip-trunking)
+FreeSWITCH gateway. It uses Twilio IP ACL authentication, so it has no SIP
+credential Secret. The carrier Kamailio egress policy allows TLS on port 5061
+only to the [Twilio Oregon signaling range](https://www.twilio.com/docs/sip-trunking/ip-addresses).
+The Admin `twilio-west` SIP provider must map its YVR gateway to `twilio-west`;
+existing extension assignments remain in Admin. Twilio's trunk IP ACL must
+allow YVR's observed public egress IP before calls can complete.
 The integration uses the Account SID and Auth Token for [Twilio API
 authentication](https://www.twilio.com/docs/usage/requests-to-twilio) and
 inbound webhook signature validation. It does not currently support API Key SID

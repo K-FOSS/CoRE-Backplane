@@ -424,11 +424,22 @@ spec:
 
                 avoipAdmin:
                   enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                  {{- if eq .values.region "yvr" }}
+                  upstreams:
+                    - name: 'twilio-west'
+                      host: 'coreinc-yvr.pstn.umatilla.twilio.com'
+                      authentication: 'ip-acl'
+                      register: false
+                  {{- end }}
                   dns:
                     enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
                     target: 'nsadmin.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                   routing:
                     enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                    {{- if eq .values.region "yvr" }}
+                    upstreamCIDRs:
+                      - '54.244.51.0/30'
+                    {{- end }}
 
                 talkHpb:
                   enabled: {{ eq .values.region "yvr" }}
