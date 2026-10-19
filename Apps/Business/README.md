@@ -72,11 +72,14 @@ individually migrated and documented.
 
 The [AVoIP owner](https://slop.writemy.codes/CoRE/CoRE-Backplane/src/branch/main/Apps/Business/AVoIP.yaml)
 configures External Secrets references for the SMS Twilio account on the YVR and
-YXL admin sites. `corevault-rootsecrets` reads `SID` and `ClientSecret` from
+YXL admin sites. `corevault-rootsecrets` reads `AccountSID` and `Token` from
 `AVoIP/SIP/Twilio` into the site-local `avoip-sms-twilio` Secret. The owner
-confirmed these fields mean Twilio Account SID and Auth Token. Workloads receive
-only Secret references named `SMS_PROVIDER_TWILIO_ACCOUNT` and
-`SMS_PROVIDER_TWILIO_TOKEN`; no credential values belong in Git or provider rows.
+confirmed `AccountSID` is the Twilio Account SID (`AC…`) and `Token` is its
+Account Auth Token. The separate `SID` (`SK…`) and `ClientSecret` fields are
+Twilio API-key credentials and are not used by the current integration.
+Workloads receive only Secret references named
+`SMS_PROVIDER_TWILIO_ACCOUNT` and `SMS_PROVIDER_TWILIO_TOKEN`; no credential
+values belong in Git or provider rows.
 
 Administrators can create a Twilio SMS provider in AVoIP Admin using those two
 environment references, an explicit E.164 number inventory, and the exact callback
@@ -84,8 +87,10 @@ URL `https://sms.resolvemy.host/providers/<provider-id>/inbound`. Definitions
 remain administrator-managed; this credential mapping does not create or replace
 a provider definition, import numbers, change Twilio callbacks, or enable SIP
 routing. Account API credentials do not configure SIP trunk digest credentials.
-For [Twilio API authentication](https://www.twilio.com/docs/usage/requests-to-twilio),
-`ClientSecret` here is the owner's Vault field name for the Auth Token.
+The integration uses the Account SID and Auth Token for [Twilio API
+authentication](https://www.twilio.com/docs/usage/requests-to-twilio) and
+inbound webhook signature validation. It does not currently support API Key SID
+and secret credentials.
 
 Reconcile the owner, then the generated ExternalSecret; verify its Ready condition
 before rolling the consuming API, webhook and admin Deployments. Verify only
