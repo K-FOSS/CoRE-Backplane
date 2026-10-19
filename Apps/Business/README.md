@@ -70,10 +70,36 @@ individually migrated and documented.
 
 ## AVoIP
 
+The [AVoIP owner](https://slop.writemy.codes/CoRE/CoRE-Backplane/src/branch/main/Apps/Business/AVoIP.yaml)
+configures External Secrets references for the SMS Twilio account on the YVR and
+YXL admin sites. `corevault-rootsecrets` reads `SID` and `ClientSecret` from
+`AVoIP/SIP/Twilio` into the site-local `avoip-sms-twilio` Secret. The owner
+confirmed these fields mean Twilio Account SID and Auth Token. Workloads receive
+only Secret references named `SMS_PROVIDER_TWILIO_ACCOUNT` and
+`SMS_PROVIDER_TWILIO_TOKEN`; no credential values belong in Git or provider rows.
+
+Administrators can create a Twilio SMS provider in AVoIP Admin using those two
+environment references, an explicit E.164 number inventory, and the exact callback
+URL `https://sms.resolvemy.host/providers/<provider-id>/inbound`. Definitions
+remain administrator-managed; this credential mapping does not create or replace
+a provider definition, import numbers, change Twilio callbacks, or enable SIP
+routing. Account API credentials do not configure SIP trunk digest credentials.
+For [Twilio API authentication](https://www.twilio.com/docs/usage/requests-to-twilio),
+`ClientSecret` here is the owner's Vault field name for the Auth Token.
+
+Reconcile the owner, then the generated ExternalSecret; verify its Ready condition
+before rolling the consuming API, webhook and admin Deployments. Verify only
+credential presence, never print Secret values. Environment-based credentials
+require a rolling update after rotation. Roll back workload references before
+removing the Secret mapping, and retain admin-managed provider metadata.
+
 The owner enables the SMS receiver/API/inbox only on `core-home1-talos-prod`
-(YVR). It enables the private site-local administration interface on YVR and
-`core-dc1-talos-prod` (YXL); the legacy K3s target gets neither. Managed SIP
-routing stays disabled during this administration rollout. DNS-only admin CNAMEs
+(YVR). It enables the private site-local administration interface and managed
+SIP routing on YVR and `core-dc1-talos-prod` (YXL); the legacy K3s target gets
+neither. Managed routing changes the carrier/private Kamailio and FreeSWITCH
+configuration, so reconcile the SIP and media resources only after reviewing
+both site renders and confirming the admin catalog and routing snapshots are
+ready. DNS-only admin CNAMEs
 point to each site's existing `nsadmin` HTTPS gateway name; Authentik remains
 required and the private HTTPRoutes are not selected for public discovery. See the
 [administration rollout and rollback](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP/docs/ADMIN.md).

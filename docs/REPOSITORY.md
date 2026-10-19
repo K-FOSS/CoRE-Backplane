@@ -26,6 +26,11 @@ combination of all three.
 | `Libraries/` | Shared or reusable chart fragments/components. |
 | `Meta/` | Locally downloaded operational CLI tools and helper scripts. |
 
+AVoIP SMS provider credential mappings are owned by the
+[AVoIP ApplicationSet](https://slop.writemy.codes/CoRE/CoRE-Backplane/src/branch/main/Apps/Business/AVoIP.yaml);
+see the [business operations guide](../Apps/Business/README.md#avoip) for the
+Twilio Vault field mapping and rollout order.
+
 ## Finding the deployment owner
 
 For a chart such as `Operations/Clusters`:

@@ -413,6 +413,21 @@ spec:
 
                 flowrouteSMS:
                   enabled: {{ eq .values.clusterName "core-home1-talos-prod" }}
+                  {{ if and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                  providerCredentials:
+                    SMS_PROVIDER_TWILIO_ACCOUNT:
+                      name: 'avoip-sms-twilio'
+                      key: 'AccountSID'
+                      remoteRef:
+                        key: 'AVoIP/SIP/Twilio'
+                        property: 'SID'
+                    SMS_PROVIDER_TWILIO_TOKEN:
+                      name: 'avoip-sms-twilio'
+                      key: 'AuthToken'
+                      remoteRef:
+                        key: 'AVoIP/SIP/Twilio'
+                        property: 'ClientSecret'
+                  {{ end }}
 
                 avoipAdmin:
                   enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
@@ -420,7 +435,7 @@ spec:
                     enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
                     target: 'nsadmin.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                   routing:
-                    enabled: false
+                    enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
 
                 talkHpb:
                   enabled: {{ eq .values.region "yvr" }}

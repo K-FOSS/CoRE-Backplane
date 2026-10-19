@@ -82,6 +82,8 @@ The ApplicationSets in [`Apps/Business/`](Apps/Business/) deploy the
 site-specific workload charts maintained in the
 [CoRE-Business repository on YVR Forgejo](https://slop.writemy.codes/CoRE/CoRE-Business),
 the canonical source for its `main` branch.
+Twilio SMS credential references for AVoIP are described in the
+[business operations guide](Apps/Business/README.md#avoip).
 The currently referenced CoRE-Business chart directories are
 [Automation](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Automation),
 [Terminal](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Terminal),
