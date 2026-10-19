@@ -416,6 +416,9 @@ spec:
 
                 avoipAdmin:
                   enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                  dns:
+                    enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                    target: 'nsadmin.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.resolvemy.host'
                   routing:
                     enabled: false
 

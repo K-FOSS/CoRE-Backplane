@@ -73,7 +73,9 @@ individually migrated and documented.
 The owner enables the SMS receiver/API/inbox only on `core-home1-talos-prod`
 (YVR). It enables the private site-local administration interface on YVR and
 `core-dc1-talos-prod` (YXL); the legacy K3s target gets neither. Managed SIP
-routing stays disabled during this administration rollout. See the
+routing stays disabled during this administration rollout. DNS-only admin CNAMEs
+point to each site's existing `nsadmin` HTTPS gateway name; Authentik remains
+required and the private HTTPRoutes are not selected for public discovery. See the
 [administration rollout and rollback](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP/docs/ADMIN.md).
 Synchronize SMS webhook replicas before the API/web images, then the admin
 resources and their identity/secret dependencies. Select only these resources:
