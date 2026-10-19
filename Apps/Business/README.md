@@ -70,6 +70,17 @@ individually migrated and documented.
 
 ## AVoIP
 
+The owner enables the SMS receiver/API/inbox only on `core-home1-talos-prod`
+(YVR). It enables the private site-local administration interface on YVR and
+`core-dc1-talos-prod` (YXL); the legacy K3s target gets neither. Managed SIP
+routing stays disabled during this administration rollout. See the
+[administration rollout and rollback](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP/docs/ADMIN.md).
+Synchronize SMS webhook replicas before the API/web images, then the admin
+resources and their identity/secret dependencies. Select only these resources:
+the unrelated registrar migration hook is not part of this rollout. Disabling
+admin must not delete the shared User or PostgreSQL data; do not prune on rollback.
+
+
 [AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the
 [CoRE-Business AVoIP chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP).
 The ApplicationSet reads the CoRE-Business repository at immutable commit

@@ -411,6 +411,14 @@ spec:
                   fax:
                     ident: '{{ upper .values.region }}-CoRE'
 
+                flowrouteSMS:
+                  enabled: {{ eq .values.clusterName "core-home1-talos-prod" }}
+
+                avoipAdmin:
+                  enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                  routing:
+                    enabled: false
+
                 talkHpb:
                   enabled: {{ eq .values.region "yvr" }}
                   clusterName: '{{ .values.clusterName }}'
