@@ -86,15 +86,18 @@ spec:
           effect: 'NoSchedule'
       affinity:
         podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-            - weight: 100
-              podAffinityTerm:
-                labelSelector:
-                  matchExpressions:
-                    - key: 'k8s-app'
-                      operator: 'In'
-                      values: ['kube-dns']
-                topologyKey: 'kubernetes.io/hostname'
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  k8s-app: 'kube-dns'
+              topologyKey: 'kubernetes.io/hostname'
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: 'kubernetes.io/hostname'
+          whenUnsatisfiable: 'DoNotSchedule'
+          labelSelector:
+            matchLabels:
+              k8s-app: 'kube-dns'
       containers:
         - name: 'coredns'
           image: {{ required "kubeDNS.image must preserve the site's pinned CoreDNS image" .Values.kubeDNS.image | squote }}
