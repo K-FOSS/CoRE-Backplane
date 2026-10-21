@@ -404,6 +404,16 @@ spec:
 
                 avoipAdmin:
                   enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                  telephony:
+                    enabled: {{ and .values.freeswitchEnabled (eq .values.clusterName "core-home1-talos-prod") }}
+                    managementSecret:
+                      remoteKey: 'AVoIP/Telephony/{{ upper .values.region }}/{{ if eq .values.clusterName "core-home1-talos-prod" }}Home1{{ else }}DC1{{ end }}'
+                    asteriskManager:
+                      username: 'avoip-admin-{{ .values.region }}'
+                    freeswitchEventSocket:
+                      listenAddress: '0.0.0.0'
+                  bridgedCalls:
+                    enabled: {{ and .values.freeswitchEnabled (eq .values.clusterName "core-home1-talos-prod") }}
                   {{- if eq .values.region "yvr" }}
                   upstreams:
                     - name: 'twilio-west'
