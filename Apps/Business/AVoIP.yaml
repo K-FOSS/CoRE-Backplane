@@ -140,6 +140,7 @@ spec:
                               rtpengineMediaPortMin: 11000
                               rtpengineMediaPortMax: 11280
                               asteriskEnabled: true
+                              freeswitchSipCoreAllowCryptoInAvp: true
                               asterisk:
                                 voicemail:
                                   enabled: true
@@ -445,6 +446,8 @@ spec:
 
                 freeswitch:
                   enabled: {{ .values.freeswitchEnabled }}
+                  sipCore:
+                    allowCryptoInAvp: {{ default false .values.freeswitchSipCoreAllowCryptoInAvp }}
                   highAvailability:
                     enabled: {{ and .values.freeswitchEnabled (or (eq .values.region "yxl") (eq .values.region "yvr")) }}
                     replicas: 2
