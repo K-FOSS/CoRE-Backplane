@@ -97,6 +97,10 @@ Reloader rolls the repo-server pods when External Secrets updates the Vault
 configuration Secret, refreshing the Lovely sidecar's environment from the
 new Vault token or endpoint.
 
+Argo CD maps the External Secrets Operator `PushSecret` `Ready` condition to
+resource health. This allows sync waves containing PushSecrets to advance only
+after they report `Ready=True`; failed readiness is surfaced as `Degraded`.
+
 `argocd-vault-config` points the Lovely replacer at
 `core-vault-<environment>.core-<environment>.svc.<cluster-domain>`. The Vault
 ApplicationSet creates that same-name Service in YXL and YVR with Cilium Global

@@ -159,6 +159,26 @@ argo-cd:
         - '.spec.dataFrom[]?.extract.decodingStrategy'
         - '.spec.dataFrom[]?.extract.metadataPolicy'
 
+      # External Secrets PushSecrets expose readiness through a Ready
+      # condition; without this mapping Argo CD cannot advance sync waves.
+      resource.customizations.health.external-secrets.io_PushSecret: |
+        hs = { status = "Progressing", message = "Waiting for PushSecret Ready condition" }
+        if obj.status == nil or obj.status.conditions == nil then
+          return hs
+        end
+        for _, condition in ipairs(obj.status.conditions) do
+          if condition.type == "Ready" then
+            hs.message = condition.message or condition.reason or "PushSecret readiness reported"
+            if condition.status == "True" then
+              hs.status = "Healthy"
+            elseif condition.status == "False" then
+              hs.status = "Degraded"
+            end
+            return hs
+          end
+        end
+        return hs
+
       # ignore kind/version injection in stateful set volume claims
       resource.customizations.ignoreDifferences.apps_StatefulSet: | #yaml
         jqPathExpressions:
