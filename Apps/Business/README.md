@@ -121,13 +121,19 @@ resources and their identity/secret dependencies. Select only these resources:
 the unrelated registrar migration hook is not part of this rollout. Disabling
 admin must not delete the shared User or PostgreSQL data; do not prune on rollback.
 
-The [YVR AVoIP owner](AVoIP.yaml) provisions a second, dedicated PostgreSQL
-`User` claim and schema for the three-replica `internal-websocket` Kamailio
-instance. This is database-only preparation: Asterisk still registers 7101,
-the HA registrar remains disabled, and the public SIPCore routes are unchanged.
-Reconcile the YVR child with its schema hook, then verify the claim, connection
-Secret metadata, and Job before enabling the registrar. Retained database
-objects are not removed automatically if this preparation is rolled back.
+The [YVR AVoIP owner](AVoIP.yaml) provisions a dedicated PostgreSQL `User`
+claim and schema for the three-replica `internal-websocket` Kamailio registrar.
+The already-published database-only stage leaves Asterisk registration and the
+public SIPCore routes unchanged. The next YVR stage enables Kamailio Digest
+registration for 7101, syncs the existing CoreVault password into the registrar
+credential table, and keeps both WSS and TLS on the same HA frontend. FreeSWITCH
+remains responsible for call control and routing policy; Asterisk's 7101
+registration and callback are disabled, while voicemail remains enabled.
+Extension 1234 is temporarily removed from the client allowlist and FreeSWITCH
+IVR. Before applying that stage, reconcile and verify the User claim, stable
+connection Secret metadata, and schema Job. Afterward, confirm the registrar
+pods and FreeSWITCH route before inviting a client call test. Retained database
+objects are not removed automatically if either stage is rolled back.
 
 
 [AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the

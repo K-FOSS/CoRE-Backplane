@@ -145,8 +145,9 @@ spec:
                                   enabled: true
                                 sipCore:
                                   enabled: true
+                                  registrarBackend: 'kamailio'
                                   externalCallback:
-                                    enabled: true
+                                    enabled: false
                                   hostname: 'sipcore.mylogin.space'
                                   gatewaySectionName: 'https-myloginspace'
 
@@ -173,7 +174,6 @@ spec:
                                       allowCallsTo:
                                         - '9090'
                                         - '66'
-                                        - '1234'
                               freeswitchEnabled: true
                               asteriskDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
                               ivrDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#AVoIPNumber>'
@@ -260,7 +260,29 @@ spec:
                                     enabled: true
                                     role: 'private-sbc'
                                     replicas: 3
+                                    sipLogging:
+                                      rawInbound: false
+                                      postToposResponses: false
+                                      carrierTraffic: false
+                                      diagnostics:
+                                        enabled: false
+                                        sdp: false
+                                    privateRouting:
+                                      peers:
+                                        - name: 'freeswitch-registrar'
+                                          controller: 'freeswitch'
+                                          cidr: '172.20.56.0/21'
+                                          sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-freeswitch.core-prod.svc.k8s.home1.resolvemy.host'
+                                          allowedUsers: []
                                     registrar:
+                                      enabled: true
+                                      realm: 'sipcore.mylogin.space'
+                                      accessPeerName: 'freeswitch-registrar'
+                                      inboundPeerName: 'freeswitch-registrar'
+                                      allowedUsers: ['7101']
+                                      maxContacts: 8
+                                      credentialSync:
+                                        enabled: true
                                       database:
                                         enabled: true
                                         host: 'psql-local.core-home1-talos-prod.home1.yvr.mylogin.space'
@@ -396,7 +418,7 @@ spec:
                     ivrExtension: '7102'
                   ivr:
                     enabled: {{ ne .values.region "yxl" }}
-                    extensions: {{ if eq .values.region "yvr" }}['7101', '9090', '66', '1234']{{ else }}['7101']{{ end }}
+                    extensions: {{ if eq .values.region "yvr" }}['7101', '9090', '66']{{ else }}['7101']{{ end }}
                     greeting: '/usr/share/freeswitch/sounds/avoip-shared/IVRGreet.wav'
                   fax:
                     ident: '{{ upper .values.region }}-CoRE'
@@ -433,6 +455,11 @@ spec:
 
                 avoipAdmin:
                   enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
+                  {{- if eq .values.clusterName "core-home1-talos-prod" }}
+                  image:
+                    tag: '1-91edafbb8d465c0da14ab3e8fa086e0a8b58c03f'
+                    digest: 'sha256:df2102b41dc5dbd0cf5bba87cd925ad4d56503335d1e7621bdf9262b69e8efaf'
+                  {{- end }}
                   telephony:
                     enabled: {{ and .values.freeswitchEnabled (eq .values.clusterName "core-home1-talos-prod") }}
                     managementSecret:
