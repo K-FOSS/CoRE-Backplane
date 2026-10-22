@@ -33,9 +33,20 @@ psql:
 
   tuning:
     maxConnections: 4096
+    workMem: '16MB'
+    sharedBuffers: '4GB'
+    effectiveCacheSize: '12GB'
     maxWorkerProcesses: 8
     maxParallelWorkers: 4
     maxParallelWorkersPerGather: 2
+
+  resources:
+    requests:
+      cpu: '2'
+      memory: '4Gi'
+    limits:
+      cpu: '6'
+      memory: '16Gi'
 
   secretStore:
     - name: mainvault-core
@@ -150,6 +161,10 @@ pooler:
   relationCache:
     expire: 300
     size: 1024
+
+  # NetBox performs writes during startup and must not begin a session on a
+  # streaming-replication standby. Other databases retain query load balancing.
+  databaseRedirectPreferenceList: '3dzxoCeJ1f:primary'
 
   queryCache:
     method: memcached

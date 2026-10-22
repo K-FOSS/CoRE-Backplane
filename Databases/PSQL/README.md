@@ -86,7 +86,11 @@ across three PGPool replicas. This gives a worst-case pooled backend budget of
 remaining capacity is reserved for replication, operator activity and direct
 clients. PostgreSQL worker limits are configured under `psql.tuning`; the
 defaults allow eight worker processes, four parallel workers globally and two
-workers per parallel query. Recalculate the connection budget whenever
+workers per parallel query. `workMem` sets PostgreSQL's per-operation sort/hash
+memory budget; `sharedBuffers` sets the PostgreSQL buffer pool and
+`effectiveCacheSize` sets the planner's estimate of PostgreSQL plus OS cache.
+The core cluster requests 2 CPU and 4GiB memory and is limited to 6 CPU and
+16GiB memory. Recalculate the connection budget whenever
 the embedded replica count, `numInitChildren`, `maxPool` or
 `psql.tuning.maxConnections` changes.
 

@@ -84,9 +84,9 @@ spec:
       max_connections: {{ .Values.psql.tuning.maxConnections | quote }}
       max_prepared_transactions: '1000'
       max_locks_per_transaction: '256'
-      shared_buffers: '2GB'
-      work_mem: 5592kB
-      effective_cache_size: 4022MB
+      shared_buffers: '{{ .Values.psql.tuning.sharedBuffers }}'
+      work_mem: '{{ .Values.psql.tuning.workMem }}'
+      effective_cache_size: '{{ .Values.psql.tuning.effectiveCacheSize }}'
       effective_io_concurrency: '2'
       maintenance_work_mem: 2047MB
       max_worker_processes: {{ .Values.psql.tuning.maxWorkerProcesses | quote }}
@@ -97,13 +97,7 @@ spec:
     size: 50Gi
 
   resources:
-    requests:
-      cpu: '100m'
-      memory: 1Gi
-
-    limits:
-      cpu: '4'
-      memory: 8Gi
+    {{- toYaml .Values.psql.resources | nindent 4 }}
 
   patroni:
     failsafe_mode: true
