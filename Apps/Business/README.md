@@ -121,6 +121,14 @@ resources and their identity/secret dependencies. Select only these resources:
 the unrelated registrar migration hook is not part of this rollout. Disabling
 admin must not delete the shared User or PostgreSQL data; do not prune on rollback.
 
+The [YVR AVoIP owner](AVoIP.yaml) provisions a second, dedicated PostgreSQL
+`User` claim and schema for the three-replica `internal-websocket` Kamailio
+instance. This is database-only preparation: Asterisk still registers 7101,
+the HA registrar remains disabled, and the public SIPCore routes are unchanged.
+Reconcile the YVR child with its schema hook, then verify the claim, connection
+Secret metadata, and Job before enabling the registrar. Retained database
+objects are not removed automatically if this preparation is rolled back.
+
 
 [AVoIP.yaml](AVoIP.yaml) is the active WIP fleet owner for the
 [CoRE-Business AVoIP chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP).
