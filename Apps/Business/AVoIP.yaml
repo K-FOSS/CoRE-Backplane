@@ -274,6 +274,17 @@ spec:
                                             repository: 'slop.writemy.codes/core/core-business/kamailio-lf-heartbeat'
                                             tag: '6.1.4-lf-heartbeat-a4125d3996cff992bc225e1b647113b64c4609e5'
                                             digest: 'sha256:6a2c6e7bf2eb18cc5b0ee4bb01fb5e3db496d9b9f58c3ba54bd553aaf05901bf'
+                                  - name: 'internal-ha'
+                                    enabled: true
+                                    role: 'private-sbc'
+                                    replicas: 3
+                                    frontendHA:
+                                      enabled: true
+                                      pilot: true
+                                    topology:
+                                      redis:
+                                        database: 54
+                                        secretName: 'avoip-kamailio-internal-ha-topos'
                               serviceOptions:
                                 kamailio-pub:
                                   type: 'LoadBalancer'

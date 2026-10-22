@@ -41,6 +41,7 @@ they are not global database numbers across clusters.
 | `51` | Kamailio TOPOS | Dedicated SIP topology state. Owned by [`Business/AVoIP`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP) and allocated independently on every AVoIP target. |
 | `52` | Kamailio internal TOPOS | Dedicated topology state for the private Kamailio instance at each AVoIP site where that role is enabled. Owned by [`Business/AVoIP`](https://github.com/K-FOSS/CoRE-Backplane/blob/main/Apps/Business/AVoIP.yaml). |
 | `53` | Kamailio internal WebSocket TOPOS | Dedicated topology state for the three-replica YVR internal WebSocket Kamailio instance. Owned by [`Business/AVoIP`](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AVoIP). |
+| `54` | Kamailio internal HA pilot TOPOS | Dedicated topology state for the three-replica YVR internal HA pilot, isolated from the active internal SBC and WebSocket edge. Owned by [`Business/AVoIP`](https://slop.writemy.codes/CoRE/CoRE-Backplane/src/branch/main/Apps/Business/AVoIP.yaml). |
 | `70` | Harbor job service | Dedicated Harbor asynchronous job queue. Owned by `Development`. |
 | `71` | Harbor registry | Dedicated Harbor registry metadata cache. Owned by `Development`. |
 | `72` | Harbor Trivy adapter | Reserved for Harbor vulnerability-scanner cache if Trivy is enabled. Owned by `Development`. |
