@@ -263,6 +263,15 @@ spec:
                                     # Prefer distinct hosts, but the third site's allocatable CPU
                                     # is exhausted; keep three replicas on the available hosts.
                                     scheduling:
+                                      affinity:
+                                        podAntiAffinity:
+                                          preferredDuringSchedulingIgnoredDuringExecution:
+                                            - weight: 100
+                                              podAffinityTerm:
+                                                labelSelector:
+                                                  matchLabels:
+                                                    app: 'core-home1-talos-prod-business-avoip-prod-kamailio-internal-websocket'
+                                                topologyKey: 'kubernetes.io/hostname'
                                       topologySpreadConstraints:
                                         - maxSkew: 1
                                           topologyKey: 'kubernetes.io/hostname'
@@ -319,6 +328,15 @@ spec:
                                     replicas: 3
                                     # Retain CPU requests while allowing a second pod on a host.
                                     scheduling:
+                                      affinity:
+                                        podAntiAffinity:
+                                          preferredDuringSchedulingIgnoredDuringExecution:
+                                            - weight: 100
+                                              podAffinityTerm:
+                                                labelSelector:
+                                                  matchLabels:
+                                                    app: 'core-home1-talos-prod-business-avoip-prod-kamailio-internal-ha'
+                                                topologyKey: 'kubernetes.io/hostname'
                                       topologySpreadConstraints:
                                         - maxSkew: 1
                                           topologyKey: 'kubernetes.io/hostname'
