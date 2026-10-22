@@ -260,6 +260,10 @@ spec:
                                     enabled: true
                                     role: 'private-sbc'
                                     replicas: 3
+                                    # Keep the third topology domain schedulable; no CPU limit is set.
+                                    resources:
+                                      requests:
+                                        cpu: '50m'
                                     sipLogging:
                                       rawInbound: false
                                       postToposResponses: false
@@ -306,6 +310,10 @@ spec:
                                     enabled: true
                                     role: 'private-sbc'
                                     replicas: 3
+                                    # Share the third site's remaining CPU reservation with the frontend.
+                                    resources:
+                                      requests:
+                                        cpu: '50m'
                                     frontendHA:
                                       enabled: true
                                       pilot: true
