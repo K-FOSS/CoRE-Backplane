@@ -260,10 +260,17 @@ spec:
                                     enabled: true
                                     role: 'private-sbc'
                                     replicas: 3
-                                    # Keep the third topology domain schedulable; no CPU limit is set.
-                                    resources:
-                                      requests:
-                                        cpu: '50m'
+                                    # Prefer distinct hosts, but the third site's allocatable CPU
+                                    # is exhausted; keep three replicas on the available hosts.
+                                    scheduling:
+                                      topologySpreadConstraints:
+                                        - maxSkew: 1
+                                          topologyKey: 'kubernetes.io/hostname'
+                                          whenUnsatisfiable: 'ScheduleAnyway'
+                                          labelSelector:
+                                            matchLabels:
+                                              app.kubernetes.io/controller: 'kamailio-internal-websocket'
+                                              app.kubernetes.io/instance: 'core-home1-talos-prod-business-avoip-prod'
                                     sipLogging:
                                       rawInbound: false
                                       postToposResponses: false
@@ -310,10 +317,16 @@ spec:
                                     enabled: true
                                     role: 'private-sbc'
                                     replicas: 3
-                                    # Share the third site's remaining CPU reservation with the frontend.
-                                    resources:
-                                      requests:
-                                        cpu: '50m'
+                                    # Retain CPU requests while allowing a second pod on a host.
+                                    scheduling:
+                                      topologySpreadConstraints:
+                                        - maxSkew: 1
+                                          topologyKey: 'kubernetes.io/hostname'
+                                          whenUnsatisfiable: 'ScheduleAnyway'
+                                          labelSelector:
+                                            matchLabels:
+                                              app.kubernetes.io/controller: 'kamailio-internal-ha'
+                                              app.kubernetes.io/instance: 'core-home1-talos-prod-business-avoip-prod'
                                     frontendHA:
                                       enabled: true
                                       pilot: true
