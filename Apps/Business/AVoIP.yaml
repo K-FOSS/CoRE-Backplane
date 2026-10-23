@@ -506,6 +506,7 @@ spec:
 
                 avoipAdmin:
                   telephony:
+                    enabled: {{ and .values.freeswitchEnabled (eq .values.clusterName "core-home1-talos-prod") }}
                     managementSecret:
                       remoteKey: 'AVoIP/Telephony/{{ upper .values.region }}/{{ if eq .values.clusterName "core-home1-talos-prod" }}Home1{{ else }}DC1{{ end }}'
                     asteriskManager:
