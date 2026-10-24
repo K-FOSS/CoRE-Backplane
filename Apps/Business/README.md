@@ -325,6 +325,10 @@ is authoritative for chart prerequisites and user-facing verification. The
 ApplicationSet preserves generated resources on removal; decommissioning must
 therefore include an explicit data-retention and cleanup decision.
 
+The ApplicationSet injects Firefly III `version-6.7.9` and its immutable Docker
+digest. This avoids the mutable `latest` tag and selects the release containing
+the patched PHP runtime.
+
 ## Landing
 
 [Landing.yaml](Landing.yaml) owns the production YVR deployment rendered from
