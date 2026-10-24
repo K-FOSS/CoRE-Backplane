@@ -147,8 +147,6 @@ spec:
                                 sipCore:
                                   enabled: true
                                   registrarBackend: 'kamailio'
-                                  externalCallback:
-                                    enabled: false
                                   hostname: 'sipcore.mylogin.space'
                                   gatewaySectionName: 'https-myloginspace'
 
@@ -158,7 +156,6 @@ spec:
                                   httpPort: 8088
                                   kamailioInstance: 'internal'
                                   ingressKamailioInstance: 'internal-websocket'
-                                  echoExtension: '9090'
                                   inboundVoiceExtension: '7101'
 
                                   secretStoreRef:
@@ -172,9 +169,6 @@ spec:
                                         remoteKey: 'AVoIP/SIPCore/YVR/Home1/7101'
                                         property: 'Password'
 
-                                      allowCallsTo:
-                                        - '9090'
-                                        - '66'
                               freeswitchEnabled: true
                               asteriskDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#FaxNumber>'
                               ivrDID: '<path:CORE0_SITE1/data/AVoIP/YVR/Home1#AVoIPNumber>'
@@ -462,8 +456,6 @@ spec:
                     ivrExtension: '7102'
                   ivr:
                     enabled: {{ ne .values.region "yxl" }}
-                    extensions: {{ if eq .values.region "yvr" }}['7101', '9090', '66']{{ else }}['7101']{{ end }}
-                    greeting: '/usr/share/freeswitch/sounds/avoip-shared/IVRGreet.wav'
                   fax:
                     ident: '{{ upper .values.region }}-CoRE'
 
