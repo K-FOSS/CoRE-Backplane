@@ -43,14 +43,17 @@ authentik:
     - 'Media Consumers'
 
   route:
-    enabled: true
+    # Immich must receive /auth/login and its callback directly so its native
+    # OIDC flow can complete; do not place the route behind Authentik's Envoy
+    # forward-auth policy.
+    enabled: false
     backend:
       name: 'aaa-myloginspace-proxy'
       namespace: 'core-prod'
       port: 80
 
 immich:
-  version: 'v3.2.2'
+  version: 'v3.3.5'
   smartSearch:
     modelName: 'ViT-SO400M-16-SigLIP2-384__webli'
   persistence:
