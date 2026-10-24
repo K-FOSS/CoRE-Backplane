@@ -181,7 +181,9 @@ incidental chart cleanup.
 ## Harbor
 
 Harbor uses an external PostgreSQL database, external cache service, and
-S3-compatible image/chart storage. It is exposed through the
+S3-compatible image/chart storage. Its integrated Trivy adapter is enabled for
+both fleet Harbor deployments and uses the configured external cache service.
+It is exposed through the
 `registry.<cluster>.<datacenter>.<region>.writemy.codes` HTTPRoute, whose rules
 direct Docker API and token paths to Harbor core and ordinary UI paths to the
 portal.

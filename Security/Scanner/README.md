@@ -1,12 +1,13 @@
 # CoRE-Backplane Security/Scanner Stack
 
 This stack installs secureCodeBox and its scanner charts in the
-`securecodebox-system` namespace. It is owned by the
+`securecodebox-system` namespace. The operator and Trivy database cache are
+enabled for the YVR security-scanner Application. It is owned by the
 [Security Scanner ApplicationSet](../../Apps/Security/Scanner.yaml).
 
 ## Dependencies and rendering
 
-The pinned secureCodeBox operator and scanner charts are pulled from the
+The pinned secureCodeBox 5.8.0 operator and scanner charts are pulled from the
 [secureCodeBox Helm OCI repository](https://github.com/secureCodeBox/secureCodeBox/tree/main/deploy/helm),
 with operator documentation in the [secureCodeBox documentation](https://www.securecodebox.io/docs/).
 The operator dependency uses the same OCI source as the scanner dependencies
