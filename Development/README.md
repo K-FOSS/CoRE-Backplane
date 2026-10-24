@@ -281,7 +281,7 @@ use `/registries/<id>` and `/projects/<id>` respectively.
 
 Forgejo is deployed independently at both infrastructure sites through the
 official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v17.1.5)
-and a digest-pinned [Forgejo 16.0.5 rootless image](https://forgejo.org/releases/16.x/).
+and a digest-pinned [Forgejo 16.0.6 rootless image](https://forgejo.org/releases/16.x/).
 This chart also creates the cluster-scoped
 `ha-core-dev-<environment>` Longhorn StorageClass with two replicas and
 `migratable: 'false'`; the YXL Forgejo deployment selects it for its RWX PVC. See the
