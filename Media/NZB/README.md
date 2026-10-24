@@ -16,6 +16,8 @@ SABnzbd is available at `nzb.mylogin.space`, Prowlarr at
 single-application forward-auth provider and application restricted to the
 `Media Consumers` group. See [`../AUTHENTIK.md`](../AUTHENTIK.md) for the
 shared access path, prerequisites, and recovery behavior.
+All NZB pods disable automatic service-account-token mounting, so the media
+containers receive no Kubernetes API credentials.
 SABnzbd startup, readiness, and liveness probes use its documented
 [`mode=version` API endpoint](https://sabnzbd.org/wiki/advanced/api), which does
 not require an API key.
@@ -24,14 +26,14 @@ Prowlarr startup, readiness, and liveness probes use its unauthenticated
 
 All NZB pods disable automatic service-account-token mounting, so the media
 containers receive no Kubernetes API credentials. SABnzbd and Prowlarr use
-immutable digest-pinned stable LinuxServer.io images. Both run as UID/GID
-`911:911`, disable privilege escalation, drop all Linux capabilities, and use
-the runtime-default seccomp profile. The upstream
+immutable digest-pinned stable LinuxServer.io images and the runtime-default
+seccomp profile. Their containers start with the image's required
+initialization privileges; LinuxServer's s6 supervisor then runs the
+applications as UID/GID `911:911` from the `PUID`/`PGID` settings. The upstream
 [SABnzbd image documentation](https://docs.linuxserver.io/images/docker-sabnzbd/)
 and [Prowlarr image documentation](https://docs.linuxserver.io/images/docker-prowlarr/)
-confirm support for non-root operation; read-only root filesystems are not
-enabled here because LinuxServer documents additional `/run` tmpfs requirements
-and cautions that existing instances should be tested before conversion.
+document this startup model and caution that forcing a container-level non-root
+user requires additional `/run` permissions and has significant limitations.
 
 SABnzbd writes fetched files to the existing `augy-downloads` persistent
 volume. FileBrowser Quantum mounts that same claim at `/downloads` read-only,

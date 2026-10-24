@@ -46,15 +46,6 @@ controllers:
           tag: {{ default "latest" $.Values.sabnzbd.tag }}
           pullPolicy: IfNotPresent
 
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - 'ALL'
-          runAsNonRoot: true
-          runAsUser: {{ $.Values.sabnzbd.userId }}
-          runAsGroup: {{ $.Values.sabnzbd.groupId }}
-
         env:
           PUID: {{ required "sabnzbd.userId is required" $.Values.sabnzbd.userId | squote }}
           PGID: {{ required "sabnzbd.groupId is required" $.Values.sabnzbd.groupId | squote }}
@@ -121,15 +112,6 @@ controllers:
           repository: {{ $.Values.prowlarr.image }}
           tag: {{ default "latest" $.Values.prowlarr.tag }}
           pullPolicy: IfNotPresent
-
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - 'ALL'
-          runAsNonRoot: true
-          runAsUser: {{ $.Values.prowlarr.userId }}
-          runAsGroup: {{ $.Values.prowlarr.groupId }}
 
         env:
           PUID: {{ required "prowlarr.userId is required" $.Values.prowlarr.userId | squote }}
