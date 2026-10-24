@@ -154,7 +154,7 @@ spec:
                                     - 'https://home.mylogin.space'
 
                                   httpPort: 8088
-                                  kamailioInstance: 'internal-ha'
+                                  kamailioInstance: 'internal'
                                   ingressKamailioInstance: 'internal-websocket'
                                   inboundVoiceExtension: '7101'
 
@@ -448,6 +448,7 @@ spec:
                     minAvailable: 1
                   flowrouteOutbound:
                     enabled: {{ and .values.freeswitchEnabled (or (eq .values.region "yxl") (eq .values.region "yvr")) }}
+                    kamailioInstance: '{{ if eq .values.region "yvr" }}internal-ha{{ else }}internal{{ end }}'
                     regionalHost: '{{ if eq .values.region "yxl" }}us-east-va.sip.flowroute.com{{ else }}us-west-or.sip.flowroute.com{{ end }}'
                   interSite:
                     enabled: {{ eq .values.region "yvr" }}
