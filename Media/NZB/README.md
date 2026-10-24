@@ -22,6 +22,17 @@ not require an API key.
 Prowlarr startup, readiness, and liveness probes use its unauthenticated
 `/ping` endpoint.
 
+All NZB pods disable automatic service-account-token mounting, so the media
+containers receive no Kubernetes API credentials. SABnzbd and Prowlarr use
+immutable digest-pinned stable LinuxServer.io images. Both run as UID/GID
+`911:911`, disable privilege escalation, drop all Linux capabilities, and use
+the runtime-default seccomp profile. The upstream
+[SABnzbd image documentation](https://docs.linuxserver.io/images/docker-sabnzbd/)
+and [Prowlarr image documentation](https://docs.linuxserver.io/images/docker-prowlarr/)
+confirm support for non-root operation; read-only root filesystems are not
+enabled here because LinuxServer documents additional `/run` tmpfs requirements
+and cautions that existing instances should be tested before conversion.
+
 SABnzbd writes fetched files to the existing `augy-downloads` persistent
 volume. FileBrowser Quantum mounts that same claim at `/downloads` read-only,
 so authenticated users can browse and download files but cannot upload,

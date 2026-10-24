@@ -8,6 +8,9 @@ global:
   nameOverride: "{{ .Release.Name }}"
 {{ end }}
 
+defaultPodOptions:
+  automountServiceAccountToken: false
+
 controllers:
   #
   # Jellyfin
@@ -24,6 +27,14 @@ controllers:
     pod:
       labels:
         mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: 1000
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -36,6 +47,14 @@ controllers:
 
     initContainers:
       enable-metrics:
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
         image:
           repository: {{ $.Values.jellyfin.image }}
           tag: {{ default "latest" $.Values.jellyfin.tag }}
@@ -56,6 +75,14 @@ controllers:
 
     containers:
       jellyfin:
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
         image:
           repository: {{ $.Values.jellyfin.image }}
           tag: {{ default "latest" $.Values.jellyfin.tag }}
@@ -125,6 +152,14 @@ controllers:
     pod:
       labels:
         mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+      automountServiceAccountToken: false
+      securityContext:
+        fsGroup: {{ $.Values.stash.groupId }}
+        runAsNonRoot: true
+        runAsUser: {{ $.Values.stash.userId }}
+        runAsGroup: {{ $.Values.stash.groupId }}
+        seccompProfile:
+          type: RuntimeDefault
       affinity:
         podAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -141,6 +176,14 @@ controllers:
 
     containers:
       stash:
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsNonRoot: true
+          runAsUser: {{ $.Values.stash.userId }}
+          runAsGroup: {{ $.Values.stash.groupId }}
         image:
           repository: {{ $.Values.stash.image }}
           tag: {{ default "latest" $.Values.stash.tag }}

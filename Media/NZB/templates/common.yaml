@@ -9,9 +9,13 @@ global:
 {{ end }}
 
 defaultPodOptions:
+  automountServiceAccountToken: false
   labels:
     logs: loki-myloginspace
     mylogin.space/media-volume-affinity: {{ .Values.tenant.name | squote }}
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
   affinity:
     podAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -41,6 +45,19 @@ controllers:
           repository: {{ $.Values.sabnzbd.image }}
           tag: {{ default "latest" $.Values.sabnzbd.tag }}
           pullPolicy: IfNotPresent
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsNonRoot: true
+          runAsUser: {{ $.Values.sabnzbd.userId }}
+          runAsGroup: {{ $.Values.sabnzbd.groupId }}
+
+        env:
+          PUID: {{ required "sabnzbd.userId is required" $.Values.sabnzbd.userId | squote }}
+          PGID: {{ required "sabnzbd.groupId is required" $.Values.sabnzbd.groupId | squote }}
 
         {{- if $.Values.networks.rogers.enabled }}
         resources:
@@ -104,6 +121,15 @@ controllers:
           repository: {{ $.Values.prowlarr.image }}
           tag: {{ default "latest" $.Values.prowlarr.tag }}
           pullPolicy: IfNotPresent
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          runAsNonRoot: true
+          runAsUser: {{ $.Values.prowlarr.userId }}
+          runAsGroup: {{ $.Values.prowlarr.groupId }}
 
         env:
           PUID: {{ required "prowlarr.userId is required" $.Values.prowlarr.userId | squote }}

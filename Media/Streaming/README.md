@@ -15,6 +15,15 @@ Jellystat update only and not evidence that the embedded Node runtime is fixed.
 only `core-home1-talos-prod`, injects the `augy` media tenant, and deploys the
 release into `core-media`.
 
+All streaming pods disable automatic service-account-token mounting, so
+Jellyfin, Stash, Jellystat, and their init containers receive no Kubernetes API
+credentials. Jellyfin and Stash run as non-root numeric users, disable
+privilege escalation, drop all Linux capabilities, and use the runtime-default
+seccomp profile. The official
+[Jellyfin container documentation](https://jellyfin.org/docs/general/installation/container/)
+supports a supplied non-root UID/GID. Stash retains its documented `PUID` and
+`PGID` configuration through the [hotio container documentation](https://hotio.dev/containers/stash/).
+
 Jellyfin's transcode workspace is a dedicated Longhorn PVC using the
 [Longhorn StorageClass parameters](https://longhorn.io/docs/latest/references/storage-class-parameters/)
 `diskSelector: 'ssd'` and `numberOfReplicas: '1'`. It is mounted at
