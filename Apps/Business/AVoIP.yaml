@@ -349,6 +349,29 @@ spec:
                                       redis:
                                         database: 54
                                         secretName: 'avoip-kamailio-internal-ha-topos'
+                                    # FreeSWITCH targets this HA set for carrier
+                                    # calls, so it owns the established mTLS
+                                    # peer and Gateway egress route as well.
+                                    carrierOutbound:
+                                      enabled: true
+                                      gatewayServiceHost: 'envoy-core-prod-main-gw-38cc5b72.kube-system.svc.k8s.home1.resolvemy.host'
+                                      sniHost: 'sip-outbound.core-home1-talos-prod.home1.yvr.resolvemy.host'
+                                      clientIdentity:
+                                        enabled: true
+                                        issuerName: 'core-tls-vault'
+                                      peer:
+                                        cidr: '172.20.56.0/21'
+                                        sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                        serviceHost: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                        controller: 'kamailio'
+                                        secretName: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio-sip-mtls'
+                                    privateRouting:
+                                      peers:
+                                        - name: 'carrier'
+                                          controller: 'kamailio'
+                                          cidr: '172.20.56.0/21'
+                                          sanHostname: 'core-home1-talos-prod-business-avoip-prod-avoip-kamailio.core-prod.svc.k8s.home1.resolvemy.host'
+                                          allowedUsers: []
                               serviceOptions:
                                 kamailio-pub:
                                   type: 'LoadBalancer'
