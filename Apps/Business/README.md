@@ -283,6 +283,19 @@ scheduler completion, and backup/restore behavior. The ApplicationSet
 preserves generated resources on removal; decommissioning must therefore
 include an explicit data-retention and cleanup decision.
 
+The optional Financial Dashboard is currently disabled through the
+ApplicationSet merge values; Firefly III remains the active workload.
+
+## Personal/Travel
+
+[Personal/Travel.yaml](Personal/Travel.yaml) owns the YVR deployment of the
+upstream [CoRE Travel chart](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Travel)
+for `core-home1-talos-prod`. AdventureLog frontend and backend images are
+rebuilt upstream and pinned by digest through the ApplicationSet merge; the
+source tag remains `latest` only as the label for those immutable digests.
+The authoritative component documentation is the
+[AdventureLog chart README](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/Personal/Travel/README.md).
+
 ## Personal/History
 
 [Personal/History.yaml](Personal/History.yaml) owns the YVR deployment of the

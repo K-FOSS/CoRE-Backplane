@@ -6,8 +6,11 @@ public Gateway API routes through the
 [`bjw-s/common` library chart](https://github.com/bjw-s-labs/helm-charts/tree/main/charts/library/common).
 It also deploys [Jellystat](https://github.com/CyferShepard/Jellystat), a
 Jellyfin statistics dashboard, at `jellystat.mylogin.space`. The container is
-pinned to the upstream `1.1.11` release tag documented in the
-[Jellystat container package](https://github.com/CyferShepard/Jellystat/pkgs/container/jellystat).
+pinned to upstream `1.1.12` at digest
+`sha256:e61c759ec706da378bc8374e797da1dfd298ab30f804cefd82d192c301a888c7` in
+the [Jellystat container package](https://github.com/CyferShepard/Jellystat/pkgs/container/jellystat).
+This predates the October 2026 Node/Brotli security release, so it is a routine
+Jellystat update only and not evidence that the embedded Node runtime is fixed.
 `Apps/Media/Streaming.yaml` owns the Argo CD ApplicationSet, currently selects
 only `core-home1-talos-prod`, injects the `augy` media tenant, and deploys the
 release into `core-media`.
