@@ -513,6 +513,18 @@ spec:
                   {{- end }}
                   {{ if and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
                   providerCredentials:
+                    SMS_PROVIDER_TELNYX_KEY:
+                      name: 'avoip-sms-telnyx'
+                      key: 'Key'
+                      remoteRef:
+                        key: 'AVoIP/SIP/Telnyx'
+                        property: 'Key'
+                    SMS_PROVIDER_TELNYX_PUBLIC_KEY:
+                      name: 'avoip-sms-telnyx'
+                      key: 'PublicKey'
+                      remoteRef:
+                        key: 'AVoIP/SIP/Telnyx'
+                        property: 'PublicKey'
                     SMS_PROVIDER_TWILIO_ACCOUNT:
                       name: 'avoip-sms-twilio'
                       key: 'AccountSID'
