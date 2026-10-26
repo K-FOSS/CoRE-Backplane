@@ -546,6 +546,13 @@ spec:
                       host: 'coreinc-yvr.pstn.umatilla.twilio.com'
                       authentication: 'ip-acl'
                       register: false
+                    - name: 'telnyx'
+                      host: 'sip.telnyx.com'
+                      authentication: 'credentials'
+                      register: true
+                      remoteKey: 'AVoIP/SIP/Telnyx'
+                      usernameProperty: 'Username'
+                      passwordProperty: 'Password'
                   {{- end }}
                   dns:
                     enabled: {{ and .values.freeswitchEnabled (or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod")) }}
@@ -555,6 +562,8 @@ spec:
                     {{- if eq .values.region "yvr" }}
                     upstreamCIDRs:
                       - '54.244.51.0/30'
+                      - '192.76.120.10/32'
+                      - '64.16.250.10/32'
                     {{- end }}
 
                 talkHpb:
