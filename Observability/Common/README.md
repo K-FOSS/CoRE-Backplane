@@ -31,6 +31,18 @@ the affected replicas remain Pending rather than co-locating. The operator's
 [storage and gateway scheduling settings](https://rajsinghtech.github.io/garage-operator/how-to/configuration/)
 describe this `storage.topologySpreadConstraints` field.
 
+Garage's S3 listener serves HTTP, so the chart uses the existing Envoy Gateway
+`main-gw` HTTPS listener to terminate TLS and routes requests to Garage's port
+`3900`. The client endpoint is
+`https://observability-garage-s3.core-prod.svc.<cluster-domain>`; an
+`ExternalName` Service resolves that S3 hostname to Envoy Gateway's internal
+Service while the HTTPRoute matches the original hostname and preserves the
+SigV4 `Host` value. This follows CoRE-Business AI's [Envoy Gateway and HTTPRoute pattern](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI/templates/Gateway/Gateway.yaml). The listener references the exact cert-manager certificate
+issued by [Network/TLS Certificates](../../Network/TLS/Certificates/README.md).
+The hostname is inside the cluster's valid FQDN and is not published to public
+DNS. Garage itself does not terminate TLS; see the operator's
+[TLS guidance](https://rajsinghtech.github.io/garage-operator/how-to/tls/).
+
 External Secrets Operator generates distinct 32-character random values and
 hex-encodes each as a 64-character credential. A `CreatedOnce` ExternalSecret
 stores them in a source Secret, and a `PushSecret` publishes them to
@@ -74,8 +86,13 @@ helm template core-dc1-talos-prod-observability-common-prod Observability/Common
 After reconciliation, verify the generator ExternalSecret and PushSecret are
 Ready, the Vault-backed bootstrap ExternalSecret is ready, GarageCluster is
 Ready, all Garage PVCs are bound, and Garage health reports three nodes with a
-committed layout. Then reconcile Metrics and verify its GarageBucket and
-GarageKey conditions and the generated S3 Secret without printing its data.
+committed layout. Also verify `observability-garage-s3-tls` Certificate Ready,
+the HTTPRoute is `Accepted` with `ResolvedRefs`, the Gateway listener is
+`Programmed`, and the certificate SAN matches the cluster-domain Service FQDN.
+Then reconcile Metrics and verify its GarageBucket
+and GarageKey conditions and the generated S3 Secret without printing its
+data. Confirm Mimir connects through Envoy Gateway with certificate verification
+enabled.
 Removing this chart removes the GarageCluster desired resource; retained PVCs
 are recovery material and require deliberate cleanup only after data is
 backed up and no consumer references the cluster. The Vault path is retained

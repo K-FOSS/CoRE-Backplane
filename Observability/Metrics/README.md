@@ -41,9 +41,12 @@ false, the distributed chart is disabled while the recovery identity remains.
 
 The YXL Metrics chart owns Garage buckets `mimir-blocks` and
 `mimir-alertmanager` and a GarageKey scoped to those buckets. The operator
-creates the S3 credential Secret `mimir-garage-s3`; when the ApplicationSet
-selects Garage, Mimir's Garage backend configuration reads its access key,
-secret key and cluster-local endpoint from that Secret. Garage itself is owned by the
+creates the S3 credential Secret `mimir-garage-s3`; Mimir reads its access and
+secret keys from that Secret and uses the HTTPS endpoint
+`observability-garage-s3.core-prod.svc.<cluster-domain>:443`. Envoy Gateway
+terminates TLS with a valid cert-manager certificate from
+[Network/TLS Certificates](../../Network/TLS/Certificates/README.md) and
+routes traffic to Garage's HTTP S3 listener. Garage itself is owned by the
 [Garage Operator stack](../../Storage/S3/Operators/Garage/README.md) and the
 [Observability/Common cluster chart](../Common/README.md). Reconcile those
 applications before Metrics so the Garage CRDs and cluster exist first.
