@@ -27,6 +27,14 @@ Terraform installs provider plugins in each Workspace's working directory. The s
 
 Applications create Crossplane claims and composed managed resources. Terraform-backed managed resources reference `ProviderConfig` objects, which select the provider credentials and Terraform backend. The provider turns Workspace specification changes into Terraform operations and periodically checks existing Workspaces for external drift. Connection outputs are published through the resource's configured Kubernetes Secret reference; never inspect or print Secret values while troubleshooting.
 
+## Authentik provider upgrades
+
+The shared [`authentik` Terraform ProviderConfig](templates/Providers/Terraform/Authentik/AuthentikTerraformConfig.yaml) pins `goauthentik/authentik` for all Workspaces that reference it. Each Workspace maintains its own Terraform dependency lock. Updating the pin alone does not upgrade an existing lock; Terraform initialization fails with a locked-version mismatch until that Workspace runs [`terraform init -upgrade`](https://developer.hashicorp.com/terraform/cli/commands/init#upgrade).
+
+For a provider upgrade, verify the selected [Authentik Terraform provider release](https://github.com/goauthentik/terraform-provider-authentik/releases) and its compatibility with the deployed server, then keep the version constraint exact. Apply `forProvider.initArgs: ['-upgrade']` temporarily to every Authentik Workspace source, including composed `User` Workspaces and consumer repositories. Reconcile in scoped cohorts and monitor Workspace `Synced` and `Ready` conditions; provider initialization can also update other unpinned providers required by a module. After all existing Workspaces have initialized successfully and their plans are healthy, remove the temporary argument and reconcile the same sources. New Workspaces use the exact provider constraint without needing an upgrade flag.
+
+An Authentik provider version change can expose real plan differences. Review those as Terraform drift or provider/API compatibility issues; a successful `init` alone is not evidence that managed Authentik objects remained unchanged. Keep the remote Kubernetes Terraform state backend and Workspace identities stable throughout the upgrade.
+
 ## Operations and verification
 
 After changing the provider runtime configuration, reconcile only the affected Crossplane child applications. Confirm the `DeploymentRuntimeConfig` arguments and resource requests and limits, then observe provider CPU and memory alongside node utilization. Verify that new Workspace changes begin reconciling promptly and that existing Workspace conditions settle.
