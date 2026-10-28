@@ -4,7 +4,8 @@ This chart deploys Headlamp `0.46.0` together with Inspektor Gadget for cluster
 management, debugging, and introspection. The Headlamp dependency is pinned in
 [`Chart.yaml`](Chart.yaml); see the [Headlamp 0.46.0 release notes](https://github.com/kubernetes-sigs/headlamp/releases/tag/0.46.0)
 and [upstream Helm chart](https://github.com/kubernetes-sigs/headlamp/tree/headlamp-helm-0.46.0/charts/headlamp)
-for the supported chart and application behavior.
+for the supported chart and application behavior. The Headlamp image is pinned
+to its upstream OCI digest in [`values.yaml`](values.yaml).
 
 ## Fleet deployment
 
