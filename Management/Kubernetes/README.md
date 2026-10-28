@@ -1,7 +1,10 @@
 # K-FOSS/CoRE-Backplane Kubernetes Management
 
-This chart deploys Headlamp together with Inspektor Gadget for cluster
-management, debugging, and introspection.
+This chart deploys Headlamp `0.46.0` together with Inspektor Gadget for cluster
+management, debugging, and introspection. The Headlamp dependency is pinned in
+[`Chart.yaml`](Chart.yaml); see the [Headlamp 0.46.0 release notes](https://github.com/kubernetes-sigs/headlamp/releases/tag/0.46.0)
+and [upstream Helm chart](https://github.com/kubernetes-sigs/headlamp/tree/headlamp-helm-0.46.0/charts/headlamp)
+for the supported chart and application behavior.
 
 ## Fleet deployment
 
@@ -165,8 +168,9 @@ by name.
 7. The controller publishes the sensitive Terraform outputs to the
    `core-headlamp-oidc` Secret in the release namespace.
 8. The Headlamp subchart reads that existing Secret through
-   `headlamp.config.oidc.externalSecret`; Headlamp does not generate or own the
-   credentials.
+   `headlamp.config.oidc.externalSecret`; `hasScopes: true` tells the 0.46.0
+   chart to pass the generated `OIDC_SCOPES` key to Headlamp. Headlamp does not
+   generate or own the credentials.
 9. `templates/HTTPRoute.yaml` exposes Headlamp through the configured Gateway.
    After login, the OIDC group claim is evaluated by Kubernetes RBAC.
 
