@@ -4,6 +4,9 @@ metadata:
   name: homeassistant-authentik
 
 spec:
+  {{ if eq .Values.cluster.name "core-dc1-talos-prod" }}
+  deletionPolicy: 'Orphan'
+  {{ end }}
   providerConfigRef:
     name: authentik
   writeConnectionSecretToRef:
