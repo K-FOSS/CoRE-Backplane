@@ -149,8 +149,8 @@ generated password is 16 characters.
 | `spec.s3.createServiceAccount` | Creates a MinIO service-account key or a GarageKey when using Garage; defaults to `false`. |
 | `spec.s3.writeServiceAccountCredentialsSecretRef` | Destination for the long-lived credential Secret. Garage-generated Secrets are namespace-local, so the namespace must match the claim namespace. |
 | `spec.s3.crossplane.*Provider` | Overrides MinIO/S3 provider configuration names. |
-| `spec.s3.garage.clusterName` | GarageCluster name; defaults to `observability-garage`. |
-| `spec.s3.garage.endpoint` | ExternalDNS-published Garage S3 hostname and port, published as `S3Hostname` and used over HTTPS in the generated credential Secret. |
+| `spec.s3.garage.clusterName` | Required with the Garage backend; must match the GarageCluster configured for the target cluster (currently `observability-garage`). |
+| `spec.s3.garage.endpoint` | Required with the Garage backend; must match the target cluster's ExternalDNS-published hostname and port, and is used over HTTPS in the generated credential Secret. |
 | `spec.writeConnectionSecretToRef.name` | Claim connection Secret written in the claim namespace. |
 
 `spec.psql.uri` controls only the URI published in `psqlURI`; PostgreSQL
@@ -316,7 +316,9 @@ namespace-local Secret named by `writeServiceAccountCredentialsSecretRef` with
 `spec.s3.garage.endpoint`; that hostname is the ExternalDNS-published S3 route
 on Envoy Gateway. It does not refer to a Gateway Service or an ExternalName
 Service. The selected hostname and port are published as `S3Hostname` in the
-claim connection Secret.
+claim connection Secret. Claims must set `spec.s3.garage.clusterName` and
+`spec.s3.garage.endpoint` to the values configured for the target cluster;
+Garage is rejected on clusters where that backend is disabled.
 
 Garage keys are static long-lived keys. They do not authenticate as the LDAP
 identity, inherit MinIO IAM policies, expire automatically, or support the

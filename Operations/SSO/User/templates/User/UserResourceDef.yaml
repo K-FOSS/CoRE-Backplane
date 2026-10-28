@@ -216,8 +216,13 @@ spec:
                       message: 'Garage does not support temporary LDAP-derived S3 credentials; use createServiceAccount'
                     - rule: '!has(self.backend) || self.backend != "garage" || !has(self.additionalPolicyStatements) || size(self.additionalPolicyStatements) == 0'
                       message: 'additionalPolicyStatements is supported only by the MinIO backend'
-                    - rule: '!has(self.backend) || self.backend != "garage" || (has(self.garage) && self.garage.enabled)'
-                      message: 'Garage backend must be enabled by the target cluster configuration'
+                    {{- if .Values.s3.garage.enabled }}
+                    - rule: '!has(self.backend) || self.backend != "garage" || (has(self.garage) && self.garage.clusterName == {{ .Values.s3.garage.clusterName | quote }} && self.garage.endpoint == {{ .Values.s3.garage.endpoint | quote }})'
+                      message: 'Garage claims must use the cluster and HTTPS endpoint configured for this target cluster'
+                    {{- else }}
+                    - rule: '!has(self.backend) || self.backend != "garage"'
+                      message: 'Garage backend is not enabled on this target cluster'
+                    {{- end }}
                     - rule: '!has(self.backend) || self.backend != "garage" || !has(self.createServiceAccount) || !self.createServiceAccount || !has(self.writeServiceAccountCredentialsSecretRef) || self.writeServiceAccountCredentialsSecretRef.namespace == "core-prod"'
                       message: 'GarageKey credentials must be written in core-prod with the current Garage namespace'
 
@@ -227,7 +232,6 @@ spec:
                       enum:
                         - 'minio'
                         - 'garage'
-                      default: 'minio'
                       description: 'S3 implementation; MinIO remains the default'
 
                     enabled:
@@ -260,17 +264,11 @@ spec:
 
                     garage:
                       type: object
-                      default: {}
                       properties:
-                        enabled:
-                          type: boolean
-                          default: {{ .Values.s3.garage.enabled }}
                         clusterName:
                           type: string
-                          default: {{ .Values.s3.garage.clusterName | squote }}
                         endpoint:
                           type: string
-                          default: {{ .Values.s3.garage.endpoint | squote }}
 
                     createUserBucket:
                       type: boolean
