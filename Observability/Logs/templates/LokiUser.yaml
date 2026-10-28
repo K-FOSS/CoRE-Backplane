@@ -3,29 +3,43 @@ kind: User
 metadata:
   name: loki-s3
 spec:
-  name: Loki {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
+  name: {{ printf "Loki %s-%s-%s" .Values.region .Values.datacenter .Values.cluster.name | squote }}
 
   groups:
-    - LDAPService
+    - 'LDAPService'
 
   s3:
     enabled: true
 
     createBuckets: true
 
-    createCredentials: true
-
     crossplane:
       terraformProvider: s3-{{ .Values.region }}-{{ .Values.datacenter }}-core
       crossplaneProvider: s3-{{ .Values.region }}-{{ .Values.datacenter }}-core
 
+    {{- if .Values.garage.enabled }}
+    backend: 'garage'
+    createUserBucket: false
+    createServiceAccount: true
+    garage:
+      clusterName: {{ .Values.garage.clusterName | squote }}
+      endpoint: {{ .Values.garage.endpoint | squote }}
     buckets:
-      - loki-rules-temp
-      - loki-admin
-
+      - {{ .Values.garage.buckets.chunks | squote }}
+      - {{ .Values.garage.buckets.ruler | squote }}
+      - {{ .Values.garage.buckets.admin | squote }}
+    writeServiceAccountCredentialsSecretRef:
+      name: {{ printf "%s-s3-creds" .Values.globalService.name | squote }}
+      namespace: {{ .Release.Namespace | squote }}
+    {{- else }}
+    createCredentials: true
+    buckets:
+      - 'loki-rules-temp'
+      - 'loki-admin'
     writeCredentialsSecretRef:
-      name: {{ .Values.globalService.name }}-s3-creds
-      namespace: {{ .Release.Namespace }}
+      name: {{ printf "%s-s3-creds" .Values.globalService.name | squote }}
+      namespace: {{ .Release.Namespace | squote }}
+    {{- end }}
 
   writeConnectionSecretToRef:
-    name: {{ .Values.globalService.name }}
+    name: {{ .Values.globalService.name | squote }}

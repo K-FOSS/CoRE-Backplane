@@ -1,8 +1,9 @@
 # CoRE-Backplane Observability/Common Stack
 
-This YXL-only chart provides the Garage S3 backend selected by
-[Mimir](../Metrics/README.md). Mimir starts with fresh Garage buckets; existing
-MinIO objects remain in place and are not copied. It is owned by the
+This YXL-only chart provides the Garage S3 backend used by
+[Mimir](../Metrics/README.md) and [Loki](../Logs/README.md). Both start with
+fresh Garage buckets; existing MinIO objects remain in place and are not
+copied. It is owned by the
 [Observability Common ApplicationSet](../../Apps/Observability/Common.yaml).
 The Garage controller and CRDs are owned separately by the
 [Garage Operator ApplicationSet](../../Apps/Storage/S3/Garage-Operator.yaml).
@@ -12,8 +13,9 @@ The Garage controller and CRDs are owned separately by the
 The ApplicationSet selects core bare-metal infrastructure clusters in DC1
 region YXL and renders this chart into `core-prod`. Sync the S3 Garage Operator
 first, wait for its CRDs and webhook to become healthy, then sync this chart to
-create the `GarageCluster`. The Metrics ApplicationSet follows and owns the
-Mimir buckets and S3 key in the same namespace.
+create the `GarageCluster`. The Metrics ApplicationSet creates Mimir's
+buckets/key; the Logs application's `loki-s3` User claim creates Loki's
+buckets/key through the User Composition.
 
 ## Garage cluster and data flow
 
@@ -33,7 +35,7 @@ describe this `storage.topologySpreadConstraints` field.
 
 Garage's S3 listener serves HTTP, so the chart uses the existing Envoy Gateway
 `main-gw` HTTPS listener to terminate TLS and routes requests to Garage's port
-`3900`. Mimir connects to
+`3900`. Mimir and Loki connect to
 `observability-garage-s3.core-prod.svc.<cluster-domain>:443`. The HTTPRoute
 matches that FQDN and preserves the SigV4 `Host` value while routing to Garage.
 Its `wan-mode: 'public'` label lets the deployed ExternalDNS controller publish
@@ -93,10 +95,10 @@ Ready, all Garage PVCs are bound, and Garage health reports three nodes with a
 committed layout. Also verify `observability-garage-s3-tls` Certificate Ready,
 the HTTPRoute is `Accepted` with `ResolvedRefs`, the Gateway listener is
 `Programmed`, and the certificate SAN matches the cluster-domain Service FQDN.
-Then reconcile Metrics and verify its GarageBucket
-and GarageKey conditions and the generated S3 Secret without printing its
-data. Confirm Mimir connects through Envoy Gateway with certificate verification
-enabled.
+Then reconcile Metrics and Logs. Verify their Garage bucket/key resources and
+User claim readiness, and inspect generated S3 Secret key names without
+printing data. Confirm both clients connect through Envoy Gateway with
+certificate verification enabled.
 Removing this chart removes the GarageCluster desired resource; retained PVCs
 are recovery material and require deliberate cleanup only after data is
 backed up and no consumer references the cluster. The Vault path is retained
@@ -105,11 +107,11 @@ the bootstrap Secret.
 
 ## Intended multi-cluster direction
 
-The current Garage deployment is local to YXL and serves Metrics. Historical
-MinIO objects remain in MinIO; copying them is not required. The intended next
-stage is to move Logs,
-Traces, and Metrics to one shared Garage service (one logical “cluster” from
-their perspective) across the YVR and YXL Talos production clusters. This likely means site-local Garage
+The current Garage deployment is local to YXL and serves Metrics and Logs.
+Historical MinIO objects remain in MinIO; copying them is not required. The
+intended next stage is to move Logs, Traces, and Metrics to one shared Garage
+service (one logical “cluster” from their perspective) across the YVR and YXL
+Talos production clusters. This likely means site-local Garage
 clusters joined through Garage federation rather than one Kubernetes
 `GarageCluster` resource; that topology and its application-level semantics
 must be verified. It still needs per-node routable RPC addresses, identical

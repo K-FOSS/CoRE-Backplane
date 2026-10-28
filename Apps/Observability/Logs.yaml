@@ -36,6 +36,8 @@ spec:
                     lokiRulerReplicas: 0
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
+                    lokiGarageEnabled: true
+                    lokiS3Bucket: 'loki-chunks'
 
                 - name: core-home1-talos-prod
                   values:
@@ -59,6 +61,8 @@ spec:
                     lokiRulerReplicas: 0
                     lokiGlobalAffinity: 'remote'
                     lokiGlobalShared: 'false'
+                    lokiGarageEnabled: false
+                    lokiS3Bucket: 'loki-chunks'
 
           - clusters:
               selector:
@@ -129,8 +133,42 @@ spec:
                     service.cilium.io/global-sync-endpoint-slices: 'true'
                     service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
                     service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+
+                garage:
+                  enabled: {{ .values.lokiGarageEnabled }}
+                  clusterName: 'observability-garage'
+                  endpoint: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
                 
                 loki:
+                  {{ if .values.lokiGarageEnabled }}
+                  global:
+                    podAnnotations:
+                      secret.reloader.stakater.com/reload: 'loki-core,loki-core-s3-creds'
+                    extraEnv:
+                      - name: 'S3_ENDPOINT'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'loki-core'
+                            key: 'S3Hostname'
+                      - name: 'S3_BUCKET'
+                        value: '{{ .values.lokiS3Bucket }}'
+                      - name: 'S3_ACCESS_KEY'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'loki-core-s3-creds'
+                            key: 'AccessKey'
+                      - name: 'S3_SECRET_ACCESS_KEY'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'loki-core-s3-creds'
+                            key: 'SecretAccessKey'
+                      - name: 'S3_SESSION_TOKEN'
+                        value: ''
+                  loki:
+                    storage:
+                      s3:
+                        region: 'garage'
+                  {{ end }}
                   enabled: {{ if eq .values.lokiEnabled false }}false{{ else }}true{{ end }}
                   # Cilium matches global Services by namespace and name.
                   fullnameOverride: 'loki-core'

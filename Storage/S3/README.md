@@ -12,13 +12,14 @@ Operator charts are maintained under [`Operators/`](Operators/README.md).
 
 MinIO remains the existing application S3 service. SeaweedFS is a separate
 YXL lab for evaluating distributed object storage and OIDC-backed temporary
-S3 credentials. Garage is being integrated as the YXL Mimir object store: the
-cluster lives in [Observability/Common](../../Observability/Common/README.md),
-while Mimir's Garage buckets and key live in
-[Observability/Metrics](../../Observability/Metrics/README.md). Garage uses
-Longhorn PVCs and Garage object replication independently of Longhorn block
-replication. Mimir continues using its existing MinIO backend until the
-current Mimir objects are migrated.
+S3 credentials. Garage is the YXL Observability S3 backend for
+[Mimir](../../Observability/Metrics/README.md) and
+[Loki](../../Observability/Logs/README.md). The cluster lives in
+[Observability/Common](../../Observability/Common/README.md); Mimir owns its
+Garage buckets and key, while Loki's `User` claim provisions its buckets and
+scoped key through the User Composition. Both start with fresh Garage buckets;
+existing MinIO objects remain untouched. Garage uses Longhorn PVCs and Garage
+object replication independently of Longhorn block replication.
 
 ## Candidate follow-up labs
 

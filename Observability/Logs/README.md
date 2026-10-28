@@ -9,11 +9,13 @@ collectors and consumers.
 
 ## Ownership, targets, and rendering
 
-DC1/YXL is the only Loki deployment and data-bearing site. Home1/YVR does not
-render Loki workloads; its release renders only the `loki-core` Cilium
-global-Service endpoint shim and retains its existing S3 User claim. YVR
-collectors use ClusterMesh to reach DC1. The ApplicationSet injects cluster
-identity, component counts, and Cilium annotations through `LOVELY_HELM_MERGE`.
+DC1/YXL is the only Loki deployment and data-bearing site. It uses the
+Observability Garage S3 service with credentials provisioned through the
+`loki-s3` `User` claim. Home1/YVR does not render Loki workloads; its release
+renders only the `loki-core` Cilium global-Service endpoint shim and retains
+its existing MinIO `User` claim. YVR collectors use ClusterMesh to reach DC1.
+The ApplicationSet injects cluster identity, storage backend, component counts,
+and Cilium annotations through `LOVELY_HELM_MERGE`.
 
 The rendering unit includes this parent chart, the pinned
 [Loki chart 6.46.0 README](https://github.com/grafana/loki/blob/helm-loki-6.46.0/production/helm/loki/README.md),
@@ -67,24 +69,42 @@ and does not share. This follows the
 model. Internal and memberlist Services remain local, so sites do not share a
 Loki ring.
 
-## Existing S3 data
+## Observability S3 and Loki credentials
 
-The topology change does not create or rename storage identities, buckets,
-Secrets, or schema periods. [`LokiUser.yaml`](templates/LokiUser.yaml) keeps
-the `loki-s3` claim and regional provider selection.
+On YXL, the `loki-s3` claim uses the `garage` backend in the existing
+[`User` Composition](../../Operations/SSO/User/README.md). The claim creates
+the Garage buckets and a scoped, long-lived Garage key, then publishes its
+stable connection Secret as `loki-core` and credentials Secret as
+`loki-core-s3-creds`. Loki reads `S3Hostname`, `AccessKey`, and
+`SecretAccessKey` from those claim-owned Secrets. No Garage bucket or key CR is
+declared directly by this chart. The Garage API is enabled for YXL in the
+[User ApplicationSet](../../Apps/Infra/Crossplane/User.yaml), and the Garage
+operator and cluster must be ready first.
 
 | Existing object | Purpose |
 | --- | --- |
-| `loki-core` Secret | S3 endpoint and dynamically assigned chunks bucket |
-| `loki-core-s3-creds` Secret | Access key, secret key, and session token |
-| dynamic chunks bucket | Chunks and TSDB index |
-| `loki-rules-temp` | Ruler data |
-| `loki-admin` | Administrative data |
+| `loki-core` User connection Secret | Garage endpoint in `S3Hostname` |
+| `loki-core-s3-creds` User credential Secret | Scoped `AccessKey` and `SecretAccessKey` |
+| `loki-chunks` Garage bucket | Chunks and TSDB index |
+| `loki-rules-temp` Garage bucket | Ruler data |
+| `loki-admin` Garage bucket | Administrative data |
 
-`loki.global.extraEnv` injects the same Secret keys into every microservice,
-and `-config.expand-env=true` expands them. The endpoint, region, path-style
-addressing, TLS behavior, and credentials are unchanged. The schema remains
+The claim grants read/write access only to those three Garage buckets and
+disables the username-named bucket. `loki.global.extraEnv` injects the stable
+User Secret references into every microservice, sets the fixed chunks bucket,
+and supplies an empty session token because Garage service-account keys do not
+use temporary tokens. Loki uses region `garage`, HTTPS through the
+`observability-garage-s3` route, and path-style addressing. The schema remains
 TSDB `v13` from `2024-04-01`, prefix `loki_index_`, with a 24-hour period.
+
+This is a fresh store, matching the Mimir Garage cutover. Existing MinIO
+buckets and Loki objects are not copied, queried, or deleted. MinIO resources
+created by the previous `User` Composition use orphan retention; inspect them
+separately before any later cleanup. The old single-binary PVCs also remain
+retained for recovery.
+
+Home1 keeps its existing MinIO `User` claim because it runs no Loki workloads
+and the Garage endpoint is YXL-local.
 Grafana documents TSDB as the
 [recommended single-store index](https://grafana.com/docs/loki/latest/operations/storage/tsdb/)
 and describes schema continuity in the
@@ -148,10 +168,13 @@ helm template logs Observability/Logs --namespace core-prod \
   --set loki.ruler.replicas=0
 ```
 
-Inspect the rendered config and workloads. Confirm all Loki processes receive
-the five S3 Secret references and expansion flag, internal addresses use the
-component Services, stateful PVCs retain, `loki-core` selects gateway pods on
-port `3100`, and only it has global annotations.
+Inspect the rendered config and workloads. On YXL, confirm all Loki processes
+receive the User Secret references, fixed chunks bucket, and expansion flag;
+the User claim must specify the Garage backend and service account. On Home1,
+confirm Loki remains disabled and its MinIO claim is unchanged. Internal
+addresses must use the component Services, stateful PVCs must retain,
+`loki-core` must select gateway pods on port `3100`, and only the intended
+global Service has global annotations.
 
 After reconciliation, verify DC1 replica and ring health, ingestion from both
 sites into tenant `core`, an existing query within `core`, a new uniquely
@@ -185,6 +208,10 @@ automatically applied until its health checks pass.
 
 If validation fails, restore the prior Git revision and point `loki-core` back
 to the three ready single-binary pods before removing distributed workloads.
-The unchanged S3 configuration, schema, Secrets, and PVCs allow rollback
-without copying or rewriting objects. Home1 remains dependent on DC1 and
-ClusterMesh; this change does not add a second serving site.
+That revision uses the existing MinIO `User` claim again. MinIO objects and
+retained PVCs are left in place, but the stores are not synchronized: writes
+made after cutover remain in Garage and will not appear after rollback. The
+Garage buckets have Retain deletion policy; check the User Composition's key
+deletion behavior before reverting the claim, and preserve the buckets until
+they are no longer needed. Home1 remains dependent on DC1 and ClusterMesh;
+this change does not add a second serving site.
