@@ -31,6 +31,7 @@ spec:
                         pullPolicy: 'IfNotPresent'
                       id: 'core-dc1-talos-prod-minion'
                       location: 'core-dc1-talos-prod'
+                      coreServiceName: 'core-home1-talos-prod-network-insight-prod'
                       coreUrl: ''
                       kafka:
                         bootstrapServers: 'kafka.core-home1-talos-prod.home1.yvr.mylogin.space:9094'
@@ -52,6 +53,7 @@ spec:
                         pullPolicy: 'IfNotPresent'
                       id: 'core-home1-talos-prod-minion'
                       location: 'core-home1-talos-prod'
+                      coreServiceName: 'core-home1-talos-prod-network-insight-prod'
                       coreUrl: ''
                       kafka:
                         bootstrapServers: 'kafka.core-home1-talos-prod.home1.yvr.mylogin.space:9094'
@@ -144,7 +146,8 @@ spec:
                   id: '{{ .values.minion.id }}'
                   location: '{{ .values.minion.location }}'
                   resources: {{ dig "resources" (dict) .values.minion | toJson }}
-                  coreUrl: '{{ if .values.minion.coreUrl }}{{ .values.minion.coreUrl }}{{ else }}http://core-home1-talos-prod-network-insight-prod.core-net-{{ .values.environment }}.svc.{{ .values.clusterDomain }}/opennms{{ end }}'
+                  coreUrl: '{{ if .values.minion.coreUrl }}{{ .values.minion.coreUrl }}{{ else }}http://{{ .values.minion.coreServiceName }}.core-net-{{ .values.environment }}.svc.{{ .values.clusterDomain }}/opennms{{ end }}'
+                  coreServiceName: '{{ .values.minion.coreServiceName }}'
                   nodeSelector: {{ .values.minion.nodeSelector | toJson }}
                   image:
                     repository: '{{ .values.minion.image.repository }}'

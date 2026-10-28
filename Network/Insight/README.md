@@ -49,12 +49,33 @@ shares; see [Kubernetes resource management](https://kubernetes.io/docs/concepts
 `Apps/Network/Insight.yaml` is the site registry for this rendering unit. Each
 site entry independently sets `opennms.enabled` and `minion.enabled`. Home1 is
 the current OpenNMS core and publishes its HTTP Service as a Cilium global
-Service; DC1 runs a Minion-only release that connects to that core. Add a site
+Service; DC1 runs a Minion-only release that connects to that core. The DC1
+release also declares a selector-less Service with the same name, namespace,
+and port. Cilium Cluster Mesh merges its remote Home1 endpoint into this local
+service so the normal DC1 Service DNS name resolves and routes to the core.
+Add a site
 entry and set its Minion `id`, `location`, `coreUrl`, and Kafka bootstrap name
 when extending the fleet. The location is the OpenNMS distributed-monitoring
 location that owns polling for that site. OpenNMS's [Minion overview](https://docs.opennms.com/horizon/36/deployment/minion/introduction.html)
 and [container configuration reference](https://docs.opennms.com/horizon/36/reference/configuration/minion-docker.html)
 describe the registration and `-c` startup behavior.
+
+The Minion uses the image-provided `/health.sh` for readiness and liveness.
+Readiness marks an unhealthy Minion unavailable; liveness allows fifteen
+minutes of failed checks before restarting it, so short inter-site outages do
+not trigger restarts while a persistent broker or core failure can recover
+without manual pod deletion. The script calls the Minion health REST probe,
+which includes core echo and Kafka broker checks. See upstream
+[Minion health-check setup](https://docs.opennms.com/horizon/36/deployment/minion/install.html)
+and the [health REST API](https://docs.opennms.com/horizon/36/development/rest/health_rest.html).
+
+Cilium Global Services need a same-name Service in each participating cluster.
+Cluster Mesh shares the Home1-backed service endpoints and synchronizes their
+EndpointSlices for service discovery; see [Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/).
+This is an internal Cluster Mesh path, not an external DNS record. If it is
+unavailable, check Cluster Mesh readiness in both clusters, the global
+annotation on the Home1 Service, and the matching DC1 Service and synchronized
+EndpointSlices.
 
 The Minion image (`repository`, `tag`, `digest`, and `pullPolicy`) and
 `nodeSelector` are values-driven. Home1 explicitly selects

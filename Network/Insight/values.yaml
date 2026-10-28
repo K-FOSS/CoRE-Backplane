@@ -9,6 +9,26 @@ minion:
   enabled: false
   # Merge overrides over the shared workload resources.
   resources: {}
+  probes:
+    readiness:
+      enabled: true
+      custom: true
+      spec:
+        exec:
+          command: ['/health.sh']
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 3
+    liveness:
+      enabled: true
+      custom: true
+      spec:
+        exec:
+          command: ['/health.sh']
+        initialDelaySeconds: 180
+        periodSeconds: 30
+        timeoutSeconds: 10
+        failureThreshold: 30
   image:
     repository: 'docker.io/opennms/minion'
     tag: '36.0.3'
@@ -16,6 +36,7 @@ minion:
     pullPolicy: 'IfNotPresent'
   id: 'example-minion'
   location: 'example-location'
+  coreServiceName: 'core-home1-talos-prod-network-insight-prod'
   coreUrl: ''
   nodeSelector: {}
   credentialsSecretName: 'opennms-minion-credentials'

@@ -1658,6 +1658,7 @@ persistence:
         (dict "name" "OPENNMS_HTTP_URL" "value" .Values.minion.coreUrl)
         (dict "name" "OPENNMS_HTTP_USER" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "username")))
         (dict "name" "OPENNMS_HTTP_PASS" "valueFrom" (dict "secretKeyRef" (dict "name" .Values.minion.credentialsSecretName "key" "password"))))
+      "probes" .Values.minion.probes
       "securityContext" (dict "capabilities" (dict "add" (list "NET_RAW")))
       "resources" (mergeOverwrite (deepCopy .Values.resources) .Values.minion.resources)))))
   "persistence" (dict
@@ -1682,5 +1683,28 @@ persistence:
     "targetPort" "traps"
     "protocol" "UDP"))))) .Values -}}
 {{- end }}
+{{- end }}
+
+{{- if and .Values.minion.enabled (not .Values.opennms.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.minion.coreServiceName | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name | squote }}
+    app.kubernetes.io/managed-by: 'Helm'
+    app.kubernetes.io/name: 'core-network-insight'
+  annotations:
+    service.cilium.io/global: 'true'
+    service.cilium.io/shared: 'true'
+    service.cilium.io/global-sync-endpoint-slices: 'true'
+spec:
+  type: 'ClusterIP'
+  ports:
+    - name: 'http'
+      port: 80
+      targetPort: 8980
+      protocol: 'TCP'
 {{- end }}
 {{ include "bjw-s.common.loader.generate" . }}
