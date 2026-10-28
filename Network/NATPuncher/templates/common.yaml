@@ -20,8 +20,10 @@ controllers:
     containers:
       main:
         image:
-          repository: coturn/coturn
-          tag: latest
+          repository: 'docker.io/coturn/coturn'
+          # common 3.6.1 only supports repository and tag; keep the OCI digest
+          # in the tag value so the rendered image is immutable.
+          tag: '4.18.0-r0@sha256:bbefd3e1fdfdc0d58770fe01b581fd8b00d9f3a5580d00acb77cf719a6bc78e3'
           pullPolicy: IfNotPresent
 
         env:
