@@ -449,9 +449,7 @@ controllers:
           - -insecure-listen-address=0.0.0.0:8081
           - -label=cluster
           - -label-value={{ required "cluster.name is required when the Mimir bridge query filter is enabled" .Values.cluster.name }}
-          - -header-name=X-Org-ID
-          - -label=org_id
-          - -upstream=http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }}/prometheus
+          - -upstream=http://127.0.0.1:8082
         ports:
           - name: filter-cluster
             containerPort: 8081
@@ -465,6 +463,44 @@ controllers:
             enabled: true
             type: TCP
             port: filter-cluster
+        resources:
+          {{- toYaml .Values.mimirBridge.queryFilter.resources | nindent 10 }}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          # The image declares USER nobody. Kubernetes cannot prove that a
+          # named user is non-root, so preserve that identity numerically.
+          runAsGroup: 65534
+          runAsUser: 65534
+      tenant-query-filter:
+        image:
+          repository: {{ .Values.mimirBridge.queryFilter.image.repository }}
+          tag: '{{ .Values.mimirBridge.queryFilter.image.tag }}@{{ .Values.mimirBridge.queryFilter.image.digest }}'
+          pullPolicy: {{ .Values.mimirBridge.queryFilter.image.pullPolicy }}
+        args:
+          - -enable-label-apis
+          - -error-on-replace
+          - -insecure-listen-address=0.0.0.0:8082
+          - -label=org_id
+          - -header-name=X-Org-ID
+          - -upstream=http://{{ .Values.mimirBridge.upstream.service }}:{{ int .Values.mimirBridge.upstream.port }}/prometheus
+        ports:
+          - name: filter-tenant
+            containerPort: 8082
+            protocol: TCP
+        probes:
+          liveness:
+            enabled: true
+            type: TCP
+            port: filter-tenant
+          readiness:
+            enabled: true
+            type: TCP
+            port: filter-tenant
         resources:
           {{- toYaml .Values.mimirBridge.queryFilter.resources | nindent 10 }}
         securityContext:
@@ -823,7 +859,10 @@ configMaps:
                 proxy_set_header Connection '';
                 proxy_set_header Authorization '';
                 proxy_set_header X-Org-ID core;
-                proxy_set_header X-Scope-OrgID $http_x_scope_orgid;
+                # This bridge serves the fixed core tenant. Inject the tenant
+                # Mimir requires instead of forwarding an absent or caller
+                # controlled header from clients such as the Kubernetes proxy.
+                proxy_set_header X-Scope-OrgID core;
                 proxy_set_header Host {{ .Values.mimirBridge.upstream.service }};
                 {{- if .Values.mimirBridge.queryFilter.enabled }}
                 # prom-label-proxy receives the unprefixed API path and adds
