@@ -1,18 +1,4 @@
 {{- if and .Values.garage.enabled .Values.garage.tls.enabled }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ .Values.garage.tls.serviceName | squote }}
-  namespace: {{ .Release.Namespace | squote }}
-spec:
-  type: ExternalName
-  externalName: {{ printf "%s.%s.svc.%s" .Values.garage.tls.gatewayService "kube-system" .Values.cluster.domain | squote }}
-  ports:
-    - name: 'https'
-      port: 443
-      protocol: TCP
-      targetPort: 443
----
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

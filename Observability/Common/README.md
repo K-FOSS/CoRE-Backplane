@@ -34,10 +34,9 @@ describe this `storage.topologySpreadConstraints` field.
 Garage's S3 listener serves HTTP, so the chart uses the existing Envoy Gateway
 `main-gw` HTTPS listener to terminate TLS and routes requests to Garage's port
 `3900`. The client endpoint is
-`https://observability-garage-s3.core-prod.svc.<cluster-domain>`; an
-`ExternalName` Service resolves that S3 hostname to Envoy Gateway's internal
-Service while the HTTPRoute matches the original hostname and preserves the
-SigV4 `Host` value. This follows CoRE-Business AI's [Envoy Gateway and HTTPRoute pattern](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI/templates/Gateway/Gateway.yaml). The listener references the exact cert-manager certificate
+`https://observability-garage-s3.core-prod.svc.<cluster-domain>`. The HTTPRoute
+matches that hostname and preserves the SigV4 `Host` value while routing to
+Garage. This follows CoRE-Business AI's [Envoy Gateway and HTTPRoute pattern](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI/templates/Gateway/Gateway.yaml). The listener references the exact cert-manager certificate
 issued by [Network/TLS Certificates](../../Network/TLS/Certificates/README.md).
 The hostname is inside the cluster's valid FQDN and is not published to public
 DNS. Garage itself does not terminate TLS; see the operator's
