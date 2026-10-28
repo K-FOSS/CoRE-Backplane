@@ -1,0 +1,41 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: argocd-server-authentik
+
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: argocd-server
+
+  extAuth:
+    failOpen: false
+
+    headersToExtAuth:
+      - cookie
+
+    http:
+      headersToBackend:
+        - set-cookie
+        - x-authentik-*
+        - authorization
+        - Content-Type
+        - Location
+
+      # Keep a client on the same Authentik proxy replica so its local
+      # authorization/session cache remains effective.
+      backendSettings:
+        loadBalancer:
+          type: ConsistentHash
+          consistentHash:
+            type: SourceIP
+
+      backendRefs:
+        - group: ''
+          kind: Service
+          namespace: core-prod
+          name: aaa-myloginspace-proxy
+          port: 80
+
+      path: /outpost.goauthentik.io/auth/envoy

@@ -184,6 +184,17 @@ can replay recent log entries. The local `argocd-webhook-route` exposes only
 `/api/webhook`, and `BackendTrafficPolicy` enables compression for the main
 HTTP route.
 
+The main `argocd-server` HTTPRoute is protected by the local
+[`SecurityPolicy`](templates/SecurityPolicy.yaml), which uses the shared
+`aaa-myloginspace-proxy` Authentik outpost in `core-prod` for Envoy external
+authorization. Authentik cookies and authorization/session headers are
+forwarded to Argo CD, and source-IP consistent hashing keeps a client on one
+proxy replica. The separate webhook route remains unauthenticated so external
+source-control webhooks can reach `/api/webhook`; keep that route restricted to
+the webhook path. The Authentik stack's
+[`ReferenceGrant`](../AAA/templates/Authentik/RefGrant.yaml) permits this
+`argocd`-namespace policy to reference the proxy Service in `core-prod`.
+
 Gateway API requires implementations to reject an HTTPRoute and GRPCRoute
 that attach to the same listener with overlapping hostnames. Consequently,
 the upstream GRPCRoute is deliberately disabled. The supported alternatives
