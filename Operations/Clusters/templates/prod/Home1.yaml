@@ -32,6 +32,15 @@ spec:
     kubernetes: v1.36.3
     talos: v1.14.2
 
+  oidc:
+    apps:
+      - issuer: 'https://idp.mylogin.space/application/o/che/'
+        clientIDSecretRef:
+          name: cluster-oidc-client-ids
+          key: 'che'
+      - issuer: 'https://idp.mylogin.space/application/o/headlamp/'
+        clientID: 'headlamp'
+
   clustertype: infra
 
   computetype: baremetal

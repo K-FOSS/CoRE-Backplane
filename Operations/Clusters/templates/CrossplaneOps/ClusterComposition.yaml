@@ -210,9 +210,6 @@ spec:
                   - name: nvme_tcp
                   - name: vfio_pci
 
-            #
-            # OIDC For API Server
-            #
             - op: add
               path: /machine/files
               value:
@@ -235,9 +232,8 @@ spec:
                           uid:
                             expression: 'claims.sub'
                         userValidationRules:
-                          - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
-                            message: 'username cannot used reserved system: prefix'
-
+                          - expression: "!user.username.startsWith('system:')"
+                            message: 'username cannot use reserved system: prefix'
                       - issuer:
                           url: https://idp.mylogin.space/application/o/headlamp/
                           audiences:
@@ -250,8 +246,8 @@ spec:
                           uid:
                             expression: 'claims.sub'
                         userValidationRules:
-                          - expression: "!user.username.startsWith('system:')" # the expression will evaluate to true, so validation will succeed.
-                            message: 'username cannot used reserved system: prefix'
+                          - expression: "!user.username.startsWith('system:')"
+                            message: 'username cannot use reserved system: prefix'
 
             #
             # KubeDNS
@@ -260,6 +256,30 @@ spec:
               path: /machine/features/hostDNS/forwardKubeDNSToHost
               value: false
 
+            {{- end }}
+
+            {{- range $index, $app := $xr.spec.oidc.apps }}
+            {{- if $app.clientIDSecretRef }}
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{ setResourceNameAnnotation (printf "oidc-client-secret-%d" $index) }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+              managementPolicies:
+                - 'Observe'
+              deletionPolicy: Orphan
+              forProvider:
+                manifest:
+                  apiVersion: v1
+                  kind: Secret
+                  metadata:
+                    name: {{ $app.clientIDSecretRef.name | quote }}
+                    namespace: {{ $xr.spec.claimRef.namespace | quote }}
+            {{- end }}
             {{- end }}
             --- 
             apiVersion: kubernetes.crossplane.io/v1alpha2
@@ -308,7 +328,76 @@ spec:
                       controlplane:
                         generateType: controlplane
                         talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
-                      
+                        {{- if semverCompare ">=1.14.0" .observed.composite.resource.spec.versions.talos }}
+                        strategicPatches:
+                          - |
+                            apiVersion: v1alpha1
+                            kind: MachineConfig
+                            machine:
+                              sysctls:
+                                vm.nr_hugepages: '1024'
+                              kernel:
+                                modules:
+                                  - name: 'nvme_tcp'
+                                  - name: 'vfio_pci'
+                              features:
+                                hostDNS:
+                                  forwardKubeDNSToHost: false
+                          - |
+                            apiVersion: v1alpha1
+                            kind: KubeNodeConfig
+                            taints:
+                              node-role.kubernetes.io/control-plane:
+                                $patch: delete
+                          - |
+                            apiVersion: v1alpha1
+                            kind: KubeProxyConfig
+                            enabled: false
+                          - |
+                            apiVersion: v1alpha1
+                            kind: KubeFlannelCNIConfig
+                            $patch: delete
+                          - |
+                            apiVersion: v1alpha1
+                            kind: KubeAuthenticationConfig
+                            configuration:
+                              anonymous:
+                                enabled: true
+                                conditions:
+                                  - path: '/livez'
+                                  - path: '/readyz'
+                                  - path: '/healthz'
+                              jwt:
+                                {{ $apps := .observed.composite.resource.spec.oidc.apps }}
+                                {{ range $index, $app := $apps }}
+                                {{ $clientID := $app.clientID }}
+                                {{ if $app.clientIDSecretRef }}
+                                {{ $secretName := printf "oidc-client-secret-%d" $index }}
+                                {{ $secret := index $.observed.resources $secretName }}
+                                {{ if $secret }}
+                                {{ $secretData := $secret.resource.status.atProvider.manifest.data }}
+                                {{ $clientID = (index $secretData $app.clientIDSecretRef.key) | b64dec }}
+                                {{ if not $clientID }}{{ fail (printf "OIDC client ID key %q is missing from Secret %q" $app.clientIDSecretRef.key $app.clientIDSecretRef.name) }}{{ end }}
+                                {{ end }}
+                                {{ end }}
+                                {{ if $clientID }}
+                                - issuer:
+                                    url: {{ $app.issuer | quote }}
+                                    audiences:
+                                      - {{ $clientID | quote }}
+                                  claimMappings:
+                                    username:
+                                      expression: {{ printf "claims.%s" (default "preferred_username" $app.usernameClaim) | quote }}
+                                    groups:
+                                      expression: {{ printf "claims.%s" (default "groups" $app.groupsClaim) | quote }}
+                                    uid:
+                                      expression: {{ printf "claims.%s" (default "sub" $app.uidClaim) | quote }}
+                                  userValidationRules:
+                                    - expression: "!user.username.startsWith('system:')"
+                                      message: 'username cannot use reserved system: prefix'
+                                {{ end }}
+                                {{ end }}
+                        {{- else }}
                         configPatches:
                           - op: add
                             path: /cluster/apiServer/extraVolumes
@@ -317,6 +406,10 @@ spec:
                                 mountPath: /var/kubernetes/auth-config.yaml
                                 readonly: true
 
+                          - op: add
+                            path: /cluster/apiServer/extraArgs
+                            value:
+                              authentication-config: /var/kubernetes/auth-config.yaml
                           #
                           # Do not install any CNI by default, ArgoCD will automatically install the Network Base chart
                           #
@@ -340,11 +433,8 @@ spec:
                             path: /cluster/proxy/disabled
                             value: true
 
-                          - op: add
-                            path: /cluster/apiServer/extraArgs
-                            value:
-                              authentication-config: /var/kubernetes/auth-config.yaml
                           {{- include "talos-params" $ | nindent 14 }}
+                        {{- end }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -377,8 +467,25 @@ spec:
                       spec:
                         generateType: worker
                         talosVersion: {{ .observed.composite.resource.spec.versions.talos }}
+                        {{- if semverCompare ">=1.14.0" .observed.composite.resource.spec.versions.talos }}
+                        strategicPatches:
+                          - |
+                            apiVersion: v1alpha1
+                            kind: MachineConfig
+                            machine:
+                              sysctls:
+                                vm.nr_hugepages: '1024'
+                              kernel:
+                                modules:
+                                  - name: 'nvme_tcp'
+                                  - name: 'vfio_pci'
+                              features:
+                                hostDNS:
+                                  forwardKubeDNSToHost: false
+                        {{- else }}
                         configPatches:
                         {{- include "talos-params" $ | nindent 12 }}
+                        {{- end }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object

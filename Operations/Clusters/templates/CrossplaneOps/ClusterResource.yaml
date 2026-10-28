@@ -209,6 +209,51 @@ spec:
                       type: string
                       default: v1.13.0
 
+                oidc:
+                  type: object
+                  description: 'Configure Kubernetes API server JWT/OIDC authentication. Each app client ID is read from a Secret in the Cluster claim namespace.'
+                  default:
+                    apps: []
+                  properties:
+                    apps:
+                      type: array
+                      items:
+                        type: object
+                        required:
+                          - issuer
+                        oneOf:
+                          - required:
+                              - clientID
+                          - required:
+                              - clientIDSecretRef
+                        properties:
+                          issuer:
+                            type: string
+                            description: 'OIDC issuer URL.'
+                          clientID:
+                            type: string
+                            description: 'Literal OIDC client ID (use clientIDSecretRef to read it from a Secret).'
+                          clientIDSecretRef:
+                            type: object
+                            description: 'Same-namespace Kubernetes Secret key containing the OIDC client ID.'
+                            required:
+                              - name
+                              - key
+                            properties:
+                              name:
+                                type: string
+                              key:
+                                type: string
+                          usernameClaim:
+                            type: string
+                            default: 'preferred_username'
+                          groupsClaim:
+                            type: string
+                            default: 'groups'
+                          uidClaim:
+                            type: string
+                            default: 'sub'
+
                 clustertype:
                   type: string
                   enum:

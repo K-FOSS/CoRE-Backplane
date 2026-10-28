@@ -72,6 +72,65 @@ This is implemented in
 [`templates/CrossplaneOps/ClusterNodeComposition.yaml`](templates/CrossplaneOps/ClusterNodeComposition.yaml), using the
 [Talos machine configuration apply resource](https://github.com/siderolabs/terraform-provider-talos/blob/main/docs/resources/machine_configuration_apply.md).
 
+### Kubernetes API OIDC authentication
+
+Talos v1.14 and newer use Talos multi-document configuration for Kubernetes
+API authentication. Set `Cluster.spec.oidc.apps` to the issuer list. Each app
+references a `Secret` key in the same namespace as the `Cluster` claim; the
+Composition observes that key and uses its value as the JWT audience/client ID.
+The Che client ID is published to `core-prod` by the
+[External Secrets Operator](https://external-secrets.io/latest/api/externalsecret/).
+The referenced Secret must exist before authentication can be rendered. The
+Secret observation is held in the Crossplane Kubernetes `Object` status, so
+access to those managed resources must be treated as access to the Secret.
+
+```yaml
+spec:
+  oidc:
+    apps:
+      - issuer: 'https://idp.example.invalid/application/o/dashboard/'
+        clientIDSecretRef:
+          name: dashboard-oidc
+          key: 'ClientID'
+        usernameClaim: 'preferred_username'
+        groupsClaim: 'groups'
+        uidClaim: 'sub'
+```
+
+For Talos v1.14+, the control-plane template uses CABPT `strategicPatches` to
+set `KubeAuthenticationConfig`. Talos manages the authentication config file
+and kube-apiserver integration from that document; this replaces the legacy
+`machine.files` and `cluster.apiServer` injector. Talos versions before 1.14
+retain the legacy injector and do not consume `spec.oidc.apps`.
+
+The v1.14 control-plane patches also preserve existing node behavior through
+the new configuration documents: `KubeNodeConfig` removes the control-plane
+`NoSchedule` taint, `KubeProxyConfig` disables kube-proxy for Cilium, and the
+default `KubeFlannelCNIConfig` is deleted. See the Talos references for
+[`KubeNodeConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubenodeconfig),
+[`KubeProxyConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeproxyconfig),
+and [`KubeFlannelCNIConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeflannelcniconfig).
+
+The authentication config keeps anonymous access enabled only for kube-apiserver
+health endpoints and rejects usernames beginning with `system:`. Client ID
+values are not written into the `Cluster` claim, but are copied into observed
+Crossplane object status and generated Talos bootstrap configuration. Protect
+the management cluster’s Crossplane resources and bootstrap Secrets accordingly.
+
+This Talos 1.14 path requires
+[CABPT v0.6.13](https://github.com/siderolabs/cluster-api-bootstrap-provider-talos/releases/tag/v0.6.13)
+and
+[CACPPT v0.5.14](https://github.com/siderolabs/cluster-api-control-plane-provider-talos/releases/tag/v0.5.14).
+The referenced Secret is observed through the
+[Crossplane Kubernetes provider `Object`](https://github.com/crossplane-contrib/provider-kubernetes/blob/main/docs/enhanced-provider-k8s.md).
+See the official [Talos KubeAuthenticationConfig reference](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeauthenticationconfig)
+and [KubeAPIServerConfig reference](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeapiserverconfig),
+plus the [Talos 1.14 configuration migration notes](https://docs.siderolabs.com/talos/v1.14/getting-started/what's-new-in-talos).
+
+Control-plane `rolloutStrategy` remains `OnDelete`; changing an OIDC list
+updates the desired bootstrap template but does not itself replace running
+control-plane machines. Plan and verify any control-plane rollout separately.
+
 This chart is exercised by a real two-site, multi-province private cloud rather
 than only a virtual test environment. See
 [CoRE deployment environment](ENVIRONMENT.md) for the physical fleet, network
