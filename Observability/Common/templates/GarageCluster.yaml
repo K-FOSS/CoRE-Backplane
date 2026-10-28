@@ -12,9 +12,10 @@ spec:
   replication:
     factor: {{ int .Values.garage.replicationFactor }}
     consistencyMode: 'consistent'
-  rpcSecretRef:
-    name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
-    key: 'rpc-secret'
+  network:
+    rpcSecretRef:
+      name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+      key: 'rpc-secret'
   admin:
     adminTokenSecretRef:
       name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}

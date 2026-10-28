@@ -1,0 +1,37 @@
+{{- if .Values.garage.enabled }}
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-3'
+spec:
+  length: 32
+  encoding: 'hex'
+  allowRepeat: true
+  secretKeys:
+    - 'AdminToken'
+    - 'RPCSecret'
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ printf "%s-bootstrap-generated" .Values.garage.name | squote }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+spec:
+  refreshPolicy: 'CreatedOnce'
+  target:
+    name: {{ .Values.garage.bootstrap.generatedSecretName | squote }}
+    creationPolicy: 'Owner'
+    template:
+      type: 'Opaque'
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+{{- end }}
