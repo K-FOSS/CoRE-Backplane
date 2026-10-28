@@ -43,8 +43,8 @@ controllers:
       sonarr:
         image:
           repository: {{ $.Values.sonarr.image }}
-          tag: {{ default "latest" $.Values.sonarr.tag }}
-          digest: {{ default "latest" $.Values.sonarr.digest }}
+          tag: {{ required "sonarr.tag is required" $.Values.sonarr.tag | squote }}
+          digest: {{ required "sonarr.digest is required" $.Values.sonarr.digest | squote }}
           pullPolicy: IfNotPresent
 
         ports:
@@ -116,7 +116,8 @@ controllers:
       prefetcharr:
         image:
           repository: {{ $.Values.prefetcharr.image }}
-          tag: {{ default "latest" $.Values.prefetcharr.tag }}
+          tag: {{ required "prefetcharr.tag is required" $.Values.prefetcharr.tag | squote }}
+          digest: {{ required "prefetcharr.digest is required" $.Values.prefetcharr.digest | squote }}
           pullPolicy: IfNotPresent
 
         env:
