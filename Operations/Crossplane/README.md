@@ -17,11 +17,11 @@ The runtime configuration sets:
 - `--sync=2h` and `--poll=30m` for periodic resynchronization and external drift checks.
 - On YVR and YXL, `--max-reconcile-rate=8`, allowing a burst rate for new or changed Workspaces while bounding provider CPU use. Other targets use rate `1` unless the fleet owner changes the selection in the ApplicationSet.
 - On YVR and YXL, a `1 CPU` and `1Gi` memory request, with `8 CPU` and `8Gi` limits. The Terraform provider runs Terraform subprocesses, so its resource use can exceed the controller's steady-state usage during plans and applies.
-- A memory-backed plugin cache capped at `4Gi`. The cache is ephemeral and is repopulated after a provider restart.
+- No shared Terraform plugin cache. Multiple Workspace reconciles can run Terraform initialization at once, and HashiCorp documents that a shared plugin cache is not concurrency-safe.
 
 The upstream [Terraform provider documentation](https://github.com/crossplane-contrib/provider-terraform#further-configuration) explains that polling runs `terraform plan` for existing Workspaces, while changes to a Workspace specification are reconciled immediately. It also notes that a reconcile rate above one can use a similar number of CPUs. This configuration therefore leaves immediate application provisioning event-driven, reduces repeated drift scans, and caps a YVR/YXL burst at eight CPUs. The cap is above the observed YVR peak of about 1.4 CPUs and leaves node capacity for Crossplane, GitOps, and other workloads. The `30m` poll interval only changes how quickly out-of-band drift is detected; it does not wait 30 minutes to reconcile a changed Workspace specification.
 
-The plugin cache directory is mounted at `/tf/plugin-cache` and selected with `TF_PLUGIN_CACHE_DIR`. Keep the memory volume limit below the container memory limit so Terraform processes retain room for plan and apply working memory. A provider restart loses the cache but not remote Terraform state; Workspaces must use their configured remote state for durable state.
+Terraform installs provider plugins in each Workspace's working directory. The shared cache stays disabled because concurrent `terraform init` operations have undefined behavior when they write to it; see HashiCorp's [Terraform CLI plugin cache documentation](https://developer.hashicorp.com/terraform/cli/config/config-file#provider-plugin-cache). This trades repeated downloads for safe concurrent configuration. If registry traffic becomes material, use a provider installation mirror or another design with single-writer cache semantics. The provider container remains bounded at `8Gi` so Terraform subprocesses retain working memory during plans and applies.
 
 ## Configuration and data flow
 
@@ -29,7 +29,7 @@ Applications create Crossplane claims and composed managed resources. Terraform-
 
 ## Operations and verification
 
-After changing the provider runtime configuration, reconcile only the affected Crossplane child applications. Confirm the `DeploymentRuntimeConfig` arguments, resource requests and limits, cache mount, and resulting provider deployment. Observe provider CPU and memory alongside node utilization, then verify that new Workspace changes begin reconciling promptly and that existing Workspace conditions settle.
+After changing the provider runtime configuration, reconcile only the affected Crossplane child applications. Confirm the `DeploymentRuntimeConfig` arguments and resource requests and limits, then observe provider CPU and memory alongside node utilization. Verify that new Workspace changes begin reconciling promptly and that existing Workspace conditions settle.
 
 Useful read-only checks include:
 
@@ -44,4 +44,4 @@ Use the target cluster context when checking YXL or another cluster. Provider re
 
 ## Security and recovery
 
-The Terraform runtime may receive provider credentials through referenced Secrets and may access network services while initializing modules and providers. Keep credentials in Secret references, retain TLS mounts injected by the installed Crossplane package runtime, and do not copy Secret values into logs or manifests. To roll back a runtime change, publish a corrective Git commit and reconcile the affected child application; this rolls the provider deployment and clears its in-memory plugin cache, but does not delete Terraform-managed infrastructure.
+The Terraform runtime may receive provider credentials through referenced Secrets and may access network services while initializing modules and providers. Keep credentials in Secret references, retain TLS mounts injected by the installed Crossplane package runtime, and do not copy Secret values into logs or manifests. To roll back a runtime change, publish a corrective Git commit and reconcile the affected child application; this rolls the provider deployment but does not delete Terraform-managed infrastructure.

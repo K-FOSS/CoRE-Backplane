@@ -11,11 +11,6 @@ spec:
       selector: {}
       template:
         spec:
-          volumes:
-            - name: 'terraform-plugin-cache'
-              emptyDir:
-                medium: 'Memory'
-                sizeLimit: '4Gi'
           containers:
             - name: 'package-runtime'
               args:
@@ -34,12 +29,6 @@ spec:
                   cpu: {{ .limits.cpu | squote }}
                   memory: {{ .limits.memory | squote }}
               {{- end }}
-              env:
-                - name: 'TF_PLUGIN_CACHE_DIR'
-                  value: '/tf/plugin-cache'
-              volumeMounts:
-                - name: 'terraform-plugin-cache'
-                  mountPath: '/tf/plugin-cache'
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
