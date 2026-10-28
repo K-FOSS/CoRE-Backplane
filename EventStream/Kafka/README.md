@@ -81,6 +81,18 @@ for `core-kafka-oidc`; a changed local connection Secret therefore causes
 Strimzi to roll the brokers. The broker does not consume this Secret for
 normal JWT validation, so this restart is a credential-rotation safeguard.
 
+The Kafka client credential also feeds the OpenNMS core directly, the Kafbat
+UI pod, and each OpenNMS Minion through its site-local `opennms-minion-kafka`
+ExternalSecret. The core, Kafbat UI, and Minion pod templates all carry
+`secret.reloader.stakater.com/reload` annotations for their target Secrets;
+Strimzi Kafka pods retain the same annotation for `core-kafka-oidc`. Keep this
+annotation on every new workload that reads either the source connection
+Secret or a derived Secret. Changing `oidc.clientSecretRotation` changes the
+Terraform `random_password` keeper and rotates only the Kafka OAuth client;
+the PushSecret then publishes the new value and ExternalSecrets refresh the
+consumers. The separate Kafbat UI client secret does not rotate with this
+field.
+
 ## OpenNMS IPC topics
 
 The broker disables automatic topic creation, so the chart declares the

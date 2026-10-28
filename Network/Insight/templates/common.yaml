@@ -1645,6 +1645,7 @@ persistence:
     "replicas" 1
     "pod" (dict
       "automountServiceAccountToken" false
+      "annotations" (dict "secret.reloader.stakater.com/reload" .Values.minion.kafka.credentialsSecretName)
       "nodeSelector" .Values.minion.nodeSelector
       "securityContext" (dict "runAsNonRoot" true "runAsUser" 10001 "runAsGroup" 10001 "seccompProfile" (dict "type" "RuntimeDefault")))
     "containers" (dict "minion" (dict
@@ -1683,6 +1684,15 @@ persistence:
     "targetPort" "traps"
     "protocol" "UDP"))))) .Values -}}
 {{- end }}
+{{- end }}
+
+{{- if .Values.minion.enabled }}
+{{- $_ := mergeOverwrite .Values (dict "persistence" (dict
+  "minion-confd" (dict
+    "type" "configMap"
+    "name" (printf "%s-minion-confd" .Release.Name)
+    "advancedMounts" (dict "minion" (dict "minion" (list
+      (dict "path" "/opt/minion/confd/confd.toml" "subPath" "confd.toml" "readOnly" true))))))) .Values -}}
 {{- end }}
 
 {{- if and .Values.minion.enabled (not .Values.opennms.enabled) }}

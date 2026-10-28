@@ -71,6 +71,14 @@ echo and Kafka broker checks. See upstream
 [Minion health-check setup](https://docs.opennms.com/horizon/36/deployment/minion/install.html)
 and the [health REST API](https://docs.opennms.com/horizon/36/development/rest/health_rest.html).
 
+The Minion mounts a generated `confd.toml` with `log-level = "info"`.
+Confd's debug mode logs rendered configuration values, including Kafka
+credentials; keep it below debug in normal operation. The Minion pod watches
+its generated `opennms-minion-kafka` Secret through Stakater Reloader so a
+rotated OAuth client secret is loaded without waiting for a manual restart.
+OpenNMS documents the [Minion container configuration](https://docs.opennms.com/horizon/36/reference/configuration/minion-docker.html)
+and the upstream [Minion confd configuration](https://github.com/OpenNMS/opennms/blob/develop/opennms-container/minion/CONFD_README.md).
+
 Cilium Global Services need a same-name Service in each participating cluster.
 Cluster Mesh shares the Home1-backed service endpoints and synchronizes their
 EndpointSlices for service discovery; see [Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/).

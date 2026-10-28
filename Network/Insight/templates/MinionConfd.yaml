@@ -1,0 +1,12 @@
+{{- if .Values.minion.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Release.Name }}-minion-confd'
+  namespace: {{ .Release.Namespace | squote }}
+data:
+  confd.toml: |-
+    confdir = "/opt/minion/confd"
+    backend = "file"
+    log-level = "info"
+{{- end }}

@@ -195,6 +195,7 @@ oidc:
   applicationName: 'Core Kafka'
   applicationSlug: 'core-kafka'
   clientId: 'core-kafka'
+  clientSecretRotation: '2026-10-28'
   authentikUrl: 'https://idp.mylogin.space'
   authorizationFlowSlug: 'default-provider-authorization-explicit-consent'
   invalidationFlowSlug: 'default-provider-invalidation-flow'
@@ -220,6 +221,8 @@ external:
 kafka-ui:
   enabled: true
   fullnameOverride: 'core-kafka-ui'
+  podAnnotations:
+    secret.reloader.stakater.com/reload: 'core-kafka-oidc'
   image:
     tag: 'v1.5.0'
   replicaCount: 1

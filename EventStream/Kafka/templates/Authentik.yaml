@@ -43,6 +43,9 @@ spec:
         numeric = true
         upper   = true
         special = true
+        keepers = {
+          rotation = {{ .Values.oidc.clientSecretRotation | quote }}
+        }
       }
 
       resource "random_password" "ui_client_secret" {
