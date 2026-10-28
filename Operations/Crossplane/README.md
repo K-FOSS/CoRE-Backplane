@@ -27,6 +27,31 @@ Terraform installs provider plugins in each Workspace's working directory. The s
 
 Applications create Crossplane claims and composed managed resources. Terraform-backed managed resources reference `ProviderConfig` objects, which select the provider credentials and Terraform backend. The provider turns Workspace specification changes into Terraform operations and periodically checks existing Workspaces for external drift. Connection outputs are published through the resource's configured Kubernetes Secret reference; never inspect or print Secret values while troubleshooting.
 
+### Garage resources composed by User claims
+
+On `core-dc1-talos-prod`, Crossplane composes the Garage `GarageBucket` and
+`GarageKey` resources requested by the `mylogin.space` User Composition. Its
+controller needs cluster-wide `get`, `list`, and `watch` access because its
+composed-resource cache lists these namespaced kinds at cluster scope. The
+additional writer Role grants `create`, `update`, `patch`, and `delete` only in
+`core-prod`, where Garage-backed User claims are allowed. The
+[Crossplane RBAC model](https://docs.crossplane.io/latest/concepts/pods/#crossplane-clusterroles)
+and [Garage resource reference](https://rajsinghtech.github.io/garage-operator/reference/custom-resources/)
+describe the relevant controllers and resource kinds.
+
+The Crossplane ApplicationSet enables this narrow permission set only for
+`core-dc1-talos-prod`; other clusters render no Garage RBAC resources. The
+Garage operator remains responsible for reconciling bucket and key status.
+Verify the read grant is available to the Crossplane service account, that
+Garage writes are allowed in `core-prod`, and that writes are denied in other
+namespaces:
+
+```sh
+kubectl --context core-dc1-talos-prod auth can-i list garagebuckets.garage.rajsingh.info --as=system:serviceaccount:crossplane-system-prod:crossplane
+kubectl --context core-dc1-talos-prod auth can-i create garagekeys.garage.rajsingh.info -n core-prod --as=system:serviceaccount:crossplane-system-prod:crossplane
+kubectl --context core-dc1-talos-prod auth can-i create garagekeys.garage.rajsingh.info -n default --as=system:serviceaccount:crossplane-system-prod:crossplane
+```
+
 ## Authentik provider upgrades
 
 The shared [`authentik` Terraform ProviderConfig](templates/Providers/Terraform/Authentik/AuthentikTerraformConfig.yaml) pins `goauthentik/authentik` for all Workspaces that reference it and sets `pluginCache: false`. Each Workspace maintains its own Terraform dependency lock. Updating the pin alone does not upgrade an existing lock; Terraform initialization fails with a locked-version mismatch until that Workspace runs [`terraform init -upgrade`](https://developer.hashicorp.com/terraform/cli/commands/init#upgrade).

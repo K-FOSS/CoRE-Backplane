@@ -48,6 +48,8 @@ spec:
           env:
             - name: 'LOVELY_HELM_MERGE'
               value: |-
+                garagePermissions:
+                  enabled: {{ if eq .name "core-dc1-talos-prod" }}true{{ else }}false{{ end }}
                 providerTerraform:
                   maxReconcileRate: {{ if or (eq .name "core-home1-talos-prod") (eq .name "core-dc1-talos-prod") }}8{{ else }}1{{ end }}
                   {{- if or (eq .name "core-home1-talos-prod") (eq .name "core-dc1-talos-prod") }}
