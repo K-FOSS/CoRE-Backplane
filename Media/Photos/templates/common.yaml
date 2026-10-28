@@ -77,14 +77,29 @@ global:
 controllers:
   server:
     strategy: Recreate
-    containers:
-      main:
+    initContainers:
+      render-config:
         image:
-          repository: 'ghcr.io/immich-app/immich-server'
-          tag: {{ required "immich.version is required" .Values.immich.version | squote }}
+          repository: 'docker.io/library/haproxy'
+          tag: '3.2.23-alpine3.24'
+          digest: 'sha256:57b361f7e5cec8279a5d82ea4d4941936d12cf35305146383b9cb01200017a40'
+        command:
+          - 'sh'
+          - '-ec'
+        args:
+          - |
+            busybox awk '
+            {
+              line = $0
+              while (match(line, /\$\{OAUTH_CLIENT_ID\}/)) {
+                line = substr(line, 1, RSTART - 1) ENVIRON["OAUTH_CLIENT_ID"] substr(line, RSTART + RLENGTH)
+              }
+              while (match(line, /\$\{OAUTH_CLIENT_SECRET\}/)) {
+                line = substr(line, 1, RSTART - 1) ENVIRON["OAUTH_CLIENT_SECRET"] substr(line, RSTART + RLENGTH)
+              }
+              print line
+            }' /config-template/immich-config.yaml > /config/immich-config.yaml
         env:
-          IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
-          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}:3003'
           OAUTH_CLIENT_ID:
             valueFrom:
               secretKeyRef:
@@ -95,6 +110,14 @@ controllers:
               secretKeyRef:
                 name: 'photos-oidc'
                 key: 'client_secret'
+    containers:
+      main:
+        image:
+          repository: 'ghcr.io/immich-app/immich-server'
+          tag: {{ required "immich.version is required" .Values.immich.version | squote }}
+        env:
+          IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
+          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}:3003'
           DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
           DB_PORT: '5432'
           DB_USERNAME:
@@ -285,6 +308,15 @@ persistence:
         path: 'immich-config.yaml'
     advancedMounts:
       server:
+        render-config:
+          - path: '/config-template'
+            readOnly: true
+  rendered-config:
+    type: emptyDir
+    advancedMounts:
+      server:
+        render-config:
+          - path: '/config'
         main:
           - path: '/config'
             readOnly: true

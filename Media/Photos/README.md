@@ -58,9 +58,10 @@ Immich OAuth is automated with an Authentik OIDC provider and one generated
 both the client ID and client secret, writes them and the
 client ID and client secret outputs to the `photos-oidc` Secret, while the
 non-secret Immich configuration is stored in the chart-generated
-`photos-immich-config` ConfigMap. The common-library workload mounts the
-ConfigMap and reads the OAuth credentials from the Secret. No OIDC credential is
-stored in Git. The provider allows the Immich web and mobile redirect URIs and
+`photos-immich-config` ConfigMap. An init container renders the two
+Secret-backed placeholders into an ephemeral config volume before the Immich
+server starts; no OIDC credential is stored in Git or the ConfigMap. The
+provider allows the Immich web and mobile redirect URIs and
 is restricted to the configured `Media Consumers` group. See [Immich OAuth configuration](https://docs.immich.app/administration/oauth/)
 and [Authentik OAuth2 providers](https://docs.goauthentik.io/add-secure-apps/providers/oauth2/).
 The connection Secret is published by the [Crossplane Terraform provider](https://github.com/crossplane-contrib/provider-terraform)
