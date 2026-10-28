@@ -1,46 +1,56 @@
 apiVersion: pkg.crossplane.io/v1beta1
 kind: DeploymentRuntimeConfig
 metadata:
-  name: provider-terraform
+  name: 'provider-terraform'
 spec:
   deploymentTemplate:
     metadata:
       labels:
-        logs: loki-myloginspace
+        logs: 'loki-myloginspace'
     spec:
       selector: {}
       template:
         spec:
           volumes:
-            - name: terraform-plugin-cache
+            - name: 'terraform-plugin-cache'
               emptyDir:
-                medium: Memory
-                sizeLimit: 8Gi
+                medium: 'Memory'
+                sizeLimit: '4Gi'
           containers:
-            - name: package-runtime
+            - name: 'package-runtime'
               args:
-                - -d
-                - --log-encoding=json
-                - --sync=2h
-                - --poll=30m
-                - --poll-jitter=15m
+                - '-d'
+                - '--log-encoding=json'
+                - '--sync=2h'
+                - '--poll=30m'
+                - '--poll-jitter=15m'
+                - '--max-reconcile-rate={{ .Values.providerTerraform.maxReconcileRate }}'
+              {{- with .Values.providerTerraform.resources }}
+              resources:
+                requests:
+                  cpu: {{ .requests.cpu | squote }}
+                  memory: {{ .requests.memory | squote }}
+                limits:
+                  cpu: {{ .limits.cpu | squote }}
+                  memory: {{ .limits.memory | squote }}
+              {{- end }}
               env:
-                - name: TF_PLUGIN_CACHE_DIR
-                  value: /tf/plugin-cache
+                - name: 'TF_PLUGIN_CACHE_DIR'
+                  value: '/tf/plugin-cache'
               volumeMounts:
-                - name: terraform-plugin-cache
-                  mountPath: /tf/plugin-cache
+                - name: 'terraform-plugin-cache'
+                  mountPath: '/tf/plugin-cache'
 ---
 apiVersion: pkg.crossplane.io/v1
 kind: Provider
 metadata:
-  name: provider-terraform
+  name: 'provider-terraform'
 
   annotations:
     argocd.argoproj.io/sync-wave: '20'
 
 spec:
   # TODO: Get this automated with Renovate
-  package: registry.writemy.codes/library/terraform:v0.20.1
+  package: 'registry.writemy.codes/library/terraform:v0.20.1'
   runtimeConfigRef:
-    name: provider-terraform
+    name: 'provider-terraform'

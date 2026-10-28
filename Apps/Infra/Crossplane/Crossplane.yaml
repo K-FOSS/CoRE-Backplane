@@ -45,6 +45,20 @@ spec:
         targetRevision: HEAD
         plugin:
           name: argocd-lovely-plugin
+          env:
+            - name: 'LOVELY_HELM_MERGE'
+              value: |-
+                providerTerraform:
+                  maxReconcileRate: {{ if or (eq .name "core-home1-talos-prod") (eq .name "core-dc1-talos-prod") }}8{{ else }}1{{ end }}
+                  {{- if or (eq .name "core-home1-talos-prod") (eq .name "core-dc1-talos-prod") }}
+                  resources:
+                    requests:
+                      cpu: '1'
+                      memory: '1Gi'
+                    limits:
+                      cpu: '8'
+                      memory: '8Gi'
+                  {{- end }}
 
       destination:
         server: '{{ .server }}'
