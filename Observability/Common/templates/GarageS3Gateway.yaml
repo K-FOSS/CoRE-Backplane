@@ -4,6 +4,9 @@ kind: HTTPRoute
 metadata:
   name: 'observability-garage-s3'
   namespace: {{ .Release.Namespace | squote }}
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
 spec:
   parentRefs:
     - name: {{ .Values.garage.tls.gatewayName | squote }}

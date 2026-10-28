@@ -33,13 +33,18 @@ describe this `storage.topologySpreadConstraints` field.
 
 Garage's S3 listener serves HTTP, so the chart uses the existing Envoy Gateway
 `main-gw` HTTPS listener to terminate TLS and routes requests to Garage's port
-`3900`. The client endpoint is
-`https://observability-garage-s3.core-prod.svc.<cluster-domain>`. The HTTPRoute
-matches that hostname and preserves the SigV4 `Host` value while routing to
-Garage. This follows CoRE-Business AI's [Envoy Gateway and HTTPRoute pattern](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI/templates/Gateway/Gateway.yaml). The listener references the exact cert-manager certificate
-issued by [Network/TLS Certificates](../../Network/TLS/Certificates/README.md).
-The hostname is inside the cluster's valid FQDN and is not published to public
-DNS. Garage itself does not terminate TLS; see the operator's
+`3900`. Mimir connects to
+`observability-garage-s3.core-prod.svc.<cluster-domain>:443`. The HTTPRoute
+matches that FQDN and preserves the SigV4 `Host` value while routing to Garage.
+Its `wan-mode: 'public'` label lets the deployed ExternalDNS controller publish
+the route hostname against the Gateway address; `lan-mode: 'private'` retains
+the private network classification. No alias Service or generated Envoy
+Service name is part of the client endpoint. This follows CoRE-Business AI's
+[Envoy Gateway and HTTPRoute pattern](https://slop.writemy.codes/CoRE/CoRE-Business/src/branch/main/AI/templates/Gateway/Gateway.yaml).
+The listener references the exact cert-manager certificate issued by
+[Network/TLS Certificates](../../Network/TLS/Certificates/README.md). Garage
+S3 access remains protected by the operator-generated, bucket-scoped key.
+Garage itself does not terminate TLS; see the operator's
 [TLS guidance](https://rajsinghtech.github.io/garage-operator/how-to/tls/).
 
 External Secrets Operator generates distinct 32-character random values and
