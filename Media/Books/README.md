@@ -21,10 +21,10 @@ The new claim is named `media-augy-books`, uses `media-augy-storage`, requests
 chart's generic default leaves this claim disabled until an ApplicationSet
 provides tenant-specific enablement and size.
 
-The existing Chaptarr config claim remains mounted at `/config`. Its shared
-`${tenant}-media` claim remains mounted at `/ebooks` and `/audiobooks`, and its
-`${tenant}-downloads` claim remains mounted at `/downloads`. These existing
-claims and paths are independent of `media-augy-books`.
+The Chaptarr config claim remains mounted at `/config`. Chaptarr does not mount
+the legacy `${tenant}-media` or `${tenant}-downloads` claims; those claims
+remain owned by Media/Common and their data is not copied or deleted by this
+change.
 
 Media/Common provisions `media-augy-storage` with the Longhorn provisioner,
 one replica, volume expansion enabled, and a `Delete` reclaim policy. Longhorn
@@ -40,7 +40,8 @@ removing the claim or changing its lifecycle.
 
 After reconciliation, verify `media-augy-books` is Bound with
 `ReadWriteMany` and `storageClassName: media-augy-storage`, then confirm
-Chaptarr mounts it at `/Books`. Change the requested capacity through
+Chaptarr mounts it at `/Books` and no legacy media or downloads claim is
+mounted. Change the requested capacity through
 `booksVolumeSize` in the ApplicationSet; the StorageClass allows expansion.
-Shrinking the claim or moving files from `/ebooks` or `/audiobooks` requires a
+Shrinking the claim or moving files from an existing library requires a
 separate data operation.

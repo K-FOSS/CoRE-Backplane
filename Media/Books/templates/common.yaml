@@ -59,27 +59,6 @@ persistence:
         chaptarr:
           - path: '/config'
   {{- end }}
-  {{- if .Values.chaptarr.volumes.media.enabled }}
-  media:
-    enabled: true
-    type: persistentVolumeClaim
-    existingClaim: {{ printf "%s-media" .Values.tenant.name | squote }}
-    advancedMounts:
-      chaptarr:
-        chaptarr:
-          - path: '/ebooks'
-          - path: '/audiobooks'
-  {{- end }}
-  {{- if .Values.chaptarr.volumes.downloads.enabled }}
-  downloads:
-    enabled: true
-    type: persistentVolumeClaim
-    existingClaim: {{ printf "%s-downloads" .Values.tenant.name | squote }}
-    advancedMounts:
-      chaptarr:
-        chaptarr:
-          - path: '/downloads'
-  {{- end }}
   {{- if and .Values.chaptarr.enabled .Values.chaptarr.volumes.books.enabled }}
   books:
     enabled: true
