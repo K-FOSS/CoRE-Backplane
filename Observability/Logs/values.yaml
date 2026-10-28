@@ -50,8 +50,6 @@ loki:
           secretKeyRef:
             name: 'loki-core'
             key: 'S3Hostname'
-      - name: 'S3_BUCKET'
-        value: 'loki-chunks'
       - name: 'S3_ACCESS_KEY'
         valueFrom:
           secretKeyRef:
@@ -62,8 +60,6 @@ loki:
           secretKeyRef:
             name: 'loki-core-s3-creds'
             key: 'SecretAccessKey'
-      - name: 'S3_SESSION_TOKEN'
-        value: ''
 
   loki:
     auth_enabled: true
@@ -93,7 +89,7 @@ loki:
     storage:
       type: s3
       bucketNames:
-        chunks: ${S3_BUCKET}
+        chunks: 'loki-chunks'
         ruler: loki-rules-temp
         admin: loki-admin
       s3:
@@ -101,7 +97,7 @@ loki:
         region: us-east-1
         accessKeyId: ${S3_ACCESS_KEY}
         secretAccessKey: ${S3_SECRET_ACCESS_KEY}
-        session_token: ${S3_SESSION_TOKEN}
+        session_token: ''
         s3ForcePathStyle: true
         insecure: false
 
@@ -147,8 +143,6 @@ loki:
           secretKeyRef:
             name: 'loki-core'
             key: 'S3Hostname'
-      - name: 'S3_BUCKET'
-        value: 'loki-chunks'
       - name: 'S3_ACCESS_KEY'
         valueFrom:
           secretKeyRef:
@@ -159,8 +153,6 @@ loki:
           secretKeyRef:
             name: 'loki-core-s3-creds'
             key: 'SecretAccessKey'
-      - name: 'S3_SESSION_TOKEN'
-        value: ''
 
   gateway:
     enabled: true

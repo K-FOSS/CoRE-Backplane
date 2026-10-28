@@ -91,9 +91,10 @@ operator and cluster must be ready first.
 
 The claim grants read/write access only to those three Garage buckets and
 disables the username-named bucket. `loki.global.extraEnv` injects the stable
-User Secret references into every microservice, sets the fixed chunks bucket,
-and supplies an empty session token because Garage service-account keys do not
-use temporary tokens. Loki uses region `garage`, HTTPS through the
+User Secret references for endpoint and credentials into every microservice.
+The chunks bucket is fixed to `loki-chunks`; the config uses an empty session
+token because Garage service-account keys do not use temporary tokens. Loki
+uses region `garage`, HTTPS through the
 `observability-garage-s3` route, and path-style addressing. The schema remains
 TSDB `v13` from `2024-04-01`, prefix `loki_index_`, with a 24-hour period.
 
