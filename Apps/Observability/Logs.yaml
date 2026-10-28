@@ -37,7 +37,6 @@ spec:
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
                     lokiGarageEnabled: true
-                    lokiS3Bucket: 'loki-chunks'
 
                 - name: core-home1-talos-prod
                   values:
@@ -62,7 +61,6 @@ spec:
                     lokiGlobalAffinity: 'remote'
                     lokiGlobalShared: 'false'
                     lokiGarageEnabled: false
-                    lokiS3Bucket: 'loki-chunks'
 
           - clusters:
               selector:
@@ -144,26 +142,6 @@ spec:
                   global:
                     podAnnotations:
                       secret.reloader.stakater.com/reload: 'loki-core,loki-core-s3-creds'
-                    extraEnv:
-                      - name: 'S3_ENDPOINT'
-                        valueFrom:
-                          secretKeyRef:
-                            name: 'loki-core'
-                            key: 'S3Hostname'
-                      - name: 'S3_BUCKET'
-                        value: '{{ .values.lokiS3Bucket }}'
-                      - name: 'S3_ACCESS_KEY'
-                        valueFrom:
-                          secretKeyRef:
-                            name: 'loki-core-s3-creds'
-                            key: 'AccessKey'
-                      - name: 'S3_SECRET_ACCESS_KEY'
-                        valueFrom:
-                          secretKeyRef:
-                            name: 'loki-core-s3-creds'
-                            key: 'SecretAccessKey'
-                      - name: 'S3_SESSION_TOKEN'
-                        value: ''
                   loki:
                     storage:
                       s3:
