@@ -198,25 +198,6 @@ spec:
                                   timeout: 1800
             ---
             {{- define "talos-params" -}}
-            - op: replace
-              path: /machine/install/diskSelector
-              value:
-                size: '>= 120G'
-
-            #
-            # Longhorn Requirements
-            #
-            - op: add
-              path: /machine/kubelet/extraMounts
-              value:
-                - destination: /var/lib/longhorn
-                  type: bind
-                  source: /var/lib/longhorn
-                  options:
-                    - bind
-                    - rshared
-                    - rw
-
             - op: add
               path: /machine/sysctls
               value:
