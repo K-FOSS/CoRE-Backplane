@@ -23,6 +23,12 @@ spec:
             - name: ARGOCD_EXEC_TIMEOUT
               value: 300s
 
+            - name: LOVELY_HELM_PATH
+              value: '/opt/helm-cache-wrappers/helm'
+
+            - name: PATH
+              value: '/opt/helm-cache-wrappers:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin'
+
           securityContext:
             runAsNonRoot: true
             runAsUser: 999
@@ -49,8 +55,22 @@ spec:
 
             - name: lovely-tmp
               mountPath: /tmp
+
+            - name: 'helm-cache-wrappers'
+              mountPath: '/opt/helm-cache-wrappers'
+              readOnly: true
               
       volumes:
+        - name: 'helm-cache-wrappers'
+          configMap:
+            name: 'argocd-helm-cache-wrappers'
+            defaultMode: 365
+            items:
+              - key: 'argocd-lovely-plugin'
+                path: 'argocd-lovely-plugin'
+              - key: 'helm'
+                path: 'helm'
+
         # A temporary directory for the tool to work in.
         - name: lovely-tmp
           emptyDir:

@@ -2,6 +2,12 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: argocd
 
+configMapGenerator:
+  - name: 'argocd-helm-cache-wrappers'
+    files:
+      - 'argocd-lovely-plugin=argocd-lovely-plugin-wrapper.sh'
+      - 'helm=helm-cache-wrapper.sh'
+
 # resources:
 #   - https://github.com/hyperspike/argocd-cluster-register/releases/download/v0.0.22/install.yaml
 

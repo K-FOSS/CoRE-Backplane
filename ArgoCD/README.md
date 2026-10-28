@@ -47,7 +47,29 @@ Chart.yaml + values.yaml + LOVELY_HELM_MERGE
 [`argocd-lovely-plugin.yaml`](argocd-lovely-plugin.yaml) is a strategic merge
 patch for `argocd-repo-server`. It adds a `lovely-plugin` sidecar, a
 memory-backed temporary volume, and access to the repo-server plugin sockets.
-The sidecar reads Vault configuration from `argocd-vault-config`.
+The sidecar follows the upstream [Argo CD Config Management Plugin
+installation model](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/)
+and reads Vault configuration from `argocd-vault-config`.
+
+The pinned [Lovely plugin 1.2.5 Helm processor](https://github.com/crumbhole/argocd-lovely-plugin/blob/1.2.5/pkg/processor/helmProcessor.go)
+passes a fixed `/tmp/.helm` repository config, registry config, and chart-index
+cache to Helm. It also adds chart repositories and runs `helm repo update`
+during manifest generation. Since the sidecar handles concurrent generation
+requests, those writes can overlap and leave empty index files. The
+[`argocd-helm-cache-wrappers` ConfigMap](kustomization.yaml) supplies a wrapper
+for Lovely and Helm: each Lovely invocation gets a private temporary cache and
+repository configuration shared by its Helm commands, then removes it when
+rendering exits. This keeps repository updates enabled while isolating
+concurrent applications. The scripts validate the fixed arguments from the
+pinned plugin version and fail closed if an upstream image changes them. A
+forced process kill can leave a temporary directory behind until the
+repo-server pod is replaced; `/tmp` remains bounded by the sidecar's 4 GiB
+memory-backed volume.
+
+To verify the fix, check the Lovely sidecar logs for the absence of
+`empty index.yaml file` errors during concurrent renders, and compare the
+repo-server pod's memory use with its `/tmp` volume limit. Reverting this
+change restores the shared-cache behavior.
 
 The ApplicationSet also changes `argocd-secret` to Crossplane's connection
 secret type because the Authentik Terraform Workspace writes its connection
