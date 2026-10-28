@@ -262,7 +262,10 @@ spec:
             {{- if $app.clientIDSecretRef }}
             ---
             {{ $secretName := printf "oidc-client-secret-%d" $index }}
-            {{ $secret := index $.observed.resources $secretName }}
+            {{ $secret := dict }}
+            {{ if $.observed.resources }}
+            {{ $secret = index $.observed.resources $secretName }}
+            {{ end }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -391,7 +394,10 @@ spec:
                                 {{ $issuer := $app.issuer }}
                                 {{ if $app.clientIDSecretRef }}
                                 {{ $secretName := printf "oidc-client-secret-%d" $index }}
-                                {{ $secret := index $.observed.resources $secretName }}
+                                {{ $secret := dict }}
+                                {{ if $.observed.resources }}
+                                {{ $secret = index $.observed.resources $secretName }}
+                                {{ end }}
                                 {{ if $secret }}
                                 {{ $secretData := $secret.resource.status.atProvider.manifest.data }}
                                 {{ $clientID = (index $secretData $app.clientIDSecretRef.key) | b64dec }}
