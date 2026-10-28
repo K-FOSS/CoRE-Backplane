@@ -338,9 +338,8 @@ spec:
                         storage:
                           backend: s3
                           s3:
-                            endpoint: ${S3_ENDPOINT}
+                            endpoint: '{{ if eq .values.mimirS3Backend "garage" }}observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ else }}s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443{{ end }}'
                             region: '{{ if eq .values.mimirS3Backend "garage" }}garage{{ else }}us-east-1{{ end }}'
-                            bucket_name: ${S3_BUCKET}
                             access_key_id: ${AWS_ACCESS_KEY_ID}
                             secret_access_key: ${AWS_SECRET_ACCESS_KEY}
                             session_token: ${AWS_SESSION_TOKEN}
@@ -351,7 +350,7 @@ spec:
                       blocks_storage:
                         backend: s3
                         s3:
-                          bucket_name: ${S3_BUCKET}
+                          bucket_name: 'mimir-blocks'
                       alertmanager_storage:
                         backend: s3
                         s3:
