@@ -212,8 +212,24 @@ spec:
                       message: 'writeCredentialsSecretRef is required when createCredentials is true'
                     - rule: '!has(self.createServiceAccount) || !self.createServiceAccount || has(self.writeServiceAccountCredentialsSecretRef)'
                       message: 'writeServiceAccountCredentialsSecretRef is required when createServiceAccount is true'
+                    - rule: '!has(self.backend) || self.backend != "garage" || !has(self.createCredentials) || !self.createCredentials'
+                      message: 'Garage does not support temporary LDAP-derived S3 credentials; use createServiceAccount'
+                    - rule: '!has(self.backend) || self.backend != "garage" || !has(self.additionalPolicyStatements) || size(self.additionalPolicyStatements) == 0'
+                      message: 'additionalPolicyStatements is supported only by the MinIO backend'
+                    - rule: '!has(self.backend) || self.backend != "garage" || (has(self.garage) && self.garage.enabled)'
+                      message: 'Garage backend must be enabled by the target cluster configuration'
+                    - rule: '!has(self.backend) || self.backend != "garage" || !has(self.createServiceAccount) || !self.createServiceAccount || !has(self.writeServiceAccountCredentialsSecretRef) || self.writeServiceAccountCredentialsSecretRef.namespace == "core-prod"'
+                      message: 'GarageKey credentials must be written in core-prod with the current Garage namespace'
 
                   properties:
+                    backend:
+                      type: string
+                      enum:
+                        - 'minio'
+                        - 'garage'
+                      default: 'minio'
+                      description: 'S3 implementation; MinIO remains the default'
+
                     enabled:
                       type: boolean
                       default: false
@@ -242,6 +258,20 @@ spec:
                           
                           default: {{ .Values.s3.crossplane.provider }}
 
+                    garage:
+                      type: object
+                      default: {}
+                      properties:
+                        enabled:
+                          type: boolean
+                          default: {{ .Values.s3.garage.enabled }}
+                        clusterName:
+                          type: string
+                          default: {{ .Values.s3.garage.clusterName | squote }}
+                        endpoint:
+                          type: string
+                          default: {{ .Values.s3.garage.endpoint | squote }}
+
                     createUserBucket:
                       type: boolean
 
@@ -257,14 +287,14 @@ spec:
 
                       default: false
 
-                      description: Create and store access keys using the LDAP authentication
+                      description: 'MinIO only: create and store temporary access keys using LDAP authentication'
 
                     createServiceAccount:
                       type: 'boolean'
 
                       default: false
 
-                      description: 'Create a long-lived MinIO service account access key and secret key for the LDAP identity'
+                      description: 'Create long-lived service-account credentials using the selected S3 backend'
 
                     buckets:
                       type: array
@@ -279,7 +309,7 @@ spec:
 
                       default: []
 
-                      description: 'Additional IAM policy statements appended to the generated bucket access statement'
+                      description: 'MinIO only: additional IAM statements appended to the generated bucket access statement'
 
                       items:
                         type: 'object'
@@ -345,7 +375,7 @@ spec:
                     writeServiceAccountCredentialsSecretRef:
                       type: 'object'
 
-                      description: 'Secret to store the long-lived MinIO service account AccessKey and SecretAccessKey'
+                      description: 'Secret destination for long-lived S3 service-account credentials'
 
                       properties:
                         namespace:

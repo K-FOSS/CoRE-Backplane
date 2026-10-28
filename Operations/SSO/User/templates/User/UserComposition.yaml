@@ -42,6 +42,10 @@ spec:
             {{ $s3Creds := "s3-creds-secret" }}
             {{ $s3ServiceAccountCreds := "s3-service-account-creds-secret" }}
 
+            {{- if and .observed.composite.resource.spec.s3.enabled (eq (default "minio" .observed.composite.resource.spec.s3.backend) "garage") (ne .observed.composite.resource.spec.claimRef.namespace "core-prod") }}
+            {{- fail "Garage-backed User claims must be in core-prod on the YXL/DC1 cluster" }}
+            {{- end }}
+
             #
             # PostgreSQL
             #
@@ -389,6 +393,7 @@ spec:
             {{- end }}
 
             {{- $buckets = uniq ($buckets | sortAlpha) }}
+            {{- $createBuckets = uniq ($createBuckets | sortAlpha) }}
 
             {{- $additionalPolicyStatements := list }}
             {{- range $statement := .observed.composite.resource.spec.s3.additionalPolicyStatements }}
@@ -402,6 +407,7 @@ spec:
               {{- $additionalPolicyStatements = append $additionalPolicyStatements $renderedStatement }}
             {{- end }}
 
+            {{- if ne (default "minio" .observed.composite.resource.spec.s3.backend) "garage" }}
             {{- range $bucketIndex, $bucketName := $createBuckets }}
             apiVersion: minio.crossplane.io/v1
             kind: Bucket
@@ -812,6 +818,62 @@ spec:
             {{- end }}
             {{- end }}
 
+            {{- else }}
+            {{- range $bucketName := $createBuckets }}
+            {{- $bucketHash := $bucketName | sha256sum | trunc 12 }}
+            apiVersion: garage.rajsingh.info/v1beta1
+            kind: GarageBucket
+            metadata:
+              name: {{ printf "%.43s-gb-%s" $.observed.composite.resource.metadata.name $bucketHash | lower | replace "_" "-" }}
+              namespace: {{ $.observed.composite.resource.spec.claimRef.namespace }}
+              annotations:
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation (printf "garage-bucket-%s" $bucketHash) }}
+            spec:
+              clusterRef:
+                name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
+              globalAlias: {{ $bucketName | squote }}
+              deletionPolicy: 'Retain'
+            ---
+            {{- end }}
+
+            {{- if .observed.composite.resource.spec.s3.createServiceAccount }}
+            apiVersion: garage.rajsingh.info/v1beta1
+            kind: GarageKey
+            metadata:
+              name: {{ printf "%.52s-garage-key" .observed.composite.resource.metadata.name | lower | replace "_" "-" }}
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+              annotations:
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{ setResourceNameAnnotation "garage-key" }}
+            spec:
+              clusterRef:
+                name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
+              name: {{ printf "S3 key for %s" .observed.composite.resource.spec.name | squote }}
+              neverExpires: true
+              {{- if gt (len $buckets) 0 }}
+              bucketPermissions:
+                {{- range $bucketName := $buckets }}
+                - globalAlias: {{ $bucketName | quote }}
+                  read: true
+                  write: true
+                {{- end }}
+              {{- end }}
+              secretTemplate:
+                name: {{ .observed.composite.resource.spec.s3.writeServiceAccountCredentialsSecretRef.name | squote }}
+                accessKeyIdKey: 'AccessKey'
+                secretAccessKeyKey: 'SecretAccessKey'
+                endpointKey: 'AWS_ENDPOINTS'
+                regionKey: 'AWS_REGION'
+                includeEndpoint: false
+                includeRegion: false
+                additionalData:
+                  AWS_ENDPOINTS: {{ printf "https://%s" .observed.composite.resource.spec.s3.garage.endpoint | squote }}
+                  AWS_REGION: 'garage'
+                  VIRTUAL_HOSTED_STYLE: 'false'
+            ---
+            {{- end }}
+            {{- end }}
             {{- end }}
             {{- end }}
 
@@ -1104,7 +1166,11 @@ spec:
               mongoURI: {{ ( index $.observed.resources $userCredsWorkspace ).connectionDetails.mongoURI }}
               {{- end }}
               {{- if .observed.composite.resource.spec.s3.enabled }}
+              {{- if eq (default "minio" .observed.composite.resource.spec.s3.backend) "garage" }}
+              S3Hostname: {{ .observed.composite.resource.spec.s3.garage.endpoint | b64enc }}
+              {{- else }}
               S3Hostname: {{ ( index $.observed.resources $tfMinio ).connectionDetails.S3Endpoint }}
+              {{- end }}
               {{- end }}
             {{ end }}
             `}}

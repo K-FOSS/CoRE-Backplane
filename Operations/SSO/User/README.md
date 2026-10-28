@@ -1,9 +1,10 @@
 # CoRE-Backplane Operations/SSO/User Stack
 
 This chart installs Crossplane APIs that turn a namespaced identity claim into
-an Authentik account and, optionally, PostgreSQL and MinIO/S3 resources. It is
-the account-provisioning layer used by platform services; it does not deploy
-Authentik, PostgreSQL, MinIO, Crossplane, or their providers. The
+an Authentik account and, optionally, PostgreSQL and MinIO or Garage S3
+resources. MinIO remains the default backend. It is the account-provisioning
+layer used by platform services; it does not deploy Authentik, PostgreSQL,
+MinIO, Garage, Crossplane, or their providers. The
 [Crossplane fleet owner](../../../Apps/Infra/Crossplane/User.yaml) selects its
 target clusters.
 
@@ -41,7 +42,8 @@ User claim
        +-> optional MongoDB LDAP role and database grants
        |
        +-> optional MinIO buckets, policy, LDAP attachment,
-           temporary S3 credentials, and long-lived service-account keys
+       |   temporary S3 credentials, and long-lived service-account keys
+       `-> optional Garage buckets and operator-generated scoped S3 keys
 ```
 
 The base Terraform Workspace generates a random username when `spec.username`
@@ -69,11 +71,16 @@ it does not prove a `User` claim completed.
   Crossplane ProviderConfigs selected by the claim. The provider's
   [PostgreSQL Database API](https://pkg.go.dev/github.com/crossplane-contrib/provider-sql/apis/cluster/postgresql/v1alpha1)
   defines the `lcCollate` and `lcCType` fields used for database creation.
-- For `spec.s3.enabled`: the MinIO `Bucket` CRD plus the Terraform and
-  Crossplane ProviderConfigs selected by the claim. The Terraform provider
-  must support the
+- For `spec.s3.backend: minio` (the default): the MinIO `Bucket` CRD plus the
+  Terraform and Crossplane ProviderConfigs selected by the claim. The
+  Terraform provider must support the
   [`minio_iam_service_account` resource](https://registry.terraform.io/providers/aminueza/minio/3.2.2/docs/resources/iam_service_account)
   when long-lived credentials are requested.
+- For `spec.s3.backend: garage`: the Garage operator and its
+  [`GarageBucket` and `GarageKey` CRDs](https://rajsinghtech.github.io/garage-operator/reference/custom-resources/)
+  must be installed on the target cluster. Garage-backed claims currently
+  belong in `core-prod` on the YXL/DC1 cluster, where the operator watches the
+  namespace and `observability-garage` is installed.
 - For `spec.mongodb.enabled`: the active `mongodb-prod-tf` Terraform
   ProviderConfig, its `RiskIdent/mongodb-driver` provider, and network access
   to the MongoDB replica set. The [MongoDB LDAP authorization
@@ -130,17 +137,20 @@ generated password is 16 characters.
 | `spec.mongodb.uri` | MongoDB URI scheme/prefix; defaults to `mongodb://`. |
 | `spec.mongodb.databases[]` | Databases granted to the LDAP virtual-group role; at least one is required when MongoDB is enabled. |
 | `spec.mongodb.crossplane.terraformProvider` | Overrides the MongoDB Terraform ProviderConfig; defaults to `mongodb-prod-tf`. |
-| `spec.s3.enabled` | Enables bucket, policy, and LDAP-policy reconciliation. |
+| `spec.s3.enabled` | Enables S3 resource reconciliation. |
+| `spec.s3.backend` | Selects `minio` (default) or `garage`. |
 | `spec.s3.region` | Region used for created buckets; defaults to `us-east-1`. |
 | `spec.s3.createUserBucket` | Creates a username-named bucket unless explicitly `false`. |
 | `spec.s3.createBuckets` | Creates entries in `s3.buckets` unless explicitly `false`. |
-| `spec.s3.buckets[]` | Buckets included in the user's MinIO policy. |
-| `spec.s3.additionalPolicyStatements[]` | Appends structured IAM statements to the generated bucket-access statement. |
-| `spec.s3.createCredentials` | Requests temporary LDAP-derived S3 credentials; defaults to `false`. |
+| `spec.s3.buckets[]` | Buckets included in the MinIO policy or granted to the Garage key. |
+| `spec.s3.additionalPolicyStatements[]` | Appends structured IAM statements to MinIO bucket policy; unavailable with Garage. |
+| `spec.s3.createCredentials` | Requests temporary LDAP-derived credentials from MinIO; unavailable with Garage. Defaults to `false`. |
 | `spec.s3.writeCredentialsSecretRef` | Destination for the optional S3 credential Secret. |
-| `spec.s3.createServiceAccount` | Creates long-lived MinIO access-key credentials for the LDAP identity; defaults to `false`. |
-| `spec.s3.writeServiceAccountCredentialsSecretRef` | Destination for the optional long-lived credential Secret. |
+| `spec.s3.createServiceAccount` | Creates a MinIO service-account key or a GarageKey when using Garage; defaults to `false`. |
+| `spec.s3.writeServiceAccountCredentialsSecretRef` | Destination for the long-lived credential Secret. Garage-generated Secrets are namespace-local, so the namespace must match the claim namespace. |
 | `spec.s3.crossplane.*Provider` | Overrides MinIO/S3 provider configuration names. |
+| `spec.s3.garage.clusterName` | GarageCluster name; defaults to `observability-garage`. |
+| `spec.s3.garage.endpoint` | ExternalDNS-published Garage S3 hostname and port, published as `S3Hostname` and used over HTTPS in the generated credential Secret. |
 | `spec.writeConnectionSecretToRef.name` | Claim connection Secret written in the claim namespace. |
 
 `spec.psql.uri` controls only the URI published in `psqlURI`; PostgreSQL
@@ -192,7 +202,7 @@ spec:
     name: gitlab-database
 ```
 
-When enabled, the composition:
+With the default `backend: minio`, the composition:
 
 1. Creates a provider-sql `Role` with login privileges and the generated
    Authentik password.
@@ -272,7 +282,7 @@ to reuse or refresh them. This path handles passwords and access keys inside
 Terraform Workspace connection Secrets. Treat all intermediate and copied
 Secrets as sensitive, and test rotation before depending on it in production.
 
-Long-lived credentials use MinIO's service-account model rather than
+Long-lived MinIO credentials use MinIO's service-account model rather than
 `AssumeRoleWithLDAPIdentity`. Their Secret contains `AccessKey` and
 `SecretAccessKey`, with no `SessionToken` or `Expiry`. They inherit the LDAP
 identity's effective policy; MinIO documents these as
@@ -294,6 +304,33 @@ account inline policies can only reduce the parent identity's permissions, so
 this composition attaches the combined policy to the LDAP identity and lets
 the service account inherit it.
 
+### Garage backend
+
+Set `spec.s3.backend: garage` to use the Garage operator instead of any MinIO
+resources. The composition creates `GarageBucket` resources for requested
+buckets and, when `createServiceAccount: true`, a `GarageKey` with read/write
+permissions for the declared bucket aliases. The Garage operator generates a
+namespace-local Secret named by `writeServiceAccountCredentialsSecretRef` with
+`AccessKey`, `SecretAccessKey`, `AWS_ENDPOINTS`, `AWS_REGION`, and
+`VIRTUAL_HOSTED_STYLE` keys. `AWS_ENDPOINTS` is the HTTPS URL formed from
+`spec.s3.garage.endpoint`; that hostname is the ExternalDNS-published S3 route
+on Envoy Gateway. It does not refer to a Gateway Service or an ExternalName
+Service. The selected hostname and port are published as `S3Hostname` in the
+claim connection Secret.
+
+Garage keys are static long-lived keys. They do not authenticate as the LDAP
+identity, inherit MinIO IAM policies, expire automatically, or support the
+temporary LDAP `createCredentials` flow. Garage does not implement MinIO's
+`additionalPolicyStatements`; the XRD rejects that combination. Use the
+operator's [bucket and credential guide](https://rajsinghtech.github.io/garage-operator/how-to/buckets-and-credentials/)
+for key permission and rotation behavior. Current Garage-backed claims must
+be in `core-prod` on `core-dc1-talos-prod`, because that is the only selected
+cluster with Garage and the operator watches only `core-prod`. Keep
+`writeServiceAccountCredentialsSecretRef.namespace` equal to the claim
+namespace; GarageKey-generated Secrets cannot be written across namespaces.
+Garage-managed bucket resources use `deletionPolicy: Retain`, so removing a
+claim or its bucket resource does not delete its Garage data.
+
 ## Connection details and Secrets
 
 The claim's `writeConnectionSecretToRef` receives only the connection details
@@ -310,7 +347,7 @@ published by the final `CompositeConnectionDetails` object:
 | `mongoHostname` | When MongoDB is enabled; cluster-specific MongoDB replica-set Service FQDN derived from the injected cluster name, environment, and cluster domain. |
 | `mongoPort` | When MongoDB is enabled; configured MongoDB port. |
 | `mongoURI` | When MongoDB is enabled; connection URI for the first requested database using LDAP PLAIN authentication. |
-| `S3Hostname` | Only when S3 is enabled and the MinIO attachment Workspace emits it. |
+| `S3Hostname` | When S3 is enabled; read from MinIO's attachment Workspace or the configured Garage endpoint, depending on `spec.s3.backend`. |
 
 The XRD advertises additional connection keys, but the current pipeline does
 not publish most of them to the claim Secret. In particular, do not expect S3
@@ -376,6 +413,8 @@ events:
 kubectl get roles.postgresql.sql.crossplane.io
 kubectl get databases.postgresql.sql.crossplane.io
 kubectl get buckets.minio.crossplane.io
+kubectl -n core-prod get garagebuckets.garage.rajsingh.info
+kubectl -n core-prod get garagekeys.garage.rajsingh.info
 kubectl -n core-prod get workspace -o wide
 ```
 
@@ -387,7 +426,7 @@ the base Workspace is not Ready or has not exposed connection details.
 
 - Several composed resources are annotated ready unconditionally. A `Ready`
   composite can therefore overstate downstream health; verify the external
-  Authentik, PostgreSQL, and MinIO objects.
+  Authentik, PostgreSQL, MinIO, and Garage resources.
 - Identity creation, policy changes, database grants, and credential issuance
   are security-sensitive. Review provider access and target namespaces before
   accepting claims from additional tenants.
