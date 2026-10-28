@@ -80,6 +80,19 @@ persistence:
         chaptarr:
           - path: '/downloads'
   {{- end }}
+  {{- if and .Values.chaptarr.enabled .Values.chaptarr.volumes.books.enabled }}
+  books:
+    enabled: true
+    type: 'persistentVolumeClaim'
+    forceRename: {{ printf "media-%s-books" .Values.tenant.name | squote }}
+    accessMode: 'ReadWriteMany'
+    size: {{ required "chaptarr.volumes.books.size is required when the Books volume is enabled" .Values.chaptarr.volumes.books.size | squote }}
+    storageClass: {{ printf "media-%s-storage" .Values.tenant.name | squote }}
+    advancedMounts:
+      chaptarr:
+        chaptarr:
+          - path: '/Books'
+  {{- end }}
 service:
   {{- if .Values.chaptarr.enabled }}
   chaptarr:

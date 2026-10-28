@@ -16,6 +16,7 @@ spec:
                   values:
                     hub: false
                     mediatenant: 'augy'
+                    booksVolumeSize: '100Gi'
           - clusters:
               selector:
                 matchLabels:
@@ -60,6 +61,11 @@ spec:
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+                chaptarr:
+                  volumes:
+                    books:
+                      enabled: true
+                      size: '{{ .values.booksVolumeSize }}'
       destination:
         server: '{{ .server }}'
         namespace: 'core-media'
