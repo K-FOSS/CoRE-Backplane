@@ -1,0 +1,46 @@
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: pgadmin-{{ .Values.region }}-{{ .Values.datacenter }}-forward-auth
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '60'
+
+spec:
+  providerConfigRef:
+    name: authentik
+
+  forProvider:
+    source: Inline
+    module: |
+      data "authentik_flow" "default-authorization-flow" {
+        slug = "default-provider-authorization-explicit-consent"
+      }
+
+      data "authentik_flow" "default-provider-invalidation-flow" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_outpost" "proxy" {
+        name = "{{ .Values.authentik.proxy.outpostName }}"
+      }
+
+      resource "authentik_provider_proxy" "forward-auth" {
+        name               = "PGAdmin Forward Auth"
+        external_host      = "https://{{ .Values.pgadmin.domain }}"
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow  = data.authentik_flow.default-provider-invalidation-flow.id
+        mode               = "forward_single"
+      }
+
+      resource "authentik_application" "forward-auth" {
+        name              = "PGAdmin Forward Auth"
+        slug              = "pgadmin-{{ .Values.region }}-{{ .Values.datacenter }}-forward-auth"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        protocol_provider = authentik_provider_proxy.forward-auth.id
+      }
+
+      resource "authentik_outpost_provider_attachment" "forward-auth" {
+        outpost           = data.authentik_outpost.proxy.id
+        protocol_provider = authentik_provider_proxy.forward-auth.id
+      }
