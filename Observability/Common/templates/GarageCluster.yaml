@@ -31,4 +31,8 @@ spec:
     pvcRetentionPolicy:
       whenDeleted: 'Retain'
       whenScaled: 'Retain'
+    {{- with .Values.garage.storage.topologySpreadConstraints }}
+    topologySpreadConstraints:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
 {{- end }}

@@ -22,6 +22,15 @@ garage:
   rpcSecretProperty: 'RPCSecret'
   bootstrap:
     generatedSecretName: 'observability-garage-bootstrap-generated'
+  storage:
+    topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: 'kubernetes.io/hostname'
+        whenUnsatisfiable: 'DoNotSchedule'
+        labelSelector:
+          matchLabels:
+            garage.rajsingh.info/cluster: 'observability-garage'
+            garage.rajsingh.info/tier: 'storage'
 
 longhorn:
   provisioner: 'driver.longhorn.io'

@@ -24,6 +24,12 @@ three object copies provide the data replication; the metadata class uses two
 Longhorn replicas. PVC reclaim and Garage PVC retention policies are both
 `Retain`. Review capacity before sync; this configuration requests 66Gi of
 PVC capacity and Longhorn will additionally allocate metadata replicas.
+The Garage Operator applies a hostname topology-spread constraint with
+`maxSkew: 1` to storage nodes, requiring eligible nodes to distribute replicas
+across distinct Talos hosts. If fewer than three hosts can schedule the pods,
+the affected replicas remain Pending rather than co-locating. The operator's
+[storage and gateway scheduling settings](https://rajsinghtech.github.io/garage-operator/how-to/configuration/)
+describe this `storage.topologySpreadConstraints` field.
 
 External Secrets Operator generates distinct 32-character random values and
 hex-encodes each as a 64-character credential. A `CreatedOnce` ExternalSecret
