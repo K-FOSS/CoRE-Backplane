@@ -86,7 +86,7 @@ CoreVault paths are `Operations/Clusters/OIDC/Che` and
 `Operations/Clusters/OIDC/Headlamp/<cluster-name>`; production uses the
 `core-dc1-talos-prod` and `core-home1-talos-prod` Headlamp entries. These values
 are assembled into the `cluster-oidc-client-ids` Secret in the Cluster claims'
-`multicluster-controlplane` namespace.
+`core-prod` namespace.
 The referenced Secret must exist before authentication can be rendered. The
 Secret observation is held in the Crossplane Kubernetes `Object` status, so
 access to those managed resources must be treated as access to the Secret.
