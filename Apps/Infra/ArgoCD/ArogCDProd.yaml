@@ -25,6 +25,7 @@ spec:
                       operations: 10
                     reposerver:
                       parallelism: 2
+                      replicas: 1
                     controllerCache:
                       # Batch watch events to avoid amplifying API traffic over
                       # the roughly 100 ms inter-site links.
@@ -107,7 +108,7 @@ spec:
                         enabled: {{ .values.monitoring.enabled }}
 
                   repoServer:
-                    replicas: 2
+                    replicas: {{ .values.reposerver.replicas }}
 
                     pdb:
                       enabled: true
