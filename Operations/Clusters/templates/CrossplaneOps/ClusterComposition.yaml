@@ -261,10 +261,20 @@ spec:
             {{- range $index, $app := $xr.spec.oidc.apps }}
             {{- if $app.clientIDSecretRef }}
             ---
+            {{ $secretName := printf "oidc-client-secret-%d" $index }}
+            {{ $secret := index $.observed.resources $secretName }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
+                {{- if $secret }}
+                {{- $secretData := $secret.resource.status.atProvider.manifest.data }}
+                {{- if $secretData }}
+                {{- if (index $secretData $app.clientIDSecretRef.key) }}
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{- end }}
+                {{- end }}
+                {{- end }}
                 crossplane.io/external-name: {{ $app.clientIDSecretRef.name | quote }}
                 {{ setResourceNameAnnotation (printf "oidc-client-secret-%d" $index) }}
             spec:
