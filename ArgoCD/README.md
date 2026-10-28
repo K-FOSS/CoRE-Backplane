@@ -207,8 +207,10 @@ different node names.
 
 ## Rendering and validation
 
-The current dependency pin is `argo-cd` chart `10.9.7`, which deploys Argo CD
-`v3.5.4`. From the previous deployed `v3.3.6`, review the upstream
+The current dependency pin is `argo-cd` chart `10.11.6`, which deploys Argo CD
+`v3.5.6`. Review the upstream [Argo CD 3.5 release notes](https://github.com/argoproj/argo-cd/releases/tag/v3.5.6)
+and [argo-cd 10.11.6 chart release](https://github.com/argoproj/argo-helm/releases/tag/argo-cd-10.11.6).
+From the previous deployed `v3.3.6`, review the upstream
 [v3.3 to v3.4 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.5/operator-manual/upgrading/3.3-3.4/)
 and [v3.4 to v3.5 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.5/operator-manual/upgrading/3.4-3.5/).
 Argo CD 3.5 bundles Helm 4, so review rendered application differences for
