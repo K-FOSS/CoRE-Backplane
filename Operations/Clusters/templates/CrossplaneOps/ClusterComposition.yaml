@@ -265,6 +265,7 @@ spec:
             kind: Object
             metadata:
               annotations:
+                crossplane.io/external-name: {{ $app.clientIDSecretRef.name | quote }}
                 {{ setResourceNameAnnotation (printf "oidc-client-secret-%d" $index) }}
             spec:
               providerConfigRef:
