@@ -43,7 +43,7 @@ controllers:
       sabnzbd:
         image:
           repository: {{ $.Values.sabnzbd.image }}
-          tag: {{ default "latest" $.Values.sabnzbd.tag }}
+          tag: {{ required "sabnzbd.tag is required" $.Values.sabnzbd.tag | squote }}
           pullPolicy: IfNotPresent
 
         env:
@@ -110,7 +110,7 @@ controllers:
       prowlarr:
         image:
           repository: {{ $.Values.prowlarr.image }}
-          tag: {{ default "latest" $.Values.prowlarr.tag }}
+          tag: {{ required "prowlarr.tag is required" $.Values.prowlarr.tag | squote }}
           pullPolicy: IfNotPresent
 
         env:
