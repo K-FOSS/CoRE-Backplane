@@ -401,6 +401,17 @@ the CoreDNS [Kubernetes plugin](https://coredns.io/plugins/kubernetes/),
 [cache plugin](https://coredns.io/plugins/cache/), and
 [NSID plugin](https://coredns.io/plugins/nsid/) for their semantics.
 
+DC1 sets `kubeDNS.forwardUnmatchedClusterDomain: true` so a hostname published
+by ExternalDNS beneath `k3s.dc1.resolvemy.host` can resolve from cluster Pods.
+CoreDNS first resolves known Kubernetes Service names locally; only names not
+found in its Kubernetes zone fall through to the configured upstream resolvers.
+Home1 keeps the default `false`. This is needed for the Garage S3 HTTPRoute,
+whose route hostname is a valid cluster-domain FQDN and whose A record is
+published from the parent Gateway address by the deployed
+[ExternalDNS Gateway API source](https://kubernetes-sigs.github.io/external-dns/latest/docs/sources/gateway-api/).
+Verify the host resolves from a DC1 workload after the DNS record is published;
+the public DNS record alone does not override CoreDNS's Kubernetes zone.
+
 Talos remains responsible for DNS bootstrap. Before initial adoption, verify
 all adopted resources, their field managers, and the Deployment's `config-volume`
 mount; check for a Talos/bootstrap reconciler that could overwrite them. The initial

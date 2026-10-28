@@ -33,7 +33,11 @@ data:
         prometheus :9153
         kubernetes cluster.local {{ $domain }} in-addr.arpa ip6.arpa {
             pods insecure
+            {{- if .Values.kubeDNS.forwardUnmatchedClusterDomain }}
+            fallthrough in-addr.arpa ip6.arpa {{ $domain }}
+            {{- else }}
             fallthrough in-addr.arpa ip6.arpa
+            {{- end }}
             ttl 30
         }
         forward . {{ join " " .Values.kubeDNS.upstreams }} {
