@@ -219,17 +219,23 @@ spec:
                       type: array
                       items:
                         type: object
-                        required:
-                          - issuer
                         oneOf:
                           - required:
+                              - issuer
                               - clientID
                           - required:
+                              - issuer
+                              - clientIDSecretRef
+                          - required:
+                              - issuerKey
                               - clientIDSecretRef
                         properties:
                           issuer:
                             type: string
-                            description: 'OIDC issuer URL.'
+                            description: 'Explicit OIDC issuer URL. Use issuerKey to read the issuer produced by the app workspace.'
+                          issuerKey:
+                            type: string
+                            description: 'Key in the same Secret named by clientIDSecretRef containing the workspace-generated OIDC_ISSUER_URL.'
                           clientID:
                             type: string
                             description: 'Literal OIDC client ID (use clientIDSecretRef to read it from a Secret).'

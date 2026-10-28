@@ -176,8 +176,8 @@ by name.
    generate or own the credentials.
 9. `templates/HTTPRoute.yaml` exposes Headlamp through the configured Gateway.
    After login, the OIDC group claim is evaluated by Kubernetes RBAC.
-10. `templates/HeadlampOIDCPushSecret.yaml` publishes `OIDC_CLIENT_ID` to
-    CoreVault at
+10. `templates/HeadlampOIDCPushSecret.yaml` publishes `OIDC_CLIENT_ID` and
+    the Workspace-generated `OIDC_ISSUER_URL` to CoreVault at
     `Operations/Clusters/OIDC/Headlamp/<cluster-name>` for the Talos Cluster
     Composition. The client secret remains in the application cluster's
     `core-headlamp-oidc` Secret.
@@ -187,7 +187,7 @@ The target path uses the cluster name injected by the
 For the production Talos clusters it is
 `Operations/Clusters/OIDC/Headlamp/core-dc1-talos-prod` or
 `Operations/Clusters/OIDC/Headlamp/core-home1-talos-prod`. This PushSecret
-publishes only the client ID and does not export the client secret.
+publishes the client ID and issuer URL, but does not export the client secret.
 
 The generated Secret contains these output keys:
 

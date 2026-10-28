@@ -270,7 +270,12 @@ spec:
                 {{- if $secret }}
                 {{- $secretData := $secret.resource.status.atProvider.manifest.data }}
                 {{- if $secretData }}
-                {{- if (index $secretData $app.clientIDSecretRef.key) }}
+                {{- $clientIDObserved := index $secretData $app.clientIDSecretRef.key }}
+                {{- $issuerObserved := true }}
+                {{- if $app.issuerKey }}
+                {{- $issuerObserved = index $secretData $app.issuerKey }}
+                {{- end }}
+                {{- if and $clientIDObserved $issuerObserved }}
                 gotemplating.fn.crossplane.io/ready: 'True'
                 {{- end }}
                 {{- end }}
@@ -383,6 +388,7 @@ spec:
                                 {{ $apps := .observed.composite.resource.spec.oidc.apps }}
                                 {{ range $index, $app := $apps }}
                                 {{ $clientID := $app.clientID }}
+                                {{ $issuer := $app.issuer }}
                                 {{ if $app.clientIDSecretRef }}
                                 {{ $secretName := printf "oidc-client-secret-%d" $index }}
                                 {{ $secret := index $.observed.resources $secretName }}
@@ -390,11 +396,15 @@ spec:
                                 {{ $secretData := $secret.resource.status.atProvider.manifest.data }}
                                 {{ $clientID = (index $secretData $app.clientIDSecretRef.key) | b64dec }}
                                 {{ if not $clientID }}{{ fail (printf "OIDC client ID key %q is missing from Secret %q" $app.clientIDSecretRef.key $app.clientIDSecretRef.name) }}{{ end }}
+                                {{ if $app.issuerKey }}
+                                {{ $issuer = (index $secretData $app.issuerKey) | b64dec }}
+                                {{ if not $issuer }}{{ fail (printf "OIDC issuer key %q is missing from Secret %q" $app.issuerKey $app.clientIDSecretRef.name) }}{{ end }}
                                 {{ end }}
                                 {{ end }}
-                                {{ if $clientID }}
+                                {{ end }}
+                                {{ if and $clientID $issuer }}
                                 - issuer:
-                                    url: {{ $app.issuer | quote }}
+                                    url: {{ $issuer | quote }}
                                     audiences:
                                       - {{ $clientID | quote }}
                                   claimMappings:

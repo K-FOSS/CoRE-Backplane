@@ -82,6 +82,10 @@ The Che and Headlamp stacks publish their own client IDs to CoreVault with
 [External Secrets PushSecrets](https://external-secrets.io/latest/api/pushsecret/).
 This chart reads those values with an
 [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/).
+Headlamp's Authentik Terraform Workspace also outputs `OIDC_ISSUER_URL`; its
+stack publishes that output beside the client ID, and `issuerKey` reads it from
+the same claim-local Secret. Che keeps its existing `/che/` issuer because its
+app is not created by a Workspace in this repository.
 CoreVault paths are `Operations/Clusters/OIDC/Che` and
 `Operations/Clusters/OIDC/Headlamp/<cluster-name>`; production uses the
 `core-dc1-talos-prod` and `core-home1-talos-prod` Headlamp entries. These values
@@ -99,14 +103,16 @@ spec:
         clientIDSecretRef:
           name: cluster-oidc-client-ids
           key: 'che'
-      - issuer: 'https://idp.mylogin.space/application/o/headlamp/'
+      - issuerKey: 'dc1HeadlampIssuer'
         clientIDSecretRef:
           name: cluster-oidc-client-ids
           key: 'dc1Headlamp'
 ```
 
 For Talos v1.14+, the control-plane template uses CABPT `strategicPatches` to
-set `KubeAuthenticationConfig` when `spec.oidc.apps` is populated. Talos manages
+set `KubeAuthenticationConfig` when `spec.oidc.apps` is populated. An app may
+set an explicit `issuer`, or use `issuerKey` to read its Workspace-generated
+issuer from the same Secret as `clientIDSecretRef`. Talos manages
 the authentication config file and kube-apiserver integration from that
 document. The production DC1 and Home1 Cluster claims now declare their
 respective Che and Headlamp issuers. Other claims remain on the current
