@@ -1375,7 +1375,7 @@ configMaps:
         writeUrl={{ required "timeseries.writeUrl is required when external time-series storage is enabled" .Values.timeseries.writeUrl }}
         readUrl={{ required "timeseries.readUrl is required when external time-series storage is enabled" .Values.timeseries.readUrl }}
         {{- with .Values.timeseries.orgId }}
-        organizationId={{ .Values.timeseries.orgId }}
+        organizationId={{ . }}
         {{- end }}
         maxConcurrentHttpConnections={{ int .Values.timeseries.maxConcurrentHttpConnections }}
         writeTimeoutInMs={{ int .Values.timeseries.writeTimeoutInMs }}
