@@ -60,12 +60,14 @@ location that owns polling for that site. OpenNMS's [Minion overview](https://do
 and [container configuration reference](https://docs.opennms.com/horizon/36/reference/configuration/minion-docker.html)
 describe the registration and `-c` startup behavior.
 
-The Minion uses the image-provided `/health.sh` for readiness and liveness.
-Readiness marks an unhealthy Minion unavailable; liveness allows fifteen
-minutes of failed checks before restarting it, so short inter-site outages do
-not trigger restarts while a persistent broker or core failure can recover
-without manual pod deletion. The script calls the Minion health REST probe,
-which includes core echo and Kafka broker checks. See upstream
+The Minion first waits for its local REST listener on TCP port `8181` before
+starting the health probes, with a ten-minute startup allowance. It then uses
+the image-provided `/health.sh` for readiness and liveness. Readiness marks an
+unhealthy Minion unavailable; liveness allows fifteen minutes of failed checks
+before restarting it, so short inter-site outages do not trigger restarts
+while a persistent broker or core failure can recover without manual pod
+deletion. The script calls the Minion health REST probe, which includes core
+echo and Kafka broker checks. See upstream
 [Minion health-check setup](https://docs.opennms.com/horizon/36/deployment/minion/install.html)
 and the [health REST API](https://docs.opennms.com/horizon/36/development/rest/health_rest.html).
 
