@@ -86,6 +86,31 @@ spec:
         protocol_provider = authentik_provider_oauth2.auth-provider.id
       }
 
+      data "authentik_outpost" "proxy" {
+        name = "{{ .Values.authentik.proxy.outpostName }}"
+      }
+
+      resource "authentik_provider_proxy" "forward-auth" {
+        name               = "ArgoCD Forward Auth"
+        external_host      = "https://argocd.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.{{ .Values.domain }}"
+        authorization_flow = data.authentik_flow.default-authorization-flow.id
+        invalidation_flow  = data.authentik_flow.default-provider-invalidation-flow.id
+        mode               = "forward_single"
+      }
+
+      resource "authentik_application" "forward-auth" {
+        name              = "ArgoCD Forward Auth"
+        slug              = "{{ .Values.oidc.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.tenant.name }}-argocd-forward-auth"
+        group             = "{{ .Values.datacenter }}-{{ .Values.cluster.name }}"
+        meta_launch_url   = "blank://blank"
+        protocol_provider = authentik_provider_proxy.forward-auth.id
+      }
+
+      resource "authentik_outpost_provider_attachment" "forward-auth" {
+        outpost           = data.authentik_outpost.proxy.id
+        protocol_provider = authentik_provider_proxy.forward-auth.id
+      }
+
       output "OIDC_CLIENT_ID" {
         value = authentik_provider_oauth2.auth-provider.client_id
         sensitive = true

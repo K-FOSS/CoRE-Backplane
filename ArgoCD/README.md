@@ -195,6 +195,18 @@ the webhook path. The Authentik stack's
 [`ReferenceGrant`](../AAA/templates/Authentik/RefGrant.yaml) permits this
 `argocd`-namespace policy to reference the proxy Service in `core-prod`.
 
+The Argo CD chart's Authentik Terraform
+[`Workspace`](templates/Authentik.yaml) creates the forward-single proxy
+provider and application, then attaches that provider to the existing
+`myloginspace-proxy` outpost. The native Argo CD OAuth application remains a
+separate provider for Argo CD's in-application SSO.
+The configuration follows Authentik's [forward-auth provider
+model](https://docs.goauthentik.io/add-secure-apps/providers/proxy/create-proxy-provider/)
+and the Terraform provider's [`authentik_provider_proxy`
+resource](https://registry.terraform.io/providers/goauthentik/authentik/latest/docs/resources/provider_proxy).
+Its `blank://blank` launch URL hides the forward-auth-only application from
+the Authentik application dashboard while leaving route authorization active.
+
 Gateway API requires implementations to reject an HTTPRoute and GRPCRoute
 that attach to the same listener with overlapping hostnames. Consequently,
 the upstream GRPCRoute is deliberately disabled. The supported alternatives
