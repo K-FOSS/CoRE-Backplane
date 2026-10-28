@@ -150,19 +150,16 @@ It uses the maintained
 pinned by version and multi-architecture digest, an unprivileged listener, a
 read-only root filesystem, and a size-limited `/tmp` `emptyDir`.
 
-Before a query leaves the bridge Pod, two pinned
-[`prom-label-proxy` instances](https://github.com/prometheus-community/prom-label-proxy)
-run in sequence. The first enforces `cluster=<cluster.name>`, whose value comes
-from the ApplicationSet's cluster identity, not caller-controlled parameters.
-The second enforces `org_id="core"` from the `X-Org-ID` header. Each instance
-enforces one label because `prom-label-proxy` accepts only one label-value
-source per process. Label APIs are enabled on both so discovery requests are
-scoped along with PromQL queries, and conflicting matchers fail instead of
-silently replacing the enforced scope. NGINX sets `X-Org-ID: core` and the
-required Mimir `X-Scope-OrgID: core`, including for clients that do not send a
-tenant header, then forwards the unprefixed path through both loopback-only
-filter listeners. The second filter adds Mimir's `/prometheus` prefix through
-its upstream URL. When
+Before a query leaves the bridge Pod, one pinned
+[`prom-label-proxy` instance](https://github.com/prometheus-community/prom-label-proxy)
+enforces `cluster=<cluster.name>`, whose value comes from the ApplicationSet's
+cluster identity, not caller-controlled parameters. Label APIs are enabled so
+discovery requests are scoped along with PromQL queries, and conflicting
+matchers fail instead of silently replacing the enforced cluster scope. The
+proxy no longer filters on the `org_id` label. NGINX injects the required
+Mimir `X-Scope-OrgID: core` tenant header, including for clients that do not
+send one, then forwards the unprefixed path through the cluster filter. That
+filter adds Mimir's `/prometheus` prefix through its upstream URL. When
 `mimirBridge.queryFilter` is disabled, NGINX adds the same prefix before
 forwarding directly.
 
