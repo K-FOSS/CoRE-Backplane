@@ -35,8 +35,8 @@ spec:
   environment: prod
 
   versions:
-    kubernetes: v1.36.3
-    talos: v1.14.2
+    kubernetes: 'v1.36.3'
+    talos: 'v1.14.2'
 
   oidc:
     apps:
@@ -45,7 +45,9 @@ spec:
           name: cluster-oidc-client-ids
           key: 'che'
       - issuer: 'https://idp.mylogin.space/application/o/headlamp/'
-        clientID: 'headlamp'
+        clientIDSecretRef:
+          name: cluster-oidc-client-ids
+          key: 'dc1Headlamp'
 
   bgp:
     instances:

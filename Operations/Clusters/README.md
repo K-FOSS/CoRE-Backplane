@@ -78,8 +78,15 @@ Talos v1.14 and newer use Talos multi-document configuration for Kubernetes
 API authentication. Set `Cluster.spec.oidc.apps` to the issuer list. Each app
 references a `Secret` key in the same namespace as the `Cluster` claim; the
 Composition observes that key and uses its value as the JWT audience/client ID.
-The Che client ID is published to `core-prod` by the
-[External Secrets Operator](https://external-secrets.io/latest/api/externalsecret/).
+The Che and Headlamp stacks publish their own client IDs to CoreVault with
+[External Secrets PushSecrets](https://external-secrets.io/latest/api/pushsecret/).
+This chart reads those values with an
+[ExternalSecret](https://external-secrets.io/latest/api/externalsecret/).
+CoreVault paths are `Operations/Clusters/OIDC/Che` and
+`Operations/Clusters/OIDC/Headlamp/<cluster-name>`; production uses the
+`core-dc1-talos-prod` and `core-home1-talos-prod` Headlamp entries. These values
+are assembled into the `cluster-oidc-client-ids` Secret in the Cluster claims'
+`multicluster-controlplane` namespace.
 The referenced Secret must exist before authentication can be rendered. The
 Secret observation is held in the Crossplane Kubernetes `Object` status, so
 access to those managed resources must be treated as access to the Secret.
@@ -88,20 +95,23 @@ access to those managed resources must be treated as access to the Secret.
 spec:
   oidc:
     apps:
-      - issuer: 'https://idp.example.invalid/application/o/dashboard/'
+      - issuer: 'https://idp.mylogin.space/application/o/che/'
         clientIDSecretRef:
-          name: dashboard-oidc
-          key: 'ClientID'
-        usernameClaim: 'preferred_username'
-        groupsClaim: 'groups'
-        uidClaim: 'sub'
+          name: cluster-oidc-client-ids
+          key: 'che'
+      - issuer: 'https://idp.mylogin.space/application/o/headlamp/'
+        clientIDSecretRef:
+          name: cluster-oidc-client-ids
+          key: 'dc1Headlamp'
 ```
 
 For Talos v1.14+, the control-plane template uses CABPT `strategicPatches` to
-set `KubeAuthenticationConfig`. Talos manages the authentication config file
-and kube-apiserver integration from that document; this replaces the legacy
-`machine.files` and `cluster.apiServer` injector. Talos versions before 1.14
-retain the legacy injector and do not consume `spec.oidc.apps`.
+set `KubeAuthenticationConfig` when `spec.oidc.apps` is populated. Talos manages
+the authentication config file and kube-apiserver integration from that
+document. The production DC1 and Home1 Cluster claims now declare their
+respective Che and Headlamp issuers. Other claims remain on the current
+advanced JWT configuration until they declare `spec.oidc.apps`; Talos versions
+before 1.14 also retain that legacy injector.
 
 The v1.14 control-plane patches also preserve existing node behavior through
 the new configuration documents: `KubeNodeConfig` removes the control-plane

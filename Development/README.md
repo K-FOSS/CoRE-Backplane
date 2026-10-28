@@ -657,6 +657,13 @@ client, SCM OAuth clients, the Che/DevWorkspace operators, cluster capacity,
 and dynamic storage. Validate the `CheCluster` status before troubleshooting
 generated Deployments.
 
+When Che is enabled, `CheTalosOIDCClientID.yaml` reads only the Authentik
+client ID from Main Vault and publishes it to CoreVault at
+`Operations/Clusters/OIDC/Che` with a PushSecret. The client secret is not
+published. The Operations/Clusters ExternalSecret consumes that CoreVault
+entry for Talos API authentication. This publication is owned by the Che
+deployment stack, so it exists only in the cluster where Che is enabled.
+
 The profile ConfigMap is currently fixed to namespace `kjones-che` and exposes
 an alias that reads Argo CD's initial admin password. Treat this as
 operator-specific and security-sensitive; it is not a general profile for all

@@ -1,0 +1,43 @@
+{{- if .Values.che.enabled }}
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: 'che-talos-oidc-client-id'
+  namespace: 'eclipse-che'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  secretStoreRef:
+    kind: 'ClusterSecretStore'
+    name: 'mainvault-core'
+  target:
+    name: 'che-talos-oidc-client-id'
+    creationPolicy: 'Owner'
+  data:
+    - secretKey: 'ClientID'
+      remoteRef:
+        key: 'IDE/Che/Authentik'
+        property: 'ClientID'
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: 'che-talos-oidc-client-id'
+  namespace: 'eclipse-che'
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  refreshInterval: '1h'
+  secretStoreRefs:
+    - name: 'corevault-rootsecrets'
+      kind: 'ClusterSecretStore'
+  selector:
+    secret:
+      name: 'che-talos-oidc-client-id'
+  data:
+    - match:
+        secretKey: 'ClientID'
+        remoteRef:
+          remoteKey: 'Operations/Clusters/OIDC/Che'
+          property: 'ClientID'
+{{- end }}

@@ -357,6 +357,7 @@ spec:
                             apiVersion: v1alpha1
                             kind: KubeFlannelCNIConfig
                             $patch: delete
+                          {{- if gt (len .observed.composite.resource.spec.oidc.apps) 0 }}
                           - |
                             apiVersion: v1alpha1
                             kind: KubeAuthenticationConfig
@@ -397,6 +398,56 @@ spec:
                                       message: 'username cannot use reserved system: prefix'
                                 {{ end }}
                                 {{ end }}
+                          {{- else }}
+                          - |
+                            apiVersion: v1alpha1
+                            kind: MachineConfig
+                            machine:
+                              files:
+                                - path: '/var/kubernetes/auth-config.yaml'
+                                  permissions: 0o644
+                                  op: 'create'
+                                  content: |-
+                                    apiVersion: apiserver.config.k8s.io/v1beta1
+                                    kind: AuthenticationConfiguration
+                                    jwt:
+                                      - issuer:
+                                          url: 'https://idp.mylogin.space/application/o/che/'
+                                          audiences:
+                                            - '<path:CORE0_SITE1/data/IDE/Che/Authentik#ClientID>'
+                                        claimMappings:
+                                          username:
+                                            expression: 'claims.preferred_username'
+                                          groups:
+                                            expression: 'claims.groups'
+                                          uid:
+                                            expression: 'claims.sub'
+                                        userValidationRules:
+                                          - expression: "!user.username.startsWith('system:')"
+                                            message: 'username cannot use reserved system: prefix'
+                                      - issuer:
+                                          url: 'https://idp.mylogin.space/application/o/headlamp/'
+                                          audiences:
+                                            - 'headlamp'
+                                        claimMappings:
+                                          username:
+                                            expression: 'claims.preferred_username'
+                                          groups:
+                                            expression: 'claims.groups'
+                                          uid:
+                                            expression: 'claims.sub'
+                                        userValidationRules:
+                                          - expression: "!user.username.startsWith('system:')"
+                                            message: 'username cannot use reserved system: prefix'
+                            cluster:
+                              apiServer:
+                                extraVolumes:
+                                  - hostPath: '/var/kubernetes/auth-config.yaml'
+                                    mountPath: '/var/kubernetes/auth-config.yaml'
+                                    readonly: true
+                                extraArgs:
+                                  authentication-config: '/var/kubernetes/auth-config.yaml'
+                          {{- end }}
                         {{- else }}
                         configPatches:
                           - op: add

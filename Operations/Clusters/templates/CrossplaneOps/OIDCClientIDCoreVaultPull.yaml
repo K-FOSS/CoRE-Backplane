@@ -1,0 +1,27 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: 'cluster-oidc-client-ids'
+  namespace: 'multicluster-controlplane'
+  annotations:
+    argocd.argoproj.io/sync-wave: '3'
+spec:
+  secretStoreRef:
+    kind: 'ClusterSecretStore'
+    name: 'corevault-rootsecrets'
+  target:
+    name: 'cluster-oidc-client-ids'
+    creationPolicy: 'Owner'
+  data:
+    - secretKey: 'che'
+      remoteRef:
+        key: 'Operations/Clusters/OIDC/Che'
+        property: 'ClientID'
+    - secretKey: 'dc1Headlamp'
+      remoteRef:
+        key: 'Operations/Clusters/OIDC/Headlamp/core-dc1-talos-prod'
+        property: 'ClientID'
+    - secretKey: 'home1Headlamp'
+      remoteRef:
+        key: 'Operations/Clusters/OIDC/Headlamp/core-home1-talos-prod'
+        property: 'ClientID'
