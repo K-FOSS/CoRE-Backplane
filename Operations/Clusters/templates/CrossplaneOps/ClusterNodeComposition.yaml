@@ -91,7 +91,7 @@ spec:
             {{ range $secretIndex, $secretName := $oidcSecretNames }}
             {{ $secretResourceName := printf "oidc-client-secret-%d" $secretIndex }}
             {{ $secret := dict }}
-            {{ if and $.observed.resources (hasKey $.observed.resources $secretResourceName) }}
+            {{ if $.observed.resources }}
             {{ $secret = index $.observed.resources $secretResourceName }}
             {{ end }}
             {{ $secretData := dict }}
@@ -129,7 +129,7 @@ spec:
             {{ $clientID = "" }}
             {{ $secretResourceName := printf "oidc-client-secret-%d" (index $oidcSecretNameIndexes $app.clientIDSecretRef.name) }}
             {{ $secret := dict }}
-            {{ if and $.observed.resources (hasKey $.observed.resources $secretResourceName) }}
+            {{ if $.observed.resources }}
             {{ $secret = index $.observed.resources $secretResourceName }}
             {{ end }}
             {{ $secretData := dict }}
