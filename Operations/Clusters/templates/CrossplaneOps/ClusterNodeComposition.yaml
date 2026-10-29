@@ -1047,8 +1047,7 @@ spec:
                     installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
                     use_kube_authentication_document = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
                     node_kubelet_override_requested = {{ if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubelet .observed.composite.resource.spec.overrides.kubelet.config }}true{{ else }}false{{ end }}
-                    node_has_longhorn_disks = {{ if and .observed.composite.resource.spec.storage .observed.composite.resource.spec.storage.longhornDisks }}true{{ else }}false{{ end }}
-                    use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.node_kubelet_override_requested && !local.node_has_longhorn_disks
+                    use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.node_kubelet_override_requested
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc

@@ -236,16 +236,17 @@ spec:
 ```
 
 The Composition detects the running Talos version. Talos 1.14 and newer nodes
-with an explicit kubelet override and no configured Longhorn user disks receive
-the dedicated Talos
+with an explicit kubelet override receive the dedicated Talos
 [`KubeletConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeletconfig)
 and
 [`KubeNodeConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubenodeconfig)
-documents. Other nodes retain the legacy `machine.kubelet` configuration,
-including its Longhorn bind/rshared mounts, until the Talos 1.14 mount
-migration is verified against the [Longhorn Talos guidance](https://longhorn.io/docs/1.13.0/advanced-resources/os-distro-specific/talos-linux-support/).
-If the version probe cannot reach the node, the Composition conservatively
-uses the legacy form.
+documents even when Longhorn user disks are configured. Longhorn disks are
+provisioned with `UserVolumeConfig`; Talos mounts those volumes under
+`/var/mnt/<name>` and propagates them into the kubelet container, so the modern
+document path does not need legacy kubelet `extraMounts` ([Talos User Volumes](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-management/user)).
+Nodes without an explicit kubelet override, and nodes below Talos 1.14, retain
+the legacy `machine.kubelet` configuration. If the version probe cannot reach
+the node, the Composition conservatively uses the legacy form.
 
 For a node using the Talos v1.14 documents, its Workspace first removes the inherited legacy
 `machine.kubelet`, `machine.nodeLabels`, and
