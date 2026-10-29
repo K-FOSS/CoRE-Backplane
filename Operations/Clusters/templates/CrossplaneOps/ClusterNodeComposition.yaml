@@ -1427,7 +1427,7 @@ spec:
                     config_patches = compact([
                       yamlencode({
                         debug = false
-                        cluster = {
+                        cluster = merge({
                           allowSchedulingOnControlPlanes = local.use_v1_14_kubelet_documents ? null : true
                           controlPlane = {
                             endpoint = "https://{{ $clusterCustomResource.status.atProvider.manifest.spec.controlplane.ipAddress }}:6443"
@@ -1468,13 +1468,6 @@ spec:
                             ]
                           }
 
-                          apiServer = local.use_kube_apiserver_document ? null : {
-                            extraArgs = {
-                              feature-gates = "UserNamespacesSupport=true"
-                            }
-
-                            image = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"
-                          }
                           controllerManager = {
                             extraArgs = {
                               node-cidr-mask-size-ipv6 = "119"
@@ -1487,7 +1480,17 @@ spec:
                             image = "registry.k8s.io/kube-scheduler:{{ $clusterK8sVersion }}"
                           }
                           {{- end }}
-                        }
+                        }, {{ if eq $.observed.composite.resource.spec.type "controlplane" }}
+                          local.use_kube_apiserver_document ? {} : {
+                            apiServer = {
+                              extraArgs = {
+                                feature-gates = "UserNamespacesSupport=true"
+                              }
+
+                              image = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"
+                            }
+                          }
+                        {{ else }}{}{{ end }})
                         machine = merge({
                           baseRuntimeSpecOverrides = {
                             process = {
