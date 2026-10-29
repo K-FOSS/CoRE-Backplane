@@ -40,6 +40,8 @@ spec:
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             {{ $bootloaderMode := default "uefi" .observed.composite.resource.spec.bootloader.mode }}
             {{ $oidcApps := list }}
+            {{ $oidcSecretNames := list }}
+            {{ $oidcSecretNameIndexes := dict }}
             {{ $oidcJWT := list }}
             {{ $oidcExpected := false }}
             {{ $oidcReady := true }}
@@ -77,15 +79,58 @@ spec:
             {{ $oidcApps = $clusterSpec.oidc.apps }}
             {{ $oidcExpected = and (eq .observed.composite.resource.spec.type "controlplane") (gt (len $oidcApps) 0) }}
             {{- if $oidcExpected }}
+            {{ range $app := $oidcApps }}
+            {{- if $app.clientIDSecretRef }}
+            {{ $secretName := $app.clientIDSecretRef.name }}
+            {{ if not (hasKey $oidcSecretNameIndexes $secretName) }}
+            {{ $_ := set $oidcSecretNameIndexes $secretName (len $oidcSecretNames) }}
+            {{ $oidcSecretNames = append $oidcSecretNames $secretName }}
+            {{ end }}
+            {{- end }}
+            {{ end }}
+            {{ range $secretIndex, $secretName := $oidcSecretNames }}
+            {{ $secretResourceName := printf "oidc-client-secret-%d" $secretIndex }}
+            {{ $secret := dict }}
+            {{ if and $.observed.resources (hasKey $.observed.resources $secretResourceName) }}
+            {{ $secret = index $.observed.resources $secretResourceName }}
+            {{ end }}
+            {{ $secretData := dict }}
+            {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
+            {{ $secretData = $secret.resource.status.atProvider.manifest.data }}
+            {{ end }}
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{- if $secretData }}
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{- end }}
+                crossplane.io/external-name: {{ $secretName | quote }}
+                {{ setResourceNameAnnotation $secretResourceName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+              managementPolicies:
+                - 'Observe'
+              deletionPolicy: Orphan
+              forProvider:
+                manifest:
+                  apiVersion: v1
+                  kind: Secret
+                  metadata:
+                    name: {{ $secretName | quote }}
+                    namespace: {{ $clusterCustomResource.status.atProvider.manifest.metadata.namespace | quote }}
+            {{ end }}
             {{ range $index, $app := $oidcApps }}
             {{ $clientID := $app.clientID }}
             {{ $issuer := $app.issuer }}
             {{- if $app.clientIDSecretRef }}
             {{ $clientID = "" }}
-            {{ $secretName := printf "oidc-client-secret-%d" $index }}
+            {{ $secretResourceName := printf "oidc-client-secret-%d" (index $oidcSecretNameIndexes $app.clientIDSecretRef.name) }}
             {{ $secret := dict }}
-            {{ if $.observed.resources }}
-            {{ $secret = index $.observed.resources $secretName }}
+            {{ if and $.observed.resources (hasKey $.observed.resources $secretResourceName) }}
+            {{ $secret = index $.observed.resources $secretResourceName }}
             {{ end }}
             {{ $secretData := dict }}
             {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
@@ -105,29 +150,6 @@ spec:
             {{ end }}
             {{ end }}
             {{ end }}
-            ---
-            apiVersion: kubernetes.crossplane.io/v1alpha2
-            kind: Object
-            metadata:
-              annotations:
-                {{- if and $clientID $issuer }}
-                gotemplating.fn.crossplane.io/ready: 'True'
-                {{- end }}
-                crossplane.io/external-name: {{ $app.clientIDSecretRef.name | quote }}
-                {{ setResourceNameAnnotation $secretName }}
-            spec:
-              providerConfigRef:
-                name: local-k8s
-              managementPolicies:
-                - 'Observe'
-              deletionPolicy: Orphan
-              forProvider:
-                manifest:
-                  apiVersion: v1
-                  kind: Secret
-                  metadata:
-                    name: {{ $app.clientIDSecretRef.name | quote }}
-                    namespace: {{ $clusterCustomResource.status.atProvider.manifest.metadata.namespace | quote }}
             {{- end }}
             {{ if or (not $clientID) (not $issuer) }}
             {{ $oidcReady = false }}
