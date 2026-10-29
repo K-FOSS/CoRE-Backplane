@@ -7,8 +7,9 @@ the reusable policy template is [`templates/WAF.yaml`](templates/WAF.yaml),
 and the default configuration is in [`values.yaml`](values.yaml). See the
 [Network stack overview](../README.md) for the parent stack.
 
-Current status: implemented and repository-validated, pending isolated
-runtime validation and deployment. It is not live protection. This change
+Current status: implemented and repository-validated; the exact Envoy/Coraza
+pair loads in a local restricted-process test, but the YVR data plane still
+fails plugin initialization. It is not live protection. This change
 does not reconcile Argo CD, mutate a cluster, or enable production-wide
 blocking.
 
@@ -78,6 +79,16 @@ Harbor mirroring and a digest comparison are explicit pre-deployment gates;
 until that is done, a cold controller cache depends on GHCR availability and
 the canary's fail-open behavior preserves traffic without providing WAF
 inspection.
+
+The deployed YVR replicas were rolled after the platform-manifest checksum was
+corrected, but both still report `Plugin coraza-crs failed to load` and expose
+the filter as disabled. A local test using the exact Envoy
+`distroless-v1.39.1` binary, the exact `main` WASM bytes, the live directives,
+worker threads, no-new-privileges, zero effective capabilities, and seccomp
+mode 2 loaded the plugin successfully. This rules out a general restricted
+pod posture and a need for a custom Envoy image. A Kubernetes-isolated test
+with the node's exact `RuntimeDefault` profile is still required to identify
+the remaining production-specific difference.
 
 ## Request processing and safety settings
 
