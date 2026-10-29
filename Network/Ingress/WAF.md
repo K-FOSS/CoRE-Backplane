@@ -62,13 +62,14 @@ guide](https://gateway.envoyproxy.io/v1.9/tasks/extensibility/wasm/) and
 The module is the upstream [Coraza proxy-Wasm `main` image](https://github.com/corazawaf/coraza-proxy-wasm),
 whose [configuration documentation](https://github.com/corazawaf/coraza-proxy-wasm/blob/main/README.md)
 records the filter configuration. The image is referenced by the mutable `:main`
-tag for registry compatibility, while Envoy verifies the immutable manifest
-digest recorded in `values.yaml`. The upstream image metadata does not publish
+tag for registry compatibility, while Envoy Gateway verifies the immutable
+amd64 image-manifest digest recorded in `values.yaml` (not the multi-platform
+index digest). The upstream image metadata does not publish
 a standalone CRS version for this image; retain the configured CRS compatibility
 assumption until the image is mirrored and inspected in the isolated canary. Use the [OWASP CRS false-positive tuning
 guide](https://coreruleset.org/docs/2-how-crs-works/2-3-false-positives-and-tuning/)
 when reviewing canary events. Registry inspection verified manifest
-digest `sha256:9f44777b0806016a432df9609ea710e301014a6c2d0719c5f4e5735b989b9f23`,
+digest `sha256:c9f2c0e03038b9961ddb8eb94ffd4dede0acf3ccaa4970255cb241f4c2543ea5`,
 release revision `b0c1b024854049ffd5e8cc63a869bbb6de153b71`, amd64 architecture.
 The upstream project warns of possible TinyGo memory leaks and
 performance degradation; soak testing is a blocking promotion criterion.
