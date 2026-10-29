@@ -51,7 +51,7 @@ S3 signed requests, gRPC, and WebSocket applications.
 
 | Option | Compatibility and cost | Decision |
 | --- | --- | --- |
-| Coraza proxy-Wasm with `EnvoyExtensionPolicy` | Envoy Gateway v1.9 supports OCI Wasm and HTTPRoute attachment. The installed CRD confirms the exact fields. Coraza proxy-Wasm 0.6.0 embeds CRS 4.14.0. No controller flag, pod sidecar, or routing tier is required. | Selected; smallest route-scoped in-process change. |
+| Coraza proxy-Wasm with `EnvoyExtensionPolicy` | Envoy Gateway v1.9 supports OCI Wasm and HTTPRoute attachment. The installed CRD confirms the exact fields. The requested `ghcr.io/corazawaf/coraza-proxy-wasm:main` image is selected, with its resolved manifest digest enforced by the policy. No controller flag, pod sidecar, or routing tier is required. | Selected; smallest route-scoped in-process change. |
 | Coraza native/[dynamic module](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/dynamic_modules) | Envoy Gateway v1.9 exposes dynamic-module policy fields, but Coraza does not publish a supported Envoy dynamic-module artifact. This would require a custom module/image lifecycle and couple the shared library to Envoy's unstable dynamic-module ABI and exact data-plane build. | Rejected for this phase. |
 | `EnvoyPatchPolicy` | Could inject a filter when extension APIs are insufficient, but patch paths depend on generated xDS names and protobuf structure. Upgrades and route changes can silently invalidate the patch. | Fallback only; unnecessary on v1.9.2. |
 | Separate [ModSecurity](https://github.com/owasp-modsecurity/ModSecurity#readme)/[BunkerWeb](https://docs.bunkerweb.io/latest/) proxy | Mature alternative inspection engines, but adds another reverse-proxy tier, workload, failure domain, certificate/routing path, and observability surface. | Not implemented. |
@@ -59,15 +59,18 @@ S3 signed requests, gRPC, and WebSocket applications.
 The selected API and attachment follow the versioned [Envoy Gateway v1.9 Wasm
 guide](https://gateway.envoyproxy.io/v1.9/tasks/extensibility/wasm/) and
 [`EnvoyExtensionPolicy` v1.9 API](https://gateway.envoyproxy.io/v1.9/api/extension_types/#envoyextensionpolicy).
-The module is the upstream [Coraza proxy-Wasm 0.6.0
-release](https://github.com/corazawaf/coraza-proxy-wasm/releases/tag/0.6.0),
-whose [configuration documentation](https://github.com/corazawaf/coraza-proxy-wasm/blob/0.6.0/README.md)
-records the embedded CRS behavior. Use the [OWASP CRS false-positive tuning
+The module is the upstream [Coraza proxy-Wasm `main` image](https://github.com/corazawaf/coraza-proxy-wasm),
+whose [configuration documentation](https://github.com/corazawaf/coraza-proxy-wasm/blob/main/README.md)
+records the filter configuration. The image is referenced by the mutable `:main`
+tag for registry compatibility, while Envoy verifies the immutable manifest
+digest recorded in `values.yaml`. The upstream image metadata does not publish
+a standalone CRS version for this image; retain the configured CRS compatibility
+assumption until the image is mirrored and inspected in the isolated canary. Use the [OWASP CRS false-positive tuning
 guide](https://coreruleset.org/docs/2-how-crs-works/2-3-false-positives-and-tuning/)
 when reviewing canary events. Registry inspection verified manifest
-digest `sha256:d66f944831428ea27039207fa4019bea55f9ea0a876d7b0dc8cc7c9e385fa4b1`,
-release revision `3607c012f60c07263cd4d7a96e787e82b9047b7f`, amd64 architecture,
-and CRS 4.14.0. The upstream release warns of possible TinyGo memory leaks and
+digest `sha256:9f44777b0806016a432df9609ea710e301014a6c2d0719c5f4e5735b989b9f23`,
+release revision `b0c1b024854049ffd5e8cc63a869bbb6de153b71`, amd64 architecture.
+The upstream project warns of possible TinyGo memory leaks and
 performance degradation; soak testing is a blocking promotion criterion.
 The review manifest references the verified upstream GHCR digest. Site-local
 Harbor mirroring and a digest comparison are explicit pre-deployment gates;
