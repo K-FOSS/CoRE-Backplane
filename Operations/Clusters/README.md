@@ -82,9 +82,12 @@ This is implemented in
 
 Talos v1.14 and newer use Talos multi-document configuration for Kubernetes
 API authentication. Set `Cluster.spec.oidc.apps` to the applications and their
-client ID sources. Control-plane `ClusterNode` Workspaces observe the referenced
-Secret and render the JWT configuration into the Talos node configuration; the
-`Cluster` Composition does not inject the authentication document. The Che and
+client ID sources. Control-plane `ClusterNode` Workspaces read the referenced
+Secret keys through Terraform Workspace `env.secretKeyRef` inputs and render
+the JWT configuration into the Talos node configuration; the `Cluster`
+Composition does not inject the authentication document. This uses the
+[Terraform Workspace resource's Secret environment references](https://registry.terraform.io/providers/upbound/provider-terraform/latest/docs/resources/workspace).
+The Che and
 Headlamp stacks publish their own client IDs to CoreVault with
 [External Secrets PushSecrets](https://external-secrets.io/latest/api/pushsecret/).
 This chart reads those values with an
@@ -100,13 +103,14 @@ CoreVault paths are `Operations/Clusters/OIDC/Che` and
 are assembled into the `cluster-oidc-client-ids` Secret in the Cluster claims'
 `core-prod` namespace.
 All apps that use `clientIDSecretRef` within one Cluster must reference the same
-Secret name; each app can use a different key in that Secret. This lets each
-control-plane Workspace observe the Secret once and assemble all of the
-cluster's JWT entries from that observation.
-The referenced Secret must exist before authentication can be applied. The
-read-only Kubernetes `Object` observations and Terraform Workspace varmap hold
-the decoded client IDs and issuer URLs at runtime, so access to those Crossplane
-resources must be treated as access to the Secret.
+Secret name; each app can use a different key in that Secret. The referenced
+Secret must exist before authentication can be applied. External Secrets reads
+the current values from CoreVault into `cluster-oidc-client-ids`; the node
+Workspace references those keys directly and Terraform receives them as
+sensitive `TF_VAR_` inputs. Secret values are not copied into the Cluster claim,
+the Terraform Workspace manifest, or Crossplane observed Object status. The
+Workspace runner and resulting Talos configuration/state still require access
+controls appropriate for OIDC client credentials.
 
 ```yaml
 spec:
@@ -142,9 +146,10 @@ and [`KubeFlannelCNIConfig`](https://docs.siderolabs.com/talos/v1.14/reference/c
 
 The authentication config keeps anonymous access enabled only for kube-apiserver
 health endpoints and rejects usernames beginning with `system:`. Client ID
-values are not written into the `Cluster` claim, but are copied into observed
-Crossplane object status and generated Talos bootstrap configuration. Protect
-the management cluster’s Crossplane resources and bootstrap Secrets accordingly.
+values are not written into the `Cluster` claim or Terraform Workspace manifest,
+but are present in generated Talos configuration and Terraform runtime state.
+Protect the management cluster's Workspace runner and bootstrap state
+accordingly.
 
 This Talos 1.14 path requires
 [CABPT v0.6.13](https://github.com/siderolabs/cluster-api-bootstrap-provider-talos/releases/tag/v0.6.13)
