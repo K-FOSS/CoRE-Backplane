@@ -211,7 +211,7 @@ spec:
 
                 oidc:
                   type: object
-                  description: 'Configure Kubernetes API server JWT/OIDC authentication. Each app client ID is read from a Secret in the Cluster claim namespace.'
+                  description: 'Configure Kubernetes API server JWT/OIDC authentication for control-plane ClusterNode Workspaces.'
                   default:
                     apps: []
                   properties:
@@ -219,29 +219,29 @@ spec:
                       type: array
                       items:
                         type: object
-                        oneOf:
+                        x-kubernetes-validations:
+                          - rule: '!has(self.clientID) || has(self.issuer)'
+                            message: 'issuer is required when clientID is supplied directly'
+                          - rule: '!(has(self.clientID) && has(self.clientIDSecretRef))'
+                            message: 'supply clientID or clientIDSecretRef, not both'
+                        anyOf:
                           - required:
-                              - issuer
                               - clientID
                           - required:
-                              - issuer
-                              - clientIDSecretRef
-                          - required:
-                              - issuerKey
                               - clientIDSecretRef
                         properties:
                           issuer:
                             type: string
-                            description: 'Explicit OIDC issuer URL. Use issuerKey to read the issuer produced by the app workspace.'
+                            description: 'Explicit issuer URL. When omitted with clientIDSecretRef, the Workspace reads the sibling <clientID key>Issuer value produced by the application Workspace.'
                           issuerKey:
                             type: string
-                            description: 'Key in the same Secret named by clientIDSecretRef containing the workspace-generated OIDC_ISSUER_URL.'
+                            description: 'Optional issuer key override in the Secret named by clientIDSecretRef. Defaults to the client ID key followed by Issuer.'
                           clientID:
                             type: string
                             description: 'Literal OIDC client ID (use clientIDSecretRef to read it from a Secret).'
                           clientIDSecretRef:
                             type: object
-                            description: 'Same-namespace Kubernetes Secret key containing the OIDC client ID.'
+                            description: 'Same-namespace Kubernetes Secret key containing the OIDC client ID and, by default, its sibling issuer key.'
                             required:
                               - name
                               - key

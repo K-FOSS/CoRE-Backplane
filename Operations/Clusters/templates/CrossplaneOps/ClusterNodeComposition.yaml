@@ -39,6 +39,12 @@ spec:
             {{ $bridgeDSResourceName := "bridge-ds" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             {{ $bootloaderMode := default "uefi" .observed.composite.resource.spec.bootloader.mode }}
+            {{ $oidcApps := list }}
+            {{ $oidcJWT := list }}
+            {{ $oidcExpected := false }}
+            {{ $oidcReady := true }}
+            {{ $oidcAuthenticationDocument := "" }}
+            {{ $oidcLegacyAuthenticationFile := "" }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
@@ -66,6 +72,90 @@ spec:
                     namespace: {{ .observed.composite.resource.spec.clusterRef.namespace }}
             ---
             {{ $clusterCustomResource := getComposedResource . $clusterCustomResourceName }}
+            {{ if $clusterCustomResource.status.atProvider }}
+            {{ $clusterSpec := $clusterCustomResource.status.atProvider.manifest.spec }}
+            {{ $oidcApps = $clusterSpec.oidc.apps }}
+            {{ $oidcExpected = and (eq .observed.composite.resource.spec.type "controlplane") (gt (len $oidcApps) 0) }}
+            {{- if $oidcExpected }}
+            {{ range $index, $app := $oidcApps }}
+            {{ $clientID := $app.clientID }}
+            {{ $issuer := $app.issuer }}
+            {{- if $app.clientIDSecretRef }}
+            {{ $clientID = "" }}
+            {{ $secretName := printf "oidc-client-secret-%d" $index }}
+            {{ $secret := dict }}
+            {{ if $.observed.resources }}
+            {{ $secret = index $.observed.resources $secretName }}
+            {{ end }}
+            {{ $secretData := dict }}
+            {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
+            {{ $secretData = $secret.resource.status.atProvider.manifest.data }}
+            {{ if hasKey $secretData $app.clientIDSecretRef.key }}
+            {{ $clientID = (index $secretData $app.clientIDSecretRef.key) | b64dec }}
+            {{ end }}
+            {{ end }}
+            {{ $issuerKey := $app.issuerKey }}
+            {{ if not $issuerKey }}
+            {{ $issuerKey = printf "%sIssuer" $app.clientIDSecretRef.key }}
+            {{ end }}
+            {{ if not $issuer }}
+            {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
+            {{ if hasKey $secretData $issuerKey }}
+            {{ $issuer = (index $secretData $issuerKey) | b64dec }}
+            {{ end }}
+            {{ end }}
+            {{ end }}
+            ---
+            apiVersion: kubernetes.crossplane.io/v1alpha2
+            kind: Object
+            metadata:
+              annotations:
+                {{- if and $clientID $issuer }}
+                gotemplating.fn.crossplane.io/ready: 'True'
+                {{- end }}
+                crossplane.io/external-name: {{ $app.clientIDSecretRef.name | quote }}
+                {{ setResourceNameAnnotation $secretName }}
+            spec:
+              providerConfigRef:
+                name: local-k8s
+              managementPolicies:
+                - 'Observe'
+              deletionPolicy: Orphan
+              forProvider:
+                manifest:
+                  apiVersion: v1
+                  kind: Secret
+                  metadata:
+                    name: {{ $app.clientIDSecretRef.name | quote }}
+                    namespace: {{ $clusterCustomResource.status.atProvider.manifest.metadata.namespace | quote }}
+            {{- end }}
+            {{ if or (not $clientID) (not $issuer) }}
+            {{ $oidcReady = false }}
+            {{ else }}
+            {{ $oidcJWT = append $oidcJWT (dict
+              "issuer" (dict "url" $issuer "audiences" (list $clientID))
+              "claimMappings" (dict
+                "username" (dict "expression" (printf "claims.%s" (default "preferred_username" $app.usernameClaim)))
+                "groups" (dict "expression" (printf "claims.%s" (default "groups" $app.groupsClaim)))
+                "uid" (dict "expression" (printf "claims.%s" (default "sub" $app.uidClaim)))
+              )
+              "userValidationRules" (list (dict "expression" "!user.username.startsWith('system:')" "message" "username cannot use reserved system: prefix"))
+            ) }}
+            {{ end }}
+            {{ end }}
+            {{ $talosAuthConfig := dict
+              "apiVersion" "v1alpha1"
+              "kind" "KubeAuthenticationConfig"
+              "configuration" (dict
+                "anonymous" (dict "enabled" true "conditions" (list (dict "path" "/livez") (dict "path" "/readyz") (dict "path" "/healthz")))
+                "jwt" $oidcJWT
+              )
+            }}
+            {{ $legacyAuthConfig := dict "apiVersion" "apiserver.config.k8s.io/v1beta1" "kind" "AuthenticationConfiguration" "jwt" $oidcJWT }}
+            {{ $oidcAuthenticationDocument = toYaml $talosAuthConfig }}
+            {{ $oidcLegacyAuthenticationFile = toYaml $legacyAuthConfig }}
+            {{- end }}
+            {{ end }}
             {{ if $clusterCustomResource.status.atProvider }}
             apiVersion: tf.upbound.io/v1beta1
             kind: Workspace
@@ -859,7 +949,9 @@ spec:
               annotations:
                 #
                 # TODO: Actually make this check status
+                {{- if or (not $oidcExpected) $oidcReady }}
                 gotemplating.fn.crossplane.io/ready: 'True'
+                {{- end }}
                 {{ setResourceNameAnnotation $talosTFTest }}
 
             spec:
@@ -895,6 +987,10 @@ spec:
                   installerImage: {{ $talosImageFactory.status.atProvider.outputs.installer_url }}
                   intendedTalosVersion: {{ $talosVersion }}
                   nodeIP: {{ regexReplaceAll "(.*)/[1-3][0-9]"  (index (index .observed.composite.resource.spec.networks 0).addresses 0) "${1}" }}
+                  oidcExpected: {{ $oidcExpected }}
+                  oidcReady: {{ $oidcReady }}
+                  oidcAuthenticationDocument: {{ $oidcAuthenticationDocument | quote }}
+                  oidcLegacyAuthenticationFile: {{ $oidcLegacyAuthenticationFile | quote }}
                 module: | # hcl
             {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubelet .observed.composite.resource.spec.overrides.kubelet.config }}
                   # Reinitialize the Talos provider after the v1.14 kubelet migration.
@@ -919,6 +1015,26 @@ spec:
                     type        = string
                   }
 
+                  variable "oidcExpected" {
+                    description = "Whether this control-plane node must apply the Cluster OIDC configuration"
+                    type        = bool
+                  }
+
+                  variable "oidcReady" {
+                    description = "Whether every referenced OIDC client ID and issuer has been observed"
+                    type        = bool
+                  }
+
+                  variable "oidcAuthenticationDocument" {
+                    description = "Talos KubeAuthenticationConfig document rendered from the Cluster claim and observed Secrets"
+                    type        = string
+                  }
+
+                  variable "oidcLegacyAuthenticationFile" {
+                    description = "Kubernetes AuthenticationConfiguration for Talos versions before 1.14"
+                    type        = string
+                  }
+
                   # Talos 1.12 introduced the multi-document network configuration
                   # model. Keep using the legacy machine configuration until the
                   # running node has actually been upgraded as well as the desired
@@ -939,7 +1055,9 @@ spec:
                     installed_talos_parts = split(".", local.installed_talos_version)
                     intended_talos_version = try(regex("[0-9]+\\.[0-9]+\\.[0-9]+", var.intendedTalosVersion), "0.0.0")
                     intended_talos_parts = split(".", local.intended_talos_version)
+                    intended_talos_is_1_14_or_newer = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 14)
                     installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
+                    use_kube_authentication_document = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
                     node_kubelet_override_requested = {{ if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubelet .observed.composite.resource.spec.overrides.kubelet.config }}true{{ else }}false{{ end }}
                     node_has_longhorn_disks = {{ if and .observed.composite.resource.spec.storage .observed.composite.resource.spec.storage.longhornDisks }}true{{ else }}false{{ end }}
                     use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.node_kubelet_override_requested && !local.node_has_longhorn_disks
@@ -983,6 +1101,23 @@ spec:
                       cluster:
                         allowSchedulingOnControlPlanes:
                           $patch: delete
+                    EOT
+
+                    legacy-oidc-config = <<-EOT
+                      machine:
+                        files:
+                          - path: /var/kubernetes/auth-config.yaml
+                            permissions: 420
+                            op: create
+                            content: ${jsonencode(var.oidcLegacyAuthenticationFile)}
+                      cluster:
+                        apiServer:
+                          extraVolumes:
+                            - hostPath: /var/kubernetes/auth-config.yaml
+                              mountPath: /var/kubernetes/auth-config.yaml
+                              readonly: true
+                          extraArgs:
+                            authentication-config: /var/kubernetes/auth-config.yaml
                     EOT
 
                     registry-cleanup = <<-EOT
@@ -1542,6 +1677,8 @@ spec:
                       }),
                       local.use_v1_14_kubelet_documents ? local.legacy-kubelet-cleanup : "",
                       local.use_v1_14_kubelet_documents ? local.kubelet-conf : "",
+                      var.oidcExpected && local.use_kube_authentication_document ? var.oidcAuthenticationDocument : "",
+                      var.oidcExpected && !local.use_kube_authentication_document ? local.legacy-oidc-config : "",
                       local.registry-cleanup,
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
@@ -1565,6 +1702,13 @@ spec:
                       local.longhorn-disk-conf,
                       {{- end }}
                     ])
+
+                    lifecycle {
+                      precondition {
+                        condition = !var.oidcExpected || var.oidcReady
+                        error_message = "OIDC client ID and issuer Secret keys must be observed before applying control-plane configuration."
+                      }
+                    }
                   }
 
                   output "sas_drives" {
