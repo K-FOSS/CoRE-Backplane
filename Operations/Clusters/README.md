@@ -56,6 +56,12 @@ Crossplane/Terraform reconciliation for `core-dc1-talos`. A separate
 cluster; it is not the owner of the live srv1 claim. Preserve this distinction
 when refreshing or syncing Cluster Ops during recovery.
 
+Only the child selected from an Argo cluster registration with
+`resolvemy.host/nodetype: init` renders the production `Cluster` claims. The
+ApplicationSet passes that selection as `operations.clusterClaims`; other
+Cluster Ops applications keep the API and controller resources without
+creating duplicate production cluster claims.
+
 ### Talos compute-node configuration compatibility
 
 The `cluster-node` Composition detects the installed Talos version with

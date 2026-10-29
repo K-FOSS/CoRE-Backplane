@@ -1,3 +1,4 @@
+{{- if .Values.operations.clusterClaims }}
 apiVersion: resolvemy.host/v1alpha1
 kind: Cluster
 metadata:
@@ -31,6 +32,17 @@ spec:
   versions:
     kubernetes: 'v1.36.5'
     talos: 'v1.14.5'
+
+  oidc:
+    apps:
+      - issuer: 'https://idp.mylogin.space/application/o/che/'
+        clientIDSecretRef:
+          name: cluster-oidc-client-ids
+          key: 'che'
+      - issuerKey: 'home1HeadlampIssuer'
+        clientIDSecretRef:
+          name: cluster-oidc-client-ids
+          key: 'home1Headlamp'
 
   clustertype: infra
 
@@ -109,3 +121,5 @@ spec:
 
   controlplane:
     ipAddress: kubernetes.default.svc.k8s.home1.resolvemy.host
+
+{{- end }}

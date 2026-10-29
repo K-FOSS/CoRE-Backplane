@@ -22,6 +22,7 @@ spec:
           clusterName: '{{ .name }}'
           environment: prod
           tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+          clusterClaims: '{{ if eq (index .metadata.labels "resolvemy.host/nodetype") "init" }}true{{ else }}false{{ end }}'
 
   template:
     metadata:
@@ -58,6 +59,9 @@ spec:
                       passwordSecret:
                         name: {{ .values.clusterName }}-ops-cluster-kamaji
                         namespace: multicluster-controlplane
+
+                operations:
+                  clusterClaims: {{ .values.clusterClaims }}
 
 
       destination:
