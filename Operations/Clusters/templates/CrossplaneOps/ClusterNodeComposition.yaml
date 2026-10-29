@@ -1056,6 +1056,7 @@ spec:
                     legacy-node-labels = try(tomap(local.legacy-machine-config.nodeLabels), {})
                     legacy-node-annotations = try(tomap(local.legacy-machine-config.nodeAnnotations), {})
                     legacy-node-taints = try(tomap(local.legacy-machine-config.nodeTaints), {})
+                    kube-node-labels = merge(local.legacy-node-labels, {{ if $isControlplane }}{"node-role.kubernetes.io/control-plane" = ""}{{ else }}{"node-role.kubernetes.io/worker" = ""}{{ end }})
                     legacy-kubelet-config = try(local.legacy-machine-config.kubelet, {})
                     legacy-kubelet-extra-args = try(tomap(local.legacy-kubelet-config.extraArgs), {})
                     legacy-kubelet-cluster-dns = try(tolist(local.legacy-kubelet-config.clusterDNS), [])
@@ -1109,7 +1110,7 @@ spec:
                       yamlencode(merge({
                         apiVersion  = "v1alpha1"
                         kind        = "KubeNodeConfig"
-                        labels      = local.legacy-node-labels
+                        labels      = local.kube-node-labels
                         annotations = local.legacy-node-annotations
                         taints      = local.kube-node-taints
                         nodeIP = merge(local.legacy-kubelet-node-ip, {
