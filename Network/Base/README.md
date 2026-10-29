@@ -73,6 +73,10 @@ and [PMTU tuning guidance](https://docs.cilium.io/en/stable/operations/performan
 describe the mode and its trade-offs. Verify the effective value with
 `cilium-dbg config` after reconciliation.
 
+The Cilium agent CPU request is set to `128m` with `cilium.resources.requests.cpu`;
+this chart value configures the agent container's resource requests in the pinned
+[Cilium 1.20.4 chart values](https://github.com/cilium/cilium/blob/v1.20.4/install/kubernetes/cilium/values.yaml).
+
 Cilium extended IP protocols are enabled through `cilium.extraConfig` so
 protocols without transport-layer ports, including VRRP and IGMP, can be
 handled by the datapath. See Cilium's [extended IP protocol guidance](https://docs.cilium.io/en/stable/security/policy/host/)
