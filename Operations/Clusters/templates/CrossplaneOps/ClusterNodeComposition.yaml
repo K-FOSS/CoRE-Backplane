@@ -41,7 +41,6 @@ spec:
             {{ $bootloaderMode := default "uefi" .observed.composite.resource.spec.bootloader.mode }}
             {{ $oidcApps := list }}
             {{ $oidcSecretNames := list }}
-            {{ $oidcSecretNameIndexes := dict }}
             {{ $oidcJWT := list }}
             {{ $oidcExpected := false }}
             {{ $oidcReady := true }}
@@ -82,8 +81,7 @@ spec:
             {{ range $app := $oidcApps }}
             {{- if $app.clientIDSecretRef }}
             {{ $secretName := $app.clientIDSecretRef.name }}
-            {{ if not (hasKey $oidcSecretNameIndexes $secretName) }}
-            {{ $_ := set $oidcSecretNameIndexes $secretName (len $oidcSecretNames) }}
+            {{ if not (has $secretName $oidcSecretNames) }}
             {{ $oidcSecretNames = append $oidcSecretNames $secretName }}
             {{ end }}
             {{- end }}
@@ -127,7 +125,13 @@ spec:
             {{ $issuer := $app.issuer }}
             {{- if $app.clientIDSecretRef }}
             {{ $clientID = "" }}
-            {{ $secretResourceName := printf "oidc-client-secret-%d" (index $oidcSecretNameIndexes $app.clientIDSecretRef.name) }}
+            {{ $secretIndex := -1 }}
+            {{ range $candidateIndex, $candidateName := $oidcSecretNames }}
+            {{ if eq $candidateName $app.clientIDSecretRef.name }}
+            {{ $secretIndex = $candidateIndex }}
+            {{ end }}
+            {{ end }}
+            {{ $secretResourceName := printf "oidc-client-secret-%d" $secretIndex }}
             {{ $secret := dict }}
             {{ if $.observed.resources }}
             {{ $secret = index $.observed.resources $secretResourceName }}
