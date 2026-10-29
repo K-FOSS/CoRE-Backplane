@@ -379,6 +379,11 @@ spec:
                       topology.kubernetes.io/region: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}'
                       topology.kubernetes.io/zone: '{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.region }}-{{ $clusterCustomResource.status.atProvider.manifest.spec.metadata.datacenter }}'
                       resolvemy.host/nodemode: '{{ $.observed.composite.resource.spec.type }}'
+                      {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
+                      node-role.kubernetes.io/control-plane: ''
+                      {{- else }}
+                      node-role.kubernetes.io/worker: ''
+                      {{- end }}
                       {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                         {{- $nic := "" }}
                         {{- if $network.bridge }}
@@ -1046,8 +1051,20 @@ spec:
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
-                    legacy-machine-config = try(yamldecode(split("\n---", var.talosConfig)[0]).machine, {})
-                    legacy-cluster-config = try(yamldecode(split("\n---", var.talosConfig)[0]).cluster, {})
+                    talos-config-documents = split("\n---", var.talosConfig)
+                    talos-config-document = yamldecode(local.talos-config-documents[0])
+                    legacy-machine-config = try(local.talos-config-document.machine, {})
+                    legacy-cluster-config = try(local.talos-config-document.cluster, {})
+                    talos-config-without-legacy-apiserver = join("\n---", concat([
+                      yamlencode(merge(
+                        { for key, value in local.talos-config-document : key => value if key != "cluster" },
+                        try(local.talos-config-document.cluster, null) == null ? {} : {
+                          cluster = {
+                            for key, value in local.legacy-cluster-config : key => value if key != "apiServer"
+                          }
+                        }
+                      ))
+                    ], slice(local.talos-config-documents, 1, length(local.talos-config-documents))))
                     legacy-kube-apiserver-config = try(local.legacy-cluster-config.apiServer, {})
                     legacy-kube-apiserver-extra-args = {
                       for key, value in try(tomap(local.legacy-kube-apiserver-config.extraArgs), {}) : key => value
@@ -1056,7 +1073,6 @@ spec:
                     legacy-node-labels = try(tomap(local.legacy-machine-config.nodeLabels), {})
                     legacy-node-annotations = try(tomap(local.legacy-machine-config.nodeAnnotations), {})
                     legacy-node-taints = try(tomap(local.legacy-machine-config.nodeTaints), {})
-                    kube-node-labels = merge(local.legacy-node-labels, {{ if $isControlplane }}{"node-role.kubernetes.io/control-plane" = ""}{{ else }}{"node-role.kubernetes.io/worker" = ""}{{ end }})
                     legacy-kubelet-config = try(local.legacy-machine-config.kubelet, {})
                     legacy-kubelet-extra-args = try(tomap(local.legacy-kubelet-config.extraArgs), {})
                     legacy-kubelet-cluster-dns = try(tolist(local.legacy-kubelet-config.clusterDNS), [])
@@ -1110,7 +1126,7 @@ spec:
                       yamlencode(merge({
                         apiVersion  = "v1alpha1"
                         kind        = "KubeNodeConfig"
-                        labels      = local.kube-node-labels
+                        labels      = local.legacy-node-labels
                         annotations = local.legacy-node-annotations
                         taints      = local.kube-node-taints
                         nodeIP = merge(local.legacy-kubelet-node-ip, {
@@ -1437,7 +1453,7 @@ spec:
                       graceful = false
                       reboot   = false
                     }
-                    machine_configuration_input = var.talosConfig
+                    machine_configuration_input = local.use_kube_apiserver_document ? local.talos-config-without-legacy-apiserver : var.talosConfig
                     node = var.nodeIP
                     endpoint = var.nodeIP
                     config_patches = compact([
@@ -1708,8 +1724,8 @@ spec:
                       }),
                       local.use_v1_14_kubelet_documents ? local.legacy-kubelet-cleanup : "",
                       local.use_v1_14_kubelet_documents ? local.kubelet-conf : "",
-                      {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                       local.use_kube_apiserver_document ? local.legacy-kube-apiserver-cleanup : "",
+                      {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                       local.use_kube_apiserver_document ? local.kube-apiserver-conf : "",
                       local.use_kube_apiserver_document ? local.kube-authorizer-conf : "",
                       {{- end }}

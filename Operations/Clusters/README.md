@@ -143,9 +143,10 @@ whose installed and intended Talos versions are both v1.14 or newer; this no
 longer depends on a node-specific kubelet override. It carries forward existing
 kubelet extra arguments, DNS servers, seccomp setting, node
 labels, annotations, taints, node IP subnets, and registration settings where
-present. It also adds the `node-role.kubernetes.io/control-plane` label to
-control-plane nodes and `node-role.kubernetes.io/worker` to workers. The kubelet
-image stays aligned with the intended Kubernetes version.
+present. The composed Kubernetes `Node` resource also sets
+`node-role.kubernetes.io/control-plane` on control-plane nodes and
+`node-role.kubernetes.io/worker` on workers. The kubelet image stays aligned
+with the intended Kubernetes version.
 On control-plane nodes the Workspace also applies `KubeAPIServerConfig`, moving
 the Kubernetes API server image and `UserNamespacesSupport` feature gate out of
 the legacy `cluster.apiServer` field, plus named `Node` and `RBAC`
