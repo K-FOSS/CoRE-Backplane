@@ -25,6 +25,7 @@ spec:
                     hub: false
                     waf:
                       enabled: false
+                      policies: []
                     gateway:
                       address:
                         ipv4: 66.165.222.101
@@ -101,7 +102,7 @@ spec:
 
                 waf:
                   enabled: {{ .values.waf.enabled }}
-                  {{ with .values.waf.policies }}
+                  {{ with (index .values.waf "policies") }}
                   policies:
                     {{ toYaml . | nindent 4 }}
                   {{ end }}
