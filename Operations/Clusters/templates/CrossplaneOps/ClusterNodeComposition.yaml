@@ -41,6 +41,10 @@ spec:
             {{ $bootloaderMode := default "uefi" .observed.composite.resource.spec.bootloader.mode }}
             {{ $oidcApps := list }}
             {{ $oidcSecretNames := list }}
+            {{ $oidcSecretName := "" }}
+            {{ $oidcSecretResourceName := "oidc-client-secret" }}
+            {{ $oidcSecret := dict }}
+            {{ $oidcSecretData := dict }}
             {{ $oidcJWT := list }}
             {{ $oidcExpected := false }}
             {{ $oidcReady := true }}
@@ -86,26 +90,24 @@ spec:
             {{ end }}
             {{- end }}
             {{ end }}
-            {{ range $secretIndex, $secretName := $oidcSecretNames }}
-            {{ $secretResourceName := printf "oidc-client-secret-%d" $secretIndex }}
-            {{ $secret := dict }}
+            {{ if gt (len $oidcSecretNames) 0 }}
+            {{ $oidcSecretName = index $oidcSecretNames 0 }}
             {{ if $.observed.resources }}
-            {{ $secret = index $.observed.resources $secretResourceName }}
+            {{ $oidcSecret = index $.observed.resources $oidcSecretResourceName }}
             {{ end }}
-            {{ $secretData := dict }}
-            {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
-            {{ $secretData = $secret.resource.status.atProvider.manifest.data }}
+            {{ if and $oidcSecret $oidcSecret.resource.status.atProvider $oidcSecret.resource.status.atProvider.manifest }}
+            {{ $oidcSecretData = $oidcSecret.resource.status.atProvider.manifest.data }}
             {{ end }}
             ---
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
               annotations:
-                {{- if $secretData }}
+                {{- if $oidcSecretData }}
                 gotemplating.fn.crossplane.io/ready: 'True'
                 {{- end }}
-                crossplane.io/external-name: {{ $secretName | quote }}
-                {{ setResourceNameAnnotation $secretResourceName }}
+                crossplane.io/external-name: {{ $oidcSecretName | quote }}
+                {{ setResourceNameAnnotation $oidcSecretResourceName }}
             spec:
               providerConfigRef:
                 name: local-k8s
@@ -117,7 +119,7 @@ spec:
                   apiVersion: v1
                   kind: Secret
                   metadata:
-                    name: {{ $secretName | quote }}
+                    name: {{ $oidcSecretName | quote }}
                     namespace: {{ $clusterCustomResource.status.atProvider.manifest.metadata.namespace | quote }}
             {{ end }}
             {{ range $index, $app := $oidcApps }}
@@ -125,22 +127,9 @@ spec:
             {{ $issuer := $app.issuer }}
             {{- if $app.clientIDSecretRef }}
             {{ $clientID = "" }}
-            {{ $secretIndex := -1 }}
-            {{ range $candidateIndex, $candidateName := $oidcSecretNames }}
-            {{ if eq $candidateName $app.clientIDSecretRef.name }}
-            {{ $secretIndex = $candidateIndex }}
-            {{ end }}
-            {{ end }}
-            {{ $secretResourceName := printf "oidc-client-secret-%d" $secretIndex }}
-            {{ $secret := dict }}
-            {{ if $.observed.resources }}
-            {{ $secret = index $.observed.resources $secretResourceName }}
-            {{ end }}
-            {{ $secretData := dict }}
-            {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
-            {{ $secretData = $secret.resource.status.atProvider.manifest.data }}
-            {{ if hasKey $secretData $app.clientIDSecretRef.key }}
-            {{ $clientID = (index $secretData $app.clientIDSecretRef.key) | b64dec }}
+            {{ if and $oidcSecretData (eq $app.clientIDSecretRef.name $oidcSecretName) }}
+            {{ if hasKey $oidcSecretData $app.clientIDSecretRef.key }}
+            {{ $clientID = (index $oidcSecretData $app.clientIDSecretRef.key) | b64dec }}
             {{ end }}
             {{ end }}
             {{ $issuerKey := $app.issuerKey }}
@@ -148,9 +137,9 @@ spec:
             {{ $issuerKey = printf "%sIssuer" $app.clientIDSecretRef.key }}
             {{ end }}
             {{ if not $issuer }}
-            {{ if and $secret $secret.resource.status.atProvider $secret.resource.status.atProvider.manifest }}
-            {{ if hasKey $secretData $issuerKey }}
-            {{ $issuer = (index $secretData $issuerKey) | b64dec }}
+            {{ if and $oidcSecretData (eq $app.clientIDSecretRef.name $oidcSecretName) }}
+            {{ if hasKey $oidcSecretData $issuerKey }}
+            {{ $issuer = (index $oidcSecretData $issuerKey) | b64dec }}
             {{ end }}
             {{ end }}
             {{ end }}
@@ -973,10 +962,6 @@ spec:
             kind: Workspace
             metadata:
               annotations:
-                oidc-debug-app-count: {{ len $oidcApps | quote }}
-                oidc-debug-secret-count: {{ len $oidcSecretNames | quote }}
-                oidc-debug-app-0-ref: {{ if and (gt (len $oidcApps) 0) (index $oidcApps 0).clientIDSecretRef }}'true'{{ else }}'false'{{ end }}
-                oidc-debug-app-1-ref: {{ if and (gt (len $oidcApps) 1) (index $oidcApps 1).clientIDSecretRef }}'true'{{ else }}'false'{{ end }}
                 #
                 # TODO: Actually make this check status
                 {{- if or (not $oidcExpected) $oidcReady }}

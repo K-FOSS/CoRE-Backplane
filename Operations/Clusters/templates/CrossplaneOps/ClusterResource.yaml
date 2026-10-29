@@ -217,6 +217,9 @@ spec:
                   properties:
                     apps:
                       type: array
+                      x-kubernetes-validations:
+                        - rule: 'self.all(app, !has(app.clientIDSecretRef) || self.all(other, !has(other.clientIDSecretRef) || app.clientIDSecretRef.name == other.clientIDSecretRef.name))'
+                          message: 'all clientIDSecretRef values in one Cluster must refer to the same Secret'
                       items:
                         type: object
                         x-kubernetes-validations:

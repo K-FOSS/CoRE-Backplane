@@ -99,6 +99,10 @@ CoreVault paths are `Operations/Clusters/OIDC/Che` and
 `core-dc1-talos-prod` and `core-home1-talos-prod` Headlamp entries. These values
 are assembled into the `cluster-oidc-client-ids` Secret in the Cluster claims'
 `core-prod` namespace.
+All apps that use `clientIDSecretRef` within one Cluster must reference the same
+Secret name; each app can use a different key in that Secret. This lets each
+control-plane Workspace observe the Secret once and assemble all of the
+cluster's JWT entries from that observation.
 The referenced Secret must exist before authentication can be applied. The
 read-only Kubernetes `Object` observations and Terraform Workspace varmap hold
 the decoded client IDs and issuer URLs at runtime, so access to those Crossplane
