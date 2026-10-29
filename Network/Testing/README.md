@@ -4,6 +4,11 @@ This chart deploys LibreSpeed, iperf3 and Gateway/traffic-policy test
 resources. It is owned by `Apps/Network/Testing.yaml` and is deployed to
 selected production clusters despite its testing purpose.
 
+The YVR LibreSpeed `HTTPRoute` is also the initial detection-only canary for
+the [shared Envoy Gateway Coraza/OWASP CRS policy](../Ingress/WAF.md). The WAF
+policy remains owned by the ingress chart; this chart only owns the low-risk
+route and backend selected for controlled validation.
+
 Use it to measure inter-site/cluster throughput and latency and to exercise
 service, ingress, L2 announcement and LoadBalancer behavior.
 

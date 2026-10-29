@@ -1,0 +1,62 @@
+{{- if .Values.waf.enabled }}
+{{- range $policy := .Values.waf.policies }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyExtensionPolicy
+metadata:
+  name: {{ required "waf.policies[].name is required" $policy.name | squote }}
+  namespace: {{ $.Release.Namespace | squote }}
+  labels:
+    app.kubernetes.io/component: 'waf'
+    app.kubernetes.io/part-of: 'core-backplane-ingress'
+  annotations:
+    core.mylogin.space/waf-mode: {{ $.Values.waf.mode | squote }}
+    core.mylogin.space/coraza-version: {{ $.Values.waf.image.version | squote }}
+    core.mylogin.space/crs-version: {{ $.Values.waf.image.crsVersion | squote }}
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ required "waf.policies[].targetRoute is required" $policy.targetRoute | squote }}
+  wasm:
+    - name: 'coraza-crs'
+      rootID: ''
+      failOpen: {{ $.Values.waf.failOpen }}
+      code:
+        type: Image
+        image:
+          url: '{{ $.Values.waf.image.repository }}@{{ $.Values.waf.image.digest }}'
+          sha256: {{ trimPrefix "sha256:" $.Values.waf.image.digest | squote }}
+      config:
+        metric_labels:
+          cluster: {{ $.Values.cluster.name | squote }}
+          route: {{ required "waf.policies[].targetRoute is required" $policy.targetRoute | squote }}
+        directives_map:
+          default:
+            - 'Include @recommended-conf'
+            - 'SecRuleEngine {{ $.Values.waf.mode }}'
+            - 'SecRequestBodyLimit {{ printf "%.0f" $.Values.waf.requestBodyLimit }}'
+            - 'SecRequestBodyInMemoryLimit {{ printf "%.0f" $.Values.waf.requestBodyInMemoryLimit }}'
+            - 'SecRequestBodyLimitAction {{ $.Values.waf.requestBodyLimitAction }}'
+            {{- if $.Values.waf.responseBodyInspection }}
+            - 'SecResponseBodyAccess On'
+            {{- else }}
+            - 'SecResponseBodyAccess Off'
+            {{- end }}
+            - 'SecAuditEngine RelevantOnly'
+            - 'SecAuditLogParts AHZ'
+            - 'SecAuditLogType Serial'
+            - 'SecAuditLog /dev/stdout'
+            - 'SecAuditLogFormat JSON'
+            - 'SecDebugLogLevel 1'
+            - 'Include @crs-setup-conf'
+            - 'SecAction "id:900000,phase:1,pass,nolog,setvar:tx.paranoia_level={{ $.Values.waf.paranoiaLevel }}"'
+            {{- range $exclusion := $policy.exclusions }}
+            {{- $reason := required "waf exclusion reason is required" $exclusion.reason }}
+            # Exclusion reason: {{ $reason }}
+            - {{ printf "SecRule REQUEST_URI \"@beginsWith %s\" \"id:%v,phase:1,pass,nolog,ctl:ruleRemoveById=%v\"" (required "waf exclusion pathPrefix is required" $exclusion.pathPrefix) (required "waf exclusion controlRuleId is required" $exclusion.controlRuleId) (required "waf exclusion ruleId is required" $exclusion.ruleId) | squote }}
+            {{- end }}
+            - 'Include @owasp_crs/*.conf'
+        default_directives: 'default'
+---
+{{- end }}
+{{- end }}

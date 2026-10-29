@@ -23,6 +23,8 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    waf:
+                      enabled: false
                     gateway:
                       address:
                         ipv4: 66.165.222.101
@@ -35,6 +37,12 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    waf:
+                      enabled: true
+                      policies:
+                        - name: 'coraza-crs-librespeed-canary'
+                          targetRoute: 'core-home1-talos-prod-net-testing-prod'
+                          exclusions: []
                     gateway:
                       dns:
                         target: l8520277.eero.online
@@ -90,6 +98,13 @@ spec:
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
+
+                waf:
+                  enabled: {{ .values.waf.enabled }}
+                  {{ with .values.waf.policies }}
+                  policies:
+                    {{ toYaml . | nindent 4 }}
+                  {{ end }}
 
                 gateway:
                   service:

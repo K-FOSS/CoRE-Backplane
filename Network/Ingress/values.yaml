@@ -134,6 +134,22 @@ env: testing
 gatewayClass:
   controllerName: 
 
+waf:
+  enabled: false
+  mode: 'DetectionOnly'
+  failOpen: true
+  requestBodyLimit: 1048576
+  requestBodyInMemoryLimit: 1048576
+  requestBodyLimitAction: 'ProcessPartial'
+  responseBodyInspection: false
+  paranoiaLevel: 1
+  image:
+    repository: 'ghcr.io/corazawaf/coraza-proxy-wasm'
+    version: '0.6.0'
+    digest: 'sha256:d66f944831428ea27039207fa4019bea55f9ea0a876d7b0dc8cc7c9e385fa4b1'
+    crsVersion: '4.14.0'
+  policies: []
+
 s3-proxy:
   # Default values for s3-proxy.
   # This is a YAML-formatted file.
