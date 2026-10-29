@@ -135,8 +135,17 @@ API-server volume/argument patch from the same node Workspace. The production
 DC1 and Home1 Cluster claims declare Che and Headlamp, with Headlamp issuer URLs
 assembled automatically from their application Workspace outputs.
 
-The v1.14 control-plane Workspace patches also preserve existing node behavior
-through the new configuration documents. `KubeNodeConfig` removes the
+The v1.14 Workspace applies `KubeletConfig` and `KubeNodeConfig` to every node
+whose installed and intended Talos versions are both v1.14 or newer; this no
+longer depends on a node-specific kubelet override. It carries forward the
+inherited kubelet image, extra arguments, DNS servers, seccomp setting, node
+labels, annotations, taints, node IP subnets, and registration settings where
+present. On control-plane nodes it also applies `KubeAPIServerConfig`, moving
+the Kubernetes API server image and `UserNamespacesSupport` feature gate out of
+the legacy `cluster.apiServer` field. Nodes still running an older Talos
+version keep the legacy configuration until their installed version is
+upgraded. The v1.14 control-plane Workspace patches also preserve existing
+node behavior through the new configuration documents. `KubeNodeConfig` removes the
 control-plane `NoSchedule` taint, `KubeProxyConfig` disables kube-proxy for
 Cilium, and the default `KubeFlannelCNIConfig` is deleted. See the Talos
 references for
@@ -236,7 +245,7 @@ spec:
 ```
 
 The Composition detects the running Talos version. Talos 1.14 and newer nodes
-with an explicit kubelet override receive the dedicated Talos
+receive the dedicated Talos
 [`KubeletConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeletconfig)
 and
 [`KubeNodeConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubenodeconfig)
@@ -244,9 +253,9 @@ documents even when Longhorn user disks are configured. Longhorn disks are
 provisioned with `UserVolumeConfig`; Talos mounts those volumes under
 `/var/mnt/<name>` and propagates them into the kubelet container, so the modern
 document path does not need legacy kubelet `extraMounts` ([Talos User Volumes](https://docs.siderolabs.com/talos/v1.14/configure-your-talos-cluster/storage-and-disk-management/disk-management/user)).
-Nodes without an explicit kubelet override, and nodes below Talos 1.14, retain
-the legacy `machine.kubelet` configuration. If the version probe cannot reach
-the node, the Composition conservatively uses the legacy form.
+Nodes below Talos 1.14 retain the legacy `machine.kubelet` configuration. If
+the version probe cannot reach a node, the Composition conservatively uses the
+legacy form.
 
 For a node using the Talos v1.14 documents, its Workspace first removes the inherited legacy
 `machine.kubelet`, `machine.nodeLabels`, and

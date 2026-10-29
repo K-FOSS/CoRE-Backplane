@@ -39,6 +39,7 @@ spec:
             {{ $bridgeDSResourceName := "bridge-ds" }}
             {{ $targetClusterNodeResourceName := "cluster-k8s-node" }}
             {{ $bootloaderMode := default "uefi" .observed.composite.resource.spec.bootloader.mode }}
+            {{ $isControlplane := eq .observed.composite.resource.spec.type "controlplane" }}
             {{ $oidcApps := list }}
             {{ $oidcExpected := false }}
             ---
@@ -982,11 +983,11 @@ spec:
             {{ end }}
             {{- end }}
 
-                  # Talos 1.12 introduced the multi-document network configuration
-                  # model. Keep using the legacy machine configuration until the
-                  # running node has actually been upgraded as well as the desired
-                  # image, because ApplyConfiguration is handled by the currently
-                  # installed Talos API.
+                  # Talos 1.12 introduced multi-document network configuration;
+                  # Talos 1.14 moved kubelet, node, and API server settings into
+                  # dedicated documents. Keep using each legacy configuration
+                  # until the running node and intended image both support its
+                  # replacement, because ApplyConfiguration uses the installed API.
                   data "local_command" "talos_version" {
                     command                  = "talosctl"
                     arguments                = ["get", "version", "-o", "json", "--talosconfig=./talos-config", "--nodes", var.nodeIP]
@@ -1046,44 +1047,82 @@ spec:
                     intended_talos_is_1_14_or_newer = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 14)
                     installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
                     use_kube_authentication_document = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
-                    node_kubelet_override_requested = {{ if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubelet .observed.composite.resource.spec.overrides.kubelet.config }}true{{ else }}false{{ end }}
-                    use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.node_kubelet_override_requested
+                    use_kube_apiserver_document = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
+                    use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
                     intended_talos_supports_multidoc = tonumber(local.intended_talos_parts[0]) > 1 || (tonumber(local.intended_talos_parts[0]) == 1 && tonumber(local.intended_talos_parts[1]) >= 12)
                     use_multidoc_config = local.installed_talos_supports_multidoc && local.intended_talos_supports_multidoc
-                    legacy-node-labels = try(tomap(yamldecode(split("\n---", var.talosConfig)[0]).machine.nodeLabels), {})
+                    legacy-machine-config = try(yamldecode(split("\n---", var.talosConfig)[0]).machine, {})
+                    legacy-cluster-config = try(yamldecode(split("\n---", var.talosConfig)[0]).cluster, {})
+                    legacy-kube-apiserver-config = try(local.legacy-cluster-config.apiServer, {})
+                    legacy-kube-apiserver-extra-args = try(tomap(local.legacy-kube-apiserver-config.extraArgs), {})
+                    legacy-node-labels = try(tomap(local.legacy-machine-config.nodeLabels), {})
+                    legacy-node-annotations = try(tomap(local.legacy-machine-config.nodeAnnotations), {})
+                    legacy-node-taints = try(tomap(local.legacy-machine-config.nodeTaints), {})
+                    legacy-kubelet-config = try(local.legacy-machine-config.kubelet, {})
+                    legacy-kubelet-extra-args = try(tomap(local.legacy-kubelet-config.extraArgs), {})
+                    legacy-kubelet-cluster-dns = try(tolist(local.legacy-kubelet-config.clusterDNS), [])
+                    legacy-kubelet-node-ip = try(tomap(local.legacy-kubelet-config.nodeIP), {})
+                    legacy-kubelet-node-registration = merge(
+                      try(local.legacy-kubelet-config.skipNodeRegistration, null) == null ? {} : { skipNodeRegistration = local.legacy-kubelet-config.skipNodeRegistration },
+                      try(local.legacy-kubelet-config.registerWithFQDN, null) == null ? {} : { registerWithFQDN = local.legacy-kubelet-config.registerWithFQDN }
+                    )
+                    legacy-kubelet-default-runtime-seccomp-profile-enabled = try(local.legacy-kubelet-config.defaultRuntimeSeccompProfileEnabled, null)
+                    kube-node-taints = merge(local.legacy-node-taints, {{ if $isControlplane }}{"node-role.kubernetes.io/control-plane" = {"$patch" = "delete"}}{{ else }}{}{{ end }})
 
-                    kubelet-conf = <<-EOT
-                      ---
-                      apiVersion: v1alpha1
-                      kind: KubeletConfig
-                      image: ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}
-                      config: {{ $kubeletConfig | toJson }}
-                      ---
-                      apiVersion: v1alpha1
-                      kind: KubeNodeConfig
-                      labels: ${jsonencode(local.legacy-node-labels)}
-                      {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
-                      taints:
-                        node-role.kubernetes.io/control-plane:
-                          $patch: delete
-                      {{- end }}
-                      nodeIP:
-                        validSubnets:
-                          {{- range $index, $network := .observed.composite.resource.spec.networks }}
-                          {{- range $addrIndex, $address := $network.addresses }}
-                          {{- if and . (not (contains ":" $address)) }}
-                          - {{ regexReplaceAll "(.*)/[1-3][0-9]" $address "${1}" }}/32
-                          {{- end }}
-                          {{- end }}
-                          {{- end }}
-                    EOT
+                    kube-apiserver-conf = yamlencode(merge({
+                      apiVersion = "v1alpha1"
+                      kind       = "KubeAPIServerConfig"
+                      image      = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"
+                      extraArgs  = merge(local.legacy-kube-apiserver-extra-args, { "feature-gates" = "UserNamespacesSupport=true" })
+                    },
+                      try(local.legacy-kube-apiserver-config.env, null) == null ? {} : { env = local.legacy-kube-apiserver-config.env },
+                      try(local.legacy-kube-apiserver-config.resources, null) == null ? {} : { resources = local.legacy-kube-apiserver-config.resources },
+                      try(local.legacy-kube-apiserver-config.apiPort, null) == null ? {} : { apiPort = local.legacy-kube-apiserver-config.apiPort },
+                      try(local.legacy-kube-apiserver-config.certExtraSANs, null) == null ? {} : { certExtraSANs = local.legacy-kube-apiserver-config.certExtraSANs },
+                      try(local.legacy-kube-apiserver-config.startupProbes, null) == null ? {} : { startupProbes = local.legacy-kube-apiserver-config.startupProbes }
+                    ))
+
+                    kubelet-conf = join("\n---\n", [
+                      yamlencode(merge({
+                        apiVersion = "v1alpha1"
+                        kind       = "KubeletConfig"
+                        image      = "ghcr.io/siderolabs/kubelet:{{ $clusterK8sVersion }}"
+                        config     = {{ $kubeletConfig | toJson }}
+                      },
+                        length(local.legacy-kubelet-extra-args) > 0 ? { extraArgs = local.legacy-kubelet-extra-args } : {},
+                        length(local.legacy-kubelet-cluster-dns) > 0 ? { clusterDNS = local.legacy-kubelet-cluster-dns } : {},
+                        local.legacy-kubelet-default-runtime-seccomp-profile-enabled == null ? {} : { defaultRuntimeSeccompProfileEnabled = local.legacy-kubelet-default-runtime-seccomp-profile-enabled }
+                      )),
+                      yamlencode(merge({
+                        apiVersion  = "v1alpha1"
+                        kind        = "KubeNodeConfig"
+                        labels      = local.legacy-node-labels
+                        annotations = local.legacy-node-annotations
+                        taints      = local.kube-node-taints
+                        nodeIP = merge(local.legacy-kubelet-node-ip, {
+                          validSubnets = [
+                            {{- range $index, $network := .observed.composite.resource.spec.networks }}
+                            {{- range $addrIndex, $address := $network.addresses }}
+                            {{- if and . (not (contains ":" $address)) }}
+                            "{{ regexReplaceAll "(.*)/[1-3][0-9]" $address "${1}" }}/32",
+                            {{- end }}
+                            {{- end }}
+                            {{- end }}
+                          ]
+                        })
+                      }, local.legacy-kubelet-node-registration))
+                    ])
 
                     legacy-kubelet-cleanup = <<-EOT
                       machine:
                         kubelet:
                           $patch: delete
                         nodeLabels:
+                          $patch: delete
+                        nodeAnnotations:
+                          $patch: delete
+                        nodeTaints:
                           $patch: delete
                       cluster:
                         allowSchedulingOnControlPlanes:
@@ -1443,7 +1482,7 @@ spec:
                             ]
                           }
 
-                          apiServer = {
+                          apiServer = local.use_kube_apiserver_document ? null : {
                             extraArgs = {
                               feature-gates = "UserNamespacesSupport=true"
                             }
@@ -1664,6 +1703,9 @@ spec:
                       }),
                       local.use_v1_14_kubelet_documents ? local.legacy-kubelet-cleanup : "",
                       local.use_v1_14_kubelet_documents ? local.kubelet-conf : "",
+                      {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
+                      local.use_kube_apiserver_document ? local.kube-apiserver-conf : "",
+                      {{- end }}
                       var.oidcExpected && local.use_kube_authentication_document ? local.oidc_authentication_document : "",
                       var.oidcExpected && !local.use_kube_authentication_document ? local.legacy-oidc-config : "",
                       local.registry-cleanup,
