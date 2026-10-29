@@ -4,6 +4,12 @@ This chart deploys LibreSpeed, iperf3 and Gateway/traffic-policy test
 resources. It is owned by `Apps/Network/Testing.yaml` and is deployed to
 selected production clusters despite its testing purpose.
 
+[LibreSpeed 6.3.1](https://github.com/librespeed/speedtest/releases/tag/v6.3.1)
+is pinned to its multi-architecture OCI index digest in
+[`templates/common.yaml`](templates/common.yaml). The upstream
+[container documentation](https://github.com/librespeed/speedtest/blob/v6.3.1/doc_docker.md)
+describes its runtime modes, environment variables, and port `8080` default.
+
 The YVR LibreSpeed `HTTPRoute` is also the initial detection-only canary for
 the [shared Envoy Gateway Coraza/OWASP CRS policy](../Ingress/WAF.md). The WAF
 policy remains owned by the ingress chart; this chart only owns the low-risk
