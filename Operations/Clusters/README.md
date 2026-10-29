@@ -137,16 +137,17 @@ assembled automatically from their application Workspace outputs.
 
 The v1.14 Workspace applies `KubeletConfig` and `KubeNodeConfig` to every node
 whose installed and intended Talos versions are both v1.14 or newer; this no
-longer depends on a node-specific kubelet override. It carries forward the
-inherited kubelet image, extra arguments, DNS servers, seccomp setting, node
+longer depends on a node-specific kubelet override. It carries forward existing
+kubelet extra arguments, DNS servers, seccomp setting, node
 labels, annotations, taints, node IP subnets, and registration settings where
-present. On control-plane nodes it also applies `KubeAPIServerConfig`, moving
+present. The kubelet image stays aligned with the intended Kubernetes version.
+On control-plane nodes the Workspace also applies `KubeAPIServerConfig`, moving
 the Kubernetes API server image and `UserNamespacesSupport` feature gate out of
 the legacy `cluster.apiServer` field. Nodes still running an older Talos
 version keep the legacy configuration until their installed version is
 upgraded. The v1.14 control-plane Workspace patches also preserve existing
-node behavior through the new configuration documents. `KubeNodeConfig` removes the
-control-plane `NoSchedule` taint, `KubeProxyConfig` disables kube-proxy for
+node behavior through the new configuration documents. `KubeNodeConfig` removes
+the control-plane `NoSchedule` taint, `KubeProxyConfig` disables kube-proxy for
 Cilium, and the default `KubeFlannelCNIConfig` is deleted. See the Talos
 references for
 [`KubeNodeConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubenodeconfig),
