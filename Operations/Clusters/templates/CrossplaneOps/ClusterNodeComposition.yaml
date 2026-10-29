@@ -1080,6 +1080,21 @@ spec:
                       try(local.legacy-kube-apiserver-config.startupProbes, null) == null ? {} : { startupProbes = local.legacy-kube-apiserver-config.startupProbes }
                     ))
 
+                    kube-authorizer-conf = join("\n---\n", [
+                      yamlencode({
+                        apiVersion = "v1alpha1"
+                        kind       = "KubeAuthorizerConfig"
+                        name       = "node"
+                        type       = "Node"
+                      }),
+                      yamlencode({
+                        apiVersion = "v1alpha1"
+                        kind       = "KubeAuthorizerConfig"
+                        name       = "rbac"
+                        type       = "RBAC"
+                      })
+                    ])
+
                     kubelet-conf = join("\n---\n", [
                       yamlencode(merge({
                         apiVersion = "v1alpha1"
@@ -1695,6 +1710,7 @@ spec:
                       {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                       local.use_kube_apiserver_document ? local.legacy-kube-apiserver-cleanup : "",
                       local.use_kube_apiserver_document ? local.kube-apiserver-conf : "",
+                      local.use_kube_apiserver_document ? local.kube-authorizer-conf : "",
                       {{- end }}
                       var.oidcExpected && local.use_kube_authentication_document ? local.oidc_authentication_document : "",
                       local.registry-cleanup,

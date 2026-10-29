@@ -146,7 +146,9 @@ labels, annotations, taints, node IP subnets, and registration settings where
 present. The kubelet image stays aligned with the intended Kubernetes version.
 On control-plane nodes the Workspace also applies `KubeAPIServerConfig`, moving
 the Kubernetes API server image and `UserNamespacesSupport` feature gate out of
-the legacy `cluster.apiServer` field. Nodes still running an older Talos
+the legacy `cluster.apiServer` field, plus named `Node` and `RBAC`
+[`KubeAuthorizerConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeauthorizerconfig)
+documents required by the API server. Nodes still running an older Talos
 version keep the legacy configuration until their installed version is
 upgraded. The v1.14 control-plane Workspace patches also preserve existing
 node behavior through the new configuration documents. `KubeNodeConfig` removes
