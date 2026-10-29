@@ -130,10 +130,13 @@ For Talos v1.14+, the control-plane node Workspace applies the
 An app may set an explicit `issuer`; otherwise, when using `clientIDSecretRef`,
 the Workspace derives the issuer key by appending `Issuer` to the client ID key.
 Talos manages the authentication config file and kube-apiserver integration from
-that document. Older Talos versions receive the legacy authentication file and
-API-server volume/argument patch from the same node Workspace. The production
-DC1 and Home1 Cluster claims declare Che and Headlamp, with Headlamp issuer URLs
-assembled automatically from their application Workspace outputs.
+that document. The legacy `AuthenticationConfiguration` file and
+kube-apiserver volume/argument injection have been removed. A control-plane
+Workspace with OIDC apps now requires both installed and intended Talos versions
+to be v1.14 or newer; it fails its precondition until an older node is upgraded
+instead of applying a legacy authentication path. The production DC1 and Home1
+Cluster claims declare Che and Headlamp, with Headlamp issuer URLs assembled
+automatically from their application Workspace outputs.
 
 The v1.14 Workspace applies `KubeletConfig` and `KubeNodeConfig` to every node
 whose installed and intended Talos versions are both v1.14 or newer; this no

@@ -1030,15 +1030,9 @@ spec:
                         jwt = local.oidc_jwt
                       }
                     })
-                    oidc_legacy_authentication_file = jsonencode({
-                      apiVersion = "apiserver.config.k8s.io/v1beta1"
-                      kind       = "AuthenticationConfiguration"
-                      jwt        = local.oidc_jwt
-                    })
             {{- else }}
                     oidc_jwt = []
                     oidc_authentication_document = ""
-                    oidc_legacy_authentication_file = ""
             {{- end }}
                     installed_talos_version = try(trimprefix(jsondecode(trimspace(data.local_command.talos_version.stdout)).spec.version, "v"), "0.0.0")
                     installed_talos_parts = split(".", local.installed_talos_version)
@@ -1055,7 +1049,10 @@ spec:
                     legacy-machine-config = try(yamldecode(split("\n---", var.talosConfig)[0]).machine, {})
                     legacy-cluster-config = try(yamldecode(split("\n---", var.talosConfig)[0]).cluster, {})
                     legacy-kube-apiserver-config = try(local.legacy-cluster-config.apiServer, {})
-                    legacy-kube-apiserver-extra-args = try(tomap(local.legacy-kube-apiserver-config.extraArgs), {})
+                    legacy-kube-apiserver-extra-args = {
+                      for key, value in try(tomap(local.legacy-kube-apiserver-config.extraArgs), {}) : key => value
+                      if key != "authentication-config"
+                    }
                     legacy-node-labels = try(tomap(local.legacy-machine-config.nodeLabels), {})
                     legacy-node-annotations = try(tomap(local.legacy-machine-config.nodeAnnotations), {})
                     legacy-node-taints = try(tomap(local.legacy-machine-config.nodeTaints), {})
@@ -1129,21 +1126,10 @@ spec:
                           $patch: delete
                     EOT
 
-                    legacy-oidc-config = <<-EOT
-                      machine:
-                        files:
-                          - path: /var/kubernetes/auth-config.yaml
-                            permissions: 420
-                            op: create
-                            content: ${jsonencode(local.oidc_legacy_authentication_file)}
+                    legacy-kube-apiserver-cleanup = <<-EOT
                       cluster:
                         apiServer:
-                          extraVolumes:
-                            - hostPath: /var/kubernetes/auth-config.yaml
-                              mountPath: /var/kubernetes/auth-config.yaml
-                              readonly: true
-                          extraArgs:
-                            authentication-config: /var/kubernetes/auth-config.yaml
+                          $patch: delete
                     EOT
 
                     registry-cleanup = <<-EOT
@@ -1704,10 +1690,10 @@ spec:
                       local.use_v1_14_kubelet_documents ? local.legacy-kubelet-cleanup : "",
                       local.use_v1_14_kubelet_documents ? local.kubelet-conf : "",
                       {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
+                      local.use_kube_apiserver_document ? local.legacy-kube-apiserver-cleanup : "",
                       local.use_kube_apiserver_document ? local.kube-apiserver-conf : "",
                       {{- end }}
                       var.oidcExpected && local.use_kube_authentication_document ? local.oidc_authentication_document : "",
-                      var.oidcExpected && !local.use_kube_authentication_document ? local.legacy-oidc-config : "",
                       local.registry-cleanup,
                       {{- if $.observed.composite.resource.spec.watchdog.enabled }}
                       local.watchdog-conf,
@@ -1736,6 +1722,10 @@ spec:
                       precondition {
                         condition = !var.oidcExpected || length(local.oidc_jwt) > 0
                         error_message = "OIDC configuration requires at least one Cluster app with client ID and issuer inputs."
+                      }
+                      precondition {
+                        condition = !var.oidcExpected || local.use_kube_authentication_document
+                        error_message = "OIDC configuration requires an installed and intended Talos version of v1.14 or newer."
                       }
                     }
                   }
