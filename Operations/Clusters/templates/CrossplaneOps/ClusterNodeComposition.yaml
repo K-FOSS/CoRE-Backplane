@@ -187,10 +187,6 @@ spec:
             kind: Workspace
             metadata:
               annotations:
-                oidc-debug-app-count: {{ len $oidcApps | quote }}
-                oidc-debug-secret-count: {{ len $oidcSecretNames | quote }}
-                oidc-debug-app-0-ref: {{ if and (gt (len $oidcApps) 0) (index $oidcApps 0).clientIDSecretRef }}'true'{{ else }}'false'{{ end }}
-                oidc-debug-app-1-ref: {{ if and (gt (len $oidcApps) 1) (index $oidcApps 1).clientIDSecretRef }}'true'{{ else }}'false'{{ end }}
                 #
                 # TODO: Actually make this check status and shit
                 gotemplating.fn.crossplane.io/ready: 'True'
@@ -977,6 +973,10 @@ spec:
             kind: Workspace
             metadata:
               annotations:
+                oidc-debug-app-count: {{ len $oidcApps | quote }}
+                oidc-debug-secret-count: {{ len $oidcSecretNames | quote }}
+                oidc-debug-app-0-ref: {{ if and (gt (len $oidcApps) 0) (index $oidcApps 0).clientIDSecretRef }}'true'{{ else }}'false'{{ end }}
+                oidc-debug-app-1-ref: {{ if and (gt (len $oidcApps) 1) (index $oidcApps 1).clientIDSecretRef }}'true'{{ else }}'false'{{ end }}
                 #
                 # TODO: Actually make this check status
                 {{- if or (not $oidcExpected) $oidcReady }}
