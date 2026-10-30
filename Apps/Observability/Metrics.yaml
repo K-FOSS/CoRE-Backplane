@@ -66,7 +66,7 @@ spec:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" | replace ".mylogin.space" "" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
@@ -121,7 +121,7 @@ spec:
 
                 mimir:
                   enabled: {{ .values.mimirEnabled }}
-                  tenant: core
+                  tenant: '{{ .values.tenant }}'
                   storage:
                     backend: '{{ .values.mimirS3Backend }}'
                     region: '{{ if eq .values.mimirS3Backend "garage" }}garage{{ else }}us-east-1{{ end }}'
@@ -148,7 +148,7 @@ spec:
                       serverName: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                   rules:
                     configMapName: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
-                    tenant: core
+                    tenant: '{{ .values.tenant }}'
                   {{- if eq .values.region "yxl" }}
                   limits:
                     ingestionRate: {{ .values.mimirIngestionRate }}
@@ -314,7 +314,7 @@ spec:
                     persistentVolume:
                       enabled: true
                       size: 2Gi
-                      storageClass: longhorn
+                      storageClass: '{{ .values.tenant }}-fast-rwx'
                       enableRetentionPolicy: true
                       whenDeleted: Retain
                       whenScaled: Retain
@@ -335,7 +335,7 @@ spec:
                           name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
                     extraVolumeMounts:
                       - name: rulefiles
-                        mountPath: /rules/core
+                        mountPath: '/rules/{{ .values.tenant }}'
                   mimir:
                     structuredConfig:
                       limits:

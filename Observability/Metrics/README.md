@@ -66,8 +66,11 @@ Garage client; the operator supplies its separate static GarageKey.
 
 ## Storage and credentials
 
-The distributed chart's `ingester`, `store_gateway`, and `compactor` persistence
-values use Longhorn claims with `Retain` policies. The legacy
+The distributed chart's `ingester` and `compactor` persistence values use the
+`longhorn` StorageClass. The `store_gateway` uses the tenant-scoped
+`<tenant>-fast-rwx` class; its class-level `Delete` policy applies if its PVC is
+deleted, while Mimir's current retention settings retain the PVC when the
+workload is deleted. The legacy
 `mimir.dataVolume` and `mimir.tmpVolume` values remain for the disabled
 single-binary compatibility path and independently support
 `type: 'emptyDir'` or `type: 'persistentVolumeClaim'`. For node-local disk,
@@ -97,8 +100,8 @@ settings differ from the retained, disabled single-binary profile. The S3
 layout follows Grafana's [distributed chart production configuration
 guide](https://grafana.com/docs/helm-charts/mimir-distributed/latest/run-production-environment-with-helm/#configure-mimir-to-use-object-storage).
 
-The ruler mounts the exporter-owned rulefiles ConfigMap at `/rules/core` and
-uses `ruler_storage.backend: local` with directory `/rules`. Tenant `core`
+The ruler mounts the exporter-owned rulefiles ConfigMap at `/rules/<tenant>` and
+uses `ruler_storage.backend: local` with directory `/rules`. The cluster tenant
 therefore reads that ConfigMap. The writable ruler working directory is
 `/data`, separate from the read-only rule input. Compactor and Alertmanager
 also use their chart-mounted `/data` paths. See the upstream
