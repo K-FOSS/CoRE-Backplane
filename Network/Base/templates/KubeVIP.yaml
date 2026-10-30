@@ -116,8 +116,10 @@ data:
     }
 
     vip_is_owned() {
-      ip -4 -o addr show dev "${WAN}" scope global 2>/dev/null |
-        awk '{print $4}' | cut -d/ -f1 | grep -Fxq "${1}"
+      case " ${owned_vips} " in
+        *" ${1} "*) return 0 ;;
+        *) return 1 ;;
+      esac
     }
 
     # tc prints flower handles in hex even when the CLI accepted decimal.
@@ -375,6 +377,8 @@ data:
       ensure_clsact || true
       ensure_cilium_default_route || true
       ensure_private_routes || true
+      # Snapshot ownership once per pass; all VIP decisions use the same view.
+      owned_vips="$(ip -4 -o addr show dev "${WAN}" scope global 2>/dev/null | awk '{split($4, address, "/"); printf "%s ", address[1]}')"
       n="${START}"
       while [ "${n}" -le "${END}" ]; do
         vip="${PREFIX}.${n}"

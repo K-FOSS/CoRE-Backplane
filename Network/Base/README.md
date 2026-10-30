@@ -166,6 +166,9 @@ available, because filtered human-readable
 output can omit chain and preference. The Cilium default-route check searches
 all routes returned for `eth0` and keeps an existing route via the selected
 gateway with metric 50, even when `ip route` omits `dev eth0` from that output.
+Each pass reads the WAN VIP addresses once and uses that snapshot for all pool
+decisions. The pass runs every 30 seconds, so ownership changes or drift can
+take up to the next pass to repair.
 It does not inspect or modify ARP, NDP, IPv6, DHCP, UPnP,
 source addresses, or Service backends.
 
