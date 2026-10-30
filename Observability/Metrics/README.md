@@ -22,6 +22,10 @@ frontends execute PromQL; two query schedulers coordinate the read path. The
 stable `core-mimir` Service selects the distributed NGINX gateway so existing
 collectors and the bridge keep their endpoint. The blocks backend remains S3;
 local claims hold working state and synchronized indexes. The distributed
+ingesters use a soft hostname topology spread constraint and a preferred pod
+anti-affinity rule, so new pods favor separate nodes but can share a node when
+capacity or node eligibility prevents spreading. Existing pods are not moved
+by these scheduling preferences until they are recreated. The distributed
 configuration explicitly sets `blocks_storage.backend: s3` and its bucket name
 alongside the shared S3 client. With MinIO selected, the Mimir `User` claim
 provisions the `mimir-blocks` and `mimir-alertmanager` MinIO buckets. Alertmanager uses its named

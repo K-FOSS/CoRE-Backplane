@@ -279,6 +279,19 @@ spec:
                     replicas: 3
                   ingester:
                     replicas: 3
+                    topologySpreadConstraints:
+                      maxSkew: 1
+                      topologyKey: 'kubernetes.io/hostname'
+                      whenUnsatisfiable: 'ScheduleAnyway'
+                    affinity:
+                      podAntiAffinity:
+                        preferredDuringSchedulingIgnoredDuringExecution:
+                          - weight: 100
+                            podAffinityTerm:
+                              topologyKey: 'kubernetes.io/hostname'
+                              labelSelector:
+                                matchLabels:
+                                  app.kubernetes.io/component: 'ingester'
                     zoneAwareReplication:
                       enabled: false
                     persistentVolume:
