@@ -7,6 +7,12 @@ copied. It is owned by the
 [Observability Common ApplicationSet](../../Apps/Observability/Common.yaml).
 The Garage controller and CRDs are owned separately by the
 [Garage Operator ApplicationSet](../../Apps/Storage/S3/Garage-Operator.yaml).
+The chart also creates one Longhorn `ReadWriteMany` StorageClass per
+entry in [`values.yaml`](values.yaml), named `<tenant>-fast-rwx`. These classes
+use one replica, disable live migration, require strict local data placement,
+and delete dynamically provisioned volumes when their PVCs are deleted.
+Longhorn documents these settings in its
+[StorageClass parameter reference](https://longhorn.io/docs/1.13.0/references/storage-class-parameters/).
 
 ## Ownership and reconciliation
 
