@@ -66,3 +66,23 @@ patches:
                 resources:
                   requests:
                     cpu: 16m
+
+  - target:
+      group: apps
+      version: v1
+      kind: DaemonSet
+      name: kube-sriov-cni-ds
+      namespace: kube-system
+    patch: |
+      apiVersion: apps/v1
+      kind: DaemonSet
+      metadata:
+        name: kube-sriov-cni-ds
+      spec:
+        template:
+          spec:
+            containers:
+              - name: kube-sriov-cni
+                resources:
+                  requests:
+                    cpu: 16m
