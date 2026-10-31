@@ -303,7 +303,16 @@ spec:
 
 `ClusterNode.spec.sysctls` is applied after the cluster list. A node value with
 the same name therefore overrides the cluster value. Values are strings
-because that is the format expected by the Talos machine configuration.
+because that is the format expected by the Talos machine configuration. On
+nodes whose installed and intended versions are both Talos 1.14 or newer, the
+Workspace carries inherited, built-in, cluster, and node values into a
+dedicated [`SysctlConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/runtime/sysctlconfig)
+document. It also carries inherited and node-level sysfs values into a
+dedicated [`SysfsConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/runtime/sysfsconfig)
+document. The Workspace removes the corresponding legacy `machine.sysctls`
+and `machine.sysfs` fields before applying those documents. Nodes below Talos
+1.14, or nodes whose installed version cannot be detected, retain the legacy
+machine configuration fields.
 
 Treat sysctl changes as operating-system changes: validate them against the
 deployed Talos version and test them on a non-critical node first.
