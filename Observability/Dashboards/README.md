@@ -140,7 +140,10 @@ Admins` and `Grafana Admins`, while the disabled generic OAuth mapping refers to
 ExternalSecret without exposing its secret values.
 
 Grafana stores application state in the external PostgreSQL database; local PVC
-persistence is disabled. Grafana Live uses Dragonfly as its Redis-compatible
+persistence is disabled. Its managed `User` claim explicitly publishes a
+`postgres://` connection URI because Grafana does not recognize the
+composition's generic `postgresql://` default as a database type. Grafana Live
+uses Dragonfly as its Redis-compatible
 HA messaging/pub-sub engine on logical database `0`, allowing both Grafana
 replicas to exchange Live connection state. Grafana's
 [remote cache](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#remote_cache)
