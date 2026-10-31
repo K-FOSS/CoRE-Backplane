@@ -5,8 +5,8 @@ storage and a Cilium global `tempo-core` Service. It is owned by the
 [`core-observability-traces` ApplicationSet](../../Apps/Observability/Traces.yaml)
 and follows the same active-site/remote-site model as
 [Logs](../Logs/README.md) and [Metrics](../Metrics/README.md). The pinned
-[Grafana Community `tempo-distributed` chart](https://github.com/grafana-community/helm-charts/tree/main/charts/tempo-distributed)
-provides the Tempo services; its [microservices deployment documentation](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/deploy/kubernetes/helm-chart/)
+[Grafana Community `tempo-distributed` chart 2.26.2](https://github.com/grafana-community/helm-charts/tree/tempo-distributed-2.26.2/charts/tempo-distributed)
+provides Tempo 2.10.7 in microservices mode; its [microservices deployment documentation](https://grafana.com/docs/tempo/latest/set-up-for-tracing/setup-tempo/deploy/kubernetes/helm-chart/)
 and [storage configuration reference](https://grafana.com/docs/tempo/latest/configuration/#storage)
 describe the upstream behavior.
 
@@ -40,10 +40,10 @@ endpoint; the provider-backed recovery profile retains virtual-hosted
 addressing.
 
 Tempo trace blocks remain authoritative in S3; the chart's local WAL and
-working directories are ephemeral in this profile. The chart's Tempo 3 Kafka-backed `blockBuilder` and
-`liveStore` components are disabled because the observability deployment uses
-the established memberlist and ingester microservices path; enabling them
-requires a reviewed Kafka endpoint, partition sizing, and credentials.
+working directories are ephemeral in this profile. This deployment remains on
+the Tempo 2 ingester and compactor architecture. Tempo 3 requires a reviewed
+Kafka deployment, topic sizing, credentials, and failure-domain design before
+it can replace this profile.
 
 ## Routing and telemetry flow
 
