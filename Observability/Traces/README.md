@@ -32,7 +32,10 @@ The `User` claim provisions the `tempo-traces` bucket and writes the stable
 service account; the remote profile keeps the provider-backed S3 credential
 path available for recovery. Tempo expands the `S3_ENDPOINT`,
 `S3_ACCESS_KEY`, and `S3_SECRET_ACCESS_KEY` environment variables at runtime;
-secret values are never stored in Git.
+secret values are never stored in Git. The Garage profile enables Tempo's
+path-style S3 addressing because the bucket is reached through the shared
+cluster-domain TLS endpoint; the provider-backed recovery profile retains
+virtual-hosted addressing.
 
 Tempo trace blocks remain authoritative in S3; the chart's local WAL and
 working directories are ephemeral in this profile. The chart's Tempo 3 Kafka-backed `blockBuilder` and
