@@ -139,6 +139,10 @@ spec:
                   gateway:
                     enabled: true
                     replicas: {{ .values.tempoGatewayReplicas }}
+                    strategy:
+                      rollingUpdate:
+                        maxSurge: 0
+                        maxUnavailable: 1
                     service:
                       port: 3200
                   distributor:

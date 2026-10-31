@@ -46,6 +46,10 @@ tempo-distributed:
       secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
   gateway:
     enabled: true
+    strategy:
+      rollingUpdate:
+        maxSurge: 0
+        maxUnavailable: 1
     service:
       port: 3200
   traces:
