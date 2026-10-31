@@ -45,9 +45,10 @@ the Tempo 2 ingester and compactor architecture. Tempo 3 requires a reviewed
 Kafka deployment, topic sizing, credentials, and failure-domain design before
 it can replace this profile.
 
-Gateway rollouts use zero surge and permit one unavailable replica. The
-gateway's required host anti-affinity otherwise prevents a surge pod from
-scheduling when all three active-site nodes already run a gateway replica.
+Gateway host anti-affinity is preferred rather than required. This keeps the
+three replicas spread during steady state while allowing a surge pod to
+schedule during a rolling update when every active-site node already runs a
+gateway replica.
 
 ## Routing and telemetry flow
 

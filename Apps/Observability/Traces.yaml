@@ -139,10 +139,16 @@ spec:
                   gateway:
                     enabled: true
                     replicas: {{ .values.tempoGatewayReplicas }}
-                    strategy:
-                      rollingUpdate:
-                        maxSurge: 0
-                        maxUnavailable: 1
+                    affinity: |
+                      podAntiAffinity:
+                        preferredDuringSchedulingIgnoredDuringExecution:
+                          - weight: 100
+                            podAffinityTerm:
+                              labelSelector:
+                                matchLabels:
+                                  app.kubernetes.io/name: 'tempo'
+                                  app.kubernetes.io/component: 'gateway'
+                              topologyKey: 'kubernetes.io/hostname'
                     service:
                       port: 3200
                   distributor:
