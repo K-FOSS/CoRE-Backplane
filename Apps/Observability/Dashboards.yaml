@@ -90,8 +90,11 @@ spec:
 
                   grafana.ini:
                     tracing.opentelemetry.otlp:
-                      address: {{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4317
-                      propagation: w3c
+                      address: '{{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4317'
+                      propagation: 'w3c'
+                      sampler_type: 'probabilistic'
+                      sampler_param: 0.1
+                      insecure: true
 
                   ldap:
                     enabled: true

@@ -41,6 +41,18 @@ client.
 YXL renders the HTTPRoute and Envoy SecurityPolicy. When `mimirEnabled` is
 false, the distributed chart is disabled while the recovery identity remains.
 
+## Distributed tracing
+
+Every active Mimir component exports OTLP traces to the site-local
+[Alloy collector](../Collectors/README.md) over HTTP on port `4318`. Mimir uses
+the documented
+[OpenTelemetry tracing environment variables](https://grafana.com/docs/mimir/latest/configure/configure-tracing/)
+with parent-based 10 percent trace-ID sampling and W3C Trace Context plus
+baggage propagation. Parent sampling decisions are retained across Mimir's
+internal requests; new root traces are sampled at the configured ratio. Alloy
+adds the cluster tenant header and forwards the spans through the global Tempo
+Service described by the [Traces stack](../Traces/README.md).
+
 ## Garage object storage
 
 The YXL Metrics chart owns Garage buckets `mimir-blocks` and

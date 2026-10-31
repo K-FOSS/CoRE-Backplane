@@ -50,7 +50,11 @@ configuration.
   Reloader annotation with a post-render Kustomize patch targeted only at
   `Deployment/grafana-core`; the annotation is not copied to pods, ConfigMaps,
   RBAC, or other resources.
-- Grafana exports OpenTelemetry traces to the cluster-local Alloy service.
+- Grafana exports OpenTelemetry traces to the cluster-local Alloy service over
+  OTLP/gRPC with W3C propagation and 10 percent probabilistic sampling. The
+  settings follow Grafana's
+  [OpenTelemetry tracing configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#tracingopentelemetryotlp),
+  and Alloy forwards sampled spans to Tempo.
 - LDAP mounts the existing `grafana-core-ldap` Secret. Its
   `servers.group_mappings` entries are configured through
   `grafana.ldap.groupMappings` in [`values.yaml`](values.yaml), so a target

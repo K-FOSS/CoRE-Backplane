@@ -232,6 +232,16 @@ spec:
                     podAnnotations:
                       secret.reloader.stakater.com/reload: '{{ if eq .values.mimirS3Backend "garage" }}mimir-garage-s3{{ else }}{{ .values.clusterName }}-metrics-s3-creds,{{ .values.clusterName }}-metrics-creds{{ end }}'
                     extraEnv:
+                      - name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
+                        value: 'http://{{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4318'
+                      - name: 'OTEL_TRACES_EXPORTER'
+                        value: 'otlp'
+                      - name: 'OTEL_TRACES_SAMPLER'
+                        value: 'parentbased_traceidratio'
+                      - name: 'OTEL_TRACES_SAMPLER_ARG'
+                        value: '0.1'
+                      - name: 'OTEL_PROPAGATORS'
+                        value: 'tracecontext,baggage'
                       {{- if eq .values.mimirS3Backend "garage" }}
                       - name: AWS_ACCESS_KEY_ID
                         valueFrom:
