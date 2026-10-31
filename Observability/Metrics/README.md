@@ -86,6 +86,10 @@ the store-gateway index cache on a block volume; Grafana
 documents that Mimir components using local disk require POSIX block storage
 and do not support network filesystems in its
 [hardware requirements](https://grafana.com/docs/mimir/latest/set-up/hardware-requirements/).
+The owning Application ignores the store-gateway StatefulSet's immutable
+`volumeClaimTemplates` field while respecting differences during sync. This
+preserves the API-defaulted live claim template and allows ordinary pod-template
+rollouts without replacing retained PVCs.
 The legacy
 `mimir.dataVolume` and `mimir.tmpVolume` values remain for the disabled
 single-binary compatibility path and independently support

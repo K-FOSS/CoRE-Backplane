@@ -461,3 +461,10 @@ spec:
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
+
+      ignoreDifferences:
+        - group: apps
+          kind: StatefulSet
+          name: 'core-mimir-store-gateway'
+          jsonPointers:
+            - '/spec/volumeClaimTemplates'
