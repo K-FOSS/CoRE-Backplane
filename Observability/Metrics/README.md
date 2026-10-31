@@ -78,9 +78,11 @@ Garage client; the operator supplies its separate static GarageKey.
 
 ## Storage and credentials
 
-The distributed chart's `ingester`, `store_gateway`, and `compactor`
-persistence values use the `longhorn` StorageClass with retained workload
-claims. This keeps the store-gateway index cache on a block volume; Grafana
+The distributed chart's `ingester` and `compactor` persistence values use the
+`longhorn` StorageClass. The store-gateway retains its existing
+`core-fast-rwx` claim template; despite the legacy name, that class is a
+Longhorn XFS RWO class. All workload claims use retention policies. This keeps
+the store-gateway index cache on a block volume; Grafana
 documents that Mimir components using local disk require POSIX block storage
 and do not support network filesystems in its
 [hardware requirements](https://grafana.com/docs/mimir/latest/set-up/hardware-requirements/).

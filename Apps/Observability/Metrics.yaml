@@ -324,7 +324,9 @@ spec:
                     persistentVolume:
                       enabled: true
                       size: 2Gi
-                      storageClass: 'longhorn'
+                      # Preserve the existing StatefulSet claim template. Despite
+                      # its legacy name, this is a Longhorn XFS RWO class.
+                      storageClass: 'core-fast-rwx'
                       enableRetentionPolicy: true
                       whenDeleted: Retain
                       whenScaled: Retain
