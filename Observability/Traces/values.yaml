@@ -56,6 +56,14 @@ tempo-distributed:
                   app.kubernetes.io/name: 'tempo'
                   app.kubernetes.io/component: 'gateway'
               topologyKey: 'kubernetes.io/hostname'
+    topologySpreadConstraints: |
+      - maxSkew: 1
+        topologyKey: 'kubernetes.io/hostname'
+        whenUnsatisfiable: 'DoNotSchedule'
+        labelSelector:
+          matchLabels:
+            app.kubernetes.io/name: 'tempo'
+            app.kubernetes.io/component: 'gateway'
     service:
       port: 3200
   traces:

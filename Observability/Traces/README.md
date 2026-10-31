@@ -46,9 +46,10 @@ Kafka deployment, topic sizing, credentials, and failure-domain design before
 it can replace this profile.
 
 Gateway host anti-affinity is preferred rather than required. This keeps the
-three replicas spread during steady state while allowing a surge pod to
-schedule during a rolling update when every active-site node already runs a
-gateway replica.
+three replicas eligible for rolling surge placement. A required
+`DoNotSchedule` topology-spread constraint enforces one replica per active-site
+host in steady state, preventing a routable node failure from concentrating
+the global Service endpoints on one host.
 
 ## Routing and telemetry flow
 
