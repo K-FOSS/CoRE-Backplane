@@ -167,7 +167,9 @@ Before reconciliation, the target cluster must provide:
   public DNS and TLS path;
 - External Secrets Operator, `mainvault-core`, and access to `Grafana/User`,
   `Grafana/Database`, and `Grafana/OIDC` remote keys;
-- the platform `User` composition and Terraform provider for a hub render;
+- the platform `User` composition and Terraform provider on the Home1 hub,
+  which owns the `grafana-core` LDAP/PostgreSQL identity and publishes its
+  connection details to Vault for the non-hub deployment;
 - Authentik flows, the `Logs` scope mapping, the `tls` signing certificate, and
   the groups referenced by the access configuration;
 - PostgreSQL and the cluster-scoped `dragonfly-core` service and

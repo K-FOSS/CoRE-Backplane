@@ -193,6 +193,7 @@ spec:
   username: gl-core
   psql:
     enabled: true
+    database: 'gitlab'
     createUserDatabase: true
     lcCollate: 'C'
     lcCType: 'C'
@@ -206,10 +207,10 @@ With the default `backend: minio`, the composition:
 
 1. Creates a provider-sql `Role` with login privileges and the generated
    Authentik password.
-2. By default creates a database named after the lowercase username, owned by
-   that role. New databases use `C` for both `LC_COLLATE` and `LC_CTYPE` by
-   default. Existing databases are not changed if these fields are later
-   modified.
+2. Creates `spec.psql.database` when set, or otherwise a database named after
+   the lowercase username, owned by that role. New databases use `C` for both
+   `LC_COLLATE` and `LC_CTYPE` by default. Existing databases are not changed
+   if these fields are later modified.
 3. Uses a Terraform Workspace to grant `CREATE`, `CONNECT`, and `TEMPORARY` on
    listed databases, plus broad privileges on their public schema, tables,
    and sequences.
