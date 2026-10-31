@@ -39,6 +39,15 @@ the affected replicas remain Pending rather than co-locating. The operator's
 [storage and gateway scheduling settings](https://rajsinghtech.github.io/garage-operator/how-to/configuration/)
 describe this `storage.topologySpreadConstraints` field.
 
+The cluster enables the operator-managed Garage node ServiceMonitor at a
+60-second interval. Garage exports per-node data and metadata disk capacity,
+cluster health, S3 request activity, and block read/write counters through its
+[Prometheus metrics endpoint](https://garagehq.deuxfleurs.fr/documentation/reference-manual/monitoring/).
+The scrape drops only `rpc_duration_bucket`, whose peer and endpoint labels
+otherwise create a large number of histogram series; the related count and sum
+series remain available. Bucket bytes and object counts come from the Garage
+operator metrics endpoint described in the operator stack documentation.
+
 Garage's S3 listener serves HTTP, so the chart uses the existing Envoy Gateway
 `main-gw` HTTPS listener to terminate TLS and routes requests to Garage's port
 `3900`. Mimir and Loki connect to

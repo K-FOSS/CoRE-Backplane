@@ -20,6 +20,15 @@ spec:
     adminTokenSecretRef:
       name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
       key: 'admin-token'
+  monitoring:
+    enabled: true
+    interval: '60s'
+    metricRelabelings:
+      # Per-peer, per-endpoint histogram buckets are the dominant Garage
+      # series source. Keep counts and sums for traffic/error dashboards.
+      - sourceLabels: ['__name__']
+        regex: 'rpc_duration_bucket'
+        action: 'drop'
   storage:
     replicas: {{ int .Values.garage.storageReplicas }}
     metadata:

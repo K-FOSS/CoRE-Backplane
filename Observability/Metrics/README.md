@@ -66,11 +66,13 @@ Garage client; the operator supplies its separate static GarageKey.
 
 ## Storage and credentials
 
-The distributed chart's `ingester` and `compactor` persistence values use the
-`longhorn` StorageClass. The `store_gateway` uses the tenant-scoped
-`<tenant>-fast-rwx` class; its class-level `Delete` policy applies if its PVC is
-deleted, while Mimir's current retention settings retain the PVC when the
-workload is deleted. The legacy
+The distributed chart's `ingester`, `store_gateway`, and `compactor`
+persistence values use the `longhorn` StorageClass with retained workload
+claims. This keeps the store-gateway index cache on a block volume; Grafana
+documents that Mimir components using local disk require POSIX block storage
+and do not support network filesystems in its
+[hardware requirements](https://grafana.com/docs/mimir/latest/set-up/hardware-requirements/).
+The legacy
 `mimir.dataVolume` and `mimir.tmpVolume` values remain for the disabled
 single-binary compatibility path and independently support
 `type: 'emptyDir'` or `type: 'persistentVolumeClaim'`. For node-local disk,
@@ -214,8 +216,14 @@ and is exported by Cilium. In Home1, verify its backends are remote. On both
 sites, verify both proxy Pods are ready, `/-/healthy` remains available during a
 YXL outage,
 and the Headlamp endpoint returns a Mimir query response with the
-expected tenant. Also confirm proxy logs do not expose credentials. After
-rotating each YXL S3 Secret, verify that Mimir rolls one pod at a time, all
+expected tenant. Also confirm proxy logs do not expose credentials. After the
+Garage monitoring resources reconcile, verify the bundled dashboard shows
+`mimir-blocks` bytes and object count, each Garage node's physical data-disk
+available/total bytes, and S3/block read-write rates. Bucket-specific free
+space is defined only when a GarageBucket quota is configured; these Mimir
+buckets are unlimited and share the cluster's physical capacity with other
+observability buckets. When rotating each YXL S3 Secret, verify that Mimir
+rolls one pod at a time, all
 replacement pods become ready, and block uploads and queries continue without
 authentication errors. Render both site profiles before merging. Roll back
 through Git/Argo CD. Disabling the bridge removes the local `core-mimir-proxy`

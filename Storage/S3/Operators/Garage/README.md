@@ -23,6 +23,15 @@ CRDs are retained when the operator chart is removed. Remove dependent
 GarageCluster, GarageBucket and GarageKey resources deliberately before
 removing the controller; retain and recover the Longhorn PVCs separately.
 
+The chart enables the operator's authenticated
+[ServiceMonitor and bundled Grafana dashboard](https://github.com/rajsinghtech/garage-operator/blob/v0.8.1/docs/how-to/monitoring.md).
+The dashboard ConfigMap is placed in `core-prod`, where the Grafana sidecar
+discovers it. A narrowly scoped ClusterRoleBinding permits the YXL central
+Alloy collector to read only the operator's non-resource `/metrics` endpoint.
+Those metrics include current bytes and object counts for every managed
+GarageBucket. An unlimited bucket has no bucket-specific available-space
+value; physical availability comes from the Garage node metrics instead.
+
 ## Reconciliation and verification
 
 Build and render from the repository root:
