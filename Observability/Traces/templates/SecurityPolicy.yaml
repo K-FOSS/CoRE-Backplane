@@ -1,13 +1,13 @@
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Values.globalService.name | squote }}
 
 spec:
   targetRef:
     group: gateway.networking.k8s.io
     kind: HTTPRoute
-    name: {{ .Chart.Name }}
+    name: {{ .Values.globalService.name | squote }}
 
   jwt:
     optional: false

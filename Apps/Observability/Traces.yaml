@@ -1,33 +1,48 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-observability-traces
-
+  name: 'core-observability-traces'
   annotations:
     argocd.argoproj.io/sync-wave: '20'
-
 spec:
   goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
   generators:
     - merge:
         mergeKeys:
-          - name
-
+          - 'name'
         generators:
           - list:
               elements:
-                # - name: core-dc1-talos-prod
-                #   values:
-                #     hub: false
-
-                #     mode: Distributed
-
-                - name: core-home1-talos-prod
+                - name: 'core-dc1-talos-prod'
                   values:
-                    hub: false
-
-                    mode: SingleBinary
-
+                    tempoEnabled: true
+                    globalServiceOnly: false
+                    authentikEnabled: true
+                    tempoGlobalAffinity: 'local'
+                    tempoGlobalShared: 'true'
+                    tempoGarageEnabled: true
+                    tempoDistributorReplicas: 3
+                    tempoIngesterReplicas: 3
+                    tempoQuerierReplicas: 3
+                    tempoQueryFrontendReplicas: 3
+                    tempoCompactorReplicas: 1
+                    tempoGatewayReplicas: 3
+                - name: 'core-home1-talos-prod'
+                  values:
+                    tempoEnabled: false
+                    globalServiceOnly: true
+                    authentikEnabled: false
+                    tempoGlobalAffinity: 'remote'
+                    tempoGlobalShared: 'false'
+                    tempoGarageEnabled: false
+                    tempoDistributorReplicas: 0
+                    tempoIngesterReplicas: 0
+                    tempoQuerierReplicas: 0
+                    tempoQueryFrontendReplicas: 0
+                    tempoCompactorReplicas: 0
+                    tempoGatewayReplicas: 0
           - clusters:
               selector:
                 matchLabels:
@@ -38,54 +53,129 @@ spec:
                 clusterName: '{{ .name }}'
                 environment: 'prod'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
-                tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                tenant: '{{ index .metadata.labels "mylogin.space/tenant" | replace ".mylogin.space" "" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
-
   syncPolicy:
     preserveResourcesOnDeletion: true
-
   template:
     metadata:
       name: '{{ .values.clusterName }}-traces'
-      
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: .
-
+        argocd.argoproj.io/manifest-generate-paths: '.'
       labels:
         resolvemy.host/env: '{{ .values.environment }}'
         resolvemy.host/priority: 'critical'
-
     spec:
-      project: core
-
+      project: 'core'
       syncPolicy:
         syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true
-          - RespectIgnoreDifferences=true
-
+          - 'CreateNamespace=true'
+          - 'ServerSideApply=true'
+          - 'RespectIgnoreDifferences=true'
       source:
-        path: Observability/Traces
-        repoURL: https://slop.writemy.codes/CoRE/CoRE-Backplane.git
-        targetRevision: HEAD
-
+        path: 'Observability/Traces'
+        repoURL: 'https://slop.writemy.codes/CoRE/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
         plugin:
-          name: argocd-lovely-plugin
+          name: 'argocd-lovely-plugin'
           env:
-            - name: LOVELY_HELM_MERGE
+            - name: 'LOVELY_HELM_MERGE'
               value: |-
-                env: {{ .values.environment }}
-
                 cluster:
-                  name: {{ .values.clusterName }}
-                  domain: {{ .values.clusterDomain }}
+                  name: '{{ .values.clusterName }}'
+                  domain: '{{ .values.clusterDomain }}'
 
-                  
-                datacenter: {{ .values.datacenter }}
-                region: {{ .values.region }}
+                datacenter: '{{ .values.datacenter }}'
+                region: '{{ .values.region }}'
 
+                globalServiceOnly: {{ .values.globalServiceOnly }}
+
+                authentik:
+                  enabled: {{ .values.authentikEnabled }}
+
+                globalService:
+                  name: 'tempo-core'
+                  annotations:
+                    service.cilium.io/global: 'true'
+                    service.cilium.io/global-sync-endpoint-slices: 'true'
+                    service.cilium.io/affinity: '{{ .values.tempoGlobalAffinity }}'
+                    service.cilium.io/shared: '{{ .values.tempoGlobalShared }}'
+
+                garage:
+                  enabled: {{ .values.tempoGarageEnabled }}
+                  clusterName: 'observability-garage'
+                  endpoint: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
+                  bucket: 'tempo-traces'
+
+                tempo-distributed:
+                  enabled: {{ .values.tempoEnabled }}
+                  multitenancyEnabled: true
+                  blockBuilder:
+                    enabled: false
+                  liveStore:
+                    enabled: false
+                  global:
+                    fullnameOverride: 'tempo-core'
+                    clusterDomain: '{{ .values.clusterDomain }}'
+                    extraArgs:
+                      - '-config.expand-env=true'
+                    extraEnv:
+                      - name: 'S3_ENDPOINT'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'tempo-core'
+                            key: 'S3Hostname'
+                      - name: 'S3_ACCESS_KEY'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'tempo-core-s3-creds'
+                            key: 'AccessKey'
+                      - name: 'S3_SECRET_ACCESS_KEY'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'tempo-core-s3-creds'
+                            key: 'SecretAccessKey'
+                  tempo:
+                    podAnnotations:
+                      secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
+                  gateway:
+                    enabled: true
+                    replicas: {{ .values.tempoGatewayReplicas }}
+                    service:
+                      port: 3200
+                  distributor:
+                    replicas: {{ .values.tempoDistributorReplicas }}
+                  ingester:
+                    replicas: {{ .values.tempoIngesterReplicas }}
+                  querier:
+                    replicas: {{ .values.tempoQuerierReplicas }}
+                  queryFrontend:
+                    replicas: {{ .values.tempoQueryFrontendReplicas }}
+                  compactor:
+                    replicas: {{ .values.tempoCompactorReplicas }}
+                  traces:
+                    otlp:
+                      grpc:
+                        enabled: true
+                        port: 4317
+                      http:
+                        enabled: true
+                        port: 4318
+                  storage:
+                    trace:
+                      backend: 's3'
+                      s3:
+                        endpoint: '${S3_ENDPOINT}'
+                        access_key: '${S3_ACCESS_KEY}'
+                        secret_key: '${S3_SECRET_ACCESS_KEY}'
+                        bucket: 'tempo-traces'
+                        region: '{{ if .values.tempoGarageEnabled }}garage{{ else }}us-east-1{{ end }}'
+                        insecure: false
+
+            - name: 'LOVELY_KUSTOMIZE_MERGE'
+              value: '{}'
       destination:
         server: '{{ .server }}'
-        namespace: core-{{ .values.environment }}
+        namespace: 'core-{{ .values.environment }}'

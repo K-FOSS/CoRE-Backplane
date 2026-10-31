@@ -1,32 +1,38 @@
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
-  name: tempo-s3
-
+  name: 'tempo-s3'
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
-  name: Tempo {{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}
-
+  name: {{ printf "Tempo %s-%s-%s" .Values.region .Values.datacenter .Values.cluster.name | squote }}
   s3:
     enabled: true
-
     createBuckets: true
-
-    createUserBucket: true
-
-    createCredentials: true
-
     crossplane:
-      terraformProvider: s3-yvr-home1-core
-      crossplaneProvider: s3-yvr-home1-core
-
+      terraformProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+      crossplaneProvider: 's3-{{ .Values.region }}-{{ .Values.datacenter }}-core'
+    {{- if .Values.garage.enabled }}
+    backend: 'garage'
+    createUserBucket: false
+    createServiceAccount: true
+    garage:
+      clusterName: {{ .Values.garage.clusterName | squote }}
+      endpoint: {{ .Values.garage.endpoint | squote }}
+    buckets:
+      - {{ .Values.garage.bucket | squote }}
+    writeServiceAccountCredentialsSecretRef:
+      name: 'tempo-core-s3-creds'
+      namespace: {{ .Release.Namespace | squote }}
+    {{- else }}
+    createCredentials: true
+    buckets:
+      - {{ .Values.garage.bucket | squote }}
     writeCredentialsSecretRef:
-      name: {{ .Release.Name }}-s3-creds
-      namespace: {{ .Release.Namespace }}
-
+      name: 'tempo-core-s3-creds'
+      namespace: {{ .Release.Namespace | squote }}
+    {{- end }}
   groups:
-    - LDAPService
-
+    - 'LDAPService'
   writeConnectionSecretToRef:
-    name: tempo-core-creds
+    name: 'tempo-core'

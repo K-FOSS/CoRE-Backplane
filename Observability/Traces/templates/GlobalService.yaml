@@ -1,0 +1,33 @@
+{{- $tempo := index .Subcharts "tempo-distributed" }}
+{{- if or .Values.globalServiceOnly (index (index .Values "tempo-distributed") "enabled") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.globalService.name | squote }}
+  labels:
+    app.kubernetes.io/name: 'tempo'
+    app.kubernetes.io/component: 'gateway'
+  annotations:
+    {{- toYaml .Values.globalService.annotations | nindent 4 }}
+spec:
+  type: 'ClusterIP'
+  ports:
+    - name: 'http-metrics'
+      port: 3200
+      protocol: TCP
+      targetPort: 'http-metrics'
+    - name: 'grpc-otlp'
+      port: 4317
+      protocol: TCP
+      targetPort: 'grpc-otlp'
+    - name: 'http-otlp'
+      port: 4318
+      protocol: TCP
+      targetPort: 'http-metrics'
+  selector:
+    {{- if .Values.globalServiceOnly }}
+    service.mylogin.space/global-endpoint: 'tempo-core'
+    {{- else }}
+    {{- include "tempo.selectorLabels" (dict "ctx" $tempo "component" "gateway") | nindent 4 }}
+    {{- end }}
+{{- end }}

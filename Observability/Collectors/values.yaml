@@ -259,7 +259,7 @@ alloy:
   destinations:
     lokiUrl: 'http://loki-core:3100/loki/api/v1/push'
     mimirUrl: http://10.44.2.161:8080/api/v1/push
-    tempoEndpoint: 10.44.5.232:4317
+    tempoEndpoint: 'tempo-core.core-prod.svc.cluster.local:4317'
 
   alloy:
     configMap:
@@ -615,6 +615,10 @@ alloy:
         otelcol.exporter.otlp "tempo" {
           client {
             endpoint = {{ required "alloy.destinations.tempoEndpoint is required" .Values.destinations.tempoEndpoint | quote }}
+
+            headers = {
+              "X-Scope-OrgID" = {{ required "alloy.destinations.orgId is required" .Values.destinations.orgId | quote }},
+            }
 
             tls {
               insecure = true

@@ -15,7 +15,7 @@ umbrella chart.
 | [`Logs`](Logs/) | Stores and queries logs. | Grafana Loki in `Distributed` microservices mode with S3 storage. |
 | [`Metrics`](Metrics/) | Stores and queries metrics. | Grafana Mimir. |
 | [`Common`](Common/) | Provides shared observability infrastructure. | YXL Garage object storage for Mimir. |
-| [`Traces`](Traces/) | Stores and queries distributed traces. | Grafana Tempo in monolithic mode. |
+| [`Traces`](Traces/) | Stores and queries distributed traces. | Grafana Tempo in microservices mode with Garage/S3 storage and a Cilium global Service. |
 | [`Dashboards`](Dashboards/) | Visualization and interactive exploration. | Grafana with Authentik and LDAP integration. |
 | [`Exporters`](Exporters/) | Exposes Kubernetes and platform metrics for collection. | `kube-prometheus-stack`. |
 | [`Kubernetes`](Kubernetes/) | Kubernetes-specific observability configuration. | Helm-managed cluster monitoring values. |
@@ -134,7 +134,8 @@ Application does not prove every downstream Crossplane resource is ready.
 
 ## Current limitations
 
-- Loki uses a three-replica `SingleBinary` topology; Tempo is monolithic.
+- Loki uses a three-replica `SingleBinary` topology; Tempo uses distributed
+  services with YXL-local ingestion and a Home1 remote endpoint.
 - The Alloy-to-Loki destination is a fixed network address.
 - Repository-wide rendering and schema validation are not automated.
 - SLO coverage and component runbooks are incomplete.

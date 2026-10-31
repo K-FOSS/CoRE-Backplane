@@ -73,13 +73,14 @@ to Mimir and traces go to Tempo. The pod log path is
 `loki-core`; Cilium's Global
 Service routes the final write to the Loki backends. Metrics use the matching namespace-local `core-mimir`
 DNS name, so Cilium selects the site-local Mimir endpoints while preserving
-the same path for cross-site collectors. The
+the same path for cross-site collectors. Tempo uses the matching namespace-local
+`tempo-core` Cilium Global Service for the same site-selection behavior. The
 [Logs stack](../Logs/README.md#global-service-ownership) uses
 [Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
 to serve DC1 Loki backends in both DC1 and Home1. The legacy collector retains
 DC1's mutable Service IP because it has no local global Service. Mimir and
-Tempo are otherwise private endpoints; Mimir uses the Cilium global Service
-while Tempo retains its existing direct endpoint.
+Tempo are otherwise private endpoints; both use Cilium global Services for
+cross-site endpoint selection.
 
 The Service exposes a cluster-internal Prometheus remote-write receiver on
 port `9090`. Its

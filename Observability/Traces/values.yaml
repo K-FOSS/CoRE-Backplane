@@ -1,14 +1,81 @@
-hub: false
-
 cluster:
-  name: k8s
-  domain: cluster.local
+  name: 'k8s'
+  domain: 'cluster.local'
+
+globalService:
+  name: 'tempo-core'
+  annotations: {}
+
+globalServiceOnly: false
+
+authentik:
+  enabled: false
+
+garage:
+  enabled: false
+  clusterName: 'observability-garage'
+  endpoint: ''
+  bucket: 'tempo-traces'
+
+tempo-distributed:
+  enabled: false
+  multitenancyEnabled: true
+  blockBuilder:
+    enabled: false
+  liveStore:
+    enabled: false
+  global:
+    fullnameOverride: 'tempo-core'
+    clusterDomain: 'cluster.local'
+    extraArgs:
+      - '-config.expand-env=true'
+    extraEnv:
+      - name: 'S3_ENDPOINT'
+        valueFrom:
+          secretKeyRef:
+            name: 'tempo-core'
+            key: 'S3Hostname'
+      - name: 'S3_ACCESS_KEY'
+        valueFrom:
+          secretKeyRef:
+            name: 'tempo-core-s3-creds'
+            key: 'AccessKey'
+      - name: 'S3_SECRET_ACCESS_KEY'
+        valueFrom:
+          secretKeyRef:
+            name: 'tempo-core-s3-creds'
+            key: 'SecretAccessKey'
+  tempo:
+    podAnnotations:
+      secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
+  gateway:
+    enabled: true
+    service:
+      port: 3200
+  traces:
+    otlp:
+      grpc:
+        enabled: true
+        port: 4317
+      http:
+        enabled: true
+        port: 4318
+  storage:
+    trace:
+      backend: 's3'
+      s3:
+        endpoint: '${S3_ENDPOINT}'
+        access_key: '${S3_ACCESS_KEY}'
+        secret_key: '${S3_SECRET_ACCESS_KEY}'
+        bucket: 'tempo-traces'
+        region: 'us-east-1'
+        insecure: false
 
 gateway:
-  name: main-gw
-  namespace: core-prod
-  sectionName: https-myloginspace
+  name: 'main-gw'
+  namespace: 'core-prod'
+  sectionName: 'https-myloginspace'
 
-datacenter: dc1
+datacenter: 'dc1'
 
-region: yxl
+region: 'yxl'
