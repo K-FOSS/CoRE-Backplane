@@ -16,7 +16,10 @@ The ApplicationSet selects bare-metal production clusters for the `core` tenant
 and merges a site profile by cluster name:
 
 - YXL runs the Tempo distributor, ingesters, queriers, query frontend,
-  compactor, and gateway. Its trace bucket uses the shared Garage endpoint.
+  metrics-generator, compactor, and gateway. Its trace bucket uses the shared
+  Garage endpoint. The [Tempo metrics-generator](https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-generator/)
+  runs the `span-metrics` processor so TraceQL metrics queries such as `rate()`
+  have an active generator ring.
 - Home1 runs no local Tempo pods. It publishes the same `tempo-core` global
   Service as a remote endpoint, so Cilium can select the active site through
   `service.cilium.io/affinity` without changing collector or Grafana addresses.
@@ -73,11 +76,12 @@ helm template traces Observability/Traces --namespace core-prod \
 ```
 
 After reconciliation, verify the `tempo-core` Service has the expected local
-or synchronized EndpointSlices, all active Tempo components are Ready, the
+or synchronized EndpointSlices, all active Tempo components including the
+metrics-generator are Ready, the metrics-generator ring is populated, the
 `User` claim and generated S3 Secrets are Ready, and the `tempo-traces` bucket
 is available. Then send an OTLP trace through Alloy, confirm it is written to
-Garage/S3, query it through the protected route, and test the active-site
-affinity and remote-site failover path.
+Garage/S3, query it through the protected route, exercise a TraceQL metrics
+query, and test the active-site affinity and remote-site failover path.
 
 Removing the chart does not by itself prove that the external S3 bucket,
 credentials, or stored traces were deleted. Inspect the `User` composition,

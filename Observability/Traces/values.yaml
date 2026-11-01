@@ -20,6 +20,14 @@ garage:
 tempo-distributed:
   enabled: false
   multitenancyEnabled: true
+  metricsGenerator:
+    enabled: true
+    replicas: 2
+  overrides:
+    defaults:
+      metrics_generator:
+        processors:
+          - 'span-metrics'
   global:
     fullnameOverride: 'tempo-core'
     clusterDomain: 'cluster.local'
