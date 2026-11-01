@@ -42,6 +42,7 @@ spec:
       data "authentik_certificate_key_pair" "cert" {
         name = {{ required "oidc.signingCertificateName is required when OIDC is enabled" .Values.oidc.signingCertificateName | quote }}
         fetch_key = false
+        fetch_certificate = false
       }
 
       resource "random_password" "client-secret" {
