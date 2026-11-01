@@ -14,8 +14,13 @@ spec:
             mylogin.space/tenant: 'core.mylogin.space'
             resolvemy.host/computetype: 'baremetal'
             resolvemy.host/nodetype: 'infra'
-            resolvemy.host/dc: 'dc1'
-            topology.kubernetes.io/region: 'yxl'
+          matchExpressions:
+            - key: 'resolvemy.host/dc'
+              operator: 'In'
+              values: ['dc1', 'home1']
+            - key: 'topology.kubernetes.io/region'
+              operator: 'In'
+              values: ['yxl', 'yvr']
   syncPolicy:
     preserveResourcesOnDeletion: true
   template:
@@ -35,6 +40,10 @@ spec:
         targetRevision: 'HEAD'
         plugin:
           name: 'argocd-lovely-plugin'
+          env:
+            - name: 'LOVELY_HELM_MERGE'
+              value: |-
+                metricsCollectorServiceAccount: '{{ .name }}-collectors-alloy'
       destination:
         server: '{{ .server }}'
         namespace: 'garage-operator-system'

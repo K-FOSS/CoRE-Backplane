@@ -1,14 +1,14 @@
 # CoRE-Backplane Storage/S3/Operators/Garage Stack
 
-This YXL-only stack installs the Garage Kubernetes operator and its CRDs. It is
+This YVR/YXL stack installs the Garage Kubernetes operator and its CRDs. It is
 owned by the [Garage operator ApplicationSet](../../../../Apps/Storage/S3/Garage-Operator.yaml).
 The Garage cluster for observability is defined separately in
 [Observability/Common](../../../../Observability/Common/README.md).
 
 ## Ownership and configuration
 
-The ApplicationSet selects the core bare-metal infrastructure cluster in DC1
-region YXL and installs the pinned upstream operator chart `0.8.1` into
+The ApplicationSet selects the core bare-metal infrastructure clusters in DC1
+regions YVR and YXL and installs the pinned upstream operator chart `0.8.1` into
 `garage-operator-system`. It watches only `core-prod` for Garage custom
 resources. The operator chart is published by the
 [Garage Kubernetes Operator project](https://github.com/rajsinghtech/garage-operator)
@@ -26,8 +26,9 @@ removing the controller; retain and recover the Longhorn PVCs separately.
 The chart enables the operator's authenticated
 [ServiceMonitor and bundled Grafana dashboard](https://github.com/rajsinghtech/garage-operator/blob/v0.8.1/docs/how-to/monitoring.md).
 The dashboard ConfigMap is placed in `core-prod`, where the Grafana sidecar
-discovers it. A narrowly scoped ClusterRoleBinding permits the YXL central
-Alloy collector to read only the operator's non-resource `/metrics` endpoint.
+discovers it. A narrowly scoped ClusterRoleBinding permits the target cluster's
+central Alloy collector to read only the operator's non-resource `/metrics`
+endpoint.
 Those metrics include current bytes and object counts for every managed
 GarageBucket. An unlimited bucket has no bucket-specific available-space
 value; physical availability comes from the Garage node metrics instead.
@@ -39,7 +40,7 @@ Build and render from the repository root:
 ```bash
 helm dependency build Storage/S3/Operators/Garage
 helm lint Storage/S3/Operators/Garage
-helm template garage-operator-yxl Storage/S3/Operators/Garage --namespace garage-operator-system
+helm template garage-operator Storage/S3/Operators/Garage --namespace garage-operator-system
 ```
 
 After sync, verify the operator Deployment and webhook are healthy and all six
