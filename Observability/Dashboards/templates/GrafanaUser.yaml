@@ -22,3 +22,21 @@ spec:
   writeConnectionSecretToRef:
     name: core-grafana-creds
 {{- end }}
+
+---
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: grafana-dashboard-sync-{{ .Values.cluster.name | lower | replace "_" "-" }}
+
+spec:
+  name: 'Grafana Dashboard Sync {{ .Values.cluster.name }}'
+
+  serviceAccount: true
+
+  groups:
+    - LDAPService
+    - Grafana Dashboard Sync
+
+  writeConnectionSecretToRef:
+    name: grafana-dashboard-sync-bootstrap

@@ -108,14 +108,18 @@ grafana:
       - groupDn: 'cn=Grafana Admins,ou=groups,dc=ldap,dc=mylogin,dc=space'
         orgRole: 'Admin'
         grafanaAdmin: true
+      - groupDn: 'cn=Grafana Dashboard Sync,ou=groups,dc=ldap,dc=mylogin,dc=space'
+        orgRole: 'Editor'
+        grafanaAdmin: false
 
   sidecar:
     dashboards:
-      enabled: true
-      # Each cluster watches its own core-prod ConfigMaps, while both Grafana
-      # instances use the shared YVR PostgreSQL database. Do not let one
-      # cluster delete dashboards that are only present in the other cluster.
-      provider:
-        disableDelete: true
-      label: 'grafana_dashboard'
-      labelValue: 'true'
+      enabled: false
+
+dashboardSync:
+  centralClusterName: 'core-home1-talos-prod'
+  image:
+    repository: 'quay.io/kiwigrid/k8s-sidecar'
+    tag: '2.10.1'
+    digest: 'sha256:7eac5c4fed714a18d038fc9fea57d8744d113367935dac0ea4eb6a87cef704a3'
+  folder: '/tmp/dashboards'

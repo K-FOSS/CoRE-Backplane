@@ -6,7 +6,7 @@ optional [Vector](https://vector.dev/docs/setup/installation/package-managers/he
 collectors. The
 [`core-observability-collectors` ApplicationSet](../../Apps/Observability/Collectors.yaml)
 targets `core-dc1-talos-prod`, `core-home1-talos-prod`, and `dc1-k3s-node1`,
-injecting the cluster and datacentre labels.
+injecting the cluster, region, and datacentre labels.
 See the [Observability overview](../README.md).
 
 The chart also installs the
@@ -86,8 +86,8 @@ The Service exposes a cluster-internal Prometheus remote-write receiver on
 port `9090`. Its
 [`prometheus.receive_http`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.receive_http/)
 endpoint is `/api/v1/metrics/write` and forwards into the existing Mimir writer,
-so pushed samples receive the same ApplicationSet-injected `cluster` and `dc`
-external labels as scraped metrics. OpenNMS Insight is the first consumer. The
+so pushed samples receive the same ApplicationSet-injected `cluster`, `region`,
+and `dc` external labels as scraped metrics. OpenNMS Insight is the first consumer. The
 receiver is not an HTTPRoute or LoadBalancer and performs no authentication;
 only trusted in-cluster producers may use it. Reads do not pass through Alloy
 because it is a write gateway, not a Prometheus remote-read service.
