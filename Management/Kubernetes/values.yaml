@@ -73,10 +73,9 @@ headlamp:
 
           cp -r /plugins/inspektor-gadget-plugin/. /build/plugins/inspektor-gadget/
 
-          sed -i 's#http://localhost:4466/externalproxy#/externalproxy#g' \
-            /build/plugins/inspektor-gadget/main.js
-          grep -o 'fetch("/externalproxy"' \
-            /build/plugins/inspektor-gadget/main.js
+          sed -i 's#http://localhost:4466/externalproxy#/externalproxy#g' /build/plugins/inspektor-gadget/main.js
+
+          grep -o 'fetch("/externalproxy"' /build/plugins/inspektor-gadget/main.js
       volumeMounts:
         - name: headlamp-plugins
           mountPath: /build/plugins
