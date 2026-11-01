@@ -1,3 +1,4 @@
+{{- if .Values.operations.clusterClaims }}
 apiVersion: resolvemy.host/v1alpha1
 kind: ClusterNode
 metadata:
@@ -124,6 +125,27 @@ spec:
     - name: net.core.bpf_jit_harden
       value: '1'
 
+    - name: net.ipv4.conf.all.arp_ignore
+      value: '0'
+
+    - name: net.ipv4.conf.default.arp_ignore
+      value: '0'
+
+    - name: net.ipv4.conf.eno1.arp_ignore
+      value: '1'
+
+    - name: net.ipv4.conf.enp117s0.arp_ignore
+      value: '1'
+
+    - name: net.ipv4.conf.all.arp_announce
+      value: '2'
+
+    - name: net.ipv4.conf.all.rp_filter
+      value: '0'
+
+    - name: net.ipv4.conf.default.rp_filter
+      value: '0'
+
     - name: net.ipv6.conf.eno1.accept_ra
       value: '2'
 
@@ -193,3 +215,4 @@ spec:
           - name: nvidia_uvm
           - name: nvidia_drm
           - name: nvidia_modeset
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.operations.clusterClaims }}
 apiVersion: resolvemy.host/v1alpha1
 kind: ClusterNode
 metadata:
@@ -197,6 +198,18 @@ spec:
     - name: 'net.core.netdev_budget'
       value: '600'
 
+    - name: 'net.ipv4.conf.all.arp_ignore'
+      value: '1'
+
+    - name: 'net.ipv4.conf.default.arp_ignore'
+      value: '1'
+
+    - name: 'net.ipv4.conf.all.arp_announce'
+      value: '2'
+
+    - name: 'net.ipv4.conf.default.arp_announce'
+      value: '2'
+
   overrides:
     cni:
       cilium:
@@ -259,3 +272,4 @@ spec:
           - uinput
           - nvme-cli
           - usb-audio-drivers
+{{- end }}

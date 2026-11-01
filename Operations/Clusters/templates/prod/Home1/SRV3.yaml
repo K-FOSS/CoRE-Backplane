@@ -1,3 +1,4 @@
+{{- if .Values.operations.clusterClaims }}
 apiVersion: resolvemy.host/v1alpha1
 kind: ClusterNode
 metadata:
@@ -195,6 +196,15 @@ spec:
           - name: 'vfio_iommu_type1'
 
   sysctls:
+    - name: 'net.ipv4.conf.all.arp_announce'
+      value: '2'
+
+    - name: 'net.ipv4.conf.eno1.arp_ignore'
+      value: '1'
+
+    - name: 'net.ipv4.conf.eno2.arp_ignore'
+      value: '1'
+
     - name: 'net.ipv6.conf.eno1.accept_ra'
       value: '0'
 
@@ -213,3 +223,4 @@ spec:
 
     - name: class.net.eno2.device.sriov_numvfs
       value: '16'
+{{- end }}
