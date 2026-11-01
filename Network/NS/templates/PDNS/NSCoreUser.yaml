@@ -1,0 +1,28 @@
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: 'ns-core-psql'
+
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
+
+spec:
+  name: 'Network Nameserver {{ .Values.region }}-{{ .Values.datacenter }}'
+  username: 'ns-core-{{ .Values.region }}-{{ .Values.datacenter }}'
+  groups:
+    - LDAPService
+
+  psql:
+    enabled: true
+    createUserDatabase: false
+    hostname: {{ required "psql.hostname must be injected by the owning ApplicationSet" .Values.psql.hostname | quote }}
+    uri: 'postgresql://'
+    databases:
+      - 'DlzcnePHKR'
+    crossplane:
+      crossplaneProvider: {{ required "psql.crossplaneProvider must be injected by the owning ApplicationSet" .Values.psql.crossplaneProvider | quote }}
+      terraformProvider: {{ required "psql.terraformProvider must be injected by the owning ApplicationSet" .Values.psql.terraformProvider | quote }}
+
+  writeConnectionSecretToRef:
+    name: 'ns-core-psql-creds'
