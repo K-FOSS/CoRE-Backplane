@@ -16,6 +16,7 @@ spec:
   psql:
     enabled: true
     createUserDatabase: false
+    database: 'DlzcnePHKR'
     hostname: {{ required "psql.hostname must be injected by the owning ApplicationSet" .Values.psql.hostname | quote }}
     uri: 'postgresql://'
     databases:
@@ -25,4 +26,4 @@ spec:
       terraformProvider: {{ required "psql.terraformProvider must be injected by the owning ApplicationSet" .Values.psql.terraformProvider | quote }}
 
   writeConnectionSecretToRef:
-    name: 'ns-core-psql-creds'
+    name: 'ns-core-creds'
