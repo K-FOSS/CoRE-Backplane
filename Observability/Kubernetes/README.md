@@ -2,7 +2,7 @@
 
 This chart deploys the official
 [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
-using chart version `3.13.1`. The
+using chart version `3.14.0`. The
 [`core-observability-k8s` ApplicationSet](../../Apps/Observability/Kubernetes.yaml)
 targets both infrastructure clusters at 15-second resolution and
 `dc1-k3s-node1` at 60-second resolution, deploying into `kube-system`.

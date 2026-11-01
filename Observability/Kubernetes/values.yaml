@@ -1,6 +1,29 @@
 metrics-server:
   priorityClassName: system-cluster-critical
 
+  # The ApplicationSet reduces this to one for the single-node k3s target.
+  replicas: 2
+
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: 'metrics-server'
+          topologyKey: 'kubernetes.io/hostname'
+
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: 'kubernetes.io/hostname'
+      whenUnsatisfiable: 'DoNotSchedule'
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: 'metrics-server'
+
   containerPort: 10250
 
   hostNetwork:
@@ -10,15 +33,6 @@ metrics-server:
     # API server unable to communicate with metrics-server. As an example, this is required
     # if you use Weave network on EKS
     enabled: false
-
-  replicas: 1
-
-  podDisruptionBudget:
-    # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
-    enabled: false
-    minAvailable:
-    maxUnavailable:
-    unhealthyPodEvictionPolicy:
 
   defaultArgs:
     - --cert-dir=/tmp

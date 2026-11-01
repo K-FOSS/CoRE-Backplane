@@ -20,16 +20,19 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    replicas: '2'
                     resolution: 15s
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    replicas: '2'
                     resolution: 15s
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    replicas: '1'
                     resolution: 60s
           - clusters:
               selector:
@@ -80,6 +83,8 @@ spec:
             - name: LOVELY_HELM_MERGE
               value: |- 
                 metrics-server:
+                  replicas: {{ .values.replicas }}
+
                   args:
                     - --metric-resolution={{ .values.resolution }}
 
