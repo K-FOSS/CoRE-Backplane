@@ -1140,16 +1140,21 @@ spec:
                     })
 
                     {{- $clusterKubeAPIServerExtraArgs := dict }}
-                    {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubeAPIServer .observed.composite.resource.spec.overrides.kubeAPIServer.extraArgs }}
-                    {{- $clusterKubeAPIServerExtraArgs = .observed.composite.resource.spec.overrides.kubeAPIServer.extraArgs }}
+                    {{- if and $clusterCustomResource.status.atProvider.manifest.spec.overrides $clusterCustomResource.status.atProvider.manifest.spec.overrides.kubeAPIServer $clusterCustomResource.status.atProvider.manifest.spec.overrides.kubeAPIServer.extraArgs }}
+                    {{- $clusterKubeAPIServerExtraArgs = $clusterCustomResource.status.atProvider.manifest.spec.overrides.kubeAPIServer.extraArgs }}
                     {{- end }}
+                    {{- $nodeKubeAPIServerExtraArgs := dict }}
+                    {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubeAPIServer .observed.composite.resource.spec.overrides.kubeAPIServer.extraArgs }}
+                    {{- $nodeKubeAPIServerExtraArgs = .observed.composite.resource.spec.overrides.kubeAPIServer.extraArgs }}
+                    {{- end }}
+                    {{- $kubeAPIServerExtraArgs := mergeOverwrite (dict) $clusterKubeAPIServerExtraArgs $nodeKubeAPIServerExtraArgs }}
                     kube-apiserver-conf = yamlencode(merge({
                       apiVersion = "v1alpha1"
                       kind       = "KubeAPIServerConfig"
                       image      = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"
                       extraArgs  = merge(local.legacy-kube-apiserver-extra-args, {
                         "feature-gates" = "UserNamespacesSupport=true"
-                        {{- range $key, $value := $clusterKubeAPIServerExtraArgs }}
+                        {{- range $key, $value := $kubeAPIServerExtraArgs }}
                         "{{ $key }}" = "{{ $value }}"
                         {{- end }}
                       })
@@ -1589,7 +1594,7 @@ spec:
                             apiServer = {
                               extraArgs = {
                                 feature-gates = "UserNamespacesSupport=true"
-                                {{- range $key, $value := $clusterKubeAPIServerExtraArgs }}
+                                {{- range $key, $value := $kubeAPIServerExtraArgs }}
                                 "{{ $key }}" = "{{ $value }}"
                                 {{- end }}
                               }
