@@ -1003,8 +1003,12 @@ spec:
                   read_only: {{ default false .observed.composite.resource.spec.psql.readOnly }}
 
                   tables:
+                    {{- if .observed.composite.resource.spec.psql.tables }}
                     {{- range $tableName := .observed.composite.resource.spec.psql.tables }}
                     - {{ $tableName | squote }}
+                    {{- end }}
+                    {{- else }}
+                    []
                     {{- end }}
 
                 module: | # hcl
@@ -1055,7 +1059,7 @@ spec:
 
                   resource "postgresql_grant" "readonly_tables" {
                     for_each = {
-                      for pair in setproduct(var.databases, var.tables) :
+                      for pair in setproduct(var.databases, var.tables != null ? var.tables : toset([])) :
                       "${pair[0]}:${pair[1]}" => pair
                       if var.read_only
                     }
