@@ -1139,11 +1139,20 @@ spec:
                       params     = local.sysfs-params
                     })
 
+                    {{- $clusterKubeAPIServerExtraArgs := dict }}
+                    {{- if and .observed.composite.resource.spec.overrides .observed.composite.resource.spec.overrides.kubeAPIServer .observed.composite.resource.spec.overrides.kubeAPIServer.extraArgs }}
+                    {{- $clusterKubeAPIServerExtraArgs = .observed.composite.resource.spec.overrides.kubeAPIServer.extraArgs }}
+                    {{- end }}
                     kube-apiserver-conf = yamlencode(merge({
                       apiVersion = "v1alpha1"
                       kind       = "KubeAPIServerConfig"
                       image      = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"
-                      extraArgs  = merge(local.legacy-kube-apiserver-extra-args, { "feature-gates" = "UserNamespacesSupport=true" })
+                      extraArgs  = merge(local.legacy-kube-apiserver-extra-args, {
+                        "feature-gates" = "UserNamespacesSupport=true"
+                        {{- range $key, $value := $clusterKubeAPIServerExtraArgs }}
+                        "{{ $key }}" = "{{ $value }}"
+                        {{- end }}
+                      })
                     },
                       try(local.legacy-kube-apiserver-config.env, null) == null ? {} : { env = local.legacy-kube-apiserver-config.env },
                       try(local.legacy-kube-apiserver-config.resources, null) == null ? {} : { resources = local.legacy-kube-apiserver-config.resources },
@@ -1580,6 +1589,9 @@ spec:
                             apiServer = {
                               extraArgs = {
                                 feature-gates = "UserNamespacesSupport=true"
+                                {{- range $key, $value := $clusterKubeAPIServerExtraArgs }}
+                                "{{ $key }}" = "{{ $value }}"
+                                {{- end }}
                               }
 
                               image = "registry.k8s.io/kube-apiserver:{{ $clusterK8sVersion }}"

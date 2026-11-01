@@ -230,8 +230,9 @@ spec:
                   properties:
                     apps:
                       type: array
+                      maxItems: 16
                       x-kubernetes-validations:
-                        - rule: 'self.all(app, !has(app.clientIDSecretRef) || self.all(other, !has(other.clientIDSecretRef) || app.clientIDSecretRef.name == other.clientIDSecretRef.name))'
+                        - rule: 'self.filter(app, has(app.clientIDSecretRef)).map(app, app.clientIDSecretRef.name).distinct().size() <= 1'
                           message: 'all clientIDSecretRef values in one Cluster must refer to the same Secret'
                       items:
                         type: object
@@ -248,12 +249,15 @@ spec:
                         properties:
                           issuer:
                             type: string
+                            maxLength: 2048
                             description: 'Explicit issuer URL. When omitted with clientIDSecretRef, the Workspace reads the sibling <clientID key>Issuer value produced by the application Workspace.'
                           issuerKey:
                             type: string
+                            maxLength: 253
                             description: 'Optional issuer key override in the Secret named by clientIDSecretRef. Defaults to the client ID key followed by Issuer.'
                           clientID:
                             type: string
+                            maxLength: 253
                             description: 'Literal OIDC client ID (use clientIDSecretRef to read it from a Secret).'
                           clientIDSecretRef:
                             type: object
@@ -264,8 +268,10 @@ spec:
                             properties:
                               name:
                                 type: string
+                                maxLength: 253
                               key:
                                 type: string
+                                maxLength: 253
                           usernameClaim:
                             type: string
                             default: 'preferred_username'
