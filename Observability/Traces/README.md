@@ -18,8 +18,9 @@ and merges a site profile by cluster name:
 - YXL runs the Tempo distributor, ingesters, queriers, query frontend,
   metrics-generator, compactor, and gateway. Its trace bucket uses the shared
   Garage endpoint. The [Tempo metrics-generator](https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-generator/)
-  runs the `span-metrics` processor so TraceQL metrics queries such as `rate()`
-  have an active generator ring.
+  runs the `local-blocks` and `span-metrics` processors so TraceQL metrics
+  queries such as `rate()` and Grafana Traces Drilldown have an active
+  generator ring.
 - Home1 runs no local Tempo pods. It publishes the same `tempo-core` global
   Service as a remote endpoint, so Cilium can select the active site through
   `service.cilium.io/affinity` without changing collector or Grafana addresses.
