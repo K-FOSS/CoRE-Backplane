@@ -18,7 +18,7 @@ The list generator currently limits the result to these applications:
 
 | Cluster | Application | Namespace | `hub` | Grafana replicas | ApplicationSet mode |
 | --- | --- | --- | --- | --- | --- |
-| `core-home1-talos-prod` | `core-home1-talos-prod-dashboards` | `core-prod` | `false` | `2` | `SingleBinary` |
+| `core-home1-talos-prod` | `core-home1-talos-prod-dashboards` | `core-prod` | `true` | `2` | `SingleBinary` |
 | `core-dc1-talos-prod` | `core-dc1-talos-prod-dashboards` | `core-prod` | `false` | `2` | `Distributed` |
 
 `mode` is part of the generator data but is not consumed by this chart. The
@@ -90,7 +90,13 @@ Dashboard discovery uses the chart's
 [k8s-sidecar integration](https://github.com/grafana-community/helm-charts/tree/grafana-12.10.4/charts/grafana#sidecar-for-dashboards)
 to watch ConfigMaps labelled `grafana_dashboard` in the release namespace. This
 is a namespaced dashboard watch, not the source of the cluster-wide telemetry
-traffic described in the [Collectors guide](../Collectors/README.md).
+traffic described in the [Collectors guide](../Collectors/README.md). Both
+cluster-local sidecars write through Grafana's shared YVR PostgreSQL database.
+The sidecar provider uses `disableDelete: true`: because each sidecar can see
+only its own cluster's ConfigMaps, an import-only provider prevents the DC1
+sidecar from deleting a dashboard supplied by YVR, or vice versa. Dashboard
+ConfigMaps should therefore use stable Grafana UIDs when the same dashboard is
+rendered in both clusters; the shared database remains authoritative.
 
 The local templates additionally render:
 
@@ -106,11 +112,11 @@ The local templates additionally render:
 - spoke-only ExternalSecrets that retrieve the database and OIDC material from
   CoreVault.
 
-At present both ApplicationSet entries inject `hub: false`. Consequently, the
-hub-only `User`, Authentik Workspace, and PushSecrets are not rendered by these
-two Applications. They remain chart behavior for a caller that explicitly
-renders this unit with `hub: true`; do not assume the default in `values.yaml`
-describes the current Argo CD deployment.
+The Home1 ApplicationSet entry injects `hub: true`, so it renders the
+hub-owned Grafana `User`, Authentik Workspace, and PushSecrets that create and
+publish the shared credentials. The DC1 entry injects `hub: false` and consumes
+those credentials through ExternalSecrets. Do not assume the default in
+`values.yaml` describes the current Argo CD deployment.
 
 ## Identity, secrets, and data flow
 

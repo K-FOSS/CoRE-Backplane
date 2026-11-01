@@ -112,3 +112,8 @@ grafana:
   sidecar:
     dashboards:
       enabled: true
+      # Each cluster watches its own core-prod ConfigMaps, while both Grafana
+      # instances use the shared YVR PostgreSQL database. Do not let one
+      # cluster delete dashboards that are only present in the other cluster.
+      provider:
+        disableDelete: true
