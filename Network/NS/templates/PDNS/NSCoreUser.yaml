@@ -16,10 +16,20 @@ spec:
   psql:
     enabled: true
     createUserDatabase: false
+    database: 'DlzcnePHKR'
     hostname: {{ required "psql.hostname must be injected by the owning ApplicationSet" .Values.psql.hostname | quote }}
     uri: 'postgresql://'
+    readOnly: true
     databases:
       - 'DlzcnePHKR'
+    tables:
+      - 'domains'
+      - 'records'
+      - 'comments'
+      - 'domainmetadata'
+      - 'cryptokeys'
+      - 'tsigkeys'
+      - 'supermasters'
     crossplane:
       crossplaneProvider: {{ required "psql.crossplaneProvider must be injected by the owning ApplicationSet" .Values.psql.crossplaneProvider | quote }}
       terraformProvider: {{ required "psql.terraformProvider must be injected by the owning ApplicationSet" .Values.psql.terraformProvider | quote }}
