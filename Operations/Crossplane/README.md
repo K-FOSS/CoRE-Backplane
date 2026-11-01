@@ -61,6 +61,13 @@ For a provider upgrade, verify the selected [Authentik Terraform provider releas
 
 An Authentik provider version change can expose real plan differences. Review those as Terraform drift or provider/API compatibility issues; a successful `init` alone is not evidence that managed Authentik objects remained unchanged. Keep the remote Kubernetes Terraform state backend and Workspace identities stable throughout the upgrade.
 
+Authentik TLS signing certificate data sources set `fetch_key = false` when the
+Workspace only needs the certificate-key pair ID for a provider's `signing_key`.
+This avoids fetching private-key data that Terraform does not consume. Keep key
+fetching enabled only when a Workspace explicitly uses the data source's
+`key_data` or another private-key output. See the Authentik provider's
+[certificate-key-pair data source schema](https://github.com/goauthentik/terraform-provider-authentik/blob/main/docs/data-sources/certificate_key_pair.md).
+
 ## Operations and verification
 
 After changing the provider runtime configuration, reconcile only the affected Crossplane child applications. Confirm the `DeploymentRuntimeConfig` arguments and resource requests and limits, then observe provider CPU and memory alongside node utilization. Verify that new Workspace changes begin reconciling promptly and that existing Workspace conditions settle.
