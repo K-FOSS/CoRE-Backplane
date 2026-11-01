@@ -1,0 +1,40 @@
+{{- if .Values.dashboardSync.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: grafana
+spec:
+  pluginCache: false
+  credentials:
+    - filename: grafana-username
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: grafana-dashboard-sync-bootstrap
+        key: username
+    - filename: grafana-password
+      source: Secret
+      secretRef:
+        namespace: {{ .Release.Namespace }}
+        name: grafana-dashboard-sync-bootstrap
+        key: password
+  configuration: | # hcl
+    provider "grafana" {
+      url  = "http://grafana-dashboard-api.core-prod.svc.{{ .Values.cluster.domain }}"
+      auth = "${trimspace(file("${path.module}/grafana-username"))}:${trimspace(file("${path.module}/grafana-password"))}"
+    }
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-grafana"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        grafana = {
+          source  = "grafana/grafana"
+          version = "4.49.0"
+        }
+      }
+    }
+{{- end }}

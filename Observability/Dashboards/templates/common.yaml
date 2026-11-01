@@ -1,0 +1,122 @@
+{{- $_ := set .Values "global" (dict "createDefaultServiceAccount" false) -}}
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "core-observability-dashboards.syncerValues" -}}
+global:
+  nameOverride: 'grafana-dashboard-sync'
+  createDefaultServiceAccount: false
+
+controllers:
+  main:
+    forceRename: 'grafana-dashboard-sync'
+    replicas: 1
+    strategy: 'RollingUpdate'
+    serviceAccount:
+      identifier: 'main'
+    pod:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+    containers:
+      dashboard-sync:
+        image:
+          repository: {{ .Values.dashboardSync.image.repository | quote }}
+          tag: {{ printf "%s@%s" .Values.dashboardSync.image.tag .Values.dashboardSync.image.digest | quote }}
+          pullPolicy: 'IfNotPresent'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ['ALL']
+          seccompProfile:
+            type: 'RuntimeDefault'
+        env:
+          LABEL: 'grafana_dashboard'
+          LABEL_VALUE: 'true'
+          NAMESPACE: 'core-prod'
+          RESOURCE: 'configmap'
+          METHOD: 'WATCH'
+          FOLDER: '/tmp/dashboards'
+          SCRIPT: '/scripts/import.py'
+          GRAFANA_URL: {{ printf "http://grafana-dashboard-api.core-prod.svc.%s" .Values.cluster.domain | quote }}
+          GRAFANA_TOKEN:
+            secretKeyRef:
+              name: 'grafana-dashboard-sync-auth'
+              key: 'token'
+        ports:
+          - name: 'health'
+            containerPort: 8080
+        probes:
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/healthz'
+                port: 'health'
+              periodSeconds: 10
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: '/healthz'
+                port: 'health'
+              periodSeconds: 30
+        resources:
+          requests:
+            cpu: '10m'
+            memory: '64Mi'
+          limits:
+            cpu: '200m'
+            memory: '256Mi'
+
+serviceAccount:
+  main:
+    enabled: true
+    forceRename: 'grafana-dashboard-sync'
+
+rbac:
+  roles:
+    main:
+      enabled: true
+      type: 'Role'
+      forceRename: 'grafana-dashboard-sync'
+      rules:
+        - apiGroups: ['']
+          resources: ['configmaps']
+          verbs: ['get', 'list', 'watch']
+  bindings:
+    main:
+      enabled: true
+      type: 'RoleBinding'
+      forceRename: 'grafana-dashboard-sync'
+      roleRef:
+        identifier: 'main'
+      subjects:
+        - identifier: 'main'
+
+persistence:
+  dashboards:
+    enabled: true
+    type: 'emptyDir'
+    advancedMounts:
+      main:
+        dashboard-sync:
+          - path: '/tmp/dashboards'
+  script:
+    enabled: true
+    type: 'configMap'
+    name: 'grafana-dashboard-sync-script'
+    defaultMode: 0555
+    advancedMounts:
+      main:
+        dashboard-sync:
+          - path: '/scripts'
+            readOnly: true
+{{- end }}
+{{- if .Values.dashboardSync.enabled }}
+{{- $_ := mergeOverwrite .Values (include "core-observability-dashboards.syncerValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}
+{{- end }}

@@ -23,6 +23,7 @@ spec:
     name: core-grafana-creds
 {{- end }}
 
+{{- if .Values.dashboardSync.enabled }}
 ---
 apiVersion: mylogin.space/v1alpha1
 kind: User
@@ -40,3 +41,4 @@ spec:
 
   writeConnectionSecretToRef:
     name: grafana-dashboard-sync-bootstrap
+{{- end }}

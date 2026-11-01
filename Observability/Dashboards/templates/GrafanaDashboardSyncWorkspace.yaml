@@ -1,0 +1,29 @@
+{{- if .Values.dashboardSync.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: grafana-dashboard-sync-{{ .Values.cluster.name | lower | replace "_" "-" }}
+spec:
+  providerConfigRef:
+    name: grafana
+  writeConnectionSecretToRef:
+    namespace: {{ .Release.Namespace }}
+    name: grafana-dashboard-sync-auth
+  forProvider:
+    source: Inline
+    initArgs: ['-upgrade']
+    module: |
+      resource "grafana_service_account" "dashboard_sync" {
+        name = "dashboard-sync-{{ .Values.cluster.name }}"
+        role = "Editor"
+      }
+      resource "grafana_service_account_token" "dashboard_sync" {
+        name               = "dashboard-sync-token-{{ .Values.cluster.name }}"
+        service_account_id = grafana_service_account.dashboard_sync.id
+      }
+
+      output "token" {
+        value     = grafana_service_account_token.dashboard_sync.key
+        sensitive = true
+      }
+{{- end }}

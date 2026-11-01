@@ -1,0 +1,20 @@
+{{- if .Values.dashboardSync.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-dashboard-api
+  annotations:
+    service.cilium.io/global: 'true'
+    service.cilium.io/global-sync-endpoint-slices: 'true'
+    service.cilium.io/shared: 'true'
+spec:
+  type: ClusterIP
+  ports:
+    - name: grafana
+      port: 80
+      protocol: TCP
+      targetPort: grafana
+  selector:
+    app.kubernetes.io/instance: '{{ .Values.dashboardSync.centralClusterName }}-dashboards'
+    app.kubernetes.io/name: grafana
+{{- end }}

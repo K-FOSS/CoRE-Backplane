@@ -1,0 +1,61 @@
+{{- if .Values.dashboardSync.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-sync-script
+data:
+  import.py: |-
+    #!/usr/bin/env python3
+    import json
+    import os
+    from pathlib import Path
+    from urllib.error import HTTPError
+    from urllib.parse import quote
+    from urllib.request import Request, urlopen
+
+    ROOT = Path(os.environ['FOLDER'])
+    GRAFANA_URL = os.environ['GRAFANA_URL'].rstrip('/')
+    token = os.environ['GRAFANA_TOKEN']
+
+    def request(method, path, payload=None):
+        body = None
+        headers = {
+            'Authorization': f'Bearer {token}',
+            'Accept': 'application/json',
+        }
+        if payload is not None:
+            body = json.dumps(payload).encode()
+            headers['Content-Type'] = 'application/json'
+        req = Request(f'{GRAFANA_URL}{path}', data=body, headers=headers, method=method)
+        with urlopen(req, timeout=30) as response:
+            return response.status, json.loads(response.read() or b'{}')
+
+    def folder_uid(folder):
+        if not folder:
+            return None
+        encoded = quote(folder, safe='')
+        try:
+            _, result = request('GET', f'/api/folders/name/{encoded}')
+            return result['uid']
+        except HTTPError as error:
+            if error.code != 404:
+                raise
+        _, result = request('POST', '/api/folders', {'title': folder})
+        return result['uid']
+
+    for dashboard_path in sorted(ROOT.rglob('*.json')):
+        with dashboard_path.open(encoding='utf-8') as stream:
+            dashboard = json.load(stream)
+        dashboard.pop('id', None)
+        relative_parent = dashboard_path.parent.relative_to(ROOT)
+        folder = '' if str(relative_parent) == '.' else str(relative_parent)
+        payload = {
+            'dashboard': dashboard,
+            'folderId': 0,
+            'overwrite': True,
+        }
+        uid = folder_uid(folder)
+        if uid:
+            payload['folderUid'] = uid
+        request('POST', '/api/dashboards/db', payload)
+{{- end }}
