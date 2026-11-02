@@ -151,9 +151,11 @@ writer and YVR is a follower. Replication factor `3` with
 `zoneRedundancyMode: AtLeast` and `zoneRedundancyMinZones: 2` requires object
 copies to span both sites.
 
-Each site advertises the managed Garage node pod addresses from its routable
-site pod CIDR for identity-specific cross-site RPC. No node-address or public
-LoadBalancer dependency is used. The operator uses those endpoints while
+Each YVR node has a dedicated headless RPC Service. Site ExternalDNS publishes
+the Service endpoint names, and the YXL writer uses those names for
+identity-specific cross-site RPC. The records resolve to the routable YVR pod
+addresses; no node-address or LoadBalancer dependency is used. The operator uses
+those endpoints while
 the Admin API is published through the site-specific TLS HTTPRoute
 `observability-garage-admin.<dc>.<region>.mylogin.space`. This endpoint is
 authenticated with the remote site's Garage admin token and is not an S3
@@ -169,7 +171,8 @@ ordering for all topology changes.
 
 The YXL writer declares the three current YVR node identities as external
 `GarageNode` resources. Their IDs are read from the YVR PVC-backed Garage
-identities and their addresses are the routable YVR pod addresses. If a YVR
+identities and their addresses are the ExternalDNS-published headless Service
+names. If a YVR
 node identity is deliberately replaced, update this registry after the new
 node is running and before removing the old role; do not reuse an old ID for a
 different PVC.

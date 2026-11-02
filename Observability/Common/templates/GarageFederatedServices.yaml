@@ -1,0 +1,25 @@
+{{- if and .Values.garage.enabled .Values.garage.federation.enabled (eq .Values.region "yvr") }}
+{{- range .Values.garage.federation.remoteStorageNodes }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-rpc" .name | squote }}
+  namespace: {{ $.Release.Namespace | squote }}
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+  annotations:
+    external-dns.kubernetes.io/hostname: {{ .hostname | squote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .hostname | squote }}
+spec:
+  clusterIP: 'None'
+  publishNotReadyAddresses: true
+  selector:
+    statefulset.kubernetes.io/pod-name: {{ printf "observability-garage-storage-%s-0" .ordinal | squote }}
+  ports:
+    - name: 'rpc'
+      port: 3901
+      targetPort: 'rpc'
+{{- end }}
+{{- end }}
