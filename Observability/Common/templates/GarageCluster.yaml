@@ -17,7 +17,10 @@ spec:
   deletionPolicy: 'Drain'
   {{- if .Values.garage.federation.enabled }}
   layoutManagement:
+    autoApply: true
     siteRole: {{ if eq .Values.region .Values.garage.federation.writerRegion }}'Writer'{{ else }}'Follower'{{ end }}
+    drain:
+      unverifiedPeersPolicy: 'AssumeConsistent'
   publicEndpoint:
     type: {{ .Values.garage.federation.rpc.type | squote }}
     nodePort:
