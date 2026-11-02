@@ -8,12 +8,12 @@ The Garage cluster for observability is defined separately in
 ## Ownership and configuration
 
 The ApplicationSet selects the core bare-metal infrastructure clusters in DC1
-regions YVR and YXL and installs the pinned upstream operator chart `0.8.1` into
+regions YVR and YXL and installs the pinned upstream operator chart `0.8.2` into
 `garage-operator-system`. It watches only `core-prod` for Garage custom
 resources. The operator chart is published by the
 [Garage Kubernetes Operator project](https://github.com/rajsinghtech/garage-operator)
-as an OCI artifact. Chart version `0.8.1` is pinned; its OCI digest is
-`sha256:2acc04b7ab0021664985fbd1ffac16ea9d3d79b40c4878c361480fba6ffa8c1e`.
+as an OCI artifact. Chart version `0.8.2` is pinned; its OCI digest is
+`sha256:2aec61c6a0613aa9f21e8efed167b74429d555555871a96a643169137fa70ac8`.
 The operator image and Garage `v2.4.1` image are pinned by digest in
 [values.yaml](values.yaml).
 
@@ -24,7 +24,7 @@ GarageCluster, GarageBucket and GarageKey resources deliberately before
 removing the controller; retain and recover the Longhorn PVCs separately.
 
 The chart enables the operator's authenticated
-[ServiceMonitor and bundled Grafana dashboard](https://github.com/rajsinghtech/garage-operator/blob/v0.8.1/docs/how-to/monitoring.md).
+[ServiceMonitor and bundled Grafana dashboard](https://github.com/rajsinghtech/garage-operator/blob/v0.8.2/docs/how-to/monitoring.md).
 The dashboard ConfigMap is placed in `core-prod`, where the Grafana sidecar
 discovers it. A narrowly scoped ClusterRoleBinding permits the target cluster's
 central Alloy collector to read only the operator's non-resource `/metrics`
