@@ -3,6 +3,9 @@ kind: DeploymentRuntimeConfig
 metadata:
   name: 'provider-terraform'
 spec:
+  serviceAccountTemplate:
+    metadata:
+      name: 'provider-terraform'
   deploymentTemplate:
     metadata:
       labels:
@@ -43,6 +46,6 @@ metadata:
 
 spec:
   # TODO: Get this automated with Renovate
-  package: 'registry.writemy.codes/library/terraform:v0.20.1'
+  package: '{{ .Values.providerTerraform.package }}'
   runtimeConfigRef:
     name: 'provider-terraform'
