@@ -61,11 +61,13 @@ spec:
         allowed_redirect_uris = [
           {
             matching_mode = "strict"
+            redirect_uri_type = "authorization"
             url           = "${local.external_url}/c/oidc/callback"
           },
           {{- if eq .Values.region "yxl" }}
           {
             matching_mode = "strict"
+            redirect_uri_type = "authorization"
             url           = "https://registry.writemy.codes/c/oidc/callback"
           },
           {{- end }}
