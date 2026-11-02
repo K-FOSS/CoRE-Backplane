@@ -151,8 +151,9 @@ writer and YVR is a follower. Replication factor `3` with
 `zoneRedundancyMode: AtLeast` and `zoneRedundancyMinZones: 2` requires object
 copies to span both sites.
 
-Each site exposes identity-specific RPC NodePorts through the listed site node
-hostnames. The operator uses those endpoints for cross-site Garage RPC, while
+Each site advertises the managed Garage node pod addresses from its routable
+site pod CIDR for identity-specific cross-site RPC. No node-address or public
+LoadBalancer dependency is used. The operator uses those endpoints while
 the Admin API is published through the site-specific TLS HTTPRoute
 `observability-garage-admin.<dc>.<region>.mylogin.space`. This endpoint is
 authenticated with the remote site's Garage admin token and is not an S3

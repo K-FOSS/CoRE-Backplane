@@ -21,16 +21,6 @@ spec:
     siteRole: {{ if eq .Values.region .Values.garage.federation.writerRegion }}'Writer'{{ else }}'Follower'{{ end }}
     drain:
       unverifiedPeersPolicy: 'AssumeConsistent'
-  publicEndpoint:
-    type: {{ .Values.garage.federation.rpc.type | squote }}
-    nodePort:
-      basePort: {{ int .Values.garage.federation.rpc.basePort }}
-      externalAddresses:
-        {{- if eq .Values.region "yxl" }}
-        {{- toYaml .Values.garage.federation.rpc.yxlExternalAddresses | nindent 8 }}
-        {{- else }}
-        {{- toYaml .Values.garage.federation.rpc.yvrExternalAddresses | nindent 8 }}
-        {{- end }}
   remoteClusters:
     - name: {{ if eq .Values.region "yxl" }}'observability-garage-yvr'{{ else }}'observability-garage-yxl'{{ end }}
       zone: {{ if eq .Values.region "yxl" }}'yvr'{{ else }}'yxl'{{ end }}
@@ -41,6 +31,9 @@ spec:
           key: 'admin-token'
   {{- end }}
   network:
+    {{- if .Values.garage.federation.enabled }}
+    rpcPublicAddrSubnet: {{ if eq .Values.region "yxl" }}'172.20.48.0/21'{{ else }}'172.20.56.0/21'{{ end }}
+    {{- end }}
     rpcSecretRef:
       name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
       key: 'rpc-secret'
