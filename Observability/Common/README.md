@@ -166,3 +166,10 @@ objects only. Before changing membership, verify both sites report
 `FederationConfigured=True`, `RemoteClustersHealthy=True`, no sustained
 `PeerUnreachable`, and a settled layout. Preserve the YXL writer/YVR follower
 ordering for all topology changes.
+
+The YXL writer declares the three current YVR node identities as external
+`GarageNode` resources. Their IDs are read from the YVR PVC-backed Garage
+identities and their addresses are the routable YVR pod addresses. If a YVR
+node identity is deliberately replaced, update this registry after the new
+node is running and before removing the old role; do not reuse an old ID for a
+different PVC.
