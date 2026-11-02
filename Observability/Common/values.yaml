@@ -41,5 +41,53 @@ garage:
     gatewayName: 'main-gw'
     gatewayNamespace: 'core-prod'
 
+garageUI:
+  enabled: true
+  hostname: 'garage-ui.mylogin.space'
+  accessGroup: 'Server Admins'
+  garage:
+    serviceName: 'observability-garage'
+    s3Port: 3900
+    adminPort: 3903
+garageUIWeb:
+  fullnameOverride: 'garage-ui'
+  replicaCount: 2
+  image:
+    repository: 'noooste/garage-ui'
+    tag: 'v0.14.0@sha256:e4a33c448304a3f6e60f08d6aa71b2471fd79ac870a5c7e178ea247dea3238b3'
+    pullPolicy: 'IfNotPresent'
+  config:
+    server:
+      host: '::'
+      port: 8080
+      environment: 'production'
+      domain: 'garage-ui.mylogin.space'
+      protocol: 'https'
+      root_url: 'https://garage-ui.mylogin.space'
+    garage:
+      endpoint: 'http://observability-garage:3900'
+      region: 'garage'
+      admin_endpoint: 'http://observability-garage:3903'
+      admin_token: ''
+      existingSecret:
+        name: 'observability-garage-bootstrap'
+        key: 'admin-token'
+    auth:
+      metrics_public: true
+      admin:
+        enabled: false
+      oidc:
+        enabled: false
+  resources:
+    requests:
+      cpu: '50m'
+      memory: '128Mi'
+    limits:
+      cpu: '500m'
+      memory: '512Mi'
+  serviceMonitor:
+    enabled: true
+    interval: '60s'
+
 longhorn:
   provisioner: 'driver.longhorn.io'

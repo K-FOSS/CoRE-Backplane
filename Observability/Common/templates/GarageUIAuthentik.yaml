@@ -1,0 +1,47 @@
+{{- if and .Values.garage.enabled .Values.garageUI.enabled }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
+metadata:
+  name: 'garage-ui-authentik'
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  providerConfigRef:
+    name: 'authentik'
+  forProvider:
+    source: 'Inline'
+    module: |
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
+
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      data "authentik_group" "access" {
+        name = "{{ .Values.garageUI.accessGroup }}"
+      }
+
+      resource "authentik_provider_proxy" "garage_ui" {
+        name               = "Garage UI"
+        mode               = "forward_single"
+        external_host      = "https://{{ .Values.garageUI.hostname }}"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+
+      resource "authentik_application" "garage_ui" {
+        name              = "Garage UI"
+        slug              = "garage-ui"
+        group             = "Observability"
+        meta_launch_url   = "https://{{ .Values.garageUI.hostname }}"
+        protocol_provider = authentik_provider_proxy.garage_ui.id
+      }
+
+      resource "authentik_policy_binding" "access" {
+        target = authentik_application.garage_ui.uuid
+        group  = data.authentik_group.access.id
+        order  = 0
+      }
+{{- end }}

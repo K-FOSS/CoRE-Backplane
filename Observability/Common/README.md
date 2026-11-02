@@ -48,6 +48,21 @@ otherwise create a large number of histogram series; the related count and sum
 series remain available. Bucket bytes and object counts come from the Garage
 operator metrics endpoint described in the operator stack documentation.
 
+The chart also deploys [Garage UI](https://github.com/Noooste/garage-ui), pinned
+to Helm chart version `0.14.0` and image digest
+`sha256:e4a33c448304a3f6e60f08d6aa71b2471fd79ac870a5c7e178ea247dea3238b3`, as the
+management interface for this Garage cluster. Its upstream chart values are
+provided under the `garageUIWeb` dependency alias in
+[`values.yaml`](values.yaml). It uses the cluster's existing bootstrap Secret for the Garage
+admin API token and connects to the in-cluster S3 and admin Services over HTTP;
+the public UI hostname is `garage-ui.mylogin.space`. The upstream UI's own OIDC
+login is disabled because the route is protected by the shared Authentik
+forward-auth outpost. The generated Authentik proxy application grants access
+only to the `Server Admins` group. Garage UI's optional team access control is
+not a replacement for Garage key permissions; its upstream
+[access-control documentation](https://github.com/Noooste/garage-ui/blob/main/docs/access-control.md)
+describes that limitation.
+
 Garage's S3 listener serves HTTP, so the chart uses the existing Envoy Gateway
 `main-gw` HTTPS listener to terminate TLS and routes requests to Garage's port
 `3900`. Mimir and Loki connect to
@@ -114,6 +129,12 @@ Then reconcile Metrics and Logs. Verify their Garage bucket/key resources and
 User claim readiness, and inspect generated S3 Secret key names without
 printing data. Confirm both clients connect through Envoy Gateway with
 certificate verification enabled.
+For Garage UI, verify the `garage-ui` Deployment, ServiceMonitor, HTTPRoute,
+outpost callback route, fail-closed SecurityPolicy, and Authentik Workspace.
+An unauthenticated request to `https://garage-ui.mylogin.space` must redirect
+through Authentik, while a `Server Admins` member must be able to browse the
+Garage cluster and buckets. The upstream [Garage UI Helm chart](https://github.com/Noooste/garage-ui/tree/main/helm/garage-ui)
+documents the configuration and health endpoint used by the deployment.
 Removing this chart removes the GarageCluster desired resource; retained PVCs
 are recovery material and require deliberate cleanup only after data is
 backed up and no consumer references the cluster. The Vault path is retained
