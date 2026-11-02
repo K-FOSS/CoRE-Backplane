@@ -207,6 +207,7 @@ The generated Secret contains these output keys:
 | `region` | Included in the Authentik provider name, client ID, and application slug. |
 | `oauth.indexKey` | Prefix for the client ID and application/issuer slug. |
 | `oauth.scopes` | Value written to `OIDC_SCOPES`. Keep it aligned with the managed mappings in the template. |
+| `oauth.refreshTokenValidity` | Authentik OAuth2 refresh-token lifetime, using Authentik duration syntax; production is configured for `days=3`. |
 | `oauth.groups` | Existing Authentik groups granted access to the application. |
 | `oauth.authentik.urlBase` | External Authentik base URL used to construct the issuer URL. |
 | `gateway.*` | Parent Gateway and listener used by the Headlamp HTTPRoute. |
