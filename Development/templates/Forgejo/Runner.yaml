@@ -130,6 +130,7 @@ metadata:
     argocd.argoproj.io/sync-wave: '1'
 spec:
   replicas: {{ if hasKey . "replicas" }}{{ .replicas }}{{ else }}{{ $.Values.forgejoRunner.replicaCount }}{{ end }}
+  revisionHistoryLimit: 3
   strategy:
     type: Recreate
   selector:
