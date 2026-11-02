@@ -281,7 +281,7 @@ use `/registries/<id>` and `/projects/<id>` respectively.
 
 Forgejo is deployed independently at both infrastructure sites through the
 official [Forgejo Helm chart](https://code.forgejo.org/forgejo-helm/forgejo-helm/src/tag/v17.1.5)
-and a digest-pinned [Forgejo 16.0.6 rootless image](https://forgejo.org/releases/16.x/).
+and a digest-pinned [Forgejo 17.0.1 rootless image](https://forgejo.org/releases/17.x/).
 This chart also creates the cluster-scoped
 `ha-core-dev-<environment>` Longhorn StorageClass with two replicas and
 `migratable: 'false'`; the YXL Forgejo deployment selects it for its RWX PVC. See the
@@ -644,7 +644,7 @@ Key behavior:
   region uses `America/Winnipeg` (Sioux Lookout/Northern Ontario Central
   Time); YVR uses `America/Vancouver`;
 - inactive workspaces idle after 6 hours; the absolute runtime cap is disabled;
-- Che 7.122.0 CLI activity tracking keeps terminal Codex processes active,
+- Che 7.123.0 CLI activity tracking keeps terminal Codex processes active,
   including unattended sessions;
 - each user may run four workspaces, with no configured total-workspace cap;
 - startup may take up to 30 minutes;
@@ -685,8 +685,8 @@ Disable `che.aiToolRegistry.enabled` to hide the AI Provider selector. Existing
 user API-key Secrets are not deleted when the registry is disabled, consistent
 with Che's documented behavior.
 
-Codex activity uses the native [Che machine-exec CLI watcher](https://github.com/eclipse-che/che-machine-exec/blob/7.122.0/timeout/CLI-WATCHER.md).
-The operator dependency in `IDE/Che` is pinned to 7.122.0 because 7.121.0
+Codex activity uses the native [Che machine-exec CLI watcher](https://github.com/eclipse-che/che-machine-exec/blob/7.123.0/timeout/CLI-WATCHER.md).
+The operator dependency in `IDE/Che` is pinned to 7.123.0 because 7.121.0
 lacks this watcher and its CheCluster fields. `che.cliActivityTracker` enables
 60-second process checks. Its maximum process age is the largest supported
 positive int32 (about 68 years), avoiding the default six-hour process cap.
@@ -700,7 +700,7 @@ and processes without a user terminal are not covered by this native watcher.
 Project `.noidle` files and
 `CLI_ACTIVITY_TRACKER_CONFIG` override the home configuration.
 The mount-on-start annotation prevents this ConfigMap from restarting active
-sessions. Existing workspaces need a planned restart with a 7.122.0 editor
+sessions. Existing workspaces need a planned restart with a 7.123.0 editor
 image/tooling; old editor contributions or project editor overrides may need
 updating through the dashboard before the watcher is available.
 
@@ -722,7 +722,7 @@ The same ApplicationSet callback is injected into the Che server's
 `CHE_OAUTH_GITHUB_REDIRECTURIS` extra property. Che 7.122 otherwise omits
 `redirect_uri` from its authorization request when the request host does not
 match a configured callback, and Forgejo rejects it. See the
-[Che OAuth authenticator source](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-auth/src/main/java/org/eclipse/che/security/oauth/OAuthAuthenticator.java).
+[Che OAuth authenticator source](https://github.com/eclipse-che/che-server/blob/7.123.0/wsmaster/che-core-api-auth/src/main/java/org/eclipse/che/security/oauth/OAuthAuthenticator.java).
 Changing an existing callback requires a new `jobRevision` in the ApplicationSet
 because completed Jobs do not rerun. The Job updates the existing Forgejo OAuth
 application and republishes its rotated client secret; verify both PushSecret
@@ -732,7 +732,7 @@ pulls that record into `eclipse-che` with Che's OAuth SCM labels and the
 Forgejo endpoint. Forgejo's OAuth application endpoint and OAuth provider
 behavior are documented in the [Forgejo OAuth2 provider guide](https://forgejo.org/docs/latest/admin/advanced/oauth2-provider/)
 and [API reference](https://forgejo.org/docs/latest/user/api/).
-[Che Server 7.122.0 binds only two GitHub-compatible OAuth providers](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-auth-github/src/main/java/org/eclipse/che/security/oauth/GithubModule.java).
+[Che Server 7.123.0 binds only two GitHub-compatible OAuth providers](https://github.com/eclipse-che/che-server/blob/7.123.0/wsmaster/che-core-api-auth-github/src/main/java/org/eclipse/che/security/oauth/GithubModule.java).
 The YVR Development ApplicationSet reserves both slots for the YXL and YVR
 Forgejo endpoints by disabling the `che-github` ExternalSecret there. Its
 operator-owned `github-oauth-config` Secret is removed with that ExternalSecret,
@@ -744,7 +744,7 @@ only after providing a supported third provider slot or retiring one Forgejo
 connection.
 The [Forgejo GitHub API compatibility route](templates/Forgejo/GitHubAPICompat.yaml)
 rewrites `/api/v3` requests to `/api/v1` on each enabled Forgejo hostname.
-Che 7.122's [GitHub Enterprise API client](https://github.com/eclipse-che/che-server/blob/7.122.0/wsmaster/che-core-api-factory-github-common/src/main/java/org/eclipse/che/api/factory/server/github/GithubApiClient.java)
+Che 7.123's [GitHub Enterprise API client](https://github.com/eclipse-che/che-server/blob/7.123.0/wsmaster/che-core-api-factory-github-common/src/main/java/org/eclipse/che/api/factory/server/github/GithubApiClient.java)
 uses `/api/v3/user` to validate the OAuth token and `/api/v3/repos/...` for
 repository metadata, while Forgejo serves those operations under `/api/v1`.
 The dedicated [Gateway API URL rewrite](https://gateway-api.sigs.k8s.io/guides/user-guides/http-redirect-rewrite/)
@@ -764,10 +764,10 @@ the inactivity timeout. Once Codex exits, inactivity idling resumes.
 To roll back, disable `che.cliActivityTracker.enabled`, restore
 `che.secondsOfRunBeforeIdling: 43200`, and remove the activity ConfigMap via a
 reviewed pruning operation. Restart workspaces to remove their mounted policy.
-Keep the operator at 7.122.0; disabling the feature does not require a CRD
+Keep the operator at 7.123.0; disabling the feature does not require a CRD
 or controller downgrade. Storage and workspace deletion policies are unchanged.
 See the [CheCluster field reference](https://eclipse.dev/che/docs/stable/administration-guide/checluster-custom-resource-fields-reference/)
-and [7.122.0 release notes](https://github.com/eclipse-che/che/releases/tag/7.122.0).
+and [7.123.0 release notes](https://github.com/eclipse-che/che/releases/tag/7.123.0).
 
 Before a Che change, test OIDC login, workspace creation, PVC attachment,
 image pull, each generated Forgejo SCM secret and callback, SCM authorization,
@@ -779,7 +779,7 @@ Avoid changing workspace storage strategy without a migration plan.
 
 ## Artifact Hub
 
-Artifact Hub is backed by external PostgreSQL and uses Authentik OIDC. A local
+Artifact Hub chart 1.23.0 is backed by external PostgreSQL and uses Authentik OIDC. A local
 `User` requests its database/service identity and a PushSecret publishes the
 generated connection details to Vault. The upstream scanner is disabled,
 while tracking and database migration remain part of the deployment.
