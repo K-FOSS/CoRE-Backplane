@@ -8,10 +8,35 @@ metadata:
     argocd.argoproj.io/sync-wave: '1'
 spec:
   image: {{ .Values.garage.image | squote }}
-  zone: {{ .Values.garage.zone | squote }}
+  zone: {{ .Values.region | squote }}
   replication:
     factor: {{ int .Values.garage.replicationFactor }}
     consistencyMode: 'consistent'
+    zoneRedundancyMode: 'AtLeast'
+    zoneRedundancyMinZones: 2
+  deletionPolicy: 'Drain'
+  {{- if .Values.garage.federation.enabled }}
+  layoutManagement:
+    siteRole: {{ if eq .Values.region .Values.garage.federation.writerRegion }}'Writer'{{ else }}'Follower'{{ end }}
+  publicEndpoint:
+    type: {{ .Values.garage.federation.rpc.type | squote }}
+    nodePort:
+      basePort: {{ int .Values.garage.federation.rpc.basePort }}
+      externalAddresses:
+        {{- if eq .Values.region "yxl" }}
+        {{- toYaml .Values.garage.federation.rpc.yxlExternalAddresses | nindent 8 }}
+        {{- else }}
+        {{- toYaml .Values.garage.federation.rpc.yvrExternalAddresses | nindent 8 }}
+        {{- end }}
+  remoteClusters:
+    - name: {{ if eq .Values.region "yxl" }}'observability-garage-yvr'{{ else }}'observability-garage-yxl'{{ end }}
+      zone: {{ if eq .Values.region "yxl" }}'yvr'{{ else }}'yxl'{{ end }}
+      connection:
+        adminApiEndpoint: {{ if eq .Values.region "yxl" }}'https://observability-garage-admin.home1.yvr.mylogin.space'{{ else }}'https://observability-garage-admin.dc1.yxl.mylogin.space'{{ end }}
+        adminTokenSecretRef:
+          name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+          key: 'admin-token'
+  {{- end }}
   network:
     rpcSecretRef:
       name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
@@ -33,10 +58,10 @@ spec:
     replicas: {{ int .Values.garage.storageReplicas }}
     metadata:
       size: {{ .Values.garage.metadataSize | quote }}
-      storageClassName: {{ .Values.garage.metadataStorageClass | squote }}
+      storageClassName: {{ if eq .Values.region "yxl" }}{{ .Values.garage.metadataStorageClass | squote }}{{ else }}'garage-mimir-yvr-metadata'{{ end }}
     data:
       size: {{ .Values.garage.dataSize | quote }}
-      storageClassName: {{ .Values.garage.dataStorageClass | squote }}
+      storageClassName: {{ if eq .Values.region "yxl" }}{{ .Values.garage.dataStorageClass | squote }}{{ else }}'garage-mimir-yvr-data'{{ end }}
     pvcRetentionPolicy:
       whenDeleted: 'Retain'
       whenScaled: 'Retain'

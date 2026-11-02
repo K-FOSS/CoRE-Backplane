@@ -2,7 +2,7 @@
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: {{ .Values.garage.dataStorageClass | squote }}
+  name: {{ if eq .Values.region "yxl" }}{{ .Values.garage.dataStorageClass | squote }}{{ else }}'garage-mimir-yvr-data'{{ end }}
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 provisioner: {{ .Values.longhorn.provisioner | squote }}
@@ -18,7 +18,7 @@ parameters:
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
-  name: {{ .Values.garage.metadataStorageClass | squote }}
+  name: {{ if eq .Values.region "yxl" }}{{ .Values.garage.metadataStorageClass | squote }}{{ else }}'garage-mimir-yvr-metadata'{{ end }}
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 provisioner: {{ .Values.longhorn.provisioner | squote }}

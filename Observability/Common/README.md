@@ -1,6 +1,6 @@
 # CoRE-Backplane Observability/Common Stack
 
-This YXL-only chart provides the Garage S3 backend used by
+This chart deploys the federated Garage S3 backend in YXL and YVR used by
 [Mimir](../Metrics/README.md) and [Loki](../Logs/README.md). Both start with
 fresh Garage buckets; existing MinIO objects remain in place and are not
 copied. It is owned by the
@@ -16,8 +16,8 @@ Longhorn documents these settings in its
 
 ## Ownership and reconciliation
 
-The ApplicationSet selects core bare-metal infrastructure clusters in DC1
-region YXL and renders this chart into `core-prod`. Sync the S3 Garage Operator
+The ApplicationSet selects the core bare-metal infrastructure clusters in DC1/YXL
+and Home1/YVR and renders this chart into `core-prod`. Sync the S3 Garage Operator
 first, wait for its CRDs and webhook to become healthy, then sync this chart to
 create the `GarageCluster`. The Metrics ApplicationSet creates Mimir's
 buckets/key; the Logs application's `loki-s3` User claim creates Loki's
@@ -52,7 +52,7 @@ The chart also deploys [Garage UI](https://github.com/Noooste/garage-ui), pinned
 to Helm chart version `0.14.0` and image digest
 `sha256:e4a33c448304a3f6e60f08d6aa71b2471fd79ac870a5c7e178ea247dea3238b3`, as the
 management interface for this Garage cluster. Its upstream chart values are
-provided under the `garageUIWeb` dependency alias in
+provided under the `garage-ui-web` dependency alias in
 [`values.yaml`](values.yaml). It uses the cluster's existing bootstrap Secret for the Garage
 admin API token and connects to the in-cluster S3 and admin Services over HTTP;
 the public UI hostname is `garage-ui.mylogin.space`. The upstream UI's own OIDC
@@ -141,20 +141,27 @@ backed up and no consumer references the cluster. The Vault path is retained
 on chart removal; reapplying the chart pulls those same credentials back into
 the bootstrap Secret.
 
-## Intended multi-cluster direction
+## Multi-cluster federation
 
-The current Garage deployment is local to YXL and serves Metrics and Logs.
-Historical MinIO objects remain in MinIO; copying them is not required. The
-intended next stage is to move Logs, Traces, and Metrics to one shared Garage
-service (one logical “cluster” from their perspective) across the YVR and YXL
-Talos production clusters. This likely means site-local Garage
-clusters joined through Garage federation rather than one Kubernetes
-`GarageCluster` resource; that topology and its application-level semantics
-must be verified. It still needs per-node routable RPC addresses, identical
-RPC credentials at both sites, cross-site network policy and routing,
-placement and failure-domain decisions, and
-documented backup and recovery behavior. Do not treat the present YXL-only
-cluster as that federated service until those dependencies and reconciliation
-flows are implemented and verified. See the operator's
-[multi-cluster federation guide](https://rajsinghtech.github.io/garage-operator/how-to/federation/)
-and [storage identity and layout guide](https://rajsinghtech.github.io/garage-operator/concepts/storage-and-layout/).
+YXL and YVR run site-local `GarageCluster` resources that join one Garage
+layout. Both sites read the same `AdminToken` and `RPCSecret` properties from
+the `Garage/Mimir` Vault path; the RPC value must therefore remain byte-for-byte
+identical in the site-local `mainvault-core` stores. YXL is the sole layout
+writer and YVR is a follower. Replication factor `3` with
+`zoneRedundancyMode: AtLeast` and `zoneRedundancyMinZones: 2` requires object
+copies to span both sites.
+
+Each site exposes identity-specific RPC NodePorts through the listed site node
+hostnames. The operator uses those endpoints for cross-site Garage RPC, while
+the Admin API is published through the site-specific TLS HTTPRoute
+`observability-garage-admin.<dc>.<region>.mylogin.space`. This endpoint is
+authenticated with the remote site's Garage admin token and is not an S3
+endpoint. The [Garage federation guide](https://rajsinghtech.github.io/garage-operator/how-to/federation/)
+and [storage identity and layout guide](https://rajsinghtech.github.io/garage-operator/concepts/storage-and-layout/)
+describe the routable RPC and serialized layout requirements.
+
+Historical MinIO objects remain in MinIO; federation applies to new Garage
+objects only. Before changing membership, verify both sites report
+`FederationConfigured=True`, `RemoteClustersHealthy=True`, no sustained
+`PeerUnreachable`, and a settled layout. Preserve the YXL writer/YVR follower
+ordering for all topology changes.
