@@ -9,11 +9,10 @@ collectors and consumers.
 
 ## Ownership, targets, and rendering
 
-DC1/YXL is the only Loki deployment and data-bearing site. It uses the
-Observability Garage S3 service with credentials provisioned through the
-`loki-s3` `User` claim. Home1/YVR does not render Loki workloads; its release
-renders only the `loki-core` Cilium global-Service endpoint shim and retains
-its existing MinIO `User` claim. YVR collectors use ClusterMesh to reach DC1.
+DC1/YXL and Home1/YVR now run Loki data-plane workloads. Each site uses its
+local Observability Garage S3 service with credentials provisioned through the
+`loki-s3` `User` claim. The global `loki-core` Service uses local affinity and
+synchronized EndpointSlices for failover.
 The ApplicationSet injects cluster identity, storage backend, component counts,
 and Cilium annotations through `LOVELY_HELM_MERGE`.
 
@@ -26,15 +25,15 @@ is selected with `deploymentMode: Distributed`.
 
 | Component | DC1 replicas | Home1 replicas | Workload |
 | --- | ---: | ---: | --- |
-| Gateway | 3 | Not deployed | Deployment |
-| Distributor | 3 | Not deployed | Deployment |
-| Ingester | 3 | Not deployed | StatefulSet |
-| Querier | 3 | Not deployed | Deployment |
-| Query frontend | 2 | Not deployed | Deployment |
-| Query scheduler | 2 | Not deployed | Deployment |
-| Index gateway | 2 | Not deployed | StatefulSet |
-| Compactor | 1 | Not deployed | StatefulSet |
-| Ruler | 1 | Not deployed | StatefulSet |
+| Gateway | 3 | 3 | Deployment |
+| Distributor | 3 | 0 | Deployment |
+| Ingester | 3 | 0 | StatefulSet |
+| Querier | 3 | 0 | Deployment |
+| Query frontend | 2 | 0 | Deployment |
+| Query scheduler | 2 | 0 | Deployment |
+| Index gateway | 2 | 0 | StatefulSet |
+| Compactor | 1 | 0 | StatefulSet |
+| Ruler | 1 | 0 | StatefulSet |
 
 The simple-scalable and former single-binary targets remain at zero. Ingester
 zone awareness is disabled because this is one site; hostname anti-affinity
@@ -55,13 +54,6 @@ Cilium pairing, and ClusterIP while selecting gateway pods. The upstream
 gateway routes API paths to their owning components. The public
 [`HTTPRoute`](templates/HTTPRoutes.yaml) uses the same stable Service.
 
-Home1's `loki.enabled: false` disables the Loki subchart completely. The parent
-chart emits the same name-only global Service there with no local workload
-selector matches (the selector uses a label absent from Loki pods), while
-retaining the existing S3 `User` claim and Authentik
-resources. This keeps the cluster-local DNS entry needed by Home1 collectors
-without running Loki there.
-
 Both sites set `service.cilium.io/global` and EndpointSlice synchronization.
 DC1 uses local affinity and shares its endpoints; Home1 uses remote affinity
 and does not share. This follows the
@@ -71,7 +63,7 @@ Loki ring.
 
 ## Observability S3 and Loki credentials
 
-On YXL, the `loki-s3` claim uses the `garage` backend in the existing
+On YXL and YVR, the `loki-s3` claim uses the `garage` backend in the existing
 [`User` Composition](../../Operations/SSO/User/README.md). The claim creates
 the Garage buckets and a scoped, long-lived Garage key, then publishes its
 stable connection Secret as `loki-core` and credentials Secret as
@@ -104,8 +96,9 @@ created by the previous `User` Composition use orphan retention; inspect them
 separately before any later cleanup. The old single-binary PVCs also remain
 retained for recovery.
 
-Home1 keeps its existing MinIO `User` claim because it runs no Loki workloads
-and the Garage endpoint is YXL-local.
+The local Garage endpoint is selected from each cluster's domain, so both Loki
+deployments write through site-local Garage while federation maintains the
+shared object-storage layout.
 Grafana documents TSDB as the
 [recommended single-store index](https://grafana.com/docs/loki/latest/operations/storage/tsdb/)
 and describes schema continuity in the

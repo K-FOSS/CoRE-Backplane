@@ -42,14 +42,14 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'RemoteServiceOnly'
-                    globalServiceOnly: true
-                    lokiEnabled: false
-                    lokiReplicas: 0
-                    lokiBackendReplicas: 0
-                    lokiReadReplicas: 0
-                    lokiWriteReplicas: 0
-                    lokiGatewayReplicas: 0
+                    mode: 'SingleBinary<->SimpleScalable'
+                    globalServiceOnly: false
+                    lokiEnabled: true
+                    lokiReplicas: 3
+                    lokiBackendReplicas: 3
+                    lokiReadReplicas: 3
+                    lokiWriteReplicas: 3
+                    lokiGatewayReplicas: 3
                     lokiDistributorReplicas: 0
                     lokiIngesterReplicas: 0
                     lokiQuerierReplicas: 0
@@ -58,9 +58,9 @@ spec:
                     lokiIndexGatewayReplicas: 0
                     lokiCompactorReplicas: 0
                     lokiRulerReplicas: 0
-                    lokiGlobalAffinity: 'remote'
-                    lokiGlobalShared: 'false'
-                    lokiGarageEnabled: false
+                    lokiGlobalAffinity: 'local'
+                    lokiGlobalShared: 'true'
+                    lokiGarageEnabled: true
 
           - clusters:
               selector:

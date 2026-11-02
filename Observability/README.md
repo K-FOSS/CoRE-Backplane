@@ -14,7 +14,7 @@ umbrella chart.
 | [`Collectors`](Collectors/) | Receives, discovers, enriches, and forwards telemetry. | Grafana Alloy and Vector. |
 | [`Logs`](Logs/) | Stores and queries logs. | Grafana Loki in `Distributed` microservices mode with S3 storage. |
 | [`Metrics`](Metrics/) | Stores and queries metrics. | Grafana Mimir. |
-| [`Common`](Common/) | Provides shared observability infrastructure. | YXL Garage object storage for Mimir. |
+| [`Common`](Common/) | Provides shared observability infrastructure. | Federated YXL/YVR Garage object storage for observability data. |
 | [`Traces`](Traces/) | Stores and queries distributed traces. | Grafana Tempo in microservices mode with Garage/S3 storage and a Cilium global Service. |
 | [`Dashboards`](Dashboards/) | Visualization and interactive exploration. | Grafana with Authentik and LDAP integration. |
 | [`Exporters`](Exporters/) | Exposes Kubernetes and platform metrics for collection. | `kube-prometheus-stack`. |

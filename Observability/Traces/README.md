@@ -15,15 +15,15 @@ describe the upstream behavior.
 The ApplicationSet selects bare-metal production clusters for the `core` tenant
 and merges a site profile by cluster name:
 
-- YXL runs the Tempo distributor, ingesters, queriers, query frontend,
+- YXL and Home1 run the Tempo distributor, ingesters, queriers, query frontend,
   metrics-generator, compactor, and gateway. Its trace bucket uses the shared
-  Garage endpoint. The [Tempo metrics-generator](https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-generator/)
+  local Garage endpoint at each site. The [Tempo metrics-generator](https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-generator/)
   runs the `local-blocks` and `span-metrics` processors so TraceQL metrics
   queries such as `rate()` and Grafana Traces Drilldown have an active
   generator ring.
-- Home1 runs no local Tempo pods. It publishes the same `tempo-core` global
-  Service as a remote endpoint, so Cilium can select the active site through
-  `service.cilium.io/affinity` without changing collector or Grafana addresses.
+- Both sites publish the same `tempo-core` global Service identity. Local
+  affinity selects the site-local gateway while synchronized EndpointSlices
+  retain the other site as a failover path.
 
 Switching the active site is an ApplicationSet profile change. Review the
 selected replicas, Garage/S3 backend, Cilium affinity, and downstream collector
@@ -32,9 +32,8 @@ path together before reconciliation.
 ## Storage and credentials
 
 The `User` claim provisions the `tempo-traces` bucket and writes the stable
-`tempo-core` connection Secret plus `tempo-core-s3-creds`. YXL uses a Garage
-service account; the remote profile keeps the provider-backed S3 credential
-path available for recovery. Tempo expands the `S3_ENDPOINT`,
+`tempo-core` connection Secret plus `tempo-core-s3-creds`. Both sites use a
+Garage service account and their local Garage S3 endpoint. Tempo expands the `S3_ENDPOINT`,
 `S3_ACCESS_KEY`, and `S3_SECRET_ACCESS_KEY` environment variables at runtime;
 secret values are never stored in Git. The ApplicationSet escapes the leading
 `$` so Argo CD preserves these references for Tempo instead of expanding them
