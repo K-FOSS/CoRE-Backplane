@@ -4,6 +4,8 @@ kind: HTTPRoute
 metadata:
   name: 'observability-garage-s3'
   namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
   labels:
     wan-mode: 'public'
     lan-mode: 'private'
