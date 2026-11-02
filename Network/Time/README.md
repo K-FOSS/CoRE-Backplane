@@ -2,6 +2,8 @@
 
 This chart is a fresh-install design for a horizontally scalable [Chrony](https://chrony-project.org/documentation.html) NTP/NTS service. It is rendered through the [BJW-S common library chart](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common) and owned by [`Apps/Network/Time.yaml`](../../Apps/Network/Time.yaml). It does not migrate, copy, or import state from an existing installation.
 
+The NTS-enabled [Chrony container](https://github.com/simonrupf/docker-chronyd#enable-network-time-security-nts-separate--nts-image) is pinned to the newer `latest-nts` build by digest (`sha256:13b6051c…`) for both the serving replicas and key authority. The digest is immutable even though the upstream tag is mutable; retain the digest when upgrading this image.
+
 ## Topology
 
 The default installation contains one singleton `key-authority` Deployment, two `chrony` StatefulSet replicas (each with a local chrony-exporter), one retained RWX PVC containing only canonical `ntskeys`, one retained RWO PVC per serving replica, and one retained RWO PVC plus memory-backed `/tmp` for the singleton NTP Dashboard. It also creates a public PureLB/anycast LoadBalancer for UDP/123 and TCP/4460, a private ClusterIP `chrony-command` Service for UDP/323, an internal metrics Service, and the existing ServiceMonitor/Grafana path.
