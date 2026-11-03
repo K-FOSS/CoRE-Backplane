@@ -41,7 +41,6 @@ metadata:
   name: {{ .Values.gateway.routeName }}-k8gb
   labels:
     lan-mode: 'private'
-    wan-mode: 'public'
   annotations:
     external-dns.kubernetes.io/hostname: {{ printf "%s.%s" (first (splitList "." (first .Values.gateway.hostnames))) .Values.k8gb.domain | quote }}
     external-dns.alpha.kubernetes.io/hostname: {{ printf "%s.%s" (first (splitList "." (first .Values.gateway.hostnames))) .Values.k8gb.domain | quote }}
