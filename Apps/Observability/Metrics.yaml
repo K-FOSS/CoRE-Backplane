@@ -260,7 +260,7 @@ spec:
                       - name: S3_BUCKET
                         value: 'mimir-blocks'
                       - name: S3_ENDPOINT
-                        value: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
+                        value: '{{ if eq .values.region "yvr" }}observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else }}observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ end }}'
                       {{- else }}
                       - name: AWS_ACCESS_KEY_ID
                         valueFrom:
@@ -370,7 +370,7 @@ spec:
                             access_key_id: ${AWS_ACCESS_KEY_ID}
                             secret_access_key: ${AWS_SECRET_ACCESS_KEY}
                             session_token: ${AWS_SESSION_TOKEN}
-                            insecure: false
+                            insecure: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                             http:
                               max_idle_connections: 200
                               max_idle_connections_per_host: 200

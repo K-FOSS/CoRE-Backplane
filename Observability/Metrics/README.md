@@ -11,8 +11,9 @@ See the [Observability overview](../README.md).
 
 The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metrics.yaml)
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
-site identity. YXL enables the distributed implementation, while YVR keeps the
-remote bridge and recovery identity without local Mimir pods. Distributors,
+site identity. Both sites enable the distributed implementation and use their
+local Garage S3 endpoint; the global `core-mimir` Service keeps local affinity
+while allowing synchronized remote endpoints for failover. Distributors,
 ingesters, queriers, query frontends, query schedulers, store-gateways,
 compactor, ruler, Alertmanager and the NGINX gateway run as separate upstream
 chart workloads. Three YXL ingesters receive Prometheus remote write, keep
@@ -28,8 +29,8 @@ capacity or node eligibility prevents spreading. Existing pods are not moved
 by these scheduling preferences until they are recreated. The distributed
 configuration explicitly sets `blocks_storage.backend: s3` and its bucket name
 alongside the shared S3 client. With MinIO selected, the Mimir `User` claim
-provisions the `mimir-blocks` and `mimir-alertmanager` MinIO buckets. Alertmanager uses its named
-bucket, while ruler storage remains local at `/rules`.
+provisions the `mimir-blocks`, `mimir-alertmanager`, and `mimir-ruler` MinIO
+buckets. Alertmanager and ruler each use their named S3 bucket.
 This follows Mimir's
 [query-frontend data flow](https://grafana.com/docs/mimir/latest/references/architecture/components/query-frontend/)
 and documented [query-scheduler ring discovery](https://grafana.com/docs/mimir/latest/references/architecture/components/query-scheduler/),
@@ -55,8 +56,13 @@ Service described by the [Traces stack](../Traces/README.md).
 
 ## Garage object storage
 
-The YXL Metrics chart owns Garage buckets `mimir-blocks` and
-`mimir-alertmanager` and a GarageKey scoped to those buckets. The operator
+For YVR, the `User` claim uses the YXL Garage credentials handle to create
+`mimir-garage-s3`, while Mimir writes through the local
+`observability-garage` S3 listener on port `3900` with HTTP enabled. YXL
+continues to use the TLS gateway. YVR does not create duplicate buckets.
+
+Each active site's Metrics chart owns or reconciles Garage buckets `mimir-blocks`, `mimir-alertmanager`,
+and `mimir-ruler`, plus a GarageKey scoped to those buckets. The operator
 creates the S3 credential Secret `mimir-garage-s3`; Mimir reads its access and
 secret keys from that Secret and uses the HTTPS endpoint
 `observability-garage-s3.core-prod.svc.<cluster-domain>:443`. Envoy Gateway
@@ -67,7 +73,7 @@ routes traffic to Garage's HTTP S3 listener. Garage itself is owned by the
 [Observability/Common cluster chart](../Common/README.md). Reconcile those
 applications before Metrics so the Garage CRDs and cluster exist first.
 
-YXL selects `mimir.storage.backend: 'garage'` and starts with fresh Garage
+YXL and YVR select `mimir.storage.backend: 'garage'` and use the local Garage
 buckets. Historical blocks and Alertmanager objects in MinIO are not copied or
 read by the new backend; they remain in MinIO with the existing MinIO `User`
 claim, buckets, and credentials for possible recovery. This change does not
@@ -120,15 +126,13 @@ settings differ from the retained, disabled single-binary profile. The S3
 layout follows Grafana's [distributed chart production configuration
 guide](https://grafana.com/docs/helm-charts/mimir-distributed/latest/run-production-environment-with-helm/#configure-mimir-to-use-object-storage).
 
-The ruler mounts the exporter-owned rulefiles ConfigMap at `/rules/<tenant>` and
-uses `ruler_storage.backend: local` with directory `/rules`. The cluster tenant
-therefore reads that ConfigMap. The writable ruler working directory is
-`/data`, separate from the read-only rule input. Compactor and Alertmanager
-also use their chart-mounted `/data` paths. See the upstream
-[ruler local-storage layout](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/#local-storage):
-local rules cannot be edited through the ruler configuration API. Update the
-exporter's rule source instead. The inactive `mimir-ruler` S3 setting remains
-for compatibility but is not the active rule source.
+The ruler and Alertmanager use the S3 backend with separate `mimir-ruler` and
+`mimir-alertmanager` buckets. Their `/data/ruler` and `/data/alertmanager`
+paths are local working directories; durable rule definitions and Alertmanager
+state are stored in S3. The Mimir configuration API is therefore authoritative
+for ruler rules rather than the exporter-owned rulefiles ConfigMap. See the
+upstream [ruler storage documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/)
+and [object-storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
 
 Before reconciliation, compare the rendered `core-mimir-config` and ruler
 volume mounts with DC1. Reverting to the single-binary storage prefix or tenant

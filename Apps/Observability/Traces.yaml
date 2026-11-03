@@ -105,8 +105,9 @@ spec:
 
                 garage:
                   enabled: {{ .values.tempoGarageEnabled }}
-                  clusterName: 'observability-garage'
-                  endpoint: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
+                  clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl-credentials{{ else }}observability-garage{{ end }}'
+                  endpoint: '{{ if eq .values.region "yvr" }}http://observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else }}https://observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ end }}'
+                  createBuckets: {{ if eq .values.region "yvr" }}false{{ else }}true{{ end }}
                   bucket: 'tempo-traces'
 
                 tempo-distributed:
@@ -186,7 +187,7 @@ spec:
                         secret_key: '$${S3_SECRET_ACCESS_KEY}'
                         bucket: 'tempo-traces'
                         region: '{{ if .values.tempoGarageEnabled }}garage{{ else }}us-east-1{{ end }}'
-                        insecure: false
+                        insecure: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                         forcepathstyle: {{ .values.tempoGarageEnabled }}
 
             - name: 'LOVELY_KUSTOMIZE_MERGE'
