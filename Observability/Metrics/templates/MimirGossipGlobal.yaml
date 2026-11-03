@@ -6,12 +6,12 @@ metadata:
   annotations:
     service.cilium.io/global: 'true'
     service.cilium.io/global-sync-endpoint-slices: 'true'
-    # Prefer a peer site for the seed connection; Cilium falls back to local
-    # Mimir members when the peer site is unavailable.
     service.cilium.io/affinity: 'remote'
     service.cilium.io/shared: 'true'
 spec:
   type: ClusterIP
+  clusterIP: None
+  publishNotReadyAddresses: true
   ports:
     - name: 'memberlist-tcp'
       port: 7946
@@ -20,4 +20,5 @@ spec:
   selector:
     app.kubernetes.io/name: 'mimir'
     app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/part-of: 'memberlist'
 {{- end }}
