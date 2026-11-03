@@ -133,13 +133,13 @@ controllers:
             valueFrom:
               secretKeyRef:
                 name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
-                key: '{{ if eq .Values.mimir.storage.backend "garage" }}access-key-id{{ else }}AccessKey{{ end }}'
+                key: '{{ if and (eq .Values.mimir.storage.backend "garage") (not .Values.garage.useUserCredentials) }}access-key-id{{ else }}AccessKey{{ end }}'
 
           - name: AWS_SECRET_ACCESS_KEY
             valueFrom:
               secretKeyRef:
                 name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
-                key: '{{ if eq .Values.mimir.storage.backend "garage" }}secret-access-key{{ else }}SecretAccessKey{{ end }}'
+                key: '{{ if and (eq .Values.mimir.storage.backend "garage") (not .Values.garage.useUserCredentials) }}secret-access-key{{ else }}SecretAccessKey{{ end }}'
 
           - name: AWS_SESSION_TOKEN
             {{- if eq .Values.mimir.storage.backend "garage" }}
@@ -152,13 +152,13 @@ controllers:
             {{- end }}
 
           - name: S3_ENDPOINT
-            {{- if eq .Values.mimir.storage.backend "garage" }}
+            {{- if and (eq .Values.mimir.storage.backend "garage") (not .Values.garage.useUserCredentials) }}
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.garage.s3SecretName }}
                 key: 'host'
             {{- else }}
-            value: {{ required "mimir.storage.s3Endpoint is required when the MinIO backend is selected" .Values.mimir.storage.s3Endpoint | quote }}
+            value: {{ required "mimir.storage.s3Endpoint is required" .Values.mimir.storage.s3Endpoint | quote }}
             {{- end }}
 
           - name: S3_BUCKET
@@ -307,13 +307,13 @@ controllers:
             valueFrom:
               secretKeyRef:
                 name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
-                key: '{{ if eq .Values.mimir.storage.backend "garage" }}access-key-id{{ else }}AccessKey{{ end }}'
+                key: '{{ if and (eq .Values.mimir.storage.backend "garage") (not .Values.garage.useUserCredentials) }}access-key-id{{ else }}AccessKey{{ end }}'
 
           - name: AWS_SECRET_ACCESS_KEY
             valueFrom:
               secretKeyRef:
                 name: '{{ if eq .Values.mimir.storage.backend "garage" }}{{ .Values.garage.s3SecretName }}{{ else }}{{ $.Release.Name }}-s3-creds{{ end }}'
-                key: '{{ if eq .Values.mimir.storage.backend "garage" }}secret-access-key{{ else }}SecretAccessKey{{ end }}'
+                key: '{{ if and (eq .Values.mimir.storage.backend "garage") (not .Values.garage.useUserCredentials) }}secret-access-key{{ else }}SecretAccessKey{{ end }}'
 
           - name: AWS_SESSION_TOKEN
             {{- if eq .Values.mimir.storage.backend "garage" }}
@@ -326,13 +326,13 @@ controllers:
             {{- end }}
 
           - name: S3_ENDPOINT
-            {{- if eq .Values.mimir.storage.backend "garage" }}
+            {{- if and (eq .Values.mimir.storage.backend "garage") (not .Values.garage.useUserCredentials) }}
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.garage.s3SecretName }}
                 key: 'host'
             {{- else }}
-            value: {{ required "mimir.storage.s3Endpoint is required when the MinIO backend is selected" .Values.mimir.storage.s3Endpoint | quote }}
+            value: {{ required "mimir.storage.s3Endpoint is required" .Values.mimir.storage.s3Endpoint | quote }}
             {{- end }}
 
           - name: S3_BUCKET
