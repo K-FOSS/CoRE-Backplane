@@ -822,20 +822,16 @@ spec:
             {{- end }}
 
             {{- else }}
-            {{- $garageResourceSuffix := "" }}
-            {{- if eq .observed.composite.resource.spec.s3.garage.clusterName "observability-garage-yxl" }}
-            {{- $garageResourceSuffix = "-yxl" }}
-            {{- end }}
             {{- range $bucketName := $createBuckets }}
             {{- $bucketHash := $bucketName | sha256sum | trunc 12 }}
             apiVersion: garage.rajsingh.info/v1beta1
             kind: GarageBucket
             metadata:
-              name: {{ printf "%.39s-gb-%s%s" $.observed.composite.resource.metadata.name $bucketHash $garageResourceSuffix | lower | replace "_" "-" }}
+              name: {{ printf "%.43s-gb-%s" $.observed.composite.resource.metadata.name $bucketHash | lower | replace "_" "-" }}
               namespace: {{ $.observed.composite.resource.spec.claimRef.namespace }}
               annotations:
                 gotemplating.fn.crossplane.io/ready: 'True'
-                {{ setResourceNameAnnotation (printf "garage-bucket-%s%s" $bucketHash $garageResourceSuffix) }}
+                {{ setResourceNameAnnotation (printf "garage-bucket-%s" $bucketHash) }}
             spec:
               clusterRef:
                 name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
@@ -848,11 +844,11 @@ spec:
             apiVersion: garage.rajsingh.info/v1beta1
             kind: GarageKey
             metadata:
-              name: {{ printf "%.48s-garage-key%s" .observed.composite.resource.metadata.name $garageResourceSuffix | lower | replace "_" "-" }}
+              name: {{ printf "%.52s-garage-key" .observed.composite.resource.metadata.name | lower | replace "_" "-" }}
               namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
               annotations:
                 gotemplating.fn.crossplane.io/ready: 'True'
-                {{ setResourceNameAnnotation (printf "garage-key%s" $garageResourceSuffix) }}
+                {{ setResourceNameAnnotation "garage-key" }}
             spec:
               clusterRef:
                 name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}

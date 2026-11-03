@@ -343,6 +343,13 @@ spec:
                       whenScaled: Retain
                   ruler:
                     replicas: 1
+                    extraVolumes:
+                      - name: rulefiles
+                        configMap:
+                          name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
+                    extraVolumeMounts:
+                      - name: rulefiles
+                        mountPath: '/rules/{{ .values.tenant }}'
                   mimir:
                     structuredConfig:
                       limits:
@@ -356,7 +363,7 @@ spec:
                         compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
                       common:
                         storage:
-                          backend: 's3'
+                          backend: s3
                           s3:
                             endpoint: '{{ if eq .values.mimirS3Backend "garage" }}observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ else }}s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443{{ end }}'
                             region: '{{ if eq .values.mimirS3Backend "garage" }}garage{{ else }}us-east-1{{ end }}'
@@ -368,23 +375,25 @@ spec:
                               max_idle_connections: 200
                               max_idle_connections_per_host: 200
                       blocks_storage:
-                        backend: 's3'
+                        backend: s3
                         s3:
                           bucket_name: 'mimir-blocks'
                       alertmanager_storage:
-                        backend: 's3'
+                        backend: s3
                         s3:
-                          bucket_name: 'mimir-alertmanager'
+                          bucket_name: mimir-alertmanager
                       ruler_storage:
-                        backend: 's3'
+                        backend: local
+                        local:
+                          directory: /rules
                         s3:
-                          bucket_name: 'mimir-ruler'
+                          bucket_name: mimir-ruler
                       compactor:
-                        data_dir: '/data'
+                        data_dir: /data
                       ruler:
-                        rule_path: '/data/ruler'
+                        rule_path: /data
                       alertmanager:
-                        data_dir: '/data/alertmanager'
+                        data_dir: /data
                 s3User:
                   enabled: true
                 garage:
