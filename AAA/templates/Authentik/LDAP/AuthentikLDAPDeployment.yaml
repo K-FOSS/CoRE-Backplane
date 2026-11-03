@@ -32,6 +32,18 @@ spec:
 
     spec:
       restartPolicy: Always
+      {{- if .Values.authentik.ldap.avoidNodeName }}
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: 'kubernetes.io/hostname'
+                    operator: 'NotIn'
+                    values:
+                      - {{ .Values.authentik.ldap.avoidNodeName | squote }}
+      {{- end }}
 
       terminationGracePeriodSeconds: 30
 

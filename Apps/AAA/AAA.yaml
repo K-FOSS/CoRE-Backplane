@@ -111,6 +111,7 @@ spec:
 
                 authentik:
                   ldap:
+                    avoidNodeName: '{{ if eq .values.region "yvr" }}hpc3{{ end }}'
                     additionalExternalDNSHostname: '{{ .values.ldapAdditionalExternalDNSHostname }}'
                     clusterMesh:
                       enabled: {{ .values.ldapClusterMeshEnabled }}

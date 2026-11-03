@@ -7,6 +7,18 @@ metadata:
     argocd.argoproj.io/sync-wave: '-1'
 spec:
   replicas: {{ .Values.pooler.queryCache.dragonfly.replicas }}
+  {{- if .Values.pooler.avoidNodeName }}
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: 'kubernetes.io/hostname'
+                operator: 'NotIn'
+                values:
+                  - {{ .Values.pooler.avoidNodeName | squote }}
+  {{- end }}
   memcachedPort: {{ .Values.pooler.queryCache.port }}
   args:
     - --cache_mode=true

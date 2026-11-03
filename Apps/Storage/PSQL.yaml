@@ -151,6 +151,7 @@ spec:
                   standbyHost: 'psql-int.{{ $hub.name }}.{{ $hub.values.datacenter }}.{{ $hub.values.region }}.mylogin.space'
 
                 pooler:
+                  avoidNodeName: '{{ if eq .values.region "yvr" }}hpc3{{ end }}'
                   peers:
                     {{ nindent 4 (toYaml .values.pooler.peers) }}
 
