@@ -16,6 +16,7 @@ spec:
       sectionName: 'https-myloginspace'
   hostnames:
     - {{ printf "observability-garage-admin.%s.%s.%s" .Values.datacenter .Values.region .Values.garage.federation.adminHostnameSuffix | squote }}
+    - {{ printf "observability-garage-admin-%s.%s" .Values.region .Values.garage.federation.adminHostnameSuffix | squote }}
   rules:
     - backendRefs:
         - name: {{ .Values.garage.name | squote }}

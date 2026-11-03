@@ -26,7 +26,7 @@ spec:
     - name: {{ if eq .Values.region "yxl" }}'observability-garage-yvr'{{ else }}'observability-garage-yxl'{{ end }}
       zone: {{ if eq .Values.region "yxl" }}'yvr'{{ else }}'yxl'{{ end }}
       connection:
-        adminApiEndpoint: {{ if eq .Values.region "yxl" }}'https://observability-garage-admin.home1.yvr.mylogin.space'{{ else }}'https://observability-garage-admin.dc1.yxl.mylogin.space'{{ end }}
+        adminApiEndpoint: {{ if eq .Values.region "yxl" }}'https://observability-garage-admin-yvr.mylogin.space'{{ else }}'https://observability-garage-admin-yxl.mylogin.space'{{ end }}
         adminTokenSecretRef:
           name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
           key: 'admin-token'
