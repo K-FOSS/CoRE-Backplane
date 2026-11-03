@@ -822,7 +822,6 @@ spec:
             {{- end }}
 
             {{- else }}
-            {{- $garageClusterName := required "s3.garage.clusterName is required for Garage-backed User claims" .observed.composite.resource.spec.s3.garage.clusterName }}
             {{- range $bucketName := $createBuckets }}
             {{- $bucketHash := $bucketName | sha256sum | trunc 12 }}
             apiVersion: garage.rajsingh.info/v1beta1
@@ -835,7 +834,7 @@ spec:
                 {{ setResourceNameAnnotation (printf "garage-bucket-%s" $bucketHash) }}
             spec:
               clusterRef:
-                name: {{ $garageClusterName | squote }}
+                name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
               globalAlias: {{ $bucketName | squote }}
               deletionPolicy: 'Retain'
             ---
@@ -852,7 +851,7 @@ spec:
                 {{ setResourceNameAnnotation "garage-key" }}
             spec:
               clusterRef:
-                name: {{ $garageClusterName | squote }}
+                name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
               name: {{ printf "S3 key for %s" .observed.composite.resource.spec.name | squote }}
               neverExpires: true
               {{- if gt (len $buckets) 0 }}
