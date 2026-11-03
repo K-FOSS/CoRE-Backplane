@@ -301,6 +301,8 @@ spec:
                     replicas: 3
                   ingester:
                     replicas: 3
+                    extraArgs:
+                      ingester.ring.instance-id: '$(MIMIR_SITE)-$(HOSTNAME)'
                     topologySpreadConstraints:
                       maxSkew: 1
                       topologyKey: 'kubernetes.io/hostname'
@@ -404,8 +406,6 @@ spec:
                       compactor:
                         data_dir: /data
                       ingester:
-                        extraArgs:
-                          ingester.ring.instance-id: '$(MIMIR_SITE)-$(HOSTNAME)'
                         ring:
                           replication_factor: 3
                       distributor:
