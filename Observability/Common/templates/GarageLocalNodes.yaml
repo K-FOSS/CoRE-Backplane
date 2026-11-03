@@ -1,0 +1,35 @@
+{{- if and .Values.garage.enabled .Values.garage.federation.enabled (ne .Values.region .Values.garage.federation.writerRegion) }}
+{{- range .Values.garage.federation.remoteStorageNodes }}
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageNode
+metadata:
+  name: {{ printf "%s-storage-%s" $.Values.garage.name .ordinal | squote }}
+  namespace: {{ $.Release.Namespace | squote }}
+  labels:
+    garage.rajsingh.info/cluster: {{ $.Values.garage.name | squote }}
+    garage.rajsingh.info/tier: 'storage'
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  clusterRef:
+    name: {{ $.Values.garage.name | squote }}
+  nodeId: {{ .nodeId | squote }}
+  zone: {{ $.Values.region | squote }}
+  capacity: {{ $.Values.garage.dataSize | squote }}
+  tags:
+    - {{ printf "cluster:%s/%s" $.Values.garage.name $.Release.Namespace | squote }}
+    - {{ printf "cluster-uid:%s" $.Values.garage.federation.writerClusterUID | squote }}
+    - 'tier:storage'
+    - {{ printf "rpc-address:%s:3901" .hostname | squote }}
+  storage:
+    metadata:
+      size: {{ $.Values.garage.metadataSize | quote }}
+      storageClassName: {{ if eq $.Values.region "yxl" }}{{ $.Values.garage.metadataStorageClass | squote }}{{ else }}'garage-mimir-yvr-metadata'{{ end }}
+      type: 'PersistentVolumeClaim'
+    data:
+      size: {{ $.Values.garage.dataSize | quote }}
+      storageClassName: {{ if eq $.Values.region "yxl" }}{{ $.Values.garage.dataStorageClass | squote }}{{ else }}'garage-mimir-yvr-data'{{ end }}
+      type: 'PersistentVolumeClaim'
+{{- end }}
+{{- end }}
