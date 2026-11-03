@@ -84,7 +84,7 @@ spec:
                   garage:
                     enabled: {{ .values.garageS3Enabled }}
                     clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl-credentials{{ else }}{{ .values.garageClusterName }}{{ end }}'
-                    endpoint: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
+                    endpoint: '{{ if eq .values.region "yvr" }}http://observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else }}https://observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ end }}'
                 mongodb:
                   hostname: '{{ .values.clusterName }}-rs0.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}'
                   port: '27017'

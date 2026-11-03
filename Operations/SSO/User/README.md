@@ -126,6 +126,8 @@ generated password is 16 characters.
 | `spec.psql.hostname` | PostgreSQL host included in the emitted `psqlURI`; defaults to `psql-int.mylogin.space`. |
 | `spec.psql.uri` | SQLAlchemy PostgreSQL URI scheme/prefix included in the emitted `psqlURI`; defaults to `postgresql://`. |
 | `spec.psql.createUserDatabase` | Creates a database named after the username unless set to `false`; schema default is `true`. |
+| `spec.psql.readOnly` | Grants only `CONNECT` on listed databases and `SELECT` on the listed tables; defaults to `false`. |
+| `spec.psql.tables[]` | Tables receiving the read-only `SELECT` grant when `spec.psql.readOnly` is `true`. |
 | `spec.psql.lcCollate` | Sets the `LC_COLLATE` locale on a new user database; defaults to `'C'`. Existing databases are not changed. |
 | `spec.psql.lcCType` | Sets the `LC_CTYPE` locale on a new user database; defaults to `'C'`. Existing databases are not changed. |
 | `spec.psql.databases[]` | Existing databases on which grants are applied. |
@@ -150,7 +152,7 @@ generated password is 16 characters.
 | `spec.s3.writeServiceAccountCredentialsSecretRef` | Destination for the long-lived credential Secret. Garage-generated Secrets are namespace-local, so the namespace must match the claim namespace. |
 | `spec.s3.crossplane.*Provider` | Overrides MinIO/S3 provider configuration names. |
 | `spec.s3.garage.clusterName` | Required with the Garage backend; must match the GarageCluster configured for the target cluster (currently `observability-garage`). |
-| `spec.s3.garage.endpoint` | Required with the Garage backend; must match the target cluster's ExternalDNS-published hostname and port, and is used over HTTPS in the generated credential Secret. |
+| `spec.s3.garage.endpoint` | Required with the Garage backend; must match the target cluster's configured S3 URL. Use the direct `http://` Service URL for an in-cluster Garage bind or the routed `https://` URL for an HTTPS Gateway endpoint. |
 | `spec.writeConnectionSecretToRef.name` | Claim connection Secret written in the claim namespace. |
 
 `spec.psql.uri` controls only the URI published in `psqlURI`; PostgreSQL
@@ -313,10 +315,10 @@ buckets and, when `createServiceAccount: true`, a `GarageKey` with read/write
 permissions for the declared bucket aliases. The Garage operator generates a
 namespace-local Secret named by `writeServiceAccountCredentialsSecretRef` with
 `AccessKey`, `SecretAccessKey`, `AWS_ENDPOINTS`, `AWS_REGION`, and
-`VIRTUAL_HOSTED_STYLE` keys. `AWS_ENDPOINTS` is the HTTPS URL formed from
-`spec.s3.garage.endpoint`; that hostname is the ExternalDNS-published S3 route
-on Envoy Gateway. It does not refer to a Gateway Service or an ExternalName
-Service. The selected hostname and port are published as `S3Hostname` in the
+`VIRTUAL_HOSTED_STYLE` keys. `AWS_ENDPOINTS` preserves the scheme from
+`spec.s3.garage.endpoint`; direct in-cluster Service binds use Garage's HTTP S3
+port, while routed endpoints use HTTPS. The selected URL is published as
+`S3Hostname` in the
 claim connection Secret. Claims must set `spec.s3.garage.clusterName` and
 `spec.s3.garage.endpoint` to the values configured for the target cluster;
 Garage is rejected on clusters where that backend is disabled.
