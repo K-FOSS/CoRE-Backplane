@@ -125,8 +125,8 @@ spec:
                   storage:
                     backend: '{{ .values.mimirS3Backend }}'
                     region: '{{ if eq .values.mimirS3Backend "garage" }}garage{{ else }}us-east-1{{ end }}'
-                    insecure: false
-                    s3Endpoint: '{{ if eq .values.mimirS3Backend "garage" }}observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ else }}s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443{{ end }}'
+                    insecure: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
+                    s3Endpoint: '{{ if and (eq .values.mimirS3Backend "garage") (eq .values.region "yvr") }}observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else if eq .values.mimirS3Backend "garage" }}observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ else }}s3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:443{{ end }}'
                   service:
                     # Cilium correlates global Services by namespace and name.
                     # YXL selects local Mimir Pods; Home1 intentionally has no
@@ -249,12 +249,12 @@ spec:
                         valueFrom:
                           secretKeyRef:
                             name: 'mimir-garage-s3'
-                            key: 'access-key-id'
+                            key: '{{ if eq .values.region "yvr" }}AccessKey{{ else }}access-key-id{{ end }}'
                       - name: AWS_SECRET_ACCESS_KEY
                         valueFrom:
                           secretKeyRef:
                             name: 'mimir-garage-s3'
-                            key: 'secret-access-key'
+                            key: '{{ if eq .values.region "yvr" }}SecretAccessKey{{ else }}secret-access-key{{ end }}'
                       - name: AWS_SESSION_TOKEN
                         value: ''
                       - name: S3_BUCKET
