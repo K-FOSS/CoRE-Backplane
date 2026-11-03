@@ -501,6 +501,8 @@ alloy:
             cluster = sys.env("CLUSTER"),
             dc = sys.env("DC"),
             region = sys.env("REGION"),
+            // Mimir uses this label to deduplicate samples during Alloy failover.
+            __replica__ = sys.env("HOSTNAME"),
           }
         }
 

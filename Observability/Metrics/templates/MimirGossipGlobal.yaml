@@ -1,0 +1,23 @@
+{{- if index .Values "mimir-distributed" "enabled" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: 'core-mimir-gossip-global'
+  annotations:
+    service.cilium.io/global: 'true'
+    service.cilium.io/global-sync-endpoint-slices: 'true'
+    # Prefer a peer site for the seed connection; Cilium falls back to local
+    # Mimir members when the peer site is unavailable.
+    service.cilium.io/affinity: 'remote'
+    service.cilium.io/shared: 'true'
+spec:
+  type: ClusterIP
+  ports:
+    - name: 'memberlist-tcp'
+      port: 7946
+      targetPort: 7946
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: 'mimir'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+{{- end }}

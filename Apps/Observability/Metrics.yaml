@@ -354,6 +354,9 @@ spec:
                     structuredConfig:
                       limits:
                         max_global_series_per_user: 5000000
+                        accept_ha_samples: true
+                        ha_cluster_label: cluster
+                        ha_replica_label: __replica__
                         ingestion_rate: {{ .values.mimirIngestionRate }}
                         ingestion_burst_size: {{ .values.mimirIngestionBurstSize }}
                         out_of_order_time_window: 24h
@@ -362,6 +365,7 @@ spec:
                         results_cache_ttl_for_labels_query: 5m
                         compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
                       common:
+                        replication_factor: 3
                         storage:
                           backend: s3
                           s3:
@@ -390,6 +394,15 @@ spec:
                           bucket_name: mimir-ruler
                       compactor:
                         data_dir: /data
+                      distributor:
+                        ha_tracker:
+                          enable_ha_tracker: true
+                          kvstore:
+                            store: memberlist
+                      memberlist:
+                        cluster_label: core-observability-mimir
+                        join_members:
+                          - dns+core-mimir-gossip-global.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}.:7946
                       ruler:
                         rule_path: /data
                       alertmanager:
@@ -403,6 +416,8 @@ spec:
                   useUserCredentials: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                 mimirBridge:
                   enabled: {{ .values.mimirBridgeEnabled }}
+                  queryFilter:
+                    enabled: false
                   routeName: core-mimir
                   upstream:
                     service: core-mimir

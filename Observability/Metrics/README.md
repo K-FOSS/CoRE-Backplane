@@ -12,8 +12,9 @@ See the [Observability overview](../README.md).
 The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metrics.yaml)
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
 site identity. Both sites enable the distributed implementation and use their
-local Garage S3 endpoint; the global `core-mimir` Service keeps local affinity
-while allowing synchronized remote endpoints for failover. Distributors,
+local Garage S3 endpoint. The global `core-mimir` Service keeps client traffic
+site-local where possible, while the global memberlist Service joins both
+Mimir rings into one logical active-active ring. Distributors,
 ingesters, queriers, query frontends, query schedulers, store-gateways,
 compactor, ruler, Alertmanager and the NGINX gateway run as separate upstream
 chart workloads. Three YXL ingesters receive Prometheus remote write, keep
@@ -151,11 +152,14 @@ identity with remote affinity and sharing disabled. Its common-chart Service
 has a deliberately non-matching selector, so only Cilium-synchronized remote
 EndpointSlices back it. The YXL HTTPRoute also uses this Service as its direct
 backend. `core-mimir-proxy` selects the bridge Pods on both
-sites, and each bridge sends filtered requests to `core-mimir`; using a
+sites, and each bridge sends shared-tenant requests to `core-mimir`; using a
 separate bridge Service prevents a proxy loop.
 Cilium correlates global Services by namespace and name, while Lovely may
 derive a different Helm release name for each generated Argo CD Application.
-The memberlist gossip Service remains YXL-local and is not part of ClusterMesh.
+The `core-mimir-gossip-global` Service is part of ClusterMesh and is used by
+all Mimir components for memberlist discovery and HA-tracker state. Mimir's
+replication factor remains three, so a series is replicated across the shared
+ring rather than being confined to the site that received its write.
 This depends on Cluster Mesh connectivity and
 `clustermesh.enableEndpointSliceSynchronization`, which the Network Base
 deployment enables.
