@@ -162,7 +162,8 @@ the watcher marker, both ready endpoints, and the affected answers. The watcher
 only publishes the file hash; dnsdist performs the rule replacement and does
 not expose a remote control socket. See the [dnsdist configuration and runtime guidance](https://www.dnsdist.org/running.html)
 and [PowerDNS dnsdist container documentation](https://github.com/PowerDNS/pdns/tree/master/dockerdata),
-the [PowerDNS Recursor 5.4 image](https://hub.docker.com/r/powerdns/pdns-recursor-54),
+the [PowerDNS Recursor 5.4.9 image](https://hub.docker.com/r/powerdns/pdns-recursor-54),
+[PowerDNS Security Advisory 2026-12](https://doc.powerdns.com/recursor/security-advisories/powerdns-advisory-2026-12.html),
 [Recursor YAML settings](https://doc.powerdns.com/recursor/yamlsettings.html),
 [DNSSEC validation](https://doc.powerdns.com/recursor/dnssec.html),
 [performance and TCP Fast Open](https://doc.powerdns.com/recursor/performance.html#tcp-fast-open-support),
