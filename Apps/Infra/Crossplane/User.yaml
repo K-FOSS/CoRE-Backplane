@@ -83,7 +83,7 @@ spec:
                 s3:
                   garage:
                     enabled: {{ .values.garageS3Enabled }}
-                    clusterName: '{{ .values.garageClusterName }}'
+                    clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl-credentials{{ else }}{{ .values.garageClusterName }}{{ end }}'
                     endpoint: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
                 mongodb:
                   hostname: '{{ .values.clusterName }}-rs0.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}'
