@@ -148,6 +148,13 @@ separate reviewed plan.
 
 ## Validation and operations
 
+The production route is JWT protected at `logs.mylogin.space` through K8GB.
+Each site also serves it at `logs.gslb.mylogin.space`; only that site route
+carries the `wan-mode: 'public'` label and ExternalDNS hostname annotations.
+The K8GB `Gslb` owns the global record. See the [K8GB resource reference](https://www.k8gb.io/latest/resource_ref/),
+[K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/), and
+[ExternalDNS Gateway API source](https://github.com/kubernetes-sigs/external-dns/tree/master/provider/kubernetes-sources).
+
 Resolve the ignored dependency locally and render both fleet roles:
 
 ```bash

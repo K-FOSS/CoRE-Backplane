@@ -4,7 +4,6 @@ metadata:
   name: {{ .Values.globalService.name | squote }}
 
   labels:
-    wan-mode: 'public'
     lan-mode: 'private'
 
 spec:
@@ -30,3 +29,51 @@ spec:
         - path:
             type: PathPrefix
             value: '/'
+{{ if .Values.k8gb.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: {{ printf "%s-k8gb" .Values.globalService.name | squote }}
+  labels:
+    lan-mode: 'private'
+    wan-mode: 'public'
+  annotations:
+    external-dns.kubernetes.io/hostname: 'traces.{{ .Values.k8gb.domain }}'
+    external-dns.alpha.kubernetes.io/hostname: 'traces.{{ .Values.k8gb.domain }}'
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: {{ .Values.gateway.namespace }}
+      name: {{ .Values.gateway.name }}
+      sectionName: {{ .Values.gateway.sectionName }}
+  hostnames:
+    - 'traces.{{ .Values.k8gb.domain }}'
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Values.globalService.name | squote }}
+          port: 3200
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: '/'
+---
+apiVersion: k8gb.io/v1beta1
+kind: Gslb
+metadata:
+  name: {{ .Values.globalService.name | squote }}
+  annotations:
+    k8gb.io/hostname: 'traces.mylogin.space'
+spec:
+  resourceRef:
+    apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    name: {{ printf "%s-k8gb" .Values.globalService.name | squote }}
+  strategy:
+    type: {{ .Values.k8gb.strategy | squote }}
+    dnsTtlSeconds: {{ .Values.k8gb.dnsTtlSeconds }}
+{{- end }}

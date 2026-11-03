@@ -171,7 +171,6 @@ spec:
                   enabled: {{ .values.mimirEnabled }}
                   routeName: core-mimir
                   labels:
-                    wan-mode: public
                     lan-mode: private
                   parentRefs:
                     - group: gateway.networking.k8s.io
@@ -180,6 +179,11 @@ spec:
                       name: main-gw
                   hostnames:
                     - metrics.mylogin.space
+                k8gb:
+                  enabled: true
+                  domain: 'gslb.mylogin.space'
+                  strategy: 'roundRobin'
+                  dnsTtlSeconds: 30
 
                 securityPolicy:
                   enabled: {{ .values.mimirEnabled }}
@@ -439,7 +443,6 @@ spec:
                   enabled: {{ .values.mimirEnabled }}
                   routeName: core-mimir
                   labels:
-                    wan-mode: public
                     lan-mode: private
                   parentRefs:
                     - group: gateway.networking.k8s.io
@@ -448,6 +451,11 @@ spec:
                       name: main-gw
                   hostnames:
                     - metrics.mylogin.space
+                k8gb:
+                  enabled: true
+                  domain: 'gslb.mylogin.space'
+                  strategy: 'roundRobin'
+                  dnsTtlSeconds: 30
                 securityPolicy:
                   enabled: {{ .values.mimirEnabled }}
                   jwt:

@@ -31,5 +31,56 @@ spec:
             type: PathPrefix
             value: {{ $path.path }}
         {{ end }}
-    {{- end -}}
+    {{ end }}
+{{- end }}
+{{- if and .Values.k8gb.enabled .Values.gateway.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.gateway.routeName }}-k8gb
+  labels:
+    lan-mode: 'private'
+    wan-mode: 'public'
+  annotations:
+    external-dns.kubernetes.io/hostname: {{ printf "%s.%s" (first (splitList "." (first .Values.gateway.hostnames))) .Values.k8gb.domain | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ printf "%s.%s" (first (splitList "." (first .Values.gateway.hostnames))) .Values.k8gb.domain | quote }}
+
+spec:
+  parentRefs:
+    {{- toYaml .Values.gateway.parentRefs | nindent 4 }}
+  hostnames:
+    - {{ printf "%s.%s" (first (splitList "." (first .Values.gateway.hostnames))) .Values.k8gb.domain | quote }}
+  rules:
+    {{ $chart := index $.Subcharts "mimir-distributed" }}
+    {{ $values := index .Values "mimir-distributed" }}
+    {{ range $v, $t := $values.ingress.paths }}
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ include "mimir.fullname" $chart }}-{{ regexReplaceAll "([[:upper:]])" $v  "-${1}" | lower }}
+          port: {{ include "mimir.serverHttpListenPort" $chart }}
+          weight: 1
+      matches:
+        {{- range $path := $t }}
+        - path:
+            type: PathPrefix
+            value: {{ $path.path }}
+        {{ end }}
+    {{ end }}
+---
+apiVersion: k8gb.io/v1beta1
+kind: Gslb
+metadata:
+  name: {{ .Values.gateway.routeName }}
+  annotations:
+    k8gb.io/hostname: {{ first .Values.gateway.hostnames | quote }}
+spec:
+  resourceRef:
+    apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    name: {{ .Values.gateway.routeName }}-k8gb
+  strategy:
+    type: {{ .Values.k8gb.strategy | quote }}
+    dnsTtlSeconds: {{ .Values.k8gb.dnsTtlSeconds }}
 {{- end }}

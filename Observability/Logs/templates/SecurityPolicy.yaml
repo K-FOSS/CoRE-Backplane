@@ -80,3 +80,66 @@ spec:
               - name: groups
                 valueType: StringArray
                 values: {{ .Values.oauth.allowedGroups | toJson }}
+{{- if .Values.k8gb.enabled }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: {{ .Values.globalService.name }}-k8gb
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ .Values.globalService.name }}-k8gb
+  jwt:
+    optional: false
+    providers:
+      - name: grafana
+        issuer: https://idp.mylogin.space/application/o/grafana-test/
+        remoteJWKS:
+          cacheDuration: 3600s
+          uri: https://idp.mylogin.space/application/o/grafana-test/jwks/
+        claimToHeaders:
+          - header: x-scope-orgid
+            claim: orgID
+        extractFrom:
+          cookies:
+            - core-token
+      - name: authentik
+        issuer: {{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/
+        remoteJWKS:
+          cacheDuration: 3600s
+          uri: {{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/jwks/
+        claimToHeaders:
+          - header: x-scope-orgid
+            claim: orgID
+        extractFrom:
+          headers:
+            - name: Authorization
+              valuePrefix: 'Bearer '
+          cookies:
+            - session_access_token
+          params:
+            - token
+  authorization:
+    defaultAction: Deny
+    rules:
+      - name: 'allow'
+        action: Allow
+        principal:
+          jwt:
+            provider: grafana
+            claims:
+              - name: groups
+                valueType: StringArray
+                values: {{ .Values.oauth.allowedGroups | toJson }}
+      - name: 'allow-authentik'
+        action: Allow
+        principal:
+          jwt:
+            provider: authentik
+            claims:
+              - name: groups
+                valueType: StringArray
+                values: {{ .Values.oauth.allowedGroups | toJson }}
+{{- end }}

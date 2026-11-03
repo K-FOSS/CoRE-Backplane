@@ -69,6 +69,13 @@ group.
 
 ## Operations and verification
 
+The production route is JWT protected at `traces.mylogin.space` through K8GB.
+Each site also serves it at `traces.gslb.mylogin.space`; only that site route
+carries the `wan-mode: 'public'` label and ExternalDNS hostname annotations.
+The K8GB `Gslb` owns the global record. See the [K8GB resource reference](https://www.k8gb.io/latest/resource_ref/),
+[K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/), and
+[ExternalDNS Gateway API source](https://github.com/kubernetes-sigs/external-dns/tree/master/provider/kubernetes-sources).
+
 Build and validate locally with:
 
 ```bash

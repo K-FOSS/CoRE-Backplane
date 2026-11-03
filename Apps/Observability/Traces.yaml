@@ -103,6 +103,12 @@ spec:
                     service.cilium.io/affinity: '{{ .values.tempoGlobalAffinity }}'
                     service.cilium.io/shared: '{{ .values.tempoGlobalShared }}'
 
+                k8gb:
+                  enabled: true
+                  domain: 'gslb.mylogin.space'
+                  strategy: 'roundRobin'
+                  dnsTtlSeconds: 30
+
                 garage:
                   enabled: {{ .values.tempoGarageEnabled }}
                   clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl-credentials{{ else }}observability-garage{{ end }}'

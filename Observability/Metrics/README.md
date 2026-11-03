@@ -235,6 +235,14 @@ metric sources.
 
 ## Operations and verification
 
+When enabled by the production ApplicationSet, the chart exposes the JWT
+protected API at `metrics.gslb.mylogin.space` on each site and creates a K8GB
+`Gslb` for the global `metrics.mylogin.space` address. ExternalDNS metadata is
+present only on the site HTTPRoute; K8GB owns the global record. See the
+[K8GB resource reference](https://www.k8gb.io/latest/resource_ref/),
+[K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/), and
+[ExternalDNS Gateway API source](https://github.com/kubernetes-sigs/external-dns/tree/master/provider/kubernetes-sources).
+
 Verify distributor accepted/rejected samples, active series, ingester WAL/head
 size, block upload duration, compactor deletion markers, S3 throughput, and an
 end-to-end query in Grafana. In YXL, verify `core-mimir` selects the Mimir Pods

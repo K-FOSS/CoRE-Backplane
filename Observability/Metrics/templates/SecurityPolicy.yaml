@@ -56,3 +56,17 @@ spec:
   #               valueType: StringArray
   #               values: ["Metrics"]
 {{- end }}
+{{- if and .Values.securityPolicy.enabled .Values.k8gb.enabled }}
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: {{ .Values.gateway.routeName }}-k8gb
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: {{ .Values.gateway.routeName }}-k8gb
+  jwt:
+    {{- toYaml .Values.securityPolicy.jwt | nindent 4 }}
+{{- end }}
