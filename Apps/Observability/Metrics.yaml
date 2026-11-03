@@ -365,7 +365,6 @@ spec:
                         results_cache_ttl_for_labels_query: 5m
                         compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
                       common:
-                        replication_factor: 3
                         storage:
                           backend: s3
                           s3:
@@ -394,6 +393,9 @@ spec:
                           bucket_name: mimir-ruler
                       compactor:
                         data_dir: /data
+                      ingester:
+                        ring:
+                          replication_factor: 3
                       distributor:
                         ha_tracker:
                           enable_ha_tracker: true
