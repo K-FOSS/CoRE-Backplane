@@ -234,6 +234,8 @@ spec:
                     podAnnotations:
                       secret.reloader.stakater.com/reload: '{{ if eq .values.mimirS3Backend "garage" }}mimir-garage-s3{{ else }}{{ .values.clusterName }}-metrics-s3-creds,{{ .values.clusterName }}-metrics-creds{{ end }}'
                     extraEnv:
+                      - name: 'MIMIR_SITE'
+                        value: '{{ .values.clusterName }}'
                       - name: 'OTEL_EXPORTER_OTLP_ENDPOINT'
                         value: 'http://{{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4318'
                       - name: 'OTEL_TRACES_EXPORTER'
@@ -396,6 +398,7 @@ spec:
                       ingester:
                         ring:
                           replication_factor: 3
+                          instance_id: '${MIMIR_SITE}-${HOSTNAME}'
                       distributor:
                         ha_tracker:
                           enable_ha_tracker: true
