@@ -103,6 +103,16 @@ spec:
 
                   controller:
                     replicas: {{ .values.collectorReplicas }}
+                    {{- if eq .values.clusterName "core-home1-talos-prod" }}
+                    affinity:
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: NotIn
+                                  values: ['hpc3']
+                    {{- end }}
 
                   alloy:
                     clustering:
