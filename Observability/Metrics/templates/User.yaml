@@ -13,10 +13,25 @@ spec:
   s3:
     enabled: true
 
+    {{- if .Values.garage.useUserCredentials }}
+    backend: 'garage'
+    createBuckets: false
+    createCredentials: false
+    createUserBucket: false
+    createServiceAccount: true
+    garage:
+      clusterName: {{ .Values.garage.clusterName | squote }}
+      endpoint: {{ printf "observability-garage-s3.core-prod.svc.%s:443" .Values.cluster.domain | squote }}
+    buckets:
+      - 'mimir-blocks'
+      - 'mimir-alertmanager'
+      - 'mimir-ruler'
+    writeServiceAccountCredentialsSecretRef:
+      name: {{ .Values.garage.s3SecretName | squote }}
+      namespace: {{ .Release.Namespace | squote }}
+    {{- else }}
     createBuckets: true
-
     createCredentials: true
-
     crossplane:
       terraformProvider: s3-{{ .Values.region }}-{{ .Values.datacenter }}-core
       crossplaneProvider: s3-{{ .Values.region }}-{{ .Values.datacenter }}-core
@@ -30,6 +45,7 @@ spec:
     writeCredentialsSecretRef:
       name: {{ .Release.Name }}-s3-creds
       namespace: {{ .Release.Namespace }}
+    {{- end }}
 
   writeConnectionSecretToRef:
     name: {{ .Release.Name }}-creds

@@ -1,8 +1,8 @@
-{{- if .Values.garage.enabled }}
+{{- if and .Values.garage.enabled (not .Values.garage.useUserCredentials) }}
 apiVersion: garage.rajsingh.info/v1beta1
 kind: GarageBucket
 metadata:
-  name: 'mimir-blocks'
+  name: {{ printf "mimir-blocks%s" .Values.garage.resourceSuffix | squote }}
   annotations:
     argocd.argoproj.io/sync-wave: '-2'
 spec:
@@ -13,7 +13,18 @@ spec:
 apiVersion: garage.rajsingh.info/v1beta1
 kind: GarageBucket
 metadata:
-  name: 'mimir-alertmanager'
+  name: {{ printf "mimir-ruler%s" .Values.garage.resourceSuffix | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+spec:
+  clusterRef:
+    name: {{ .Values.garage.clusterName | squote }}
+  deletionPolicy: 'Retain'
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageBucket
+metadata:
+  name: {{ printf "mimir-alertmanager%s" .Values.garage.resourceSuffix | squote }}
   annotations:
     argocd.argoproj.io/sync-wave: '-2'
 spec:

@@ -134,8 +134,9 @@ spec:
 
                 garage:
                   enabled: {{ .values.lokiGarageEnabled }}
-                  clusterName: 'observability-garage'
+                  clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl{{ else }}observability-garage{{ end }}'
                   endpoint: 'observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443'
+                  createBuckets: {{ if eq .values.region "yvr" }}false{{ else }}true{{ end }}
                 
                 loki:
                   {{ if .values.lokiGarageEnabled }}

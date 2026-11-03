@@ -163,7 +163,9 @@ spec:
 
                 garage:
                   enabled: {{ .values.mimirGarageEnabled }}
-                  clusterName: 'observability-garage'
+                  clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl{{ else }}observability-garage{{ end }}'
+                  resourceSuffix: '{{ if eq .values.region "yvr" }}-yxl{{ else }}{{ end }}'
+                  useUserCredentials: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
 
                 gateway:
                   enabled: {{ .values.mimirEnabled }}
@@ -396,7 +398,9 @@ spec:
                   enabled: true
                 garage:
                   enabled: {{ .values.mimirGarageEnabled }}
-                  clusterName: 'observability-garage'
+                  clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl{{ else }}observability-garage{{ end }}'
+                  resourceSuffix: '{{ if eq .values.region "yvr" }}-yxl{{ else }}{{ end }}'
+                  useUserCredentials: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                 mimirBridge:
                   enabled: {{ .values.mimirBridgeEnabled }}
                   routeName: core-mimir

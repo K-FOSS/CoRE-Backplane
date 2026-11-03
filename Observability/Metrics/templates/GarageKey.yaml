@@ -1,8 +1,8 @@
-{{- if .Values.garage.enabled }}
+{{- if and .Values.garage.enabled (not .Values.garage.useUserCredentials) }}
 apiVersion: garage.rajsingh.info/v1beta1
 kind: GarageKey
 metadata:
-  name: 'mimir-garage-s3'
+  name: {{ printf "mimir-garage-s3%s" .Values.garage.resourceSuffix | squote }}
   annotations:
     argocd.argoproj.io/sync-wave: '-1'
 spec:
@@ -10,11 +10,15 @@ spec:
     name: {{ .Values.garage.clusterName | squote }}
   bucketPermissions:
     - bucketRef:
-        name: 'mimir-blocks'
+        name: {{ printf "mimir-blocks%s" .Values.garage.resourceSuffix | squote }}
       read: true
       write: true
     - bucketRef:
-        name: 'mimir-alertmanager'
+        name: {{ printf "mimir-alertmanager%s" .Values.garage.resourceSuffix | squote }}
+      read: true
+      write: true
+    - bucketRef:
+        name: {{ printf "mimir-ruler%s" .Values.garage.resourceSuffix | squote }}
       read: true
       write: true
   secretTemplate:
