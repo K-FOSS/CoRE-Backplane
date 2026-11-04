@@ -19,19 +19,109 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
-                    gpuExportersEnabled: true
+                    nodeExporterEnabled: true
+                    nodeExporterServiceMonitorEnabled: true
+                    nodeExporterScrapeInterval: '30s'
+                    nodeExporterCollectors:
+                      - 'diskstats'
+                      - 'filesystem'
+                      - 'cpu'
+                      - 'udp_queues'
+                      - 'cpufreq'
+                      - 'tcpstat'
+                      - 'sockstat'
+                      - 'uname'
+                      - 'meminfo'
+                      - 'loadavg'
+                      - 'stat'
+                      - 'netdev'
+                      - 'netstat'
+                      - 'softnet'
+                      - 'time'
+                      - 'hwmon'
+                    nodeExporterDisabledCollectors:
+                      - 'tapestats'
+                      - 'fibrechannel'
+                      - 'nfs'
+                      - 'nfsd'
+                      - 'watchdog'
+                    kubeStateMetricsEnabled: true
+                    smartctlExporterEnabled: true
+                    ipmiExporterEnabled: true
+                    drmExporterEnabled: true
+                    dcgmExporterEnabled: true
                     smartctlDeviceExclude: '/dev/sd[b-z].*'
 
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
-                    gpuExportersEnabled: false
+                    nodeExporterEnabled: true
+                    nodeExporterServiceMonitorEnabled: true
+                    nodeExporterScrapeInterval: '30s'
+                    nodeExporterCollectors:
+                      - 'diskstats'
+                      - 'filesystem'
+                      - 'cpu'
+                      - 'udp_queues'
+                      - 'cpufreq'
+                      - 'tcpstat'
+                      - 'sockstat'
+                      - 'uname'
+                      - 'meminfo'
+                      - 'loadavg'
+                      - 'stat'
+                      - 'netdev'
+                      - 'netstat'
+                      - 'softnet'
+                      - 'time'
+                      - 'hwmon'
+                    nodeExporterDisabledCollectors:
+                      - 'tapestats'
+                      - 'fibrechannel'
+                      - 'nfs'
+                      - 'nfsd'
+                      - 'watchdog'
+                    kubeStateMetricsEnabled: true
+                    smartctlExporterEnabled: true
+                    ipmiExporterEnabled: true
+                    drmExporterEnabled: false
+                    dcgmExporterEnabled: false
                     smartctlDeviceExclude: ''
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
-                    gpuExportersEnabled: false
+                    nodeExporterEnabled: true
+                    nodeExporterServiceMonitorEnabled: true
+                    nodeExporterScrapeInterval: '30s'
+                    nodeExporterCollectors:
+                      - 'diskstats'
+                      - 'filesystem'
+                      - 'cpu'
+                      - 'udp_queues'
+                      - 'cpufreq'
+                      - 'tcpstat'
+                      - 'sockstat'
+                      - 'uname'
+                      - 'meminfo'
+                      - 'loadavg'
+                      - 'stat'
+                      - 'netdev'
+                      - 'netstat'
+                      - 'softnet'
+                      - 'time'
+                      - 'hwmon'
+                    nodeExporterDisabledCollectors:
+                      - 'tapestats'
+                      - 'fibrechannel'
+                      - 'nfs'
+                      - 'nfsd'
+                      - 'watchdog'
+                    kubeStateMetricsEnabled: true
+                    smartctlExporterEnabled: true
+                    ipmiExporterEnabled: true
+                    drmExporterEnabled: false
+                    dcgmExporterEnabled: false
                     smartctlDeviceExclude: ''
           - clusters:
               selector:
@@ -81,15 +171,44 @@ spec:
           env:
             - name: LOVELY_HELM_MERGE
               value: |-
-                drm-exporter:
-                  enabled: {{ .values.gpuExportersEnabled }}
-
-                dcgm-exporter:
-                  enabled: {{ .values.gpuExportersEnabled }}
+                kube-prometheus-stack:
+                  nodeExporter:
+                    enabled: {{ .values.nodeExporterEnabled }}
+                    forceDeployDashboards: {{ .values.nodeExporterEnabled }}
+                  kubeStateMetrics:
+                    enabled: {{ .values.kubeStateMetricsEnabled }}
+                  prometheus-node-exporter:
+                    extraArgs:
+                      - '--collector.disable-defaults'
+                      {{- range .values.nodeExporterCollectors }}
+                      - '--collector.{{ . }}'
+                      {{- end }}
+                      {{- range .values.nodeExporterDisabledCollectors }}
+                      - '--no-collector.{{ . }}'
+                      {{- end }}
+                      - '--collector.filesystem.mount-points-exclude=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)'
+                      - '--collector.filesystem.fs-types-exclude=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$'
+                      - '--collector.netdev.device-exclude=^lxc.*'
+                      - '--collector.arp.device-exclude=^lxc.*'
+                      - '--collector.ethtool.device-exclude=^lxc.*'
+                    prometheus:
+                      monitor:
+                        enabled: {{ .values.nodeExporterServiceMonitorEnabled }}
+                        interval: '{{ .values.nodeExporterScrapeInterval }}'
 
                 prometheus-smartctl-exporter:
+                  enabled: {{ .values.smartctlExporterEnabled }}
                   config:
                     device_exclude: '{{ .values.smartctlDeviceExclude }}'
+
+                prometheus-ipmi-exporter:
+                  enabled: {{ .values.ipmiExporterEnabled }}
+
+                drm-exporter:
+                  enabled: {{ .values.drmExporterEnabled }}
+
+                dcgm-exporter:
+                  enabled: {{ .values.dcgmExporterEnabled }}
 
       destination:
         server: '{{ .server }}'
