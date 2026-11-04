@@ -154,6 +154,17 @@ lines. The dashboard's time range and variables can be narrowed to isolate a
 noisy namespace, pod, or container. It intentionally measures the stored log
 stream rather than adding a second metric pipeline.
 
+The chart imports Grafana Labs' pinned [Mimir / Overview dashboard](https://grafana.com/grafana/dashboards/17607-mimir-overview/)
+and [Mimir / Writes dashboard](https://grafana.com/grafana/dashboards/16026-mimir-writes/)
+from [`templates/Mimir.yaml`](templates/Mimir.yaml). Overview provides cluster
+health and component status; Writes covers the ingestion path through the
+gateway, distributor, and ingester. The dashboard URLs are pinned to immutable
+Grafana dashboard revisions and are fetched by the existing syncer into the
+`Mimir` folder. These dashboards follow Grafana Mimir's
+[production monitoring dashboard guidance](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/dashboards/)
+and require the Mimir metrics, recording rules, and labels described in the
+[dashboard requirements](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/requirements/).
+
 The Garage operator remains the canonical source for the Garage S3 dashboard in
 DC1. Its labelled ConfigMap is imported by the DC1 syncer into the central YVR
 Grafana database and is consequently available through either Grafana URI.

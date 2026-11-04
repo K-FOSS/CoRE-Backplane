@@ -43,6 +43,13 @@ client.
 YXL renders the HTTPRoute and Envoy SecurityPolicy. When `mimirEnabled` is
 false, the distributed chart is disabled while the recovery identity remains.
 
+The distributed Mimir chart also enables its pinned
+`metaMonitoring.serviceMonitor` with an explicit cluster label and 30-second
+scrape interval. This makes the Mimir `/metrics` endpoints available to Alloy
+and Grafana for the dashboards imported by the
+[Grafana dashboards stack](../Dashboards/README.md). The configuration follows
+Grafana's [Mimir monitoring mixin guidance](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/deploying-monitoring-mixin/).
+
 ## Distributed tracing
 
 Every active Mimir component exports OTLP traces to the site-local

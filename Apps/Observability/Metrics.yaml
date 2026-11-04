@@ -238,6 +238,12 @@ spec:
                       alertmanager.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                   rollout_operator:
                     enabled: false
+                  metaMonitoring:
+                    serviceMonitor:
+                      enabled: true
+                      clusterLabel: '{{ .values.clusterName }}'
+                      interval: '30s'
+                      scrapeTimeout: '10s'
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
                     podAnnotations:
