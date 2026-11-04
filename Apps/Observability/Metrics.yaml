@@ -306,8 +306,6 @@ spec:
                     replicas: 3
                     extraArgs:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
-                      distributor.ring.zone-awareness-enabled: 'true'
-                      distributor.ring.instance-availability-zone: '{{ .values.zone }}'
                       ingester.ring.zone-awareness-enabled: 'true'
                       ingester.ring.instance-availability-zone: '{{ .values.zone }}'
                     podAnnotations:
@@ -391,8 +389,6 @@ spec:
                     replicas: 1
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
-                      ruler.ring.zone-awareness-enabled: 'true'
-                      ruler.ring.instance-availability-zone: '{{ .values.zone }}'
                       ingester.ring.zone-awareness-enabled: 'true'
                       ingester.ring.instance-availability-zone: '{{ .values.zone }}'
                       store-gateway.sharding-ring.zone-awareness-enabled: 'true'

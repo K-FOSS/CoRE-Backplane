@@ -265,9 +265,10 @@ multiple ingesters and Alloy's errors changed from quorum failures to transient
 cross-site request deadlines. The distributor downstream timeout is now 10s to
 accommodate the approximately 80ms inter-site path and WAL/compaction work.
 
-The memberlist-backed ingester, distributor, querier, ruler, store-gateway, and
-Alertmanager rings use zone awareness. Each component receives the cluster's
-ApplicationSet zone label as its ring availability zone. The current topology
+The memberlist-backed ingester ring, as consumed by ingesters, distributors,
+queriers, and rulers, plus the store-gateway and Alertmanager rings use zone
+awareness. Each component receives the cluster's ApplicationSet zone label as
+its ring availability zone. The current topology
 has two site zones while the replication factor remains three, so validate ring
 placement and quorum behavior during a site outage before treating this as
 three-zone failure tolerance. See Grafana's [Mimir zone-awareness configuration](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
