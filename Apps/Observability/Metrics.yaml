@@ -411,6 +411,7 @@ spec:
                       ingester:
                         ring:
                           replication_factor: 3
+                          unregister_on_shutdown: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                       distributor:
                         remote_timeout: '10s'
                         ha_tracker:
