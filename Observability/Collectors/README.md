@@ -170,8 +170,10 @@ three `otelcol.processor.k8sattributes` informers. Scrape work is
 sharded for `ScrapeConfig`, `PodMonitor`, `ServiceMonitor`, `Probe`, and
 annotation-discovered targets using the component-level clustering described by the
 [ServiceMonitor component](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.operator.servicemonitors/#clustering).
-The node-local `alloy-metrics` scrape deliberately remains unclustered: each
-DaemonSet pod exposes a different node and must scrape its own local exporters.
+The node-local `alloy-metrics` scrape deliberately remains unclustered, but it
+exports only Alloy self-metrics. The separate node-exporter DaemonSet owns host
+metrics; the Unix exporter is disabled in `alloy-metrics` to avoid duplicate
+node telemetry.
 
 ## Operations
 

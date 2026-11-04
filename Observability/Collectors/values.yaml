@@ -134,15 +134,10 @@ alloy-metrics:
           format = "json"
         }
 
-        prometheus.exporter.unix "node" {
-        }
         prometheus.exporter.self "alloy" {}
 
         prometheus.scrape "node" {
-          targets = array.concat(
-            prometheus.exporter.unix.node.targets,
-            prometheus.exporter.self.alloy.targets,
-          )
+          targets = prometheus.exporter.self.alloy.targets
           forward_to = [prometheus.relabel.node.receiver]
         }
 
