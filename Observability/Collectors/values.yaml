@@ -3,6 +3,9 @@ alloy-logs:
     create: false
   alloy:
     stabilityLevel: public-preview
+    # Node-local log agents send OTLP to the central gateway and do not peer.
+    clustering:
+      enabled: false
     mounts:
       varlog: false
     configMap:
@@ -127,6 +130,9 @@ alloy-metrics:
   crds:
     create: false
   alloy:
+    # Node-local metric agents send OTLP to the central gateway and do not peer.
+    clustering:
+      enabled: false
     configMap:
       content: |
         logging {
@@ -193,6 +199,9 @@ alloy-otlp:
   crds:
     create: false
   alloy:
+    # Node-local OTLP receivers forward to the central gateway and do not peer.
+    clustering:
+      enabled: false
     configMap:
       content: |
         logging {
