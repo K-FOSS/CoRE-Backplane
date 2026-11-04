@@ -1083,6 +1083,14 @@ spec:
                       try(local.legacy-kubelet-config.registerWithFQDN, null) == null ? {} : { registerWithFQDN = local.legacy-kubelet-config.registerWithFQDN }
                     )
                     legacy-kubelet-default-runtime-seccomp-profile-enabled = try(local.legacy-kubelet-config.defaultRuntimeSeccompProfileEnabled, null)
+                    kube-node-labels = merge(local.legacy-node-labels, {
+                      "resolvemy.host/nodemode" = "{{ $.observed.composite.resource.spec.type }}"
+                      {{- if $isControlplane }}
+                      "node-role.kubernetes.io/control-plane" = ""
+                      {{- else }}
+                      "node-role.kubernetes.io/worker" = ""
+                      {{- end }}
+                    })
                     kube-node-taints = merge(local.legacy-node-taints, {{ if $isControlplane }}{"node-role.kubernetes.io/control-plane" = {"$patch" = "delete"}}{{ else }}{}{{ end }})
                     sysctl-params = merge(try(tomap(local.legacy-machine-config.sysctls), {}), {
                       "user.max_user_namespaces"             = "65536"
@@ -1195,7 +1203,7 @@ spec:
                       yamlencode(merge({
                         apiVersion  = "v1alpha1"
                         kind        = "KubeNodeConfig"
-                        labels      = local.legacy-node-labels
+                        labels      = local.kube-node-labels
                         annotations = local.legacy-node-annotations
                         taints      = local.kube-node-taints
                         nodeIP = merge(local.legacy-kubelet-node-ip, {
