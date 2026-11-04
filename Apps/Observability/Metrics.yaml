@@ -501,6 +501,29 @@ spec:
                             - token
                 {{- end }}
 
+            - name: 'LOVELY_KUSTOMIZE_MERGE'
+              value: |-
+                patches:
+                  - target:
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-.*'
+
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+
+                  - target:
+                      version: v1
+                      kind: StatefulSet
+                      name: 'core-mimir-.*'
+
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
