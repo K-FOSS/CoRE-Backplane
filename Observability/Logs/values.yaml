@@ -126,8 +126,11 @@ loki:
       retention_delete_worker_count: 150
       delete_request_store: s3
 
+    # Grafana's Loki plugin probes /patterns, but this optional ring is not
+    # deployed in the shared two-site topology. Keep pattern ingestion off so
+    # that probe cannot fail with an empty ring during normal log queries.
     pattern_ingester:
-      enabled: true
+      enabled: false
 
     ingester:
       chunk_encoding: snappy
