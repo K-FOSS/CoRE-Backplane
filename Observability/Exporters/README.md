@@ -19,15 +19,22 @@ enabled wherever it was previously deployed.
 ## Current behavior
 
 The stack creates Prometheus Operator CRDs/controllers, recording and alerting
-rules, kube-state-metrics, node-exporter, kubelet/cAdvisor and API-server
-ServiceMonitors, and hardware exporters. In YVR it also creates an Intel DRM
+rules, kube-state-metrics, node-exporter, kubelet/cAdvisor and hardware
+exporters. API-server, controller-manager, scheduler, kube-proxy, etcd, and
+kubelet ServiceMonitors are disabled; Alloy in [Collectors](../Collectors/)
+owns the cluster-wide kubelet/cAdvisor scrape. API-server monitoring is
+intentionally disabled because its histogram families add substantial
+cardinality without being needed by the current operations workflow. In YVR
+it also creates an Intel DRM
 exporter DaemonSet for Intel `i915`/`xe` iGPUs and dGPUs, and an NVIDIA DCGM
 Exporter DaemonSet for CUDA/NVIDIA GPUs. Both are restricted to amd64 GPU
 nodes using Node Feature Discovery/device-plugin labels. The Prometheus
 resource is configured with zero replicas; Grafana Alloy in
 [Collectors](../Collectors/) consumes the generated monitor CRs and
 remote-writes their samples to Mimir. Kustomize moves smartctl resources and
-its monitor selection to `kube-system`.
+its monitor selection to `kube-system`. The kube-prometheus-stack Grafana
+datasource ConfigMap is disabled because the standalone Grafana deployment
+owns datasource configuration.
 
 The GPU exporters require host GPU enablement: NFD must publish the Intel PCI
 label `feature.node.kubernetes.io/pci-0300_8086.present: 'true'`, and the
@@ -40,10 +47,9 @@ not enabled, so package temperature/power may be absent; see the exporter
 
 This stack contributes monitored endpoints and cardinality, but the repeated
 Kubernetes API watches are created by every Alloy DaemonSet pod. The most
-expensive metric sources are kubelet/cAdvisor on every node, kube-state-metrics,
-and API-server histograms. Existing relabel rules drop several noisy histogram
-buckets and container series, but monitor sample and target limits are zero
-(unbounded).
+expensive remaining metric sources are kubelet/cAdvisor on every node and
+kube-state-metrics. Monitor sample and target limits are zero (unbounded), so
+review those sources before enabling additional broad scrape jobs.
 
 The committed IPMI module contains upstream example credentials. They are
 deployable placeholders and must be replaced with a Secret-backed mechanism
