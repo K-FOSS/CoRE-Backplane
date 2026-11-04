@@ -21,7 +21,7 @@ spec:
 {{ toYaml $alloyValues | indent 4 }}
     configMap:
       content: |
-{{- $configValues := dict "Values" (dict "destinations" $.Values.alloy.destinations "alloy" $instance.values.alloy) }}
+{{- $configValues := dict "Values" (dict "clusterDomain" $.Values.clusterDomain "destinations" $.Values.alloy.destinations "alloy" $instance.values.alloy) }}
 {{ tpl $instance.values.alloy.configMap.content $configValues | indent 8 }}
 {{- with $instance.values.configReloader }}
   configReloader:

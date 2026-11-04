@@ -254,7 +254,7 @@ alloy:
   destinations:
     lokiUrl: 'http://loki-core:3100/loki/api/v1/push'
     mimirUrl: http://10.44.2.161:8080/api/v1/push
-    tempoEndpoint: 'tempo-core.core-prod.svc.cluster.local:4317'
+    tempoEndpoint: 'tempo-core.core-prod.svc.{{ .Values.clusterDomain }}:4317'
 
   alloy:
     configMap:
@@ -292,7 +292,7 @@ alloy:
 
           rule {
             target_label = "__address__"
-            replacement = "kubernetes.default.svc:443"
+            replacement = "kubernetes.default.svc.{{ .Values.clusterDomain }}:443"
           }
 
           rule {
