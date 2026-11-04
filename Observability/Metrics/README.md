@@ -235,6 +235,73 @@ metric sources.
 
 ## Operations and verification
 
+### Active-active ring, token persistence and write quorum
+
+The production distributed profile is the classic Mimir architecture: there is
+no `ingest_storage` or Kafka configuration, and the ingester hash ring is used
+for both series sharding and ingester discovery. The six ingesters therefore
+intentionally share one logical ring through the memberlist KV store. In this
+architecture each ingester should own tokens; `ACTIVE` alone is not evidence
+that it can receive writes. With replication factor three, a write requires a
+quorum of two ingesters. See Grafana's [classic ingester and replication
+model](https://grafana.com/docs/mimir/latest/references/architecture/components/ingester/)
+and [configuration parameter reference](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/).
+
+The ring identity is qualified with the cluster name and StatefulSet pod name
+through the ingester CLI flags in the owning ApplicationSet. The token file is
+also qualified with those values. This preserves the existing PVCs and WALs,
+but prevents a token file created for the former site-colliding identity from
+being reused by a new site-qualified identity. The old `/data/tokens` files are
+left untouched for rollback/recovery; they must not be deleted without a
+planned ring migration. Grafana documents that a non-empty
+`tokens-file-path` restores tokens at startup, while an empty path disables
+token persistence; this deployment deliberately keeps persistence enabled.
+
+The confirmed failure was a ring with six registered identities but only one
+512-token owner. The other five instances had zero tokens, so the distributor
+could select only one live replica and Alloy received HTTP 500 responses. After
+the qualified token paths rolled out, the ring reported token ownership across
+multiple ingesters and Alloy's errors changed from quorum failures to transient
+cross-site request deadlines. The distributor downstream timeout is now 10s to
+accommodate the approximately 80ms inter-site path and WAL/compaction work.
+
+All ingesters currently remain in `zone-default`. YVR and YXL are physical
+failure domains, but only two zones exist; zone-aware replication is therefore
+not enabled. Enabling it with the current topology would need a separate
+failure-domain design and validation that the requested replication factor can
+be satisfied during a site outage. This is intentionally a follow-up design
+decision, not an assumption made from the site names.
+
+### Ring and ingestion verification
+
+Use the distributor's `/ingester/ring` and `/metrics` endpoints, not only pod
+readiness, when validating ingestion. The following checks are read-only and
+should be run against both site contexts:
+
+```bash
+kubectl --context <site-context> -n core-prod get pods \
+  -l app.kubernetes.io/component=ingester -o wide
+kubectl --context <site-context> -n core-prod logs \
+  -l app.kubernetes.io/component=distributor --since=10m | \
+  rg 'httpCode=500|at least 2 live|context deadline exceeded'
+```
+
+The ring should show six expected site-qualified members, no `UNHEALTHY`
+members, and token ownership on every active ingester. Monitor
+`cortex_ring_members{name="ingester",state=...}` and
+`cortex_ring_tokens_total{name="ingester"}` together with distributor push
+errors, ingester WAL replay duration, and the
+`cortex_request_duration_seconds_count` series for the ingester Push RPC.
+An `ACTIVE` member with zero tokens or repeated cross-site Push RPC failures is
+an alert condition even when Kubernetes reports the pod ready.
+
+For a non-destructive validation, query the same tenant through the local
+`core-mimir` Service from each site, then repeat after one ingester restart in
+only one site. Do not delete PVCs or clear the old token files. Site-wide
+failure and WAN-partition simulations require a separately approved change
+window because classic Mimir replication needs two of three ingester writes to
+complete.
+
 When enabled by the production ApplicationSet, the chart exposes the JWT
 protected API at `metrics.gslb.mylogin.space` on each site and creates a K8GB
 `Gslb` for the global `metrics.mylogin.space` address. ExternalDNS metadata is
