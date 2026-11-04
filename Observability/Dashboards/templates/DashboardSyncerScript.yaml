@@ -43,9 +43,35 @@ data:
         _, result = request('POST', '/api/folders', {'title': folder})
         return result['uid']
 
-    for dashboard_path in sorted(ROOT.rglob('*.json')):
-        with dashboard_path.open(encoding='utf-8') as stream:
-            dashboard = json.load(stream)
+    dashboard_paths = sorted(ROOT.rglob('*.json')) + sorted(ROOT.rglob('*.url'))
+    for dashboard_path in dashboard_paths:
+        if dashboard_path.suffix == '.url':
+            with dashboard_path.open(encoding='utf-8') as stream:
+                dashboard_url = stream.read().strip()
+            request_object = Request(
+                dashboard_url,
+                headers={'Accept': 'application/json'},
+                method='GET',
+            )
+            with urlopen(request_object, timeout=30) as response:
+                dashboard = json.loads(response.read())
+        else:
+            with dashboard_path.open(encoding='utf-8') as stream:
+                dashboard = json.load(stream)
+        if dashboard.get('uid') == 'rYdddlPWk':
+            dashboard.setdefault('timepicker', {})['refresh_intervals'] = [
+                '15s',
+                '30s',
+                '1m',
+                '5m',
+                '15m',
+                '30m',
+                '1h',
+            ]
+            for panel in dashboard.get('panels', []):
+                if panel.get('targets'):
+                    panel['interval'] = '15s'
+                    panel['intervalFactor'] = 1
         dashboard.pop('id', None)
         relative_parent = dashboard_path.parent.relative_to(ROOT)
         folder = '' if str(relative_parent) == '.' else str(relative_parent)

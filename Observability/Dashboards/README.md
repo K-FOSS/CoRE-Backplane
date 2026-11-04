@@ -103,17 +103,34 @@ keeps only the enablement, central cluster selector, and pinned image settings;
 [k8s-sidecar script and request configuration](https://github.com/kiwigrid/k8s-sidecar#configuration-environment-variables)
 and [Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/).
 
+The `grafana-dashboard-node-exporter-full` ConfigMap imports [Grafana dashboard
+1860, Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/)
+from the pinned [revision 45 download URL](https://grafana.com/api/dashboards/1860/revisions/45/download)
+into the `Infrastructure` folder. The syncer supports `.url` entries alongside
+repository-managed `.json` dashboards; the URL is fetched when the labeled
+ConfigMap is observed. The dashboard expects Prometheus node-exporter metrics
+and provides `job`, `nodename`, and `instance` selectors.
+The syncer also applies a local overlay to this dashboard: panels use a
+15-second minimum query interval and the dashboard offers a 15-second refresh
+interval. This affects query and refresh resolution only; the WAN-GW2 scrape
+currently runs every 30 seconds, so intervals shorter than that cannot recover
+samples that were not collected.
+
 The hub Authentik Workspace creates the `Grafana Dashboard Sync` group once.
 Each dashboard Application then creates its own `mylogin.space` `User` with a
 cluster-specific name in that group. Its generated connection Secret is used
 only to bootstrap that Application's Grafana Terraform provider. The local
 Crossplane Workspace then creates a cluster-specific `dashboard-sync` Grafana
 service account and token and writes the sensitive token to the local
-`grafana-dashboard-sync-auth` Secret. No admin password or token value belongs
-in Git. The provider uses the official
+`grafana-dashboard-sync-auth` Secret. The bootstrap group maps to the Grafana
+organization `Admin` role because Grafana requires organization Admin rights or
+the appropriate fixed service-account creator roles to create a service account;
+the generated dashboard token remains limited to the `Editor` role. No admin
+password or token value belongs in Git. The provider uses the official
 [Grafana Terraform provider service-account resources](https://registry.terraform.io/providers/grafana/grafana/latest/docs/resources/service_account_token)
-and Grafana documents service accounts as the intended authentication
-mechanism for automated API clients; see the [Grafana HTTP API authentication documentation](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/authentication/).
+and Grafana documents the [service-account creation permissions](https://grafana.com/docs/grafana/latest/administration/service-accounts/)
+and intended authentication mechanism for automated API clients; see the
+[Grafana HTTP API authentication documentation](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/authentication/).
 
 The chart provisions the `PostgreSQL / Database Capacity and Connections`
 dashboard from [`templates/PostgreSQL.yaml`](templates/PostgreSQL.yaml). It
