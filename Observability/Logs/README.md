@@ -11,8 +11,9 @@ collectors and consumers.
 
 DC1/YXL and Home1/YVR now run Loki data-plane workloads. Each site uses its
 local Observability Garage S3 service with credentials provisioned through the
-`loki-s3` `User` claim. The global `loki-core` Service uses local affinity and
-synchronized EndpointSlices for failover.
+`loki-s3` `User` claim. The global `loki-core` client Service and Loki
+memberlist Service use local affinity and synchronized EndpointSlices for
+failover.
 The ApplicationSet injects cluster identity, storage backend, component counts,
 and Cilium annotations through `LOVELY_HELM_MERGE`.
 
@@ -26,18 +27,18 @@ is selected with `deploymentMode: Distributed`.
 | Component | DC1 replicas | Home1 replicas | Workload |
 | --- | ---: | ---: | --- |
 | Gateway | 3 | 3 | Deployment |
-| Distributor | 3 | 0 | Deployment |
-| Ingester | 3 | 0 | StatefulSet |
-| Querier | 3 | 0 | Deployment |
-| Query frontend | 2 | 0 | Deployment |
-| Query scheduler | 2 | 0 | Deployment |
-| Index gateway | 2 | 0 | StatefulSet |
-| Compactor | 1 | 0 | StatefulSet |
-| Ruler | 1 | 0 | StatefulSet |
+| Distributor | 3 | 3 | Deployment |
+| Ingester | 3 | 3 | StatefulSet |
+| Querier | 3 | 3 | Deployment |
+| Query frontend | 3 | 3 | Deployment |
+| Query scheduler | 2 | 2 | Deployment |
+| Index gateway | 3 | 3 | StatefulSet |
+| Compactor | 1 | 1 | StatefulSet |
+| Ruler | 1 | 1 | StatefulSet |
 
-The simple-scalable and former single-binary targets remain at zero. Ingester
-zone awareness is disabled because this is one site; hostname anti-affinity
-spreads the three ingesters across its nodes.
+The simple-scalable and former single-binary targets remain at zero. Both sites
+run the distributed read and write paths with zone-aware ingester replication
+and hostname spreading to protect rollouts and node loss.
 
 ## Architecture and global Service
 
@@ -54,12 +55,12 @@ Cilium pairing, and ClusterIP while selecting gateway pods. The upstream
 gateway routes API paths to their owning components. The public
 [`HTTPRoute`](templates/HTTPRoutes.yaml) uses the same stable Service.
 
-Both sites set `service.cilium.io/global` and EndpointSlice synchronization.
-DC1 uses local affinity and shares its endpoints; Home1 uses remote affinity
-and does not share. This follows the
+Both sites set `service.cilium.io/global` and EndpointSlice synchronization on
+the client and memberlist Services. Cilium affinity prefers the local site and
+cross-site endpoints provide failover. This follows the
 [Cilium global Service](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
-model. Internal and memberlist Services remain local, so sites do not share a
-Loki ring.
+model. The memberlist Service is global so both sites share one zone-aware
+ring, while client traffic remains local-preferred.
 
 ## Observability S3 and Loki credentials
 
@@ -110,6 +111,14 @@ Ingester WAL, index-gateway, compactor, and ruler working data use PVCs. The
 supported retention policies are `Retain`; former `storage-loki-core-*` PVCs
 also remain retained for rollback and need a separate cleanup decision. S3
 remains the durable store.
+
+Distributed Loki components retain chart-provided PodDisruptionBudgets and
+rolling-update limits. Ingesters use the chart's zone-aware StatefulSets and a
+long termination grace period; distributors, gateways, queriers, query
+frontends, and schedulers run with multiple replicas so reads and writes remain
+available during node drains and controlled scale changes. See the upstream
+[Loki Helm zone-aware replication guidance](https://grafana.com/docs/loki/latest/setup/install/helm/concepts/)
+and [hash-ring guidance](https://grafana.com/docs/loki/latest/get-started/hash-rings/).
 
 ## Retention, monitoring, and access
 

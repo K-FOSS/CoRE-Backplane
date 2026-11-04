@@ -143,6 +143,11 @@ spec:
                   gateway:
                     enabled: true
                     replicas: {{ .values.tempoGatewayReplicas }}
+                    autoscaling:
+                      enabled: true
+                      minReplicas: {{ .values.tempoGatewayReplicas }}
+                      maxReplicas: 6
+                      targetCPUUtilizationPercentage: 60
                     affinity: |
                       podAntiAffinity:
                         preferredDuringSchedulingIgnoredDuringExecution:
@@ -165,12 +170,27 @@ spec:
                       port: 3200
                   distributor:
                     replicas: {{ .values.tempoDistributorReplicas }}
+                    autoscaling:
+                      enabled: true
+                      minReplicas: {{ .values.tempoDistributorReplicas }}
+                      maxReplicas: 6
+                      targetCPUUtilizationPercentage: 60
                   ingester:
                     replicas: {{ .values.tempoIngesterReplicas }}
                   querier:
                     replicas: {{ .values.tempoQuerierReplicas }}
+                    autoscaling:
+                      enabled: true
+                      minReplicas: {{ .values.tempoQuerierReplicas }}
+                      maxReplicas: 6
+                      targetCPUUtilizationPercentage: 60
                   queryFrontend:
                     replicas: {{ .values.tempoQueryFrontendReplicas }}
+                    autoscaling:
+                      enabled: true
+                      minReplicas: {{ .values.tempoQueryFrontendReplicas }}
+                      maxReplicas: 6
+                      targetCPUUtilizationPercentage: 60
                   compactor:
                     replicas: {{ .values.tempoCompactorReplicas }}
                   traces:

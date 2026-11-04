@@ -20,20 +20,20 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'SingleBinary<->SimpleScalable'
-                    lokiReplicas: 3
-                    lokiBackendReplicas: 3
-                    lokiReadReplicas: 3
-                    lokiWriteReplicas: 3
+                    mode: 'Distributed'
+                    lokiReplicas: 0
+                    lokiBackendReplicas: 0
+                    lokiReadReplicas: 0
+                    lokiWriteReplicas: 0
                     lokiGatewayReplicas: 3
-                    lokiDistributorReplicas: 0
-                    lokiIngesterReplicas: 0
-                    lokiQuerierReplicas: 0
-                    lokiQueryFrontendReplicas: 0
-                    lokiQuerySchedulerReplicas: 0
-                    lokiIndexGatewayReplicas: 0
-                    lokiCompactorReplicas: 0
-                    lokiRulerReplicas: 0
+                    lokiDistributorReplicas: 3
+                    lokiIngesterReplicas: 3
+                    lokiQuerierReplicas: 3
+                    lokiQueryFrontendReplicas: 3
+                    lokiQuerySchedulerReplicas: 2
+                    lokiIndexGatewayReplicas: 3
+                    lokiCompactorReplicas: 1
+                    lokiRulerReplicas: 1
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
                     lokiGarageEnabled: true
@@ -42,22 +42,22 @@ spec:
                   values:
                     hub: false
 
-                    mode: 'SingleBinary<->SimpleScalable'
+                    mode: 'Distributed'
                     globalServiceOnly: false
                     lokiEnabled: true
-                    lokiReplicas: 3
-                    lokiBackendReplicas: 3
-                    lokiReadReplicas: 3
-                    lokiWriteReplicas: 3
+                    lokiReplicas: 0
+                    lokiBackendReplicas: 0
+                    lokiReadReplicas: 0
+                    lokiWriteReplicas: 0
                     lokiGatewayReplicas: 3
-                    lokiDistributorReplicas: 0
-                    lokiIngesterReplicas: 0
-                    lokiQuerierReplicas: 0
-                    lokiQueryFrontendReplicas: 0
-                    lokiQuerySchedulerReplicas: 0
-                    lokiIndexGatewayReplicas: 0
-                    lokiCompactorReplicas: 0
-                    lokiRulerReplicas: 0
+                    lokiDistributorReplicas: 3
+                    lokiIngesterReplicas: 3
+                    lokiQuerierReplicas: 3
+                    lokiQueryFrontendReplicas: 3
+                    lokiQuerySchedulerReplicas: 2
+                    lokiIndexGatewayReplicas: 3
+                    lokiCompactorReplicas: 1
+                    lokiRulerReplicas: 1
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
                     lokiGarageEnabled: true
@@ -132,6 +132,14 @@ spec:
                     service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
                     service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
 
+                memberlist:
+                  service:
+                    annotations:
+                      service.cilium.io/global: 'true'
+                      service.cilium.io/global-sync-endpoint-slices: 'true'
+                      service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                      service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+
                 k8gb:
                   enabled: true
                   domain: 'gslb.mylogin.space'
@@ -150,6 +158,20 @@ spec:
                     podAnnotations:
                       secret.reloader.stakater.com/reload: 'loki-core,loki-core-s3-creds'
                   loki:
+                    memberlistConfig:
+                      cluster_label: 'core-observability-loki'
+                      join_members:
+                        - 'loki-core-memberlist.core-prod.svc.{{ .values.clusterDomain }}'
+                      zone_aware_routing:
+                        enabled: true
+                        instance_availability_zone: '{{ .values.region }}'
+                        role: 'member'
+                    commonConfig:
+                      replication_factor: 3
+                    ingester:
+                      zoneAwareReplication:
+                        enabled: true
+                        topologyKey: 'kubernetes.io/hostname'
                     storage:
                       s3:
                         region: 'garage'
@@ -160,6 +182,17 @@ spec:
                   deploymentMode: {{ .values.mode }}
                   global:
                     clusterDomain: {{ .values.clusterDomain }}
+
+                  rollout_operator:
+                    enabled: true
+
+                  memberlist:
+                    service:
+                      annotations:
+                        service.cilium.io/global: 'true'
+                        service.cilium.io/global-sync-endpoint-slices: 'true'
+                        service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                        service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
 
                   singleBinary:
                     replicas: {{ .values.lokiReplicas }}
