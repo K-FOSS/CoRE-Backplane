@@ -210,6 +210,17 @@ spec:
 
                 - name: core-home1-talos-prod
                   values:
+                    scrapeConfigs:
+                      - name: wan-gw2-node-exporter
+                        targets:
+                          - '10.1.20.21:9100'
+                        metricsPath: '/metrics'
+                        scheme: 'http'
+                        scrapeInterval: '30s'
+                        labels:
+                          site: 'home1'
+                          router: 'wan-gw2'
+                          role: 'wan-edge'
                     networks:
                       - name: wan-home
                         vlan: 150

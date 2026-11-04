@@ -50,6 +50,39 @@ policy before removing a lab.
 See [Virtual Machine operations](../../Operations/VirtualMachines/README.md)
 for the platform-level KubeVirt deployment.
 
+## DC1 WAN-RT1 infrastructure
+
+The production DC1/YXL router is documented in the [WAN-RT1 infrastructure
+guide](WAN-RT1.md). That guide records the current KubeVirt/Multus attachment
+model and the guest routing-plane invariants for the `dc1-k3s-node1` target.
+
+## YVR WAN gateway NAT snapshot
+
+The current Home1/YVR WAN router is documented in the [WAN-GW2 as-built
+reference](WAN-GW2.md). It records the live `wan-rt2` KubeVirt deployment and
+the supplied sanitized VyOS configuration, including the distinction between
+configured HA mechanisms and YVR's current single-online-router topology.
+
+The dated [YVR VyOS NAT snapshot](YVR-VyOS-NAT.md) documents the supplied
+configuration for one YVR WAN gateway. It is a point-in-time router reference,
+not a VM chart configuration or deployment manifest.
+
+### Routed service endpoints
+
+Lab clients and VMs that use the routed YVR service paths reach CoTURN at
+cluster IP `10.44.6.44` for TCP/UDP `3478` and `5349`, plus UDP relay ports
+`15000–15049`. RTPEngine is a separate endpoint at `10.44.4.82` for TCP and
+UDP ports `11000–11279`. These are cluster service and routed service targets,
+not VM guest addresses.
+
+The VyOS route output shows `10.44.4.0/22` as the cluster range, including
+both targets, and shows LAN-VRF address `10.1.20.21` on `dum10` and `dum1002`.
+For PNets clients, source NAT rules 55 and 54 translate matching CoTURN and
+RTPEngine traffic to `10.1.20.21`, respectively, so replies return through
+the VyOS routed path. See the [full YVR NAT snapshot](YVR-VyOS-NAT.md) and
+the [NATPuncher networking documentation](../../Network/NATPuncher/README.md)
+for the rule tables and current WAN matching.
+
 ## Values
 
 ### Global and compute defaults

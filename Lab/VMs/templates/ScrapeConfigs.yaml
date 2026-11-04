@@ -1,0 +1,26 @@
+{{- range $scrapeConfig := .Values.scrapeConfigs }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: ScrapeConfig
+metadata:
+  name: '{{ $scrapeConfig.name }}'
+spec:
+  staticConfigs:
+    - targets:
+        {{- range $target := $scrapeConfig.targets }}
+        - '{{ $target }}'
+        {{- end }}
+      {{- with $scrapeConfig.labels }}
+      labels:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+  {{- with $scrapeConfig.metricsPath }}
+  metricsPath: '{{ . }}'
+  {{- end }}
+  {{- with $scrapeConfig.scheme }}
+  scheme: '{{ . }}'
+  {{- end }}
+  {{- with $scrapeConfig.scrapeInterval }}
+  scrapeInterval: '{{ . }}'
+  {{- end }}
+---
+{{- end }}
