@@ -15,7 +15,12 @@ metadata:
     app.kubernetes.io/managed-by: 'alloy-operator'
 spec:
   alloy:
-{{ toYaml $instance.values.alloy | indent 4 }}
+{{- $alloyValues := omit $instance.values.alloy "configMap" }}
+{{ toYaml $alloyValues | indent 4 }}
+    configMap:
+      content: |
+{{- $configValues := dict "Values" (dict "destinations" $.Values.alloy.destinations "alloy" $instance.values.alloy) }}
+{{ tpl $instance.values.alloy.configMap.content $configValues | indent 8 }}
 {{- with $instance.values.configReloader }}
   configReloader:
 {{ toYaml . | indent 4 }}
