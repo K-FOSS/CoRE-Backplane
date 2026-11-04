@@ -143,6 +143,13 @@ spec:
                   gateway:
                     enabled: true
                     replicas: {{ .values.tempoGatewayReplicas }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '128Mi'
+                      limits:
+                        cpu: '1'
+                        memory: '512Mi'
                     autoscaling:
                       enabled: true
                       minReplicas: {{ .values.tempoGatewayReplicas }}
@@ -170,6 +177,13 @@ spec:
                       port: 3200
                   distributor:
                     replicas: {{ .values.tempoDistributorReplicas }}
+                    resources:
+                      requests:
+                        cpu: '250m'
+                        memory: '256Mi'
+                      limits:
+                        cpu: '2'
+                        memory: '1Gi'
                     autoscaling:
                       enabled: true
                       minReplicas: {{ .values.tempoDistributorReplicas }}
@@ -179,6 +193,13 @@ spec:
                     replicas: {{ .values.tempoIngesterReplicas }}
                   querier:
                     replicas: {{ .values.tempoQuerierReplicas }}
+                    resources:
+                      requests:
+                        cpu: '250m'
+                        memory: '256Mi'
+                      limits:
+                        cpu: '2'
+                        memory: '1Gi'
                     autoscaling:
                       enabled: true
                       minReplicas: {{ .values.tempoQuerierReplicas }}
@@ -186,6 +207,13 @@ spec:
                       targetCPUUtilizationPercentage: 60
                   queryFrontend:
                     replicas: {{ .values.tempoQueryFrontendReplicas }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '128Mi'
+                      limits:
+                        cpu: '1'
+                        memory: '512Mi'
                     autoscaling:
                       enabled: true
                       minReplicas: {{ .values.tempoQueryFrontendReplicas }}

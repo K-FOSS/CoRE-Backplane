@@ -162,16 +162,8 @@ spec:
                       cluster_label: 'core-observability-loki'
                       join_members:
                         - 'loki-core-memberlist.core-prod.svc.{{ .values.clusterDomain }}'
-                      zone_aware_routing:
-                        enabled: true
-                        instance_availability_zone: '{{ .values.region }}'
-                        role: 'member'
                     commonConfig:
                       replication_factor: 3
-                    ingester:
-                      zoneAwareReplication:
-                        enabled: true
-                        topologyKey: 'kubernetes.io/hostname'
                     storage:
                       s3:
                         region: 'garage'
@@ -214,6 +206,9 @@ spec:
                     replicas: {{ .values.lokiDistributorReplicas }}
                   ingester:
                     replicas: {{ .values.lokiIngesterReplicas }}
+                    zoneAwareReplication:
+                      enabled: true
+                      maxUnavailablePct: 33
                   querier:
                     replicas: {{ .values.lokiQuerierReplicas }}
                   queryFrontend:
