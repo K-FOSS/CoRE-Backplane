@@ -302,7 +302,8 @@ active-active querying, but classic Mimir performs synchronous replicated
 writes. A WAN partition or a site with insufficient healthy ingesters can lose
 the two-of-three write quorum; an `ACTIVE` ring member does not remove that
 constraint. The 80 ms RTT and 100 Mb/s uplink also make cross-site Push and
-memberlist traffic operationally significant. Keep this topology only while
+memberlist traffic operationally significant. The distributor downstream
+timeout is 30s for the YVR-to-YXL-only write path. Keep this topology only while
 the inter-site path is monitored and the write-error budget is acceptable.
 
 Option B—independent site-local Mimir installations—provides the cleanest site
