@@ -1,0 +1,51 @@
+{{- $instances := list
+  (dict "name" "alloy" "values" .Values.alloy)
+  (dict "name" "alloy-logs" "values" (index .Values "alloy-logs"))
+  (dict "name" "alloy-metrics" "values" (index .Values "alloy-metrics"))
+  (dict "name" "alloy-otlp" "values" (index .Values "alloy-otlp"))
+-}}
+{{- range $instance := $instances }}
+---
+apiVersion: collectors.grafana.com/v1alpha1
+kind: Alloy
+metadata:
+  name: '{{ $.Release.Name }}-{{ $instance.name }}'
+  labels:
+    app.kubernetes.io/part-of: 'core-observability-collectors'
+    app.kubernetes.io/managed-by: 'alloy-operator'
+spec:
+  alloy:
+{{ toYaml $instance.values.alloy | indent 4 }}
+{{- with $instance.values.configReloader }}
+  configReloader:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.controller }}
+  controller:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.extraEnv }}
+  extraEnv:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.extraPorts }}
+  extraPorts:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.rbac }}
+  rbac:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.serviceAccount }}
+  serviceAccount:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.service }}
+  service:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- with $instance.values.serviceMonitor }}
+  serviceMonitor:
+{{ toYaml . | indent 4 }}
+{{- end }}
+{{- end }}

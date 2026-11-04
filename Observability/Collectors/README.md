@@ -1,7 +1,9 @@
 # CoRE-Backplane Observability/Collectors Stack
 
-This chart deploys four [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
-roles and
+This chart defines four [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
+roles reconciled by the
+[Grafana Alloy Operator](https://github.com/grafana/alloy-operator), and
+optional
 optional [Vector](https://vector.dev/docs/setup/installation/package-managers/helm/)
 collectors. The
 [`core-observability-collectors` ApplicationSet](../../Apps/Observability/Collectors.yaml)
@@ -27,10 +29,9 @@ Three signal-specific DaemonSets run on every node:
   adds cluster and datacentre labels with
   [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/),
   converts them to OTLP, and sends them to the central Alloy OTLP/gRPC endpoint.
-- `alloy-metrics` uses
-  [`prometheus.exporter.unix`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.exporter.unix/)
-  against read-only host root, proc, and sys mounts and also scrapes its own
-  Alloy metrics.
+- `alloy-metrics` scrapes only its own Alloy metrics. Host metrics are owned by
+  the separate node-exporter DaemonSet; the duplicate Unix exporter is
+  disabled.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `internalTrafficPolicy: Local`.
 
@@ -41,7 +42,8 @@ ApplicationSet injects the exact central service FQDN, cluster, and datacentre
 values. The log DaemonSet sends no Loki requests and needs no Loki URL or tenant
 ID; central Alloy alone owns backend tenant selection and writes.
 
-`alloy` is a three-replica StatefulSet with a PodDisruptionBudget. It owns
+The central `Alloy` custom resource reconciles to a three-replica StatefulSet
+with a PodDisruptionBudget. It owns
 only cluster-wide metrics discovery, backend writers, OTLP gateway processing,
 the Vector-specific infrastructure OTLP receiver, and compatibility Jaeger
 receivers. All cluster-wide scrape components opt
