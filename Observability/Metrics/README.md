@@ -135,6 +135,14 @@ for ruler rules rather than the exporter-owned rulefiles ConfigMap. See the
 upstream [ruler storage documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/)
 and [object-storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
 
+The ruler also loads the site-independent `cluster-resource-usage` recording
+group from `core-mimir-cluster-resource-rules`. It publishes
+`cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m`
+and `cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum`,
+both grouped by `cluster`, for dashboards and alerts. The file is mounted into
+both site rulers and uses the shared ruler ring so only the owning ruler
+evaluates the group. See Grafana's [ruler recording rules documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/).
+
 Before reconciliation, compare the rendered `core-mimir-config` and ruler
 volume mounts with DC1. Reverting to the single-binary storage prefix or tenant
 settings changes which existing objects and series are visible; it is not a

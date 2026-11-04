@@ -1,0 +1,20 @@
+{{- if index .Values "mimir-distributed" "enabled" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'core-mimir-cluster-resource-rules'
+  labels:
+    app.kubernetes.io/name: 'mimir'
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+    app.kubernetes.io/component: 'ruler'
+data:
+  cluster-resource.rules.yaml: |
+    groups:
+      - name: 'cluster-resource-usage'
+        interval: 1m
+        rules:
+          - record: 'cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
+            expr: 'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m) by (cluster)'
+          - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
+            expr: 'sum(node_namespace_pod_container:container_memory_working_set_bytes) by (cluster)'
+{{- end }}
