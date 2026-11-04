@@ -125,6 +125,12 @@ alloy-logs:
     automountServiceAccountToken: false
   service:
     enabled: false
+  controller:
+    tolerations:
+    - key: 'load'
+      operator: 'Equal'
+      value: 'testing'
+      effect: 'NoSchedule'
 
 alloy-metrics:
   crds:
@@ -201,6 +207,12 @@ alloy-metrics:
     automountServiceAccountToken: true
   service:
     enabled: false
+  controller:
+    tolerations:
+    - key: 'load'
+      operator: 'Equal'
+      value: 'testing'
+      effect: 'NoSchedule'
 
 alloy-otlp:
   crds:
@@ -280,6 +292,12 @@ alloy-otlp:
   service:
     internalTrafficPolicy: Cluster
     trafficDistribution: PreferClose
+  controller:
+    tolerations:
+    - key: 'load'
+      operator: 'Equal'
+      value: 'testing'
+      effect: 'NoSchedule'
 alloy-services:
   crds:
     create: false
