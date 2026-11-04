@@ -26,7 +26,7 @@ buckets/key through the User Composition.
 
 ## Garage cluster and data flow
 
-The chart creates a three-replica Garage storage cluster with replication
+The chart creates a three-replica Auto-managed Garage storage cluster with replication
 factor `3`. Each Garage node requests a `20Gi` Longhorn data PVC and a `2Gi`
 metadata PVC. The data StorageClass uses one Longhorn replica so Garage's
 three object copies provide the data replication; the metadata class uses two
@@ -139,6 +139,23 @@ listener or the local site route according to the rendered ApplicationSet
 values. Both endpoints address the federated bucket namespace. A local
 endpoint outage must fail over to the other site's routable Garage endpoint
 without changing bucket names, prefixes, tenant IDs, or credentials.
+
+The inter-site network is asymmetric: YVR has materially less outbound
+capacity than YXL, while normal reachability and YXL ingress/egress are good.
+This is a design constraint, not a value to encode in manifests. Keep
+telemetry ingestion, processing, reads, and temporary working state local to
+the active site. Do not synchronously send a second copy of logs, metrics, or
+traces from the application rings across the WAN. Garage remains responsible
+for the durable cross-site copy; its replication, repair, and backlog metrics
+must be monitored and rate-limited so YVR egress pressure cannot destabilize
+collectors or backend write paths.
+
+Failover should prefer YXL for sustained high-volume recovery traffic when YVR
+egress is congested, while retaining local-preferred routing during normal
+operation. Control-plane coordination, Consul/Redis/EventStream traffic, and
+Garage RPC must use bounded timeouts, retries with backoff, and circuit
+breaking. A WAN degradation is not a reason to increase Loki, Mimir, or Tempo
+replication factors.
 
 Do not infer replication from a successful S3 connection alone. Before a
 topology or credential change, verify the YXL writer, YVR follower, remote

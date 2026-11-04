@@ -285,7 +285,9 @@ could select only one live replica and Alloy received HTTP 500 responses. After
 the qualified token paths rolled out, the ring reported token ownership across
 multiple ingesters and Alloy's errors changed from quorum failures to transient
 cross-site request deadlines. The distributor downstream timeout is now 10s to
-accommodate the approximately 80ms inter-site path and WAL/compaction work.
+accommodate the observed inter-site path and WAL/compaction work. This timeout
+is not a substitute for WAN backpressure: the YVR egress constraint is one
+reason the target design removes synchronous cross-site ingester replication.
 
 Zone-aware ring replication is currently enabled with the ApplicationSet
 region as the availability zone: `yvr` and `yxl` are separate Mimir zones.

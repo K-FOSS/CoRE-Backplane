@@ -57,8 +57,9 @@ failure domains. These are access-path differences, not separate buckets.
 Failover therefore preserves bucket names, prefixes, tenant IDs, and object
 ownership. The [Common stack guide](Common/README.md#shared-buckets-across-sites)
 documents the writer/follower layout, replication contract, and recovery
-checks. Historical MinIO data remains a separate recovery source and is not
-implicitly copied into Garage.
+checks, including the asymmetric inter-site capacity policy. Historical MinIO
+data remains a separate recovery source and is not implicitly copied into
+Garage.
 
 Collectors add cluster and datacentre labels using values injected by their
 ApplicationSet. Loki pods carry the `logs=loki-myloginspace` label, which is
