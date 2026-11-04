@@ -34,7 +34,9 @@ Three signal-specific DaemonSets run on every node:
   the separate node-exporter DaemonSet; the duplicate Unix exporter is
   disabled.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
-  Service with `internalTrafficPolicy: Local`.
+  Service with `trafficDistribution: PreferClose`; it prefers the local
+  node's receiver and fails over to another receiver when the local one is
+  unavailable.
 
 The logs, metrics, and OTLP DaemonSets batch their signals and use
 [`otelcol.exporter.otlp`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlp/)
@@ -44,6 +46,12 @@ and cross-node failover. The root ApplicationSet injects the exact service FQDN,
 cluster, and datacentre values. The log DaemonSet sends no Loki requests and
 needs no Loki URL or tenant ID; central Alloy alone owns backend tenant
 selection and writes.
+
+The endpoint is role-specific: the logs, metrics, services, and Vector agents
+send to the node-local `*-collectors-alloy-otlp` Service, while the OTLP
+DaemonSet forwards its received signals to the three-replica central
+`*-collectors-alloy` Service. Keeping those endpoints distinct prevents the
+node-local receiver from forwarding telemetry back to itself.
 
 Mimir and Grafana also send traces to this same OTLP receiver. The receiver
 forwards them to the central Alloy processing gateway, which enriches and
