@@ -508,19 +508,97 @@ spec:
                       group: apps
                       version: v1
                       kind: Deployment
-                      name: 'core-mimir-.*'
-
+                      name: 'core-mimir-distributor'
                     patch: |-
                       - op: add
                         path: /spec/revisionHistoryLimit
                         value: 3
-
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-nginx'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-overrides-exporter'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-querier'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-query-frontend'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-query-scheduler'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      name: 'core-mimir-ruler'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
                   - target:
                       group: apps
                       version: v1
                       kind: StatefulSet
-                      name: 'core-mimir-.*'
-
+                      name: 'core-mimir-alertmanager'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: StatefulSet
+                      name: 'core-mimir-compactor'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: StatefulSet
+                      name: 'core-mimir-ingester'
+                    patch: |-
+                      - op: add
+                        path: /spec/revisionHistoryLimit
+                        value: 3
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: StatefulSet
+                      name: 'core-mimir-store-gateway'
                     patch: |-
                       - op: add
                         path: /spec/revisionHistoryLimit
