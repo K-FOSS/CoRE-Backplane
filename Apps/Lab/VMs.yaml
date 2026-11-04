@@ -559,6 +559,11 @@ spec:
                 {{ nindent 2 (toYaml .values.networks) }}
                 {{- end }}
 
+                {{- if .values.scrapeConfigs }}
+                scrapeConfigs:
+                {{ nindent 2 (toYaml .values.scrapeConfigs) }}
+                {{- end }}
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
