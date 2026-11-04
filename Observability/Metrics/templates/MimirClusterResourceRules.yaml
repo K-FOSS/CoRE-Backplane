@@ -17,4 +17,6 @@ data:
             expr: 'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m) by (cluster)'
           - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
             expr: 'sum(node_namespace_pod_container:container_memory_working_set_bytes) by (cluster)'
+          - record: 'cluster:container_memory_rss:sum'
+            expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}))'
 {{- end }}

@@ -141,7 +141,11 @@ group from `core-mimir-cluster-resource-rules`. It publishes
 and `cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum`,
 both grouped by `cluster`, for dashboards and alerts. The file is mounted into
 both site rulers and uses the shared ruler ring so only the owning ruler
-evaluates the group. See Grafana's [ruler recording rules documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/).
+evaluates the group. It also publishes the deduplicated
+`cluster:container_memory_rss:sum` series by taking the maximum RSS value per
+`cluster`, namespace, pod, and container before summing. This avoids counting
+the same container twice if an additional scrape path introduces duplicate
+series. See Grafana's [ruler recording rules documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/).
 
 Before reconciliation, compare the rendered `core-mimir-config` and ruler
 volume mounts with DC1. Reverting to the single-binary storage prefix or tenant
