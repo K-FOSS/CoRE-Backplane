@@ -49,10 +49,21 @@ into Alloy clustering, so a target is assigned to one healthy peer rather
 than scraped by every replica.
 The StatefulSet gives peers stable identities and follows Grafana's
 [Kubernetes clustering guidance](https://grafana.com/docs/alloy/latest/configure/clustering/).
+For Home1, the ApplicationSet injects required node affinity excluding `hpc3`
+from this central StatefulSet. Its three replicas can run on the other Ready
+nodes; the node-local Alloy DaemonSets continue collecting on `hpc3`.
 The existing `*-collectors-alloy` Service identity is preserved for clients.
 Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
+
+Kubelet/cAdvisor metrics are scraped directly from every Kubernetes node by
+the clustered central Alloy StatefulSet. The exporter chart's kubelet
+ServiceMonitor is disabled because its headless-Service path was only
+producing one kubelet endpoint per cluster. See Grafana's
+[Kubernetes discovery](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.kubernetes/)
+and [Prometheus scrape](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.scrape/)
+documentation for the node discovery and TLS/token configuration.
 
 The central StatefulSet receives OTLP telemetry from all signal DaemonSets.
 For pod logs, `loki.source.kubernetes` sends selected entries through

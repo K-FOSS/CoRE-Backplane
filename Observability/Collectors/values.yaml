@@ -285,6 +285,51 @@ alloy:
           role = "service"
         }
 
+        // Scrape every node directly. The kubelet ServiceMonitor is disabled
+        // because the headless Service path was resolving to only one node in
+        // the Alloy target set.
+        discovery.kubernetes "nodes" {
+          role = "node"
+        }
+
+        discovery.relabel "kubelet_cadvisor" {
+          targets = discovery.kubernetes.nodes.targets
+
+          rule {
+            source_labels = ["__meta_kubernetes_node_address_InternalIP"]
+            regex = "(.+)"
+            replacement = "$1:10250"
+            target_label = "__address__"
+          }
+
+          rule {
+            target_label = "__metrics_path__"
+            replacement = "/metrics/cadvisor"
+          }
+
+          rule {
+            target_label = "job"
+            replacement = "kubelet"
+          }
+        }
+
+        prometheus.scrape "kubelet_cadvisor" {
+          targets = discovery.relabel.kubelet_cadvisor.output
+          scheme = "https"
+          scrape_interval = "30s"
+          bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+          tls_config {
+            insecure_skip_verify = true
+          }
+
+          clustering {
+            enabled = true
+          }
+
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
         // Backend writers remain centralized so node agents carry no backend
         // addresses or credentials.
         loki.write "loki" {
