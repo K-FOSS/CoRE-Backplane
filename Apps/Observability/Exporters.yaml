@@ -20,16 +20,19 @@ spec:
                   values:
                     hub: false
                     gpuExportersEnabled: true
+                    smartctlDeviceExclude: '/dev/sd[b-z].*'
 
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
                     gpuExportersEnabled: false
+                    smartctlDeviceExclude: ''
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
                     gpuExportersEnabled: false
+                    smartctlDeviceExclude: ''
           - clusters:
               selector:
                 matchLabels:
@@ -83,6 +86,10 @@ spec:
 
                 dcgm-exporter:
                   enabled: {{ .values.gpuExportersEnabled }}
+
+                prometheus-smartctl-exporter:
+                  config:
+                    device_exclude: '{{ .values.smartctlDeviceExclude }}'
 
       destination:
         server: '{{ .server }}'
