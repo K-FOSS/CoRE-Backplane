@@ -7,15 +7,17 @@ data:
   import.py: |-
     #!/usr/bin/env python3
     import json
+    import hashlib
     import os
     from pathlib import Path
     from urllib.error import HTTPError
-    from urllib.parse import quote
+    from urllib.parse import quote, urlencode
     from urllib.request import Request, urlopen
 
     ROOT = Path(os.environ['FOLDER'])
     GRAFANA_URL = os.environ['GRAFANA_URL'].rstrip('/')
     token = os.environ['GRAFANA_TOKEN']
+    FOLDER_API = '/apis/folder.grafana.app/v1/namespaces/default/folders'
 
     def request(method, path, payload=None):
         body = None
@@ -33,15 +35,49 @@ data:
     def folder_uid(folder):
         if not folder:
             return None
-        encoded = quote(folder, safe='')
+        folders = []
+        continuation = None
+        while True:
+            query = {'limit': '1000'}
+            if continuation:
+                query['continue'] = continuation
+            path = f'{FOLDER_API}?{urlencode(query)}'
+            _, result = request('GET', path)
+            folders.extend(result.get('items', []))
+            continuation = result.get('metadata', {}).get('continue')
+            if not continuation:
+                break
+
+        matches = [
+            item for item in folders
+            if item.get('spec', {}).get('title') == folder
+        ]
+        if matches:
+            # Prefer the newest existing folder while duplicate folders are
+            # being consolidated manually. This avoids moving dashboards on
+            # every sync while preserving the current active folder.
+            match = max(
+                matches,
+                key=lambda item: item.get('metadata', {}).get(
+                    'creationTimestamp', ''
+                ),
+            )
+            return match['metadata']['name']
+
+        stable_uid = f'sync-{hashlib.sha256(folder.encode()).hexdigest()[:12]}'
+        payload = {
+            'metadata': {'name': stable_uid},
+            'spec': {'title': folder},
+        }
         try:
-            _, result = request('GET', f'/api/folders/name/{encoded}')
-            return result['uid']
+            _, result = request('POST', FOLDER_API, payload)
+            return result['metadata']['name']
         except HTTPError as error:
-            if error.code != 404:
+            if error.code != 409:
                 raise
-        _, result = request('POST', '/api/folders', {'title': folder})
-        return result['uid']
+            # Another cluster-local syncer may have created the same folder.
+            _, result = request('GET', f'{FOLDER_API}/{quote(stable_uid, safe="")}')
+            return result['metadata']['name']
 
     dashboard_paths = sorted(path for path in ROOT.rglob('*') if path.is_file())
     for dashboard_path in dashboard_paths:
