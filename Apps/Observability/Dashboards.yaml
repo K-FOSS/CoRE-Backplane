@@ -43,6 +43,7 @@ spec:
                 environment: 'prod'
                 clusterDomain: '{{ index .metadata.labels "cluster.kubernetes.io/domain" }}'
                 tenant: '{{ index .metadata.labels "mylogin.space/tenant" }}'
+                orgId: '{{ index .metadata.labels "mylogin.space/tenant" | trimSuffix ".mylogin.space" }}'
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
@@ -90,7 +91,7 @@ spec:
 
                   grafana.ini:
                     tracing.opentelemetry.otlp:
-                      address: '{{ .values.clusterName }}-collectors-alloy.core-prod.svc.{{ .values.clusterDomain }}:4317'
+                      address: '{{ .values.orgId }}-collectors-alloy-otlp.core-prod.svc.{{ .values.clusterDomain }}:4317'
                       propagation: 'w3c'
                       sampler_type: 'probabilistic'
                       sampler_param: 0.1

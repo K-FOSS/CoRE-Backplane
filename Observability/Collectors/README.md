@@ -28,7 +28,8 @@ Three signal-specific DaemonSets run on every node:
   [`discovery.relabel`](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.relabel/),
   adds cluster and datacentre labels with
   [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/),
-  converts them to OTLP, and sends them to the central Alloy OTLP/gRPC endpoint.
+  converts them to OTLP, and sends them to the node-local-preferred Alloy
+  OTLP/gRPC receiver.
 - `alloy-metrics` scrapes only its own Alloy metrics. Host metrics are owned by
   the separate node-exporter DaemonSet; the duplicate Unix exporter is
   disabled.
@@ -37,10 +38,19 @@ Three signal-specific DaemonSets run on every node:
 
 The logs, metrics, and OTLP DaemonSets batch their signals and use
 [`otelcol.exporter.otlp`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlp/)
-over plaintext OTLP/gRPC to the existing `*-collectors-alloy` Service. The root
-ApplicationSet injects the exact central service FQDN, cluster, and datacentre
-values. The log DaemonSet sends no Loki requests and needs no Loki URL or tenant
-ID; central Alloy alone owns backend tenant selection and writes.
+over plaintext OTLP/gRPC to the node-local-preferred `*-collectors-alloy-otlp`
+Service. The Service uses Kubernetes traffic distribution for local delivery
+and cross-node failover. The root ApplicationSet injects the exact service FQDN,
+cluster, and datacentre values. The log DaemonSet sends no Loki requests and
+needs no Loki URL or tenant ID; central Alloy alone owns backend tenant
+selection and writes.
+
+Mimir and Grafana also send traces to this same OTLP receiver. The receiver
+forwards them to the central Alloy processing gateway, which enriches and
+ships traces to Tempo. See Grafana's
+[OTLP receiver](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.otlp/)
+and [Kubernetes service traffic distribution](https://kubernetes.io/docs/reference/networking/virtual-ips/#traffic-distribution)
+documentation.
 
 The central `Alloy` custom resource reconciles to a three-replica StatefulSet
 with a PodDisruptionBudget. It owns
