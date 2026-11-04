@@ -34,9 +34,9 @@ path together before reconciliation.
 The `User` claim provisions the `tempo-traces` bucket and writes the stable
 `tempo-core` connection Secret plus `tempo-core-s3-creds`. Both sites use a
 Garage service account and their local Garage S3 endpoint. YXL owns bucket
-creation; YVR uses the YXL Garage credentials handle and the local
-`observability-garage` S3 listener on port `3900` without creating a second
-bucket. The YVR connection uses HTTP within the cluster. Tempo expands the
+creation; YVR uses its local `observability-garage` Garage cluster and S3
+listener on port `3900` without creating a second bucket. The YVR connection
+uses HTTP within the cluster. Tempo expands the
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, and `S3_SECRET_ACCESS_KEY` environment variables at runtime;
 secret values are never stored in Git. The ApplicationSet escapes the leading
 `$` so Argo CD preserves these references for Tempo instead of expanding them

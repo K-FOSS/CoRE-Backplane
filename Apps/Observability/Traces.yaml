@@ -111,7 +111,7 @@ spec:
 
                 garage:
                   enabled: {{ .values.tempoGarageEnabled }}
-                  clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl-credentials{{ else }}observability-garage{{ end }}'
+                  clusterName: 'observability-garage'
                   endpoint: '{{ if eq .values.region "yvr" }}http://observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else }}https://observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ end }}'
                   createBuckets: {{ if eq .values.region "yvr" }}false{{ else }}true{{ end }}
                   bucket: 'tempo-traces'
