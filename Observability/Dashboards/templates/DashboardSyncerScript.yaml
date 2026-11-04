@@ -108,6 +108,23 @@ data:
                 if panel.get('targets'):
                     panel['interval'] = '15s'
                     panel['intervalFactor'] = 1
+        if dashboard.get('uid') in {
+            'ffcd83628d7d4b5a03d1cafd159e6c9c',
+            '8280707b8f16e7b87b840fc1cc92d4c5',
+        }:
+            # The upstream Mimir dashboards use $__all as the default
+            # namespace value while leaving includeAll disabled. Grafana
+            # then expands an unselected namespace into an empty-compatible
+            # matcher, which newer Mimir rejects. Keep the upstream dashboard
+            # structure but make the All selection explicit and non-empty.
+            for variable in dashboard.get('templating', {}).get('list', []):
+                if variable.get('name') in {'cluster', 'namespace'}:
+                    variable['includeAll'] = True
+                    variable['allValue'] = '.+'
+                    variable['current'] = {
+                        'text': 'All',
+                        'value': ['$__all'],
+                    }
         dashboard.pop('id', None)
         relative_parent = dashboard_path.parent.relative_to(ROOT)
         folder = '' if str(relative_parent) == '.' else str(relative_parent)
