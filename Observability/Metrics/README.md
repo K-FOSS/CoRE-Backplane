@@ -272,7 +272,13 @@ configured replication quorum across those zones. Memberlist remains the
 shared discovery and KV transport. Because this topology has two zones and a
 replication factor of three, validate quorum behavior during a site outage;
 this is not three-zone failure tolerance. See Grafana's [Mimir zone-awareness configuration](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
-for the component-specific settings.
+for the component-specific settings. Each site also runs two unprivileged
+`memberlist-kv` bridge Pods, labelled `memberlist-bridge`, so the experimental
+memberlist zone-aware routing does not auto-fail over when gossip crosses the
+YVR/YXL boundary. The bridge process is a discovery/KV member only; it does not
+join an application ring. See Grafana's [memberlist zone-aware routing
+runbook](https://grafana.com/docs/mimir/latest/manage/mimir-runbooks/#mirmemberlistbridgezoneunavailable)
+for the required healthy bridge per zone.
 
 ### Ring and ingestion verification
 
