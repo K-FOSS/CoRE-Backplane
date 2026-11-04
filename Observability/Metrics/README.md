@@ -295,6 +295,34 @@ errors, ingester WAL replay duration, and the
 An `ACTIVE` member with zero tokens or repeated cross-site Push RPC failures is
 an alert condition even when Kubernetes reports the pod ready.
 
+### Architecture assessment and recovery
+
+Option A, the current shared ring, is supported and is the smallest change for
+active-active querying, but classic Mimir performs synchronous replicated
+writes. A WAN partition or a site with insufficient healthy ingesters can lose
+the two-of-three write quorum; an `ACTIVE` ring member does not remove that
+constraint. The 80 ms RTT and 100 Mb/s uplink also make cross-site Push and
+memberlist traffic operationally significant. Keep this topology only while
+the inter-site path is monitored and the write-error budget is acceptable.
+
+Option B—independent site-local Mimir installations—provides the cleanest site
+failure isolation but requires a supported global query/federation layer and a
+deliberate historical-data and HA-deduplication plan. It is not a drop-in
+replacement for the current shared tenant and should be designed separately.
+
+Option C—site-local ingestion with a shared long-term-storage/query design—can
+reduce synchronous WAN write pressure, but it requires validating the exact
+Mimir architecture and object-store consistency model before migration. It is
+not enabled by this repair. The recommended near-term posture is to retain
+Option A, validate it under a controlled single-ingester restart, and plan
+Option B or C if WAN partitions or sustained Push deadlines continue.
+
+Rollback of this repair is limited to reverting the Git commit and allowing a
+controlled distributor/ingester rollout. Do not remove the site-qualified
+token files, delete PVCs, or force ring-member removal as a rollback step. The
+old `/data/tokens` files and Garage objects remain available for a separately
+planned recovery or migration.
+
 For a non-destructive validation, query the same tenant through the local
 `core-mimir` Service from each site, then repeat after one ingester restart in
 only one site. Do not delete PVCs or clear the old token files. Site-wide
