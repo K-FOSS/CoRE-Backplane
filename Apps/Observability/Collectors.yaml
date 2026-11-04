@@ -148,7 +148,7 @@ spec:
                         value: '{{ .values.region }}'
 
                       - name: OTLP_ENDPOINT
-                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                      value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                   rbac:
                     create: {{ .values.podLogsEnabled }}
@@ -165,13 +165,13 @@ spec:
                         value: '{{ .values.clusterName }}'
 
                       - name: OTLP_ENDPOINT
-                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                        value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                 alloy-otlp:
                   alloy:
                     extraEnv:
                       - name: OTLP_ENDPOINT
-                        value: '{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                        value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                 vector:
                   enabled: {{ .values.vectorEnabled }}
@@ -184,7 +184,7 @@ spec:
                       value: '{{ .values.datacenter }}'
 
                     - name: VECTOR_OTLP_LOGS_ENDPOINT
-                      value: 'http://{{ .values.clusterName }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4328/v1/logs'
+                      value: 'http://{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4328/v1/logs'
 
       destination:
         server: '{{ .server }}'
