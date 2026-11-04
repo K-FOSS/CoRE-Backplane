@@ -662,8 +662,33 @@ alloy:
 
           output {
             traces  = [otelcol.processor.batch.gateway.input]
-            metrics = [otelcol.processor.batch.gateway.input]
+            metrics = [otelcol.processor.transform.metrics_metadata.input]
             logs     = [otelcol.processor.batch.gateway.input]
+          }
+        }
+
+        // Keep the standard Prometheus label names used by Grafana's
+        // Kubernetes dashboards while retaining the full k8s.* resource
+        // attributes on OTLP logs and traces.
+        otelcol.processor.transform "metrics_metadata" {
+          error_mode = "ignore"
+
+          metric_statements {
+            context = "datapoint"
+            statements = [
+              `set(attributes["namespace"], resource.attributes["k8s.namespace.name"]) where resource.attributes["k8s.namespace.name"] != nil`,
+              `set(attributes["pod"], resource.attributes["k8s.pod.name"]) where resource.attributes["k8s.pod.name"] != nil`,
+              `set(attributes["container"], resource.attributes["k8s.container.name"]) where resource.attributes["k8s.container.name"] != nil`,
+              `set(attributes["node"], resource.attributes["k8s.node.name"]) where resource.attributes["k8s.node.name"] != nil`,
+              `set(attributes["deployment"], resource.attributes["k8s.deployment.name"]) where resource.attributes["k8s.deployment.name"] != nil`,
+              `set(attributes["statefulset"], resource.attributes["k8s.statefulset.name"]) where resource.attributes["k8s.statefulset.name"] != nil`,
+              `set(attributes["daemonset"], resource.attributes["k8s.daemonset.name"]) where resource.attributes["k8s.daemonset.name"] != nil`,
+              `set(attributes["cluster"], resource.attributes["k8s.cluster.name"]) where resource.attributes["k8s.cluster.name"] != nil`,
+            ]
+          }
+
+          output {
+            metrics = [otelcol.processor.batch.gateway.input]
           }
         }
 
