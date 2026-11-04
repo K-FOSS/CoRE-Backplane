@@ -265,12 +265,13 @@ multiple ingesters and Alloy's errors changed from quorum failures to transient
 cross-site request deadlines. The distributor downstream timeout is now 10s to
 accommodate the approximately 80ms inter-site path and WAL/compaction work.
 
-Zone-aware ring replication remains disabled. The current topology has no
-ingesters in YVR and fewer than three eligible failure zones for the configured
-replication factor, so enabling it causes Mimir to reject writes that require
-replicas in distinct zones. Memberlist remains the shared discovery and KV
-transport. Enable zone-aware rings only after the topology provides the
-required ingester zones and quorum; see Grafana's [Mimir zone-awareness configuration](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
+Zone-aware ring replication is enabled with the ApplicationSet region as the
+availability zone: `yvr` and `yxl` are separate Mimir zones. Both site-local
+Mimir instances run ingesters so the shared memberlist ring can satisfy the
+configured replication quorum across those zones. Memberlist remains the
+shared discovery and KV transport. Because this topology has two zones and a
+replication factor of three, validate quorum behavior during a site outage;
+this is not three-zone failure tolerance. See Grafana's [Mimir zone-awareness configuration](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
 for the component-specific settings.
 
 ### Ring and ingestion verification

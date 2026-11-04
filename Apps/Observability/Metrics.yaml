@@ -234,6 +234,8 @@ spec:
                   alertmanager:
                     extraArgs:
                       alertmanager.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-alertmanager-$(HOSTNAME)'
+                      alertmanager.sharding-ring.zone-awareness-enabled: 'true'
+                      alertmanager.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                   rollout_operator:
                     enabled: false
                   global:
@@ -304,14 +306,18 @@ spec:
                     replicas: 3
                     extraArgs:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
+                      ingester.ring.zone-awareness-enabled: 'true'
+                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
                     podAnnotations:
                       core.mylogin.space/config-revision: '5018cce4b'
                   ingester:
-                    enabled: {{ if eq .values.region "yvr" }}false{{ else }}true{{ end }}
+                    enabled: true
                     replicas: 3
                     extraArgs:
                       ingester.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
                       ingester.ring.tokens-file-path: '/data/tokens-{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
+                      ingester.ring.zone-awareness-enabled: 'true'
+                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
                     topologySpreadConstraints:
                       maxSkew: 1
                       topologyKey: 'kubernetes.io/hostname'
@@ -338,6 +344,10 @@ spec:
                     replicas: 3
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
+                      ingester.ring.zone-awareness-enabled: 'true'
+                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
+                      store-gateway.sharding-ring.zone-awareness-enabled: 'true'
+                      store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                   query_frontend:
                     replicas: 3
                   query_scheduler:
@@ -348,6 +358,8 @@ spec:
                     replicas: 3
                     extraArgs:
                       store-gateway.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-store-gateway-$(HOSTNAME)'
+                      store-gateway.sharding-ring.zone-awareness-enabled: 'true'
+                      store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                     zoneAwareReplication:
                       enabled: false
                     persistentVolume:
@@ -377,6 +389,10 @@ spec:
                     replicas: 1
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
+                      ingester.ring.zone-awareness-enabled: 'true'
+                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
+                      store-gateway.sharding-ring.zone-awareness-enabled: 'true'
+                      store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                     extraVolumes:
                       - name: rulefiles
                         configMap:
