@@ -126,6 +126,23 @@ it as the Loki tenant ID and Mimir `X-Scope-OrgID`. The central Alloy Service
 accepts OTLP/gRPC from trusted in-cluster agents and no longer exposes a Loki
 push API. Loki backend URLs and tenant selection remain only in central Alloy.
 
+The collector data plane is site-local by default. Node-local Alloy agents send
+to the local processing/OTLP tier, and that tier sends to the local Mimir, Loki,
+and Tempo client Services. Those client Services may be Cilium Global Services
+so an outage can move the active write path to the other site; they are a
+routing and failover mechanism, not a request to duplicate telemetry at both
+backend rings. The intended steady state has one active backend write site for
+a tenant, with Garage's shared federated buckets providing the cross-site
+durable copy. Alloy must not fan out the same logs, metrics, or traces to both
+YXL and YVR merely because both endpoints are reachable.
+
+During a site transition, drain or fence the old processing and backend
+writers before enabling the remote path, preserve the same tenant and resource
+labels, and verify that the new site reads the existing Garage buckets. HA
+scrape deduplication remains a Mimir concern for replicas within the active
+collection path; it is not a substitute for writer fencing between independent
+site-local backend rings.
+
 Central Kubernetes enrichment first associates logs by the original source
 pod's `k8s.pod.uid` resource attribute, then falls back to the incoming
 connection for other telemetry that lacks a pod UID. This prevents forwarded

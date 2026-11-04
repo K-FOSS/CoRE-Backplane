@@ -13,8 +13,10 @@ The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metri
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
 site identity. Both sites enable the distributed implementation and use their
 local Garage S3 endpoint. The global `core-mimir` Service keeps client traffic
-site-local where possible, while the global memberlist Service joins both
-Mimir rings into one logical active-active ring. Distributors,
+site-local where possible. The current deployment also joins both Mimir sites
+through one global memberlist ring and uses ingester replication across YXL/YVR;
+that is retained as a migration state, not the target storage design.
+Distributors,
 ingesters, queriers, query frontends, query schedulers, store-gateways,
 compactor, ruler, Alertmanager and the NGINX gateway run as separate upstream
 chart workloads. Three YXL ingesters receive Prometheus remote write, keep
@@ -82,11 +84,12 @@ routes traffic to Garage's HTTP S3 listener. Garage itself is owned by the
 applications before Metrics so the Garage CRDs and cluster exist first.
 
 YXL and YVR select `mimir.storage.backend: 'garage'` and use the local Garage
-buckets. Historical blocks and Alertmanager objects in MinIO are not copied or
-read by the new backend; they remain in MinIO with the existing MinIO `User`
-claim, buckets, and credentials for possible recovery. This change does not
-delete those resources. The GarageKey has only read/write rights to the two
-Mimir buckets and cannot administer the Garage cluster. Mimir's MinIO
+endpoints for the same federated buckets. Historical blocks and Alertmanager
+objects in MinIO are not copied or read by the new backend; they remain in
+MinIO with the existing MinIO `User` claim, buckets, and credentials for
+possible recovery. This change does not delete those resources. The GarageKey
+has only read/write rights to the three Mimir buckets and cannot administer the
+Garage cluster. Mimir's MinIO
 `User`-based LDAP credential workflow remains provisioned but is unused by the
 Garage client; the operator supplies its separate static GarageKey.
 
@@ -284,20 +287,17 @@ multiple ingesters and Alloy's errors changed from quorum failures to transient
 cross-site request deadlines. The distributor downstream timeout is now 10s to
 accommodate the approximately 80ms inter-site path and WAL/compaction work.
 
-Zone-aware ring replication is enabled with the ApplicationSet region as the
-availability zone: `yvr` and `yxl` are separate Mimir zones. Both site-local
-Mimir instances run ingesters so the shared memberlist ring can satisfy the
-configured replication quorum across those zones. Memberlist remains the
-shared discovery and KV transport. Because this topology has two zones and a
-replication factor of three, validate quorum behavior during a site outage;
-this is not three-zone failure tolerance. See Grafana's [Mimir zone-awareness configuration](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/)
-for the component-specific settings. Each site also runs two unprivileged
-`memberlist-kv` bridge Pods, labelled `memberlist-bridge`, so the experimental
-memberlist zone-aware routing does not auto-fail over when gossip crosses the
-YVR/YXL boundary. The bridge process is a discovery/KV member only; it does not
-join an application ring. See Grafana's [memberlist zone-aware routing
-runbook](https://grafana.com/docs/mimir/latest/manage/mimir-runbooks/#mirmemberlistbridgezoneunavailable)
-for the required healthy bridge per zone.
+Zone-aware ring replication is currently enabled with the ApplicationSet
+region as the availability zone: `yvr` and `yxl` are separate Mimir zones.
+That makes the Mimir ring, rather than Garage, responsible for cross-site hot
+data replication. The target design disables cross-site Mimir ring
+replication, keeps memberlist and ingester rings site-local, and uses local
+ring replication only for intra-site pod failure. Garage's federated
+`mimir-blocks`, `mimir-alertmanager`, and `mimir-ruler` buckets provide the
+cross-site durability layer. The global `core-mimir` client Service remains
+the site-level failover mechanism; it must steer writers to one active site at
+a time so two independent classic Mimir writers do not race over shared
+compactor/ruler state.
 
 ### Ring and ingestion verification
 
@@ -324,26 +324,24 @@ an alert condition even when Kubernetes reports the pod ready.
 
 ### Architecture assessment and recovery
 
-Option A, the current shared ring, is supported and is the smallest change for
-active-active querying, but classic Mimir performs synchronous replicated
-writes. A WAN partition or a site with insufficient healthy ingesters can lose
-the two-of-three write quorum; an `ACTIVE` ring member does not remove that
-constraint. The 80 ms RTT and 100 Mb/s uplink also make cross-site Push and
-memberlist traffic operationally significant. The distributor downstream
-timeout is 30s for the YVR-to-YXL-only write path. Keep this topology only while
-the inter-site path is monitored and the write-error budget is acceptable.
+The target is independent site-local Mimir rings with one active write site at
+a time, a global client Service for failover, and the federated Garage buckets
+as the durable shared store. Consul/Redis/EventStream and the shared L3 path
+may support coordination or transport where the selected Mimir architecture
+requires it, but they must not be used to create a second cross-site copy of
+the same samples. A rollout needs an explicit writer-fencing and compactor /
+ruler ownership procedure before the global memberlist ring is removed.
 
-Option B—independent site-local Mimir installations—provides the cleanest site
-failure isolation but requires a supported global query/federation layer and a
-deliberate historical-data and HA-deduplication plan. It is not a drop-in
-replacement for the current shared tenant and should be designed separately.
+The current shared-ring profile remains a migration state until that procedure
+is implemented and verified. It should not be described as S3-only
+replication: classic Mimir currently performs synchronous cross-site ingester
+replication in addition to Garage object replication.
 
-Option C—site-local ingestion with a shared long-term-storage/query design—can
-reduce synchronous WAN write pressure, but it requires validating the exact
-Mimir architecture and object-store consistency model before migration. It is
-not enabled by this repair. The recommended near-term posture is to retain
-Option A, validate it under a controlled single-ingester restart, and plan
-Option B or C if WAN partitions or sustained Push deadlines continue.
+The site-local ingestion/shared long-term-storage design is the planned
+migration, but it requires validating the exact Mimir architecture and
+object-store consistency model before changing the rings. Until writer fencing,
+compactor/ruler ownership, and failover verification are complete, the current
+shared ring must be treated as an explicitly temporary compatibility state.
 
 Rollback of this repair is limited to reverting the Git commit and allowing a
 controlled distributor/ingester rollout. Do not remove the site-qualified

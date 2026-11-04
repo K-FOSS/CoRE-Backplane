@@ -1,7 +1,8 @@
 # CoRE-Backplane Observability/Common Stack
 
 This chart deploys the federated Garage S3 backend in YXL and YVR used by
-[Mimir](../Metrics/README.md) and [Loki](../Logs/README.md). Both start with
+[Mimir](../Metrics/README.md), [Loki](../Logs/README.md), and
+[Tempo](../Traces/README.md). Both start with
 fresh Garage buckets; existing MinIO objects remain in place and are not
 copied. It is owned by the
 [Observability Common ApplicationSet](../../Apps/Observability/Common.yaml).
@@ -110,6 +111,43 @@ and [bucket and credential guide](https://rajsinghtech.github.io/garage-operator
 Longhorn class parameters are documented in its
 [StorageClass reference](https://longhorn.io/docs/1.13.0/references/storage-class-parameters/).
 
+## Shared buckets across sites
+
+YXL and YVR intentionally use the same Garage bucket namespace. The S3
+endpoint, Kubernetes Service name, credential handle, and TLS path may differ
+by site, but a site suffix must never be added to a bucket name. Garage's
+federated layout is the replication boundary; the sites are not two
+independent S3 stores that require application-level bucket copying.
+
+| Consumer | Shared Garage bucket(s) | Durable contents |
+| --- | --- | --- |
+| Mimir | `mimir-blocks`, `mimir-alertmanager`, `mimir-ruler` | TSDB blocks, Alertmanager state, and ruler state |
+| Loki | `loki-chunks`, `loki-rules-temp`, `loki-admin` | Chunks/index data, ruler data, and administrative state |
+| Tempo | `tempo-traces` | Trace blocks |
+
+YXL is the Garage layout writer and YVR is the follower. The federated
+`GarageCluster` uses consistent replication with factor `3` and requires
+copies in at least two zones (`yxl` and `yvr`). The YXL bucket resources are
+the authoritative bucket records and grant both the YXL and YVR service
+identities access to the same global aliases. YVR's consumer claims use the
+YXL Garage credential handle where required; this is an identity/bootstrap
+detail, not a second bucket set.
+
+Consumers select a local-preferred endpoint for latency and site survival:
+YXL normally uses the local TLS S3 Gateway, while YVR uses its local Garage
+listener or the local site route according to the rendered ApplicationSet
+values. Both endpoints address the federated bucket namespace. A local
+endpoint outage must fail over to the other site's routable Garage endpoint
+without changing bucket names, prefixes, tenant IDs, or credentials.
+
+Do not infer replication from a successful S3 connection alone. Before a
+topology or credential change, verify the YXL writer, YVR follower, remote
+Garage nodes, committed layout, and bucket aliases. From both cluster
+contexts, verify that the observability `GarageCluster` and node resources are
+Ready or intentionally waiting on the writer, then compare the non-secret
+bucket aliases and object visibility through each site endpoint. Never print
+access keys, secret keys, admin tokens, or generated connection Secrets.
+
 ## Operations and data retention
 
 Validate with:
@@ -168,6 +206,13 @@ objects only. Before changing membership, verify both sites report
 `FederationConfigured=True`, `RemoteClustersHealthy=True`, no sustained
 `PeerUnreachable`, and a settled layout. Preserve the YXL writer/YVR follower
 ordering for all topology changes.
+
+The same-bucket invariant is part of the recovery contract. A site restore
+must rejoin the existing Garage layout and reuse the existing global aliases;
+creating `mimir-blocks-yvr`, `loki-chunks-yxl`, or another site-specific bucket
+would create a new data set that Mimir, Loki, or Tempo will not query. Retain
+the Garage PVCs and bucket resources during backend upgrades, and validate
+object reads from both sites before declaring regional failover complete.
 
 The YXL writer declares the three current YVR node identities as external
 `GarageNode` resources. Their IDs are read from the YVR PVC-backed Garage

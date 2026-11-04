@@ -42,6 +42,24 @@ External Grafana and operator requests
   -> telemetry backend
 ```
 
+### Cross-site storage contract
+
+YXL and YVR share one federated Garage object-storage layout. Mimir, Loki,
+and Tempo use the same logical bucket names in both sites:
+
+- Mimir: `mimir-blocks`, `mimir-alertmanager`, `mimir-ruler`
+- Loki: `loki-chunks`, `loki-rules-temp`, `loki-admin`
+- Tempo: `tempo-traces`
+
+The ApplicationSets select site-local S3 endpoints and credentials for normal
+traffic, while Garage replicates the objects across the `yxl` and `yvr`
+failure domains. These are access-path differences, not separate buckets.
+Failover therefore preserves bucket names, prefixes, tenant IDs, and object
+ownership. The [Common stack guide](Common/README.md#shared-buckets-across-sites)
+documents the writer/follower layout, replication contract, and recovery
+checks. Historical MinIO data remains a separate recovery source and is not
+implicitly copied into Garage.
+
 Collectors add cluster and datacentre labels using values injected by their
 ApplicationSet. Loki pods carry the `logs=loki-myloginspace` label, which is
 also selected by Alloy's Kubernetes log discovery. Grafana accesses backend

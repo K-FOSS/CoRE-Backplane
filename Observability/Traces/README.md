@@ -51,6 +51,15 @@ the Tempo 2 ingester and compactor architecture. Tempo 3 requires a reviewed
 Kafka deployment, topic sizing, credentials, and failure-domain design before
 it can replace this profile.
 
+The current Tempo profile also sets ingester replication factor `2` and joins
+the gateway Service across sites. The target profile keeps the gateway global
+for site-level failover but makes the Tempo memberlist and ingester ring
+site-local with local replication only. `tempo-traces` in federated Garage is
+the cross-site durability layer; Tempo must not synchronously replicate the
+same spans from YXL to YVR before writing them to S3. A future Tempo 3/Kafka
+profile may use the shared EventStream for ingest durability, but that is a
+separate reviewed migration and is not implied by the current Tempo 2 chart.
+
 Gateway host anti-affinity is preferred rather than required. This keeps the
 three replicas eligible for rolling surge placement. A required
 `DoNotSchedule` topology-spread constraint enforces one replica per active-site
