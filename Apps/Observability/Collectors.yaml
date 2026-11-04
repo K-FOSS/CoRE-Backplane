@@ -134,6 +134,19 @@ spec:
                       - name: REGION
                         value: '{{ .values.region }}'
 
+                  serviceMonitor:
+                    enabled: true
+                    relabelings:
+                      - action: replace
+                        targetLabel: cluster
+                        replacement: '{{ .values.clusterName }}'
+                      - action: replace
+                        targetLabel: dc
+                        replacement: '{{ .values.datacenter }}'
+                      - action: replace
+                        targetLabel: region
+                        replacement: '{{ .values.region }}'
+
                 alloy-logs:
                   alloy:
                     podLogsEnabled: {{ .values.podLogsEnabled }}
@@ -149,6 +162,19 @@ spec:
 
                       - name: OTLP_ENDPOINT
                         value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                  serviceMonitor:
+                    enabled: true
+                    relabelings:
+                      - action: replace
+                        targetLabel: cluster
+                        replacement: '{{ .values.clusterName }}'
+                      - action: replace
+                        targetLabel: dc
+                        replacement: '{{ .values.datacenter }}'
+                      - action: replace
+                        targetLabel: region
+                        replacement: '{{ .values.region }}'
 
                   rbac:
                     create: {{ .values.podLogsEnabled }}
@@ -170,6 +196,19 @@ spec:
                       - name: OTLP_ENDPOINT
                         value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
+                  serviceMonitor:
+                    enabled: true
+                    relabelings:
+                      - action: replace
+                        targetLabel: cluster
+                        replacement: '{{ .values.clusterName }}'
+                      - action: replace
+                        targetLabel: dc
+                        replacement: '{{ .values.datacenter }}'
+                      - action: replace
+                        targetLabel: region
+                        replacement: '{{ .values.region }}'
+
                 alloy-services:
                   controller:
                     replicas: {{ .values.collectorReplicas }}
@@ -187,11 +226,37 @@ spec:
                       - name: OTLP_ENDPOINT
                         value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
+                  serviceMonitor:
+                    enabled: true
+                    relabelings:
+                      - action: replace
+                        targetLabel: cluster
+                        replacement: '{{ .values.clusterName }}'
+                      - action: replace
+                        targetLabel: dc
+                        replacement: '{{ .values.datacenter }}'
+                      - action: replace
+                        targetLabel: region
+                        replacement: '{{ .values.region }}'
+
                 alloy-otlp:
                   alloy:
                     extraEnv:
                       - name: OTLP_ENDPOINT
                         value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                  serviceMonitor:
+                    enabled: true
+                    relabelings:
+                      - action: replace
+                        targetLabel: cluster
+                        replacement: '{{ .values.clusterName }}'
+                      - action: replace
+                        targetLabel: dc
+                        replacement: '{{ .values.datacenter }}'
+                      - action: replace
+                        targetLabel: region
+                        replacement: '{{ .values.region }}'
 
                 vector:
                   enabled: {{ .values.vectorEnabled }}

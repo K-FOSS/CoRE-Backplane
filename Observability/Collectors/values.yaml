@@ -124,7 +124,9 @@ alloy-logs:
   serviceAccount:
     automountServiceAccountToken: false
   service:
-    enabled: false
+    enabled: true
+  serviceMonitor:
+    enabled: true
   controller:
     tolerations:
     - key: 'load'
@@ -206,7 +208,9 @@ alloy-metrics:
   serviceAccount:
     automountServiceAccountToken: true
   service:
-    enabled: false
+    enabled: true
+  serviceMonitor:
+    enabled: true
   controller:
     tolerations:
     - key: 'load'
@@ -292,6 +296,8 @@ alloy-otlp:
   service:
     internalTrafficPolicy: Cluster
     trafficDistribution: PreferClose
+  serviceMonitor:
+    enabled: true
   controller:
     tolerations:
     - key: 'load'
@@ -385,6 +391,8 @@ alloy-services:
     podDisruptionBudget:
       enabled: true
       maxUnavailable: 1
+  serviceMonitor:
+    enabled: true
 
 alloy:
   destinations:
