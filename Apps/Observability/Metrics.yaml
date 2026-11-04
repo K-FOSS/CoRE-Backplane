@@ -302,6 +302,7 @@ spec:
                     podAnnotations:
                       core.mylogin.space/config-revision: '6b65f8ce8'
                   ingester:
+                    enabled: {{ if eq .values.region "yvr" }}false{{ else }}true{{ end }}
                     replicas: 3
                     extraArgs:
                       ingester.ring.instance-id: '$(MIMIR_SITE)-$(HOSTNAME)'
