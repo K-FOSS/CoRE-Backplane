@@ -18,7 +18,8 @@ The chart renders:
 - one standalone CDI `DataVolume` for every item in `installers`;
 - one KubeVirt `VirtualMachine` for every item in `vms`;
 - an embedded `dataVolumeTemplate` for each enabled VM disk; and
-- one or more Services for VM ports with `expose: true`.
+- one or more Services for VM ports with `expose: true`; and
+- one Prometheus Operator `ScrapeConfig` for every item in `scrapeConfigs`.
 
 VMs are rendered with `spec.running: true`. A VM disk is enabled when
 `disk.enabled` is omitted, so explicitly set `disk.enabled: false` for an
@@ -55,6 +56,12 @@ for the platform-level KubeVirt deployment.
 The production DC1/YXL router is documented in the [WAN-RT1 infrastructure
 guide](WAN-RT1.md). That guide records the current KubeVirt/Multus attachment
 model and the guest routing-plane invariants for the `dc1-k3s-node1` target.
+
+The separately supplied DC1/YXL WAN-GW2 guest context is documented in the
+[WAN-GW2 DC1/YXL guest reference](WAN-GW2-DC1.md). The repository currently
+declares the DC1 VM as `wan-rt1`; the guest-to-resource mapping for the supplied
+WAN-GW2 context is not established by the available Kubernetes context, so the
+two references are kept distinct.
 
 ## YVR WAN gateway NAT snapshot
 
@@ -94,6 +101,7 @@ for the rule tables and current WAN matching.
 | `vms` | VM definitions. Per-VM settings override `vmDefaults`. |
 | `installers` | Shared CDI DataVolumes, typically installation ISOs or bootable seed images. |
 | `networks` | Multus NAD definitions available to VM interfaces. |
+| `scrapeConfigs` | Static Prometheus Operator scrape targets rendered in the release namespace. |
 
 The CPU key is singular: `cpu`, not `cpus`. `cpu.cores`, `sockets`, and
 `threads` define guest-visible topology, while `resources.requests` and
@@ -212,6 +220,33 @@ as its `trust` and `spoofchk` settings. A VM network entry can add a stable
 interface through which this chart exposes ports with Kubernetes Services.
 Multus interfaces are attached directly and are not selected by those
 Services.
+
+### Scrape configurations
+
+Each `scrapeConfigs` item renders a Prometheus Operator `ScrapeConfig` with
+static targets, optional labels, metrics path, scheme, and interval. The
+site-local Alloy collector consumes these resources through its
+[`prometheus.operator.scrapeconfigs`](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.operator.scrapeconfigs/)
+component and forwards samples to Mimir. This is suitable for infrastructure
+endpoints that are not Kubernetes Services, such as a VyOS node-exporter
+listener on a router LAN address.
+
+The site-local values include these router node-exporter targets:
+
+| Target | Site | Router label |
+| --- | --- | --- |
+| `10.1.1.40:9100` | `dc1` | `wan-rt1` |
+| `10.1.1.41:9100` | `dc1` | `wan-gw2` |
+| `10.1.20.21:9100` | `home1` | `wan-gw2` |
+
+These identities match the `node_uname_info` values reported by the guest
+node-exporter endpoints. These are LAN-VRF management addresses, not WAN
+service endpoints. The active route-reflector table carries all three host
+routes with management route target `64567:20` (CoRE management); the DC1
+`10.1.1.41` route also carries `64567:100` and `64567:312`, while the YVR
+`10.1.20.21` route carries `64567:92` in the observed table. The collector's
+LAN-VRF path and the guest firewall must allow the scrape; a rendered
+`ScrapeConfig` does not prove endpoint reachability.
 
 ### Ports and Services
 

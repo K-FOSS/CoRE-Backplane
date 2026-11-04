@@ -57,13 +57,23 @@ spec:
                     scrapeConfigs:
                       - name: wan-rt1-node-exporter
                         targets:
-                          - '10.1.1.41:9100'
+                          - '10.1.1.40:9100'
                         metricsPath: '/metrics'
                         scheme: 'http'
                         scrapeInterval: '30s'
                         labels:
                           site: 'dc1'
                           router: 'wan-rt1'
+                          role: 'wan-edge'
+                      - name: wan-gw2-dc1-node-exporter
+                        targets:
+                          - '10.1.1.41:9100'
+                        metricsPath: '/metrics'
+                        scheme: 'http'
+                        scrapeInterval: '30s'
+                        labels:
+                          site: 'dc1'
+                          router: 'wan-gw2'
                           role: 'wan-edge'
                     installers:
                       - name: vyos
