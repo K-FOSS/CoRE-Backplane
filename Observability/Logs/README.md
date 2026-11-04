@@ -37,10 +37,10 @@ is selected with `deploymentMode: Distributed`.
 | Ruler | 1 | 1 | StatefulSet |
 
 The simple-scalable and former single-binary targets remain at zero. Both sites
-run the distributed read and write paths with replication factor 3 within each
-site. YVR and YXL are separate backend failure domains; Garage is the shared
-durable layer. Hostname spreading and disruption budgets protect rollouts and
-node loss within each site.
+run the distributed read and write paths with a global Loki ownership ring and
+replication factor 1. YVR and YXL are separate backend failure domains;
+Garage is the shared durable layer. Hostname spreading and disruption budgets
+protect rollouts and node loss within each site.
 
 ## Architecture and global Service
 
@@ -58,20 +58,23 @@ gateway routes API paths to their owning components. The public
 [`HTTPRoute`](templates/HTTPRoutes.yaml) uses the same stable Service.
 
 Both sites set `service.cilium.io/global` and EndpointSlice synchronization on
-the client Service only. Cilium affinity prefers the local site and
-cross-site client endpoints provide failover. The memberlist Service is
-site-local, so Loki's ingester, query, and ownership rings do not cross the
-WAN. This follows the
+the client and memberlist Services. Cilium affinity prefers the local site and
+cross-site endpoints provide failover. The memberlist Service is global so
+both sites participate in one logical Loki query/ownership ring. This follows the
 [Cilium global Service](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
-model. Loki's local ring replication factor is `3` within each site's
-ingesters. Loki 3.5.7 does not support Mimir's
-`memberlist.zone_aware_routing` configuration, and no cross-site Loki ring is
-used.
+model. Loki's replication factor is `1`, so each stream has one active Loki
+ingester owner rather than a second cross-site payload replica. This preserves
+access to recent in-memory logs from either site's query path while Garage
+provides durable cross-site object replication.
 
-Garage remains the shared durability
-and cross-site replication layer for `loki-chunks`, `loki-rules-temp`, and
-`loki-admin`. This avoids a second copy of each stream in the remote Loki
-ingester while preserving query access through the shared bucket namespace.
+Garage remains the shared durability and cross-site replication layer for
+`loki-chunks`, `loki-rules-temp`, and `loki-admin`. This avoids a second copy
+of each stream in the remote Loki ingester while preserving query access
+through the shared bucket namespace. The global Loki ring can still route a
+write or recent-data query across the inter-site link; it carries one payload,
+not a synchronous replica. YVR egress pressure must therefore be managed with
+local batching, bounded retries, and backpressure rather than a higher Loki
+replication factor.
 Compactor and ruler ownership remain a separate failover concern because both
 sites use the same durable bucket. The default profile runs them in YXL only;
 YVR's replicas are zero until an ordered regional promotion fences YXL and

@@ -133,7 +133,12 @@ spec:
                     service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
 
                 memberlist:
-                  service: {}
+                  service:
+                    annotations:
+                      service.cilium.io/global: 'true'
+                      service.cilium.io/global-sync-endpoint-slices: 'true'
+                      service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                      service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
 
                 k8gb:
                   enabled: true
@@ -158,9 +163,10 @@ spec:
                       join_members:
                         - 'loki-core-memberlist.core-prod.svc.{{ .values.clusterDomain }}'
                     commonConfig:
-                      # Replicate only across the local site's ingesters.
-                      # Garage is the cross-site durability layer.
-                      replication_factor: 3
+                      # Use one global owner per stream so either site's
+                      # query path can reach recent in-memory logs without
+                      # duplicating the payload in a second ingester.
+                      replication_factor: 1
                     storage:
                       s3:
                         region: 'garage'
@@ -176,7 +182,12 @@ spec:
                     enabled: false
 
                   memberlist:
-                    service: {}
+                    service:
+                      annotations:
+                        service.cilium.io/global: 'true'
+                        service.cilium.io/global-sync-endpoint-slices: 'true'
+                        service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
+                        service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
 
                   singleBinary:
                     replicas: {{ .values.lokiReplicas }}
