@@ -56,8 +56,8 @@ spec:
                     lokiQueryFrontendReplicas: 3
                     lokiQuerySchedulerReplicas: 2
                     lokiIndexGatewayReplicas: 3
-                    lokiCompactorReplicas: 1
-                    lokiRulerReplicas: 1
+                    lokiCompactorReplicas: 0
+                    lokiRulerReplicas: 0
                     lokiGlobalAffinity: 'local'
                     lokiGlobalShared: 'true'
                     lokiGarageEnabled: true
@@ -133,12 +133,7 @@ spec:
                     service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
 
                 memberlist:
-                  service:
-                    annotations:
-                      service.cilium.io/global: 'true'
-                      service.cilium.io/global-sync-endpoint-slices: 'true'
-                      service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
-                      service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+                  service: {}
 
                 k8gb:
                   enabled: true
@@ -163,7 +158,9 @@ spec:
                       join_members:
                         - 'loki-core-memberlist.core-prod.svc.{{ .values.clusterDomain }}'
                     commonConfig:
-                      replication_factor: 2
+                      # Replicate only across the local site's ingesters.
+                      # Garage is the cross-site durability layer.
+                      replication_factor: 3
                     storage:
                       s3:
                         region: 'garage'
@@ -179,12 +176,7 @@ spec:
                     enabled: false
 
                   memberlist:
-                    service:
-                      annotations:
-                        service.cilium.io/global: 'true'
-                        service.cilium.io/global-sync-endpoint-slices: 'true'
-                        service.cilium.io/affinity: '{{ .values.lokiGlobalAffinity }}'
-                        service.cilium.io/shared: '{{ .values.lokiGlobalShared }}'
+                    service: {}
 
                   singleBinary:
                     replicas: {{ .values.lokiReplicas }}

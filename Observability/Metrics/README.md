@@ -13,9 +13,9 @@ The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metri
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
 site identity. Both sites enable the distributed implementation and use their
 local Garage S3 endpoint. The global `core-mimir` Service keeps client traffic
-site-local where possible. The current deployment also joins both Mimir sites
-through one global memberlist ring and uses ingester replication across YXL/YVR;
-that is retained as a migration state, not the target storage design.
+site-local where possible. Mimir memberlist and component rings are now
+site-local; the global memberlist bridge and cross-site ingester replication
+are disabled. The global client Service remains the site-level failover path.
 Distributors,
 ingesters, queriers, query frontends, query schedulers, store-gateways,
 compactor, ruler, Alertmanager and the NGINX gateway run as separate upstream
@@ -173,15 +173,15 @@ local affinity and sharing enabled. Home1 declares the same global Service
 identity with remote affinity and sharing disabled. Its common-chart Service
 has a deliberately non-matching selector, so only Cilium-synchronized remote
 EndpointSlices back it. The YXL HTTPRoute also uses this Service as its direct
-backend. `core-mimir-proxy` selects the bridge Pods on both
-sites, and each bridge sends shared-tenant requests to `core-mimir`; using a
-separate bridge Service prevents a proxy loop.
+backend. The former `core-mimir-proxy` memberlist bridge is disabled. The
+client Service still uses Cilium synchronization for site-level failover, but
+the Mimir memberlist Service is deliberately local to each cluster.
 Cilium correlates global Services by namespace and name, while Lovely may
 derive a different Helm release name for each generated Argo CD Application.
-The `core-mimir-gossip-global` Service is part of ClusterMesh and is used by
-all Mimir components for memberlist discovery and HA-tracker state. Mimir's
-replication factor remains three, so a series is replicated across the shared
-ring rather than being confined to the site that received its write.
+The `core-mimir-gossip-ring` Service is a cluster-local headless Service used
+only by that site's Mimir components. Mimir's replication factor is three
+within the local ring, so a series is not synchronously copied to the remote
+site before Garage receives the durable block.
 This depends on Cluster Mesh connectivity and
 `clustermesh.enableEndpointSliceSynchronization`, which the Network Base
 deployment enables.
@@ -287,14 +287,11 @@ multiple ingesters and Alloy's errors changed from quorum failures to transient
 cross-site request deadlines. The distributor downstream timeout is now 10s to
 accommodate the observed inter-site path and WAL/compaction work. This timeout
 is not a substitute for WAN backpressure: the YVR egress constraint is one
-reason the target design removes synchronous cross-site ingester replication.
+reason the site-local design removes synchronous cross-site ingester replication.
 
-Zone-aware ring replication is currently enabled with the ApplicationSet
-region as the availability zone: `yvr` and `yxl` are separate Mimir zones.
-That makes the Mimir ring, rather than Garage, responsible for cross-site hot
-data replication. The target design disables cross-site Mimir ring
-replication, keeps memberlist and ingester rings site-local, and uses local
-ring replication only for intra-site pod failure. Garage's federated
+The Mimir component rings are site-local and use local replication only for
+intra-site pod failure. Zone-aware cross-site Mimir replication is disabled;
+`yvr` and `yxl` are not members of the same Mimir ingester ring. Garage's federated
 `mimir-blocks`, `mimir-alertmanager`, and `mimir-ruler` buckets provide the
 cross-site durability layer. The global `core-mimir` client Service remains
 the site-level failover mechanism; it must steer writers to one active site at
@@ -332,18 +329,17 @@ as the durable shared store. Consul/Redis/EventStream and the shared L3 path
 may support coordination or transport where the selected Mimir architecture
 requires it, but they must not be used to create a second cross-site copy of
 the same samples. A rollout needs an explicit writer-fencing and compactor /
-ruler ownership procedure before the global memberlist ring is removed.
+ruler ownership procedure before any shared cross-site coordinator is enabled.
 
-The current shared-ring profile remains a migration state until that procedure
-is implemented and verified. It should not be described as S3-only
-replication: classic Mimir currently performs synchronous cross-site ingester
-replication in addition to Garage object replication.
+The site-local ingestion/shared long-term-storage design is now the active
+profile. The exact Mimir object-store consistency model and failover procedure
+remain operational requirements, especially when changing coordinator
+ownership or promoting YVR.
 
-The site-local ingestion/shared long-term-storage design is the planned
-migration, but it requires validating the exact Mimir architecture and
-object-store consistency model before changing the rings. Until writer fencing,
-compactor/ruler ownership, and failover verification are complete, the current
-shared ring must be treated as an explicitly temporary compatibility state.
+The current profile now gives Mimir compactor and ruler ownership to YXL;
+YVR's replicas are set to zero. Regional promotion must enable those YVR
+components only after YXL ownership is fenced, because both sites use the same
+`mimir-blocks`, `mimir-alertmanager`, and `mimir-ruler` buckets.
 
 Rollback of this repair is limited to reverting the Git commit and allowing a
 controlled distributor/ingester rollout. Do not remove the site-qualified
@@ -395,8 +391,8 @@ intentional monitoring gaps.
 The October 2026 cutover starts a fresh metrics store in YXL using its existing
 site identity, site-local S3 endpoint and new Longhorn claims. It does not copy
 YVR blocks, WAL/head data, ruler objects or Alertmanager state. The previously
-scaled-to-zero YVR StatefulSets must remain stopped. Both sites keep their
-bridge; only YXL exports local Mimir backends through the global Service.
+scaled-to-zero YVR StatefulSets must remain stopped. The compatibility bridge
+is disabled; only YXL exports local Mimir backends through the global Service.
 
 Keep the YVR `User` claim and its connection Secrets managed in Git. Its
 existing Longhorn claims have `Retain` policies on StatefulSet deletion and

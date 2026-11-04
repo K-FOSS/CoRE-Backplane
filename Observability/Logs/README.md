@@ -11,9 +11,9 @@ collectors and consumers.
 
 DC1/YXL and Home1/YVR now run Loki data-plane workloads. Each site uses its
 local Observability Garage S3 service with credentials provisioned through the
-`loki-s3` `User` claim. The global `loki-core` client Service and Loki
-memberlist Service use local affinity and synchronized EndpointSlices for
-failover.
+`loki-s3` `User` claim. The global `loki-core` client Service uses local
+affinity and synchronized EndpointSlices for failover. Loki's memberlist
+Service remains cluster-local so ring traffic does not cross the WAN.
 The ApplicationSet injects cluster identity, storage backend, component counts,
 and Cilium annotations through `LOVELY_HELM_MERGE`.
 
@@ -37,9 +37,10 @@ is selected with `deploymentMode: Distributed`.
 | Ruler | 1 | 1 | StatefulSet |
 
 The simple-scalable and former single-binary targets remain at zero. Both sites
-run the distributed read and write paths with replication factor 2; YVR and
-YXL are the two failure domains. Hostname spreading and disruption budgets
-protect rollouts and node loss within each site.
+run the distributed read and write paths with replication factor 3 within each
+site. YVR and YXL are separate backend failure domains; Garage is the shared
+durable layer. Hostname spreading and disruption budgets protect rollouts and
+node loss within each site.
 
 ## Architecture and global Service
 
@@ -57,25 +58,24 @@ gateway routes API paths to their owning components. The public
 [`HTTPRoute`](templates/HTTPRoutes.yaml) uses the same stable Service.
 
 Both sites set `service.cilium.io/global` and EndpointSlice synchronization on
-the client and memberlist Services. Cilium affinity prefers the local site and
-cross-site endpoints provide failover. This is the current implementation,
-but it is not the target storage topology: a global memberlist ring makes Loki
-replicate hot log data between sites before it reaches Garage. This follows the
+the client Service only. Cilium affinity prefers the local site and
+cross-site client endpoints provide failover. The memberlist Service is
+site-local, so Loki's ingester, query, and ownership rings do not cross the
+WAN. This follows the
 [Cilium global Service](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
-model. The memberlist Service is global so both sites share one ring, while
-client traffic remains local-preferred. Loki 3.5.7 does not support Mimir's
-`memberlist.zone_aware_routing` configuration, so site replication is provided
-by the global ring and the replication factor instead.
+model. Loki's local ring replication factor is `3` within each site's
+ingesters. Loki 3.5.7 does not support Mimir's
+`memberlist.zone_aware_routing` configuration, and no cross-site Loki ring is
+used.
 
-The target design keeps the client `loki-core` Service global for site-level
-failover, but makes the Loki memberlist Service and ring site-local and sets
-the local ring replication factor to `1`. Garage remains the shared durability
+Garage remains the shared durability
 and cross-site replication layer for `loki-chunks`, `loki-rules-temp`, and
 `loki-admin`. This avoids a second copy of each stream in the remote Loki
 ingester while preserving query access through the shared bucket namespace.
-The rollout must first establish single-site write ownership and compactor
-coordination; changing only the replication factor would not be a safe
-cross-site migration.
+Compactor and ruler ownership remain a separate failover concern because both
+sites use the same durable bucket. The default profile runs them in YXL only;
+YVR's replicas are zero until an ordered regional promotion fences YXL and
+enables the YVR lifecycle owners.
 
 ## Observability S3 and Loki credentials
 

@@ -41,7 +41,7 @@ spec:
                     tempoIngesterReplicas: 3
                     tempoQuerierReplicas: 3
                     tempoQueryFrontendReplicas: 3
-                    tempoCompactorReplicas: 1
+                    tempoCompactorReplicas: 0
                     tempoGatewayReplicas: 3
           - clusters:
               selector:
@@ -140,6 +140,9 @@ spec:
                   tempo:
                     podAnnotations:
                       secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
+                    memberlist:
+                      service:
+                        annotations: {}
                   gateway:
                     enabled: true
                     replicas: {{ .values.tempoGatewayReplicas }}
@@ -191,10 +194,10 @@ spec:
                       targetCPUUtilizationPercentage: 60
                   ingester:
                     replicas: {{ .values.tempoIngesterReplicas }}
-                    extraArgs:
-                      - '-ingester.availability-zone={{ .values.region }}'
                     config:
-                      replication_factor: 2
+                      # Replicate only across the local site's ingesters.
+                      # Garage is the cross-site durability layer.
+                      replication_factor: 3
                   querier:
                     replicas: {{ .values.tempoQuerierReplicas }}
                     resources:

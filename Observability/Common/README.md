@@ -157,6 +157,22 @@ Garage RPC must use bounded timeouts, retries with backoff, and circuit
 breaking. A WAN degradation is not a reason to increase Loki, Mimir, or Tempo
 replication factors.
 
+### Shared-bucket coordinator ownership
+
+The default ApplicationSet profile runs Mimir, Loki, and Tempo compactor/ruler
+workloads in YXL only. YVR continues to run its local gateways, distributors,
+ingesters, queriers, query frontends, and other read/write edge components, but
+does not independently compact or evaluate the same shared bucket. This keeps
+one owner for index/block lifecycle operations while the federated Garage
+layout remains available from either site.
+
+Regional promotion is an ordered configuration change: fence the YXL
+coordinators and writers, confirm the Garage layout and object backlog are
+healthy, enable the YVR compactor/ruler profile, then move the global client
+Service preference. Do not run both sites' compactor/ruler coordinators against
+the same bucket during a partial failover. Demotion follows the reverse order
+after the promoted site has drained its lifecycle work.
+
 Do not infer replication from a successful S3 connection alone. Before a
 topology or credential change, verify the YXL writer, YVR follower, remote
 Garage nodes, committed layout, and bucket aliases. From both cluster
@@ -206,11 +222,11 @@ writer and YVR is a follower. Replication factor `3` with
 `zoneRedundancyMode: AtLeast` and `zoneRedundancyMinZones: 2` requires object
 copies to span both sites.
 
-Each YVR node has a dedicated headless RPC Service. Site ExternalDNS publishes
-the Service endpoint names, and the YXL writer uses those names for
-identity-specific cross-site RPC. The records resolve to the routable YVR pod
-addresses; no node-address or LoadBalancer dependency is used. The operator uses
-those endpoints while
+Each Auto-managed storage identity at both sites has a dedicated headless RPC
+Service. Site ExternalDNS publishes the identity-specific endpoint names, and
+the YXL writer uses the YVR names for cross-site RPC. The records resolve to
+the routable site pod addresses; no shared node-address or LoadBalancer
+dependency is used. The operator uses those endpoints while
 the Admin API is published through the site-specific TLS HTTPRoute
 `observability-garage-admin.<dc>.<region>.mylogin.space`. This endpoint is
 authenticated with the remote site's Garage admin token and is not an S3
@@ -234,7 +250,8 @@ object reads from both sites before declaring regional failover complete.
 The YXL writer declares the three current YVR node identities as external
 `GarageNode` resources. Their IDs are read from the YVR PVC-backed Garage
 identities and their addresses are the ExternalDNS-published headless Service
-names. If a YVR
+names. The YVR follower also receives the writer's per-ordinal RPC endpoint
+template through `remoteClusters.connection.storageRpcEndpointTemplate`. If a YVR
 node identity is deliberately replaced, update this registry after the new
 node is running and before removing the old role; do not reuse an old ID for a
 different PVC.

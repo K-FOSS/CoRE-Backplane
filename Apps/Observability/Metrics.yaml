@@ -23,7 +23,10 @@ spec:
                     mode: Distributed
 
                     mimirEnabled: true
-                    mimirBridgeEnabled: true
+                    # Keep ring discovery site-local; Garage provides the
+                    # cross-site durable copy and the client Service provides
+                    # site failover.
+                    mimirBridgeEnabled: false
                     mimirGlobalAffinity: local
                     mimirGlobalShared: 'true'
 
@@ -36,6 +39,8 @@ spec:
                     mimirCacheEnabled: true
                     mimirS3Backend: 'garage'
                     mimirGarageEnabled: true
+                    mimirCompactorReplicas: 1
+                    mimirRulerReplicas: 1
 
 
                 - name: core-home1-talos-prod
@@ -45,7 +50,7 @@ spec:
                     mode: Distributed
 
                     mimirEnabled: true
-                    mimirBridgeEnabled: true
+                    mimirBridgeEnabled: false
                     mimirGlobalAffinity: local
                     mimirGlobalShared: 'true'
                     mimirIngestionRate: 500000
@@ -55,6 +60,8 @@ spec:
                     mimirCacheEnabled: true
                     mimirS3Backend: 'garage'
                     mimirGarageEnabled: true
+                    mimirCompactorReplicas: 0
+                    mimirRulerReplicas: 0
 
           - clusters:
               selector:
@@ -235,8 +242,6 @@ spec:
                   alertmanager:
                     extraArgs:
                       alertmanager.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-alertmanager-$(HOSTNAME)'
-                      alertmanager.sharding-ring.zone-awareness-enabled: 'true'
-                      alertmanager.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                   rollout_operator:
                     enabled: false
                   metaMonitoring:
@@ -313,8 +318,6 @@ spec:
                     replicas: 3
                     extraArgs:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
-                      ingester.ring.zone-awareness-enabled: 'true'
-                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
                     podAnnotations:
                       core.mylogin.space/config-revision: '5018cce4b'
                   ingester:
@@ -323,8 +326,6 @@ spec:
                     extraArgs:
                       ingester.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
                       ingester.ring.tokens-file-path: '/data/tokens-{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
-                      ingester.ring.zone-awareness-enabled: 'true'
-                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
                     topologySpreadConstraints:
                       maxSkew: 1
                       topologyKey: 'kubernetes.io/hostname'
@@ -351,11 +352,6 @@ spec:
                     replicas: 3
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
-                      ingester.ring.zone-awareness-enabled: 'true'
-                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
-                      store-gateway.sharding-ring.zone-awareness-enabled: 'true'
-                      store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
-                      querier.prefer-availability-zones: '{{ .values.region }}'
                   query_frontend:
                     replicas: 3
                   query_scheduler:
@@ -366,8 +362,6 @@ spec:
                     replicas: 3
                     extraArgs:
                       store-gateway.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-store-gateway-$(HOSTNAME)'
-                      store-gateway.sharding-ring.zone-awareness-enabled: 'true'
-                      store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                     zoneAwareReplication:
                       enabled: false
                     persistentVolume:
@@ -380,7 +374,7 @@ spec:
                       whenDeleted: Retain
                       whenScaled: Retain
                   compactor:
-                    replicas: 1
+                    replicas: {{ .values.mimirCompactorReplicas }}
                     extraArgs:
                       compactor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-compactor-$(HOSTNAME)'
                     persistentVolume:
@@ -394,13 +388,9 @@ spec:
                     extraArgs:
                       overrides-exporter.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-overrides-exporter-$(HOSTNAME)'
                   ruler:
-                    replicas: 1
+                    replicas: {{ .values.mimirRulerReplicas }}
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
-                      ingester.ring.zone-awareness-enabled: 'true'
-                      ingester.ring.instance-availability-zone: '{{ .values.region }}'
-                      store-gateway.sharding-ring.zone-awareness-enabled: 'true'
-                      store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                     extraVolumes:
                       - name: rulefiles
                         projected:
@@ -457,7 +447,9 @@ spec:
                         data_dir: /data
                       ingester:
                         ring:
-                          replication_factor: 2
+                          # Replicate only across the local site's ingesters.
+                          # Garage is the cross-site durability layer.
+                          replication_factor: 3
                           unregister_on_shutdown: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                       distributor:
                         remote_timeout: '30s'
@@ -467,12 +459,8 @@ spec:
                             store: memberlist
                       memberlist:
                         cluster_label: core-observability-mimir
-                        zone_aware_routing:
-                          enabled: true
-                          instance_availability_zone: '{{ .values.region }}'
-                          role: member
                         join_members:
-                          - dns+core-mimir-gossip-ring-global.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}.:7946
+                          - dns+core-mimir-gossip-ring.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}.:7946
                       ruler:
                         rule_path: /data
                       alertmanager:
