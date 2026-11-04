@@ -231,6 +231,9 @@ spec:
                     pullPolicy: IfNotPresent
                   minio:
                     enabled: false
+                  alertmanager:
+                    extraArgs:
+                      alertmanager.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-alertmanager-$(HOSTNAME)'
                   rollout_operator:
                     enabled: false
                   global:
@@ -299,14 +302,16 @@ spec:
                     enabled: true
                   distributor:
                     replicas: 3
+                    extraArgs:
+                      distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
                     podAnnotations:
                       core.mylogin.space/config-revision: '5018cce4b'
                   ingester:
                     enabled: {{ if eq .values.region "yvr" }}false{{ else }}true{{ end }}
                     replicas: 3
                     extraArgs:
-                      ingester.ring.instance-id: '$(MIMIR_SITE)-$(HOSTNAME)'
-                      ingester.ring.tokens-file-path: '/data/tokens-$(MIMIR_SITE)-$(HOSTNAME)'
+                      ingester.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
+                      ingester.ring.tokens-file-path: '/data/tokens-{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
                     topologySpreadConstraints:
                       maxSkew: 1
                       topologyKey: 'kubernetes.io/hostname'
@@ -331,12 +336,18 @@ spec:
                       whenScaled: Retain
                   querier:
                     replicas: 3
+                    extraArgs:
+                      querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
                   query_frontend:
                     replicas: 3
                   query_scheduler:
                     replicas: 2
+                    extraArgs:
+                      query-scheduler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-query-scheduler-$(HOSTNAME)'
                   store_gateway:
                     replicas: 3
+                    extraArgs:
+                      store-gateway.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-store-gateway-$(HOSTNAME)'
                     zoneAwareReplication:
                       enabled: false
                     persistentVolume:
@@ -350,6 +361,8 @@ spec:
                       whenScaled: Retain
                   compactor:
                     replicas: 1
+                    extraArgs:
+                      compactor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-compactor-$(HOSTNAME)'
                     persistentVolume:
                       enabled: true
                       size: 2Gi
@@ -357,8 +370,13 @@ spec:
                       enableRetentionPolicy: true
                       whenDeleted: Retain
                       whenScaled: Retain
+                  overrides_exporter:
+                    extraArgs:
+                      overrides-exporter.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-overrides-exporter-$(HOSTNAME)'
                   ruler:
                     replicas: 1
+                    extraArgs:
+                      ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
                     extraVolumes:
                       - name: rulefiles
                         configMap:
