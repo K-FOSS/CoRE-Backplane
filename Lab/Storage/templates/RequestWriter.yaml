@@ -40,6 +40,7 @@ metadata:
     app.kubernetes.io/component: 'request-writer'
 spec:
   replicas: {{ .Values.requestWriter.replicas }}
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       app.kubernetes.io/name: '{{ .Chart.Name }}'
