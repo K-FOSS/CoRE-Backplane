@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: 'core-observability-alloy-operator'
+  namespace: 'argocd'
+  annotations:
+    argocd.argoproj.io/sync-wave: '19'
+spec:
+  goTemplate: true
+  goTemplateOptions:
+    - 'missingkey=error'
+  generators:
+    - clusters:
+        selector:
+          matchLabels:
+            mylogin.space/tenant: 'core.mylogin.space'
+            resolvemy.host/computetype: 'baremetal'
+            resolvemy.host/nodetype: 'infra'
+          matchExpressions:
+            - key: 'resolvemy.host/dc'
+              operator: 'In'
+              values: ['dc1', 'home1']
+            - key: 'topology.kubernetes.io/region'
+              operator: 'In'
+              values: ['yxl', 'yvr']
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: '{{ .name }}-observability-alloy-operator'
+      labels:
+        resolvemy.host/env: '{{ index .metadata.labels "resolvemy.host/env" }}'
+        resolvemy.host/priority: 'critical'
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: .
+    spec:
+      project: 'core'
+      syncPolicy:
+        syncOptions:
+          - 'CreateNamespace=true'
+          - 'ServerSideApply=true'
+      source:
+        path: 'Observability/AlloyOperator'
+        repoURL: 'https://github.com/K-FOSS/CoRE-Backplane.git'
+        targetRevision: 'HEAD'
+        plugin:
+          name: 'argocd-lovely-plugin'
+      destination:
+        server: '{{ .server }}'
+        namespace: 'core-{{ index .metadata.labels "resolvemy.host/env" }}'
