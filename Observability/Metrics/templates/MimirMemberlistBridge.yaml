@@ -47,6 +47,7 @@ spec:
           args:
             - '-target=memberlist-kv'
             - '-server.http-listen-port=8080'
+            - '-activity-tracker.filepath=/tmp/metrics-activity.log'
             - '-memberlist.cluster-label=core-observability-mimir'
             - '-memberlist.join=dns+core-mimir-gossip-ring-global.{{ .Release.Namespace }}.svc.{{ .Values.clusterDomain }}.:7946'
             - '-memberlist.zone-aware-routing.enabled=true'
@@ -75,6 +76,9 @@ spec:
               drop:
                 - 'ALL'
             readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: 'tmp'
+              mountPath: '/tmp'
           resources:
             requests:
               cpu: '10m'
@@ -82,4 +86,7 @@ spec:
             limits:
               cpu: '100m'
               memory: '128Mi'
+      volumes:
+        - name: 'tmp'
+          emptyDir: {}
 {{- end }}
