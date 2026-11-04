@@ -49,7 +49,9 @@ spec:
                     smartctlExporterEnabled: true
                     ipmiExporterEnabled: true
                     drmExporterEnabled: true
-                    drmExporterPrivileged: true
+                    drmExporterResources:
+                      limits:
+                        'gpu.intel.com/i915_monitoring': '1'
                     dcgmExporterEnabled: true
                     smartctlDeviceExclude: '^sd[b-z].*'
 
@@ -86,7 +88,7 @@ spec:
                     smartctlExporterEnabled: true
                     ipmiExporterEnabled: true
                     drmExporterEnabled: false
-                    drmExporterPrivileged: false
+                    drmExporterResources: {}
                     dcgmExporterEnabled: false
                     smartctlDeviceExclude: ''
 
@@ -123,7 +125,7 @@ spec:
                     smartctlExporterEnabled: true
                     ipmiExporterEnabled: true
                     drmExporterEnabled: false
-                    drmExporterPrivileged: false
+                    drmExporterResources: {}
                     dcgmExporterEnabled: false
                     smartctlDeviceExclude: ''
           - clusters:
@@ -209,8 +211,8 @@ spec:
 
                 drm-exporter:
                   enabled: {{ .values.drmExporterEnabled }}
-                  securityContext:
-                    privileged: {{ .values.drmExporterPrivileged }}
+                  resources:
+                    {{- toYaml .values.drmExporterResources | nindent 20 }}
 
                 dcgm-exporter:
                   enabled: {{ .values.dcgmExporterEnabled }}
