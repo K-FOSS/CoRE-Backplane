@@ -5,6 +5,7 @@ kube-prometheus-stack:
     enabled: false
 
   alertmanager:
+    enabled: false
     alertmanagerSpec:
       image:
         tag: 'v0.28.0'
@@ -17,6 +18,7 @@ kube-prometheus-stack:
       kubeApiserverSlos: false
 
   grafana:
+    enabled: false
     forceDeployDashboards: true
     # The standalone Grafana deployment owns datasource configuration.
     # Do not create the kube-prometheus-stack Prometheus datasource ConfigMap.
@@ -54,6 +56,20 @@ kube-prometheus-stack:
       enabled: false
       interval: '30s'
 
+  coreDns:
+    serviceMonitor:
+      enabled: false
+
+  kube-state-metrics:
+    prometheus:
+      monitor:
+        enabled: false
+    service:
+      enabled: false
+
+  prometheus:
+    enabled: false
+
   nodeExporter:
     forceDeployDashboards: true
 
@@ -67,17 +83,15 @@ kube-prometheus-stack:
       - '--collector.ethtool.device-exclude=^lxc.*'
     prometheus:
       monitor:
+        enabled: false
         interval: '30s'
 
-  prometheusOperator:
-    kubeletEndpointSliceEnabled: true
+    service:
+      enabled: false
 
-  prometheus:
-    prometheusSpec:
-      replicas: 0
-      # Alloy consumes ServiceMonitors from this release. Do not require the
-      # Prometheus release label, since the scrape is performed externally.
-      serviceMonitorSelectorNilUsesHelmValues: false
+  prometheusOperator:
+    enabled: false
+    kubeletEndpointSliceEnabled: true
 
 prometheus-smartctl-exporter:
   serviceMonitor:
