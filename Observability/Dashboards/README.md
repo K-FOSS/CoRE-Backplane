@@ -140,6 +140,16 @@ tables, plus a connection time series. The dashboard builds its displayed
 instance label as `region-dc-pod` from Prometheus labels; the scrape target's
 pod-IP `instance` label is not used in the panel grouping or legend.
 
+The chart also provisions the `Loki / Container Logging Volume` dashboard from
+[`templates/LokiLogging.yaml`](templates/LokiLogging.yaml). It uses the
+existing Alloy pod-log instrumentation: the collector preserves `cluster`,
+`dc`, `namespace`, `pod`, and `container` labels before forwarding logs to
+Loki. Loki LogQL `bytes_over_time` and `count_over_time` queries show total
+volume, bytes per second, lines per second, and the top containers by bytes or
+lines. The dashboard's time range and variables can be narrowed to isolate a
+noisy namespace, pod, or container. It intentionally measures the stored log
+stream rather than adding a second metric pipeline.
+
 The Garage operator remains the canonical source for the Garage S3 dashboard in
 DC1. Its labelled ConfigMap is imported by the DC1 syncer into the central YVR
 Grafana database and is consequently available through either Grafana URI.
