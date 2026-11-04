@@ -126,10 +126,7 @@ spec:
                       - '-config.expand-env=true'
                     extraEnv:
                       - name: 'S3_ENDPOINT'
-                        valueFrom:
-                          secretKeyRef:
-                            name: 'tempo-core'
-                            key: 'S3Hostname'
+                        value: '{{ if eq .values.region "yvr" }}observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else }}observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ end }}'
                       - name: 'S3_ACCESS_KEY'
                         valueFrom:
                           secretKeyRef:
