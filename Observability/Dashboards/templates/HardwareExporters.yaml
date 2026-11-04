@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-hardware-exporters
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'Infrastructure'
+data:
+  hardware-exporters.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (job) (up{job=~\"$job\"})", "legendFormat": "{{ "{{job}}" }}", "refId": "A"}],
+          "title": "Exporter scrape status",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"color": {"fixedColor": "red", "mode": "fixed"}, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "count(smartctl_device_status{job=~\"$job\", instance=~\"$instance\"} == 0)", "refId": "A"}],
+          "title": "SMART devices not healthy",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "count(smartctl_device_media_errors{job=~\"$job\", instance=~\"$instance\"} > 0)", "refId": "A"}],
+          "title": "SMART devices with media errors",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"decimals": 0, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8},
+          "id": 4,
+          "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true, "sortBy": [{"desc": true, "displayName": "Value"}]},
+          "targets": [{"editorMode": "code", "expr": "smartctl_device_status{job=~\"$job\", instance=~\"$instance\"}", "format": "table", "instant": true, "legendFormat": "{{ "{{instance}}" }} / {{ "{{device}}" }}", "refId": "A"}],
+          "title": "SMART device health",
+          "type": "table"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"decimals": 1, "unit": "celsius"}, "overrides": []},
+          "gridPos": {"h": 10, "w": 12, "x": 12, "y": 8},
+          "id": 5,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "smartctl_device_temperature{job=~\"$job\", instance=~\"$instance\", temperature_type=\"current\"}", "legendFormat": "{{ "{{instance}}" }} / {{ "{{device}}" }}", "refId": "A"}],
+          "title": "SMART device temperature",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 18},
+          "id": 6,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{job=~\"$job\", instance=~\"$instance\", mode=\"idle\"}[5m])))", "legendFormat": "{{ "{{instance}}" }}", "refId": "A"}],
+          "title": "Node CPU utilization",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 18},
+          "id": 7,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "100 * (1 - node_memory_MemAvailable_bytes{job=~\"$job\", instance=~\"$instance\"} / node_memory_MemTotal_bytes{job=~\"$job\", instance=~\"$instance\"})", "legendFormat": "{{ "{{instance}}" }}", "refId": "A"}],
+          "title": "Node memory utilization",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "Bps"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 26},
+          "id": 8,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [
+            {"expr": "sum by (instance) (rate(node_disk_read_bytes_total{job=~\"$job\", instance=~\"$instance\", device!~\"loop.*|dm-.*\"}[5m]))", "legendFormat": "{{ "{{instance}}" }} read", "refId": "A"},
+            {"expr": "sum by (instance) (rate(node_disk_written_bytes_total{job=~\"$job\", instance=~\"$instance\", device!~\"loop.*|dm-.*\"}[5m]))", "legendFormat": "{{ "{{instance}}" }} write", "refId": "B"}
+          ],
+          "title": "Node disk throughput",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"decimals": 1, "unit": "celsius"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 26},
+          "id": 9,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "ipmi_temperature_celsius{job=~\"$job\", instance=~\"$instance\"}", "legendFormat": "{{ "{{instance}}" }} / {{ "{{name}}" }}", "refId": "A"}],
+          "title": "IPMI temperatures",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "percent"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 34},
+          "id": 10,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "DCGM_FI_DEV_GPU_UTIL{job=~\"$job\", instance=~\"$instance\"}", "legendFormat": "{{ "{{instance}}" }} / GPU {{ "{{gpu}}" }}", "refId": "A"}],
+          "title": "GPU utilization",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"decimals": 1, "unit": "celsius"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 34},
+          "id": 11,
+          "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "DCGM_FI_DEV_GPU_TEMP{job=~\"$job\", instance=~\"$instance\"}", "legendFormat": "{{ "{{instance}}" }} / GPU {{ "{{gpu}}" }}", "refId": "A"}],
+          "title": "GPU temperature",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["hardware", "smartctl", "node-exporter", "ipmi", "gpu"],
+      "templating": {
+        "list": [
+          {"current": {}, "label": "Prometheus", "name": "datasource", "query": "prometheus", "refresh": 1, "type": "datasource"},
+          {"current": {"text": "All", "value": ["$__all"]}, "includeAll": true, "label": "Job", "multi": true, "name": "job", "query": "label_values(up, job)", "refresh": 2, "type": "query"},
+          {"current": {"text": "All", "value": ["$__all"]}, "includeAll": true, "label": "Instance", "multi": true, "name": "instance", "query": "label_values(up{job=~\"$job\"}, instance)", "refresh": 2, "type": "query"}
+        ]
+      },
+      "time": {"from": "now-6h", "to": "now"},
+      "timezone": "browser",
+      "title": "Hardware Exporters / SMART, BMC, GPU, and Node Health",
+      "uid": "core-hardware-exporters",
+      "version": 1
+    }
