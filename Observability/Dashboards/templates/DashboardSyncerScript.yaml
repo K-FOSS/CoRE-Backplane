@@ -43,7 +43,7 @@ data:
         _, result = request('POST', '/api/folders', {'title': folder})
         return result['uid']
 
-    dashboard_paths = sorted(ROOT.rglob('*.json')) + sorted(ROOT.rglob('*.url'))
+    dashboard_paths = sorted(path for path in ROOT.rglob('*') if path.is_file())
     for dashboard_path in dashboard_paths:
         if dashboard_path.suffix == '.url':
             with dashboard_path.open(encoding='utf-8') as stream:
