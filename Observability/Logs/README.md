@@ -37,8 +37,9 @@ is selected with `deploymentMode: Distributed`.
 | Ruler | 1 | 1 | StatefulSet |
 
 The simple-scalable and former single-binary targets remain at zero. Both sites
-run the distributed read and write paths with zone-aware ingester replication
-and hostname spreading to protect rollouts and node loss.
+run the distributed read and write paths with replication factor 2; YVR and
+YXL are the two failure domains. Hostname spreading and disruption budgets
+protect rollouts and node loss within each site.
 
 ## Architecture and global Service
 
@@ -59,8 +60,10 @@ Both sites set `service.cilium.io/global` and EndpointSlice synchronization on
 the client and memberlist Services. Cilium affinity prefers the local site and
 cross-site endpoints provide failover. This follows the
 [Cilium global Service](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
-model. The memberlist Service is global so both sites share one zone-aware
-ring, while client traffic remains local-preferred.
+model. The memberlist Service is global so both sites share one ring, while
+client traffic remains local-preferred. Loki 3.5.7 does not support Mimir's
+`memberlist.zone_aware_routing` configuration, so site replication is provided
+by the global ring and the replication factor instead.
 
 ## Observability S3 and Loki credentials
 

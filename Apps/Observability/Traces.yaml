@@ -191,6 +191,10 @@ spec:
                       targetCPUUtilizationPercentage: 60
                   ingester:
                     replicas: {{ .values.tempoIngesterReplicas }}
+                    extraArgs:
+                      - '-ingester.availability-zone={{ .values.region }}'
+                    config:
+                      replication_factor: 2
                   querier:
                     replicas: {{ .values.tempoQuerierReplicas }}
                     resources:

@@ -163,7 +163,7 @@ spec:
                       join_members:
                         - 'loki-core-memberlist.core-prod.svc.{{ .values.clusterDomain }}'
                     commonConfig:
-                      replication_factor: 3
+                      replication_factor: 2
                     storage:
                       s3:
                         region: 'garage'
@@ -207,7 +207,7 @@ spec:
                   ingester:
                     replicas: {{ .values.lokiIngesterReplicas }}
                     zoneAwareReplication:
-                      enabled: true
+                      enabled: false
                       maxUnavailablePct: 33
                   querier:
                     replicas: {{ .values.lokiQuerierReplicas }}
