@@ -10,7 +10,7 @@ deliberately migrated.
 
 The [Alloy Operator ApplicationSet](../../Apps/Observability/AlloyOperator.yaml)
 targets the same production bare-metal clusters as Collectors and installs
-into that cluster's `core-prod` namespace. The pinned
+into that cluster's `core-prod` namespace. The pinned 0.9.4
 [`alloy-operator` Helm chart](https://github.com/grafana/helm-charts/tree/main/charts/alloy-operator)
 creates its CRD, operator Deployment, ServiceAccount, and cluster-scoped RBAC.
 
