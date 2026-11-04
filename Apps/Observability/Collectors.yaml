@@ -120,7 +120,7 @@ spec:
                       enabled: true
 
                       # -- Name for the Alloy cluster. Used for differentiating between clusters.
-                      name: {{ .values.clusterName }}
+                      name: '{{ .values.orgId }}-collectors-gateway-{{ .values.clusterName }}'
 
                       
                     # -- Extra environment variables to pass to the Alloy container.
@@ -148,7 +148,7 @@ spec:
                         value: '{{ .values.region }}'
 
                       - name: OTLP_ENDPOINT
-                        value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                        value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                   rbac:
                     create: {{ .values.podLogsEnabled }}
@@ -157,6 +157,9 @@ spec:
 
                 alloy-metrics:
                   alloy:
+                    clustering:
+                      enabled: true
+                      name: '{{ .values.orgId }}-collectors-metrics-{{ .values.clusterName }}'
                     extraEnv:
                       - name: DC
                         value: '{{ .values.datacenter }}'
@@ -165,13 +168,30 @@ spec:
                         value: '{{ .values.clusterName }}'
 
                       - name: OTLP_ENDPOINT
-                        value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                        value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                alloy-services:
+                  controller:
+                    replicas: {{ .values.collectorReplicas }}
+                  alloy:
+                    clustering:
+                      enabled: true
+                      name: '{{ .values.orgId }}-collectors-services-{{ .values.clusterName }}'
+                    extraEnv:
+                      - name: DC
+                        value: '{{ .values.datacenter }}'
+
+                      - name: CLUSTER
+                        value: '{{ .values.clusterName }}'
+
+                      - name: OTLP_ENDPOINT
+                        value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                 alloy-otlp:
                   alloy:
                     extraEnv:
                       - name: OTLP_ENDPOINT
-                        value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+                        value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
 
                 vector:
                   enabled: {{ .values.vectorEnabled }}
@@ -184,7 +204,7 @@ spec:
                       value: '{{ .values.datacenter }}'
 
                     - name: VECTOR_OTLP_LOGS_ENDPOINT
-                      value: 'http://{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4328/v1/logs'
+                      value: 'http://{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4328/v1/logs'
 
       destination:
         server: '{{ .server }}'

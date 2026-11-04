@@ -140,6 +140,13 @@ alloy-metrics:
           format = "json"
         }
 
+        prometheus.operator.podmonitors "pods" {
+          clustering {
+            enabled = true
+          }
+          forward_to = [prometheus.relabel.node.receiver]
+        }
+
         prometheus.exporter.self "alloy" {}
 
         prometheus.scrape "node" {
@@ -189,9 +196,9 @@ alloy-metrics:
     - name: CLUSTER
       value: k8s
   rbac:
-    create: false
+    create: true
   serviceAccount:
-    automountServiceAccountToken: false
+    automountServiceAccountToken: true
   service:
     enabled: false
 
@@ -220,6 +227,15 @@ alloy-otlp:
             traces  = [otelcol.processor.batch.forward.input]
             metrics = [otelcol.processor.batch.forward.input]
             logs    = [otelcol.processor.batch.forward.input]
+          }
+        }
+
+        otelcol.receiver.otlp "infrastructure" {
+          http {
+            endpoint = "0.0.0.0:4328"
+          }
+          output {
+            logs = [otelcol.exporter.otlp.gateway.input]
           }
         }
 
@@ -253,12 +269,104 @@ alloy-otlp:
       port: 4318
       targetPort: 4318
       protocol: TCP
+    - name: infra-otel-http
+      port: 4328
+      targetPort: 4328
+      protocol: TCP
   rbac:
     create: false
   serviceAccount:
     automountServiceAccountToken: false
   service:
-    internalTrafficPolicy: Local
+    internalTrafficPolicy: Cluster
+    trafficDistribution: PreferClose
+alloy-services:
+  crds:
+    create: false
+  alloy:
+    stabilityLevel: public-preview
+    clustering:
+      enabled: true
+    configMap:
+      content: |
+        logging {
+          level = "info"
+          format = "json"
+        }
+
+        prometheus.operator.servicemonitors "services" {
+          clustering {
+            enabled = true
+          }
+          forward_to = [prometheus.relabel.services.receiver]
+        }
+
+        prometheus.operator.probes "probes" {
+          clustering {
+            enabled = true
+          }
+          forward_to = [prometheus.relabel.services.receiver]
+        }
+
+        prometheus.operator.scrapeconfigs "scrapeconfigs" {
+          clustering {
+            enabled = true
+          }
+          forward_to = [prometheus.relabel.services.receiver]
+        }
+
+        prometheus.relabel "services" {
+          rule {
+            target_label = "cluster"
+            replacement = sys.env("CLUSTER")
+          }
+          rule {
+            target_label = "dc"
+            replacement = sys.env("DC")
+          }
+          forward_to = [otelcol.receiver.prometheus.services.receiver]
+        }
+
+        otelcol.receiver.prometheus "services" {
+          output {
+            metrics = [otelcol.processor.batch.services.input]
+          }
+        }
+
+        otelcol.processor.batch "services" {
+          output {
+            metrics = [otelcol.exporter.otlp.gateway.input]
+          }
+        }
+
+        otelcol.exporter.otlp "gateway" {
+          client {
+            endpoint = sys.env("OTLP_ENDPOINT")
+            tls {
+              insecure = true
+            }
+          }
+          retry_on_failure {
+            enabled = true
+            max_elapsed_time = "0s"
+          }
+        }
+    extraEnv:
+    - name: DC
+      value: dc1
+    - name: CLUSTER
+      value: k8s
+  rbac:
+    create: true
+  serviceAccount:
+    automountServiceAccountToken: true
+  controller:
+    type: statefulset
+    replicas: 3
+    podDisruptionBudget:
+      enabled: true
+      maxUnavailable: 1
+
 alloy:
   destinations:
     lokiUrl: 'http://loki-core:3100/loki/api/v1/push'
@@ -279,7 +387,7 @@ alloy:
           write_to = [otelcol.exporter.otlp.tempo.input]
         }
 
-        // Cluster-wide metrics discovery belongs on the clustered Deployment,
+        {{- if false }}
         // not on any node-local DaemonSet.
         discovery.kubernetes "pod" {
           role = "pod"
@@ -346,6 +454,7 @@ alloy:
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
+        {{- end }}
         // Backend writers remain centralized so node agents carry no backend
         // addresses or credentials.
         loki.write "loki" {
@@ -355,7 +464,7 @@ alloy:
           }
         }
 
-        prometheus.operator.scrapeconfigs "scrapeconfigs" {
+        {{- if false }}
           forward_to = [prometheus.remote_write.mimir.receiver]
           clustering {
             enabled = true
@@ -551,6 +660,7 @@ alloy:
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
 
+        {{- end }}
         prometheus.remote_write "mimir" {
           endpoint {
             url = {{ required "alloy.destinations.mimirUrl is required" .Values.destinations.mimirUrl | quote }}
@@ -567,7 +677,7 @@ alloy:
           }
         }
 
-        // Accept Prometheus remote-write from trusted, cluster-internal
+        {{- if false }}
         // producers and keep backend addressing in the central Alloy tier.
         prometheus.receive_http "internal" {
           http {
@@ -576,6 +686,7 @@ alloy:
           }
           forward_to = [prometheus.remote_write.mimir.receiver]
         }
+        {{- end }}
 
         // Convert gateway OTLP metrics into the existing Prometheus
         // remote-write pipeline.
