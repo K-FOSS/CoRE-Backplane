@@ -396,18 +396,15 @@ spec:
                       store-gateway.sharding-ring.instance-availability-zone: '{{ .values.region }}'
                     extraVolumes:
                       - name: rulefiles
-                        configMap:
-                          name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
-                      - name: cluster-resource-rules
-                        configMap:
-                          name: 'core-mimir-cluster-resource-rules'
+                        projected:
+                          sources:
+                            - configMap:
+                                name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
+                            - configMap:
+                                name: 'core-mimir-cluster-resource-rules'
                     extraVolumeMounts:
                       - name: rulefiles
                         mountPath: '/rules/{{ .values.tenant }}'
-                      - name: cluster-resource-rules
-                        mountPath: '/rules/{{ .values.tenant }}/cluster-resource.rules.yaml'
-                        subPath: 'cluster-resource.rules.yaml'
-                        readOnly: true
                   mimir:
                     structuredConfig:
                       limits:
