@@ -1,4 +1,9 @@
 kube-prometheus-stack:
+  # Alloy/Collectors owns the Prometheus Operator CRDs consumed by both
+  # stacks. Keep this release from creating a second CRD owner.
+  crds:
+    enabled: false
+
   alertmanager:
     alertmanagerSpec:
       image:

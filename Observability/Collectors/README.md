@@ -57,13 +57,15 @@ Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
 
-Kubelet/cAdvisor metrics are scraped directly from every Kubernetes node by
-the clustered central Alloy StatefulSet. The exporter chart's kubelet
-ServiceMonitor is disabled because its headless-Service path was only
-producing one kubelet endpoint per cluster. See Grafana's
+Kubelet/cAdvisor metrics are scraped for every Kubernetes node through the
+authenticated Kubernetes node proxy by the clustered central Alloy StatefulSet.
+The exporter chart's kubelet ServiceMonitor is disabled because its
+headless-Service path was only producing one kubelet endpoint per cluster. See Grafana's
 [Kubernetes discovery](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.kubernetes/)
 and [Prometheus scrape](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.scrape/)
-documentation for the node discovery and TLS/token configuration.
+documentation for the node discovery and TLS/token configuration. The
+Collectors release owns the Prometheus Operator CRDs used by Alloy; the
+Exporters release leaves those CRDs disabled.
 
 The central StatefulSet receives OTLP telemetry from all signal DaemonSets.
 For pod logs, `loki.source.kubernetes` sends selected entries through
