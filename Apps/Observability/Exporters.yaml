@@ -49,6 +49,7 @@ spec:
                     smartctlExporterEnabled: true
                     ipmiExporterEnabled: true
                     drmExporterEnabled: true
+                    drmExporterPrivileged: true
                     dcgmExporterEnabled: true
                     smartctlDeviceExclude: '^sd[b-z].*'
 
@@ -85,6 +86,7 @@ spec:
                     smartctlExporterEnabled: true
                     ipmiExporterEnabled: true
                     drmExporterEnabled: false
+                    drmExporterPrivileged: false
                     dcgmExporterEnabled: false
                     smartctlDeviceExclude: ''
 
@@ -121,6 +123,7 @@ spec:
                     smartctlExporterEnabled: true
                     ipmiExporterEnabled: true
                     drmExporterEnabled: false
+                    drmExporterPrivileged: false
                     dcgmExporterEnabled: false
                     smartctlDeviceExclude: ''
           - clusters:
@@ -206,6 +209,8 @@ spec:
 
                 drm-exporter:
                   enabled: {{ .values.drmExporterEnabled }}
+                  securityContext:
+                    privileged: {{ .values.drmExporterPrivileged }}
 
                 dcgm-exporter:
                   enabled: {{ .values.dcgmExporterEnabled }}
