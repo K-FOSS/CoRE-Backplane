@@ -13,6 +13,8 @@ data:
       - name: 'cluster-resource-usage'
         interval: 1m
         rules:
+          - record: 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
+            expr: 'sum by (cluster, namespace, pod, container) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}[5m]))'
           - record: 'cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
             expr: 'sum(node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m) by (cluster)'
           - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
