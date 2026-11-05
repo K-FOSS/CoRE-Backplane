@@ -106,9 +106,10 @@ spec:
                     {{- if eq .values.clusterName "core-home1-talos-prod" }}
                     affinity:
                       nodeAffinity:
-                        requiredDuringSchedulingIgnoredDuringExecution:
-                          nodeSelectorTerms:
-                            - matchExpressions:
+                        preferredDuringSchedulingIgnoredDuringExecution:
+                          - weight: 100
+                            preference:
+                              matchExpressions:
                                 - key: 'kubernetes.io/hostname'
                                   operator: NotIn
                                   values: ['hpc3']
@@ -212,6 +213,17 @@ spec:
                 alloy-services:
                   controller:
                     replicas: {{ .values.collectorReplicas }}
+                    {{- if eq .values.clusterName "core-home1-talos-prod" }}
+                    affinity:
+                      nodeAffinity:
+                        preferredDuringSchedulingIgnoredDuringExecution:
+                          - weight: 100
+                            preference:
+                              matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: NotIn
+                                  values: ['hpc3']
+                    {{- end }}
                   alloy:
                     clustering:
                       enabled: true
