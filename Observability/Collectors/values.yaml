@@ -148,51 +148,17 @@ alloy-metrics:
           format = "json"
         }
 
-        discovery.kubernetes "nodes" {
-          role = "node"
-        }
-
-        discovery.relabel "kubelet_cadvisor" {
-          targets = discovery.kubernetes.nodes.targets
-
-          // Each node-local agent scrapes only its own kubelet. Cluster-wide
-          // PodMonitor discovery belongs to the clustered central Alloy tier.
-          rule {
-            source_labels = ["__meta_kubernetes_node_name"]
-            regex = "^" + sys.env("K8S_NODE_NAME") + "$"
-            action = "keep"
-          }
-
-          rule {
-            target_label = "__address__"
-            replacement = "kubernetes.default.svc." + sys.env("CLUSTER_DOMAIN") + ":443"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_node_name"]
-            regex = "(.+)"
-            replacement = "/api/v1/nodes/$1/proxy/metrics/cadvisor"
-            target_label = "__metrics_path__"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_node_name"]
-            target_label = "instance"
-          }
-
-          rule {
-            target_label = "metrics_path"
-            replacement = "/metrics/cadvisor"
-          }
-
-          rule {
-            target_label = "job"
-            replacement = "kubelet"
-          }
-        }
-
         prometheus.scrape "kubelet_cadvisor" {
-          targets = discovery.relabel.kubelet_cadvisor.output
+          // The pod already knows its node name. Keep this target static so
+          // an API watch outage cannot remove it; each scrape retries after
+          // the API service recovers.
+          targets = [{
+            "__address__" = "kubernetes.default.svc." + sys.env("CLUSTER_DOMAIN") + ":443",
+            "__metrics_path__" = "/api/v1/nodes/" + sys.env("K8S_NODE_NAME") + "/proxy/metrics/cadvisor",
+            "instance" = sys.env("K8S_NODE_NAME"),
+            "metrics_path" = "/metrics/cadvisor",
+            "job" = "kubelet",
+          }]
           job_name = "kubelet"
           scheme = "https"
           // The Kubernetes resource recording rules use a 5m rate window and
@@ -282,9 +248,6 @@ alloy-metrics:
   rbac:
     create: true
     clusterRules:
-      - apiGroups: ['']
-        resources: ['nodes']
-        verbs: ['get', 'list', 'watch']
       - apiGroups: ['']
         resources: ['nodes/proxy']
         verbs: ['get']
