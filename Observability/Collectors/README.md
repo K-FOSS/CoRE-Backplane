@@ -30,8 +30,9 @@ Three signal-specific DaemonSets run on every node:
   [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/),
   converts them to OTLP, and sends them to the node-local-preferred Alloy
   OTLP/gRPC receiver.
-- `alloy-metrics` runs the Unix/node-exporter module locally on every node and
-  forwards host metrics directly through its node-local pipeline.
+- `alloy-metrics` runs the Unix/node-exporter module locally on every node,
+  scrapes only that node's kubelet/cAdvisor endpoint, and forwards host metrics
+  directly through its node-local pipeline.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `trafficDistribution: PreferClose`; it prefers the local
   node's receiver and fails over to another receiver when the local one is
@@ -77,8 +78,9 @@ Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
 
-Kubelet/cAdvisor metrics are scraped for every Kubernetes node through the
-authenticated Kubernetes node proxy by the clustered central Alloy StatefulSet.
+Kubelet/cAdvisor metrics are scraped locally by each node's `alloy-metrics`
+DaemonSet through the authenticated Kubernetes node proxy. Cluster-wide
+PodMonitor targets are scraped by the clustered central Alloy StatefulSet.
 The exporter chart's kubelet ServiceMonitor is disabled because its
 headless-Service path was only producing one kubelet endpoint per cluster. See Grafana's
 [Kubernetes discovery](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.kubernetes/)
@@ -205,14 +207,12 @@ documents the API-server cost of discovery watches in its
 [discovery performance guidance](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.kubernetes/#performance-considerations).
 
 The central tier still has duplicated watch traffic for HA, including the
-three `otelcol.processor.k8sattributes` informers. Scrape work is
-sharded for `ScrapeConfig`, `PodMonitor`, `ServiceMonitor`, `Probe`, and
-annotation-discovered targets using the component-level clustering described by the
-[ServiceMonitor component](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.operator.servicemonitors/#clustering).
-The node-local `alloy-metrics` scrape deliberately remains unclustered. Its
-Unix exporter and authenticated kubelet/cAdvisor scrape are node-local, while
-the central StatefulSet continues to handle cluster-wide ServiceMonitor and
-PodMonitor targets.
+three `otelcol.processor.k8sattributes` informers. PodMonitor scrape work is
+sharded across the central peers using the component-level clustering
+described by Grafana's
+[PodMonitor component](https://grafana.com/docs/grafana-cloud/send-data/alloy/reference/components/prometheus/prometheus.operator.podmonitors/#clustering).
+The node-local `alloy-metrics` scrape remains unclustered: its Unix exporter
+and authenticated kubelet/cAdvisor scrape are limited to the local node.
 
 ## Operations
 

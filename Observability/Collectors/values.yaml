@@ -148,16 +148,6 @@ alloy-metrics:
           format = "json"
         }
 
-        prometheus.operator.podmonitors "pods" {
-          clustering {
-            enabled = true
-          }
-          scrape {
-            default_scrape_interval = "5m"
-          }
-          forward_to = [prometheus.relabel.node.receiver]
-        }
-
         // Run node_exporter inside the node-local Alloy DaemonSet. This
         // removes the separate Exporters DaemonSet and avoids a ClusterIP or
         // headless Service hop for host metrics.
@@ -213,6 +203,14 @@ alloy-metrics:
         discovery.relabel "kubelet_cadvisor" {
           targets = discovery.kubernetes.nodes.targets
 
+          // Each node-local agent scrapes only its own kubelet. Cluster-wide
+          // PodMonitor discovery belongs to the clustered central Alloy tier.
+          rule {
+            source_labels = ["__meta_kubernetes_node_name"]
+            regex = "^" + sys.env("K8S_NODE_NAME") + "$"
+            action = "keep"
+          }
+
           rule {
             target_label = "__address__"
             replacement = "kubernetes.default.svc." + sys.env("CLUSTER_DOMAIN") + ":443"
@@ -251,10 +249,6 @@ alloy-metrics:
           tls_config {
             server_name = "kubernetes"
             ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-          }
-
-          clustering {
-            enabled = true
           }
 
           forward_to = [prometheus.relabel.node.receiver]
@@ -555,6 +549,18 @@ alloy:
           write_to = [otelcol.exporter.otlp.tempo.input]
         }
 
+        // Cluster-wide PodMonitor discovery is owned by the clustered central
+        // Alloy StatefulSet so node-local agents only process host telemetry.
+        prometheus.operator.podmonitors "pods" {
+          clustering {
+            enabled = true
+          }
+          scrape {
+            default_scrape_interval = "5m"
+          }
+          forward_to = [prometheus.remote_write.mimir.receiver]
+        }
+
         {{- if false }}
         // not on any node-local DaemonSet.
         discovery.kubernetes "pod" {
@@ -633,13 +639,6 @@ alloy:
         }
 
         {{- if false }}
-          forward_to = [prometheus.remote_write.mimir.receiver]
-          clustering {
-            enabled = true
-          }
-        }
-
-        prometheus.operator.podmonitors "pods" {
           forward_to = [prometheus.remote_write.mimir.receiver]
           clustering {
             enabled = true
