@@ -114,7 +114,7 @@ spec:
                     log_level: warning
 
                   ldap:
-                    avoidNodeName: '{{ if eq .values.region "yvr" }}hpc3{{ end }}'
+                    avoidNodeName: ''
                     additionalExternalDNSHostname: '{{ .values.ldapAdditionalExternalDNSHostname }}'
                     clusterMesh:
                       enabled: {{ .values.ldapClusterMeshEnabled }}
@@ -156,6 +156,102 @@ spec:
                       - name: tls-certs
                         secret:
                           secretName: myloginspace-default-certificates
+
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                {{ if eq .values.region "yvr" }}
+                patches:
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      labelSelector: 'app.kubernetes.io/name=authentik'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          spec:
+                            affinity:
+                              nodeAffinity:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  - weight: 100
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: In
+                                          values:
+                                            - 'laptop2'
+                                            - 'hpc2'
+                                  - weight: 50
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: In
+                                          values:
+                                            - 'srv2'
+                                            - 'srv3'
+                                  - weight: 1
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: NotIn
+                                          values:
+                                            - 'hpc3'
+                            tolerations:
+                              - key: 'load'
+                                operator: Equal
+                                value: 'testing'
+                                effect: NoSchedule
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: Deployment
+                      labelSelector: 'app.kubernetes.io/name=myloginspace-ldap'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          spec:
+                            affinity:
+                              nodeAffinity:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  - weight: 100
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: In
+                                          values:
+                                            - 'laptop2'
+                                            - 'hpc2'
+                                  - weight: 50
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: In
+                                          values:
+                                            - 'srv2'
+                                            - 'srv3'
+                                  - weight: 1
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: NotIn
+                                          values:
+                                            - 'hpc3'
+                            tolerations:
+                              - key: 'load'
+                                operator: Equal
+                                value: 'testing'
+                                effect: NoSchedule
+                {{ else }}
+                {}
+                {{ end }}
 
       destination:
         server: '{{ .server }}'
