@@ -203,6 +203,8 @@ spec:
                       targetCPUUtilizationPercentage: 60
                   ingester:
                     replicas: {{ .values.tempoIngesterReplicas }}
+                    extraArgs:
+                      - '-ingester.availability-zone={{ .values.region }}'
                     config:
                       # Use one active owner across the global ring. Local
                       # replicas provide capacity and rollout space; Garage
