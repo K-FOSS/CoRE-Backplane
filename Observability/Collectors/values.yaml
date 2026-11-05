@@ -1031,8 +1031,6 @@ alloy:
             cluster = sys.env("CLUSTER"),
             dc = sys.env("DC"),
             region = sys.env("REGION"),
-            // Mimir uses this label to deduplicate samples during Alloy failover.
-            __replica__ = sys.env("HOSTNAME"),
           }
         }
 
@@ -1285,6 +1283,24 @@ alloy-mixin:
 vector:
   enabled: false
   role: Stateless-Aggregator
+
+  # Avoid collisions when the chart truncates auto-generated source names.
+  containerPorts:
+    - name: api
+      containerPort: 8686
+      protocol: TCP
+    - name: syslog-udp
+      containerPort: 1514
+      protocol: UDP
+    - name: syslog-tcp
+      containerPort: 1514
+      protocol: TCP
+    - name: talos-kernel
+      containerPort: 6050
+      protocol: UDP
+    - name: talos-service
+      containerPort: 6051
+      protocol: UDP
 
   # Vector 0.57 disables configuration environment interpolation by default.
   # This deployment deliberately retains it for the ApplicationSet-injected
