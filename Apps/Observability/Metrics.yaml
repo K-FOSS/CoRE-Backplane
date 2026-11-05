@@ -338,6 +338,16 @@ spec:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
                     podAnnotations:
                       core.mylogin.space/config-revision: '5018cce4b'
+                    {{- if .values.mimirAvoidHpc3 }}
+                    affinity:
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: NotIn
+                                  values: ['hpc3']
+                    {{- end }}
                   ingester:
                     enabled: true
                     replicas: 3
@@ -349,6 +359,15 @@ spec:
                       topologyKey: 'kubernetes.io/hostname'
                       whenUnsatisfiable: 'ScheduleAnyway'
                     affinity:
+                      {{- if .values.mimirAvoidHpc3 }}
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: NotIn
+                                  values: ['hpc3']
+                      {{- end }}
                       podAntiAffinity:
                         preferredDuringSchedulingIgnoredDuringExecution:
                           - weight: 100
@@ -602,31 +621,6 @@ spec:
             - name: 'LOVELY_KUSTOMIZE_MERGE'
               value: |-
                 patches:
-                  {{ if .values.mimirAvoidHpc3 }}
-                  - target:
-                      group: apps
-                      version: v1
-                      kind: 'Deployment|StatefulSet'
-                      labelSelector: 'app.kubernetes.io/name=mimir'
-                    patch: |-
-                      apiVersion: apps/v1
-                      kind: Deployment
-                      metadata:
-                        name: unused
-                      spec:
-                        template:
-                          spec:
-                            affinity:
-                              nodeAffinity:
-                                preferredDuringSchedulingIgnoredDuringExecution:
-                                  - weight: 100
-                                    preference:
-                                      matchExpressions:
-                                        - key: 'kubernetes.io/hostname'
-                                          operator: NotIn
-                                          values:
-                                            - 'hpc3'
-                  {{ end }}
                   - target:
                       group: apps
                       version: v1
