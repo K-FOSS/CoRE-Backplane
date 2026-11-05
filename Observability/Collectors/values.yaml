@@ -243,7 +243,10 @@ alloy-metrics:
           targets = discovery.relabel.kubelet_cadvisor.output
           job_name = "kubelet"
           scheme = "https"
-          scrape_interval = "30s"
+          // The Kubernetes resource recording rules use a 5m rate window and
+          // evaluate every minute, so 60s preserves dashboard resolution while
+          // reducing cAdvisor volume by half.
+          scrape_interval = "60s"
           bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
           tls_config {
@@ -258,6 +261,7 @@ alloy-metrics:
 
         prometheus.scrape "node" {
           targets = prometheus.exporter.self.alloy.targets
+          scrape_interval = "30s"
           forward_to = [prometheus.relabel.node.receiver]
         }
 
@@ -280,6 +284,12 @@ alloy-metrics:
         }
 
         otelcol.processor.batch "metrics" {
+          // Larger, bounded batches reduce OTLP request and serialization
+          // overhead without allowing an unbounded cAdvisor burst.
+          send_batch_size = 8192
+          send_batch_max_size = 8192
+          timeout = "5s"
+
           output {
             metrics = [otelcol.exporter.otlp.gateway.input]
           }

@@ -32,7 +32,10 @@ Three signal-specific DaemonSets run on every node:
   OTLP/gRPC receiver.
 - `alloy-metrics` runs the Unix/node-exporter module locally on every node,
   scrapes only that node's kubelet/cAdvisor endpoint, and forwards host metrics
-  directly through its node-local pipeline.
+  directly through its node-local pipeline. Host and Alloy self-metrics are
+  scraped every 30 seconds; cAdvisor is scraped every 60 seconds to match the
+  five-minute resource recording windows without retaining the former 30-second
+  cAdvisor volume.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `trafficDistribution: PreferClose`; it prefers the local
   node's receiver and fails over to another receiver when the local one is
@@ -212,7 +215,10 @@ sharded across the central peers using the component-level clustering
 described by Grafana's
 [PodMonitor component](https://grafana.com/docs/grafana-cloud/send-data/alloy/reference/components/prometheus/prometheus.operator.podmonitors/#clustering).
 The node-local `alloy-metrics` scrape remains unclustered: its Unix exporter
-and authenticated kubelet/cAdvisor scrape are limited to the local node.
+and authenticated kubelet/cAdvisor scrape are limited to the local node. Its
+metrics OTLP pipeline uses bounded 8,192-point batches with a five-second
+flush timeout to reduce request overhead while preserving the node and cAdvisor
+series required by the resource rules.
 
 ## Operations
 

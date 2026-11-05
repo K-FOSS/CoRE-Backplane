@@ -148,12 +148,15 @@ upstream [ruler storage documentation](https://grafana.com/docs/mimir/latest/ref
 and [object-storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
 
 The ruler also loads the site-independent `cluster-resource-usage` recording
-group from `core-mimir-cluster-resource-rules`. It publishes
+group from `core-mimir-cluster-resource-rules`. It calculates
 `cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m`
-and `cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum`,
-both grouped by `cluster`, for dashboards and alerts. The file is mounted into
-both site rulers and uses the shared ruler ring so only the owning ruler
-evaluates the group. It also publishes the deduplicated
+directly from the collected kubelet/cAdvisor
+`container_cpu_usage_seconds_total` series over a five-minute rate window,
+and calculates `cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum`
+directly from `container_memory_working_set_bytes`; both are grouped by
+`cluster` for dashboards and alerts. The file is mounted into both site rulers
+and uses the shared ruler ring so only the owning ruler evaluates the group.
+It also publishes the deduplicated
 `cluster:container_memory_rss:sum` series by taking the maximum RSS value per
 `cluster`, namespace, pod, and container before summing. This avoids counting
 the same container twice if an additional scrape path introduces duplicate
