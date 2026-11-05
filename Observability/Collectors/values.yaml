@@ -148,53 +148,6 @@ alloy-metrics:
           format = "json"
         }
 
-        // Keep the existing node-local host metrics path for compatibility;
-        // alloy-host is the separate privileged collector for NIC modules.
-        prometheus.exporter.unix "node" {
-          rootfs_path = "/host/root"
-          procfs_path = "/host/proc"
-          sysfs_path = "/host/sys"
-          set_collectors = [
-            "diskstats",
-            "filesystem",
-            "cpu",
-            "udp_queues",
-            "cpufreq",
-            "tcpstat",
-            "sockstat",
-            "uname",
-            "meminfo",
-            "loadavg",
-            "stat",
-            "netdev",
-            "netstat",
-            "softnet",
-            "time",
-            "hwmon",
-          ]
-        }
-
-        discovery.relabel "node_host" {
-          targets = prometheus.exporter.unix.node.targets
-
-          rule {
-            replacement = sys.env("K8S_NODE_NAME")
-            target_label = "instance"
-          }
-
-          rule {
-            replacement = "node-exporter"
-            target_label = "job"
-          }
-        }
-
-        prometheus.scrape "node_host" {
-          targets = discovery.relabel.node_host.output
-          job_name = "node-exporter"
-          scrape_interval = "30s"
-          forward_to = [prometheus.relabel.node.receiver]
-        }
-
         discovery.kubernetes "nodes" {
           role = "node"
         }
@@ -326,17 +279,6 @@ alloy-metrics:
       valueFrom:
         fieldRef:
           fieldPath: spec.nodeName
-    mounts:
-      extra:
-      - name: host-root
-        mountPath: /host/root
-        readOnly: true
-      - name: host-proc
-        mountPath: /host/proc
-        readOnly: true
-      - name: host-sys
-        mountPath: /host/sys
-        readOnly: true
   rbac:
     create: true
     clusterRules:
@@ -358,21 +300,6 @@ alloy-metrics:
       operator: 'Equal'
       value: 'testing'
       effect: 'NoSchedule'
-    volumes:
-      extra:
-      - name: host-root
-        hostPath:
-          path: /
-          type: Directory
-      - name: host-proc
-        hostPath:
-          path: /proc
-          type: Directory
-      - name: host-sys
-        hostPath:
-          path: /sys
-          type: Directory
-
 alloy-host:
   crds:
     create: false

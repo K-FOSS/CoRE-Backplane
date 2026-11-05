@@ -30,17 +30,15 @@ Three signal-specific DaemonSets run on every node:
   [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/),
   converts them to OTLP, and sends them to the node-local-preferred Alloy
   OTLP/gRPC receiver.
-- `alloy-metrics` runs the Unix/node-exporter module locally on every node,
-  scrapes only that node's kubelet/cAdvisor endpoint, and forwards host metrics
-  directly through its node-local pipeline. Host and Alloy self-metrics are
-  scraped every 30 seconds; cAdvisor is scraped every 60 seconds to match the
-  five-minute resource recording windows without retaining the former 30-second
-  cAdvisor volume.
-- `alloy-host` is a separate host-networked, privileged Alloy DaemonSet for
-  host-only collectors that require elevated access, including `ethtool` NIC
-  metrics. It mounts the host root, proc, and sys filesystems, listens on a
-  separate local port, and forwards its metrics through the existing OTLP
-  receiver so it does not alter the node-local cAdvisor workload.
+- `alloy-metrics` scrapes only that node's kubelet/cAdvisor endpoint and Alloy
+  self-metrics, forwarding them through its node-local pipeline. cAdvisor is
+  scraped every 60 seconds to match the five-minute resource recording windows
+  without retaining the former 30-second cAdvisor volume.
+- `alloy-host` is the sole node-exporter pipeline: a separate host-networked,
+  privileged Alloy DaemonSet using the former node-exporter collector set plus
+  `ethtool` NIC metrics. It mounts the host root, proc, and sys filesystems,
+  listens on a separate local port, and forwards metrics through the existing
+  OTLP receiver.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `trafficDistribution: PreferClose`; it prefers the local
   node's receiver and fails over to another receiver when the local one is
