@@ -316,6 +316,18 @@ spec:
                       {{- end }}
                   gateway:
                     enabled: true
+                    replicas: 2
+                    podDisruptionBudget:
+                      maxUnavailable: 1
+                    strategy:
+                      type: RollingUpdate
+                      rollingUpdate:
+                        maxUnavailable: 0
+                        maxSurge: 1
+                    topologySpreadConstraints:
+                      maxSkew: 1
+                      topologyKey: 'kubernetes.io/hostname'
+                      whenUnsatisfiable: 'ScheduleAnyway'
                   distributor:
                     replicas: 3
                     extraArgs:
@@ -362,12 +374,45 @@ spec:
                     replicas: 3
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
+                    podDisruptionBudget:
+                      maxUnavailable: 1
+                    strategy:
+                      type: RollingUpdate
+                      rollingUpdate:
+                        maxUnavailable: 0
+                        maxSurge: '15%'
+                    topologySpreadConstraints:
+                      maxSkew: 1
+                      topologyKey: 'kubernetes.io/hostname'
+                      whenUnsatisfiable: 'ScheduleAnyway'
                   query_frontend:
                     replicas: 3
+                    podDisruptionBudget:
+                      maxUnavailable: 1
+                    strategy:
+                      type: RollingUpdate
+                      rollingUpdate:
+                        maxUnavailable: 0
+                        maxSurge: '15%'
+                    topologySpreadConstraints:
+                      maxSkew: 1
+                      topologyKey: 'kubernetes.io/hostname'
+                      whenUnsatisfiable: 'ScheduleAnyway'
                   query_scheduler:
                     replicas: 2
                     extraArgs:
                       query-scheduler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-query-scheduler-$(HOSTNAME)'
+                    podDisruptionBudget:
+                      maxUnavailable: 1
+                    strategy:
+                      type: RollingUpdate
+                      rollingUpdate:
+                        maxUnavailable: 0
+                        maxSurge: 1
+                    topologySpreadConstraints:
+                      maxSkew: 1
+                      topologyKey: 'kubernetes.io/hostname'
+                      whenUnsatisfiable: 'ScheduleAnyway'
                   store_gateway:
                     replicas: 3
                     extraArgs:
