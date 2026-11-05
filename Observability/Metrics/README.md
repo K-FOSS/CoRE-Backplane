@@ -175,7 +175,7 @@ local affinity and sharing enabled. Home1 declares the same global Service
 identity with remote affinity and sharing disabled. Its common-chart Service
 has a deliberately non-matching selector, so only Cilium-synchronized remote
 EndpointSlices back it. The YXL HTTPRoute also uses this Service as its direct
-backend. The former `core-mimir-proxy` memberlist bridge is disabled. The
+backend. The zone memberlist bridge and `core-mimir-proxy` remain enabled. The
 client Service still uses Cilium synchronization for site-level failover, but
 the Mimir memberlist Service is global so the query path can discover
 ingesters in either site.
@@ -384,7 +384,7 @@ rolls one pod at a time, all
 replacement pods become ready, and block uploads and queries continue without
 authentication errors. Render both site profiles before merging. Roll back
 through Git/Argo CD. Disabling the bridge removes the local `core-mimir-proxy`
-Service and breaks the Headlamp endpoint; removing the global-service
+Service and zone bridge and breaks the Headlamp endpoint; removing the global-service
 annotations stops new remote backend synchronization. Increasing retention
 does not restore blocks already deleted, and lowering rate limits creates
 intentional monitoring gaps.
@@ -395,8 +395,9 @@ intentional monitoring gaps.
 The October 2026 cutover starts a fresh metrics store in YXL using its existing
 site identity, site-local S3 endpoint and new Longhorn claims. It does not copy
 YVR blocks, WAL/head data, ruler objects or Alertmanager state. The previously
-scaled-to-zero YVR StatefulSets must remain stopped. The compatibility bridge
-is disabled; only YXL exports local Mimir backends through the global Service.
+scaled-to-zero YVR StatefulSets must remain stopped. The zone bridge and
+compatibility bridge remain enabled; only YXL exports local Mimir backends
+through the global Service.
 
 Keep the YVR `User` claim and its connection Secrets managed in Git. Its
 existing Longhorn claims have `Retain` policies on StatefulSet deletion and
