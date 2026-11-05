@@ -13,8 +13,14 @@ data:
       - name: 'cluster-resource-usage'
         interval: 1m
         rules:
+          # kube-prometheus-stack renders this as a PrometheusRule, but this
+          # deployment disables Prometheus. Publish the upstream-compatible
+          # series from Mimir so the Kubernetes mixin namespace and pod
+          # dashboards can use their standard queries.
+          - record: 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
+            expr: 'sum by (cluster, namespace, pod, container, node) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}[5m]))'
           - record: 'cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
-            expr: 'sum by (cluster) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}[5m]))'
+            expr: 'sum by (cluster) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)'
           - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
             expr: 'sum by (cluster) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"})'
           - record: 'cluster:container_memory_rss:sum'
