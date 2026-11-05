@@ -274,6 +274,17 @@ alloy-metrics:
             target_label = "dc"
             replacement  = sys.env("DC")
           }
+          rule {
+            // Preserve the originating node through the OTLP gateway. The
+            // central k8sattributes processor may otherwise label every
+            // sample with the node hosting the receiving Alloy pod.
+            target_label = "node"
+            replacement  = sys.env("K8S_NODE_NAME")
+          }
+          rule {
+            target_label = "source_node"
+            replacement  = sys.env("K8S_NODE_NAME")
+          }
           forward_to = [otelcol.receiver.prometheus.node.receiver]
         }
 
@@ -976,7 +987,10 @@ alloy:
               `set(attributes["namespace"], resource.attributes["k8s.namespace.name"]) where resource.attributes["k8s.namespace.name"] != nil`,
               `set(attributes["pod"], resource.attributes["k8s.pod.name"]) where resource.attributes["k8s.pod.name"] != nil`,
               `set(attributes["container"], resource.attributes["k8s.container.name"]) where resource.attributes["k8s.container.name"] != nil`,
-              `set(attributes["node"], resource.attributes["k8s.node.name"]) where resource.attributes["k8s.node.name"] != nil`,
+              `set(attributes["node"], attributes["source_node"]) where attributes["source_node"] != nil`,
+              `set(attributes["instance"], attributes["source_node"]) where attributes["source_node"] != nil`,
+              `set(attributes["node"], resource.attributes["k8s.node.name"]) where attributes["source_node"] == nil and resource.attributes["k8s.node.name"] != nil`,
+              `delete_key(attributes, "source_node")`,
               `set(attributes["deployment"], resource.attributes["k8s.deployment.name"]) where resource.attributes["k8s.deployment.name"] != nil`,
               `set(attributes["statefulset"], resource.attributes["k8s.statefulset.name"]) where resource.attributes["k8s.statefulset.name"] != nil`,
               `set(attributes["daemonset"], resource.attributes["k8s.daemonset.name"]) where resource.attributes["k8s.daemonset.name"] != nil`,
