@@ -156,6 +156,11 @@ that carry the `observability.core-backplane/query-namespace` label also
 receive that explicit namespace matcher; the Kubernetes namespace containing
 a rule is not treated as its query scope. See Alloy's
 [`mimir.rules.kubernetes` documentation](https://grafana.com/docs/alloy/latest/reference/components/mimir/mimir.rules.kubernetes/).
+Mimir permits up to 100 rules per group for this tenant because the installed
+upstream rule sets contain groups larger than Mimir's default limit of 20; the
+largest currently observed group contains 57 rules. Keep this limit above the
+largest rendered `PrometheusRule` group and review ruler evaluation load when
+raising it.
 
 The site-independent `core-mimir-cluster-resource-rules` `PrometheusRule`
 defines the `cluster-resource-usage` recording group. Because Prometheus is

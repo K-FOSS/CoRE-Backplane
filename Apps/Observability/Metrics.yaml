@@ -43,6 +43,7 @@ spec:
                     mimirGarageEnabled: true
                     mimirCompactorReplicas: 1
                     mimirRulerReplicas: 1
+                    mimirMaxRulesPerRuleGroup: 100
                     mimirAvoidHpc3: false
 
 
@@ -65,6 +66,7 @@ spec:
                     mimirGarageEnabled: true
                     mimirCompactorReplicas: 0
                     mimirRulerReplicas: 1
+                    mimirMaxRulesPerRuleGroup: 100
                     mimirAvoidHpc3: true
 
           - clusters:
@@ -158,11 +160,14 @@ spec:
                       # Leave this empty so Mimir uses the system trust store.
                       caSecretName: ''
                       serverName: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
-                  {{- if eq .values.region "yxl" }}
                   limits:
+                    rulerMaxRulesPerRuleGroup: {{ .values.mimirMaxRulesPerRuleGroup }}
+                    {{- if eq .values.region "yxl" }}
                     ingestionRate: {{ .values.mimirIngestionRate }}
                     ingestionBurstSize: {{ .values.mimirIngestionBurstSize }}
                     compactorBlocksRetentionPeriod: {{ .values.mimirRetentionPeriod }}
+                    {{- end }}
+                  {{- if eq .values.region "yxl" }}
                   blocksStorage:
                     shipConcurrency: {{ .values.mimirShipConcurrency }}
                   {{- end }}
@@ -451,6 +456,7 @@ spec:
                         results_cache_ttl_for_cardinality_query: 5m
                         results_cache_ttl_for_labels_query: 5m
                         compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
+                        ruler_max_rules_per_rule_group: {{ .values.mimirMaxRulesPerRuleGroup }}
                       common:
                         storage:
                           backend: s3
