@@ -147,23 +147,39 @@ for ruler rules rather than the exporter-owned rulefiles ConfigMap. See the
 upstream [ruler storage documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/)
 and [object-storage configuration](https://grafana.com/docs/mimir/latest/configure/configure-object-storage-backend/).
 
-The ruler also loads the site-independent `cluster-resource-usage` recording
-group from `core-mimir-cluster-resource-rules`. It calculates
+The Collectors stack's dedicated `alloy-rules` StatefulSet discovers every
+local `PrometheusRule` and synchronizes it through the Mimir configuration API.
+It uses a source-cluster-specific Mimir namespace prefix and injects the source
+`cluster` matcher into every query and result, so YXL and YVR rules evaluate
+only their own metrics while sharing the same tenant and ruler store. Rules
+that carry the `observability.core-backplane/query-namespace` label also
+receive that explicit namespace matcher; the Kubernetes namespace containing
+a rule is not treated as its query scope. See Alloy's
+[`mimir.rules.kubernetes` documentation](https://grafana.com/docs/alloy/latest/reference/components/mimir/mimir.rules.kubernetes/).
+
+The site-independent `core-mimir-cluster-resource-rules` `PrometheusRule`
+defines the `cluster-resource-usage` recording group. Because Prometheus is
+disabled, Mimir publishes the upstream Kubernetes-mixin-compatible
+`node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m`
+series directly from kubelet/cAdvisor labels for namespace and pod dashboard
+queries. It then calculates
 `cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m`
 directly from the collected kubelet/cAdvisor
 `container_cpu_usage_seconds_total` series over a five-minute rate window,
 and calculates `cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum`
 directly from `container_memory_working_set_bytes`; both are grouped by
-`cluster` for dashboards and alerts. The file is mounted into both site rulers
-and uses the shared ruler ring so only the owning ruler evaluates the group.
+`cluster` for dashboards and alerts. Alloy stores the synchronized group in the
+shared S3 ruler backend, and the shared ruler ring ensures only its owning ruler
+evaluates it.
 It also publishes the deduplicated
 `cluster:container_memory_rss:sum` series by taking the maximum RSS value per
 `cluster`, namespace, pod, and container before summing. This avoids counting
 the same container twice if an additional scrape path introduces duplicate
 series. See Grafana's [ruler recording rules documentation](https://grafana.com/docs/mimir/latest/references/architecture/components/ruler/).
 
-Before reconciliation, compare the rendered `core-mimir-config` and ruler
-volume mounts with DC1. Reverting to the single-binary storage prefix or tenant
+Before reconciliation, compare the rendered `core-mimir-config`, Alloy rule
+namespaces, and active Mimir ruler groups on both sites. Reverting to local
+rule-file storage, the single-binary storage prefix, or different tenant
 settings changes which existing objects and series are visible; it is not a
 transparent rollback. Retain existing buckets and PVCs.
 

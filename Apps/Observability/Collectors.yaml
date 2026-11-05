@@ -23,6 +23,7 @@ spec:
                     vectorEnabled: false
                     podLogsEnabled: true
                     lokiGlobalService: 'true'
+                    rulesEnabled: true
 
                 - name: core-home1-talos-prod
                   values:
@@ -31,6 +32,7 @@ spec:
                     vectorEnabled: false
                     podLogsEnabled: true
                     lokiGlobalService: 'true'
+                    rulesEnabled: true
 
                 - name: dc1-k3s-node1
                   values:
@@ -39,6 +41,7 @@ spec:
                     vectorEnabled: true
                     podLogsEnabled: false
                     lokiGlobalService: 'false'
+                    rulesEnabled: false
           - clusters:
               selector:
                 matchLabels:
@@ -249,6 +252,47 @@ spec:
 
                       - name: OTLP_ENDPOINT
                         value: '{{ .values.orgId }}-collectors-alloy.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
+                  serviceMonitor:
+                    enabled: true
+                    relabelings:
+                      - action: replace
+                        targetLabel: cluster
+                        replacement: '{{ .values.clusterName }}'
+                      - action: replace
+                        targetLabel: dc
+                        replacement: '{{ .values.datacenter }}'
+                      - action: replace
+                        targetLabel: region
+                        replacement: '{{ .values.region }}'
+
+                alloy-rules:
+                  enabled: {{ .values.rulesEnabled }}
+                  controller:
+                    replicas: 2
+                    {{- if eq .values.clusterName "core-home1-talos-prod" }}
+                    affinity:
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: NotIn
+                                  values: ['hpc3']
+                    {{- end }}
+                  alloy:
+                    clustering:
+                      enabled: true
+                      name: '{{ .values.orgId }}-collectors-rules-{{ .values.clusterName }}'
+                    extraEnv:
+                      - name: CLUSTER
+                        value: '{{ .values.clusterName }}'
+
+                      - name: MIMIR_RULES_URL
+                        value: 'http://core-mimir.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:8080'
+
+                      - name: MIMIR_TENANT
+                        value: '{{ .values.orgId }}'
 
                   serviceMonitor:
                     enabled: true

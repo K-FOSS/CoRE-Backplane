@@ -156,9 +156,6 @@ spec:
                       # Leave this empty so Mimir uses the system trust store.
                       caSecretName: ''
                       serverName: 'dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
-                  rules:
-                    configMapName: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
-                    tenant: '{{ .values.tenant }}'
                   {{- if eq .values.region "yxl" }}
                   limits:
                     ingestionRate: {{ .values.mimirIngestionRate }}
@@ -446,17 +443,6 @@ spec:
                     replicas: {{ .values.mimirRulerReplicas }}
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
-                    extraVolumes:
-                      - name: rulefiles
-                        projected:
-                          sources:
-                            - configMap:
-                                name: '{{ if eq .values.region "yvr" }}prometheus-{{ .values.clusterName }}-expo-prometheus-rulefiles-0{{ else }}prometheus-{{ .values.clusterName }}-export-prometheus-rulefiles-0{{ end }}'
-                            - configMap:
-                                name: 'core-mimir-cluster-resource-rules'
-                    extraVolumeMounts:
-                      - name: rulefiles
-                        mountPath: '/rules/{{ .values.tenant }}'
                   mimir:
                     structuredConfig:
                       limits:
@@ -493,9 +479,7 @@ spec:
                         s3:
                           bucket_name: mimir-alertmanager
                       ruler_storage:
-                        backend: local
-                        local:
-                          directory: /rules
+                        backend: s3
                         s3:
                           bucket_name: mimir-ruler
                       compactor:

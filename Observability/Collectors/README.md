@@ -1,9 +1,8 @@
 # CoRE-Backplane Observability/Collectors Stack
 
-This chart defines four [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
+This chart defines specialized [Grafana Alloy](https://grafana.com/docs/alloy/latest/)
 roles reconciled by the
 [Grafana Alloy Operator](https://github.com/grafana/alloy-operator), and
-optional
 optional [Vector](https://vector.dev/docs/setup/installation/package-managers/helm/)
 collectors. The
 [`core-observability-collectors` ApplicationSet](../../Apps/Observability/Collectors.yaml)
@@ -19,7 +18,7 @@ archives remain ignored and must not be force-added.
 
 ## Current topology
 
-Three signal-specific DaemonSets run on every node:
+Four node-local DaemonSets run on every node:
 
 - `alloy-logs` discovers only pods labeled `logs=loki-myloginspace`, reads
   their streams through
@@ -82,6 +81,21 @@ The existing `*-collectors-alloy` Service identity is preserved for clients.
 Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
 pod-log collection.
+
+The dedicated two-replica `alloy-rules` StatefulSet runs only on the YXL and
+YVR Talos clusters, where `core-mimir` is available. Its
+[`mimir.rules.kubernetes`](https://grafana.com/docs/alloy/latest/reference/components/mimir/mimir.rules.kubernetes/)
+components watch `PrometheusRule` resources and synchronize them through the
+Mimir configuration API every five minutes. Alloy clustering ensures only one
+replica writes rules. Each rule query and result receives the source
+`cluster`; cluster-specific Mimir namespace prefixes prevent the two sites from
+owning or deleting one another's rule namespaces. Rules opt into a namespace
+query matcher with the
+`observability.core-backplane/query-namespace` metadata label. The Kubernetes
+namespace containing a rule is not used automatically because cluster-wide
+kube-prometheus rules are stored in `core-prod` while querying metrics for all
+workload namespaces. The legacy K3s target does not deploy `alloy-rules`
+because it has no `core-mimir` Service.
 
 Kubelet/cAdvisor metrics are scraped locally by each node's `alloy-metrics`
 DaemonSet through the authenticated Kubernetes node proxy. Cluster-wide
@@ -227,7 +241,7 @@ series required by the resource rules.
 
 ## Operations
 
-Verify all four Alloy component graphs and health at port `12345`, ensure all
+Verify every Alloy component graph and health at port `12345`, ensure all
 three central discovery peers appear in the cluster page, and confirm the
 `alloy-logs` config has exactly one pod discovery selector for
 `logs=loki-myloginspace`, a Loki-to-OTLP bridge, and an OTLP exporter targeting

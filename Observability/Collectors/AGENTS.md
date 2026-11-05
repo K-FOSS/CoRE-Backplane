@@ -21,6 +21,9 @@ redesigns the topology and updates every consumer:
   privileged, host-networked DaemonSet with read-only host root, proc, and sys
   mounts so host and NIC collectors can operate.
 - `alloy-services` clusters ServiceMonitor, Probe, and ScrapeConfig discovery.
+- `alloy-rules` discovers local `PrometheusRule` resources and synchronizes
+  cluster-scoped rule copies through the Mimir configuration API. It runs only
+  on clusters with a reachable `core-mimir` Service.
 - the main `alloy` clusters PodMonitor discovery, receives internal telemetry,
   owns backend credentials and writers, and performs only source-safe
   enrichment.

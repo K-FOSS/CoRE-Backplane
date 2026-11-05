@@ -6,6 +6,9 @@
   (dict "name" "alloy-otlp" "values" (index .Values "alloy-otlp"))
   (dict "name" "alloy-services" "values" (index .Values "alloy-services"))
 -}}
+{{- if (index .Values "alloy-rules").enabled }}
+{{- $instances = append $instances (dict "name" "alloy-rules" "values" (index .Values "alloy-rules")) }}
+{{- end }}
 {{- range $instance := $instances }}
 ---
 apiVersion: collectors.grafana.com/v1alpha1

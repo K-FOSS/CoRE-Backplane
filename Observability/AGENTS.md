@@ -19,8 +19,9 @@ followed together.
   is node-local cAdvisor in `alloy-metrics`, host and NIC metrics in
   `alloy-host`, clustered PodMonitor discovery in the main Alloy gateway, and
   clustered ServiceMonitor, Probe, and ScrapeConfig discovery in
-  `alloy-services`. Before adding a source, prove that another Alloy component,
-  exporter, or operator is not already collecting it.
+  `alloy-services`. The dedicated `alloy-rules` owns `PrometheusRule`
+  synchronization into Mimir. Before adding a source, prove that another Alloy
+  component, exporter, or operator is not already collecting it.
 - Do not fan out identical telemetry to both sites or send one signal through
   multiple equivalent pipelines. Cilium global Services provide routing and
   failover; they do not authorize duplicate writers. Preserve the tenant and

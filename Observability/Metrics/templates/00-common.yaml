@@ -764,9 +764,7 @@ configMaps:
             bucket_name: mimir-alertmanager
         
         ruler_storage:
-          backend: local
-          local:
-            directory: /rules
+          backend: s3
           s3:
             bucket_name: mimir-ruler
 
@@ -925,23 +923,6 @@ persistence:
           - path: /etc/mimir-dragonfly-ca
             readOnly: true
   {{- end }}
-
-
-  mimir-rules:
-    enabled: true
-
-    type: configMap
-
-    name: {{ required "mimir.rules.configMapName is required when mimir is enabled" .Values.mimir.rules.configMapName | quote }}
-
-    defaultMode: 0755
-
-    advancedMounts:
-      mimir: # the controller with the "main" identifier
-        mimir: # the container with the "main" identifier
-          - path: /rules/{{ .Values.mimir.rules.tenant }}
-
-
 {{- end }}
 
   {{- if .Values.mimirBridge.enabled }}

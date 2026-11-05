@@ -643,6 +643,115 @@ alloy-services:
   serviceMonitor:
     enabled: true
 
+alloy-rules:
+  # The fleet owner enables this only where the cluster-local/global Mimir
+  # Service exists. The legacy K3s collector target has no such Service.
+  enabled: false
+  crds:
+    create: false
+  alloy:
+    clustering:
+      enabled: true
+    configMap:
+      content: |
+        logging {
+          level = "info"
+          format = "json"
+        }
+
+        // Synchronize every rule that has not explicitly opted into namespace
+        // scoping. Query and result labels are constrained to this source
+        // cluster, while the Mimir namespace prefix prevents another cluster's
+        // Alloy reconciler from owning or deleting these rule namespaces.
+        mimir.rules.kubernetes "cluster" {
+          address = sys.env("MIMIR_RULES_URL")
+          tenant_id = sys.env("MIMIR_TENANT")
+          sync_interval = "5m"
+          mimir_namespace_prefix = "alloy-" + sys.env("CLUSTER") + "-cluster"
+          mimir_namespace_separator = "-"
+
+          external_labels = {
+            cluster = sys.env("CLUSTER"),
+          }
+
+          extra_query_matchers {
+            matcher {
+              name = "cluster"
+              match_type = "="
+              value = sys.env("CLUSTER")
+            }
+          }
+
+          rule_selector {
+            match_expression {
+              key = "observability.core-backplane/query-namespace"
+              operator = "DoesNotExist"
+            }
+          }
+        }
+
+        // Namespace filtering is opt-in because the Kubernetes namespace that
+        // stores a PrometheusRule is not necessarily the namespace queried by
+        // that rule. For example, the kube-prometheus rules in core-prod must
+        // continue evaluating workload metrics from every namespace.
+        mimir.rules.kubernetes "namespaced" {
+          address = sys.env("MIMIR_RULES_URL")
+          tenant_id = sys.env("MIMIR_TENANT")
+          sync_interval = "5m"
+          mimir_namespace_prefix = "alloy-" + sys.env("CLUSTER") + "-namespaced"
+          mimir_namespace_separator = "-"
+
+          external_labels = {
+            cluster = sys.env("CLUSTER"),
+          }
+
+          extra_query_matchers {
+            matcher {
+              name = "cluster"
+              match_type = "="
+              value = sys.env("CLUSTER")
+            }
+            matcher {
+              name = "namespace"
+              match_type = "="
+              value_from_label = "observability.core-backplane/query-namespace"
+            }
+          }
+
+          rule_selector {
+            match_expression {
+              key = "observability.core-backplane/query-namespace"
+              operator = "Exists"
+            }
+          }
+        }
+    extraEnv:
+      - name: CLUSTER
+        value: k8s
+      - name: MIMIR_RULES_URL
+        value: 'http://core-mimir.core-prod.svc.cluster.local:8080'
+      - name: MIMIR_TENANT
+        value: core
+  rbac:
+    create: true
+    clusterRules:
+      - apiGroups: ['']
+        resources: ['namespaces']
+        verbs: ['get', 'list', 'watch']
+      - apiGroups: ['monitoring.coreos.com']
+        resources: ['prometheusrules']
+        verbs: ['get', 'list', 'watch']
+  serviceAccount:
+    automountServiceAccountToken: true
+  controller:
+    type: statefulset
+    replicas: 2
+    podDisruptionBudget:
+      enabled: true
+      maxUnavailable: 1
+  serviceMonitor:
+    enabled: true
+
 alloy:
   destinations:
     lokiUrl: 'http://loki-core:3100/loki/api/v1/push'

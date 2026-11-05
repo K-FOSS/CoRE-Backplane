@@ -1,28 +1,25 @@
 {{- if index .Values "mimir-distributed" "enabled" }}
-apiVersion: v1
-kind: ConfigMap
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
 metadata:
   name: 'core-mimir-cluster-resource-rules'
   labels:
     app.kubernetes.io/name: 'mimir'
     app.kubernetes.io/instance: '{{ .Release.Name }}'
     app.kubernetes.io/component: 'ruler'
-data:
-  cluster-resource.rules.yaml: |
-    groups:
-      - name: 'cluster-resource-usage'
-        interval: 1m
-        rules:
-          # kube-prometheus-stack renders this as a PrometheusRule, but this
-          # deployment disables Prometheus. Publish the upstream-compatible
-          # series from Mimir so the Kubernetes mixin namespace and pod
-          # dashboards can use their standard queries.
-          - record: 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
-            expr: 'sum by (cluster, namespace, pod, container, node) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}[5m]))'
-          - record: 'cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
-            expr: 'sum by (cluster) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)'
-          - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
-            expr: 'sum by (cluster) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"})'
-          - record: 'cluster:container_memory_rss:sum'
-            expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}))'
+spec:
+  groups:
+    - name: 'cluster-resource-usage'
+      interval: '1m'
+      rules:
+        # Prometheus is disabled. The dedicated rules Alloy synchronizes this
+        # resource to Mimir and injects the source cluster matcher.
+        - record: 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
+          expr: 'sum by (cluster, namespace, pod, container, node) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}[5m]))'
+        - record: 'cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
+          expr: 'sum by (cluster) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)'
+        - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
+          expr: 'sum by (cluster) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"})'
+        - record: 'cluster:container_memory_rss:sum'
+          expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}))'
 {{- end }}
