@@ -148,33 +148,6 @@ alloy-metrics:
           format = "json"
         }
 
-        prometheus.scrape "kubelet_cadvisor" {
-          // The pod already knows its node name. Keep this target static so
-          // an API watch outage cannot remove it; each scrape retries after
-          // the API service recovers.
-          targets = [{
-            "__address__" = "kubernetes.default.svc." + sys.env("CLUSTER_DOMAIN") + ":443",
-            "__metrics_path__" = "/api/v1/nodes/" + sys.env("K8S_NODE_NAME") + "/proxy/metrics/cadvisor",
-            "instance" = sys.env("K8S_NODE_NAME"),
-            "metrics_path" = "/metrics/cadvisor",
-            "job" = "kubelet",
-          }]
-          job_name = "kubelet"
-          scheme = "https"
-          // The Kubernetes resource recording rules use a 5m rate window and
-          // evaluate every minute, so 60s preserves dashboard resolution while
-          // reducing cAdvisor volume by half.
-          scrape_interval = "60s"
-          bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-
-          tls_config {
-            server_name = "kubernetes"
-            ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-          }
-
-          forward_to = [prometheus.relabel.node.receiver]
-        }
-
         prometheus.exporter.self "alloy" {}
 
         prometheus.scrape "node" {
@@ -247,10 +220,6 @@ alloy-metrics:
           fieldPath: spec.nodeName
   rbac:
     create: true
-    clusterRules:
-      - apiGroups: ['']
-        resources: ['nodes/proxy']
-        verbs: ['get']
   serviceAccount:
     automountServiceAccountToken: true
   service:
@@ -349,6 +318,33 @@ alloy-host:
           forward_to = [otelcol.receiver.prometheus.host.receiver]
         }
 
+        // Use the existing privileged host-networked agent to scrape the
+        // local kubelet directly. The fixed node-IP target survives API-server
+        // discovery/proxy outages and retries on the next scrape interval.
+        prometheus.scrape "kubelet_cadvisor" {
+          targets = [{
+            "__address__" = sys.env("K8S_NODE_IP") + ":10250",
+            "__metrics_path__" = "/metrics/cadvisor",
+            "cluster" = sys.env("CLUSTER"),
+            "dc" = sys.env("DC"),
+            "instance" = sys.env("K8S_NODE_NAME"),
+            "node" = sys.env("K8S_NODE_NAME"),
+            "source_node" = sys.env("K8S_NODE_NAME"),
+            "metrics_path" = "/metrics/cadvisor",
+            "job" = "kubelet",
+          }]
+          job_name = "kubelet"
+          scheme = "https"
+          scrape_interval = "60s"
+          bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+          tls_config {
+            ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+          }
+
+          forward_to = [otelcol.receiver.prometheus.host.receiver]
+        }
+
         otelcol.receiver.prometheus "host" {
           output {
             metrics = [otelcol.processor.batch.host.input]
@@ -386,6 +382,10 @@ alloy-host:
         valueFrom:
           fieldRef:
             fieldPath: spec.nodeName
+      - name: K8S_NODE_IP
+        valueFrom:
+          fieldRef:
+            fieldPath: status.hostIP
       - name: OTLP_ENDPOINT
         value: alloy-otlp.core-prod.svc.cluster.local:4317
     mounts:
@@ -424,7 +424,13 @@ alloy-host:
             path: /sys
             type: Directory
   rbac:
-    create: false
+    create: true
+    clusterRules:
+      - apiGroups: ['']
+        resources: ['nodes/proxy']
+        verbs: ['get']
+  serviceAccount:
+    automountServiceAccountToken: true
   service:
     enabled: false
   serviceMonitor:
