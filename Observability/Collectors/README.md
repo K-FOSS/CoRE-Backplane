@@ -30,9 +30,8 @@ Three signal-specific DaemonSets run on every node:
   [`loki.process`](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.process/),
   converts them to OTLP, and sends them to the node-local-preferred Alloy
   OTLP/gRPC receiver.
-- `alloy-metrics` scrapes only its own Alloy metrics. Host metrics are owned by
-  the separate node-exporter DaemonSet; the duplicate Unix exporter is
-  disabled.
+- `alloy-metrics` runs the Unix/node-exporter module locally on every node and
+  forwards host metrics directly through its node-local pipeline.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `trafficDistribution: PreferClose`; it prefers the local
   node's receiver and fails over to another receiver when the local one is
@@ -209,10 +208,10 @@ three `otelcol.processor.k8sattributes` informers. Scrape work is
 sharded for `ScrapeConfig`, `PodMonitor`, `ServiceMonitor`, `Probe`, and
 annotation-discovered targets using the component-level clustering described by the
 [ServiceMonitor component](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.operator.servicemonitors/#clustering).
-The node-local `alloy-metrics` scrape deliberately remains unclustered, but it
-exports only Alloy self-metrics. The separate node-exporter DaemonSet owns host
-metrics; the Unix exporter is disabled in `alloy-metrics` to avoid duplicate
-node telemetry.
+The node-local `alloy-metrics` scrape deliberately remains unclustered. Its
+Unix exporter and authenticated kubelet/cAdvisor scrape are node-local, while
+the central StatefulSet continues to handle cluster-wide ServiceMonitor and
+PodMonitor targets.
 
 ## Operations
 

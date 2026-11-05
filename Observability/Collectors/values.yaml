@@ -155,47 +155,38 @@ alloy-metrics:
           forward_to = [prometheus.relabel.node.receiver]
         }
 
-        // Scrape the node-exporter pod on this same Kubernetes node. The
-        // exporter ServiceMonitor stays disabled in Observability/Exporters;
-        // this keeps host telemetry node-local and avoids five-way duplicate
-        // scraping through the ClusterIP Service.
-        discovery.kubernetes "node_exporter" {
-          role = "pod"
+        // Run node_exporter inside the node-local Alloy DaemonSet. This
+        // removes the separate Exporters DaemonSet and avoids a ClusterIP or
+        // headless Service hop for host metrics.
+        prometheus.exporter.unix "node" {
+          rootfs_path = "/host/root"
+          procfs_path = "/host/proc"
+          sysfs_path = "/host/sys"
+          set_collectors = [
+            "diskstats",
+            "filesystem",
+            "cpu",
+            "udp_queues",
+            "cpufreq",
+            "tcpstat",
+            "sockstat",
+            "uname",
+            "meminfo",
+            "loadavg",
+            "stat",
+            "netdev",
+            "netstat",
+            "softnet",
+            "time",
+            "hwmon",
+          ]
         }
 
-        discovery.relabel "node_exporter" {
-          targets = discovery.kubernetes.node_exporter.targets
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
-            regex = "prometheus-node-exporter"
-            action = "keep"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_node_name"]
-            target_label = "__tmp_node"
-          }
+        discovery.relabel "node_host" {
+          targets = prometheus.exporter.unix.node.targets
 
           rule {
             replacement = sys.env("K8S_NODE_NAME")
-            target_label = "__tmp_local_node"
-          }
-
-          rule {
-            source_labels = ["__tmp_node"]
-            action = "keepequal"
-            target_label = "__tmp_local_node"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_container_port_name"]
-            regex = "http-metrics"
-            action = "keep"
-          }
-
-          rule {
-            source_labels = ["__meta_kubernetes_pod_node_name"]
             target_label = "instance"
           }
 
@@ -205,8 +196,8 @@ alloy-metrics:
           }
         }
 
-        prometheus.scrape "node_exporter" {
-          targets = discovery.relabel.node_exporter.output
+        prometheus.scrape "node_host" {
+          targets = discovery.relabel.node_host.output
           job_name = "node-exporter"
           scrape_interval = "30s"
           forward_to = [prometheus.relabel.node.receiver]
@@ -314,6 +305,21 @@ alloy-metrics:
       value: dc1
     - name: CLUSTER
       value: k8s
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    mounts:
+      extra:
+      - name: host-root
+        mountPath: /host/root
+        readOnly: true
+      - name: host-proc
+        mountPath: /host/proc
+        readOnly: true
+      - name: host-sys
+        mountPath: /host/sys
+        readOnly: true
   rbac:
     create: true
     clusterRules:
@@ -332,6 +338,20 @@ alloy-metrics:
       operator: 'Equal'
       value: 'testing'
       effect: 'NoSchedule'
+    volumes:
+      extra:
+      - name: host-root
+        hostPath:
+          path: /
+          type: Directory
+      - name: host-proc
+        hostPath:
+          path: /proc
+          type: Directory
+      - name: host-sys
+        hostPath:
+          path: /sys
+          type: Directory
 
 alloy-otlp:
   crds:
