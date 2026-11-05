@@ -69,8 +69,9 @@ than scraped by every replica.
 The StatefulSet gives peers stable identities and follows Grafana's
 [Kubernetes clustering guidance](https://grafana.com/docs/alloy/latest/configure/clustering/).
 For Home1, the ApplicationSet injects required node affinity excluding `hpc3`
-from this central StatefulSet. Its three replicas can run on the other Ready
-nodes; the node-local Alloy DaemonSets continue collecting on `hpc3`.
+from this central StatefulSet and the clustered `alloy-services` workload. Their
+replicas can run on the other Ready nodes; the node-local Alloy DaemonSets
+continue collecting on `hpc3`.
 The existing `*-collectors-alloy` Service identity is preserved for clients.
 Pod and Service discovery remain specifically because they supply the
 annotation-based Prometheus scrape targets; neither component participates in
