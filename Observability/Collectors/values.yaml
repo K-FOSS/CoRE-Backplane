@@ -339,8 +339,11 @@ alloy-host:
           bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 
           tls_config {
-            server_name = sys.env("K8S_NODE_NAME")
-            ca_file = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+            // Talos kubelet serving certificates are not signed by the
+            // Kubernetes service-account CA. This fixed host-local target
+            // still authenticates every request with the service-account
+            // bearer token.
+            insecure_skip_verify = true
           }
 
           forward_to = [otelcol.receiver.prometheus.host.receiver]
