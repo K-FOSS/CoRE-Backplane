@@ -106,10 +106,9 @@ spec:
                     {{- if eq .values.clusterName "core-home1-talos-prod" }}
                     affinity:
                       nodeAffinity:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          - weight: 100
-                            preference:
-                              matchExpressions:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
                                 - key: 'kubernetes.io/hostname'
                                   operator: NotIn
                                   values: ['hpc3']
@@ -219,10 +218,9 @@ spec:
                     {{- if eq .values.clusterName "core-home1-talos-prod" }}
                     affinity:
                       nodeAffinity:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          - weight: 100
-                            preference:
-                              matchExpressions:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
                                 - key: 'kubernetes.io/hostname'
                                   operator: NotIn
                                   values: ['hpc3']
