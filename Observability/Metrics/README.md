@@ -32,8 +32,8 @@ ingesters use a soft hostname topology spread constraint and a preferred pod
 anti-affinity rule, so new pods favor separate nodes but can share a node when
 capacity or node eligibility prevents spreading. Existing pods are not moved
 by these scheduling preferences until they are recreated. The Home1 profile
-additionally injects required Helm affinity for the distributor
-and ingester components that excludes the `hpc3` hostname; this placement rule
+additionally injects required Helm affinity for the distributor, ingester, and
+querier components that excludes the `hpc3` hostname; this placement rule
 is rendered by the upstream chart rather than patched onto generated workloads.
 The distributed configuration explicitly sets `blocks_storage.backend: s3` and its bucket name
 alongside the shared S3 client. With MinIO selected, the Mimir `User` claim

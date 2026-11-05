@@ -389,6 +389,16 @@ spec:
                     replicas: 3
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
+                    {{- if .values.mimirAvoidHpc3 }}
+                    affinity:
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: NotIn
+                                  values: ['hpc3']
+                    {{- end }}
                     podDisruptionBudget:
                       maxUnavailable: 1
                     strategy:
