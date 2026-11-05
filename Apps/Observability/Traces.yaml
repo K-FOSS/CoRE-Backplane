@@ -29,6 +29,7 @@ spec:
                     tempoQueryFrontendReplicas: 3
                     tempoCompactorReplicas: 1
                     tempoGatewayReplicas: 3
+                    tempoAvoidHpc3: false
                 - name: 'core-home1-talos-prod'
                   values:
                     tempoEnabled: true
@@ -43,6 +44,7 @@ spec:
                     tempoQueryFrontendReplicas: 3
                     tempoCompactorReplicas: 0
                     tempoGatewayReplicas: 3
+                    tempoAvoidHpc3: true
           - clusters:
               selector:
                 matchLabels:
@@ -261,7 +263,35 @@ spec:
                         forcepathstyle: {{ .values.tempoGarageEnabled }}
 
             - name: 'LOVELY_KUSTOMIZE_MERGE'
-              value: '{}'
+              value: |-
+                {{ if .values.tempoAvoidHpc3 }}
+                patches:
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: 'Deployment|StatefulSet'
+                      labelSelector: 'app.kubernetes.io/name=tempo'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          spec:
+                            affinity:
+                              nodeAffinity:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  - weight: 100
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: NotIn
+                                          values:
+                                            - 'hpc3'
+                {{ else }}
+                {}
+                {{ end }}
       destination:
         server: '{{ .server }}'
         namespace: 'core-{{ .values.environment }}'

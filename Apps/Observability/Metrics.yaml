@@ -43,6 +43,7 @@ spec:
                     mimirGarageEnabled: true
                     mimirCompactorReplicas: 1
                     mimirRulerReplicas: 1
+                    mimirAvoidHpc3: false
 
 
                 - name: core-home1-talos-prod
@@ -64,6 +65,7 @@ spec:
                     mimirGarageEnabled: true
                     mimirCompactorReplicas: 0
                     mimirRulerReplicas: 1
+                    mimirAvoidHpc3: true
 
           - clusters:
               selector:
@@ -342,14 +344,6 @@ spec:
                       topologyKey: 'kubernetes.io/hostname'
                       whenUnsatisfiable: 'ScheduleAnyway'
                     affinity:
-                      nodeAffinity:
-                        preferredDuringSchedulingIgnoredDuringExecution:
-                          - weight: 100
-                            preference:
-                              matchExpressions:
-                                - key: 'kubernetes.io/hostname'
-                                  operator: NotIn
-                                  values: ['hpc3']
                       podAntiAffinity:
                         preferredDuringSchedulingIgnoredDuringExecution:
                           - weight: 100
@@ -597,6 +591,31 @@ spec:
             - name: 'LOVELY_KUSTOMIZE_MERGE'
               value: |-
                 patches:
+                  {{ if .values.mimirAvoidHpc3 }}
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: 'Deployment|StatefulSet'
+                      labelSelector: 'app.kubernetes.io/name=mimir'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          spec:
+                            affinity:
+                              nodeAffinity:
+                                preferredDuringSchedulingIgnoredDuringExecution:
+                                  - weight: 100
+                                    preference:
+                                      matchExpressions:
+                                        - key: 'kubernetes.io/hostname'
+                                          operator: NotIn
+                                          values:
+                                            - 'hpc3'
+                  {{ end }}
                   - target:
                       group: apps
                       version: v1
