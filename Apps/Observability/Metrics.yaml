@@ -456,7 +456,6 @@ spec:
                         results_cache_ttl_for_cardinality_query: 5m
                         results_cache_ttl_for_labels_query: 5m
                         compactor_blocks_retention_period: {{ .values.mimirRetentionPeriod }}
-                        ruler_max_rules_per_rule_group: {{ .values.mimirMaxRulesPerRuleGroup }}
                       common:
                         storage:
                           backend: s3
@@ -520,6 +519,12 @@ spec:
                         rule_path: /data
                       alertmanager:
                         data_dir: /data
+                  # Ruler limits are reloadable. Keep them in runtime config so
+                  # rule-set growth does not restart the entire Mimir ring.
+                  runtimeConfig:
+                    overrides:
+                      '{{ .values.tenant }}':
+                        ruler_max_rules_per_rule_group: {{ .values.mimirMaxRulesPerRuleGroup }}
                 s3User:
                   enabled: true
                 garage:
