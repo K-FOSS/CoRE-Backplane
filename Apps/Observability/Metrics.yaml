@@ -462,6 +462,7 @@ spec:
                           # capacity and rollout redundancy, while Garage is
                           # the cross-site durability layer.
                           replication_factor: 1
+                          zone_awareness_enabled: true
                           instance_availability_zone: '{{ .values.region }}'
                           unregister_on_shutdown: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                       distributor:
@@ -485,6 +486,7 @@ spec:
                       store_gateway:
                         sharding_ring:
                           instance_availability_zone: '{{ .values.region }}'
+                          zone_awareness_enabled: true
                       ruler:
                         rule_path: /data
                       alertmanager:
