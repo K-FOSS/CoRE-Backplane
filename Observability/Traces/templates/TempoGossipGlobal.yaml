@@ -1,0 +1,22 @@
+{{- $tempo := index .Subcharts "tempo-distributed" }}
+{{- if index (index .Values "tempo-distributed") "enabled" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.globalMemberlistService.name | squote }}
+  annotations:
+    # Share one active-data ring across sites. S3 remains the durable copy;
+    # the ingester replication factor controls span replication separately.
+    {{- toYaml .Values.globalMemberlistService.annotations | nindent 4 }}
+spec:
+  type: 'ClusterIP'
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - name: 'memberlist-tcp'
+      port: 7946
+      targetPort: 7946
+      protocol: 'TCP'
+  selector:
+    {{- include "tempo.gossipRingSelectorLabels" (dict "ctx" $tempo) | nindent 4 }}
+{{- end }}

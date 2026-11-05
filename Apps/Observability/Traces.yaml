@@ -105,6 +105,13 @@ spec:
                     service.cilium.io/affinity: '{{ .values.tempoGlobalAffinity }}'
                     service.cilium.io/shared: '{{ .values.tempoGlobalShared }}'
 
+                globalMemberlistService:
+                  name: 'tempo-core-gossip-ring-global'
+                  annotations:
+                    service.cilium.io/global: 'true'
+                    service.cilium.io/global-sync-endpoint-slices: 'true'
+                    service.cilium.io/shared: 'true'
+
                 k8gb:
                   enabled: true
                   domain: 'gslb.mylogin.space'

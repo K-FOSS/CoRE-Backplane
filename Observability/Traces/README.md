@@ -1,7 +1,8 @@
 # CoRE-Backplane Observability/Traces Stack
 
-This stack deploys Grafana Tempo in microservices mode with site-local S3
-storage and a Cilium global `tempo-core` Service. It is owned by the
+This stack deploys Grafana Tempo in microservices mode with one shared,
+federated Garage S3 backend and Cilium-global gateway and memberlist Services.
+It is owned by the
 [`core-observability-traces` ApplicationSet](../../Apps/Observability/Traces.yaml)
 and follows the same active-site/remote-site model as
 [Logs](../Logs/README.md) and [Metrics](../Metrics/README.md). The pinned
@@ -16,14 +17,17 @@ The ApplicationSet selects bare-metal production clusters for the `core` tenant
 and merges a site profile by cluster name:
 
 - YXL and Home1 run the Tempo distributor, ingesters, queriers, query frontend,
-  metrics-generator, compactor, and gateway. Its trace bucket uses the shared
-  local Garage endpoint at each site. The [Tempo metrics-generator](https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-generator/)
+  metrics-generator, and gateway. Both sites access the same `tempo-traces`
+  bucket through their site-local endpoint for the federated YXL Garage
+  backend. YXL alone runs the compactor. The [Tempo metrics-generator](https://grafana.com/docs/tempo/latest/metrics-from-traces/metrics-generator/)
   runs the `local-blocks` and `span-metrics` processors so TraceQL metrics
   queries such as `rate()` and Grafana Traces Drilldown have an active
   generator ring.
-- Both sites publish the same `tempo-core` global Service identity. Local
-  affinity selects the site-local gateway while synchronized EndpointSlices
-  retain the other site as a failover path.
+- Both sites publish the same `tempo-core` gateway and
+  `tempo-core-gossip-ring-global` memberlist Service identities. Local affinity
+  selects the site-local gateway while synchronized EndpointSlices retain the
+  other site as a failover path. The fixed `core-observability-tempo`
+  memberlist cluster label keeps both releases in one active-data ring.
 
 Switching the active site is an ApplicationSet profile change. Review the
 selected replicas, Garage/S3 backend, Cilium affinity, and downstream collector
@@ -32,11 +36,12 @@ path together before reconciliation.
 ## Storage and credentials
 
 The `User` claim provisions the `tempo-traces` bucket and writes the stable
-`tempo-core` connection Secret plus `tempo-core-s3-creds`. Both sites use a
-Garage service account and their local Garage S3 endpoint. YXL owns bucket
-creation; YVR uses its local `observability-garage` Garage cluster and S3
-listener on port `3900` without creating a second bucket. The YVR connection
-uses HTTP within the cluster. Tempo expands the
+`tempo-core` connection Secret plus `tempo-core-s3-creds`. Each site uses a
+Garage service account scoped to the same YXL-owned `tempo-traces` bucket and
+its site-local endpoint for that federated Garage backend. YXL owns bucket
+creation; YVR uses the `observability-garage-yxl-credentials` reference and its
+local S3 listener on port `3900` without creating another bucket. The YVR
+connection uses HTTP within the cluster. Tempo expands the
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, and `S3_SECRET_ACCESS_KEY` environment variables at runtime;
 secret values are never stored in Git. The ApplicationSet escapes the leading
 `$` so Argo CD preserves these references for Tempo instead of expanding them
@@ -51,10 +56,12 @@ the Tempo 2 ingester and compactor architecture. Tempo 3 requires a reviewed
 Kafka deployment, topic sizing, credentials, and failure-domain design before
 it can replace this profile.
 
-The gateway and memberlist Services are global for site-level query and
-failover. Tempo ingesters advertise their current region and use replication
-factor `1`, so a recent trace query may cross the inter-site link to the active
-owner without synchronously copying the same spans into a remote ingester.
+The gateway and fixed-name memberlist Services are global for site-level query
+and failover. Both releases use the same memberlist cluster label and join the
+same global headless Service. Tempo ingesters advertise their current region
+and use replication factor `1`, so a recent trace query may cross the inter-site
+link to the active owner without synchronously copying the same spans into a
+remote ingester.
 `tempo-traces` in federated Garage is the cross-site durability layer. A future
 Tempo 3/Kafka profile may use the shared
 EventStream for ingest durability, but that is a separate reviewed migration

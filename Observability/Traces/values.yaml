@@ -6,6 +6,10 @@ globalService:
   name: 'tempo-core'
   annotations: {}
 
+globalMemberlistService:
+  name: 'tempo-core-gossip-ring-global'
+  annotations: {}
+
 globalServiceOnly: false
 
 authentik:
@@ -57,6 +61,13 @@ tempo-distributed:
   tempo:
     podAnnotations:
       secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
+    structuredConfig:
+      memberlist:
+        # Release-derived labels and gossip Service names isolate sites. Use
+        # the fixed Cilium-global Service rendered by this chart instead.
+        cluster_label: 'core-observability-tempo'
+        join_members:
+          - 'dns+tempo-core-gossip-ring-global.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}.:7946'
   gateway:
     enabled: true
     affinity: |
