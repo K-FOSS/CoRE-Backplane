@@ -464,8 +464,14 @@ spec:
                           enable_ha_tracker: true
                           kvstore:
                             store: memberlist
+                      querier:
+                        prefer_availability_zones: '{{ .values.region }}'
                       memberlist:
                         cluster_label: core-observability-mimir
+                        zone_aware_routing:
+                          enabled: true
+                          instance_availability_zone: '{{ .values.region }}'
+                          role: member
                         join_members:
                           - dns+core-mimir-gossip-ring-global.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}.:7946
                       store_gateway:
