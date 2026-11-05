@@ -986,7 +986,10 @@ alloy:
           output {
             traces  = [otelcol.processor.k8sattributes.gateway.input]
             logs    = [otelcol.processor.transform.logs.input]
-            metrics = [otelcol.processor.k8sattributes.gateway.input]
+            // Prometheus metrics already carry their source labels. Do not
+            // associate them with the Alloy gateway pod through the OTLP
+            // connection; that would rewrite source metadata to the receiver.
+            metrics = [otelcol.processor.transform.metrics_metadata.input]
           }
         }
 
@@ -1055,15 +1058,8 @@ alloy:
             }
           }
 
-          pod_association {
-            source {
-              from = "connection"
-            }
-          }
-
           output {
             traces  = [otelcol.processor.batch.gateway.input]
-            metrics = [otelcol.processor.transform.metrics_metadata.input]
             logs     = [otelcol.processor.batch.gateway.input]
           }
         }

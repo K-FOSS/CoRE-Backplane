@@ -107,8 +107,11 @@ the original pod UID and extracts current Kubernetes metadata before batching
 and exporting logs through
 [`otelcol.exporter.loki`](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.loki/)
 to Loki. This avoids associating logs with the Alloy Logs
-agent merely because it opened the OTLP connection. Metrics go by remote-write
-to Mimir and traces go to Tempo. The pod log path is
+agent merely because it opened the OTLP connection. Prometheus metrics bypass
+connection-based Kubernetes enrichment and retain the labels supplied by the
+actual scrape target before remote-writing to Mimir. Traces and logs retain
+resource- or UID-based enrichment only, without a connection fallback that
+could identify them as Alloy telemetry. The pod log path is
 `alloy-logs` -> central Alloy OTLP gateway/enrichment -> namespace-local
 `loki-core`; Cilium's Global
 Service routes the final write to the Loki backends. Metrics use the matching namespace-local `core-mimir`
