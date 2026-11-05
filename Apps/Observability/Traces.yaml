@@ -142,7 +142,16 @@ spec:
                       secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
                     memberlist:
                       service:
-                        annotations: {}
+                        annotations:
+                          service.cilium.io/global: 'true'
+                          service.cilium.io/global-sync-endpoint-slices: 'true'
+                          service.cilium.io/shared: 'true'
+                    ingester:
+                      lifecycler:
+                        availability_zone: '{{ .values.region }}'
+                    querier:
+                      partition_ring:
+                        preferred_zone: '{{ .values.region }}'
                   gateway:
                     enabled: true
                     replicas: {{ .values.tempoGatewayReplicas }}
@@ -195,9 +204,10 @@ spec:
                   ingester:
                     replicas: {{ .values.tempoIngesterReplicas }}
                     config:
-                      # Replicate only across the local site's ingesters.
-                      # Garage is the cross-site durability layer.
-                      replication_factor: 3
+                      # Use one active owner across the global ring. Local
+                      # replicas provide capacity and rollout space; Garage
+                      # is the cross-site durability layer.
+                      replication_factor: 1
                   querier:
                     replicas: {{ .values.tempoQuerierReplicas }}
                     resources:

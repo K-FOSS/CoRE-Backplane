@@ -23,9 +23,11 @@ spec:
                     mode: Distributed
 
                     mimirEnabled: true
-                    # Keep ring discovery site-local; Garage provides the
-                    # cross-site durable copy and the client Service provides
-                    # site failover.
+                    # Use one global memberlist so queries can reach recent
+                    # samples held by the other site's ingesters. Keep
+                    # ingester replication at one: Garage is the cross-site
+                    # durable copy and no active sample is synchronously
+                    # replicated between sites.
                     mimirBridgeEnabled: false
                     mimirGlobalAffinity: local
                     mimirGlobalShared: 'true'
@@ -447,12 +449,17 @@ spec:
                         data_dir: /data
                       ingester:
                         ring:
-                          # Replicate only across the local site's ingesters.
-                          # Garage is the cross-site durability layer.
-                          replication_factor: 3
+                          # Use one active owner across the global ring. The
+                          # three replicas per site remain available for local
+                          # capacity and rollout redundancy, while Garage is
+                          # the cross-site durability layer.
+                          replication_factor: 1
+                          instance_availability_zone: '{{ .values.region }}'
                           unregister_on_shutdown: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
                       distributor:
                         remote_timeout: '30s'
+                        ring:
+                          instance_availability_zone: '{{ .values.region }}'
                         ha_tracker:
                           enable_ha_tracker: true
                           kvstore:
@@ -461,6 +468,9 @@ spec:
                         cluster_label: core-observability-mimir
                         join_members:
                           - dns+core-mimir-gossip-ring.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}.:7946
+                      store_gateway:
+                        sharding_ring:
+                          instance_availability_zone: '{{ .values.region }}'
                       ruler:
                         rule_path: /data
                       alertmanager:

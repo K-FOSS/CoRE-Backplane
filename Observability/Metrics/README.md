@@ -13,9 +13,11 @@ The [`core-observability-metrics` ApplicationSet](../../Apps/Observability/Metri
 targets `core-dc1-talos-prod` (YXL) and `core-home1-talos-prod` (YVR) and injects
 site identity. Both sites enable the distributed implementation and use their
 local Garage S3 endpoint. The global `core-mimir` Service keeps client traffic
-site-local where possible. Mimir memberlist and component rings are now
-site-local; the global memberlist bridge and cross-site ingester replication
-are disabled. The global client Service remains the site-level failover path.
+site-local where possible. Mimir uses one global memberlist/ring so queries can
+reach recent samples held in either site's ingesters. Ingester replication is
+deliberately `1`, so the global ring provides reachability without
+synchronously copying active samples between sites; Garage/S3 remains the
+cross-site durability layer.
 Distributors,
 ingesters, queriers, query frontends, query schedulers, store-gateways,
 compactor, ruler, Alertmanager and the NGINX gateway run as separate upstream
@@ -175,13 +177,15 @@ has a deliberately non-matching selector, so only Cilium-synchronized remote
 EndpointSlices back it. The YXL HTTPRoute also uses this Service as its direct
 backend. The former `core-mimir-proxy` memberlist bridge is disabled. The
 client Service still uses Cilium synchronization for site-level failover, but
-the Mimir memberlist Service is deliberately local to each cluster.
+the Mimir memberlist Service is global so the query path can discover
+ingesters in either site.
 Cilium correlates global Services by namespace and name, while Lovely may
 derive a different Helm release name for each generated Argo CD Application.
-The `core-mimir-gossip-ring` Service is a cluster-local headless Service used
-only by that site's Mimir components. Mimir's replication factor is three
-within the local ring, so a series is not synchronously copied to the remote
-site before Garage receives the durable block.
+The `core-mimir-gossip-ring` Service is a global headless Service used by the
+Mimir components in both sites. Mimir's replication factor is one: a series is
+owned by one active ingester in the global ring, and a recent query may cross
+the inter-site link to reach that owner. The same sample is not synchronously
+copied into a remote ingester; Garage receives the durable block instead.
 This depends on Cluster Mesh connectivity and
 `clustermesh.enableEndpointSliceSynchronization`, which the Network Base
 deployment enables.

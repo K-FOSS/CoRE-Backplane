@@ -167,6 +167,12 @@ spec:
                       # query path can reach recent in-memory logs without
                       # duplicating the payload in a second ingester.
                       replication_factor: 1
+                    ingester:
+                      lifecycler:
+                        availability_zone: '{{ .values.region }}'
+                    distributor:
+                      ring:
+                        instance_availability_zone: '{{ .values.region }}'
                     storage:
                       s3:
                         region: 'garage'
