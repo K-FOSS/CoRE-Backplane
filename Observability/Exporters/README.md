@@ -20,7 +20,7 @@ enabled wherever it was previously deployed.
 
 The stack creates Prometheus Operator CRDs/controllers, recording and alerting
 rules, kube-state-metrics and hardware exporters. Host node-exporter metrics
-are now collected by the Alloy DaemonSet; kubelet/cAdvisor is also collected
+are collected by the Alloy DaemonSets; kubelet/cAdvisor is also collected
 there. API-server, controller-manager, scheduler, kube-proxy, etcd, and
 kubelet ServiceMonitors are disabled; Alloy in [Collectors](../Collectors/)
 owns the cluster-wide kubelet/cAdvisor scrape. API-server monitoring is

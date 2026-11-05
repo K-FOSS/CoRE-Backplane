@@ -148,9 +148,8 @@ alloy-metrics:
           format = "json"
         }
 
-        // Run node_exporter inside the node-local Alloy DaemonSet. This
-        // removes the separate Exporters DaemonSet and avoids a ClusterIP or
-        // headless Service hop for host metrics.
+        // Keep the existing node-local host metrics path for compatibility;
+        // alloy-host is the separate privileged collector for NIC modules.
         prometheus.exporter.unix "node" {
           rootfs_path = "/host/root"
           procfs_path = "/host/proc"
@@ -373,6 +372,169 @@ alloy-metrics:
         hostPath:
           path: /sys
           type: Directory
+
+alloy-host:
+  crds:
+    create: false
+  alloy:
+    listenPort: 12346
+    stabilityLevel: public-preview
+    clustering:
+      enabled: false
+    securityContext:
+      privileged: true
+      allowPrivilegeEscalation: true
+      runAsNonRoot: false
+      runAsUser: 0
+      runAsGroup: 0
+    configMap:
+      content: |
+        logging {
+          level  = "info"
+          format = "json"
+        }
+
+        prometheus.exporter.unix "host" {
+          rootfs_path = "/host/root"
+          procfs_path = "/host/proc"
+          sysfs_path = "/host/sys"
+          set_collectors = [
+            "diskstats",
+            "filesystem",
+            "cpu",
+            "ethtool",
+            "netdev",
+            "netstat",
+            "softnet",
+            "sockstat",
+            "tcpstat",
+            "udp_queues",
+            "cpufreq",
+            "hwmon",
+            "loadavg",
+            "meminfo",
+            "stat",
+            "time",
+            "uname",
+          ]
+        }
+
+        discovery.relabel "host" {
+          targets = prometheus.exporter.unix.host.targets
+
+          rule {
+            target_label = "cluster"
+            replacement  = sys.env("CLUSTER")
+          }
+          rule {
+            target_label = "dc"
+            replacement  = sys.env("DC")
+          }
+          rule {
+            target_label = "node"
+            replacement  = sys.env("K8S_NODE_NAME")
+          }
+          rule {
+            target_label = "source_node"
+            replacement  = sys.env("K8S_NODE_NAME")
+          }
+          rule {
+            target_label = "instance"
+            replacement  = sys.env("K8S_NODE_NAME")
+          }
+          rule {
+            target_label = "job"
+            replacement  = "node-exporter"
+          }
+        }
+
+        prometheus.scrape "host" {
+          targets = discovery.relabel.host.output
+          job_name = "node-exporter"
+          scrape_interval = "30s"
+          forward_to = [otelcol.receiver.prometheus.host.receiver]
+        }
+
+        otelcol.receiver.prometheus "host" {
+          output {
+            metrics = [otelcol.processor.batch.host.input]
+          }
+        }
+
+        otelcol.processor.batch "host" {
+          send_batch_size = 4096
+          send_batch_max_size = 8192
+          timeout = "5s"
+
+          output {
+            metrics = [otelcol.exporter.otlp.gateway.input]
+          }
+        }
+
+        otelcol.exporter.otlp "gateway" {
+          client {
+            endpoint = sys.env("OTLP_ENDPOINT")
+            tls {
+              insecure = true
+            }
+          }
+          retry_on_failure {
+            enabled          = true
+            max_elapsed_time = "0s"
+          }
+        }
+    extraEnv:
+      - name: DC
+        value: dc1
+      - name: CLUSTER
+        value: k8s
+      - name: K8S_NODE_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: spec.nodeName
+      - name: OTLP_ENDPOINT
+        value: alloy-otlp.core-prod.svc.cluster.local:4317
+    mounts:
+      extra:
+        - name: host-root
+          mountPath: /host/root
+          readOnly: true
+        - name: host-proc
+          mountPath: /host/proc
+          readOnly: true
+        - name: host-sys
+          mountPath: /host/sys
+          readOnly: true
+  controller:
+    type: daemonset
+    hostNetwork: true
+    hostPID: true
+    dnsPolicy: ClusterFirstWithHostNet
+    tolerations:
+      - key: 'load'
+        operator: 'Equal'
+        value: 'testing'
+        effect: NoSchedule
+    volumes:
+      extra:
+        - name: host-root
+          hostPath:
+            path: /
+            type: Directory
+        - name: host-proc
+          hostPath:
+            path: /proc
+            type: Directory
+        - name: host-sys
+          hostPath:
+            path: /sys
+            type: Directory
+  rbac:
+    create: false
+  service:
+    enabled: false
+  serviceMonitor:
+    enabled: false
 
 alloy-otlp:
   crds:

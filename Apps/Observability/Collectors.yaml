@@ -211,6 +211,23 @@ spec:
                         targetLabel: region
                         replacement: '{{ .values.region }}'
 
+                alloy-host:
+                  alloy:
+                    extraEnv:
+                      - name: DC
+                        value: '{{ .values.datacenter }}'
+
+                      - name: CLUSTER
+                        value: '{{ .values.clusterName }}'
+
+                      - name: K8S_NODE_NAME
+                        valueFrom:
+                          fieldRef:
+                            fieldPath: spec.nodeName
+
+                      - name: OTLP_ENDPOINT
+                        value: '{{ .values.orgId }}-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:4317'
+
                 alloy-services:
                   controller:
                     replicas: {{ .values.collectorReplicas }}

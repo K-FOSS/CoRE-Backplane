@@ -36,6 +36,11 @@ Three signal-specific DaemonSets run on every node:
   scraped every 30 seconds; cAdvisor is scraped every 60 seconds to match the
   five-minute resource recording windows without retaining the former 30-second
   cAdvisor volume.
+- `alloy-host` is a separate host-networked, privileged Alloy DaemonSet for
+  host-only collectors that require elevated access, including `ethtool` NIC
+  metrics. It mounts the host root, proc, and sys filesystems, listens on a
+  separate local port, and forwards its metrics through the existing OTLP
+  receiver so it does not alter the node-local cAdvisor workload.
 - `alloy-otlp` accepts node-local OTLP/gRPC and OTLP/HTTP through a ClusterIP
   Service with `trafficDistribution: PreferClose`; it prefers the local
   node's receiver and fails over to another receiver when the local one is
