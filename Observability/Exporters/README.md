@@ -39,7 +39,11 @@ owns datasource configuration.
 
 The upstream Kubernetes mixin dashboards are always rendered, even though the
 stack's Prometheus and Grafana workloads are disabled; the standalone dashboard
-syncer imports their ConfigMaps. Their `kube-state-metrics` queries require
+syncer imports their ConfigMaps. The chart's cluster and multi-cluster resource
+dashboards are enabled, and their ConfigMaps use the syncer's
+`grafana_dashboard: 'true'` selector. The `cluster` variable remains visible so
+the dashboards can query either site when the Grafana data source contains both
+clusters. Their `kube-state-metrics` queries require
 the Alloy ServiceMonitor path to preserve the standard
 `job="kube-state-metrics"` label, while node dashboards use the Alloy host
 collector's `job="node-exporter"`, `instance`, and `nodename` labels.

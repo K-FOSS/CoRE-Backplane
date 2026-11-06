@@ -20,9 +20,17 @@ kube-prometheus-stack:
   grafana:
     enabled: false
     forceDeployDashboards: true
+    defaultDashboardsEnabled: true
     # The standalone Grafana deployment owns datasource configuration.
     # Do not create the kube-prometheus-stack Prometheus datasource ConfigMap.
     sidecar:
+      dashboards:
+        enabled: true
+        label: 'grafana_dashboard'
+        labelValue: 'true'
+        multicluster:
+          global:
+            enabled: true
       datasources:
         enabled: false
 
