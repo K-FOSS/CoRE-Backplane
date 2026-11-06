@@ -40,6 +40,8 @@ controllers:
           METHOD: 'WATCH'
           FOLDER: '/tmp/dashboards'
           SCRIPT: '/scripts/import.py'
+          CLUSTER_NAME: {{ .Values.cluster.name | quote }}
+          CENTRAL_CLUSTER_NAME: {{ .Values.dashboardSync.centralClusterName | quote }}
           GRAFANA_URL: {{ printf "http://grafana-dashboard-api.core-prod.svc.%s" .Values.cluster.domain | quote }}
           GRAFANA_TOKEN:
             secretKeyRef:

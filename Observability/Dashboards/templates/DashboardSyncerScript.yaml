@@ -9,6 +9,7 @@ data:
     import json
     import hashlib
     import os
+    import re
     from pathlib import Path
     from urllib.error import HTTPError
     from urllib.parse import quote, urlencode
@@ -17,7 +18,10 @@ data:
     ROOT = Path(os.environ['FOLDER'])
     GRAFANA_URL = os.environ['GRAFANA_URL'].rstrip('/')
     token = os.environ['GRAFANA_TOKEN']
+    cluster_name = os.environ['CLUSTER_NAME']
+    central_cluster_name = os.environ['CENTRAL_CLUSTER_NAME']
     FOLDER_API = '/apis/folder.grafana.app/v1/namespaces/default/folders'
+    DASHBOARD_API = '/apis/dashboard.grafana.app/v1/namespaces/default/dashboards'
 
     def request(method, path, payload=None):
         body = None
@@ -32,42 +36,50 @@ data:
         with urlopen(req, timeout=30) as response:
             return response.status, json.loads(response.read() or b'{}')
 
-    def folder_uid(folder):
-        if not folder:
-            return None
-        folders = []
+    def list_resources(path):
+        resources = []
         continuation = None
         while True:
             query = {'limit': '1000'}
             if continuation:
                 query['continue'] = continuation
-            path = f'{FOLDER_API}?{urlencode(query)}'
-            _, result = request('GET', path)
-            folders.extend(result.get('items', []))
+            separator = '&' if '?' in path else '?'
+            _, result = request('GET', f'{path}{separator}{urlencode(query)}')
+            resources.extend(result.get('items', []))
             continuation = result.get('metadata', {}).get('continue')
             if not continuation:
-                break
+                return resources
 
+    def ensure_folder(title, parent_uid, folders):
+        parent_annotation = parent_uid or None
         matches = [
             item for item in folders
-            if item.get('spec', {}).get('title') == folder
+            if item.get('spec', {}).get('title') == title
+            and item.get('metadata', {}).get('annotations', {}).get(
+                'grafana.app/folder'
+            ) == parent_annotation
         ]
         if matches:
-            # Prefer the newest existing folder while duplicate folders are
-            # being consolidated manually. This avoids moving dashboards on
-            # every sync while preserving the current active folder.
-            match = max(
+            # Prefer the deterministic UID. This makes concurrent syncers
+            # converge without creating a new folder for each event.
+            stable_uid = folder_uid(title, parent_uid)
+            for match in matches:
+                if match.get('metadata', {}).get('name') == stable_uid:
+                    return stable_uid
+            return min(
                 matches,
                 key=lambda item: item.get('metadata', {}).get(
                     'creationTimestamp', ''
                 ),
-            )
-            return match['metadata']['name']
+            )['metadata']['name']
 
-        stable_uid = f'sync-{hashlib.sha256(folder.encode()).hexdigest()[:12]}'
+        stable_uid = folder_uid(title, parent_uid)
+        metadata = {'name': stable_uid}
+        if parent_uid:
+            metadata['annotations'] = {'grafana.app/folder': parent_uid}
         payload = {
-            'metadata': {'name': stable_uid},
-            'spec': {'title': folder},
+            'metadata': metadata,
+            'spec': {'title': title},
         }
         try:
             _, result = request('POST', FOLDER_API, payload)
@@ -79,7 +91,67 @@ data:
             _, result = request('GET', f'{FOLDER_API}/{quote(stable_uid, safe="")}')
             return result['metadata']['name']
 
+    def folder_uid(title, parent_uid=None):
+        parent = parent_uid or 'root'
+        return f'sync-{hashlib.sha256(f"{parent}:{title}".encode()).hexdigest()[:16]}'
+
+    def local_dashboard_uid(original_uid):
+        if cluster_name == central_cluster_name:
+            return original_uid
+        cluster_slug = re.sub(r'[^a-z0-9-]+', '-', cluster_name.lower()).strip('-')[:22]
+        return f'{cluster_slug}-{hashlib.sha256(original_uid.encode()).hexdigest()[:12]}'
+
+    def replace_dashboard_links(value, uid_map):
+        if isinstance(value, dict):
+            return {key: replace_dashboard_links(item, uid_map) for key, item in value.items()}
+        if isinstance(value, list):
+            return [replace_dashboard_links(item, uid_map) for item in value]
+        if isinstance(value, str):
+            return re.sub(
+                r'(\./d/)([^/?#]+)(/)',
+                lambda match: f'{match.group(1)}{uid_map.get(match.group(2), match.group(2))}{match.group(3)}',
+                value,
+            )
+        return value
+
+    def cleanup_empty_legacy_folders(folders, managed_titles, active_root_uid):
+        try:
+            dashboards = list_resources(DASHBOARD_API)
+            dashboard_folders = {
+                item.get('metadata', {}).get('annotations', {}).get(
+                    'grafana.app/folder'
+                )
+                for item in dashboards
+            }
+            child_folders = {
+                item.get('metadata', {}).get('annotations', {}).get(
+                    'grafana.app/folder'
+                )
+                for item in folders
+                if item.get('metadata', {}).get('annotations', {}).get(
+                    'grafana.app/folder'
+                )
+            }
+            for folder in folders:
+                metadata = folder.get('metadata', {})
+                annotations = metadata.get('annotations', {})
+                uid = metadata.get('name')
+                if (
+                    folder.get('spec', {}).get('title') in managed_titles
+                    and not annotations.get('grafana.app/folder')
+                    and uid.startswith('sync-')
+                    and uid != active_root_uid
+                    and uid not in dashboard_folders
+                    and uid not in child_folders
+                ):
+                    request('DELETE', f'{FOLDER_API}/{quote(uid, safe="")}')
+        except Exception as error:
+            # Cleanup is best effort; dashboard imports must continue if an
+            # older Grafana API does not expose the dashboard list endpoint.
+            print(f'Unable to clean up empty legacy folders: {error}')
+
     dashboard_paths = sorted(path for path in ROOT.rglob('*') if path.is_file())
+    dashboards = []
     for dashboard_path in dashboard_paths:
         if dashboard_path.suffix == '.url':
             with dashboard_path.open(encoding='utf-8') as stream:
@@ -94,7 +166,28 @@ data:
         else:
             with dashboard_path.open(encoding='utf-8') as stream:
                 dashboard = json.load(stream)
-        if dashboard.get('uid') == 'rYdddlPWk':
+        dashboards.append((dashboard_path, dashboard))
+
+    uid_map = {}
+    for _, dashboard in dashboards:
+        original_uid = dashboard.get('uid')
+        if original_uid:
+            uid_map[original_uid] = local_dashboard_uid(original_uid)
+
+    folders = list_resources(FOLDER_API)
+    cluster_folder = ensure_folder(cluster_name, None, folders)
+    folders = list_resources(FOLDER_API)
+    managed_folder_titles = set()
+
+    for dashboard_path, dashboard in dashboards:
+        original_uid = dashboard.get('uid')
+        if original_uid:
+            dashboard['uid'] = uid_map[original_uid]
+        else:
+            generated_uid = hashlib.sha256(str(dashboard_path).encode()).hexdigest()[:12]
+            dashboard['uid'] = local_dashboard_uid(generated_uid)
+        dashboard = replace_dashboard_links(dashboard, uid_map)
+        if original_uid == 'rYdddlPWk':
             dashboard.setdefault('timepicker', {})['refresh_intervals'] = [
                 '15s',
                 '30s',
@@ -108,7 +201,7 @@ data:
                 if panel.get('targets'):
                     panel['interval'] = '15s'
                     panel['intervalFactor'] = 1
-        if dashboard.get('uid') in {
+        if original_uid in {
             'ffcd83628d7d4b5a03d1cafd159e6c9c',
             '8280707b8f16e7b87b840fc1cc92d4c5',
         }:
@@ -128,13 +221,18 @@ data:
         dashboard.pop('id', None)
         relative_parent = dashboard_path.parent.relative_to(ROOT)
         folder = '' if str(relative_parent) == '.' else str(relative_parent)
+        managed_folder_titles.add(folder or cluster_name)
+        folder_uid_value = cluster_folder
+        if folder:
+            folder_uid_value = ensure_folder(folder, cluster_folder, folders)
+            folders = list_resources(FOLDER_API)
         payload = {
             'dashboard': dashboard,
             'folderId': 0,
             'overwrite': True,
         }
-        uid = folder_uid(folder)
-        if uid:
-            payload['folderUid'] = uid
+        payload['folderUid'] = folder_uid_value
         request('POST', '/api/dashboards/db', payload)
+
+    cleanup_empty_legacy_folders(folders, managed_folder_titles, cluster_folder)
 {{- end }}
