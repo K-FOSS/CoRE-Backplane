@@ -340,8 +340,8 @@ spec:
                     replicas: 3
                     resources:
                       requests:
-                        cpu: '200m'
-                        memory: '1Gi'
+                        cpu: '150m'
+                        memory: '256Mi'
                     extraArgs:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
                     podAnnotations:
@@ -361,8 +361,8 @@ spec:
                     replicas: 3
                     resources:
                       requests:
-                        cpu: '750m'
-                        memory: '3Gi'
+                        cpu: '400m'
+                        memory: '1536Mi'
                     extraArgs:
                       ingester.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
                       ingester.ring.tokens-file-path: '/data/tokens-{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
@@ -401,8 +401,8 @@ spec:
                     replicas: 3
                     resources:
                       requests:
-                        cpu: '150m'
-                        memory: '512Mi'
+                        cpu: '50m'
+                        memory: '128Mi'
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
                     {{- if .values.mimirAvoidHpc3 }}
@@ -507,7 +507,7 @@ spec:
                     replicas: {{ .values.mimirRulerReplicas }}
                     resources:
                       requests:
-                        cpu: '500m'
+                        cpu: '100m'
                         memory: '256Mi'
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
