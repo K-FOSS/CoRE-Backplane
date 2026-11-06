@@ -166,8 +166,8 @@ spec:
                     replicas: {{ .values.tempoGatewayReplicas }}
                     resources:
                       requests:
-                        cpu: '100m'
-                        memory: '128Mi'
+                        cpu: '10m'
+                        memory: '32Mi'
                       limits:
                         cpu: '1'
                         memory: '512Mi'
@@ -200,8 +200,8 @@ spec:
                     replicas: {{ .values.tempoDistributorReplicas }}
                     resources:
                       requests:
-                        cpu: '250m'
-                        memory: '256Mi'
+                        cpu: '50m'
+                        memory: '64Mi'
                       limits:
                         cpu: '2'
                         memory: '1Gi'
@@ -212,6 +212,10 @@ spec:
                       targetCPUUtilizationPercentage: 60
                   ingester:
                     replicas: {{ .values.tempoIngesterReplicas }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '1Gi'
                     extraArgs:
                       - '-ingester.availability-zone={{ .values.region }}'
                     config:
@@ -223,8 +227,8 @@ spec:
                     replicas: {{ .values.tempoQuerierReplicas }}
                     resources:
                       requests:
-                        cpu: '250m'
-                        memory: '256Mi'
+                        cpu: '25m'
+                        memory: '64Mi'
                       limits:
                         cpu: '2'
                         memory: '1Gi'
@@ -237,8 +241,8 @@ spec:
                     replicas: {{ .values.tempoQueryFrontendReplicas }}
                     resources:
                       requests:
-                        cpu: '100m'
-                        memory: '128Mi'
+                        cpu: '10m'
+                        memory: '32Mi'
                       limits:
                         cpu: '1'
                         memory: '512Mi'
@@ -249,6 +253,20 @@ spec:
                       targetCPUUtilizationPercentage: 60
                   compactor:
                     replicas: {{ .values.tempoCompactorReplicas }}
+                    resources:
+                      requests:
+                        cpu: '150m'
+                        memory: '1536Mi'
+                  memcached:
+                    resources:
+                      requests:
+                        cpu: '10m'
+                        memory: '32Mi'
+                  metricsGenerator:
+                    resources:
+                      requests:
+                        cpu: '50m'
+                        memory: '256Mi'
                   traces:
                     otlp:
                       grpc:

@@ -216,25 +216,61 @@ spec:
                     replicas: {{ .values.lokiWriteReplicas }}
                   gateway:
                     replicas: {{ .values.lokiGatewayReplicas }}
+                    resources:
+                      requests:
+                        cpu: '10m'
+                        memory: '32Mi'
                   distributor:
                     replicas: {{ .values.lokiDistributorReplicas }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '128Mi'
                   ingester:
                     replicas: {{ .values.lokiIngesterReplicas }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '256Mi'
                     zoneAwareReplication:
                       enabled: false
                       maxUnavailablePct: 33
                   querier:
                     replicas: {{ .values.lokiQuerierReplicas }}
+                    resources:
+                      requests:
+                        cpu: '100m'
+                        memory: '128Mi'
                   queryFrontend:
                     replicas: {{ .values.lokiQueryFrontendReplicas }}
+                    resources:
+                      requests:
+                        cpu: '25m'
+                        memory: '96Mi'
                   queryScheduler:
                     replicas: {{ .values.lokiQuerySchedulerReplicas }}
+                    resources:
+                      requests:
+                        cpu: '10m'
+                        memory: '64Mi'
                   indexGateway:
                     replicas: {{ .values.lokiIndexGatewayReplicas }}
+                    resources:
+                      requests:
+                        cpu: '25m'
+                        memory: '192Mi'
                   compactor:
                     replicas: {{ .values.lokiCompactorReplicas }}
+                    resources:
+                      requests:
+                        cpu: '25m'
+                        memory: '128Mi'
                   ruler:
                     replicas: {{ .values.lokiRulerReplicas }}
+                    resources:
+                      requests:
+                        cpu: '25m'
+                        memory: '96Mi'
 
                   test:
                     enabled: false

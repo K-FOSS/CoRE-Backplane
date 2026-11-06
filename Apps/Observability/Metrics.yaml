@@ -321,6 +321,10 @@ spec:
                   nginx:
                     enabled: true
                     replicas: 2
+                    resources:
+                      requests:
+                        cpu: '10m'
+                        memory: '32Mi'
                     podDisruptionBudget:
                       maxUnavailable: 1
                     strategy:
@@ -334,6 +338,10 @@ spec:
                       whenUnsatisfiable: 'ScheduleAnyway'
                   distributor:
                     replicas: 3
+                    resources:
+                      requests:
+                        cpu: '200m'
+                        memory: '1Gi'
                     extraArgs:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
                     podAnnotations:
@@ -351,6 +359,10 @@ spec:
                   ingester:
                     enabled: true
                     replicas: 3
+                    resources:
+                      requests:
+                        cpu: '750m'
+                        memory: '3Gi'
                     extraArgs:
                       ingester.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
                       ingester.ring.tokens-file-path: '/data/tokens-{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
@@ -387,6 +399,10 @@ spec:
                       whenScaled: Retain
                   querier:
                     replicas: 3
+                    resources:
+                      requests:
+                        cpu: '150m'
+                        memory: '512Mi'
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
                     {{- if .values.mimirAvoidHpc3 }}
@@ -412,6 +428,10 @@ spec:
                       whenUnsatisfiable: 'ScheduleAnyway'
                   query_frontend:
                     replicas: 3
+                    resources:
+                      requests:
+                        cpu: '50m'
+                        memory: '128Mi'
                     podDisruptionBudget:
                       maxUnavailable: 1
                     strategy:
@@ -425,6 +445,10 @@ spec:
                       whenUnsatisfiable: 'ScheduleAnyway'
                   query_scheduler:
                     replicas: 2
+                    resources:
+                      requests:
+                        cpu: '25m'
+                        memory: '96Mi'
                     extraArgs:
                       query-scheduler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-query-scheduler-$(HOSTNAME)'
                     podDisruptionBudget:
@@ -440,6 +464,10 @@ spec:
                       whenUnsatisfiable: 'ScheduleAnyway'
                   store_gateway:
                     replicas: 3
+                    resources:
+                      requests:
+                        cpu: '50m'
+                        memory: '128Mi'
                     extraArgs:
                       store-gateway.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-store-gateway-$(HOSTNAME)'
                     zoneAwareReplication:
@@ -455,6 +483,10 @@ spec:
                       whenScaled: Retain
                   compactor:
                     replicas: {{ .values.mimirCompactorReplicas }}
+                    resources:
+                      requests:
+                        cpu: '500m'
+                        memory: '256Mi'
                     extraArgs:
                       compactor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-compactor-$(HOSTNAME)'
                     persistentVolume:
@@ -465,10 +497,18 @@ spec:
                       whenDeleted: Retain
                       whenScaled: Retain
                   overrides_exporter:
+                    resources:
+                      requests:
+                        cpu: '10m'
+                        memory: '64Mi'
                     extraArgs:
                       overrides-exporter.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-overrides-exporter-$(HOSTNAME)'
                   ruler:
                     replicas: {{ .values.mimirRulerReplicas }}
+                    resources:
+                      requests:
+                        cpu: '500m'
+                        memory: '256Mi'
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
                   mimir:
