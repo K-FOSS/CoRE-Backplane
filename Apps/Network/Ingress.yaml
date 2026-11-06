@@ -40,6 +40,9 @@ spec:
                     hub: false
                     waf:
                       enabled: true
+                      mode: 'On'
+                      failOpen: false
+                      requestBodyLimitAction: 'Reject'
                       policies:
                         - name: 'coraza-crs-librespeed-canary'
                           targetRoute: 'core-home1-talos-prod-net-testing-prod'
@@ -102,6 +105,15 @@ spec:
 
                 waf:
                   enabled: {{ .values.waf.enabled }}
+                  {{ with (index .values.waf "mode") }}
+                  mode: {{ . | squote }}
+                  {{ end }}
+                  {{ if hasKey .values.waf "failOpen" }}
+                  failOpen: {{ .values.waf.failOpen }}
+                  {{ end }}
+                  {{ with (index .values.waf "requestBodyLimitAction") }}
+                  requestBodyLimitAction: {{ . | squote }}
+                  {{ end }}
                   {{ with (index .values.waf "policies") }}
                   policies:
                     {{ toYaml . | nindent 4 }}
