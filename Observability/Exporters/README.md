@@ -37,6 +37,13 @@ its monitor selection to `kube-system`. The kube-prometheus-stack Grafana
 datasource ConfigMap is disabled because the standalone Grafana deployment
 owns datasource configuration.
 
+The upstream Kubernetes mixin dashboards are always rendered, even though the
+stack's Prometheus and Grafana workloads are disabled; the standalone dashboard
+syncer imports their ConfigMaps. Their `kube-state-metrics` queries require
+the Alloy ServiceMonitor path to preserve the standard
+`job="kube-state-metrics"` label, while node dashboards use the Alloy host
+collector's `job="node-exporter"`, `instance`, and `nodename` labels.
+
 The GPU exporters require host GPU enablement: NFD must publish the Intel PCI
 label `feature.node.kubernetes.io/pci-0300_8086.present: 'true'`, and the
 NVIDIA driver, container runtime integration, and device plugin must publish

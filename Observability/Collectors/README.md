@@ -97,14 +97,18 @@ kube-prometheus rules are stored in `core-prod` while querying metrics for all
 workload namespaces. The legacy K3s target does not deploy `alloy-rules`
 because it has no `core-mimir` Service.
 
-Kubelet/cAdvisor metrics are scraped locally by each node's `alloy-metrics`
-DaemonSet through the authenticated Kubernetes node proxy. Cluster-wide
-PodMonitor targets are scraped by the clustered central Alloy StatefulSet.
+Kubelet/cAdvisor metrics are scraped locally by the privileged, host-networked
+`alloy-host` DaemonSet through each node's secure kubelet endpoint. The target
+is built from the pod's `status.hostIP`, so it does not use Kubernetes API node
+discovery or the API-server proxy; failed scrapes retry on the next interval.
+The kubelet still validates the service-account bearer token, so its configured
+authentication/authorization webhook must remain available for authenticated
+scrapes. PodMonitor targets are scraped by the clustered central Alloy
+StatefulSet.
 The exporter chart's kubelet ServiceMonitor is disabled because its
 headless-Service path was only producing one kubelet endpoint per cluster. See Grafana's
-[Kubernetes discovery](https://grafana.com/docs/alloy/latest/reference/components/discovery/discovery.kubernetes/)
-and [Prometheus scrape](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.scrape/)
-documentation for the node discovery and TLS/token configuration. The
+[Prometheus scrape](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.scrape/)
+documentation covers the scrape and TLS/token configuration. The
 Collectors release owns the Prometheus Operator CRDs used by Alloy; the
 Exporters release leaves those CRDs disabled.
 
