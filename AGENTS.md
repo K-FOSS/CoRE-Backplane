@@ -251,6 +251,13 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   `version` values, or any env: or key/value YAML or related languages on the key/left side.
 - Prefer values-driven templates for environment-specific behavior. Retain a
   literal only for a deliberate compatibility reason and document it.
+- Grafana dashboard ConfigMaps consumed by the dashboard syncer must carry the
+  exact label `grafana_dashboard: 'true'`; the syncer does not match
+  `grafana_dashboard: '1'`. The current syncer watches only `core-prod` with a
+  namespace-scoped ConfigMap Role, so dashboards in `kube-system` are not
+  imported unless the namespace watch and RBAC are deliberately expanded or a
+  labeled copy is rendered into `core-prod`. Use the existing target-directory
+  or folder annotation when assigning dashboards to a non-root Grafana folder.
 - For every `Landing`/Forecastle-exposed service, add a
   `forecastle.stakater.com/appName` annotation with a friendly display name;
   do not rely on the generated resource name in the dashboard.
@@ -277,6 +284,11 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   block scalar.
 - For Helm/Lovely changes, resolve dependencies, run `helm lint`, render with
   representative values and injected layers, and inspect affected resources.
+- When an ApplicationSet supplies `LOVELY_KUSTOMIZE_MERGE`, its source
+  directory must contain a `kustomization.yaml` (or `Kustomization`) marker so
+  the Lovely plugin executes the Kustomize stage. Audit this boundary before
+  relying on any injected patch, and preserve the marker when adding new
+  Lovely patches.
 - Validate Kubernetes API versions and CRDs against the controllers installed
   on target clusters. Stable-looking API names are not evidence of support.
 - Run `git diff --check` scoped to files changed for the task and review the
