@@ -325,6 +325,8 @@ spec:
                       requests:
                         cpu: '10m'
                         memory: '32Mi'
+                      limits:
+                        memory: '128Mi'
                     podDisruptionBudget:
                       maxUnavailable: 1
                     strategy:
@@ -342,6 +344,8 @@ spec:
                       requests:
                         cpu: '150m'
                         memory: '256Mi'
+                      limits:
+                        memory: '2Gi'
                     extraArgs:
                       distributor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-distributor-$(HOSTNAME)'
                     podAnnotations:
@@ -363,6 +367,8 @@ spec:
                       requests:
                         cpu: '400m'
                         memory: '1536Mi'
+                      limits:
+                        memory: '3Gi'
                     extraArgs:
                       ingester.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
                       ingester.ring.tokens-file-path: '/data/tokens-{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ingester-$(HOSTNAME)'
@@ -403,6 +409,8 @@ spec:
                       requests:
                         cpu: '50m'
                         memory: '128Mi'
+                      limits:
+                        memory: '512Mi'
                     extraArgs:
                       querier.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-querier-$(HOSTNAME)'
                     {{- if .values.mimirAvoidHpc3 }}
@@ -432,6 +440,8 @@ spec:
                       requests:
                         cpu: '50m'
                         memory: '128Mi'
+                      limits:
+                        memory: '512Mi'
                     podDisruptionBudget:
                       maxUnavailable: 1
                     strategy:
@@ -449,6 +459,8 @@ spec:
                       requests:
                         cpu: '25m'
                         memory: '96Mi'
+                      limits:
+                        memory: '256Mi'
                     extraArgs:
                       query-scheduler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-query-scheduler-$(HOSTNAME)'
                     podDisruptionBudget:
@@ -468,6 +480,8 @@ spec:
                       requests:
                         cpu: '50m'
                         memory: '128Mi'
+                      limits:
+                        memory: '512Mi'
                     extraArgs:
                       store-gateway.sharding-ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-store-gateway-$(HOSTNAME)'
                     zoneAwareReplication:
@@ -487,6 +501,8 @@ spec:
                       requests:
                         cpu: '500m'
                         memory: '256Mi'
+                      limits:
+                        memory: '1Gi'
                     extraArgs:
                       compactor.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-compactor-$(HOSTNAME)'
                     persistentVolume:
@@ -501,6 +517,8 @@ spec:
                       requests:
                         cpu: '10m'
                         memory: '64Mi'
+                      limits:
+                        memory: '256Mi'
                     extraArgs:
                       overrides-exporter.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-overrides-exporter-$(HOSTNAME)'
                   ruler:
@@ -509,6 +527,8 @@ spec:
                       requests:
                         cpu: '100m'
                         memory: '256Mi'
+                      limits:
+                        memory: '512Mi'
                     extraArgs:
                       ruler.ring.instance-id: '{{ .values.clusterName }}-mimir-{{ .values.tenant }}-ruler-$(HOSTNAME)'
                   mimir:
