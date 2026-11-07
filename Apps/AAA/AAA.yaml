@@ -22,6 +22,7 @@ spec:
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    readReplicaHost: ''
                     ldapAdditionalExternalDNSHostname: ''
                     ldapClusterMeshEnabled: false
                     radiusAdditionalExternalDNSHostname: ''
@@ -30,6 +31,7 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: true
+                    readReplicaHost: 'psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space'
                     ldapAdditionalExternalDNSHostname: 'ldap.mylogin.space,ldap-dc1-talos.mylogin.space'
                     ldapClusterMeshEnabled: true
                     radiusAdditionalExternalDNSHostname: 'radius.mylogin.space'
@@ -38,6 +40,7 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    readReplicaHost: ''
                     ldapAdditionalExternalDNSHostname: 'ldap-home1.mylogin.space'
                     ldapClusterMeshEnabled: true
                     radiusAdditionalExternalDNSHostname: ''
@@ -98,8 +101,8 @@ spec:
                 hub: {{ .values.hub }}
 
                 readReplica:
-                  enabled: {{ .values.hub }}
-                  host: psql-int-rep.core-dc1-talos-prod.dc1.yxl.mylogin.space
+                  enabled: {{ ne .values.readReplicaHost "" }}
+                  host: '{{ .values.readReplicaHost }}'
 
                 cluster:
                   name: {{ .values.clusterName }}
@@ -125,6 +128,29 @@ spec:
                       enabled: {{ .values.radiusClusterMeshEnabled }}
 
                   server:
+                    {{ if ne .values.readReplicaHost "" }}
+                    env:
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST'
+                        valueFrom:
+                          configMapKeyRef:
+                            name: 'aaa-authentik-read-replica'
+                            key: 'Host'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'aaa-authentik-database'
+                            key: 'Database'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'aaa-authentik-database'
+                            key: 'Username'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'aaa-authentik-database'
+                            key: 'Password'
+                    {{ end }}
                     service:
                       annotations:
                         external-dns.kubernetes.io/hostname: 'aaa-server.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
@@ -139,6 +165,29 @@ spec:
                       resolvemy.host/priority: 'critical'
 
                   worker:
+                    {{ if ne .values.readReplicaHost "" }}
+                    env:
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST'
+                        valueFrom:
+                          configMapKeyRef:
+                            name: 'aaa-authentik-read-replica'
+                            key: 'Host'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'aaa-authentik-database'
+                            key: 'Database'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'aaa-authentik-database'
+                            key: 'Username'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD'
+                        valueFrom:
+                          secretKeyRef:
+                            name: 'aaa-authentik-database'
+                            key: 'Password'
+                    {{ end }}
                     # Authentik names discovered Kubernetes TLS Secrets after
                     # the parent directory containing tls.crt and tls.key.
                     # Use the cluster name except for dc1 Talos, whose

@@ -1,10 +1,10 @@
-# AAA chart
+# CoRE-Backplane AAA Stack
 
 This chart deploys CoRE's authentication, authorization, and accounting
 services. Authentik provides the primary identity service; local templates add
 Vault-backed database and outpost credentials, LDAP/RADIUS/proxy outposts,
 Gateway API routing and policy, multi-cluster backends, and an optional legacy
-OpenLDAP proxy.
+OpenLDAP proxy. See the [parent stack overview](../README.md).
 
 The fleet entry point is
 [`Apps/AAA/AAA.yaml`](../Apps/AAA/AAA.yaml). It selects bare-metal clusters,
@@ -34,21 +34,31 @@ to Authentik through `AUTHENTIK_WEB__BASE_URL`; Authentik requires only the
 scheme and host, without a path. See the [Authentik base URL
 documentation](https://docs.goauthentik.io/install-config/configuration/#authentik_web__base_url).
 
-Authentik uses the per-cluster PGPool hostname for normal ORM traffic and the
-matching per-cluster PostgreSQL master hostname for session-scoped operations.
-The chart's `aaa-authentik-environment` ConfigMap supplies the cluster,
-datacenter, region, and domain components. Kubernetes environment replacement
-then builds the `psql.<cluster>.<datacenter>.<region>.<domain>` PGPool endpoint
-and the `psql-int.<cluster>.<datacenter>.<region>.<domain>` direct endpoint. This
-environment and all Authentik environment variables are defined in the AAA
-chart values, so ApplicationSet merging cannot discard the secret-backed
-database and email entries. This split is required by Authentik 2026.8 when the
-normal endpoint is pooled:
-[Authentik's PostgreSQL pooler guidance](https://docs.goauthentik.io/install-config/configuration/#session-scoped-operations-and-transaction-mode-poolers)
-documents that Channels LISTEN/NOTIFY, worker advisory locks, and startup
-migrations need a stable session. Server replicas default to two with a
-PodDisruptionBudget; the worker and all enabled outposts depend on the shared
-database and secret-store chain.
+Authentik uses `psql-int.mylogin.space` for both its writable primary and
+session-scoped direct connections on every site. The [PostgreSQL fleet
+ApplicationSet](../Apps/Storage/PSQL.yaml) currently places the writable hub at
+HOME1 and publishes this global name from that site's master Service. The AAA
+fleet ApplicationSet gives server and worker pods on DC1 Talos
+an [Authentik read-replica connection](https://docs.goauthentik.io/install-config/configuration/#read-replicas)
+to the DC1 Talos `psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space` endpoint.
+That endpoint is a PostgreSQL standby, so it must never be used as
+Authentik's primary or direct connection. The replica host comes from the
+`aaa-authentik-read-replica` ConfigMap; database name, user, and password come
+from the existing `aaa-authentik-database` Secret. HOME1 does not configure a
+read replica. PostgreSQL and AAA select their hubs independently: AAA's `hub`
+value controls the `authentik-core` credential producer, not database
+leadership.
+
+The primary/direct environment entries remain in the [AAA chart
+values](values.yaml), while the [AAA fleet ApplicationSet](../Apps/AAA/AAA.yaml)
+adds replica environment entries to both server and worker on DC1 Talos.
+The [upstream Helm chart's server and worker templates](https://github.com/goauthentik/helm/tree/authentik-2026.8.5/charts/authentik/templates)
+append these per-component entries to the shared environment. The direct
+endpoint bypasses PGPool so Channels LISTEN/NOTIFY, worker advisory locks, and
+startup migrations retain a stable session, as required by
+[Authentik's pooler guidance](https://docs.goauthentik.io/install-config/configuration/#session-scoped-operations-and-transaction-mode-poolers).
+Server replicas default to two with a PodDisruptionBudget; the worker and all
+enabled outposts depend on the shared database and secret-store chain.
 
 ## Hub and spoke credential flow
 
@@ -258,16 +268,8 @@ Before syncing, inspect:
 - which cluster is the only hub;
 - every Secret producer, target name, store, and Vault property;
 - PostgreSQL hostname and database credentials;
-- the optional PostgreSQL read replica used by the YXL hub instance, following
-  Authentik's [PostgreSQL read-replica configuration](https://docs.goauthentik.io/install-config/configuration/#read-replicas);
-
-Adding or removing the read replica requires restarting the Authentik server
-and worker pods. Verify the rendered replica host and the
-`aaa-authentik-read-replica` ConfigMap before reconciliation, then confirm read
-traffic reaches the replica while writes continue to use the primary. Replica
-database credentials come directly from the existing
-`aaa-authentik-database` Secret; the ConfigMap contains only the non-secret
-replica hostname.
+- the local PostgreSQL read replica on DC1 Talos and the global writable
+  endpoint on all sites;
 - Authentik server/worker images, replicas, PDB, probes, and resources;
 - enabled outpost Deployments, matching Secrets and Services;
 - LDAP/RADIUS cluster-specific and optional shared ExternalDNS hostnames, plus
@@ -276,6 +278,21 @@ replica hostname.
 - TLS Secret names and worker mount paths; and
 - CRD/API compatibility for Authentik, External Secrets, Gateway/Envoy, and
   Crossplane resources.
+
+Adding or removing the read replica requires restarting the Authentik server
+and worker pods. Before reconciliation, verify the rendered replica host and
+`aaa-authentik-read-replica` ConfigMap on DC1 Talos, and confirm the global name
+resolves to the writable HOME1 master. After reconciliation, confirm writes and
+session-scoped operations reach the global primary, reads reach the local
+standby, and replication lag permits complete browser login, OIDC token
+issuance, and outpost authentication. A reachable PostgreSQL standby alone does
+not prove Authentik is healthy: replica lag can make recent writes invisible to
+the next read, and loss of the local replica can interrupt reads even while the
+global primary remains available. If the PostgreSQL hub moves, update the AAA
+read-replica site selection in the same change and validate the new global
+endpoint before rolling Authentik. Roll back this routing change by restoring
+the previous AAA values and ApplicationSet merge, then restarting server and
+worker pods; this does not promote PostgreSQL or change stored identity data.
 
 After reconciliation:
 
