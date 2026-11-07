@@ -301,7 +301,7 @@ spec:
                               - name: server
                                 env:
                                   - name: AUTHENTIK_POSTGRESQL__HOST
-                                    value: 'psql.$(CLUSTER_NAME).$(DATACENTER).$(REGION).$(DOMAIN_NAME)'
+                                    value: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                                   - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
                                     value: 'true'
                                   - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
@@ -323,9 +323,9 @@ spec:
                               - name: worker
                                 env:
                                   - name: AUTHENTIK_POSTGRESQL__HOST
-                                    value: 'psql.$(CLUSTER_NAME).$(DATACENTER).$(REGION).$(DOMAIN_NAME)'
+                                    value: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                                   - name: AUTHENTIK_POSTGRESQL__DIRECT__HOST
-                                    value: 'psql-int.$(CLUSTER_NAME).$(DATACENTER).$(REGION).$(DOMAIN_NAME)'
+                                    value: 'psql-int.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                                   - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
                                     value: 'false'
                                   - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
