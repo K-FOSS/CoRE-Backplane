@@ -1,0 +1,30 @@
+{{- if index .Values "mimir-distributed" "enabled" }}
+{{- $annotations := .Values.mimir.service.annotations }}
+{{- $instance := .Release.Name }}
+{{- range $service := list
+  (dict "name" "alertmanager-headless" "component" "alertmanager")
+  (dict "name" "compactor" "component" "compactor")
+  (dict "name" "distributor-headless" "component" "distributor")
+  (dict "name" "query-frontend" "component" "query-frontend")
+  (dict "name" "ruler" "component" "ruler")
+}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "core-mimir-%s-global" $service.name | squote }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+spec:
+  type: 'ClusterIP'
+  ports:
+    - name: 'http'
+      port: 8080
+      protocol: 'TCP'
+      targetPort: 'http-metrics'
+  selector:
+    app.kubernetes.io/name: 'mimir'
+    app.kubernetes.io/instance: {{ $instance | squote }}
+    app.kubernetes.io/component: {{ $service.component | squote }}
+{{- end }}
+{{- end }}
