@@ -45,19 +45,14 @@ controllers:
     rollingUpdate:
       surge: 1
       unavailable: '0%'
-    containers:
-      main:
-        enabled: false
-      pgpool:
+    initContainers:
+      clean-runtime:
         image:
           repository: kristianfjones/pgpool
           digest: 'sha256:b101c0e0a33c4aa8fd9641f4e6a112851735e62bcd494e8c741a31086b7eba6b'
           pullPolicy: IfNotPresent
-        # Runtime emptyDirs survive a container restart. Remove stale
-        # PostgreSQL and PCP socket paths before Pgpool binds them again;
-        # otherwise a failed container can leave PCP unavailable to recovery.
         command:
-          - /bin/bash
+          - /bin/sh
           - -ec
         args:
           - |
@@ -68,7 +63,19 @@ controllers:
               /tmp/.s.PGSQL.5432.lock \
               /var/run/postgresql/.s.PGSQL.5432 \
               /var/run/postgresql/.s.PGSQL.5432.lock
-            exec /opt/pgpool-II/bin/start.sh
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+    containers:
+      main:
+        enabled: false
+      pgpool:
+        image:
+          repository: kristianfjones/pgpool
+          digest: 'sha256:b101c0e0a33c4aa8fd9641f4e6a112851735e62bcd494e8c741a31086b7eba6b'
+          pullPolicy: IfNotPresent
         resources:
           requests:
             cpu: 128m
@@ -218,6 +225,8 @@ persistence:
           - path: /tmp/pgpool
         recovery:
           - path: /tmp/pgpool
+        clean-runtime:
+          - path: /tmp/pgpool
 
   tmp:
     type: emptyDir
@@ -226,6 +235,8 @@ persistence:
     advancedMounts:
       main:
         pgpool:
+          - path: /tmp
+        clean-runtime:
           - path: /tmp
 
   shared-memory:
@@ -244,6 +255,8 @@ persistence:
     advancedMounts:
       main:
         pgpool:
+          - path: /var/run/postgresql
+        clean-runtime:
           - path: /var/run/postgresql
 
   config:
