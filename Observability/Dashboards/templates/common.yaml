@@ -34,8 +34,7 @@ controllers:
             type: 'RuntimeDefault'
         env:
           LABEL: 'grafana_dashboard'
-          LABEL_VALUE: 'true'
-          NAMESPACE: 'core-prod'
+          NAMESPACE: {{ join "," .Values.dashboardSync.namespaces | quote }}
           RESOURCE: 'configmap'
           METHOD: 'WATCH'
           FOLDER: '/tmp/dashboards'
@@ -92,7 +91,7 @@ serviceAccount:
 rbac:
   roles:
     main:
-      enabled: true
+      enabled: false
       type: 'Role'
       forceRename: 'grafana-dashboard-sync'
       rules:
@@ -101,7 +100,7 @@ rbac:
           verbs: ['get', 'list', 'watch']
   bindings:
     main:
-      enabled: true
+      enabled: false
       type: 'RoleBinding'
       forceRename: 'grafana-dashboard-sync'
       roleRef:

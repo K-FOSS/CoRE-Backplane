@@ -1,0 +1,28 @@
+{{- if .Values.dashboardSync.enabled }}
+{{- range $namespace := .Values.dashboardSync.namespaces }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: 'grafana-dashboard-sync'
+  namespace: {{ $namespace | quote }}
+rules:
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get', 'list', 'watch']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: 'grafana-dashboard-sync'
+  namespace: {{ $namespace | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: 'grafana-dashboard-sync'
+subjects:
+  - kind: ServiceAccount
+    name: 'grafana-dashboard-sync'
+    namespace: {{ $.Release.Namespace | quote }}
+---
+{{- end }}
+{{- end }}
