@@ -15,12 +15,6 @@ spec:
     size: 50Gi
 
   {{- if .Values.monitoring.postgresExporter.enabled }}
-  podAnnotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/path: '/metrics'
-    prometheus.io/port: '{{ .Values.monitoring.postgresExporter.port }}'
-    prometheus.io/job: 'postgres-exporter'
-
   sidecars:
     - name: postgres-exporter
       image: '{{ .Values.monitoring.postgresExporter.image }}'

@@ -1,0 +1,49 @@
+{{- if .Values.monitoring.postgresExporter.enabled }}
+{{- $clusters := list "psql-main" (printf "psql-%s-%s" .Values.datacenter .Values.region) }}
+{{- range $cluster := $clusters }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ $cluster }}-postgres-exporter'
+  labels:
+    app.kubernetes.io/name: 'postgres-exporter'
+    app.kubernetes.io/instance: '{{ $cluster }}'
+    application: 'spilo'
+    cluster-name: '{{ $cluster }}'
+spec:
+  type: ClusterIP
+  ports:
+    - name: 'metrics'
+      port: {{ $.Values.monitoring.postgresExporter.port }}
+      protocol: 'TCP'
+      targetPort: 'metrics'
+  selector:
+    application: 'spilo'
+    cluster-name: '{{ $cluster }}'
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: '{{ $cluster }}-postgres-exporter'
+  labels:
+    app.kubernetes.io/name: 'postgres-exporter'
+    app.kubernetes.io/instance: '{{ $cluster }}'
+spec:
+  namespaceSelector:
+    matchNames:
+      - '{{ $.Release.Namespace }}'
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 'postgres-exporter'
+      app.kubernetes.io/instance: '{{ $cluster }}'
+  endpoints:
+    - port: 'metrics'
+      path: '/metrics'
+      interval: '30s'
+      relabelings:
+        - action: 'replace'
+          targetLabel: 'job'
+          replacement: 'postgres-exporter'
+---
+{{- end }}
+{{- end }}
