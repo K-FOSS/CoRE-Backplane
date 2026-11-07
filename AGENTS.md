@@ -252,12 +252,13 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 - Prefer values-driven templates for environment-specific behavior. Retain a
   literal only for a deliberate compatibility reason and document it.
 - Grafana dashboard ConfigMaps consumed by the dashboard syncer must carry the
-  exact label `grafana_dashboard: 'true'`; the syncer does not match
-  `grafana_dashboard: '1'`. The current syncer watches only `core-prod` with a
-  namespace-scoped ConfigMap Role, so dashboards in `kube-system` are not
-  imported unless the namespace watch and RBAC are deliberately expanded or a
-  labeled copy is rendered into `core-prod`. Use the existing target-directory
-  or folder annotation when assigning dashboards to a non-root Grafana folder.
+  `grafana_dashboard` label key. Repository-managed dashboards should use
+  `grafana_dashboard: 'true'`; the syncer accepts any value so chart-managed
+  dashboards using `'1'` are not missed. The current syncer watches only the
+  explicitly approved `core-prod`, `kube-system`, and `longhorn-system`
+  namespaces through namespace-scoped ConfigMap Roles and RoleBindings. Use the
+  existing target-directory or folder annotation when assigning dashboards to a
+  non-root Grafana folder.
 - For every `Landing`/Forecastle-exposed service, add a
   `forecastle.stakater.com/appName` annotation with a friendly display name;
   do not rely on the generated resource name in the dashboard.
