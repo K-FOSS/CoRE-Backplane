@@ -19,6 +19,10 @@ spec:
     - name: postgres-exporter
       image: '{{ .Values.monitoring.postgresExporter.image }}'
       imagePullPolicy: 'IfNotPresent'
+      args:
+        {{- range .Values.monitoring.postgresExporter.collectors }}
+        - '--collector.{{ . }}'
+        {{- end }}
       ports:
         - name: metrics
           containerPort: {{ .Values.monitoring.postgresExporter.port }}

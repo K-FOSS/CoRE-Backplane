@@ -70,6 +70,19 @@ monitoring:
     enabled: true
     image: 'quay.io/prometheuscommunity/postgres-exporter:v0.18.1'
     port: 9187
+    # These collectors are disabled by default but are used by the pinned
+    # PostgreSQL Monitoring dashboard. Keep stat_statements out until
+    # pg_stat_statements is provisioned in PostgreSQL shared_preload_libraries.
+    collectors:
+      - 'database_wraparound'
+      - 'long_running_transactions'
+      - 'postmaster'
+      - 'process_idle'
+      - 'stat_activity_autovacuum'
+      - 'stat_checkpointer'
+      - 'stat_wal_receiver'
+      - 'statio_user_indexes'
+      - 'xlog_location'
 
 
 
