@@ -152,6 +152,13 @@ spec:
 
                 pooler:
                   avoidNodeName: '{{ if eq .values.region "yvr" }}hpc3{{ end }}'
+                  {{ if eq .values.clusterName "core-dc1-talos-prod" }}
+                  configRefreshInterval: '1m'
+                  failover:
+                    # Exit primary discovery after a WAN outage so PCP can
+                    # reattach the independently verified HOME1 primary.
+                    searchPrimaryNodeTimeout: 60
+                  {{ end }}
                   peers:
                     {{ nindent 4 (toYaml .values.pooler.peers) }}
 

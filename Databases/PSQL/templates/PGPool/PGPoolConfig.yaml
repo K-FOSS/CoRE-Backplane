@@ -4,6 +4,9 @@ metadata:
   name: pgpool-config
 
 spec:
+  {{- if .Values.pooler.configRefreshInterval }}
+  refreshInterval: {{ .Values.pooler.configRefreshInterval | squote }}
+  {{- end }}
   secretStoreRef:
     kind: ClusterSecretStore
     name: mainvault-core

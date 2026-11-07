@@ -150,6 +150,10 @@ spec:
                           secretKeyRef:
                             name: 'aaa-authentik-database'
                             key: 'Password'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_MAX_AGE'
+                        value: '60'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_HEALTH_CHECKS'
+                        value: 'true'
                     {{ end }}
                     service:
                       annotations:
