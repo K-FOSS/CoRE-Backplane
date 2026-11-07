@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: 'envoy-gateway'
+  namespace: 'kube-system'
+  labels:
+    app.kubernetes.io/part-of: 'core-network-base'
+spec:
+  namespaceSelector:
+    matchNames:
+      - 'kube-system'
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 'envoy-gw'
+      control-plane: 'envoy-gateway'
+  endpoints:
+    - port: 'metrics'
+      path: '/metrics'
+      interval: '30s'
+      scrapeTimeout: '10s'
