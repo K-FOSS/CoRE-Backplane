@@ -181,12 +181,14 @@ data:
 
     # SHOW POOL_NODES returns pipe-delimited, unaligned fields. Require an
     # attached primary instead of accepting any incidental "primary" text.
+    # DC1 Talos also checks the backend's observed status and role so its
+    # Service does not route to a pool with an unreachable HOME1 primary.
     printf '%s\n' "${nodes}" | awk -F '|' '
       {
         for (field = 1; field <= NF; field++) {
           gsub(/^[[:space:]]+|[[:space:]]+$/, "", $field)
         }
-        if ($4 == "up" && $7 == "primary") {
+        if ($4 == "up" && $7 == "primary"{{ if .Values.pooler.requirePgStatusForReadiness }} && $5 == "up" && $8 == "primary"{{ end }}) {
           found = 1
         }
       }
