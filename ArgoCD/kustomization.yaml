@@ -1,7 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: argocd
-
 configMapGenerator:
   - name: 'argocd-helm-cache-wrappers'
     files:
@@ -16,7 +14,3 @@ patches:
     target:
       kind: Deployment
       name: argocd-repo-server
-  - path: GrafanaDashboardNamespace.yaml
-    target:
-      kind: ConfigMap
-      name: grafana-dashboard-argocd
