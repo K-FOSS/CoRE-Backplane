@@ -54,7 +54,7 @@ nameserver endpoint.
 
 The chart renders:
 
-- [PowerDNS Authoritative Server 5.1.4](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.4)
+- [PowerDNS Authoritative Server 5.1.5](https://doc.powerdns.com/authoritative/changelog/5.1.html)
   backed by PostgreSQL and exposed on TCP and UDP port 53 through PureLB in
   DC1 and KubeVIP in Home1. The
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md)
@@ -82,7 +82,8 @@ The chart renders:
   application's default user role until an administrator assigns zone access.
   Local password login and signup are disabled.
 - [External Secrets Operator](https://external-secrets.io/latest/) resources
-  for the authoritative PowerDNS API key and database credentials.
+  for the authoritative PowerDNS API key and PowerDNS-Admin credentials. The
+  PowerDNS database credentials come from the global `User` claim.
 - The [BJW-S common library chart 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
   used to generate workloads, Services, storage mounts, and the HTTPRoute.
 
@@ -156,6 +157,26 @@ it from `ns-core-nsadmin-creds`, and [Stakater Reloader's Secret annotation](htt
 restarts the app when that Secret changes. These credentials are not pushed to
 the shared Vault database path. Claim deletion orphans its PostgreSQL
 resources, so removal needs a separate database and role cleanup decision.
+
+Each site also creates the global PostgreSQL `User` claim
+`ns-core-psql`. Its username is `ns-core-<region>-<datacenter>`, and its
+`psql.databases` list grants access to the existing `DlzcnePHKR` NS database
+without creating a user-owned database. The claim uses the global PostgreSQL
+hostname and provider configurations injected by the ApplicationSet.
+Its generated `ns-core-creds` Secret supplies the username and password to both
+PowerDNS containers. The global PostgreSQL chart places a specific `password`
+`pg_hba` rule for this role before the LDAP catch-all, so this role uses its
+generated password rather than LDAP authentication. The hub still pushes this
+Secret to the legacy `NS/Database` Vault path for other consumers that have not
+yet migrated to the claim.
+
+The global PSQL hub's `psql-ns-database-owner` Crossplane Terraform `Workspace`
+imports the existing `DlzcnePHKR` database and assigns it to the separate
+`NOLOGIN` role `ns-core-owner` through the injected `psql` Terraform provider.
+Terraform is prevented from deleting the database. Keeping ownership separate
+from the generated login role allows `ns-core-*` to remain read-only; existing
+schema/table ownership still requires separate verification.
+
 The claim explicitly uses SQLAlchemy's `postgresql://` URI scheme; PowerDNS-Admin's
 [v0.5.1 release notes](https://github.com/PowerDNS-Admin/PowerDNS-Admin/releases/tag/v0.5.1)
 document that SQLAlchemy 1.4 removed support for the old `postgres://` form.
@@ -288,8 +309,9 @@ PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query.
 During upgrade verification, test a harmless RFC 2136 update and rollback,
 TSIG operations, zone transfers and notifications, and representative API
 consumers; API record representations can be normalized differently in 5.1.
-Updates to LUA records remain disabled because this deployment does not enable
-them.
+RFC 2136 and forwarded DNS updates remain disabled because the NS-Core database
+role is intentionally read-only; manage records through the separate
+PowerDNS-Admin role instead. Updates to LUA records also remain disabled.
 
 Rollback through Git and let Argo CD reconcile the previous render. Removing
 the Application deletes namespaced resources unless Argo CD preservation is
