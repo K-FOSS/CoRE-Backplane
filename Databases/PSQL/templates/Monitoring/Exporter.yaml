@@ -44,6 +44,12 @@ spec:
         - action: 'replace'
           targetLabel: 'job'
           replacement: 'postgres-exporter'
+        - action: 'replace'
+          targetLabel: 'instance'
+          sourceLabels:
+            - '__meta_kubernetes_pod_name'
+          regex: '(.+)'
+          replacement: '{{ $.Values.cluster.name }}/{{ $cluster }}/$1'
 ---
 {{- end }}
 {{- end }}
