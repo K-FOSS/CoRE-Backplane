@@ -58,10 +58,10 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "label_join(sum by (region, dc, pod, datname) (pg_database_size_bytes{job=\"postgres-exporter\", datname=~\"$database\"}), \"psql_instance\", \"-\", \"region\", \"dc\", \"pod\")",
+              "expr": "sum by (instance, datname) (pg_database_size_bytes{job=\"postgres-exporter\", instance=~\"$instance\", datname=~\"$database\"})",
               "format": "table",
               "instant": true,
-              "legendFormat": "{{ "{{region}}" }}-{{ "{{dc}}" }}-{{ "{{pod}}" }} / {{ "{{datname}}" }}",
+              "legendFormat": "{{ "{{instance}}" }} / {{ "{{datname}}" }}",
               "refId": "A"
             }
           ],
@@ -109,10 +109,10 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "label_join(sum by (region, dc, pod, datname) (pg_stat_database_numbackends{job=\"postgres-exporter\", datname=~\"$database\"}), \"psql_instance\", \"-\", \"region\", \"dc\", \"pod\")",
+              "expr": "sum by (instance, datname) (pg_stat_database_numbackends{job=\"postgres-exporter\", instance=~\"$instance\", datname=~\"$database\"})",
               "format": "table",
               "instant": true,
-              "legendFormat": "{{ "{{region}}" }}-{{ "{{dc}}" }}-{{ "{{pod}}" }} / {{ "{{datname}}" }}",
+              "legendFormat": "{{ "{{instance}}" }} / {{ "{{datname}}" }}",
               "refId": "A"
             }
           ],
@@ -157,8 +157,8 @@ data:
           "targets": [
             {
               "editorMode": "code",
-              "expr": "label_join(sum by (region, dc, pod, datname) (pg_stat_database_numbackends{job=\"postgres-exporter\", datname=~\"$database\"}), \"psql_instance\", \"-\", \"region\", \"dc\", \"pod\")",
-              "legendFormat": "{{ "{{psql_instance}}" }} / {{ "{{datname}}" }}",
+              "expr": "sum by (instance, datname) (pg_stat_database_numbackends{job=\"postgres-exporter\", instance=~\"$instance\", datname=~\"$database\"})",
+              "legendFormat": "{{ "{{instance}}" }} / {{ "{{datname}}" }}",
               "refId": "A"
             }
           ],
@@ -188,6 +188,24 @@ data:
             "name": "database",
             "options": [],
             "query": "label_values(pg_database_size_bytes, datname)",
+            "refresh": 2,
+            "type": "query"
+          },
+          {
+            "allValue": ".+",
+            "current": {
+              "selected": true,
+              "text": "All",
+              "value": [
+                "$__all"
+              ]
+            },
+            "includeAll": true,
+            "label": "Instance",
+            "multi": true,
+            "name": "instance",
+            "options": [],
+            "query": "label_values(pg_up{job=\"postgres-exporter\"}, instance)",
             "refresh": 2,
             "type": "query"
           },

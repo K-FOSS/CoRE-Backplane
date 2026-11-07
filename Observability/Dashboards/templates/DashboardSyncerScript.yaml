@@ -36,6 +36,22 @@ data:
         with urlopen(req, timeout=30) as response:
             return response.status, json.loads(response.read() or b'{}')
 
+    def normalized_dashboard(value):
+        dashboard = json.loads(json.dumps(value))
+        for key in ('id', 'version', 'iteration'):
+            dashboard.pop(key, None)
+        return dashboard
+
+    def dashboard_is_unchanged(uid, desired):
+        try:
+            _, result = request('GET', f'/api/dashboards/uid/{quote(uid, safe="")}')
+        except HTTPError as error:
+            if error.code == 404:
+                return False
+            raise
+        current = result.get('dashboard', result)
+        return normalized_dashboard(current) == normalized_dashboard(desired)
+
     def list_resources(path):
         resources = []
         continuation = None
@@ -114,6 +130,21 @@ data:
             )
         return value
 
+    def normalize_prometheus_datasource(value):
+        if isinstance(value, dict):
+            normalized = {
+                key: normalize_prometheus_datasource(item)
+                for key, item in value.items()
+            }
+            if normalized.get('name') == 'DS_PROMETHEUS':
+                normalized['name'] = 'datasource'
+            return normalized
+        if isinstance(value, list):
+            return [normalize_prometheus_datasource(item) for item in value]
+        if isinstance(value, str):
+            return value.replace('${DS_PROMETHEUS}', '${datasource}')
+        return value
+
     def cleanup_empty_legacy_folders(folders, managed_titles, active_root_uid):
         try:
             dashboards = list_resources(DASHBOARD_API)
@@ -187,6 +218,8 @@ data:
             generated_uid = hashlib.sha256(str(dashboard_path).encode()).hexdigest()[:12]
             dashboard['uid'] = local_dashboard_uid(generated_uid)
         dashboard = replace_dashboard_links(dashboard, uid_map)
+        dashboard = normalize_prometheus_datasource(dashboard)
+        dashboard.pop('__inputs', None)
         if original_uid == 'rYdddlPWk':
             dashboard.setdefault('timepicker', {})['refresh_intervals'] = [
                 '15s',
@@ -232,7 +265,8 @@ data:
             'overwrite': True,
         }
         payload['folderUid'] = folder_uid_value
-        request('POST', '/api/dashboards/db', payload)
+        if not dashboard_is_unchanged(dashboard['uid'], dashboard):
+            request('POST', '/api/dashboards/db', payload)
 
     cleanup_empty_legacy_folders(folders, managed_folder_titles, cluster_folder)
 {{- end }}
