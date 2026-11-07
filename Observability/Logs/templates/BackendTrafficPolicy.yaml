@@ -1,0 +1,73 @@
+{{- if .Values.gateway.enabled }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: 'loki-core-backend'
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: 'HTTPRoute'
+      name: 'loki-core'
+  loadBalancer:
+    type: 'LeastRequest'
+    zoneAware:
+      preferLocal:
+        minEndpointsThreshold: 1
+        force:
+          minEndpointsInZoneThreshold: 1
+  healthCheck:
+    panicThreshold: 0
+    active:
+      type: 'HTTP'
+      http:
+        path: '/ready'
+        expectedStatuses:
+          - 200
+      interval: '5s'
+      timeout: '2s'
+      unhealthyThreshold: 3
+      healthyThreshold: 1
+    passive:
+      interval: '2s'
+      consecutive5XxErrors: 3
+      baseEjectionTime: '30s'
+      maxEjectionPercent: 100
+      alwaysEjectOneEndpoint: false
+---
+{{- if .Values.k8gb.enabled }}
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: 'loki-core-backend-k8gb'
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: 'HTTPRoute'
+      name: 'loki-core-k8gb'
+  loadBalancer:
+    type: 'LeastRequest'
+    zoneAware:
+      preferLocal:
+        minEndpointsThreshold: 1
+        force:
+          minEndpointsInZoneThreshold: 1
+  healthCheck:
+    panicThreshold: 0
+    active:
+      type: 'HTTP'
+      http:
+        path: '/ready'
+        expectedStatuses:
+          - 200
+      interval: '5s'
+      timeout: '2s'
+      unhealthyThreshold: 3
+      healthyThreshold: 1
+    passive:
+      interval: '2s'
+      consecutive5XxErrors: 3
+      baseEjectionTime: '30s'
+      maxEjectionPercent: 100
+      alwaysEjectOneEndpoint: false
+{{- end }}
+{{- end }}
