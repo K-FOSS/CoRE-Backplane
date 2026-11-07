@@ -1,0 +1,14 @@
+{{- if .Values.monitoring.pgpoolExporter.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'grafana-dashboard-pgpool'
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'PostgreSQL'
+    k8s-sidecar-target-directory: 'PostgreSQL'
+data:
+  pgpool.json: |-
+{{ .Files.Get "dashboards/pgpool.json" | indent 4 }}
+{{- end }}

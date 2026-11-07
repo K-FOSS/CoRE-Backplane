@@ -128,6 +128,10 @@ spec:
 
                 region: '{{ .values.region }}'
 
+                monitoring:
+                  pgpoolExporter:
+                    enabled: {{ or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod") }}
+
                 pgadmin:
                   domain: 'pgadmin.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
 

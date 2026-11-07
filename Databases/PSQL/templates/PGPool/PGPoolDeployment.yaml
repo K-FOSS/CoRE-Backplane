@@ -163,6 +163,44 @@ controllers:
               periodSeconds: 10
               timeoutSeconds: 2
               failureThreshold: 3
+      {{- if .Values.monitoring.pgpoolExporter.enabled }}
+      exporter:
+        image:
+          repository: '{{ .Values.monitoring.pgpoolExporter.repository }}'
+          digest: '{{ .Values.monitoring.pgpoolExporter.digest }}'
+          pullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: '10m'
+            memory: '32Mi'
+          limits:
+            cpu: '200m'
+            memory: '128Mi'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+        ports:
+          - name: metrics
+            containerPort: {{ .Values.monitoring.pgpoolExporter.port }}
+            protocol: TCP
+        env:
+          PGPOOL_SERVICE: '127.0.0.1'
+          PGPOOL_SERVICE_PORT: '5432'
+          POSTGRES_DATABASE: 'template1'
+          SSLMODE: 'require'
+          POSTGRES_USERNAME:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: username
+          POSTGRES_PASSWORD:
+            valueFrom:
+              secretKeyRef:
+                name: opsadmin.psql-main.credentials.postgresql.acid.zalan.do
+                key: password
+      {{- end }}
       {{- if .Values.pooler.autoRecovery.enabled }}
       recovery:
         image:
@@ -213,6 +251,17 @@ controllers:
 service:
   main:
     enabled: false
+  {{- if .Values.monitoring.pgpoolExporter.enabled }}
+  metrics:
+    controller: main
+    type: ClusterIP
+    labels:
+      app.kubernetes.io/name: pgpool-exporter
+    ports:
+      metrics:
+        port: {{ .Values.monitoring.pgpoolExporter.port }}
+        protocol: HTTP
+  {{- end }}
 
 persistence:
   pgpool-runtime:
