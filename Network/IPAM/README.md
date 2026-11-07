@@ -19,8 +19,8 @@ targets:
 Argo CD renders `Network/IPAM` with the
 [Lovely plugin](https://github.com/crumbhole/argocd-lovely-plugin). The
 ApplicationSet injects the environment, cluster identity, topology, EFI boot
-server, enabled Kea server types, NetBox enablement, and per-cluster Dragonfly
-host. It still supplies a legacy `persistence.configs` override; the chart-owned
+server, stable DHCP service identity, enabled Kea server types, NetBox enablement,
+and per-cluster Dragonfly host. It still supplies a legacy `persistence.configs` override; the chart-owned
 bjw-s template now supplies the same Secret volume authoritatively, so that
 legacy input has no rendered effect and should be removed from the
 ApplicationSet. It also injects the target cluster domain into
@@ -83,10 +83,14 @@ and the rendered Argo CD revision must be used together during an audit.
   worker components using the site image and enabled plugins. The chart's
   bundled Valkey and PostgreSQL dependencies are disabled; chart 8.x renamed
   the former `redis.enabled` dependency control to `valkey.enabled` and the
-  external Redis settings to `tasksDatabase` and `cachingDatabase`. The base
-  values allocate Dragonfly databases `80` and `81` and select the generated
-  password Secret, while the ApplicationSet injects each target's site-local
-  TLS endpoint. The chart's application version does not select the running
+  external Redis settings to `tasksDatabase` and `cachingDatabase`. The
+  ApplicationSet injects each target's site-local PGPool hostname into
+  `externalDatabase.host`
+  (`psql.<cluster>.<datacenter>.<region>.mylogin.space`) while preserving the
+  generated `netbox-core` credentials and database name. The base values
+  allocate Dragonfly databases `80` and `81` and select the generated password
+  Secret, while the ApplicationSet injects each target's site-local TLS
+  endpoint. The chart's application version does not select the running
   NetBox version because this deployment deliberately overrides the image and
   tag.
 - [External Secrets Operator](https://external-secrets.io/latest/) reads
@@ -118,13 +122,69 @@ PowerDNS, PostgreSQL, Dragonfly, Gateway/OIDC, S3, and Crossplane/Terraform.
 Argo CD `Synced`, pod readiness, or a Crossplane `Ready` condition alone does
 not verify that this complete path works.
 
+### DHCP identities, relay redundancy, and diagnostics
+
+The DHCP server identifier is site-specific: Home1 renders `10.1.1.67`, while
+the DC1/Talos and legacy DC1/K3s IPAM instances render `66.165.222.112`. These
+values correspond to the observed stable IPAM Service paths: Home1 reports
+`10.1.1.67`, and the DC1 Services expose `66.165.222.112` while PureLB reports
+the shared `10.1.1.67` anycast allocation. The two Cisco helper destinations
+are therefore preserved as distinct site paths; neither is removed by this
+stack.
+
+Home2 relays may deliver one DISCOVER to both site paths. The client chooses an
+OFFER and sends DHCPREQUEST with option 54 set to the selected server. The
+selected server should ACK; the other server may correctly log
+`DHCP4_PACKET_DROP_0003` because the request contains a foreign server
+identifier. The failure condition is when the selected server also does not
+ACK. Set `dhcp.diagnostics.enabled: true` for temporary Kea DEBUG level 15
+logging to inspect that decision, then return it to `false`.
+
+```text
+client DISCOVER -> relay 172.31.193.16 -> Home1 / DC1 Kea
+client <- OFFER (server identifier A or B)
+client DHCPREQUEST (option 54 = selected OFFER) -> relay -> both paths
+selected Kea -> DHCPACK
+other Kea -> DHCP4_PACKET_DROP_0003 (expected foreign-server discard)
+```
+
+Kea HA hooks are not configured in this repository: there is no
+`libdhcp_ha.so`, `high-availability`, or load-balancing configuration. Shared
+PostgreSQL lease storage is not equivalent to Kea HA; active/active behavior
+across the two helper paths remains an intentional design and operational
+verification item.
+
 ## Values and secrets
 
 [`values.yaml`](values.yaml) contains site inputs and dependency overrides only.
 The bjw-s workload definition is intentionally kept in
 [`templates/00-common.yaml`](templates/00-common.yaml), while cluster values
-come from the owning ApplicationSet. `dhcp.servers.dhcp4`, `dhcp6`, and
-`dhcpDdns` control the corresponding `keactrl` process flags per target. The
+come from the owning ApplicationSet. `dhcp.identity.ipv4` is required when
+DHCPv4 is enabled and `dhcp.interfaces` defaults to `['eth0']`; the latter is
+applied to both DHCPv4 and DHCPv6. `dhcp.diagnostics.enabled` temporarily
+changes the DHCPv4 logger to severity `DEBUG` and debug level `15`.
+The fixed `dhcp-core` Service is configured by the `dhcp.service.global`
+values map, including its name, type, traffic policy, labels, ports, and other
+Service properties. The owning ApplicationSet supplies `dhcp.global.enabled`,
+`dhcp.address`, and the PureLB/Cilium global-service annotations for each
+target. The reserved `dhcp.service.local.enabled` flag remains disabled for the
+current global-only deployment.
+Kea uses the fixed global LoadBalancer Service name `dhcp-core` in every target
+namespace, matching the other shared global services. The Service selector and
+DHCP UDP/67 endpoint remain site-local; only the Kubernetes Service identity is
+shared across clusters. Kea runs with three replicas using a bounded RollingUpdate (`maxUnavailable: 1`,
+`maxSurge: 1`) and the configured DHCP resource requests/limits. Stakater
+Reloader watches both the generated DHCP Secret and source ConfigMap, so a
+configuration change replaces pods through the controlled rollout rather than
+leaving old Kea processes serving stale configuration.
+The Kea Service follows the existing CDN global-service pattern: Cilium
+ClusterMesh synchronizes EndpointSlices across sites, keeps local endpoints
+preferred, and can fail over over the inter-site link. PureLB remains the
+LoadBalancer VIP allocator, so the site-specific DHCP identities and helper
+paths are unchanged. See the upstream [Cilium global service documentation](https://docs.cilium.io/en/stable/network/clustermesh/services/)
+and [service affinity documentation](https://docs.cilium.io/en/stable/network/clustermesh/affinity/).
+`dhcp.servers.dhcp4`, `dhcp6`, and `dhcpDdns` control the corresponding
+`keactrl` process flags per target. The
 PowerDNS sidecar uses the same `dhcpDdns` flag and is omitted when DHCP-DDNS is
 disabled. The Kea image is pinned to the inspected `vps1-core` digest. The
 custom NetBox image remains mutable and uses `Always`; it should be pinned when
@@ -219,23 +279,30 @@ representative value, not a credential.
 After Argo CD reconciliation, verify all of the following:
 
 1. ExternalSecret and PushSecret conditions, without printing Secret data.
-2. Kea configuration load, lease allocation, PXE for the intended firmware,
+2. On Home2, capture one transaction by MAC and confirm the sequence
+   `DISCOVER -> OFFER -> REQUEST -> ACK`; compare option 54 in the selected
+   OFFER and REQUEST, and confirm the selected server's identifier matches the
+   site value. A drop on the non-selected server is expected; no ACK from the
+   selected server is not.
+3. Confirm Kea startup no longer reports DHCP socket-open failures for `tunl0`,
+   `sit0`, or `ip6tnl0`, and that DHCP traffic continues on `eth0`.
+4. Kea configuration load, lease allocation, PXE for the intended firmware,
    and Tinkerbell boot artifact retrieval on each target network. Also restart
    only the Kea container after an unclean daemon exit and verify it removes
    stale PID and control-socket files and returns ready without replacing the
    pod. Confirm the healthcheck fails when any enabled DHCPv4, DHCPv6, or
    DHCP-DDNS process is stopped and succeeds when all enabled processes are
    active.
-3. Kea lease reads and writes through
+5. Kea lease reads and writes through
    `psql.core-prod.svc.<cluster-domain>`, plus PowerDNS PostgreSQL connectivity
    and authoritative TCP/UDP answers. After a PowerDNS upgrade, also verify a
    harmless RFC 2136 update and rollback of that test record, TSIG operations,
    zone transfer/notification flow, and representative API consumers.
-4. NetBox migrations, web and worker health, TLS-authenticated Dragonfly
+6. NetBox migrations, web and worker health, TLS-authenticated Dragonfly
    connectivity to DBs `80` and `81`, PostgreSQL connectivity, OIDC login and
    group entitlement, API access, plugins, and S3 operations.
-5. Gateway attachment and policy status, then the user-facing NetBox workflow.
-6. Crossplane provider conditions and a harmless NetBox provider read.
+7. Gateway attachment and policy status, then the user-facing NetBox workflow.
+8. Crossplane provider conditions and a harmless NetBox provider read.
 
 After rotating `dragonfly-core-password`, reconcile or restart both NetBox
 Deployments and verify that task processing and cache access recover. Secret
