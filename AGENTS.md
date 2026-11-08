@@ -259,6 +259,19 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   namespaces through namespace-scoped ConfigMap Roles and RoleBindings. Use the
   existing target-directory or folder annotation when assigning dashboards to a
   non-root Grafana folder.
+- When onboarding a Grafana dashboard, prefer an upstream chart or project
+  integration in this order: (1) the maintained upstream Helm chart's dashboard
+  value or dependency, rendered by the owning stack; (2) a Kustomize remote
+  resource loaded from an immutable upstream commit or release; then (3) a
+  repository-managed ConfigMap consumed by the dashboard syncer. The final
+  option must use an upstream dashboard or a trusted, actively maintained
+  community dashboard, preserve its provenance and direct documentation link,
+  and pin the source revision or download. Do not hand-author a replacement
+  dashboard when a supported upstream source exists. Inspect and normalize
+  datasource identifiers, variables, label matchers, folder annotations, and
+  cluster/site scoping before import; validate the rendered JSON and representative
+  Grafana queries, and document any local overlay or reason for bypassing the
+  preferred source order.
 - For every `Landing`/Forecastle-exposed service, add a
   `forecastle.stakater.com/appName` annotation with a friendly display name;
   do not rely on the generated resource name in the dashboard.
