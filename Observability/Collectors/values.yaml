@@ -349,6 +349,32 @@ alloy-host:
           forward_to = [otelcol.receiver.prometheus.host.receiver]
         }
 
+        // Kubelet volume statistics are exposed on the regular kubelet
+        // metrics endpoint rather than the cAdvisor endpoint.
+        prometheus.scrape "kubelet" {
+          targets = [{
+            "__address__" = sys.env("K8S_NODE_IP") + ":10250",
+            "__metrics_path__" = "/metrics",
+            "cluster" = sys.env("CLUSTER"),
+            "dc" = sys.env("DC"),
+            "instance" = sys.env("K8S_NODE_NAME"),
+            "node" = sys.env("K8S_NODE_NAME"),
+            "source_node" = sys.env("K8S_NODE_NAME"),
+            "metrics_path" = "/metrics",
+            "job" = "kubelet",
+          }]
+          job_name = "kubelet"
+          scheme = "https"
+          scrape_interval = "60s"
+          bearer_token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+
+          tls_config {
+            insecure_skip_verify = true
+          }
+
+          forward_to = [otelcol.receiver.prometheus.host.receiver]
+        }
+
         otelcol.receiver.prometheus "host" {
           output {
             metrics = [otelcol.processor.batch.host.input]
