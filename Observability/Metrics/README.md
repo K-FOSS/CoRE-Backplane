@@ -47,7 +47,13 @@ Both sites retain their S3 `User` claims and stable connection Secrets. Garage
 mode uses the operator-managed GarageKey below; the existing MinIO-specific
 User S3 claim and resources remain provisioned but are unused by the Garage
 client.
-YXL renders the HTTPRoute and Envoy SecurityPolicy. When `mimirEnabled` is
+The Metrics HTTPRoutes retain Mimir's per-component path routing, but each
+component backend is a dedicated globally annotated Service (for example,
+`core-mimir-distributor-global` and `core-mimir-query-frontend-global`). Cilium
+synchronizes each Service's EndpointSlices between participating clusters, so
+Envoy can use local or remote component endpoints according to the active
+locality and health policy. YXL renders the HTTPRoute and Envoy SecurityPolicy.
+When `mimirEnabled` is
 false, the distributed chart is disabled while the recovery identity remains.
 
 The distributed Mimir chart also enables its pinned
@@ -202,8 +208,9 @@ configured by the ApplicationSet. YXL exports the local Mimir backends with
 local affinity and sharing enabled. Home1 declares the same global Service
 identity with remote affinity and sharing disabled. Its common-chart Service
 has a deliberately non-matching selector, so only Cilium-synchronized remote
-EndpointSlices back it. The YXL HTTPRoute also uses this Service as its direct
-backend. The zone memberlist bridge and `core-mimir-proxy` remain enabled. The
+EndpointSlices back it. The YXL HTTPRoutes use the matching per-component
+global Services as their direct backends. The zone memberlist bridge and
+`core-mimir-proxy` remain enabled. The
 client Service still uses Cilium synchronization for site-level failover, but
 the Mimir memberlist Service is global so the query path can discover
 ingesters in either site.
@@ -217,6 +224,14 @@ copied into a remote ingester; Garage receives the durable block instead.
 This depends on Cluster Mesh connectivity and
 `clustermesh.enableEndpointSliceSynchronization`, which the Network Base
 deployment enables.
+
+The `core-mimir` HTTPRoutes use Envoy Gateway `BackendTrafficPolicy` resources
+for local-zone preference, active `/ready` checks, and passive 5xx endpoint
+ejection. Cilium-synchronized Service endpoints provide the remote-site
+fallback. The existing JWT SecurityPolicy remains the authentication and
+authorization boundary. The Mimir NGINX layer remains in place because it
+provides the Prometheus path rewrite, tenant header, and cluster-scoped label
+proxy; removing it requires an equivalent Envoy filter or route design.
 
 Both sites also render a two-replica `core-mimir-proxy` Deployment and matching
 ClusterIP Service, along with the NGINX ConfigMap, through
@@ -276,7 +291,7 @@ then publishes selected credentials with [External Secrets
 PushSecret](https://external-secrets.io/latest/api/pushsecret/).
 
 YXL is intentionally constrained to 500,000 samples/s, a 1,550,000-sample burst,
-12-hour retention, and one concurrent block upload. Rate limiting rejects
+3-day retention, and one concurrent block upload. Rate limiting rejects
 excess samples; it does not reduce the collectors' Kubernetes watches or
 guarantee an immediate drop in sender network retries. Retention is enforced
 asynchronously by the compactor and does not immediately delete existing

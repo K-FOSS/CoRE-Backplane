@@ -176,6 +176,12 @@ data:
                 rf'\1{selector_open}{matchers}{selector_close}',
                 query,
             )
+        if 'kubelet_volume_stats_' in query and 'longhorn_' in query:
+            query = re.sub(
+                r'\bon\s*\(\s*namespace\s*,\s*pvc\s*\)',
+                'on (namespace, pvc, volume)',
+                query,
+            )
         return query
 
     def is_prometheus_datasource(value):
