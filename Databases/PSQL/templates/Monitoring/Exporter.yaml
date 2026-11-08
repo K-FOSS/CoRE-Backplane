@@ -14,9 +14,9 @@ spec:
   type: ClusterIP
   ports:
     - name: 'metrics'
-      port: {{ $.Values.monitoring.postgresExporter.port }}
+      port: {{ $.Values.monitoring.postgresExporter.servicePort }}
       protocol: 'TCP'
-      targetPort: 'metrics'
+      targetPort: {{ $.Values.monitoring.postgresExporter.port }}
   selector:
     application: 'spilo'
     cluster-name: '{{ $cluster }}'

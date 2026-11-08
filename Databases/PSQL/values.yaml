@@ -86,6 +86,10 @@ monitoring:
     # preserves the sidecar CR args but does not pass them into the generated
     # pod, so the Service and ServiceMonitor must target the image default.
     port: 9432
+    # Preserve the existing Service endpoint while moving its target to the
+    # image's native listener. This avoids a server-side apply list merge when
+    # reconciling the old 9187 Service.
+    servicePort: 9187
     # These collectors provide the metrics used by the pinned PostgreSQL
     # Monitoring dashboard. Keep statements out until pg_stat_statements is
     # provisioned in PostgreSQL shared_preload_libraries.
