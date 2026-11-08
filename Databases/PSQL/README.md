@@ -14,24 +14,81 @@ plus PGPool, pgAdmin, services and credential automation. It is owned by
   users.
 - Crossplane/provider credentials.
 - Optional restore cluster resource.
-- PostgreSQL metrics from a `postgres_exporter` sidecar, scraped by the
-  cluster's Alloy annotation autodiscovery and forwarded to Mimir.
+- PostgreSQL metrics from a `postgres_exporter` sidecar, exposed through
+  internal metrics Services and scraped by the cluster's Alloy ServiceMonitor
+  collector before being forwarded to Mimir.
+- PGPool frontend, backend and health-check metrics from a site-local exporter
+  sidecar on the two Talos production clusters.
 
 ## Monitoring
 
-The chart enables the [prometheus-community PostgreSQL exporter](https://github.com/prometheus-community/postgres_exporter)
-as a sidecar on both the shared `psql-main` cluster and the site-local
-PostgreSQL cluster. The Zalando operator injects `POSTGRES_USER` and
-`POSTGRES_PASSWORD` into sidecars; the exporter uses those runtime values to
-connect to the local PostgreSQL process over loopback. Credentials are never
+The [official Pgpool-II exporter](https://github.com/pgpool/pgpool2_exporter/blob/v1.2.2/README.md)
+runs beside each PGPool process on HOME1 and DC1 Talos. The
+[fleet ApplicationSet](../../Apps/Storage/PSQL.yaml) enables it for those two
+clusters; the legacy K3s target is excluded. Its v1.2.2 image is pinned by
+digest in [`values.yaml`](values.yaml). The exporter connects over pod loopback
+using the existing operator-managed `opsadmin` Secret and TLS; no credential is
+stored in Git. An internal metrics Service and
+[`ServiceMonitor`](templates/Monitoring/PGPoolExporter.yaml) expose each pod on
+port 9719 to Alloy, which adds site labels before forwarding to Mimir. This
+Service has no external DNS or ingress. Exporter failure does not gate PGPool
+readiness, so database traffic can continue while monitoring is repaired.
+
+The [PGPool dashboard ConfigMap](templates/Monitoring/PGPoolDashboard.yaml)
+imports the [chart-owned dashboard](dashboards/pgpool.json) into the
+`PostgreSQL` folder. Its queries use the [upstream exporter metrics](https://github.com/pgpool/pgpool2_exporter/blob/v1.2.2/README.md#metrics)
+to show exporter health, frontend occupancy, backend status, and Pgpool's own
+backend health-check failures, retries and durations. Those health-check
+counters are separate from Kubernetes readiness-probe failures; inspect pod
+events and the kubelet probe metrics for the latter. Verify the exporter
+ServiceMonitor has one healthy target per PGPool pod, `pgpool2_frontend_total`
+and `pgpool2_pool_health_check_stats_fail_count` appear in Mimir, and the
+dashboard resolves those series. Set `monitoring.pgpoolExporter.enabled` to
+`false` for a site and reconcile its PostgreSQL Application to remove the
+sidecar, metrics Service, ServiceMonitor and dashboard ConfigMap there.
+
+The chart enables the pinned [nbari `pg_exporter`](https://github.com/nbari/pg_exporter)
+0.22.2 image as a sidecar on both the shared `psql-main` cluster and the
+site-local PostgreSQL cluster. This is the exporter associated with the pinned
+[PostgreSQL Monitoring dashboard](https://grafana.com/grafana/dashboards/24298-postgresql-monitoring-dashboard/)
+revision 11: its `database` collector provides the PostgreSQL 14+ session
+counters (`pg_stat_database_sessions_total` and related metrics), session-time
+counters, and checksum metrics used by the dashboard. The exporter also
+provides the dashboard's database, activity, vacuum, lock, I/O, replication,
+and other enabled collector families. The Zalando operator injects
+`POSTGRES_USER` and `POSTGRES_PASSWORD` into sidecars; the exporter consumes
+those runtime values through standard PostgreSQL environment variables and
+connects to the local PostgreSQL process over loopback. Credentials are never
 stored in chart values or annotations.
 
-The sidecar exposes port 9187 and the operator attaches the standard
-`prometheus.io` annotations to every database pod. The cluster-local
-[Alloy collector](../../Observability/Collectors/README.md) discovers those
-annotated pods and forwards the resulting Prometheus metrics to Mimir. This
-does not create a `ServiceMonitor`, so it does not require a separate
-Prometheus instance or cross-cluster Service.
+The sidecar exposes port 9187. This chart creates one internal ClusterIP
+metrics Service and one `ServiceMonitor` for `psql-main` and the site-local
+cluster. The cluster-local [Alloy collector](../../Observability/Collectors/README.md)
+discovers those ServiceMonitors, adds the cluster, datacenter and region
+labels, sets `instance` to `<cluster>/<psql-cluster>/<pod-name>`, and forwards the resulting
+Prometheus metrics to Mimir. The metrics Services are not published through
+ingress or external DNS.
+
+Site-local PSQL also renders a dedicated `md5` `pg_hba` entry for the
+cluster-local Forgejo role and database (`forgejo-<cluster>`), limited to the
+Forgejo source pod CIDR injected by [`Apps/Storage/PSQL.yaml`](../../Apps/Storage/PSQL.yaml).
+The current production CIDRs are `172.20.48.0/21` for DC1 and `172.20.56.0/21`
+for Home1. This compatibility rule is narrower than the legacy LDAP catch-all
+rules and does not create or publish a password; the Forgejo `User` claim
+remains the identity and credential owner.
+
+The chart also imports Grafana's pinned [PostgreSQL Monitoring
+Dashboard](https://grafana.com/grafana/dashboards/24298-postgresql-monitoring-dashboard/)
+revision 11 into the `PostgreSQL` folder through
+[`templates/Monitoring/PostgreSQLDashboard.yaml`](templates/Monitoring/PostgreSQLDashboard.yaml).
+The dashboard covers exporter health, connections, query activity, cache and
+I/O, locks, vacuum, WAL, replication and database size. The chart explicitly
+enables the exporter collectors used by the dashboard for database sessions,
+activity, vacuum, locks, I/O, replication and related PostgreSQL state. The
+`statements` collector is not enabled because it requires PostgreSQL's
+`pg_stat_statements` extension and `shared_preload_libraries` provisioning;
+enabling it without those prerequisites causes scrape errors. Panels for that
+collector remain empty until the extension is deliberately added.
 
 Verify after reconciliation that the exporter container is ready on every
 PostgreSQL pod, `http://<pod-ip>:9187/metrics` responds from inside the cluster,
@@ -54,18 +111,37 @@ and appends the site-specific remote peers supplied by the ApplicationSet. Its
 workload shape, image, resources and memory volumes are embedded in
 `templates/PGPool/PGPoolDeployment.yaml`; operational pool sizing, health
 checks and site-specific peers remain under `pooler` in `values.yaml`. The
-deployment pins the inspected custom PGPool image by digest so its binaries and
-shell behavior remain reproducible. See the upstream
+deployment pins the inspected custom PGPool image at the October 2026
+`sha256:62d5239f2c3bc53066327867968294142146d7a8bc548a51ac239bac9050ebdb`
+release by digest so its binaries and shell behavior remain reproducible. See
+the upstream
 [Pgpool-II backend settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-backend-settings.html),
 [connection pooling settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection-pooling.html),
 and [health-check settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-health-check.html).
+
+The pool keeps backend connections for reuse. A failed primary can remain
+marked down in PGPool's runtime status file after a container restart. The
+[fleet ApplicationSet](../../Apps/Storage/PSQL.yaml) bounds primary discovery
+to 60 seconds on DC1 Talos, allowing PGPool to finish startup even if the
+HOME1 primary was previously detached. Its local PCP listener can then accept
+the recovery sidecar's reattachment request after the sidecar independently
+verifies a writable primary. DC1 Talos readiness also requires PGPool's
+observed `pg_status` and `pg_role` to report an available primary; this avoids
+advertising a pool whose attached primary is currently unreachable.
+The same DC1 Talos override sets the `pgpool-config` ExternalSecret refresh
+interval to one minute, so its rendered Secret updates after the ConfigMap
+change and Stakater Reloader rolls PGPool. Other sites retain the default
+External Secrets interval and unlimited primary search. See
+[Pgpool-II primary search and failback](https://www.pgpool.net/docs/latest/en/html/runtime-config-failover.html)
+and [startup behavior](https://www.pgpool.net/docs/latest/en/html/server-start.html),
+plus [External Secrets refresh behavior](https://external-secrets.io/latest/api/externalsecret/).
 
 PGPool uses three probe levels. A TCP startup probe allows up to one minute for
 the listener to appear. The TCP liveness probe checks only that PGPool still
 accepts connections, so a PostgreSQL outage does not create a PGPool restart
 loop. The readiness script runs `SHOW POOL_NODES` with psql startup files
 disabled, strict error handling and a bounded connection timeout; the pod
-receives Service traffic only when an attached primary is reported. This
+receives Service traffic only when the site-specific primary checks pass. This
 chart-owned script replaces the image's non-POSIX `grep | wc` check and is
 delivered through the existing externally rendered `pgpool-config` Secret.
 PGPool's Deployment explicitly opts in to the installed
@@ -98,6 +174,12 @@ PGPool mounts bounded, memory-backed `emptyDir` volumes at `/tmp`, `/dev/shm`,
 and `/var/run/postgresql`; their size limits live with the workload definition
 in `templates/PGPool/PGPoolDeployment.yaml`. `/dev/shm` supports the pre-forked PGPool processes and
 shared caches, while the runtime volume holds the PostgreSQL and PCP sockets.
+An init container removes stale socket files before Pgpool startup because
+these memory-backed volumes survive a container restart; this keeps the
+loopback PCP listener available to the auto-recovery sidecar without exposing
+PCP as a Service port. See the upstream
+[Pgpool-II connection settings](https://www.pgpool.net/docs/latest/en/html/runtime-config-connection.html)
+for the PCP listener and socket behavior.
 Memory-backed `emptyDir` usage counts toward the pod's memory consumption, so
 include it when adjusting the PGPool memory request and limit. Kubernetes
 documents this behavior under
@@ -231,6 +313,21 @@ example, the DC1 Talos endpoint is
 `pgadmin.core-dc1-talos-prod.dc1.yxl.mylogin.space` and the Home1 endpoint is
 `pgadmin.core-home1-talos-prod.home1.yvr.mylogin.space`.
 
+The `pgadmin-ingress` route is protected by the chart-owned
+[`SecurityPolicy`](templates/PGAdmin/PGAdminSecurityPolicy.yaml), which sends
+requests through the shared Authentik forward-auth service before they reach
+pgAdmin. LDAP remains pgAdmin's application-level identity source after the
+gateway check; the gateway policy is the external access boundary.
+
+The chart's Authentik Terraform
+[`Workspace`](templates/PGAdmin/PGAdminAuth.yaml) creates the matching
+forward-single proxy provider and application and attaches it to the existing
+`myloginspace-proxy` outpost.
+The configuration follows Authentik's [forward-auth provider
+model](https://docs.goauthentik.io/add-secure-apps/providers/proxy/create-proxy-provider/)
+and the Terraform provider's [`authentik_provider_proxy`
+resource](https://registry.terraform.io/providers/goauthentik/authentik/latest/docs/resources/provider_proxy).
+
 The owning ApplicationSet selects `ldap-dc1.mylogin.space` for the dc1
 clusters and `ldap-home1.mylogin.space` for the home1 cluster, then injects the
 site endpoint into PostgreSQL, PGPool and pgAdmin through `LOVELY_HELM_MERGE`.
@@ -258,6 +355,15 @@ workflow so Terraform can reconcile the role deletion.
 The Terraform PostgreSQL provider's [role resource](https://registry.terraform.io/providers/cyrilgdn/postgresql/latest/docs/resources/postgresql_role)
 is used for the role lifecycle, while Crossplane's [Terraform Workspace](https://marketplace.upbound.io/providers/upbound/provider-terraform/latest/resources/tf.upbound.io/Workspace/v1beta1)
 supplies the workflow and provider binding.
+
+### Home1/YVR node scheduling
+
+The Home1/YVR entry in the [PSQL ApplicationSet](../../Apps/Storage/PSQL.yaml)
+adds the `load=testing:NoSchedule` toleration to both the site-local and shared
+PostgreSQL resources. This allows their pods to run on HPC2 while retaining the
+default empty toleration list for other clusters. The control-plane taint is
+removed by the cluster composition, so this setting is intentionally limited to
+the load-pool taint.
 
 pgAdmin sends mail through `mail.mylogin.space` using STARTTLS on port 587. It
 authenticates with the username and password generated for the `pgadmin-core`
