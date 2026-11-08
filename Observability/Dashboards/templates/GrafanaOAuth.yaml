@@ -43,7 +43,23 @@ spec:
 
   oidc:
     provider:
+      backendRefs:
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: 'grafana-oidc'
+          port: 443
+      backendSettings:
+        retry:
+          numRetries: 3
+          perRetry:
+            backOff:
+              baseInterval: '1s'
+              maxInterval: '5s'
+          retryOn:
+            triggers: ['5xx', 'gateway-error', 'reset']
       issuer: https://idp.mylogin.space/application/o/grafana-test
+      authorizationEndpoint: https://idp.mylogin.space/application/o/authorize/
+      tokenEndpoint: https://idp.mylogin.space/application/o/token/
     scopes:
       - openid
       - profile
@@ -57,3 +73,14 @@ spec:
     refreshToken: true
     clientSecret:
       name: grafana-core-authentik
+
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: 'grafana-oidc'
+spec:
+  endpoints:
+    - fqdn:
+        hostname: 'idp.mylogin.space'
+        port: 443
