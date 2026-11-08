@@ -47,6 +47,11 @@ spec:
 
   numberOfInstances: 3
 
+  {{- with .Values.psql.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
   masterServiceAnnotations:
     external-dns.kubernetes.io/hostname: 'psql-local.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
     # TODO(external-dns-031): Remove the legacy annotation after upgrading ExternalDNS.
@@ -75,6 +80,9 @@ spec:
       - host all          postgres   0.0.0.0/0 md5
       - host all          pooler     0.0.0.0/0 md5
       - host all          /^opsadmin.*   0.0.0.0/0 md5
+      {{- if .Values.networking.forgejoPodCIDR }}
+      - host forgejo-{{ .Values.cluster.name }} forgejo-{{ .Values.cluster.name }} {{ .Values.networking.forgejoPodCIDR }} md5
+      {{- end }}
       - host all          all        ::/0 ldap ldapserver={{ .Values.ldap.postgres.server }} ldapport={{ .Values.ldap.port }} ldapbasedn="{{ .Values.ldap.baseDN }}" ldapbinddn="{{ .Values.ldap.bindDN }}" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="{{ .Values.ldap.searchAttribute }}"
       - host all          all        0.0.0.0/0 ldap ldapserver={{ .Values.ldap.postgres.server }} ldapport={{ .Values.ldap.port }} ldapbasedn="{{ .Values.ldap.baseDN }}" ldapbinddn="{{ .Values.ldap.bindDN }}" ldapbindpasswd="<path:CORE0_SITE1/data/PSQL/LDAP#Password>" ldapsearchattribute="{{ .Values.ldap.searchAttribute }}"
 

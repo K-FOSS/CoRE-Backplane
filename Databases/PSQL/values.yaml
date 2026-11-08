@@ -26,6 +26,10 @@ psql:
   # from the single fleet entry configured with values.hub=true.
   standbyHost: ''
 
+  # Optional node taints tolerated by PostgreSQL pods. The Home1/YVR
+  # ApplicationSet entry supplies the load-testing taint used by HPC2.
+  tolerations: []
+
   # Zalando Postgres Operator maintenance windows are evaluated in UTC.
   # 10:00-12:00 UTC is 02:00-04:00 PST (UTC-08:00).
   maintenanceWindows:
@@ -106,6 +110,9 @@ monitoring:
 cluster:
   name: k8s
   domain: cluster.local
+
+networking:
+  forgejoPodCIDR: ''
 
 gateway:
   name: main-gw
