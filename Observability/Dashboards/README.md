@@ -106,7 +106,19 @@ upstream dashboard UIDs; non-central cluster syncers receive stable
 cluster-prefixed UIDs so copies do not overwrite or move the central copy.
 Folder creation is keyed by the deterministic parent-aware UID, and the syncer
 removes only empty, root-level legacy folders after verifying that no dashboard
-or child folder remains in them. A separate `grafana-dashboard-api` Service is the only Cilium
+or child folder remains in them. Before importing, the syncer compares the
+desired dashboard with Grafana's existing dashboard by UID and skips an
+unchanged dashboard, preventing refresh events from generating needless
+overwrite alerts. Prometheus dashboards imported from upstream are normalized
+to the repository's `datasource` variable convention, so datasource inputs such
+as `${DS_PROMETHEUS}` do not remain unresolved in the saved dashboard. A
+Prometheus dashboard imported by a syncer also receives visible `Cluster`, `Dc`,
+and `Region` selectors initialized to that syncer's source cluster. The syncer
+adds those matchers to PromQL selectors before writing the dashboard to Grafana,
+which prevents identically named resources such as PVCs from being joined across
+the two source clusters. The selectors remain part of the dashboard so an
+operator can see the scope applied to its queries. A separate
+`grafana-dashboard-api` Service is the only Cilium
 Global Service: its selector points at the YVR/Home1 Grafana pods, and
 EndpointSlice synchronization makes that central API reachable from DC1.
 Normal Grafana UI and data traffic remains cluster-local. See the
@@ -160,9 +172,9 @@ The chart provisions the `PostgreSQL / Database Capacity and Connections`
 dashboard from [`templates/PostgreSQL.yaml`](templates/PostgreSQL.yaml). It
 uses the PostgreSQL exporter's `pg_database_size_bytes` and
 `pg_stat_database_numbackends` metrics for per-database size and connection
-tables, plus a connection time series. The dashboard builds its displayed
-instance label as `region-dc-pod` from Prometheus labels; the scrape target's
-pod-IP `instance` label is not used in the panel grouping or legend.
+tables, plus a connection time series. PostgreSQL scrape targets use the
+canonical `instance` label `<cluster>/<psql-cluster>/<pod-name>`, matching the PSQL chart's
+ServiceMonitor relabeling.
 
 The chart also provisions the `Loki / Container Logging Volume` dashboard from
 [`templates/LokiLogging.yaml`](templates/LokiLogging.yaml). It uses the

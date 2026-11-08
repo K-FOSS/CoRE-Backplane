@@ -19,6 +19,8 @@ data:
     GRAFANA_URL = os.environ['GRAFANA_URL'].rstrip('/')
     token = os.environ['GRAFANA_TOKEN']
     cluster_name = os.environ['CLUSTER_NAME']
+    datacenter = os.environ['DC']
+    region = os.environ['REGION']
     central_cluster_name = os.environ['CENTRAL_CLUSTER_NAME']
     FOLDER_API = '/apis/folder.grafana.app/v1/namespaces/default/folders'
     DASHBOARD_API = '/apis/dashboard.grafana.app/v1/namespaces/default/dashboards'
@@ -145,6 +147,95 @@ data:
             return value.replace('${DS_PROMETHEUS}', '${datasource}')
         return value
 
+    def scope_prometheus_query(query):
+        scoped = {'cluster': '$cluster', 'dc': '$dc', 'region': '$region'}
+        selector_open = chr(123)
+        selector_close = chr(125)
+        matchers = ','.join(
+            f'{label}="{value}"' for label, value in scoped.items()
+        )
+
+        def scope_selector(match):
+            metric = match.group('metric') or ''
+            body = match.group('body')
+            body = re.sub(
+                r'(?:^|,)\s*(?:cluster|dc|region)\s*(?:=~|=|!~|!=)\s*"(?:\\.|[^"])*"\s*(?=,|$)',
+                '',
+                body,
+            ).strip(', ')
+            return f'{metric}{selector_open}{matchers}{"," if body else ""}{body}{selector_close}'
+
+        query = re.sub(
+            r'(?P<metric>[a-zA-Z_:][a-zA-Z0-9_:]*)?\x7b(?P<body>[^\x7b\x7d]*)\x7d',
+            scope_selector,
+            query,
+        )
+        for metric in ('kubelet_volume_stats_', 'longhorn_'):
+            query = re.sub(
+                rf'(?<![a-zA-Z0-9_:])({metric}[a-zA-Z0-9_:]*)(?![a-zA-Z0-9_:]|\s*\x7b)',
+                rf'\1{selector_open}{matchers}{selector_close}',
+                query,
+            )
+        return query
+
+    def is_prometheus_datasource(value):
+        return isinstance(value, dict) and value.get('type') == 'prometheus'
+
+    def scope_prometheus_queries(value, inherited=False):
+        if isinstance(value, dict):
+            local = inherited or is_prometheus_datasource(value.get('datasource'))
+            return {
+                key: (
+                    scope_prometheus_query(item)
+                    if local and key in {'expr', 'query'} and isinstance(item, str)
+                    else scope_prometheus_queries(item, local)
+                )
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [scope_prometheus_queries(item, inherited) for item in value]
+        return value
+
+    def contains_prometheus_datasource(value):
+        if isinstance(value, dict):
+            if is_prometheus_datasource(value.get('datasource')):
+                return True
+            return any(contains_prometheus_datasource(item) for item in value.values())
+        if isinstance(value, list):
+            return any(contains_prometheus_datasource(item) for item in value)
+        return False
+
+    def ensure_source_scope_variables(dashboard):
+        values = {
+            'cluster': cluster_name,
+            'dc': datacenter,
+            'region': region,
+        }
+        labels = {'cluster': 'Cluster', 'dc': 'Datacenter', 'region': 'Region'}
+        variables = dashboard.setdefault('templating', {}).setdefault('list', [])
+        by_name = {
+            variable.get('name'): variable
+            for variable in variables
+            if isinstance(variable, dict) and variable.get('name')
+        }
+        for name, value in values.items():
+            variable = by_name.get(name)
+            if variable is None:
+                variable = {'name': name}
+                variables.append(variable)
+            variable.update({
+                'current': {'selected': True, 'text': value, 'value': value},
+                'hide': 0,
+                'includeAll': False,
+                'label': labels[name],
+                'multi': False,
+                'options': [{'selected': True, 'text': value, 'value': value}],
+                'query': value,
+                'type': 'custom',
+            })
+            for key in ('allValue', 'datasource', 'refresh'):
+                variable.pop(key, None)
+
     def cleanup_empty_legacy_folders(folders, managed_titles, active_root_uid):
         try:
             dashboards = list_resources(DASHBOARD_API)
@@ -220,6 +311,9 @@ data:
         dashboard = replace_dashboard_links(dashboard, uid_map)
         dashboard = normalize_prometheus_datasource(dashboard)
         dashboard.pop('__inputs', None)
+        if contains_prometheus_datasource(dashboard):
+            ensure_source_scope_variables(dashboard)
+            dashboard = scope_prometheus_queries(dashboard)
         if original_uid == 'rYdddlPWk':
             dashboard.setdefault('timepicker', {})['refresh_intervals'] = [
                 '15s',

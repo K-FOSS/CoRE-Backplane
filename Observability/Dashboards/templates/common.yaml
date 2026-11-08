@@ -40,6 +40,8 @@ controllers:
           FOLDER: '/tmp/dashboards'
           SCRIPT: '/scripts/import.py'
           CLUSTER_NAME: {{ .Values.cluster.name | quote }}
+          DC: {{ .Values.cluster.datacenter | quote }}
+          REGION: {{ .Values.cluster.region | quote }}
           CENTRAL_CLUSTER_NAME: {{ .Values.dashboardSync.centralClusterName | quote }}
           GRAFANA_URL: {{ printf "http://grafana-dashboard-api.core-prod.svc.%s" .Values.cluster.domain | quote }}
           GRAFANA_TOKEN:
