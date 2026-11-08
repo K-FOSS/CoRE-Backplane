@@ -48,6 +48,15 @@ WAF policy, and every unselected YVR route is unaffected. This avoids initial
 inspection of Authentik callbacks, SMS webhooks, Harbor and multipart uploads,
 S3 signed requests, gRPC, and WebSocket applications.
 
+The YVR ApplicationSet now requests `SecRuleEngine On`, a 1 MiB body limit with
+`Reject`, and `failOpen: false` for this canary only. The chart defaults remain
+DetectionOnly for other uses. This is desired repository configuration; the
+live policy must be checked separately. Do not publish or reconcile this
+blocking change until a synthetic CRS match is denied before the backend,
+benign LibreSpeed uploads and oversized requests are tested, and module-load
+failure behavior and privacy-safe event delivery are verified. Failure to load
+the module with `failOpen: false` can deny otherwise valid requests.
+
 ## Integration decision
 
 | Option | Compatibility and cost | Decision |
