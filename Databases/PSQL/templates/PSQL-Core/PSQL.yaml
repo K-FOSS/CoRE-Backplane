@@ -17,6 +17,11 @@ spec:
 
   podPriorityClassName: 'tier2-priority'
 
+  {{- with .Values.psql.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+
   enableConnectionPooler: false
 
   {{- if .Values.monitoring.postgresExporter.enabled }}
