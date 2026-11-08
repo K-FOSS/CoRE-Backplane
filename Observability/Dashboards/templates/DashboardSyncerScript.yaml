@@ -148,6 +148,14 @@ data:
         return value
 
     def scope_prometheus_query(query):
+        # A query that already scopes itself to a cluster owns its routing
+        # semantics. Preserve it byte-for-byte: multi-cluster rules and CPU
+        # queries may intentionally select or aggregate several clusters.
+        if re.search(
+            r'(?<![a-zA-Z0-9_])cluster\s*(?:=~|=|!~|!=)\s*"(?:\\.|[^"])*"',
+            query,
+        ):
+            return query
         scoped = {'cluster': '$cluster', 'dc': '$dc', 'region': '$region'}
         selector_open = chr(123)
         selector_close = chr(125)
