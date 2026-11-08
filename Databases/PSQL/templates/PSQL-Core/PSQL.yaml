@@ -25,6 +25,8 @@ spec:
       image: '{{ .Values.monitoring.postgresExporter.image }}'
       imagePullPolicy: 'IfNotPresent'
       args:
+        - '--port'
+        - '{{ .Values.monitoring.postgresExporter.port }}'
         {{- range .Values.monitoring.postgresExporter.collectors }}
         - '--collector.{{ . }}'
         {{- end }}
@@ -33,11 +35,11 @@ spec:
           containerPort: {{ .Values.monitoring.postgresExporter.port }}
           protocol: 'TCP'
       env:
-        - name: DATA_SOURCE_URI
-          value: '127.0.0.1:5432/postgres?sslmode=disable'
-        - name: DATA_SOURCE_USER
+        - name: PG_EXPORTER_DSN
+          value: 'postgresql://127.0.0.1:5432/postgres?sslmode=disable'
+        - name: PGUSER
           value: '$(POSTGRES_USER)'
-        - name: DATA_SOURCE_PASS
+        - name: PGPASSWORD
           value: '$(POSTGRES_PASSWORD)'
       resources:
         requests:

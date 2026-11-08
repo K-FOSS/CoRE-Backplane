@@ -74,21 +74,29 @@ monitoring:
     port: 9719
   postgresExporter:
     enabled: true
-    image: 'quay.io/prometheuscommunity/postgres-exporter:v0.18.1'
+    # The pinned PostgreSQL Monitoring dashboard uses the PG14+ session and
+    # checksum metrics provided by nbari/pg_exporter, not the similarly named
+    # prometheus-community exporter.
+    image: 'ghcr.io/nbari/pg_exporter:0.22.2@sha256:18006dbbc980627334c2e7cb2555b6bd2f82293e8726872a0b0aeec79af45680'
     port: 9187
-    # These collectors are disabled by default but are used by the pinned
-    # PostgreSQL Monitoring dashboard. Keep stat_statements out until
-    # pg_stat_statements is provisioned in PostgreSQL shared_preload_libraries.
+    # These collectors provide the metrics used by the pinned PostgreSQL
+    # Monitoring dashboard. Keep statements out until pg_stat_statements is
+    # provisioned in PostgreSQL shared_preload_libraries.
     collectors:
-      - 'database_wraparound'
-      - 'long_running_transactions'
-      - 'postmaster'
-      - 'process_idle'
-      - 'stat_activity_autovacuum'
-      - 'stat_checkpointer'
-      - 'stat_wal_receiver'
-      - 'statio_user_indexes'
-      - 'xlog_location'
+      - 'default'
+      - 'activity'
+      - 'database'
+      - 'vacuum'
+      - 'locks'
+      - 'stat'
+      - 'stat_io'
+      - 'slru'
+      - 'temp'
+      - 'replication'
+      - 'index'
+      - 'sequences'
+      - 'tls'
+      - 'exporter'
 
 
 
