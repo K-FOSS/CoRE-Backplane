@@ -82,7 +82,10 @@ monitoring:
     # checksum metrics provided by nbari/pg_exporter, not the similarly named
     # prometheus-community exporter.
     image: 'ghcr.io/nbari/pg_exporter:0.22.2@sha256:18006dbbc980627334c2e7cb2555b6bd2f82293e8726872a0b0aeec79af45680'
-    port: 9187
+    # pg_exporter listens on 9432 by default. The Zalando operator currently
+    # preserves the sidecar CR args but does not pass them into the generated
+    # pod, so the Service and ServiceMonitor must target the image default.
+    port: 9432
     # These collectors provide the metrics used by the pinned PostgreSQL
     # Monitoring dashboard. Keep statements out until pg_stat_statements is
     # provisioned in PostgreSQL shared_preload_libraries.
