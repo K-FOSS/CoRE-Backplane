@@ -1,0 +1,42 @@
+{{- if .Values.siteLocalGarage.enabled }}
+apiVersion: garage.rajsingh.info/v1beta2
+kind: GarageCluster
+metadata:
+  name: {{ .Values.siteLocalGarage.name | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  image: {{ .Values.siteLocalGarage.image | squote }}
+  zone: {{ .Values.region | squote }}
+  replication:
+    factor: {{ int .Values.siteLocalGarage.replicationFactor }}
+    consistencyMode: 'consistent'
+    zoneRedundancyMode: 'AtLeast'
+    zoneRedundancyMinZones: 2
+  deletionPolicy: 'Drain'
+  network:
+    rpcSecretRef:
+      name: {{ printf "%s-bootstrap" .Values.siteLocalGarage.name | squote }}
+      key: 'rpc-secret'
+  admin:
+    adminTokenSecretRef:
+      name: {{ printf "%s-bootstrap" .Values.siteLocalGarage.name | squote }}
+      key: 'admin-token'
+  monitoring:
+    enabled: true
+    interval: '60s'
+  storage:
+    layoutPolicy: 'Auto'
+    replicas: {{ int .Values.siteLocalGarage.storageReplicas }}
+    metadata:
+      size: {{ .Values.siteLocalGarage.metadataSize | quote }}
+      storageClassName: {{ .Values.siteLocalGarage.metadataStorageClass | squote }}
+    data:
+      size: {{ .Values.siteLocalGarage.dataSize | quote }}
+      storageClassName: {{ .Values.siteLocalGarage.dataStorageClass | squote }}
+    pvcRetentionPolicy:
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

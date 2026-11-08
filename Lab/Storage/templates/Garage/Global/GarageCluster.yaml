@@ -1,0 +1,72 @@
+{{- if .Values.garage.enabled }}
+apiVersion: garage.rajsingh.info/v1beta2
+kind: GarageCluster
+metadata:
+  name: {{ .Values.garage.name | squote }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '1'
+spec:
+  image: {{ .Values.garage.image | squote }}
+  zone: {{ .Values.region | squote }}
+  replication:
+    factor: {{ int .Values.garage.replicationFactor }}
+    consistencyMode: 'consistent'
+    zoneRedundancyMode: 'AtLeast'
+    zoneRedundancyMinZones: 2
+  deletionPolicy: 'Drain'
+  {{- if .Values.garage.federation.enabled }}
+  layoutPolicy: {{ if eq .Values.region .Values.garage.federation.writerRegion }}'Auto'{{ else }}'Manual'{{ end }}
+  layoutManagement:
+    autoApply: true
+    siteRole: {{ if eq .Values.region .Values.garage.federation.writerRegion }}'Writer'{{ else }}'Follower'{{ end }}
+    drain:
+      unverifiedPeersPolicy: 'AssumeConsistent'
+  remoteClusters:
+    - name: {{ printf "%s-%s" .Values.garage.name .Values.garage.federation.remoteRegion | squote }}
+      zone: {{ .Values.garage.federation.remoteRegion | squote }}
+      connection:
+        adminApiEndpoint: {{ printf "https://%s-admin.%s.%s.%s" .Values.garage.name .Values.garage.federation.remoteDatacenter .Values.garage.federation.remoteRegion .Values.garage.federation.adminHostnameSuffix | squote }}
+        {{- with .Values.garage.federation.storageRpcEndpointTemplate }}
+        storageRpcEndpointTemplate: {{ . | squote }}
+        {{- end }}
+        adminTokenSecretRef:
+          name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+          key: 'admin-token'
+  {{- end }}
+  network:
+    {{- if .Values.garage.federation.enabled }}
+    rpcPublicAddrSubnet: {{ .Values.garage.rpcPublicAddrSubnet | squote }}
+    {{- end }}
+    rpcSecretRef:
+      name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+      key: 'rpc-secret'
+  admin:
+    adminTokenSecretRef:
+      name: {{ printf "%s-bootstrap" .Values.garage.name | squote }}
+      key: 'admin-token'
+  monitoring:
+    enabled: true
+    interval: '60s'
+    metricRelabelings:
+      - sourceLabels: ['__name__']
+        regex: 'rpc_duration_bucket'
+        action: 'drop'
+  storage:
+    layoutPolicy: 'Auto'
+    replicas: {{ int .Values.garage.storageReplicas }}
+    metadata:
+      size: {{ .Values.garage.metadataSize | quote }}
+      storageClassName: {{ .Values.garage.metadataStorageClass | squote }}
+    data:
+      size: {{ .Values.garage.dataSize | quote }}
+      storageClassName: {{ .Values.garage.dataStorageClass | squote }}
+    pvcRetentionPolicy:
+      whenDeleted: 'Retain'
+      whenScaled: 'Retain'
+    {{- with .Values.garage.storage.topologySpreadConstraints }}
+    topologySpreadConstraints:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

@@ -1,0 +1,158 @@
+{{- include "lab-storage.values.init" . }}
+{{- include "bjw-s.common.loader.init" . }}
+
+{{- define "app-template.hardcodedValues" -}}
+global:
+  nameOverride: '{{ .Release.Name }}'
+
+controllers:
+  request-writer:
+    enabled: {{ .Values.requestWriter.enabled | default true }}
+    strategy: Recreate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.requestWriter.image }}'
+          tag: 'latest'
+          digest: '{{ .Values.requestWriter.imageDigest }}'
+          pullPolicy: 'IfNotPresent'
+        command: ['/bin/sh', '/scripts/serve.sh']
+        env:
+          - name: 'MOUNT_PATH'
+            value: '{{ .Values.requestWriter.mountPath }}'
+          - name: 'PORT'
+            value: '{{ .Values.requestWriter.port }}'
+        ports:
+          - name: 'http'
+            containerPort: {{ .Values.requestWriter.port }}
+        probes:
+          readiness:
+            type: TCP
+          liveness:
+            type: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ['ALL']
+
+  file-browser:
+    enabled: {{ .Values.fileBrowser.enabled | default true }}
+    strategy: Recreate
+    containers:
+      main:
+        image:
+          repository: '{{ .Values.fileBrowser.image }}'
+          tag: 'latest'
+          digest: '{{ .Values.fileBrowser.imageDigest }}'
+          pullPolicy: 'IfNotPresent'
+        args: ['nginx', '-c', '/etc/nginx/nginx.conf', '-g', 'daemon off;']
+        ports:
+          - name: 'http'
+            containerPort: {{ .Values.fileBrowser.port }}
+        probes:
+          readiness:
+            type: TCP
+          liveness:
+            type: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ['ALL']
+
+persistence:
+  data:
+    enabled: true
+    type: 'persistentVolumeClaim'
+    forceRename: '{{ .Release.Name }}'
+    accessMode: 'ReadWriteMany'
+    size: '{{ .Values.testPersistence.size }}'
+    storageClass: 'longhorn-rwx'
+    advancedMounts:
+      request-writer:
+        main:
+          - path: '{{ .Values.requestWriter.mountPath }}'
+      file-browser:
+        main:
+          - path: '{{ .Values.fileBrowser.mountPath }}'
+            readOnly: true
+  request-writer-script:
+    enabled: true
+    type: 'configMap'
+    name: '{{ .Release.Name }}-request-writer'
+    advancedMounts:
+      request-writer:
+        main:
+          - path: '/scripts'
+            readOnly: true
+  file-browser-config:
+    enabled: true
+    type: 'configMap'
+    name: '{{ .Release.Name }}-file-browser'
+    advancedMounts:
+      file-browser:
+        main:
+          - path: '/etc/nginx/nginx.conf'
+            subPath: 'nginx.conf'
+            readOnly: true
+
+configMaps:
+  request-writer:
+    enabled: true
+    data:
+      serve.sh: |
+        #!/bin/sh
+        set -eu
+        fifo="${MOUNT_PATH}/.nc-fifo"
+        [ -p "${fifo}" ] || mkfifo "${fifo}"
+        while true; do
+          {
+            IFS= read -r request_line || exit 0
+            while IFS= read -r header_line && [ "${header_line}" != "$(printf '\\r')" ]; do :; done
+            request_file="$(mktemp "${MOUNT_PATH}/request-XXXXXX")" || {
+              printf 'HTTP/1.1 500 Internal Server Error\\r\\nConnection: close\\r\\n\\r\\n' > "${fifo}"
+              continue
+            }
+            printf '%s\\n' "${request_line}" > "${request_file}"
+            printf 'HTTP/1.1 201 Created\\r\\nContent-Type: text/plain\\r\\nConnection: close\\r\\n\\r\\n%s\\n' "${request_file##*/}" > "${fifo}"
+          } < "${fifo}" | nc -l -p "${PORT}" > "${fifo}" || true
+        done
+  file-browser:
+    enabled: true
+    data:
+      nginx.conf: |
+        events {}
+        http {
+          server {
+            listen 8080;
+            server_name _;
+            root /usr/share/nginx/html;
+            autoindex on;
+            autoindex_exact_size off;
+            autoindex_localtime on;
+            location / { try_files $uri $uri/ =404; }
+          }
+        }
+
+service:
+  request-writer:
+    enabled: true
+    controller: 'request-writer'
+    primary: true
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 8080
+        targetPort: 'http'
+  file-browser:
+    enabled: true
+    controller: 'file-browser'
+    ports:
+      http:
+        enabled: true
+        primary: true
+        port: 8080
+        targetPort: 'http'
+{{- end -}}
+{{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
+{{ include "bjw-s.common.loader.generate" . }}

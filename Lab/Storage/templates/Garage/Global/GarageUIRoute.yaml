@@ -1,0 +1,87 @@
+{{- if and .Values.garage.enabled .Values.garageUI.enabled (eq .Values.region .Values.garage.hubRegion) }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: 'lab-garage-ui'
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+    forecastle.stakater.com/expose: 'true'
+    forecastle.stakater.com/instance: 'core'
+    forecastle.stakater.com/appName: 'Lab Garage UI'
+    forecastle.stakater.com/group: 'Storage'
+spec:
+  parentRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: Gateway
+      namespace: {{ .Values.routes.publicGateway.namespace | squote }}
+      name: {{ .Values.routes.publicGateway.name | squote }}
+      sectionName: {{ .Values.routes.publicGateway.sectionName | squote }}
+  hostnames:
+    - {{ .Values.garageUI.hostname | squote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: '/'
+      backendRefs:
+        - name: 'lab-garage-ui'
+          port: 80
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: 'lab-garage-ui-outpost'
+spec:
+  parentRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: Gateway
+      namespace: {{ .Values.routes.publicGateway.namespace | squote }}
+      name: {{ .Values.routes.publicGateway.name | squote }}
+      sectionName: {{ .Values.routes.publicGateway.sectionName | squote }}
+  hostnames:
+    - {{ .Values.garageUI.hostname | squote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: '/outpost.goauthentik.io'
+      backendRefs:
+        - name: 'aaa-myloginspace-proxy'
+          namespace: 'core-prod'
+          port: 80
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: 'lab-garage-ui'
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: 'lab-garage-ui'
+  extAuth:
+    failOpen: false
+    headersToExtAuth:
+      - 'cookie'
+    http:
+      headersToBackend:
+        - 'set-cookie'
+        - 'x-authentik-*'
+        - 'authorization'
+        - 'Content-Type'
+        - 'Location'
+      backendSettings:
+        loadBalancer:
+          type: 'ConsistentHash'
+          consistentHash:
+            type: 'SourceIP'
+      backendRefs:
+        - group: ''
+          kind: Service
+          namespace: 'core-prod'
+          name: 'aaa-myloginspace-proxy'
+          port: 80
+      path: '/outpost.goauthentik.io/auth/envoy'
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

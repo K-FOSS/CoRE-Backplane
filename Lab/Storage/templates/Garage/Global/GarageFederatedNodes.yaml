@@ -1,0 +1,22 @@
+{{- if and .Values.garage.enabled .Values.garage.federation.enabled (eq .Values.region .Values.garage.federation.writerRegion) }}
+{{- range .Values.garage.federation.remoteStorageNodes }}
+---
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageNode
+metadata:
+  name: {{ .name | squote }}
+  namespace: {{ $.Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  clusterRef:
+    name: {{ $.Values.garage.name | squote }}
+  nodeId: {{ .nodeId | squote }}
+  zone: {{ default $.Values.garage.federation.remoteRegion .zone | squote }}
+  capacity: {{ default $.Values.garage.dataSize .capacity | squote }}
+  external:
+    address: {{ .hostname | squote }}
+    port: 3901
+{{- end }}
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

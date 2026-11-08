@@ -1,0 +1,21 @@
+{{- if .Values.siteLocalGarage.enabled }}
+{{- range $kind, $class := dict "data" .Values.siteLocalGarage.dataStorageClass "metadata" .Values.siteLocalGarage.metadataStorageClass }}
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ $class | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+provisioner: {{ $.Values.longhorn.provisioner | squote }}
+reclaimPolicy: 'Retain'
+allowVolumeExpansion: true
+volumeBindingMode: 'Immediate'
+parameters:
+  numberOfReplicas: {{ if eq $kind "data" }}'1'{{ else }}'2'{{ end }}
+  staleReplicaTimeout: '2880'
+  dataEngine: 'v1'
+  fsType: 'xfs'
+---
+{{- end }}
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

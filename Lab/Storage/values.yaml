@@ -1,18 +1,56 @@
-env: prod
+# Chart-owned defaults are defined in templates/_helpers.tpl so the complete
+# stack configuration is visible with the rendered Helm templates. Site and
+# cluster overrides are injected by Apps/Lab/Storage.yaml.
+cluster:
+  name: ''
+  domain: ''
 
-persistence:
-  accessModes:
-    - 'ReadWriteMany'
-  size: '5Gi'
+datacenter: ''
+region: ''
+
+longhorn:
+  provisioner: 'driver.longhorn.io'
+
+garage:
+  enabled: false
+  federation:
+    enabled: false
+
+siteLocalGarage:
+  enabled: false
+
+routes:
+  publicGateway:
+    name: 'main-gw'
+    namespace: 'core-prod'
+    sectionName: 'https-myloginspace'
 
 requestWriter:
-  image: 'docker.io/library/busybox@sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0'
+  image: 'docker.io/library/busybox'
+  imageDigest: 'sha256:9db7b59979c38555a39def84a31fb98b5296952f9e3afd4f6f11f05b07adfab0'
   mountPath: '/data'
   port: 8080
   replicas: 1
 
 fileBrowser:
-  image: 'docker.io/library/nginx@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236'
+  image: 'docker.io/library/nginx'
+  imageDigest: 'sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236'
   mountPath: '/usr/share/nginx/html'
   port: 8080
   replicas: 1
+
+garage:
+  tls:
+    serviceName: 'lab-garage-s3'
+    gatewayName: 'main-gw'
+    gatewayNamespace: 'core-prod'
+  federation:
+    adminHostnameSuffix: 'mylogin.space'
+
+garageUI:
+  hostname: 'lab-garage-ui.mylogin.space'
+  accessGroup: 'Server Admins'
+  garage:
+    serviceName: 'lab-garage'
+    s3Port: 3900
+    adminPort: 3903

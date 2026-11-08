@@ -1,0 +1,26 @@
+{{- if and .Values.garage.enabled .Values.garage.federation.enabled }}
+{{- range $ordinal := until (int .Values.garage.storageReplicas) }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-%s-storage-%d-rpc" $.Values.garage.name $.Values.region $ordinal | squote }}
+  namespace: {{ $.Release.Namespace | squote }}
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+  annotations:
+    external-dns.kubernetes.io/hostname: {{ replace "{region}" $.Values.region (replace "{ordinal}" (printf "%d" $ordinal) $.Values.garage.federation.localStorageHostnameTemplate) | squote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ replace "{region}" $.Values.region (replace "{ordinal}" (printf "%d" $ordinal) $.Values.garage.federation.localStorageHostnameTemplate) | squote }}
+spec:
+  clusterIP: 'None'
+  publishNotReadyAddresses: true
+  selector:
+    statefulset.kubernetes.io/pod-name: {{ printf "%s-storage-%d-0" $.Values.garage.name $ordinal | squote }}
+  ports:
+    - name: 'rpc'
+      port: 3901
+      targetPort: 'rpc'
+{{- end }}
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

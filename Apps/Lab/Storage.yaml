@@ -71,6 +71,77 @@ spec:
               value: |- # yaml
                 env: {{ .values.environment }}
 
+                cluster:
+                  name: '{{ .values.clusterName }}'
+                  domain: '{{ .values.clusterDomain }}'
+
+                datacenter: '{{ .values.datacenter }}'
+                region: '{{ .values.region }}'
+
+                garage:
+                  enabled: {{ if or (eq .values.region "yvr") (eq .values.region "yxl") }}true{{ else }}false{{ end }}
+                  hubRegion: 'yvr'
+                  name: 'lab-garage'
+                  image: 'dxflrs/garage:v2.4.1@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020'
+                  replicationFactor: 3
+                  storageReplicas: 3
+                  dataSize: '20Gi'
+                  metadataSize: '2Gi'
+                  dataStorageClass: 'garage-lab-{{ .values.region }}-data'
+                  metadataStorageClass: 'garage-lab-{{ .values.region }}-metadata'
+                  rpcPublicAddrSubnet: '{{ if eq .values.region "yxl" }}172.20.48.0/21{{ else }}172.20.56.0/21{{ end }}'
+                  secretStoreRef:
+                    kind: 'ClusterSecretStore'
+                    name: 'mainvault-core'
+                  remoteKey: 'Garage/LabStorage'
+                  adminTokenProperty: 'AdminToken'
+                  rpcSecretProperty: 'RPCSecret'
+                  tls:
+                    enabled: true
+                    serviceName: 'lab-garage-s3'
+                    gatewayName: 'main-gw'
+                    gatewayNamespace: 'core-prod'
+                  bootstrap:
+                    generatedSecretName: 'lab-garage-bootstrap-generated'
+                  federation:
+                    enabled: true
+                    writerRegion: 'yvr'
+                    remoteRegion: '{{ if eq .values.region "yvr" }}yxl{{ else }}yvr{{ end }}'
+                    remoteDatacenter: '{{ if eq .values.region "yvr" }}dc1{{ else }}home1{{ end }}'
+                    adminHostnameSuffix: 'mylogin.space'
+                    localStorageHostnameTemplate: '{{ if eq .values.region "yvr" }}garage-yvr-storage-{ordinal}.core-home1-talos-prod.home1.yvr.mylogin.space{{ else }}garage-yxl-storage-{ordinal}.core-dc1-talos-prod.dc1.yxl.mylogin.space{{ end }}'
+                    storageRpcEndpointTemplate: '{{ if eq .values.region "yvr" }}garage-yxl-storage-{ordinal}.core-dc1-talos-prod.dc1.yxl.mylogin.space:3901{{ else }}garage-yvr-storage-{ordinal}.core-home1-talos-prod.home1.yvr.mylogin.space:3901{{ end }}'
+                    remoteStorageNodes: []
+
+                siteLocalGarage:
+                  enabled: {{ if or (eq .values.region "yvr") (eq .values.region "yxl") }}true{{ else }}false{{ end }}
+                  name: 'lab-garage-local'
+                  image: 'dxflrs/garage:v2.4.1@sha256:9c96caa2612d3411acc5b0e6701fb238dbfba33e533a6d7d3d811a4b12d0d020'
+                  replicationFactor: 3
+                  storageReplicas: 3
+                  dataSize: '20Gi'
+                  metadataSize: '2Gi'
+                  dataStorageClass: 'garage-lab-local-{{ .values.region }}-data'
+                  metadataStorageClass: 'garage-lab-local-{{ .values.region }}-metadata'
+                  secretStoreRef:
+                    kind: 'ClusterSecretStore'
+                    name: 'mainvault-core'
+                  remoteKey: 'Garage/LabStorageLocal-{{ .values.region }}'
+                  adminTokenProperty: 'AdminToken'
+                  rpcSecretProperty: 'RPCSecret'
+
+                garageUI:
+                  enabled: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
+                  hostname: 'lab-garage-ui.mylogin.space'
+                  accessGroup: 'Server Admins'
+                  garage:
+                    serviceName: 'lab-garage'
+                    s3Port: 3900
+                    adminPort: 3903
+
+                garage-ui-web:
+                  enabled: {{ if eq .values.region "yvr" }}true{{ else }}false{{ end }}
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}

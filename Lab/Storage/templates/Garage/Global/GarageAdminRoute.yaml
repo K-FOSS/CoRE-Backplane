@@ -1,0 +1,25 @@
+{{- if and .Values.garage.enabled .Values.garage.federation.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: 'lab-garage-admin'
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+spec:
+  parentRefs:
+    - name: {{ .Values.garage.tls.gatewayName | squote }}
+      namespace: {{ .Values.garage.tls.gatewayNamespace | squote }}
+      sectionName: {{ .Values.routes.publicGateway.sectionName | squote }}
+  hostnames:
+    - {{ printf "%s-admin.%s.%s.%s" .Values.garage.name .Values.datacenter .Values.region .Values.garage.federation.adminHostnameSuffix | squote }}
+  rules:
+    - backendRefs:
+        - name: {{ .Values.garage.name | squote }}
+          port: 3903
+          kind: Service
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

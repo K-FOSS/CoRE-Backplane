@@ -1,0 +1,31 @@
+{{- if and .Values.garage.enabled .Values.garage.user.enabled }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: {{ .Values.garage.user.name | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+spec:
+  name: {{ .Values.garage.user.displayName | squote }}
+  groups:
+    - 'LDAPService'
+  s3:
+    enabled: true
+    backend: 'garage'
+    createBuckets: true
+    createCredentials: false
+    createUserBucket: false
+    createServiceAccount: true
+    garage:
+      clusterName: {{ .Values.garage.name | squote }}
+      endpoint: {{ printf "https://%s.%s.svc.%s:443" .Values.garage.tls.serviceName .Release.Namespace .Values.cluster.domain | squote }}
+    buckets:
+{{- range .Values.garage.user.buckets }}
+      - {{ . | squote }}
+{{- end }}
+    writeServiceAccountCredentialsSecretRef:
+      name: {{ .Values.garage.user.credentialsSecretName | squote }}
+      namespace: {{ .Release.Namespace | squote }}
+  writeConnectionSecretToRef:
+    name: {{ printf "%s-connection" .Values.garage.user.name | squote }}
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

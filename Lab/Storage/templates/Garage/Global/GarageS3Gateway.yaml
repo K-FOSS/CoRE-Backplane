@@ -1,0 +1,25 @@
+{{- if and .Values.garage.enabled .Values.garage.tls.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: 'lab-garage-s3'
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+  labels:
+    wan-mode: 'public'
+    lan-mode: 'private'
+spec:
+  parentRefs:
+    - name: {{ .Values.garage.tls.gatewayName | squote }}
+      namespace: {{ .Values.garage.tls.gatewayNamespace | squote }}
+      sectionName: {{ .Values.routes.publicGateway.sectionName | squote }}
+  hostnames:
+    - {{ printf "%s.%s.svc.%s" .Values.garage.tls.serviceName .Release.Namespace .Values.cluster.domain | squote }}
+  rules:
+    - backendRefs:
+        - name: {{ .Values.garage.name | squote }}
+          port: 3900
+          kind: Service
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

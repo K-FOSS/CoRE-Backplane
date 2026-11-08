@@ -1,0 +1,65 @@
+{{- if .Values.siteLocalGarage.enabled }}
+apiVersion: generators.external-secrets.io/v1alpha1
+kind: Password
+metadata:
+  name: {{ printf "%s-bootstrap-generated" .Values.siteLocalGarage.name | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-3'
+spec:
+  length: 32
+  encoding: 'hex'
+  allowRepeat: true
+  secretKeys:
+    - 'AdminToken'
+    - 'RPCSecret'
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ printf "%s-bootstrap-generated" .Values.siteLocalGarage.name | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-2'
+spec:
+  refreshPolicy: 'CreatedOnce'
+  target:
+    name: {{ printf "%s-bootstrap-generated" .Values.siteLocalGarage.name | squote }}
+    creationPolicy: 'Owner'
+  dataFrom:
+    - sourceRef:
+        generatorRef:
+          apiVersion: generators.external-secrets.io/v1alpha1
+          kind: Password
+          name: {{ printf "%s-bootstrap-generated" .Values.siteLocalGarage.name | squote }}
+---
+apiVersion: external-secrets.io/v1alpha1
+kind: PushSecret
+metadata:
+  name: {{ printf "%s-bootstrap-push" .Values.siteLocalGarage.name | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '-1'
+spec:
+  refreshInterval: '1h'
+  updatePolicy: 'IfNotExists'
+  deletionPolicy: 'None'
+  secretStoreRefs:
+    - name: {{ .Values.siteLocalGarage.secretStoreRef.name | squote }}
+      kind: {{ .Values.siteLocalGarage.secretStoreRef.kind | squote }}
+  selector:
+    secret:
+      name: {{ printf "%s-bootstrap-generated" .Values.siteLocalGarage.name | squote }}
+  data:
+    - match:
+        secretKey: 'AdminToken'
+        remoteRef:
+          remoteKey: {{ .Values.siteLocalGarage.remoteKey | squote }}
+          property: {{ .Values.siteLocalGarage.adminTokenProperty | squote }}
+    - match:
+        secretKey: 'RPCSecret'
+        remoteRef:
+          remoteKey: {{ .Values.siteLocalGarage.remoteKey | squote }}
+          property: {{ .Values.siteLocalGarage.rpcSecretProperty | squote }}
+{{- end }}
+{{- include "lab-storage.values.init" . -}}
