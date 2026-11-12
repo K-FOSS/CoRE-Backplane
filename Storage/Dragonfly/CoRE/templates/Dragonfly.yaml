@@ -3,7 +3,12 @@ kind: Dragonfly
 metadata:
   name: dragonfly-core
 spec:
-  replicas: 2
+  replicas: {{ .Values.replicas }}
+
+  {{- with .Values.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 
   # Grafana Mimir uses Dragonfly's Memcached protocol for disposable query,
   # index, chunk and metadata caches. The main Redis/TLS port remains unchanged.
@@ -81,5 +86,5 @@ spec:
       memory: 500Mi
 
     limits:
-      cpu: '2'
+      cpu: '1'
       memory: 2Gi

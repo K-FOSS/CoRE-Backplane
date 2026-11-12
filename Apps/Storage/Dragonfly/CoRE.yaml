@@ -61,6 +61,15 @@ spec:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
 
+                {{ if eq .values.clusterName "core-home1-talos-prod" }}
+                replicas: 3
+                tolerations:
+                  - key: 'load'
+                    operator: 'Equal'
+                    value: 'testing'
+                    effect: 'NoSchedule'
+                {{ end }}
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}

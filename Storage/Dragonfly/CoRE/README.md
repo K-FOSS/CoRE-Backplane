@@ -5,6 +5,12 @@ TLS, PVC-backed snapshots and a long-lived S3 service-account credential. It is
 owned by
 `Apps/Storage/Dragonfly/CoRE.yaml`.
 
+The YVR fleet target `core-home1-talos-prod` runs three replicas and receives
+the same `load=testing:NoSchedule` toleration used by the PostgreSQL fleet,
+allowing the Dragonfly replicas to schedule on HPC2. This is a toleration rather
+than a node selector, so Kubernetes may still place replicas on other eligible
+nodes; YXL and other targets remain at two replicas without that toleration.
+
 Dragonfly creates snapshots every 30 minutes in a per-replica `130Gi`
 `ssd-storage` PVC mounted at `/data`. The optional `tiering` PVC is a separate
 performance/data-tier volume and is disabled by default. See the [Dragonfly operator snapshot and
