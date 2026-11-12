@@ -269,9 +269,18 @@ authentication-related data, not Grafana sessions or authoritative application
 state. Grafana Live remains on the default Redis database because its Redis
 client does not expose a database selector. Refer to Grafana's [database configuration](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#database)
 and [Live HA setup](https://grafana.com/docs/grafana/latest/setup-grafana/set-up-grafana-live/#configure-grafana-live-ha-setup)
-when changing either dependency. Grafana Live's Redis client does not support
-TLS, while the remote-cache client is explicitly configured with `ssl=true`;
+when changing either dependency. Grafana Live uses the TLS-enabled `rediss://`
+address, and the remote-cache client is explicitly configured with `ssl=true`;
 verify the Dragonfly listener behavior for both clients after reconciliation.
+The PostgreSQL pool is bounded at 50 open and 10 idle connections, reusing
+connections for up to 30 minutes. The shared `psql-int.mylogin.space` URI is
+the PostgreSQL HA/PGPool endpoint, so Grafana writes remain on the active
+primary while standby promotion and routing remain owned by PostgreSQL/PGPool;
+Grafana does not have a separate read-replica pool. The Dragonfly address also
+resolves to the operator-managed primary service. Dragonfly replicas provide
+replication and failover, but Grafana Live and the remote cache must not connect
+directly to read-only replicas. The remote-cache pool is bounded at 50
+connections per Grafana pod.
 The shared Dragonfly allocation is recorded in the
 [Dragonfly logical database registry](../../Storage/Dragonfly/CoRE/README.md),
 which reserves `132` for this remote cache and keeps Grafana Live on the

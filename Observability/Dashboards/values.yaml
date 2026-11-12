@@ -62,13 +62,17 @@ grafana:
   grafana.ini:
     live:
       ha_engine: 'redis'
-      ha_engine_address: '$__env{DRAGONFLY_ADDRESS}'
+      ha_engine_address: 'rediss://$__env{DRAGONFLY_ADDRESS}'
       ha_engine_password: '$__env{DRAGONFLY_PASSWORD}'
     remote_cache:
       type: 'redis'
-      connstr: 'addr=$__env{DRAGONFLY_ADDRESS},pool_size=100,db=132,password=$__env{DRAGONFLY_PASSWORD},ssl=true'
+      connstr: 'addr=$__env{DRAGONFLY_ADDRESS},pool_size=50,db=132,password=$__env{DRAGONFLY_PASSWORD},ssl=true'
     database:
       type: 'postgres'
+      max_idle_conn: 10
+      max_open_conn: 50
+      conn_max_lifetime: 1800
+      ssl_mode: 'require'
     server:
       domain: 'grafana.int.mylogin.space'
       root_url: 'https://grafana.int.mylogin.space'
