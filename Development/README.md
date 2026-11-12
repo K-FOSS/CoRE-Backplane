@@ -359,12 +359,18 @@ long-lived service-account key in the namespace-local `forgejo-s3` Secret.
 The claim also requests temporary LDAP-derived S3 credentials in the separate
 `forgejo-s3-credentials-2700068d4785d5b1` Secret; those credentials are not
 consumed by Forgejo.
-Forgejo bounds its PostgreSQL client pool at 50 open and 10 idle connections,
-recycles connections after 30 minutes or 5 minutes idle, and retries database
-initialization up to 10 times with a three-second backoff. These settings are
-kept in both the chart defaults and the fleet ApplicationSet override; see
-Forgejo's [database configuration reference](https://forgejo.org/docs/latest/admin/config-cheat-sheet/)
-for the upstream semantics.
+Forgejo uses the site-local PostgreSQL primary for writes and the corresponding
+`psql-local-rep` service for eligible read-only queries, with `RoundRobin`
+selection when multiple replica endpoints are available. The PostgreSQL chart
+publishes the replica service through ExternalDNS. Forgejo bounds its database
+client pool at 50 open and 10 idle connections, recycles connections after 30
+minutes or 5 minutes idle, and retries database initialization up to 10 times
+with a three-second backoff. These settings are kept in both the chart defaults
+and the fleet ApplicationSet override; see Forgejo's [database configuration
+reference](https://forgejo.org/docs/latest/admin/config-cheat-sheet/) and
+[primary/replica database guidance](https://forgejo.org/docs/v17.0/admin/installation/database-preparation/)
+for the upstream semantics. Replica routing is read scaling rather than
+failover: verify replica health and replication lag before enabling it.
 The directory init container runs as root only to repair PVC ownership, then
 assigns `/data/git` and `/data/gitea` to UID/GID `1000`; the configuration,
 migration, and Forgejo containers remain unprivileged.

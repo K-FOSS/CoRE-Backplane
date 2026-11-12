@@ -374,7 +374,9 @@ spec:
                         # Forgejo access token lifetime in seconds (12 hours) for every OAuth client.
                         ACCESS_TOKEN_EXPIRATION_TIME: '43200'
                       database:
-                        HOST: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:5432'
+                        HOST_PRIMARY: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:5432'
+                        HOST_REPLICA: 'psql-local-rep.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:5432'
+                        LOAD_BALANCE_POLICY: 'RoundRobin'
                         NAME: 'forgejo-{{ .values.clusterName }}'
                         USER: 'forgejo-{{ .values.clusterName }}'
                         MAX_OPEN_CONNS: '50'
