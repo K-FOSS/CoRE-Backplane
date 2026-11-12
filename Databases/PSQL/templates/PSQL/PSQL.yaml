@@ -58,6 +58,11 @@ spec:
     # TODO(external-dns-031): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: 'psql-local.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
 
+  replicaServiceAnnotations:
+    external-dns.kubernetes.io/hostname: 'psql-local-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+    # TODO(external-dns-034): Remove the legacy annotation after upgrading ExternalDNS.
+    external-dns.alpha.kubernetes.io/hostname: 'psql-local-rep.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space'
+
   postgresql:
     version: '17'
 
