@@ -14,11 +14,24 @@ plus PGPool, pgAdmin, services and credential automation. It is owned by
   users.
 - Crossplane/provider credentials.
 - Optional restore cluster resource.
+- Longhorn-backed PostgreSQL storage with best-effort data locality and a
+  required `ssd,nvme` disk tag selector.
 - PostgreSQL metrics from a `postgres_exporter` sidecar, exposed through
   internal metrics Services and scraped by the cluster's Alloy ServiceMonitor
   collector before being forwarded to Mimir.
 - PGPool frontend, backend and health-check metrics from a site-local exporter
   sidecar on the two Talos production clusters.
+
+## Storage
+
+The chart creates the `psql-storage` Longhorn StorageClass and assigns it to
+the shared, site-local and optional restore PostgreSQL resources. It uses
+one Longhorn V1 replica, `WaitForFirstConsumer`, `Retain`, and
+`dataLocality: 'best-effort'`. Longhorn must have disks carrying both the
+`ssd` and `nvme` tags; its [StorageClass parameters](https://longhorn.io/docs/1.13.0/references/storage-class-parameters/)
+define the `diskSelector` and locality behavior. The class is shared by the
+PSQL ApplicationSet's target namespaces because StorageClasses are
+cluster-scoped.
 
 ## Monitoring
 
@@ -61,7 +74,9 @@ those runtime values through standard PostgreSQL environment variables and
 connects to the local PostgreSQL process over loopback. Credentials are never
 stored in chart values or annotations.
 
-The sidecar exposes port 9187. This chart creates one internal ClusterIP
+The sidecar exposes port 9432, the pinned `pg_exporter` image default. The
+metrics Services retain their existing 9187 Service port and target the sidecar
+on 9432 during this transition. This chart creates one internal ClusterIP
 metrics Service and one `ServiceMonitor` for `psql-main` and the site-local
 cluster. The cluster-local [Alloy collector](../../Observability/Collectors/README.md)
 discovers those ServiceMonitors, adds the cluster, datacenter and region
@@ -91,7 +106,7 @@ enabling it without those prerequisites causes scrape errors. Panels for that
 collector remain empty until the extension is deliberately added.
 
 Verify after reconciliation that the exporter container is ready on every
-PostgreSQL pod, `http://<pod-ip>:9187/metrics` responds from inside the cluster,
+PostgreSQL pod, `http://<service>:9187/metrics` responds from inside the cluster,
 and Alloy reports successful scrapes and remote writes. A failed exporter must
 not affect PostgreSQL readiness; disable it by setting
 `monitoring.postgresExporter.enabled` to `false` and reconciling the owning
