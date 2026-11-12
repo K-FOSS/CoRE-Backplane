@@ -114,9 +114,12 @@ to the repository's `datasource` variable convention, so datasource inputs such
 as `${DS_PROMETHEUS}` do not remain unresolved in the saved dashboard. A
 Prometheus dashboard imported by a syncer also receives visible `Cluster`, `Dc`,
 and `Region` selectors initialized to that syncer's source cluster. The syncer
-adds those matchers to PromQL selectors before writing the dashboard to Grafana,
-which prevents identically named resources such as PVCs from being joined across
-the two source clusters. The selectors remain part of the dashboard so an
+adds those matchers to unscoped PromQL selectors before writing the dashboard to
+Grafana, which prevents identically named resources such as PVCs from being
+joined across the two source clusters. If a query already contains a `cluster`
+label matcher, the syncer preserves it unchanged; this is required for
+intentionally multi-cluster dashboards and aggregation rules such as Kubernetes
+multi-cluster and CPU panels. The selectors remain part of the dashboard so an
 operator can see the scope applied to its queries. A separate
 `grafana-dashboard-api` Service is the only Cilium
 Global Service: its selector points at the YVR/Home1 Grafana pods, and
@@ -207,7 +210,9 @@ The local templates additionally render:
   named `grafana-core-ldap` on every target;
 - an [Envoy Gateway SecurityPolicy](https://gateway.envoyproxy.io/docs/api/extension_types/#securitypolicy)
   that performs Authentik OIDC and JWT validation for the `grafana-core`
-  HTTPRoute;
+  HTTPRoute. Its OIDC provider uses an Envoy Gateway `Backend` and the
+  documented [OIDC backend retry settings](https://gateway.envoyproxy.io/docs/tasks/security/oidc/#connect-to-an-oidc-provider-with-self-signed-certificate)
+  for transient provider failures;
 - hub-only Crossplane `User` and
   [Terraform Workspace](https://marketplace.upbound.io/providers/upbound/provider-terraform/latest/resources/tf.upbound.io/Workspace/v1beta1)
   resources, plus [PushSecrets](https://external-secrets.io/latest/api/pushsecret/)
