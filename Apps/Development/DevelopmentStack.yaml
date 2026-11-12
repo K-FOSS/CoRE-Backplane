@@ -377,6 +377,12 @@ spec:
                         HOST: 'psql-local.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space:5432'
                         NAME: 'forgejo-{{ .values.clusterName }}'
                         USER: 'forgejo-{{ .values.clusterName }}'
+                        MAX_OPEN_CONNS: '50'
+                        MAX_IDLE_CONNS: '10'
+                        CONN_MAX_LIFETIME: '30m'
+                        CONN_MAX_IDLETIME: '5m'
+                        DB_RETRIES: '10'
+                        DB_RETRY_BACKOFF: '3s'
                     {{- if eq .values.region "yxl" }}
                       storage:
                         STORAGE_TYPE: 'minio'
