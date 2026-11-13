@@ -62,5 +62,8 @@ spec:
     name: aaa-authentik-k8gb
   strategy:
     type: {{ .Values.k8gb.strategy | quote }}
+    {{- if eq .Values.k8gb.strategy "failover" }}
+    primaryGeoTag: {{ .Values.k8gb.primaryGeoTag | quote }}
+    {{- end }}
     dnsTtlSeconds: {{ .Values.k8gb.dnsTtlSeconds }}
 {{- end }}

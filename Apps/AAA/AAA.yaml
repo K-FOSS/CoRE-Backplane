@@ -22,6 +22,7 @@ spec:
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    k8gbPrimaryGeoTag: 'home1'
                     readReplicaHost: ''
                     ldapAdditionalExternalDNSHostname: ''
                     ldapClusterMeshEnabled: false
@@ -31,6 +32,7 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: true
+                    k8gbPrimaryGeoTag: 'home1'
                     readReplicaHost: 'psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space'
                     ldapAdditionalExternalDNSHostname: 'ldap.mylogin.space,ldap-dc1-talos.mylogin.space'
                     ldapClusterMeshEnabled: true
@@ -40,6 +42,7 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    k8gbPrimaryGeoTag: 'home1'
                     readReplicaHost: ''
                     ldapAdditionalExternalDNSHostname: 'ldap-home1.mylogin.space'
                     ldapClusterMeshEnabled: true
@@ -115,7 +118,8 @@ spec:
                 k8gb:
                   enabled: true
                   domain: 'gslb.mylogin.space'
-                  strategy: 'roundRobin'
+                  strategy: 'failover'
+                  primaryGeoTag: '{{ .values.k8gbPrimaryGeoTag }}'
                   dnsTtlSeconds: 30
 
                 authentik:
