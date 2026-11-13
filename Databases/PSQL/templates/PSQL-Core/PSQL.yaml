@@ -39,20 +39,15 @@ spec:
         - name: metrics
           containerPort: {{ .Values.monitoring.postgresExporter.port }}
           protocol: 'TCP'
+      resources:
+        {{- toYaml .Values.monitoring.postgresExporter.resources | nindent 8 }}
       env:
         - name: PG_EXPORTER_DSN
-          value: 'postgresql://127.0.0.1:5432/postgres?sslmode=disable'
+          value: 'postgresql://127.0.0.1:5432/postgres?sslmode=require'
         - name: PGUSER
           value: '$(POSTGRES_USER)'
         - name: PGPASSWORD
           value: '$(POSTGRES_PASSWORD)'
-      resources:
-        requests:
-          cpu: '10m'
-          memory: '32Mi'
-        limits:
-          cpu: '100m'
-          memory: '128Mi'
   {{- end }}
 
   {{- with .Values.psql.maintenanceWindows }}

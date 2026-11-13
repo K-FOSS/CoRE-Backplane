@@ -93,6 +93,13 @@ monitoring:
     # image's native listener. This avoids a server-side apply list merge when
     # reconciling the old 9187 Service.
     servicePort: 9187
+    resources:
+      requests:
+        cpu: '10m'
+        memory: '32Mi'
+      limits:
+        cpu: '100m'
+        memory: '128Mi'
     # These collectors provide the metrics used by the pinned PostgreSQL
     # Monitoring dashboard. Keep statements out until pg_stat_statements is
     # provisioned in PostgreSQL shared_preload_libraries.
@@ -111,6 +118,7 @@ monitoring:
       - 'sequences'
       - 'tls'
       - 'exporter'
+      - 'system'
 
 
 
