@@ -264,6 +264,18 @@ spec:
                   resources:
                     {{- toYaml .resources | nindent 4 }}
                   {{- end }}
+                  prometheus:
+                    serviceMonitor:
+                      relabelings:
+                        - action: replace
+                          sourceLabels: ['__meta_kubernetes_pod_node_name']
+                          targetLabel: 'node'
+                          replacement: '{{ .values.clusterName }}/${1}'
+                      metricRelabelings:
+                        - action: replace
+                          sourceLabels: ['node']
+                          targetLabel: 'pod'
+                          replacement: '${1}'
                   {{- with .values.hubble }}
                   hubble:
                     {{- toYaml . | nindent 4 }}

@@ -81,6 +81,13 @@ dashboard ConfigMaps in `kube-system`. The
 imports those ConfigMaps through its dashboard syncer; do not add a second
 repository-managed Cilium dashboard there.
 
+The ApplicationSet relabels Cilium agent metrics to a stable `cluster-name/node`
+identity. It also projects that identity into the upstream dashboard's existing
+`pod` label so the dashboard remains compatible with the pinned chart while
+surviving Cilium pod rollouts. The underlying `node` label is the authoritative
+identity for queries and storage; the `pod` label is only a dashboard-compatibility
+alias.
+
 Cilium path MTU discovery is enabled with TCP Packetization Layer PMTUD set to
 `always`, so agents continuously use packetization-layer probing rather than
 waiting for a suspected PMTU black hole. The [Cilium Helm values reference](https://docs.cilium.io/en/stable/helm-values/)
