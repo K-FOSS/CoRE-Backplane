@@ -1,0 +1,13 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: 'grafana-authentik-idp'
+
+spec:
+  endpoints:
+    - fqdn:
+        hostname: 'idp.mylogin.space'
+        port: 443
+  tls:
+    autoSNIFromEndpointHostname: true
+    wellKnownCACertificates: 'System'

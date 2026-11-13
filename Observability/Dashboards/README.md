@@ -210,9 +210,10 @@ The local templates additionally render:
   named `grafana-core-ldap` on every target;
 - an [Envoy Gateway SecurityPolicy](https://gateway.envoyproxy.io/docs/api/extension_types/#securitypolicy)
   that performs Authentik OIDC and JWT validation for the `grafana-core`
-  HTTPRoute. Its OIDC provider uses an Envoy Gateway `Backend` and the
-  documented [OIDC backend retry settings](https://gateway.envoyproxy.io/docs/tasks/security/oidc/#connect-to-an-oidc-provider-with-self-signed-certificate)
-  for transient provider failures;
+  HTTPRoute. Its OIDC provider and JWT remote-JWKS fetch both use the
+  `grafana-authentik-idp` Envoy Gateway `Backend` for the Authentik HTTPS FQDN,
+  with system CA validation, explicit authorization/token endpoints, and
+  bounded retries for transient 5xx, gateway, and connection-reset failures;
 - hub-only Crossplane `User` and
   [Terraform Workspace](https://marketplace.upbound.io/providers/upbound/provider-terraform/latest/resources/tf.upbound.io/Workspace/v1beta1)
   resources, plus [PushSecrets](https://external-secrets.io/latest/api/pushsecret/)
