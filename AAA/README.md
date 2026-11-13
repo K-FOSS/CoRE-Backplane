@@ -23,6 +23,8 @@ Every selected cluster receives:
 - the current `idp.mylogin.space` HTTPRoute and a separate K8GB route for
   `idp.gslb.mylogin.space`, plus Envoy Gateway traffic/security
   policies and cross-namespace ReferenceGrants;
+- the `aaa-core-authentik` Cilium ClusterMesh Service, which publishes local
+  Authentik server endpoints to peer clusters with local affinity; and
 - optional LDAP, RADIUS, and proxy outpost Deployments and Services; and
 - optional Envoy `Backend` objects for peer Authentik clusters.
 
@@ -31,6 +33,10 @@ ApplicationSet sets to `idp.mylogin.space`. Its separate K8GB HTTPRoute uses
 `idp.gslb.mylogin.space` as the per-cluster route and is referenced by
 a `Gslb` advertising `idp.mylogin.space`. K8GB owns the global DNS decision;
 the per-cluster route sends traffic only to the local Authentik Service. The
+AAA GSLB uses the `failover` strategy with `primaryGeoTag: home1`, making the
+YVR `core-home1-talos-prod` site the hub while retaining the YXL `dc1` site as
+the failover peer. Every AAA child Application receives that primary geotag so
+both K8GB controllers reconcile the same hub selection. The
 current route can still include explicitly configured peer Backends. The same
 external origin is supplied to Authentik through
 `AUTHENTIK_WEB__BASE_URL`; Authentik requires only the scheme and host,
@@ -249,10 +255,9 @@ default and should be treated as legacy rather than a general OpenLDAP chart.
 `idp.gslb.mylogin.space` K8GB route. Neither route uses the
 `wan-mode` label: the K8GB route publishes its explicit hostname through the
 ExternalDNS annotations and K8GB's `Gslb` resource advertises the global
-hostname. A BackendTrafficPolicy configures active readiness checks against
-`/-/health/ready/`, request timeouts, and two retries for transient
-connection/reset failures, selected 5xx/408/429 responses, and per-attempt
-timeouts on both routes. A SecurityPolicy applies CORS rules to both routes.
+hostname. Each HTTPRoute retries five times for HTTP 404/500 responses with a
+100 ms backoff and has unlimited route/backend request timeouts. A
+SecurityPolicy applies CORS rules to both routes.
 
 The ReferenceGrant permits SecurityPolicies from a fixed set of namespaces to
 reference the Authentik server and proxy Services. Adding a namespace expands
@@ -260,6 +265,16 @@ which workloads may delegate authentication to AAA; review it as an
 authorization boundary. `core-net-prod` is included for the OpenNMS Insight
 SecurityPolicy, whose workload requires that namespace's privileged Pod
 Security profile for `NET_RAW`.
+
+`aaa-core-authentik` is a separate internal Service for cross-cluster
+consumers on the configured ClusterMesh peers. Cilium marks it global, shares
+the service identity across the ClusterMesh members, synchronizes EndpointSlices,
+and prefers local endpoints. It selects only the Authentik server pods and
+exposes the upstream chart's HTTP and HTTPS ports. The public `aaa-authentik`
+and K8GB routes continue to use the site-local `aaa-authentik-server` Service,
+so route policy and peer Backend behavior remain unchanged. See the [Cilium global Services
+documentation](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
+and [Kubernetes Service documentation](https://kubernetes.io/docs/concepts/services-networking/service/).
 
 The HTTPRoute hostname, Gateway section name, CORS origin, Vault paths, and
 some namespaces/domains are currently hardcoded. The
