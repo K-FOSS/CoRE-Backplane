@@ -93,6 +93,13 @@ The K8GB `Gslb` owns the global record. See the [K8GB resource reference](https:
 [K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/), and
 [ExternalDNS Gateway API source](https://github.com/kubernetes-sigs/external-dns/tree/master/provider/kubernetes-sources).
 
+The route uses an Envoy Gateway `BackendTrafficPolicy` that prefers local-zone
+Tempo gateway endpoints, actively checks `/ready`, and passively ejects
+endpoints returning repeated 5xx responses before falling back to
+Cilium-synchronized remote endpoints. The existing JWT SecurityPolicy remains
+required. K8GB's current `roundRobin` strategy is unchanged because K8GB does
+not provide zone-local DNS selection without GeoIP/EDNS0 configuration.
+
 Build and validate locally with:
 
 ```bash
