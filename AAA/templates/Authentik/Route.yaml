@@ -36,10 +36,17 @@ spec:
           name: aaa-server-{{ $peer.cluster }}
           weight: 1
         {{- end }}
+
+      retry:
+        attempts: 5
+        backoff: 100ms
+        codes:
+          - 500
+          - 404
       
       timeouts:
-        backendRequest: 10s
-        request: 20s
+        backendRequest: 0s
+        request: 0s
 
       matches:
         - path:

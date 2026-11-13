@@ -13,26 +13,5 @@ spec:
 
   timeout:
     http:
-      requestTimeout: 120s
+      requestTimeout: 0s
       maxStreamDuration: 0s
-
-  retry:
-    numRetries: 2
-    retryOn:
-      triggers:
-        - connect-failure
-        - refused-stream
-        - reset
-        - retriable-status-codes
-      httpStatusCodes:
-        - 408
-        - 429
-        - 500
-        - 502
-        - 503
-        - 504
-    perRetry:
-      timeout: 8s
-      backOff:
-        baseInterval: 100ms
-        maxInterval: 1s
