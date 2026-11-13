@@ -97,7 +97,7 @@ with the `grafana_dashboard` key, then imports their JSON through the
 authenticated Grafana API. Repository-managed dashboards use the value `'true'`;
 the syncer does not filter on the value so chart-managed dashboards using `'1'`
 are also accepted. The syncer watches only the explicitly configured
-`core-prod`, `kube-system`, and `longhorn-system` namespaces through separate
+`core-prod`, `k8gb`, `kube-system`, and `longhorn-system` namespaces through separate
 namespace-scoped Roles and RoleBindings. Folder discovery uses Grafana's
 [current folder API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/folder/)
 and creates a deterministic cluster folder with dashboard-type subfolders, for
