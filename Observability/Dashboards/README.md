@@ -150,13 +150,10 @@ interval. This affects query and refresh resolution only; the WAN-GW2 scrape
 currently runs every 30 seconds, so intervals shorter than that cannot recover
 samples that were not collected.
 
-The `grafana-dashboard-cilium` ConfigMap imports the pinned [Cilium Agent
-dashboard](https://grafana.com/grafana/dashboards/16611-cilium-v1-12-agent-metrics/),
-[Cilium Operator dashboard](https://grafana.com/grafana/dashboards/16612-cilium-v1-12-operator-metrics/),
-and [Cilium Hubble dashboard](https://grafana.com/grafana/dashboards/16613-cilium-v1-12-hubble-metrics/)
-revisions into the cluster-local `Cilium` folder. It uses the
-`grafana_dashboard: 'true'` selector and the target-directory annotation so the
-dashboard syncer does not create an unlabeled root-folder copy.
+Cilium dashboards are provided by the Cilium Helm release in the
+[Network/Base stack](../../Network/Base/README.md), which enables the chart's
+dashboard ConfigMaps in `kube-system`. This stack only watches and imports
+those ConfigMaps; it does not create a duplicate Cilium dashboard definition.
 
 The hub Authentik Workspace creates the `Grafana Dashboard Sync` group once.
 Each dashboard Application then creates its own `mylogin.space` `User` with a

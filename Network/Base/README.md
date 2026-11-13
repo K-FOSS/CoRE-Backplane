@@ -66,6 +66,13 @@ The primary value groups are `cilium`, `hubble`, `sriov-network-operator`, `cf-d
 belong in the owning ApplicationSet rather than as additional literals in this
 directory.
 
+The Cilium chart's `cilium.dashboards.enabled` value is enabled, so the Cilium
+release remains the authoritative source for the agent, operator, and Hubble
+dashboard ConfigMaps in `kube-system`. The
+[Observability/Dashboards stack](../../Observability/Dashboards/README.md)
+imports those ConfigMaps through its dashboard syncer; do not add a second
+repository-managed Cilium dashboard there.
+
 Cilium path MTU discovery is enabled with TCP Packetization Layer PMTUD set to
 `always`, so agents continuously use packetization-layer probing rather than
 waiting for a suspected PMTU black hole. The [Cilium Helm values reference](https://docs.cilium.io/en/stable/helm-values/)
