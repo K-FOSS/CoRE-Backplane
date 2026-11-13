@@ -83,7 +83,7 @@ every 30 seconds; the metrics webservers are bound to internal addresses and
 allow only private network ranges. See the [dnsdist Prometheus endpoint
 documentation](https://www.dnsdist.org/guides/webserver.html), the [Recursor
 Prometheus endpoint](https://doc.powerdns.com/recursor/http-api/prometheus.html),
-and the [Grafana dnsdist dashboard](https://grafana.com/grafana/dashboards/13692-dnsdist-dashboard/).
+and the [Grafana dnsdist dashboard](https://grafana.com/grafana/dashboards/20422-dnsdist/).
 The dashboard ConfigMap is owned by this stack and imported by the shared
 [Grafana dashboard syncer](../../Observability/Dashboards/README.md).
 
