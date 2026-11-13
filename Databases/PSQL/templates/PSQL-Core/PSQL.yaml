@@ -29,7 +29,8 @@ spec:
     - name: postgres-exporter
       image: '{{ .Values.monitoring.postgresExporter.image }}'
       imagePullPolicy: 'IfNotPresent'
-      args:
+      command:
+        - '/usr/local/bin/pg_exporter'
         - '--port'
         - '{{ .Values.monitoring.postgresExporter.port }}'
         {{- range .Values.monitoring.postgresExporter.collectors }}
