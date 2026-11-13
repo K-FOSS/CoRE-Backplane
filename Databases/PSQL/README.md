@@ -74,7 +74,12 @@ those runtime values through standard PostgreSQL environment variables and
 connects to the local PostgreSQL process over loopback. Credentials are never
 stored in chart values or annotations.
 
-The sidecar exposes port 9432, the pinned `pg_exporter` image default. The
+The sidecar connects to PostgreSQL over TLS with `sslmode=require` and exposes
+port 9432, the pinned `pg_exporter` image default. Its `tls` collector reports
+PostgreSQL certificate and connection-encryption metrics; its `system`
+collector reports CPU, load, memory, and swap metrics from the exporter host.
+The sidecar has explicit `10m`/`32Mi` requests and `100m`/`128Mi` limits under
+`monitoring.postgresExporter.resources`. The
 metrics Services retain their existing 9187 Service port and target the sidecar
 on 9432 during this transition. This chart creates one internal ClusterIP
 metrics Service and one `ServiceMonitor` for `psql-main` and the site-local
@@ -115,7 +120,7 @@ ApplicationSet.
 Chart dependencies are pinned to the
 [BJW-S common library 4.6.2](https://github.com/bjw-s-labs/helm-charts/releases/tag/common-4.6.2)
 and the
-[Runix pgAdmin4 chart 1.65.0](https://artifacthub.io/packages/helm/runix/pgadmin4/1.65.0).
+[Runix pgAdmin4 chart 1.71.0](https://artifacthub.io/packages/helm/runix/pgadmin4/1.71.0).
 Exact versions keep Lovely dependency resolution and rendered manifests
 deterministic. Common 4.6.2 is the newest v4 release and supports Kubernetes
 1.28 and newer; common 5 requires Kubernetes 1.31 and Helm 3.18 across every
