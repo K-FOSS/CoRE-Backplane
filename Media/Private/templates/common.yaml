@@ -42,7 +42,7 @@ controllers:
       whisparr:
         image:
           repository: {{ $.Values.whisparr.image }}
-          tag: {{ default "latest" $.Values.whisparr.tag }}
+          tag: {{ required "whisparr.tag is required" $.Values.whisparr.tag | squote }}
           pullPolicy: IfNotPresent
 
         env:
@@ -90,7 +90,7 @@ controllers:
       metube:
         image:
           repository: {{ $.Values.metube.image }}
-          tag: {{ default "latest" $.Values.metube.tag }}
+          tag: {{ required "metube.tag is required" $.Values.metube.tag | squote }}
           pullPolicy: IfNotPresent
 
         env:
