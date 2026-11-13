@@ -51,7 +51,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | [PureLB](https://purelb.gitlab.io/purelb/) | Enabled Helm dependency using the Cilium announcer and `purelb.io/purelb` load-balancer class. |
 | [KubeVIP](https://kube-vip.io/docs/usage/kubernetes-services/) and [kube-vip-cloud-provider](https://kube-vip.io/docs/usage/cloud-provider/) | Optional LoadBalancer implementation using ARP on a Multus secondary network. Separate load-balancer class `kube-vip.io/kube-vip-class`; disabled by default. See the [KubeVIP source and releases](https://github.com/kube-vip/kube-vip) and [cloud-provider source](https://github.com/kube-vip/kube-vip-cloud-provider). |
 | [netshoot](https://github.com/nicolaka/netshoot) | Optional `netshoot` diagnostic sidecar in the KubeVIP DaemonSet. It shares the pod network namespace and is enabled for Home1; its image is pinned to `ghcr.io/nicolaka/netshoot:v0.16`. |
-| [Envoy Gateway](https://gateway.envoyproxy.io/docs/) | Enabled OCI Helm dependency with two replicas, controller and proxy Prometheus monitoring, Envoy dashboards, and Backend and EnvoyPatchPolicy extension APIs. Follow its [Helm installation and upgrade guidance](https://gateway.envoyproxy.io/docs/install/install-helm/) and [Grafana integration guidance](https://gateway.envoyproxy.io/v1.9/tasks/observability/grafana-integration/). |
+| [Envoy Gateway](https://gateway.envoyproxy.io/docs/) | Enabled OCI Helm dependencies with two replicas, controller and proxy Prometheus monitoring, the pinned [Gateway Add-ons chart](https://github.com/envoyproxy/gateway/tree/v1.10.0/charts/gateway-addons-helm), Envoy dashboards, and Backend and EnvoyPatchPolicy extension APIs. Follow its [Helm installation and upgrade guidance](https://gateway.envoyproxy.io/docs/install/install-helm/) and [Grafana integration guidance](https://gateway.envoyproxy.io/latest/tasks/observability/grafana-integration/). |
 | [FRR-K8s](https://github.com/metallb/frr-k8s) | Enabled Helm dependency. The ApplicationSet replaces its startup daemon configuration and permits incoming BGP connections. |
 
 The remote Multus dynamic controller, SR-IOV CNI, and SR-IOV device-plugin
@@ -62,9 +62,17 @@ references on every change, and pin both before treating a render as reproducibl
 ## Values and generated resources
 
 The primary value groups are `cilium`, `hubble`, `sriov-network-operator`, `cf-dns`,
-`sriovDevicePlugin`, `purelb`, `kubeVip`, `envoy-gw`, and `frr-k8s`. Site-specific values
+`sriovDevicePlugin`, `purelb`, `kubeVip`, `envoy-gw`, `envoy-addons`, and `frr-k8s`. Site-specific values
 belong in the owning ApplicationSet rather than as additional literals in this
 directory.
+
+The pinned [Gateway Add-ons Helm chart](https://github.com/envoyproxy/gateway/tree/v1.10.0/charts/gateway-addons-helm)
+is enabled only for its bundled Envoy dashboard ConfigMap. Its Prometheus,
+Grafana, Fluent Bit, Alloy, Loki, Tempo, and OpenTelemetry Collector
+dependencies remain disabled because those shared services are owned by other
+stacks. The dashboard ConfigMap is labelled for the
+[Grafana dashboard syncer](../../Observability/Dashboards/README.md) and placed
+in the `Envoy` folder.
 
 The Cilium chart's `cilium.dashboards.enabled` value is enabled, so the Cilium
 release remains the authoritative source for the agent, operator, and Hubble
