@@ -91,6 +91,9 @@ describe the mode and its trade-offs. Verify the effective value with
 The Cilium agent CPU request is set to `128m` with `cilium.resources.requests.cpu`;
 this chart value configures the agent container's resource requests in the pinned
 [Cilium 1.20.4 chart values](https://github.com/cilium/cilium/blob/v1.20.4/install/kubernetes/cilium/values.yaml).
+The YVR `core-home1-talos-prod` ApplicationSet entry additionally sets the
+Cilium agent memory request to `512Mi` and memory limit to `4Gi`; YXL retains the
+chart default memory behavior.
 
 Cilium extended IP protocols are enabled through `cilium.extraConfig` so
 protocols without transport-layer ports, including VRRP and IGMP, can be
