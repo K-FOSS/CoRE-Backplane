@@ -43,7 +43,7 @@ controllers:
       radarr:
         image:
           repository: {{ $.Values.radarr.image }}
-          tag: {{ default "latest" $.Values.radarr.tag }}
+          tag: {{ required "radarr.tag is required" $.Values.radarr.tag | squote }}
           pullPolicy: IfNotPresent
 
         ports:
