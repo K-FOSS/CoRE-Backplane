@@ -75,7 +75,12 @@ which deploys Grafana `13.2.3`.
 The release renders one Grafana replica named `grafana-core`, a local ClusterIP
 Service, a dedicated dashboard-sync Deployment and RBAC, a central dashboard
 API Service, and an HTTPRoute for
-`grafana.int.mylogin.space` attached to `core-prod/main-gw`. The upstream chart
+`grafana.int.mylogin.space` attached to `core-prod/main-gw`. The site route is
+private and the chart additionally renders a `grafana.gslb.mylogin.space`
+HTTPRoute plus a K8GB `Gslb` advertising `grafana.int.mylogin.space`; K8GB owns
+the global DNS decision while each site route sends traffic to its local
+Grafana Service. See the [K8GB resource reference](https://www.k8gb.io/latest/resource_ref/)
+and [K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/). The upstream chart
 provides the [Grafana configuration values](https://github.com/grafana-community/helm-charts/blob/grafana-13.5.0/charts/grafana/values.yaml)
 and container defaults; local values deliberately override its authentication,
 database, routing, plugin, and dashboard-discovery behavior.

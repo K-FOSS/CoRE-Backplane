@@ -8,6 +8,11 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: grafana-core
+{{- if .Values.k8gb.enabled }}
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: grafana-core-k8gb
+{{- end }}
 
   jwt:
     optional: false
@@ -19,7 +24,7 @@ spec:
           cacheDuration: '3600s'
           backendRefs:
             - group: 'gateway.envoyproxy.io'
-              kind: 'Backend'
+              kind: Backend
               name: 'grafana-authentik-idp'
               port: 443
           backendSettings:
@@ -63,7 +68,7 @@ spec:
       issuer: 'https://idp.mylogin.space/application/o/grafana-test/'
       backendRefs:
         - group: 'gateway.envoyproxy.io'
-          kind: 'Backend'
+          kind: Backend
           name: 'grafana-authentik-idp'
           port: 443
           weight: 1

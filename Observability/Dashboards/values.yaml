@@ -7,6 +7,12 @@ cluster:
   datacenter: 'dc1'
   region: 'yxl'
 
+k8gb:
+  enabled: false
+  domain: 'gslb.mylogin.space'
+  strategy: 'roundRobin'
+  dnsTtlSeconds: 30
+
 grafana:
   fullnameOverride: 'grafana-core'
 
@@ -16,7 +22,7 @@ grafana:
     main:
       enabled: true
       labels:
-        wan-mode: 'public'
+        lan-mode: 'private'
       hostnames:
         - 'grafana.int.mylogin.space'
       parentRefs:
