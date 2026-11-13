@@ -1,6 +1,6 @@
 # Photos
 
-This rendering unit deploys Immich `v3.3.5` directly with the [BJW-S common
+This rendering unit deploys Immich `v3.4.1` directly with the [BJW-S common
 library](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common)
 at `photos.mylogin.space`. The server and machine-learning workloads remain
 `photos-server` and `photos-machine-learning`; the shared Dragonfly TLS proxy
@@ -19,8 +19,8 @@ database. See [Immich's Smart Search model guidance](https://docs.immich.app/fea
 
 The chart currently deploys Immich's API and microservices together in the
 single `photos-server` Deployment. The deployment does not override Immich's
-worker selection; this follows the v3.3.5 server process model described in
-the [upstream worker source](https://github.com/immich-app/immich/blob/v3.3.5/server/src/main.ts).
+worker selection; this follows the v3.4.1 server process model described in
+the [upstream worker source](https://github.com/immich-app/immich/blob/v3.4.1/server/src/main.ts).
 
 The Immich library is a dedicated `50Gi` Longhorn `ReadWriteMany` PVC named
 `photos-library`, using the `photos-library` StorageClass. The StorageClass
@@ -68,8 +68,8 @@ The connection Secret is published by the [Crossplane Terraform provider](https:
 Workspace rather than by a separate OIDC password generator.
 
 The Intel machine-learning Deployment is pinned to the `laptop2` Kubernetes
-node and uses Immich's `v3.3.5-openvino` image with the host `/dev/dri` device
-directory. CUDA runners use the `v3.3.5-cuda` image and inherit their configured
+node and uses Immich's `v3.4.1-openvino` image with the host `/dev/dri` device
+directory. CUDA runners use the `v3.4.1-cuda` image and inherit their configured
 NVIDIA resource and scheduling constraints. See Immich's [ML hardware acceleration documentation](https://docs.immich.app/features/ml-hardware-acceleration/).
 The Dragonfly password is pulled into the namespace by an
 [ExternalSecret](https://external-secrets.io/latest/api/externalsecret/)

@@ -115,6 +115,7 @@ controllers:
         image:
           repository: 'ghcr.io/immich-app/immich-server'
           tag: {{ required "immich.version is required" .Values.immich.version | squote }}
+          digest: {{ required "immich.imageDigest is required" .Values.immich.imageDigest | squote }}
         env:
           IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
           IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}:3003'
@@ -194,6 +195,7 @@ controllers:
         image:
           repository: 'ghcr.io/immich-app/immich-machine-learning'
           tag: {{ printf "%s-%s" $.Values.immich.version (include "photos.mlImageTag" $runner) | squote }}
+          digest: {{ required (printf "immich.mlImageDigests.%s is required" $runner.type) (index $.Values.immich.mlImageDigests $runner.type) | squote }}
         {{- with $runner.resources }}
         resources:
 {{ toYaml . | nindent 10 }}
