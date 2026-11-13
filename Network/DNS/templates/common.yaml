@@ -46,6 +46,11 @@ controllers:
           - name: 'dns-tcp'
             containerPort: {{ .Values.dnsdist.port }}
             protocol: 'TCP'
+          {{- if .Values.dnsdist.metrics.enabled }}
+          - name: 'metrics'
+            containerPort: {{ .Values.dnsdist.metrics.dnsdistPort }}
+            protocol: 'TCP'
+          {{- end }}
         args:
           - '-C'
           - '/etc/dnsdist/dnsdist.conf'
@@ -182,6 +187,11 @@ controllers:
           - name: 'recursor-tcp'
             containerPort: {{ .Values.dnsdist.recursor.port }}
             protocol: 'TCP'
+          {{- if .Values.dnsdist.metrics.enabled }}
+          - name: 'metrics'
+            containerPort: {{ .Values.dnsdist.metrics.recursorPort }}
+            protocol: 'TCP'
+          {{- end }}
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -242,9 +252,26 @@ service:
         port: {{ .Values.dnsdist.port }}
         targetPort: 'dns-tcp'
         protocol: 'TCP'
+  metrics:
+    controller: main
+    forceRename: 'dnsdist-metrics'
+    type: ClusterIP
+    labels:
+      app.kubernetes.io/name: 'dnsdist'
+      app.kubernetes.io/component: 'metrics'
+    ports:
+      metrics:
+        enabled: {{ .Values.dnsdist.metrics.enabled }}
+        primary: true
+        port: {{ .Values.dnsdist.metrics.servicePort }}
+        targetPort: 'metrics'
+        protocol: 'TCP'
   recursor:
     controller: recursor
     forceRename: 'recursor-discovery'
+    labels:
+      app.kubernetes.io/name: 'recursor'
+      app.kubernetes.io/component: 'metrics'
     type: ClusterIP
     clusterIP: 'None'
     ipFamilyPolicy: 'SingleStack'
@@ -262,6 +289,14 @@ service:
         port: {{ .Values.dnsdist.recursor.port }}
         targetPort: 'recursor-tcp'
         protocol: 'TCP'
+      {{- if .Values.dnsdist.metrics.enabled }}
+      metrics:
+        enabled: true
+        primary: true
+        port: {{ .Values.dnsdist.metrics.recursorPort }}
+        targetPort: 'metrics'
+        protocol: 'TCP'
+      {{- end }}
 
 networkpolicies:
   recursor:
@@ -281,6 +316,11 @@ networkpolicies:
               port: {{ .Values.dnsdist.recursor.port }}
             - protocol: 'TCP'
               port: {{ .Values.dnsdist.recursor.port }}
+        - from:
+            - podSelector: {}
+          ports:
+            - protocol: 'TCP'
+              port: {{ .Values.dnsdist.metrics.recursorPort }}
       egress:
         - ports:
             - protocol: 'UDP'

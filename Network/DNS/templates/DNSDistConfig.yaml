@@ -50,6 +50,16 @@ data:
       servfail_ttl: {{ .Values.dnsdist.recursor.packetCache.servfailTtl }}
     dnssec:
       validation: {{ .Values.dnsdist.recursor.dnssecValidation | quote }}
+    webservice:
+      webserver: {{ .Values.dnsdist.metrics.enabled }}
+      address: '0.0.0.0'
+      port: {{ .Values.dnsdist.metrics.recursorPort }}
+      allow_from:
+        - '10.0.0.0/8'
+        - '100.64.0.0/10'
+        - '172.16.0.0/12'
+        - '192.168.0.0/16'
+        - 'fc00::/7'
     outgoing:
       tcp_fast_open_connect: {{ .Values.dnsdist.recursor.outgoingTcpFastOpenConnect }}
       dont_query:
@@ -279,4 +289,12 @@ data:
     setPoolServerPolicy(roundrobin, 'authoritative')
     setPoolServerPolicy(roundrobin, 'recursive')
     end
+    {{- if .Values.dnsdist.metrics.enabled }}
+    webserver('0.0.0.0:{{ .Values.dnsdist.metrics.dnsdistPort }}')
+    setWebserverConfig({
+      statsRequireAuthentication=false,
+      acl='10.0.0.0/8, 100.64.0.0/10, 172.16.0.0/12, 192.168.0.0/16, fc00::/7',
+      prometheusAddInstanceLabel=true
+    })
+    {{- end }}
     {{- end }}

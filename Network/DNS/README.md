@@ -73,6 +73,20 @@ The full DNSSEC validation mode and the TCP, socket, and cache limits are
 configured through the Recursor's
 [YAML settings](https://doc.powerdns.com/recursor/yamlsettings.html).
 
+## Prometheus metrics
+
+The chart enables the native PowerDNS metrics endpoints rather than adding a
+duplicate exporter container. dnsdist exposes `/metrics` on its internal
+`dnsdist-metrics` Service, and the Recursor exposes `/metrics` on the
+`recursor-discovery` Service's metrics port. Both are scraped by ServiceMonitors
+every 30 seconds; the metrics webservers are bound to internal addresses and
+allow only private network ranges. See the [dnsdist Prometheus endpoint
+documentation](https://www.dnsdist.org/guides/webserver.html), the [Recursor
+Prometheus endpoint](https://doc.powerdns.com/recursor/http-api/prometheus.html),
+and the [Grafana dnsdist dashboard](https://grafana.com/grafana/dashboards/13692-dnsdist-dashboard/).
+The dashboard ConfigMap is owned by this stack and imported by the shared
+[Grafana dashboard syncer](../../Observability/Dashboards/README.md).
+
 The Recursor permits outgoing DNS queries to RFC 1918 and IPv6 ULA addresses so
 delegations for domains with private authoritative nameservers can resolve. Its
 `outgoing.dont_query` list continues to block loopback, link-local, and

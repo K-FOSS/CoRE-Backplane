@@ -1,0 +1,45 @@
+{{- if and .Values.dnsdist.enabled .Values.dnsdist.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: 'dnsdist'
+  labels:
+    app.kubernetes.io/name: 'dnsdist'
+    app.kubernetes.io/component: 'monitoring'
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 'dnsdist'
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: 'metrics'
+  endpoints:
+    - port: 'metrics'
+      path: '/metrics'
+      interval: {{ .Values.dnsdist.metrics.interval | quote }}
+      scrapeTimeout: {{ .Values.dnsdist.metrics.scrapeTimeout | quote }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: 'recursor'
+  labels:
+    app.kubernetes.io/name: 'recursor'
+    app.kubernetes.io/component: 'monitoring'
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace | quote }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: 'recursor'
+      app.kubernetes.io/instance: {{ .Release.Name | quote }}
+      app.kubernetes.io/component: 'metrics'
+  endpoints:
+    - port: 'metrics'
+      path: '/metrics'
+      interval: {{ .Values.dnsdist.metrics.interval | quote }}
+      scrapeTimeout: {{ .Values.dnsdist.metrics.scrapeTimeout | quote }}
+{{- end }}
