@@ -355,6 +355,44 @@ Names may vary with the Helm release. First check ExternalSecret readiness and
 PostgreSQL connectivity, then Authentik migrations/server readiness, worker
 health, outpost token validity, Gateway routing, and finally external DNS.
 
+## Known application-list latency
+
+The Authentik admin Applications page can take close to one second or more to
+load. The affected endpoint is `/api/v3/core/applications/`. This is a known
+upstream Authentik performance bug involving redundant application queries and
+stale PostgreSQL planner statistics; track [Authentik issue
+#25288](https://github.com/goauthentik/authentik/issues/25288) for the current
+upstream status.
+
+The observed Home1 profile showed approximately 0.7 seconds average request
+latency across the two server replicas, while the corresponding application
+SELECT statements normally executed in roughly 10–12 ms. PostgreSQL had stale
+estimates for Authentik's small policy/application tables and `jit` was enabled,
+which can make a poor multi-join plan substantially slower. This indicates an
+Authentik ORM/policy-evaluation and planner-statistics problem rather than
+general PostgreSQL CPU, connection, or storage saturation.
+
+### Temporary database remediation
+
+After confirming the active writable PostgreSQL primary, refresh the affected
+planner statistics with the standard PostgreSQL [`ANALYZE`](https://www.postgresql.org/docs/17/sql-analyze.html)
+command:
+
+```sh
+kubectl --context logged-user -n core-prod exec <active-psql-primary> -c postgres -- \
+  psql -U postgres -d <authentik-database> -v ON_ERROR_STOP=1 -c \
+  'ANALYZE authentik_policies_policybindingmodel;
+   ANALYZE authentik_core_application;
+   ANALYZE authentik_core_provider;
+   ANALYZE authentik_providers_oauth2_oauth2provider;'
+```
+
+Recheck the application-list latency after refreshing statistics. If it remains
+slow, compare a controlled test with PostgreSQL JIT disabled for the Authentik
+database/session; do not change the production PostgreSQL setting without a
+reviewed PSQL change and a rollback plan. The `ANALYZE` action is maintenance
+only and does not modify Authentik records, permissions, or credentials.
+
 ## Change safety and recovery
 
 - AAA is a shared login dependency. Preserve an Authentik admin or break-glass
