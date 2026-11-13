@@ -55,6 +55,17 @@ psql:
       cpu: '6'
       memory: '16Gi'
 
+  # Resource profile for the site-local PostgreSQL cluster. The fleet
+  # ApplicationSet overrides this independently from the shared psql-main
+  # profile because the local primary and global standby have different load.
+  localResources:
+    requests:
+      cpu: '100m'
+      memory: '1Gi'
+    limits:
+      cpu: '4'
+      memory: '8Gi'
+
   secretStore:
     - name: mainvault-core
       kind: ClusterSecretStore

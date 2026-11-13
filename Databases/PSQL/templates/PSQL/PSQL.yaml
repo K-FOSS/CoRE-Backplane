@@ -43,6 +43,9 @@ spec:
 
   numberOfInstances: 3
 
+  resources:
+    {{- toYaml .Values.psql.localResources | nindent 4 }}
+
   {{- with .Values.psql.tolerations }}
   tolerations:
     {{- toYaml . | nindent 4 }}
