@@ -90,6 +90,13 @@ spec:
                   psql:
                     crossplaneProvider: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
                     terraformProvider: 'psql-{{ .values.datacenter }}-{{ .values.region }}'
+                    replica:
+                      enabled: true
+                      host: 'psql-local-rep.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                      port: 5432
+                      database: 'mastodon_production'
+                      tasks: false
+                      preparedStatements: false
                   s3:
                     crossplaneProvider: 's3-{{ .values.region }}-{{ .values.datacenter }}-core'
                     terraformProvider: 's3-{{ .values.region }}-{{ .values.datacenter }}-core'
