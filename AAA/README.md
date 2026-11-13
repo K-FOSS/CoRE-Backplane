@@ -20,45 +20,65 @@ Every selected cluster receives:
 - the upstream Authentik server and worker;
 - ExternalSecrets for database credentials and the shared Authentik service
   user;
-- the public `idp.mylogin.space` HTTPRoute, Envoy Gateway traffic/security
-  policies, and cross-namespace ReferenceGrants;
+- the current `idp.mylogin.space` HTTPRoute and a separate K8GB route for
+  `idp.gslb.mylogin.space`, plus Envoy Gateway traffic/security
+  policies and cross-namespace ReferenceGrants;
 - optional LDAP, RADIUS, and proxy outpost Deployments and Services; and
 - optional Envoy `Backend` objects for peer Authentik clusters.
 
-The HTTPRoute hostnames come from `route.hostnames`, which the fleet
-ApplicationSet currently sets to `idp.mylogin.space`. It sends traffic to the
-local Authentik server and every configured peer backend with equal weight.
-This provides multi-cluster reachability, but it also means a bad peer endpoint
-can affect the shared identity hostname. The same external origin is supplied
-to Authentik through `AUTHENTIK_WEB__BASE_URL`; Authentik requires only the
-scheme and host, without a path. See the [Authentik base URL
+The current HTTPRoute hostname comes from `route.hostnames`, which the fleet
+ApplicationSet sets to `idp.mylogin.space`. Its separate K8GB HTTPRoute uses
+`idp.gslb.mylogin.space` as the per-cluster route and is referenced by
+a `Gslb` advertising `idp.mylogin.space`. K8GB owns the global DNS decision;
+the per-cluster route sends traffic only to the local Authentik Service. The
+current route can still include explicitly configured peer Backends. The same
+external origin is supplied to Authentik through
+`AUTHENTIK_WEB__BASE_URL`; Authentik requires only the scheme and host,
+without a path. See the [K8GB HTTPRoute resource reference](https://www.k8gb.io/latest/resource_ref/)
+and [Authentik base URL
 documentation](https://docs.goauthentik.io/install-config/configuration/#authentik_web__base_url).
 
-Authentik uses `psql-int.mylogin.space` for both its writable primary and
-session-scoped direct connections on every site. The [PostgreSQL fleet
-ApplicationSet](../Apps/Storage/PSQL.yaml) currently places the writable hub at
-HOME1 and publishes this global name from that site's master Service. The AAA
-fleet ApplicationSet gives server and worker pods on DC1 Talos
-an [Authentik read-replica connection](https://docs.goauthentik.io/install-config/configuration/#read-replicas)
-to the DC1 Talos `psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space` endpoint.
-That endpoint is a PostgreSQL standby, so it must never be used as
-Authentik's primary or direct connection. The replica host comes from the
-`aaa-authentik-read-replica` ConfigMap; database name, user, and password come
-from the existing `aaa-authentik-database` Secret. HOME1 does not configure a
-read replica. PostgreSQL and AAA select their hubs independently: AAA's `hub`
-value controls the `authentik-core` credential producer, not database
-leadership.
+The [AAA chart values](values.yaml) set Authentik's default and session-scoped
+direct database connections to `psql-int.mylogin.space`. The [PostgreSQL fleet
+ApplicationSet](../Apps/Storage/PSQL.yaml) places the writable hub at HOME1 and
+publishes this global name from its master Service. The [AAA fleet
+ApplicationSet](../Apps/AAA/AAA.yaml) changes only the DC1 Talos server's
+default connection to its site-local PGPool Service,
+`psql.core-dc1-talos-prod.dc1.yxl.mylogin.space`. The server keeps the global
+direct endpoint for Channels LISTEN/NOTIFY, worker advisory locks, and startup
+migrations, following [Authentik's pooler guidance](https://docs.goauthentik.io/install-config/configuration/#session-scoped-operations-and-transaction-mode-poolers).
+The ApplicationSet renders the site hostname before Kustomize patches the
+Deployment. Kubernetes places the patched database host before the shared
+cluster-name environment entries, so `$(CLUSTER_NAME)` style references there
+would remain literal and fail DNS resolution.
+It disables server-side cursors for the pooled connection, checks connection
+health, and limits connection age to 60 seconds.
 
-The primary/direct environment entries remain in the [AAA chart
-values](values.yaml), while the [AAA fleet ApplicationSet](../Apps/AAA/AAA.yaml)
-adds replica environment entries to both server and worker on DC1 Talos.
-The [upstream Helm chart's server and worker templates](https://github.com/goauthentik/helm/tree/authentik-2026.8.5/charts/authentik/templates)
-append these per-component entries to the shared environment. The direct
-endpoint bypasses PGPool so Channels LISTEN/NOTIFY, worker advisory locks, and
-startup migrations retain a stable session, as required by
-[Authentik's pooler guidance](https://docs.goauthentik.io/install-config/configuration/#session-scoped-operations-and-transaction-mode-poolers).
-Server replicas default to two with a PodDisruptionBudget; the worker and all
-enabled outposts depend on the shared database and secret-store chain.
+The [PGPool configuration](../Databases/PSQL/templates/PGPool/PGPoolConfigTemplate.yaml)
+routes server writes to the detected primary. DC1 Talos currently has a local
+standby backend and a remote HOME1 primary backend. The DC1 Talos server also
+uses an [Authentik read-replica connection](https://docs.goauthentik.io/install-config/configuration/#read-replicas)
+to its local `psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space` standby for
+eligible reads. Its replica host comes from the `aaa-authentik-read-replica`
+ConfigMap; name, user, and password come from the existing
+`aaa-authentik-database` Secret. The replica connection has a 60-second maximum
+age and a health check before reuse, matching the YXL server's pooled default
+connection. This avoids a new local PostgreSQL handshake on every eligible
+request while allowing closed connections to be replaced. HOME1 does not
+configure an Authentik read replica. PostgreSQL and AAA select their hubs
+independently: AAA's `hub` value controls the `authentik-core` credential
+producer, not database leadership.
+
+The DC1 Talos worker retains its older local PGPool default and local
+`psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space` direct endpoint, without
+an Authentik read-replica connection. The ApplicationSet keeps that worker at
+zero replicas. Its direct endpoint is a PostgreSQL standby and cannot support
+worker writes or session-scoped operations if the worker is enabled. Move its
+direct endpoint to a writable primary before scaling it up. The [upstream Helm
+chart's deployment templates](https://github.com/goauthentik/helm/tree/authentik-2026.8.5/charts/authentik/templates)
+append per-component environment entries to the shared values. Server replicas
+default to two with a PodDisruptionBudget; enabled workers and outposts depend
+on the shared database and secret-store chain.
 
 ## Hub and spoke credential flow
 
@@ -225,9 +245,14 @@ default and should be treated as legacy rather than a general OpenLDAP chart.
 ## Gateway and authorization policy
 
 `aaa-authentik` attaches to the configured shared Gateway and serves
-`idp.mylogin.space`. A BackendTrafficPolicy configures active readiness checks
-against `/-/health/ready/` and request timeouts. A SecurityPolicy applies CORS
-rules.
+`idp.mylogin.space`; `aaa-authentik-k8gb` separately serves the
+`idp.gslb.mylogin.space` K8GB route. Neither route uses the
+`wan-mode` label: the K8GB route publishes its explicit hostname through the
+ExternalDNS annotations and K8GB's `Gslb` resource advertises the global
+hostname. A BackendTrafficPolicy configures active readiness checks against
+`/-/health/ready/`, request timeouts, and two retries for transient
+connection/reset failures, selected 5xx/408/429 responses, and per-attempt
+timeouts on both routes. A SecurityPolicy applies CORS rules to both routes.
 
 The ReferenceGrant permits SecurityPolicies from a fixed set of namespaces to
 reference the Authentik server and proxy Services. Adding a namespace expands
@@ -268,8 +293,8 @@ Before syncing, inspect:
 - which cluster is the only hub;
 - every Secret producer, target name, store, and Vault property;
 - PostgreSQL hostname and database credentials;
-- the local PostgreSQL read replica on DC1 Talos and the global writable
-  endpoint on all sites;
+- the DC1 Talos server's local PGPool and read-replica endpoints, global direct
+  endpoint, and the disabled worker's older local direct endpoint;
 - Authentik server/worker images, replicas, PDB, probes, and resources;
 - enabled outpost Deployments, matching Secrets and Services;
 - LDAP/RADIUS cluster-specific and optional shared ExternalDNS hostnames, plus
@@ -279,20 +304,26 @@ Before syncing, inspect:
 - CRD/API compatibility for Authentik, External Secrets, Gateway/Envoy, and
   Crossplane resources.
 
-Adding or removing the read replica requires restarting the Authentik server
-and worker pods. Before reconciliation, verify the rendered replica host and
-`aaa-authentik-read-replica` ConfigMap on DC1 Talos, and confirm the global name
-resolves to the writable HOME1 master. After reconciliation, confirm writes and
-session-scoped operations reach the global primary, reads reach the local
-standby, and replication lag permits complete browser login, OIDC token
+The Authentik LDAP and proxy outpost resource requests and limits are defined
+in [`values.yaml`](values.yaml) under `authentik.ldap.resources` and
+`authentik.proxy.resources`; the fleet ApplicationSet only supplies
+cluster-specific topology and endpoint settings.
+
+Adding or removing the server read replica requires restarting its pods.
+Before reconciliation, verify the rendered replica host and
+`aaa-authentik-read-replica` ConfigMap on DC1 Talos, and confirm PGPool sees a
+writable HOME1 backend and the global direct name resolves to its master.
+After reconciliation, confirm server writes through PGPool and session-scoped
+direct operations reach the global primary, eligible reads reach the local standby,
+and replication lag permits complete browser login, OIDC token
 issuance, and outpost authentication. A reachable PostgreSQL standby alone does
 not prove Authentik is healthy: replica lag can make recent writes invisible to
 the next read, and loss of the local replica can interrupt reads even while the
 global primary remains available. If the PostgreSQL hub moves, update the AAA
 read-replica site selection in the same change and validate the new global
-endpoint before rolling Authentik. Roll back this routing change by restoring
-the previous AAA values and ApplicationSet merge, then restarting server and
-worker pods; this does not promote PostgreSQL or change stored identity data.
+endpoint before rolling Authentik. Roll back the DC1 server routing by removing
+its ApplicationSet patch and reconciling the server Deployment; this does not
+promote PostgreSQL or change stored identity data.
 
 After reconciliation:
 

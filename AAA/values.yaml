@@ -26,6 +26,12 @@ route:
   hostnames:
     - 'idp.mylogin.space'
 
+k8gb:
+  enabled: false
+  domain: 'gslb.mylogin.space'
+  strategy: 'roundRobin'
+  dnsTtlSeconds: 30
+
 authentik:
   global:
     podLabels:
@@ -136,8 +142,6 @@ authentik:
 
     service:
       annotations: null
-      labels:
-        wan-mode: public
       servicePortHttpAppProtocol: kubernetes.io/ws
       sessionAffinity: None
 

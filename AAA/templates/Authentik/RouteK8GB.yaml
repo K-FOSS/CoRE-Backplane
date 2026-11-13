@@ -1,0 +1,59 @@
+{{- if and .Values.k8gb.enabled (gt (len .Values.route.hostnames) 0) }}
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: aaa-authentik-k8gb
+
+  labels:
+    lan-mode: 'private'
+    resolvemy.host/gw: '{{ .Values.gateway.name }}'
+    resolvemy.host/gw-ns: '{{ .Values.gateway.namespace }}'
+    resolvemy.host/security: 'public'
+    resolvemy.host/env: '{{ .Values.env }}'
+
+  annotations:
+    external-dns.kubernetes.io/hostname: {{ printf "%s.%s" (first (splitList "." (first .Values.route.hostnames))) .Values.k8gb.domain | quote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ printf "%s.%s" (first (splitList "." (first .Values.route.hostnames))) .Values.k8gb.domain | quote }}
+
+spec:
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      namespace: {{ .Values.gateway.namespace }}
+      name: {{ .Values.gateway.name }}
+      sectionName: https-myloginspace
+
+  hostnames:
+    - {{ printf "%s.%s" (first (splitList "." (first .Values.route.hostnames))) .Values.k8gb.domain | quote }}
+  rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-authentik-server
+          port: 80
+          weight: 1
+
+      timeouts:
+        backendRequest: 10s
+        request: 20s
+
+      matches:
+        - path:
+            type: PathPrefix
+            value: /
+---
+apiVersion: k8gb.io/v1beta1
+kind: Gslb
+metadata:
+  name: aaa-authentik
+  annotations:
+    k8gb.io/hostname: {{ first .Values.route.hostnames | quote }}
+spec:
+  resourceRef:
+    apiVersion: gateway.networking.k8s.io/v1
+    kind: HTTPRoute
+    name: aaa-authentik-k8gb
+  strategy:
+    type: {{ .Values.k8gb.strategy | quote }}
+    dnsTtlSeconds: {{ .Values.k8gb.dnsTtlSeconds }}
+{{- end }}
