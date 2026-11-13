@@ -12,7 +12,7 @@ data:
     import re
     from pathlib import Path
     from urllib.error import HTTPError
-    from urllib.parse import quote, urlencode
+    from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
     from urllib.request import Request, urlopen
 
     ROOT = Path(os.environ['FOLDER'])
@@ -119,17 +119,43 @@ data:
         cluster_slug = re.sub(r'[^a-z0-9-]+', '-', cluster_name.lower()).strip('-')[:22]
         return f'{cluster_slug}-{hashlib.sha256(original_uid.encode()).hexdigest()[:12]}'
 
-    def replace_dashboard_links(value, uid_map):
-        if isinstance(value, dict):
-            return {key: replace_dashboard_links(item, uid_map) for key, item in value.items()}
-        if isinstance(value, list):
-            return [replace_dashboard_links(item, uid_map) for item in value]
-        if isinstance(value, str):
-            return re.sub(
-                r'(\./d/)([^/?#]+)(/)',
-                lambda match: f'{match.group(1)}{uid_map.get(match.group(2), match.group(2))}{match.group(3)}',
-                value,
+    def replace_dashboard_link(url, uid_map, folder_uid):
+        parsed = urlsplit(url)
+        if not parsed.path.startswith('./d/'):
+            return url
+        path_parts = parsed.path.split('/')
+        if len(path_parts) < 4 or not path_parts[2]:
+            return url
+        path_parts[2] = uid_map.get(path_parts[2], path_parts[2])
+        query = [
+            (key, value)
+            for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+            if key != 'folderUid'
+        ]
+        query.append(('folderUid', folder_uid))
+        return urlunsplit(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                '/'.join(path_parts),
+                urlencode(query),
+                parsed.fragment,
             )
+        )
+
+    def replace_dashboard_links(value, uid_map, folder_uid):
+        if isinstance(value, dict):
+            return {
+                key: replace_dashboard_links(item, uid_map, folder_uid)
+                for key, item in value.items()
+            }
+        if isinstance(value, list):
+            return [
+                replace_dashboard_links(item, uid_map, folder_uid)
+                for item in value
+            ]
+        if isinstance(value, str):
+            return replace_dashboard_link(value, uid_map, folder_uid)
         return value
 
     def normalize_prometheus_datasource(value):
@@ -322,7 +348,7 @@ data:
         else:
             generated_uid = hashlib.sha256(str(dashboard_path).encode()).hexdigest()[:12]
             dashboard['uid'] = local_dashboard_uid(generated_uid)
-        dashboard = replace_dashboard_links(dashboard, uid_map)
+        dashboard = replace_dashboard_links(dashboard, uid_map, cluster_folder)
         dashboard = normalize_prometheus_datasource(dashboard)
         dashboard.pop('__inputs', None)
         if contains_prometheus_datasource(dashboard):

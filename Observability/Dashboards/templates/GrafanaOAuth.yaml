@@ -44,6 +44,14 @@ spec:
   oidc:
     provider:
       issuer: https://idp.mylogin.space/application/o/grafana-test
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: core-home1-talos-prod-aaa-prod-authentik-server
+          port: 80
+          weight: 1
+          fallback: true
+
     scopes:
       - openid
       - profile

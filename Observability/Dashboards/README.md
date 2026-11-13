@@ -104,6 +104,9 @@ and creates a deterministic cluster folder with dashboard-type subfolders, for
 example `core-dc1-talos-prod/Mimir`. The central Home1 syncer retains the
 upstream dashboard UIDs; non-central cluster syncers receive stable
 cluster-prefixed UIDs so copies do not overwrite or move the central copy.
+Internal dashboard links are rewritten to the local UID and include the owning
+cluster folder UID, keeping navigation within the same cluster folder even
+when a dashboard is stored in a dashboard-type subfolder.
 Folder creation is keyed by the deterministic parent-aware UID, and the syncer
 removes only empty, root-level legacy folders after verifying that no dashboard
 or child folder remains in them. Before importing, the syncer compares the
