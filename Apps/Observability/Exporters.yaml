@@ -223,6 +223,19 @@ spec:
                 dcgm-exporter:
                   enabled: {{ .values.dcgmExporterEnabled }}
 
+            - name: LOVELY_KUSTOMIZE_MERGE
+              value: |-
+                patches:
+                  - target:
+                      version: v1
+                      kind: ConfigMap
+                      name: '{{ .values.clusterName }}-expo-k8s-coredns'
+                    patch: |-
+                      - op: add
+                        path: /metadata/annotations
+                        value:
+                          grafana_folder: 'Infrastructure'
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}

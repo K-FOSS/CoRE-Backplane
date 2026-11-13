@@ -47,6 +47,8 @@ clusters. Their `kube-state-metrics` queries require
 the Alloy ServiceMonitor path to preserve the standard
 `job="kube-state-metrics"` label, while node dashboards use the Alloy host
 collector's `job="node-exporter"`, `instance`, and `nodename` labels.
+The generated CoreDNS dashboard is patched into the `Infrastructure` Grafana
+folder by the owning [Exporters ApplicationSet](../../Apps/Observability/Exporters.yaml).
 
 The GPU exporters require host GPU enablement: NFD must publish the Intel PCI
 label `feature.node.kubernetes.io/pci-0300_8086.present: 'true'`, and the
