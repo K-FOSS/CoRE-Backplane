@@ -75,6 +75,7 @@ data:
     local function refreshCnameFilterIPs()
       if cnameFilterRefreshPending then return end
       cnameFilterRefreshPending = true
+      pdnslog('Resolving external YVR public hostname ' .. tostring(cnameFilter), pdns.loglevels.Warning)
       getAddressInfo(tostring(cnameFilter), function(_, addresses)
         cnameFilterRefreshPending = false
         if #addresses == 0 then
@@ -90,7 +91,7 @@ data:
         end
         cnameFilterIPs = refreshed
         table.sort(resolved)
-        pdnslog('Resolved YVR public hostname ' .. tostring(cnameFilter) .. ' to ' .. table.concat(resolved, ', '), pdns.loglevels.Info)
+        pdnslog('Resolved external YVR public hostname ' .. tostring(cnameFilter) .. ' to ' .. table.concat(resolved, ', '), pdns.loglevels.Warning)
       end)
     end
     refreshCnameFilterIPs()
