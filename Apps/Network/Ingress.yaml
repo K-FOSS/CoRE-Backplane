@@ -23,6 +23,10 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    envoyProxy:
+                      service:
+                        loadBalancerClass: ''
+                        annotations: {}
                     waf:
                       enabled: false
                       policies: []
@@ -38,6 +42,11 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: false
+                    envoyProxy:
+                      service:
+                        loadBalancerClass: 'kube-vip.io/kube-vip-class'
+                        annotations:
+                          kube-vip.io/forwardUPNP: 'true'
                     waf:
                       enabled: true
                       mode: 'On'
@@ -127,6 +136,12 @@ spec:
                       purelb.io/allow-shared-ip: '{{ .values.gateway.address.sharedIP.key }}' 
                       {{ end }}
                       purelb.io/service-group: '{{ .values.gateway.address.serviceGroup }}'
+
+                envoyProxy:
+                  service:
+                    loadBalancerClass: {{ .values.envoyProxy.service.loadBalancerClass | squote }}
+                    annotations:
+                      {{ toYaml .values.envoyProxy.service.annotations | nindent 6 }}
 
                 gatewayClass:
                   controllerName: envoy.{{ .values.tenant }}/base

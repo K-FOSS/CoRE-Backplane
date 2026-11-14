@@ -50,7 +50,13 @@ spec:
       envoyService:
         externalTrafficPolicy: Local
         type: LoadBalancer
-        loadBalancerClass: purelb.io/purelbv2
+        {{- if .Values.envoyProxy.service.loadBalancerClass }}
+        loadBalancerClass: {{ .Values.envoyProxy.service.loadBalancerClass | quote }}
+        {{- end }}
+        {{- with .Values.envoyProxy.service.annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         patch:
           type: StrategicMerge
           value:
