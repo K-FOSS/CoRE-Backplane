@@ -359,6 +359,19 @@ spec:
 
                       - name: wan-rt2
                         installing: false
+                        affinity:
+                          podAntiAffinity:
+                            preferredDuringSchedulingIgnoredDuringExecution:
+                              - weight: 100
+                                podAffinityTerm:
+                                  labelSelector:
+                                    matchExpressions:
+                                      - key: 'kubevirt.io/domain'
+                                        operator: 'In'
+                                        values:
+                                          - 'wan-rt2'
+                                          - 'testvm'
+                                  topologyKey: 'kubernetes.io/hostname'
                         boot:
                           mode: uefi
                           secureBoot: false
@@ -378,6 +391,19 @@ spec:
 
                       - name: testvm
                         installing: false
+                        affinity:
+                          podAntiAffinity:
+                            preferredDuringSchedulingIgnoredDuringExecution:
+                              - weight: 100
+                                podAffinityTerm:
+                                  labelSelector:
+                                    matchExpressions:
+                                      - key: 'kubevirt.io/domain'
+                                        operator: 'In'
+                                        values:
+                                          - 'wan-rt2'
+                                          - 'testvm'
+                                  topologyKey: 'kubernetes.io/hostname'
                         podNetwork:
                           enabled: false
                         disk:
