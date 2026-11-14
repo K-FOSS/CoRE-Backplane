@@ -1,6 +1,44 @@
 {{- include "bjw-s.common.loader.init" . }}
 
 {{- define "core-network-dns.commonValues" -}}
+{{- $dnsdistConfigData := include "core-network-dns.dnsdistConfigData" . | fromYaml -}}
+configMaps:
+  dnsdist:
+    enabled: {{ .Values.dnsdist.enabled }}
+    forceRename: 'dnsdist-config'
+    includeChecksumInControllers:
+      - 'recursor'
+    data:
+{{ toYaml $dnsdistConfigData.data | nindent 6 }}
+
+serviceMonitor:
+  dnsdist:
+    enabled: {{ and .Values.dnsdist.enabled .Values.dnsdist.metrics.enabled }}
+    forceRename: 'dnsdist'
+    labels:
+      app.kubernetes.io/name: 'dnsdist'
+      app.kubernetes.io/component: 'monitoring'
+    service:
+      identifier: 'metrics'
+    endpoints:
+      - port: 'metrics'
+        path: '/metrics'
+        interval: {{ .Values.dnsdist.metrics.interval | quote }}
+        scrapeTimeout: {{ .Values.dnsdist.metrics.scrapeTimeout | quote }}
+  recursor:
+    enabled: {{ and .Values.dnsdist.enabled .Values.dnsdist.metrics.enabled }}
+    forceRename: 'recursor'
+    labels:
+      app.kubernetes.io/name: 'recursor'
+      app.kubernetes.io/component: 'monitoring'
+    service:
+      identifier: 'recursor'
+    endpoints:
+      - port: 'metrics'
+        path: '/metrics'
+        interval: {{ .Values.dnsdist.metrics.interval | quote }}
+        scrapeTimeout: {{ .Values.dnsdist.metrics.scrapeTimeout | quote }}
+
 global:
   nameOverride: 'dnsdist'
   fullnameOverride: 'dnsdist'
@@ -156,11 +194,6 @@ controllers:
                   app.kubernetes.io/controller: 'recursor'
     pod:
       automountServiceAccountToken: false
-      annotations:
-        core.mylogin.space/recursor-config-revision: {{ toYaml .Values.dnsdist.recursor | sha256sum | quote }}
-        {{ if .Values.dnsdist.cnameFilter.enabled }}
-        core.mylogin.space/cname-filter-revision: {{ include (print $.Template.BasePath "/DNSDistConfig.yaml") . | sha256sum | quote }}
-        {{ end }}
       securityContext:
         fsGroup: 953
         fsGroupChangePolicy: OnRootMismatch

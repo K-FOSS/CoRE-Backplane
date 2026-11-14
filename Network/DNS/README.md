@@ -9,15 +9,19 @@ the [Network/NS stack](../NS/README.md), K8GB CoreDNS remains owned by
 owned by [Network/Base](../Base/README.md). A separate PowerDNS Recursor
 Deployment provides site-local general recursion for explicitly allowed LANs.
 
-The dnsdist Deployment and Services are generated through the pinned
-[BJW-S common library chart 5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common).
-The dnsdist ConfigMap remains a direct chart resource because its Lua routing
-configuration is specific to this stack.
+The dnsdist Deployment, Services, ConfigMap, and ServiceMonitors are generated
+through the pinned [BJW-S common library chart
+5.0.1](https://github.com/bjw-s-labs/helm-charts/tree/common-5.0.1/charts/library/common).
+The ConfigMap source remains in [`templates/DNSDistConfig.yaml`](templates/DNSDistConfig.yaml)
+and is parsed into the common chart values; BJW-S includes its checksum on the
+Recursor controller so changes to its Lua script roll the Recursor pods.
+ServiceMonitor resources use the common chart's native `serviceMonitor`
+configuration.
 
 ## Routing and exposure
 
 The [official PowerDNS dnsdist image](https://hub.docker.com/r/powerdns/dnsdist-21)
-is pinned to `2.1.1`, the latest verified Docker image tag. Its [downstream
+is pinned to `2.1.3` by multi-platform image digest. Its [downstream
 health checks and server-pool model](https://www.dnsdist.org/guides/downstreams.html)
 are rendered from [`values.yaml`](values.yaml) and
 [`templates/DNSDistConfig.yaml`](templates/DNSDistConfig.yaml).
@@ -101,9 +105,9 @@ YVR enables an additional
 [`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)
 and [DNS record editing API](https://docs.powerdns.com/recursor/lua-scripting/dnsrecord.html)
 to inspect completed answers. If an A response contains a CNAME to the
-Vault-backed YVR `PublicHostname` injected as `dnsdist.cnameFilter.target`, it
-removes the returned CNAME chain and terminal records, then returns one A
-record for the original queried name at `dnsdist.cnameFilter.address`
+ Vault-backed YVR `PublicHostname` injected as `dnsdist.cnameFilter.target`, it
+ removes the returned CNAME chain and terminal records, then returns one A
+ record for the original queried name at `dnsdist.cnameFilter.address`
 (`10.0.0.19`). This covers any alias whose CNAME points at the Vault-provided
 hostname, including aliases whose names are not known to the ApplicationSet.
 Other query types and unrelated CNAMEs are returned unchanged. The
@@ -119,7 +123,8 @@ configuration so fully qualified internal Service names are resolved directly.
 The pod also runs a same-image configuration watcher. Kubernetes projects
 updates to the mounted ConfigMap directory; the watcher publishes a hash marker
 and dnsdist's one-second `maintenance()` hook detects it, reloads `rules.lua`,
-and replaces the routing rules in place. Listening sockets and the dnsdist
+and applies routing rules in place through a dedicated Lua function that does
+not invoke dnsdist's built-in full configuration reload. Listening sockets and the dnsdist
 process remain open, so routing-rule changes do not restart the process or roll
 out the Pod. Changes to `dnsdist.conf`, including the downstream backend
 addresses and health checks, require updating `dnsdist.configRevision` to roll

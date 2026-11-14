@@ -1,3 +1,4 @@
+{{- define "core-network-dns.dnsdistConfigData" -}}
 {{- if .Values.dnsdist.enabled }}
 {{- $authoritativeBackend := default (printf "ns-core-discovery.core-%s.svc.%s:53" .Values.cluster.environment .Values.cluster.kubernetesDomain) .Values.dnsdist.authoritative.backend }}
 {{- $k8gbServiceName := "core-network-global-coredns" }}
@@ -9,14 +10,6 @@
 {{- $authoritativeHost := trimSuffix ":53" $authoritativeBackend }}
 {{- $k8gbHost := trimSuffix ":53" $k8gbBackend }}
 {{- $recursiveHost := trimSuffix ":53" $recursiveBackend }}
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: dnsdist-config
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/name: 'dnsdist'
-    app.kubernetes.io/instance: {{ .Release.Name | quote }}
 data:
   recursor.yml: |
     incoming:
@@ -284,7 +277,7 @@ data:
     -- an independent backend, so dnsdist can health-check and balance replicas.
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
     dofile('/etc/dnsdist/rules.lua')
-    reloadConfig()
+    applyRoutingRules()
     local reloadMarker = ''
     function maintenance()
       startPendingBackendHealthChecks()
@@ -301,13 +294,13 @@ data:
         markerFile:close()
         if marker ~= nil and marker ~= reloadMarker then
           dofile('/etc/dnsdist/rules.lua')
-          reloadConfig()
+          applyRoutingRules()
           reloadMarker = marker
         end
       end
     end
   rules.lua: |
-    function reloadConfig()
+    function applyRoutingRules()
       setRules({
     {{- range (default (list) .Values.dnsdist.hostOverrides) }}
         newRuleAction(QNameRule({{ printf "%s." (trimSuffix "." .hostname) | quote }}), SpoofAction({
@@ -344,3 +337,4 @@ data:
     })
     {{- end }}
     {{- end }}
+{{- end }}
