@@ -84,3 +84,20 @@ Validate bucket read/write, S3 signature/authentication, dashboard OIDC,
 LDAP users, TLS/DNS, metrics and Crossplane provider access. Back up critical
 objects to an independent site/account and test restoring both data and bucket
 policy/users.
+
+## S3 API browser CORS
+
+The `minio-s3-cors` Envoy Gateway `SecurityPolicy` targets the generated S3
+HTTPRoute in each TenantLab namespace using its BJW-S common chart name. It
+allows browser requests from any origin using the S3 `GET`, `HEAD`, `POST`,
+`PUT` and `DELETE` methods, allows
+arbitrary request headers for S3 signing, exposes `ETag` and MinIO request
+identifiers, and caches preflight responses for 24 hours. Credentialed browser
+requests are disabled. This is a browser CORS response policy, not S3
+authentication or authorization; MinIO still validates every S3 request.
+
+The policy applies to the shared S3 API route across buckets. It does not
+create per-bucket MinIO CORS rules; use MinIO's [bucket CORS configuration](https://docs.min.io/aistor/administration/cors-configuration/)
+only when a bucket needs its own S3 CORS behavior. See Envoy Gateway's
+[CORS SecurityPolicy documentation](https://gateway.envoyproxy.io/v1.10/tasks/security/cors/)
+for the gateway behavior.

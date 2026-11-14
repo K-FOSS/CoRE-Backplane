@@ -1,0 +1,28 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: minio-s3-cors
+
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ include "bjw-s.common.lib.chart.names.fullname" . }}-s3
+
+  cors:
+    allowOrigins:
+      - '*'
+    allowMethods:
+      - 'GET'
+      - 'HEAD'
+      - 'POST'
+      - 'PUT'
+      - 'DELETE'
+    allowHeaders:
+      - '*'
+    exposeHeaders:
+      - 'ETag'
+      - 'x-amz-request-id'
+      - 'x-amz-id-2'
+    maxAge: '86400s'
+    allowCredentials: false
