@@ -278,7 +278,6 @@ data:
     addBackend('{{ $k8gbHost }}', 'k8gb', 'k8gb', 'SOA', nil, '{{ .Values.dnsdist.k8gb.healthCheckName }}')
     dofile('/etc/dnsdist/rules.lua')
     applyRoutingRules()
-    local reloadMarker = ''
     function maintenance()
       startPendingBackendHealthChecks()
       authoritativeRefreshCount = authoritativeRefreshCount + 1
@@ -288,16 +287,6 @@ data:
         refreshRecursiveBackends()
       end
 
-      local markerFile = io.open('/run/dnsdist/reload', 'r')
-      if markerFile ~= nil then
-        local marker = markerFile:read('*l')
-        markerFile:close()
-        if marker ~= nil and marker ~= reloadMarker then
-          dofile('/etc/dnsdist/rules.lua')
-          applyRoutingRules()
-          reloadMarker = marker
-        end
-      end
     end
   rules.lua: |
     function applyRoutingRules()

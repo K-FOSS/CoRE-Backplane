@@ -6,8 +6,6 @@ configMaps:
   dnsdist:
     enabled: {{ .Values.dnsdist.enabled }}
     forceRename: 'dnsdist-config'
-    includeChecksumInControllers:
-      - 'recursor'
     data:
 {{ toYaml $dnsdistConfigData.data | nindent 6 }}
 
@@ -58,7 +56,7 @@ controllers:
     pod:
       automountServiceAccountToken: false
       annotations:
-        core.mylogin.space/dnsdist-config-revision: {{ .Values.dnsdist.configRevision | quote }}
+        configmap.reloader.stakater.com/reload: 'dnsdist-config'
       dnsConfig:
         options:
           - name: ndots
@@ -128,52 +126,6 @@ controllers:
               periodSeconds: 5
               timeoutSeconds: 2
               failureThreshold: 60
-      reloader:
-        image:
-          repository: {{ .Values.dnsdist.image.repository | quote }}
-          tag: {{ .Values.dnsdist.image.tag | quote }}
-          digest: {{ .Values.dnsdist.image.digest | quote }}
-          pullPolicy: {{ .Values.dnsdist.image.pullPolicy | quote }}
-        command:
-          - '/bin/sh'
-          - '-ec'
-        args:
-          - |
-            config_hash() {
-              sha256sum /etc/dnsdist/dnsdist.conf /etc/dnsdist/rules.lua \
-                | sha256sum | awk '{print $1}'
-            }
-            last="$(config_hash)"
-            publish() {
-              printf '%s\n' "$1" > /run/dnsdist/reload.tmp
-              mv /run/dnsdist/reload.tmp /run/dnsdist/reload
-            }
-            publish "${last}"
-            while :; do
-              current="$(config_hash)"
-              if [ "${current}" != "${last}" ]; then
-                publish "${current}"
-                last="${current}"
-              fi
-              sleep 2
-            done
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-              - 'ALL'
-          privileged: false
-          readOnlyRootFilesystem: true
-          runAsNonRoot: true
-          runAsUser: 953
-          runAsGroup: 953
-        resources:
-          requests:
-            cpu: '5m'
-            memory: '16Mi'
-          limits:
-            cpu: '50m'
-            memory: '64Mi'
   recursor:
     type: deployment
     replicas: {{ .Values.dnsdist.recursor.replicas }}
@@ -194,6 +146,8 @@ controllers:
                   app.kubernetes.io/controller: 'recursor'
     pod:
       automountServiceAccountToken: false
+      annotations:
+        configmap.reloader.stakater.com/reload: 'dnsdist-config'
       securityContext:
         fsGroup: 953
         fsGroupChangePolicy: OnRootMismatch
@@ -374,9 +328,6 @@ persistence:
         main:
           - path: '/etc/dnsdist'
             readOnly: true
-        reloader:
-          - path: '/etc/dnsdist'
-            readOnly: true
   recursor-config:
     type: custom
     volumeSpec:
@@ -400,15 +351,6 @@ persistence:
         recursor:
           - path: '/var/run/pdns-recursor'
           - path: '/tmp'
-  runtime:
-    type: emptyDir
-    advancedMounts:
-      main:
-        main:
-          - path: '/run/dnsdist'
-        reloader:
-          - path: '/run/dnsdist'
-
 {{- end -}}
 
 {{- if .Values.dnsdist.enabled }}
