@@ -61,45 +61,12 @@ data:
   cname-filter.lua: |
     local cnameFilter = newDN({{ .Values.dnsdist.cnameFilter.target | quote }})
     local cnameFilterAddress = {{ .Values.dnsdist.cnameFilter.address | quote }}
-    local cnameFilterIPs = {}
-    local cnameFilterRefreshPending = false
-    local cnameFilterRefreshInterval = 60
-    local cnameFilterNextRefresh = 0
-    local function refreshCnameFilterIPs()
-      if cnameFilterRefreshPending then return end
-      cnameFilterRefreshPending = true
-      pdnslog('Resolving external YVR public hostname ' .. tostring(cnameFilter), pdns.loglevels.Warning)
-      getAddressInfo(tostring(cnameFilter), function(_, addresses)
-        cnameFilterRefreshPending = false
-        if #addresses == 0 then
-          pdnslog('Unable to resolve YVR public hostname ' .. tostring(cnameFilter), pdns.loglevels.Warning)
-          return
-        end
-        local refreshed = {}
-        local resolved = {}
-        for _, address in ipairs(addresses) do
-          local ip = address:toString()
-          refreshed[ip] = true
-          table.insert(resolved, ip)
-        end
-        cnameFilterIPs = refreshed
-        table.sort(resolved)
-        pdnslog('Resolved external YVR public hostname ' .. tostring(cnameFilter) .. ' to ' .. table.concat(resolved, ', '), pdns.loglevels.Warning)
-      end)
-    end
-    refreshCnameFilterIPs()
-    function maintenance()
-      local now = os.time()
-      if now >= cnameFilterNextRefresh then
-        cnameFilterNextRefresh = now + cnameFilterRefreshInterval
-        refreshCnameFilterIPs()
-      end
-    end
     function postresolve(dq)
       if dq.qtype ~= pdns.A then return false end
       local records = dq:getRecords()
       local matched = false
       local k8gbAnswer = false
+      local originalAddresses = {}
       for _, record in pairs(records) do
         if record.place == 1 and record.type == pdns.CNAME then
           local target = string.lower(tostring(newDN(record:getContent())))
@@ -107,17 +74,15 @@ data:
             k8gbAnswer = true
           end
           if newDN(record:getContent()) == cnameFilter then matched = true end
+        elseif record.place == 1 and record.type == pdns.A then
+          table.insert(originalAddresses, record:getContent())
         end
       end
-      if not matched and k8gbAnswer then
-        for _, record in pairs(records) do
-          if record.place == 1 and record.type == pdns.A and cnameFilterIPs[record:getContent()] then
-            matched = true
-            break
-          end
-        end
-      end
+      matched = matched or (k8gbAnswer and #originalAddresses > 0)
       if not matched then return false end
+      if k8gbAnswer then
+        pdnslog('Rewriting K8GB A answer for ' .. dq.qname:toString() .. ' from ' .. table.concat(originalAddresses, ', ') .. ' to ' .. cnameFilterAddress, pdns.loglevels.Info)
+      end
       local retained = {}
       for _, record in pairs(records) do
         if record.place == 0 then table.insert(retained, record) end
