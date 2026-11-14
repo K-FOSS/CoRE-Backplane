@@ -69,11 +69,38 @@ data:
     local cnameFilter = newDN({{ .Values.dnsdist.cnameFilter.target | quote }})
     local cnameFilterAddress = {{ .Values.dnsdist.cnameFilter.address | quote }}
     local cnameFilterIPs = {}
-    getAddressInfo(tostring(cnameFilter), function(_, addresses)
-      for _, address in ipairs(addresses) do
-        cnameFilterIPs[address:toString()] = true
+    local cnameFilterRefreshPending = false
+    local cnameFilterRefreshInterval = 60
+    local cnameFilterNextRefresh = 0
+    local function refreshCnameFilterIPs()
+      if cnameFilterRefreshPending then return end
+      cnameFilterRefreshPending = true
+      getAddressInfo(tostring(cnameFilter), function(_, addresses)
+        cnameFilterRefreshPending = false
+        if #addresses == 0 then
+          pdnslog('Unable to resolve YVR public hostname ' .. tostring(cnameFilter), pdns.loglevels.Warning)
+          return
+        end
+        local refreshed = {}
+        local resolved = {}
+        for _, address in ipairs(addresses) do
+          local ip = address:toString()
+          refreshed[ip] = true
+          table.insert(resolved, ip)
+        end
+        cnameFilterIPs = refreshed
+        table.sort(resolved)
+        pdnslog('Resolved YVR public hostname ' .. tostring(cnameFilter) .. ' to ' .. table.concat(resolved, ', '), pdns.loglevels.Info)
+      end)
+    end
+    refreshCnameFilterIPs()
+    function maintenance()
+      local now = os.time()
+      if now >= cnameFilterNextRefresh then
+        cnameFilterNextRefresh = now + cnameFilterRefreshInterval
+        refreshCnameFilterIPs()
       end
-    end)
+    end
     function postresolve(dq)
       if dq.qtype ~= pdns.A then return false end
       local records = dq:getRecords()
