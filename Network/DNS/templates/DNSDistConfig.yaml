@@ -105,11 +105,22 @@ data:
       if dq.qtype ~= pdns.A then return false end
       local records = dq:getRecords()
       local matched = false
+      local k8gbAnswer = false
       for _, record in pairs(records) do
-        if record.place == 1 and ((record.type == pdns.CNAME and newDN(record:getContent()) == cnameFilter) or
-          (record.type == pdns.A and cnameFilterIPs[record:getContent()])) then
-          matched = true
-          break
+        if record.place == 1 and record.type == pdns.CNAME then
+          local target = string.lower(tostring(newDN(record:getContent())))
+          if target == 'gslb.mylogin.space.' or string.sub(target, -string.len('.gslb.mylogin.space.')) == '.gslb.mylogin.space.' then
+            k8gbAnswer = true
+          end
+          if newDN(record:getContent()) == cnameFilter then matched = true end
+        end
+      end
+      if not matched and k8gbAnswer then
+        for _, record in pairs(records) do
+          if record.place == 1 and record.type == pdns.A and cnameFilterIPs[record:getContent()] then
+            matched = true
+            break
+          end
         end
       end
       if not matched then return false end
