@@ -159,7 +159,7 @@ controllers:
       annotations:
         core.mylogin.space/recursor-config-revision: {{ toYaml .Values.dnsdist.recursor | sha256sum | quote }}
         {{ if .Values.dnsdist.cnameFilter.enabled }}
-        core.mylogin.space/cname-filter-revision: {{ printf "%t|%s|%s" .Values.dnsdist.cnameFilter.enabled .Values.dnsdist.cnameFilter.target .Values.dnsdist.cnameFilter.address | sha256sum | quote }}
+        core.mylogin.space/cname-filter-revision: {{ include (print $.Template.BasePath "/DNSDistConfig.yaml") . | sha256sum | quote }}
         {{ end }}
       securityContext:
         fsGroup: 953
