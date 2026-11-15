@@ -264,6 +264,18 @@ route:
         sectionName: '{{ .Values.pubgateway.sectionName }}'
         namespace: '{{ .Values.pubgateway.namespace }}'
     rules:
+      - matches:
+          - path:
+              type: 'Exact'
+              value: '/api/search/smart'
+        backendRefs:
+          - kind: 'Service'
+            port: 2283
+            identifier: 'server'
+            weight: 1
+        timeouts:
+          backendRequest: '2h'
+          request: '0s'
       - backendRefs:
           - kind: 'Service'
             port: 2283

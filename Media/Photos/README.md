@@ -12,9 +12,11 @@ v3 removes `pgvecto.rs`; this deployment selects `pgvector`. See Immich's
 and [upgrade documentation](https://docs.immich.app/install/upgrading/)
 before reconciliation.
 
-Smart Search uses `ViT-B-16-SigLIP2__webli`, configured through the generated
-Immich config ConfigMap. After changing the model, re-run all Smart Search jobs;
-Immich notes that changing models can leave incompatible embeddings in the
+Smart Search uses the smaller `ViT-B-16-SigLIP__webli` model, configured
+through the generated Immich config ConfigMap. Immich lists this model at about
+1,081 MiB of memory, compared with about 3,854 MiB for the former
+`ViT-SO400M-16-SigLIP2-384__webli` model. After changing the model, re-run all
+Smart Search jobs; changing models can leave incompatible embeddings in the
 database. See [Immich's Smart Search model guidance](https://docs.immich.app/features/searching/).
 
 The chart currently deploys Immich's API and microservices together in the
@@ -81,6 +83,9 @@ The route uses Immich's native OIDC integration with Authentik; it must not be
 wrapped in the repository's Authentik Envoy external-authorization policy,
 because that policy intercepts Immich's `/auth/login` and OIDC callback. Access
 is restricted by the Authentik OIDC application's `Media Consumers` binding.
+The exact `/api/search/smart` route allows up to two hours for the backend
+request so large Smart Search queries can complete; the remaining paths use the
+HTTPRoute defaults.
 Verify the `User` claim, generated Secret, PostgreSQL role/database and vector
 extension, PVC `Bound` status, Immich server and machine-learning readiness,
 the websocket-enabled HTTP Service, HTTPRoute `Accepted` status, and a
