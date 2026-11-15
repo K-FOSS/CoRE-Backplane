@@ -113,8 +113,8 @@ data:
         parent = parent_uid or 'root'
         return f'sync-{hashlib.sha256(f"{parent}:{title}".encode()).hexdigest()[:16]}'
 
-    def local_dashboard_uid(original_uid):
-        if cluster_name == central_cluster_name:
+    def local_dashboard_uid(original_uid, global_dashboard=False):
+        if global_dashboard or cluster_name == central_cluster_name:
             return original_uid
         cluster_slug = re.sub(r'[^a-z0-9-]+', '-', cluster_name.lower()).strip('-')[:22]
         return f'{cluster_slug}-{hashlib.sha256(original_uid.encode()).hexdigest()[:12]}'
@@ -276,6 +276,11 @@ data:
             for key in ('allValue', 'datasource', 'refresh'):
                 variable.pop(key, None)
 
+    def is_global_dashboard(dashboard_path):
+        # k8s-sidecar places annotated ConfigMaps under this directory.
+        parts = dashboard_path.relative_to(ROOT).parts
+        return bool(parts) and parts[0] == 'Global'
+
     def cleanup_empty_legacy_folders(folders, managed_titles, active_root_uid):
         try:
             dashboards = list_resources(DASHBOARD_API)
@@ -331,14 +336,16 @@ data:
         dashboards.append((dashboard_path, dashboard))
 
     uid_map = {}
-    for _, dashboard in dashboards:
+    for dashboard_path, dashboard in dashboards:
         original_uid = dashboard.get('uid')
+        global_dashboard = is_global_dashboard(dashboard_path)
         if original_uid:
-            uid_map[original_uid] = local_dashboard_uid(original_uid)
+            uid_map[original_uid] = local_dashboard_uid(
+                original_uid, is_global_dashboard(dashboard_path)
+            )
 
     folders = list_resources(FOLDER_API)
-    cluster_folder = ensure_folder(cluster_name, None, folders)
-    folders = list_resources(FOLDER_API)
+    cluster_folder = None
     managed_folder_titles = set()
 
     for dashboard_path, dashboard in dashboards:
@@ -347,13 +354,13 @@ data:
             dashboard['uid'] = uid_map[original_uid]
         else:
             generated_uid = hashlib.sha256(str(dashboard_path).encode()).hexdigest()[:12]
-            dashboard['uid'] = local_dashboard_uid(generated_uid)
-        dashboard = replace_dashboard_links(dashboard, uid_map, cluster_folder)
+            dashboard['uid'] = local_dashboard_uid(generated_uid, global_dashboard)
         dashboard = normalize_prometheus_datasource(dashboard)
         dashboard.pop('__inputs', None)
         if contains_prometheus_datasource(dashboard):
-            ensure_source_scope_variables(dashboard)
-            dashboard = scope_prometheus_queries(dashboard)
+            if not global_dashboard:
+                ensure_source_scope_variables(dashboard)
+                dashboard = scope_prometheus_queries(dashboard)
         if original_uid == 'rYdddlPWk':
             dashboard.setdefault('timepicker', {})['refresh_intervals'] = [
                 '15s',
@@ -388,11 +395,23 @@ data:
         dashboard.pop('id', None)
         relative_parent = dashboard_path.parent.relative_to(ROOT)
         folder = '' if str(relative_parent) == '.' else str(relative_parent)
-        managed_folder_titles.add(folder or cluster_name)
-        folder_uid_value = cluster_folder
+        folder_parts = relative_parent.parts
+        global_folder = global_dashboard and folder_parts[0] == 'Global'
+        if global_dashboard:
+            root_folder_uid = ensure_folder('Global', None, folders)
+        else:
+            if cluster_folder is None:
+                cluster_folder = ensure_folder(cluster_name, None, folders)
+                folders = list_resources(FOLDER_API)
+            root_folder_uid = cluster_folder
+        managed_folder_titles.add('Global' if global_dashboard else folder or cluster_name)
+        folder_uid_value = root_folder_uid
         if folder:
-            folder_uid_value = ensure_folder(folder, cluster_folder, folders)
+            nested_folder = '/'.join(folder_parts[1:]) if global_folder else folder
+            if nested_folder:
+                folder_uid_value = ensure_folder(nested_folder, root_folder_uid, folders)
             folders = list_resources(FOLDER_API)
+        dashboard = replace_dashboard_links(dashboard, uid_map, root_folder_uid)
         payload = {
             'dashboard': dashboard,
             'folderId': 0,

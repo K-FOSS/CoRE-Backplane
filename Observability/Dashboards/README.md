@@ -79,7 +79,12 @@ API Service, and an HTTPRoute for
 private and the chart additionally renders a `grafana.gslb.mylogin.space`
 HTTPRoute plus a K8GB `Gslb` advertising `grafana.int.mylogin.space`; K8GB owns
 the global DNS decision while each site route sends traffic to its local
-Grafana Service. See the [K8GB resource reference](https://www.k8gb.io/latest/resource_ref/)
+Grafana Service. The Grafana GSLB uses `failover` with YVR's `home1` GeoTag as
+the primary, matching Authentik: YVR is returned while healthy and YXL is
+returned when the primary route has no available Pods. This is regional
+failover, not client-local GeoIP routing. See the [K8GB resource reference](https://www.k8gb.io/latest/resource_ref/),
+[K8GB load-balancing strategies](https://www.k8gb.io/latest/strategy/),
+including the [GeoIP requirements](https://www.k8gb.io/latest/strategy/#geoip),
 and [K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/). The upstream chart
 provides the [Grafana configuration values](https://github.com/grafana-community/helm-charts/blob/grafana-13.5.0/charts/grafana/values.yaml)
 and container defaults; local values deliberately override its authentication,
@@ -103,14 +108,24 @@ authenticated Grafana API. Repository-managed dashboards use the value `'true'`;
 the syncer does not filter on the value so chart-managed dashboards using `'1'`
 are also accepted. The syncer watches only the explicitly configured
 `core-prod`, `k8gb`, `kube-system`, and `longhorn-system` namespaces through separate
-namespace-scoped Roles and RoleBindings. Folder discovery uses Grafana's
+namespace-scoped Roles and RoleBindings. The k8s-sidecar uses the
+`grafana_folder` ConfigMap annotation to place files into their intended folder.
+Kubernetes mixin dashboard ConfigMaps carry
+`grafana_dashboard_global: 'true'` and `grafana_folder: 'Global'`; the importer
+preserves their cluster variable and PromQL selectors, uses their upstream UIDs,
+and puts them in the root `Global` folder. This allows any active cluster's
+syncer to refresh the shared dashboards without making the current syncer's
+cluster the only selector option. The upstream chart enables its global
+multicluster dashboard mode as well. Folder discovery uses Grafana's
 [current folder API](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/folder/)
 and creates a deterministic cluster folder with dashboard-type subfolders, for
-example `core-dc1-talos-prod/Mimir`. The central Home1 syncer retains the
-upstream dashboard UIDs; non-central cluster syncers receive stable
-cluster-prefixed UIDs so copies do not overwrite or move the central copy.
+example `core-dc1-talos-prod/Mimir`; dashboards routed to `Global` use a shared
+root folder instead. The central Home1 syncer retains the upstream dashboard
+UIDs; non-central cluster syncers receive stable cluster-prefixed UIDs for
+cluster-scoped copies, while global dashboards always retain upstream UIDs so
+all cluster syncers converge on one dashboard.
 Internal dashboard links are rewritten to the local UID and include the owning
-cluster folder UID, keeping navigation within the same cluster folder even
+folder UID, keeping navigation within the same folder even
 when a dashboard is stored in a dashboard-type subfolder.
 Folder creation is keyed by the deterministic parent-aware UID, and the syncer
 removes only empty, root-level legacy folders after verifying that no dashboard
@@ -119,15 +134,15 @@ desired dashboard with Grafana's existing dashboard by UID and skips an
 unchanged dashboard, preventing refresh events from generating needless
 overwrite alerts. Prometheus dashboards imported from upstream are normalized
 to the repository's `datasource` variable convention, so datasource inputs such
-as `${DS_PROMETHEUS}` do not remain unresolved in the saved dashboard. A
-Prometheus dashboard imported by a syncer also receives visible `Cluster`, `Dc`,
-and `Region` selectors initialized to that syncer's source cluster. The syncer
+as `${DS_PROMETHEUS}` do not remain unresolved in the saved dashboard.
+Cluster-scoped Prometheus dashboards imported by a syncer also receive visible
+`Cluster`, `Dc`, and `Region` selectors initialized to that syncer's source cluster. The syncer
 adds those matchers to unscoped PromQL selectors before writing the dashboard to
 Grafana, which prevents identically named resources such as PVCs from being
 joined across the two source clusters. If a query already contains a `cluster`
 label matcher, the syncer preserves it unchanged; this is required for
-intentionally multi-cluster dashboards and aggregation rules such as Kubernetes
-multi-cluster and CPU panels. The selectors remain part of the dashboard so an
+intentionally multi-cluster dashboards and aggregation rules. Global dashboards
+skip this scoping entirely. The selectors remain part of the dashboard so an
 operator can see the scope applied to its queries. A separate
 `grafana-dashboard-api` Service is the only Cilium
 Global Service: its selector points at the YVR/Home1 Grafana pods, and
