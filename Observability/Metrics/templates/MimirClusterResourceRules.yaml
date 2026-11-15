@@ -15,11 +15,11 @@ spec:
         # Prometheus is disabled. The dedicated rules Alloy synchronizes this
         # resource to Mimir and injects the source cluster matcher.
         - record: 'node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
-          expr: 'sum by (cluster, namespace, pod, container, node) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}[5m]))'
+          expr: 'sum by (cluster, namespace, pod, container, node) (max by (cluster, namespace, pod, container, node) (rate(container_cpu_usage_seconds_total{job="kubelet", metrics_path="/metrics/cadvisor", pod!="", container!="", container!="POD"}[5m])))'
         - record: 'cluster:node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m'
           expr: 'sum by (cluster) (node_namespace_pod_container:container_cpu_usage_seconds_total:sum_rate5m)'
         - record: 'cluster:node_namespace_pod_container:container_memory_working_set_bytes:sum'
-          expr: 'sum by (cluster) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"})'
+          expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", pod!="", container!="", container!="POD"}))'
         - record: 'cluster:container_memory_rss:sum'
           expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}))'
 {{- end }}
