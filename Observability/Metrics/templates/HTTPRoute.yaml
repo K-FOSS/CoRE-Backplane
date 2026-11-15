@@ -30,6 +30,9 @@ spec:
             type: PathPrefix
             value: {{ $path.path }}
         {{ end }}
+      timeouts:
+        request: '310s'
+        backendRequest: '300s'
     {{ end }}
 {{- end }}
 {{- if and .Values.k8gb.enabled .Values.gateway.enabled }}
@@ -64,6 +67,9 @@ spec:
             type: PathPrefix
             value: {{ $path.path }}
         {{ end }}
+      timeouts:
+        request: '310s'
+        backendRequest: '300s'
     {{ end }}
 ---
 apiVersion: k8gb.io/v1beta1
