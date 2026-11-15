@@ -119,6 +119,13 @@ spec:
                         enabled: true
                     kubeDNS:
                       upstreams: ['1.1.1.1', '8.8.8.8']
+                      nodeAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          nodeSelectorTerms:
+                            - matchExpressions:
+                                - key: 'kubernetes.io/hostname'
+                                  operator: 'NotIn'
+                                  values: ['laptop2']
                     nodePortNetwork: 172.31.193.0/24
                     clusterId: 1
                     peers:

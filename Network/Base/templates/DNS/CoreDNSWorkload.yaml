@@ -85,6 +85,10 @@ spec:
           operator: 'Exists'
           effect: 'NoSchedule'
       affinity:
+        {{ with .Values.kubeDNS.nodeAffinity }}
+        nodeAffinity:
+          {{- toYaml . | nindent 10 }}
+        {{ end }}
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
