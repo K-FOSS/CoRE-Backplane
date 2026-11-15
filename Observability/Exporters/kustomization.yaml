@@ -3,6 +3,15 @@ kind: Kustomization
 
 patches:
   - target:
+      kind: ConfigMap
+      labelSelector: 'app=kube-prometheus-stack-grafana,grafana_dashboard=true'
+
+    patch: |
+      - op: add
+        path: /metadata/labels/grafana_dashboard_global
+        value: 'true'
+
+  - target:
       labelSelector: 'app.kubernetes.io/name=prometheus-smartctl-exporter'
 
     patch: |
