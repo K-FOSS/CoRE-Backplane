@@ -53,6 +53,12 @@ component backend is a dedicated globally annotated Service (for example,
 synchronizes each Service's EndpointSlices between participating clusters, so
 Envoy can use local or remote component endpoints according to the active
 locality and health policy. YXL renders the HTTPRoute and Envoy SecurityPolicy.
+The site and K8GB routes set `query-frontend` requests to a 120-second backend
+deadline and 150-second overall deadline, matching Mimir's default two-minute
+query timeout with response margin. Write and other component routes keep the
+Gateway implementation defaults. See the
+[Mimir querier configuration](https://grafana.com/docs/mimir/latest/configure/configuration-parameters/#querier)
+and [Gateway API timeout fields](https://gateway-api.sigs.k8s.io/api-types/httproute/#timeouts-optional).
 When `mimirEnabled` is
 false, the distributed chart is disabled while the recovery identity remains.
 

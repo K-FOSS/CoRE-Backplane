@@ -25,6 +25,62 @@ spec:
       matches:
         - path:
             type: PathPrefix
+            value: /loki/api/v1/query
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/query_range
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/labels
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/label
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/series
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/index
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/rules
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_labels
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/format_query
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_fields
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/patterns
+      timeouts:
+        request: '330s'
+        backendRequest: '300s'
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Values.globalService.name }}
+          port: 3100
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/tail
+      timeouts:
+        request: '0s'
+        backendRequest: '0s'
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Values.globalService.name }}
+          port: 3100
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
             value: /
 {{ if .Values.k8gb.enabled }}
 ---
@@ -47,6 +103,62 @@ spec:
   hostnames:
     - 'logs.{{ .Values.k8gb.domain }}'
   rules:
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Values.globalService.name }}
+          port: 3100
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/query
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/query_range
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/labels
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/label
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/series
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/index
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/rules
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_labels
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/format_query
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/detected_fields
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/patterns
+      timeouts:
+        request: '330s'
+        backendRequest: '300s'
+    - backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Values.globalService.name }}
+          port: 3100
+          weight: 1
+      matches:
+        - path:
+            type: PathPrefix
+            value: /loki/api/v1/tail
+      timeouts:
+        request: '0s'
+        backendRequest: '0s'
     - backendRefs:
         - group: ''
           kind: Service

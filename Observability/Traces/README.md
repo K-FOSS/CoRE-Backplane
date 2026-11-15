@@ -1,6 +1,6 @@
 # CoRE-Backplane Observability/Traces Stack
 
-This stack deploys Grafana Tempo in microservices mode with one shared,
+This stack deploys Grafana Tempo in microservices mode with a shared,
 federated Garage S3 backend and Cilium-global gateway and memberlist Services.
 It is owned by the
 [`core-observability-traces` ApplicationSet](../../Apps/Observability/Traces.yaml)
@@ -61,18 +61,19 @@ and failover. Both releases use the same memberlist cluster label and join the
 same global headless Service. Tempo ingesters advertise their current region
 and use replication factor `1`, so a recent trace query may cross the inter-site
 link to the active owner without synchronously copying the same spans into a
-remote ingester.
-`tempo-traces` in federated Garage is the cross-site durability layer. A future
-Tempo 3/Kafka profile may use the shared
-EventStream for ingest durability, but that is a separate reviewed migration
-and is not implied by the current Tempo 2 chart. Tempo compactor ownership is
-YXL-only by default; YVR is promoted only after the YXL coordinator is fenced.
+remote ingester. `tempo-traces` in federated Garage is the cross-site durability
+layer. A future Tempo 3/Kafka profile may use the shared EventStream for ingest
+durability, but that is a separate reviewed migration and is not implied by the
+current Tempo 2 chart. Tempo compactor ownership is YXL-only by default; YVR is
+promoted only after the YXL coordinator is fenced.
 
 Gateway host anti-affinity is preferred rather than required. This keeps the
 three replicas eligible for rolling surge placement. A required
 `DoNotSchedule` topology-spread constraint enforces one replica per active-site
 host in steady state, preventing a routable node failure from concentrating
-the global Service endpoints on one host.
+the global Service endpoints on one host. In the Home1 profile, the gateway and
+distributor also prefer every node except `hpc3`; other Tempo components retain
+their normal chart placement rules.
 
 ## Routing and telemetry flow
 
@@ -99,6 +100,26 @@ endpoints returning repeated 5xx responses before falling back to
 Cilium-synchronized remote endpoints. The existing JWT SecurityPolicy remains
 required. K8GB's current `roundRobin` strategy is unchanged because K8GB does
 not provide zone-local DNS selection without GeoIP/EDNS0 configuration.
+Both site and K8GB routes allow a 45-second backend request and a 60-second
+end-to-end request. Tempo's pinned chart defaults allow 30 seconds for search
+and 10 seconds for trace-by-ID queries. The longer route deadline leaves time
+for the upstream response and inter-site request to finish. The
+[Gateway API timeout fields](https://gateway-api.sigs.k8s.io/api-types/httproute/#timeouts-optional)
+distinguish those deadlines. These route timeouts do not affect OTLP ingest or
+the Tempo memberlist ring, nor do they extend Tempo's own query timeout.
+
+During the YVR outage investigation on 2026-11-15, the live YVR ingester log
+showed memberlist TCP timeouts and `no route to host` to YXL Tempo peers, while
+YXL ingesters had no corresponding memberlist warnings in the sampled 24-hour
+logs. YVR's HTTPRoutes were accepted and both clusters' synchronized endpoint
+lists reported ready gateways, but those signals did not prove inter-site
+memberlist reachability. This is consistent with an inter-site network failure
+affecting the shared ring; the logs alone do not establish that the YVR Internet
+outage was the sole cause. The global memberlist and cross-cluster query
+behavior remain intentional. During a partition, remote ring peers and their
+in-memory spans can be unavailable until memberlist and the inter-site path
+recover. Verify cross-cluster search from both site routes after connectivity
+returns.
 
 Build and validate locally with:
 
@@ -110,7 +131,8 @@ helm template traces Observability/Traces --namespace core-prod \
 ```
 
 After reconciliation, verify the `tempo-core` Service has the expected local
-or synchronized EndpointSlices, all active Tempo components including the
+or synchronized EndpointSlices, both sites join the same memberlist ring, all
+active Tempo components including the
 metrics-generator are Ready, the metrics-generator ring is populated, the
 `User` claim and generated S3 Secrets are Ready, and the `tempo-traces` bucket
 is available. Then send an OTLP trace through Alloy, confirm it is written to

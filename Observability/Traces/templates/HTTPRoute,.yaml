@@ -29,6 +29,9 @@ spec:
         - path:
             type: PathPrefix
             value: '/'
+      timeouts:
+        request: '60s'
+        backendRequest: '45s'
 {{ if .Values.k8gb.enabled }}
 ---
 apiVersion: gateway.networking.k8s.io/v1beta1
@@ -60,6 +63,9 @@ spec:
         - path:
             type: PathPrefix
             value: '/'
+      timeouts:
+        request: '60s'
+        backendRequest: '45s'
 ---
 apiVersion: k8gb.io/v1beta1
 kind: Gslb
