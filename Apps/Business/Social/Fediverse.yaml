@@ -75,6 +75,16 @@ spec:
 
                 region: '{{ .values.region }}'
 
+                defaultPodOptions:
+                  dnsPolicy: 'None'
+                  dnsConfig:
+                    nameservers:
+                      - '10.44.4.10'
+                      - '1.1.1.1'
+                    options:
+                      - name: 'ndots'
+                        value: '0'
+
                 cluster:
                   name: '{{ .values.clusterName }}'
                   domain: '{{ .values.clusterDomain }}'
