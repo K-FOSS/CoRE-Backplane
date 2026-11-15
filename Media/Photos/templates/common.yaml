@@ -17,7 +17,7 @@ frontend redis
 
 backend dragonfly
   option tcp-check
-  server dragonfly dragonfly-core.core-prod.svc.cluster.local:6379 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt verifyhost dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space sni str(dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space)
+  server dragonfly dragonfly-core.core-prod.svc.{{ .Values.global.cluster.domain }}:6379 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt verifyhost dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space sni str(dragonfly.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space)
 {{- end }}
 
 {{- define "photos.haproxyContainer" -}}
@@ -77,6 +77,11 @@ global:
 controllers:
   server:
     strategy: Recreate
+    pod:
+      dnsConfig:
+        options:
+          - name: 'ndots'
+            value: '0'
     initContainers:
       render-config:
         image:
@@ -118,7 +123,7 @@ controllers:
           digest: {{ required "immich.imageDigest is required" .Values.immich.imageDigest | squote }}
         env:
           IMMICH_CONFIG_FILE: '/config/immich-config.yaml'
-          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}:3003'
+          IMMICH_MACHINE_LEARNING_URL: 'http://{{ include "photos.mlResourceName" (dict "name" (index .Values.mlrunners 0).name "release" .Values.global.nameOverride) }}.core-media.svc.{{ .Values.global.cluster.domain }}:3003'
           DB_HOSTNAME: 'psql-local.{{ .Values.global.cluster.name }}.{{ .Values.global.datacenter }}.{{ .Values.global.region }}.mylogin.space'
           DB_PORT: '5432'
           DB_USERNAME:
@@ -173,6 +178,10 @@ controllers:
     forceRename: '{{ include "photos.mlResourceName" (dict "name" $runner.name "release" $.Values.global.nameOverride) }}'
     strategy: Recreate
     pod:
+      dnsConfig:
+        options:
+          - name: 'ndots'
+            value: '0'
       {{- with $runner.nodeSelector }}
       nodeSelector:
 {{ toYaml . | nindent 8 }}
@@ -271,7 +280,7 @@ configMaps:
         machineLearning:
           urls:
 {{- range $runner := .Values.mlrunners }}
-            - 'http://{{ include "photos.mlResourceName" (dict "name" .name "release" $.Values.global.nameOverride) }}:3003'
+            - 'http://{{ include "photos.mlResourceName" (dict "name" .name "release" $.Values.global.nameOverride) }}.core-media.svc.{{ $.Values.global.cluster.domain }}:3003'
 {{- end }}
           clip:
             modelName: '{{ required "immich.smartSearch.modelName is required" .Values.immich.smartSearch.modelName }}'
