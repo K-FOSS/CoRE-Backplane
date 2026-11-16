@@ -33,9 +33,11 @@ nodes using Node Feature Discovery/device-plugin labels. The Prometheus
 resource is configured with zero replicas; Grafana Alloy in
 [Collectors](../Collectors/) consumes the generated monitor CRs and
 remote-writes their samples to Mimir. Kustomize moves smartctl resources and
-its monitor selection to `kube-system`. The kube-prometheus-stack Grafana
-datasource ConfigMap is disabled because the standalone Grafana deployment
-owns datasource configuration.
+its monitor selection to `kube-system`. Its ServiceMonitor replaces the
+scrape-target `instance` label with the Kubernetes node name, matching the
+node identity used by the hardware dashboard's node-exporter queries. The
+kube-prometheus-stack Grafana datasource ConfigMap is disabled because the
+standalone Grafana deployment owns datasource configuration.
 
 The upstream Kubernetes mixin dashboards are always rendered, even though the
 stack's Prometheus and Grafana workloads are disabled; the standalone dashboard
