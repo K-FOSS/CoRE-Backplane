@@ -20,27 +20,45 @@ spec:
                   values:
                     hub: false
                     collectorReplicas: 3
-                    vectorEnabled: false
+                    vector:
+                      enabled: true
+                      syslog:
+                        service:
+                          enabled: false
                     podLogsEnabled: true
-                    lokiGlobalService: 'true'
+                    loki:
+                      globalService:
+                        enabled: true
                     rulesEnabled: true
 
                 - name: core-home1-talos-prod
                   values:
                     hub: false
                     collectorReplicas: 3
-                    vectorEnabled: false
+                    vector:
+                      enabled: true
+                      syslog:
+                        service:
+                          enabled: false
                     podLogsEnabled: true
-                    lokiGlobalService: 'true'
+                    loki:
+                      globalService:
+                        enabled: true
                     rulesEnabled: true
 
                 - name: dc1-k3s-node1
                   values:
                     hub: false
                     collectorReplicas: 3
-                    vectorEnabled: true
+                    vector:
+                      enabled: false
+                      syslog:
+                        service:
+                          enabled: false
                     podLogsEnabled: false
-                    lokiGlobalService: 'false'
+                    loki:
+                      globalService:
+                        enabled: false
                     rulesEnabled: false
           - clusters:
               selector:
@@ -92,7 +110,7 @@ spec:
               value: |-
                 alloy:
                   destinations:
-                    {{- if eq .values.lokiGlobalService "true" }}
+                    {{- if .values.loki.globalService.enabled }}
                     lokiUrl: 'http://loki-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:3100/loki/api/v1/push'
                     {{- else }}
                     # Legacy has no namespace-local global Service registration.
@@ -332,7 +350,9 @@ spec:
                         replacement: '{{ .values.region }}'
 
                 vector:
-                  enabled: {{ .values.vectorEnabled }}
+                  enabled: {{ .values.vector.enabled }}
+                  syslogService:
+                    enabled: {{ .values.vector.syslog.service.enabled }}
 
                   env:
                     - name: VECTOR_CLUSTER

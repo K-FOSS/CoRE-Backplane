@@ -187,13 +187,17 @@ the gateway connection. The transform removes its temporary bridge attributes
 after promoting them and marks cluster, datacentre, and Kubernetes resource
 attributes for Loki label conversion.
 
-Vector ingestion runs only on `dc1-k3s-node1`, which owns the static syslog
-LoadBalancer address. It accepts Cisco and iDRAC syslog over TCP or UDP on port
-514 and Talos kernel/service JSON over UDP ports 6050/6051. Vector parses and
-normalizes those records into OTLP resources, then sends OTLP/HTTP to the
-central Alloy infrastructure receiver on port 4328. That receiver deliberately
-bypasses `k8sattributes`: the emitting device remains the resource rather than
-being replaced by the Vector pod identity. See Vector's
+Vector is enabled on `core-dc1-talos-prod` (YXL) and
+`core-home1-talos-prod` (YVR), and disabled on `dc1-k3s-node1`. The K3s
+Application no longer runs the Vector syslog receiver. The
+`vector.syslog.service.enabled` setting is currently false on all three
+profiles, so no syslog LoadBalancer Service is created; Vector on YXL/YVR has
+no external syslog listener until a site-specific Service is configured.
+When Vector receives device or Talos logs, it parses and normalizes them into
+OTLP resources, then sends OTLP/HTTP to the central Alloy infrastructure
+receiver on port 4328. That receiver deliberately bypasses `k8sattributes`:
+the emitting device remains the resource rather than being replaced by the
+Vector pod identity. See Vector's
 [`socket` source](https://vector.dev/docs/reference/configuration/sources/socket/),
 [`remap` transform](https://vector.dev/docs/reference/configuration/transforms/remap/),
 and
@@ -203,8 +207,9 @@ documentation.
 The Vector chart runs a stateless Deployment without Kubernetes RBAC or a
 mounted service-account token. Its internal API supplies gRPC startup,
 readiness, and liveness checks on pod port `8686`; neither the chart Service nor
-the syslog LoadBalancer exposes that port. Site-specific PureLB annotations and
-listener mappings are configured under `vector.syslogService`.
+any Service exposes that port. Site-specific PureLB annotations and listener
+mappings are configured under `vector.syslogService` when a syslog Service is
+enabled.
 
 Vector 0.57 disables configuration-file environment interpolation by default.
 This deployment explicitly opts back in because the ApplicationSet injects the
