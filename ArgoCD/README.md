@@ -51,7 +51,10 @@ The sidecar follows the upstream [Argo CD Config Management Plugin
 installation model](https://argo-cd.readthedocs.io/en/stable/operator-manual/config-management-plugins/)
 and reads Vault configuration from `argocd-vault-config`.
 
-The pinned [Lovely plugin 1.2.5 Helm processor](https://github.com/crumbhole/argocd-lovely-plugin/blob/1.2.5/pkg/processor/helmProcessor.go)
+The pinned [Lovely plugin 2.0.0](https://github.com/crumbhole/argocd-lovely-plugin/releases/tag/v2.0.0)
+ships Kustomize 5.8.1 and Helm 4. The cache wrapper calls the bundled `helm3`
+binary to preserve this stack's Helm 3 rendering behavior. Its
+[Helm processor](https://github.com/crumbhole/argocd-lovely-plugin/blob/v2.0.0/pkg/processor/helmProcessor.go)
 passes a fixed `/tmp/.helm` repository config, registry config, and chart-index
 cache to Helm. It also adds chart repositories and runs `helm repo update`
 during manifest generation. Since the sidecar handles concurrent generation
@@ -89,6 +92,16 @@ details into that Secret.
 | Local home1 cluster registration | Registers the local cluster at `https://kubernetes.default.svc` with the Argo CD Application controller's in-cluster identity and the labels consumed by the fleet ApplicationSets. |
 | Authentik Workspace | Creates the Argo CD OAuth provider/application and writes OIDC outputs to `argocd-secret`. |
 | Lovely plugin | Renders Helm/Kustomize content and resolves Vault-backed placeholders. |
+
+The production ApplicationSet enables metrics and ServiceMonitors for the
+application controller, repo-server, ApplicationSet controller, notifications
+controller, and API server at a 30-second interval. Alloy's clustered
+ServiceMonitor pipeline forwards these metrics to Mimir. The standalone
+Grafana dashboard chart imports the pinned [Argo CD / Application / Overview
+dashboard](https://grafana.com/grafana/dashboards/19974-argocd-application-overview/)
+into the `Infrastructure` folder. Argo CD's [metrics
+documentation](https://argo-cd.readthedocs.io/en/stable/operator-manual/metrics/)
+describes the component endpoints and available metric families.
 
 Dex and OpenShift integration are disabled. Argo CD's local admin account is
 currently enabled, while Authentik is the configured OIDC provider.
@@ -252,12 +265,13 @@ different node names.
 
 ## Rendering and validation
 
-The current dependency pin is `argo-cd` chart `10.11.6`, which deploys Argo CD
-`v3.5.6`. Review the upstream [Argo CD 3.5 release notes](https://github.com/argoproj/argo-cd/releases/tag/v3.5.6)
-and [argo-cd 10.11.6 chart release](https://github.com/argoproj/argo-helm/releases/tag/argo-cd-10.11.6).
+The current dependency pin is `argo-cd` chart `10.18.0`, which deploys Argo CD
+`v3.6.1`. Review the upstream [Argo CD 3.6.1 release notes](https://github.com/argoproj/argo-cd/releases/tag/v3.6.1)
+and [argo-cd 10.18.0 chart release](https://github.com/argoproj/argo-helm/releases/tag/argo-cd-10.18.0).
 From the previous deployed `v3.3.6`, review the upstream
 [v3.3 to v3.4 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.5/operator-manual/upgrading/3.3-3.4/)
 and [v3.4 to v3.5 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.5/operator-manual/upgrading/3.4-3.5/).
+Also review the [v3.5 to v3.6 upgrade notes](https://argo-cd.readthedocs.io/en/release-3.6/operator-manual/upgrading/3.5-3.6/).
 Argo CD 3.5 bundles Helm 4, so review rendered application differences for
 Helm-based sources as part of an upgrade.
 
