@@ -152,6 +152,18 @@ clustered Alloy deployment discovers it and writes the metrics to Mimir.
 Verify the canary write/read loop and component metrics;
 readiness alone does not prove S3 ingestion or querying.
 
+The pinned Loki 6.46.0 chart publishes its complete bundled mixin dashboard set
+through `loki.monitoring.dashboards.enabled`; the dashboard ConfigMaps use the
+`grafana_dashboard: 'true'` label and import into Grafana's `Loki` folder. Its
+monitoring rules are enabled to provide mixin recording rules, with alert rules
+disabled. See the [upstream chart dashboard and rules values](https://github.com/grafana/loki/blob/helm-loki-6.46.0/production/helm/loki/values.yaml)
+and [Loki mixin dashboards](https://github.com/grafana/loki/tree/helm-loki-6.46.0/production/helm/loki/src/dashboards).
+The repository-managed `Loki / Container Logging Volume` dashboard is also
+owned here and imports into `Observability`; it uses Alloy's cluster,
+datacenter, namespace, pod, and container log labels. Loki's ServiceMonitor
+sets `cluster` to the injected cluster name so the dashboard syncer's query
+scoping matches the labels in Mimir.
+
 External access uses
 `logs.<cluster>.<datacentre>.<region>.<externalDomain>`. The
 [`SecurityPolicy`](templates/SecurityPolicy.yaml) validates the configured

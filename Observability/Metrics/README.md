@@ -69,6 +69,13 @@ scrape interval. This makes the Mimir `/metrics` endpoints available to Alloy
 and Grafana for the dashboards imported by the
 [Grafana dashboards stack](../Dashboards/README.md). The configuration follows
 Grafana's [Mimir monitoring mixin guidance](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/deploying-monitoring-mixin/).
+The pinned [`mimir-distributed` chart 5.7.0-weekly.327](https://github.com/grafana/helm-charts/tree/mimir-distributed-5.7.0-weekly.327/charts/mimir-distributed)
+also publishes its bundled mixin dashboards through
+`metaMonitoring.dashboards.enabled`. The generated ConfigMaps carry
+`grafana_dashboard: 'true'` and import into the `Mimir` folder through the
+dashboard syncer. This keeps Mimir Overview, Writes, and the rest of the chart's
+dashboard set with the Mimir workloads. The mixin's [dashboard requirements](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/requirements/)
+describe the metrics, rules, and labels expected by its panels.
 
 ## Distributed tracing
 

@@ -58,6 +58,16 @@ collector's `job="node-exporter"`, `instance`, and `nodename` labels.
 The generated CoreDNS dashboard is patched into the `Infrastructure` Grafana
 folder by the owning [Exporters ApplicationSet](../../Apps/Observability/Exporters.yaml).
 
+This stack also owns the `Hardware Exporters` dashboard and the pinned
+[Grafana Node Exporter Full dashboard 1860, revision 45](https://grafana.com/api/dashboards/1860/revisions/45/download).
+Their labeled ConfigMaps are in `core-prod` and import into the
+`Infrastructure` folder. The repository-managed hardware dashboard uses the
+Alloy node-exporter series; Node Exporter Full uses its `job`, `nodename`, and
+`instance` selectors. The syncer applies a local 15-second minimum query
+interval and refresh to Node Exporter Full, while the WAN-GW2 scrape runs every
+30 seconds. The exporter chart's standalone Prometheus and Grafana workloads
+remain disabled; Alloy and the dashboard syncer own collection and import.
+
 The GPU exporters require host GPU enablement: NFD must publish the Intel PCI
 label `feature.node.kubernetes.io/pci-0300_8086.present: 'true'`, and the
 NVIDIA driver, container runtime integration, and device plugin must publish

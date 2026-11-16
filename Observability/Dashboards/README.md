@@ -153,22 +153,9 @@ keeps only the enablement, central cluster selector, and pinned image settings;
 [k8s-sidecar script and request configuration](https://github.com/kiwigrid/k8s-sidecar#configuration-environment-variables)
 and [Cilium Global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/).
 
-The `grafana-dashboard-node-exporter-full` ConfigMap imports [Grafana dashboard
-1860, Node Exporter Full](https://grafana.com/grafana/dashboards/1860-node-exporter-full/)
-from the pinned [revision 45 download URL](https://grafana.com/api/dashboards/1860/revisions/45/download)
-into the `Infrastructure` folder. The syncer supports `.url` entries alongside
-repository-managed `.json` dashboards; the URL is fetched when the labeled
-ConfigMap is observed. The dashboard expects Prometheus node-exporter metrics
-and provides `job`, `nodename`, and `instance` selectors. The dedicated
-privileged Alloy host DaemonSet emits those standard labels; the exporter
-ApplicationSet also forces the pinned upstream Kubernetes dashboard ConfigMaps
-to render so the standalone syncer receives dashboard updates even though no
-Prometheus or kube-prometheus-stack Grafana pod is deployed.
-The syncer also applies a local overlay to this dashboard: panels use a
-15-second minimum query interval and the dashboard offers a 15-second refresh
-interval. This affects query and refresh resolution only; the WAN-GW2 scrape
-currently runs every 30 seconds, so intervals shorter than that cannot recover
-samples that were not collected.
+The Node Exporter Full and Hardware Exporter dashboards are owned by the
+[Exporters stack](../Exporters/README.md). The exporter stack also continues to
+render the Kubernetes mixin dashboards for its standalone syncer.
 
 Cilium dashboards are provided by the Cilium Helm release in the
 [Network/Base stack](../../Network/Base/README.md), which enables the chart's
@@ -191,34 +178,20 @@ and Grafana documents the [service-account creation permissions](https://grafana
 and intended authentication mechanism for automated API clients; see the
 [Grafana HTTP API authentication documentation](https://grafana.com/docs/grafana/latest/developer-resources/api-reference/http-api/authentication/).
 
-The chart provisions the `PostgreSQL / Database Capacity and Connections`
-dashboard from [`templates/PostgreSQL.yaml`](templates/PostgreSQL.yaml). It
-uses the PostgreSQL exporter's `pg_database_size_bytes` and
-`pg_stat_database_numbackends` metrics for per-database size and connection
-tables, plus a connection time series. PostgreSQL scrape targets use the
-canonical `instance` label `<cluster>/<psql-cluster>/<pod-name>`, matching the PSQL chart's
-ServiceMonitor relabeling.
+Component dashboards are defined with their workloads so each stack owns its
+dashboards and required telemetry:
 
-The chart also provisions the `Loki / Container Logging Volume` dashboard from
-[`templates/LokiLogging.yaml`](templates/LokiLogging.yaml). It uses the
-existing Alloy pod-log instrumentation: the collector preserves `cluster`,
-`dc`, `namespace`, `pod`, and `container` labels before forwarding logs to
-Loki. Loki LogQL `bytes_over_time` and `count_over_time` queries show total
-volume, bytes per second, lines per second, and the top containers by bytes or
-lines. The dashboard's time range and variables can be narrowed to isolate a
-noisy namespace, pod, or container. It intentionally measures the stored log
-stream rather than adding a second metric pipeline.
+- [Metrics](../Metrics/README.md) provides Mimir mixin dashboards.
+- [Logs](../Logs/README.md) provides Loki mixin dashboards and the container
+  logging volume dashboard.
+- [Traces](../Traces/README.md) provides Tempo mixin dashboards.
+- [Exporters](../Exporters/README.md) provides Hardware Exporters and Node
+  Exporter Full dashboards.
+- [PostgreSQL](../../Databases/PSQL/README.md) provides the database capacity
+  dashboard with its PostgreSQL exporters.
 
-The chart imports Grafana Labs' pinned [Mimir / Overview dashboard](https://grafana.com/grafana/dashboards/17607-mimir-overview/)
-and [Mimir / Writes dashboard](https://grafana.com/grafana/dashboards/16026-mimir-writes/)
-from [`templates/Mimir.yaml`](templates/Mimir.yaml). Overview provides cluster
-health and component status; Writes covers the ingestion path through the
-gateway, distributor, and ingester. The dashboard URLs are pinned to immutable
-Grafana dashboard revisions and are fetched by the existing syncer into the
-`Mimir` folder. These dashboards follow Grafana Mimir's
-[production monitoring dashboard guidance](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/dashboards/)
-and require the Mimir metrics, recording rules, and labels described in the
-[dashboard requirements](https://grafana.com/docs/mimir/latest/manage/monitor-grafana-mimir/requirements/).
+The syncer continues to import these labeled ConfigMaps from the component
+stacks into Grafana.
 
 The Garage operator remains the canonical source for the Garage S3 dashboard in
 DC1. Its labelled ConfigMap is imported by the DC1 syncer into the central YVR
