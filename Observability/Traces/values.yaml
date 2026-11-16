@@ -94,6 +94,17 @@ tempo-distributed:
             app.kubernetes.io/component: 'gateway'
     service:
       port: 3200
+  distributor:
+    affinity: |
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: 'tempo'
+                  app.kubernetes.io/component: 'distributor'
+              topologyKey: 'kubernetes.io/hostname'
   traces:
     otlp:
       grpc:
