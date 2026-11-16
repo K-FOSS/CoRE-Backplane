@@ -71,7 +71,9 @@ Gateway host anti-affinity is preferred rather than required. This keeps the
 three replicas eligible for rolling surge placement. A required
 `DoNotSchedule` topology-spread constraint enforces one replica per active-site
 host in steady state, preventing a routable node failure from concentrating
-the global Service endpoints on one host. In the Home1 profile, the gateway and
+the global Service endpoints on one host. Distributor host anti-affinity is also
+preferred rather than required, so a constrained cluster can place multiple
+distributors on one node when necessary. In the Home1 profile, the gateway and
 distributor also prefer every node except `hpc3`; other Tempo components retain
 their normal chart placement rules.
 The [ApplicationSet patch](../../Apps/Observability/Traces.yaml) selects the
