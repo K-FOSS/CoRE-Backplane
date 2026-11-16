@@ -19,7 +19,10 @@ Authentik display name and username include the target cluster. This keeps the
 LDAP identity cluster-scoped in the shared Authentik directory while retaining
 the standard `User.mylogin.space/v1alpha1` claim lifecycle. The owning
 ApplicationSet injects the cluster name; standalone chart renders fall back to
-the Helm release name.
+the Helm release name. The claim Secret is pushed to and read from the
+cluster-specific Vault path `MongoDB/<cluster>/Credentials`, which supplies
+the LDAP query user and password used by MongoDB. The Crossplane provider still
+uses the separate operator administrator Secret for role management.
 
 ## Dependencies
 
