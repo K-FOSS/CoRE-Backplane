@@ -1,0 +1,16 @@
+{{- if (index (index .Values "tempo-distributed") "enabled") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-mixin-dashboards
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'Tempo'
+data:
+  tempo-reads.url: 'https://raw.githubusercontent.com/grafana/tempo/8100f5a7b8f0986edf1fcd2ff6552d174b25ec18/operations/tempo-mixin-compiled/dashboards/tempo-reads.json'
+  tempo-writes.url: 'https://raw.githubusercontent.com/grafana/tempo/8100f5a7b8f0986edf1fcd2ff6552d174b25ec18/operations/tempo-mixin-compiled/dashboards/tempo-writes.json'
+  tempo-resources.url: 'https://raw.githubusercontent.com/grafana/tempo/8100f5a7b8f0986edf1fcd2ff6552d174b25ec18/operations/tempo-mixin-compiled/dashboards/tempo-resources.json'
+  tempo-operational.url: 'https://raw.githubusercontent.com/grafana/tempo/8100f5a7b8f0986edf1fcd2ff6552d174b25ec18/operations/tempo-mixin-compiled/dashboards/tempo-operational.json'
+{{- end }}

@@ -85,6 +85,17 @@ when active and synchronized remote endpoints otherwise. The public
 is protected by an Envoy Gateway JWT SecurityPolicy requiring the `Traces`
 group.
 
+The stack enables Tempo's chart `metaMonitoring.serviceMonitor`, with a
+30-second scrape interval and the ApplicationSet-injected cluster name. Alloy
+discovers the ServiceMonitors and remote-writes Tempo metrics to Mimir. A
+labeled ConfigMap imports the four Tempo 2.10.7 mixin dashboards (Reads, Writes,
+Resources, and Operational) into Grafana's `Tempo` folder. Each `.url` source
+is pinned to the deployed [Tempo v2.10.7 release commit](https://github.com/grafana/tempo/tree/8100f5a7b8f0986edf1fcd2ff6552d174b25ec18/operations/tempo-mixin-compiled/dashboards);
+the dashboard files and monitoring requirements are documented in the [Tempo v2.10 monitoring guide](https://grafana.com/docs/tempo/v2.10.x/operations/monitor/).
+Tempo mixin recording rules and alerts are not installed by this dashboard
+import, so panels that depend on derived series require those rules to be
+provided separately.
+
 ## Operations and verification
 
 The production route is JWT protected at `traces.mylogin.space` through K8GB.
