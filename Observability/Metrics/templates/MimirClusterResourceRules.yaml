@@ -22,4 +22,15 @@ spec:
           expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_working_set_bytes{job="kubelet", metrics_path="/metrics/cadvisor", pod!="", container!="", container!="POD"}))'
         - record: 'cluster:container_memory_rss:sum'
           expr: 'sum by (cluster) (max by (cluster, namespace, pod, container) (container_memory_rss{job="kubelet", metrics_path="/metrics/cadvisor", container!="", container!="POD"}))'
+        # KubeVirt's total VMI CPU includes vCPU and hypervisor time. Keep a
+        # separate guest-vCPU series so dashboards do not mistake QEMU/KVM
+        # overhead (including host-side halt polling) for guest work.
+        - record: 'kubevirt_vmi_cpu_usage:rate5m'
+          expr: 'sum by (cluster, namespace, name, node) (rate(kubevirt_vmi_cpu_usage_seconds_total[5m]))'
+        - record: 'kubevirt_vmi_vcpu_usage:rate5m'
+          expr: 'sum by (cluster, namespace, name, node) (rate(kubevirt_vmi_vcpu_seconds_total{state="running"}[5m]))'
+        - record: 'kubevirt_vmi_vcpu_delay:rate5m'
+          expr: 'sum by (cluster, namespace, name, node) (rate(kubevirt_vmi_vcpu_delay_seconds_total[5m]))'
+        - record: 'kubevirt_vmi_vcpu_wait:rate5m'
+          expr: 'sum by (cluster, namespace, name, node) (rate(kubevirt_vmi_vcpu_wait_seconds_total[5m]))'
 {{- end }}
