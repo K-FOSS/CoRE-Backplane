@@ -46,6 +46,9 @@ controllers:
           DC: {{ .Values.cluster.datacenter | quote }}
           REGION: {{ .Values.cluster.region | quote }}
           CENTRAL_CLUSTER_NAME: {{ .Values.dashboardSync.centralClusterName | quote }}
+          SYNC_STATE: '/var/lib/grafana-dashboard-sync/state.json'
+          SYNC_LOCK: '/var/lib/grafana-dashboard-sync/sync.lock'
+          SYNC_VERIFICATION_INTERVAL: {{ .Values.dashboardSync.verificationIntervalSeconds | quote }}
           GRAFANA_URL: {{ printf "http://grafana-dashboard-api.core-prod.svc.%s" .Values.cluster.domain | quote }}
           GRAFANA_TOKEN:
             secretKeyRef:
@@ -121,6 +124,13 @@ persistence:
       main:
         dashboard-sync:
           - path: '/tmp/dashboards'
+  state:
+    enabled: true
+    type: 'emptyDir'
+    advancedMounts:
+      main:
+        dashboard-sync:
+          - path: '/var/lib/grafana-dashboard-sync'
   script:
     enabled: true
     type: 'configMap'

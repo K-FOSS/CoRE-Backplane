@@ -10,6 +10,8 @@ data:
     import hashlib
     import os
     import re
+    import time
+    import fcntl
     from pathlib import Path
     from urllib.error import HTTPError
     from urllib.parse import parse_qsl, quote, urlencode, urlsplit, urlunsplit
@@ -22,6 +24,9 @@ data:
     datacenter = os.environ['DC']
     region = os.environ['REGION']
     central_cluster_name = os.environ['CENTRAL_CLUSTER_NAME']
+    STATE_PATH = Path(os.environ['SYNC_STATE'])
+    LOCK_PATH = Path(os.environ['SYNC_LOCK'])
+    VERIFICATION_INTERVAL = int(os.environ.get('SYNC_VERIFICATION_INTERVAL', '300'))
     FOLDER_API = '/apis/folder.grafana.app/v1/namespaces/default/folders'
     DASHBOARD_API = '/apis/dashboard.grafana.app/v1/namespaces/default/dashboards'
 
@@ -37,6 +42,35 @@ data:
         req = Request(f'{GRAFANA_URL}{path}', data=body, headers=headers, method=method)
         with urlopen(req, timeout=30) as response:
             return response.status, json.loads(response.read() or b'{}')
+
+    def source_digest(path):
+        """Hash the source content, not mtime; sidecar rewrites files on events."""
+        digest = hashlib.sha256()
+        with path.open('rb') as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    def load_state():
+        try:
+            with STATE_PATH.open(encoding='utf-8') as stream:
+                value = json.load(stream)
+            return value if isinstance(value, dict) else {}
+        except (FileNotFoundError, json.JSONDecodeError):
+            return {}
+
+    def save_state(state):
+        temporary = STATE_PATH.with_suffix('.tmp')
+        with temporary.open('w', encoding='utf-8') as stream:
+            json.dump(state, stream, sort_keys=True)
+            stream.flush()
+            os.fsync(stream.fileno())
+        temporary.replace(STATE_PATH)
+
+    def acquire_lock():
+        lock = LOCK_PATH.open('w', encoding='utf-8')
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        return lock
 
     def normalized_dashboard(value):
         dashboard = json.loads(json.dumps(value))
@@ -67,47 +101,6 @@ data:
             continuation = result.get('metadata', {}).get('continue')
             if not continuation:
                 return resources
-
-    def ensure_folder(title, parent_uid, folders):
-        parent_annotation = parent_uid or None
-        matches = [
-            item for item in folders
-            if item.get('spec', {}).get('title') == title
-            and item.get('metadata', {}).get('annotations', {}).get(
-                'grafana.app/folder'
-            ) == parent_annotation
-        ]
-        if matches:
-            # Prefer the deterministic UID. This makes concurrent syncers
-            # converge without creating a new folder for each event.
-            stable_uid = folder_uid(title, parent_uid)
-            for match in matches:
-                if match.get('metadata', {}).get('name') == stable_uid:
-                    return stable_uid
-            return min(
-                matches,
-                key=lambda item: item.get('metadata', {}).get(
-                    'creationTimestamp', ''
-                ),
-            )['metadata']['name']
-
-        stable_uid = folder_uid(title, parent_uid)
-        metadata = {'name': stable_uid}
-        if parent_uid:
-            metadata['annotations'] = {'grafana.app/folder': parent_uid}
-        payload = {
-            'metadata': metadata,
-            'spec': {'title': title},
-        }
-        try:
-            _, result = request('POST', FOLDER_API, payload)
-            return result['metadata']['name']
-        except HTTPError as error:
-            if error.code != 409:
-                raise
-            # Another cluster-local syncer may have created the same folder.
-            _, result = request('GET', f'{FOLDER_API}/{quote(stable_uid, safe="")}')
-            return result['metadata']['name']
 
     def folder_uid(title, parent_uid=None):
         parent = parent_uid or 'root'
@@ -322,6 +315,7 @@ data:
             # older Grafana API does not expose the dashboard list endpoint.
             print(f'Unable to clean up empty legacy folders: {error}')
 
+    lock = acquire_lock()
     dashboard_paths = sorted(path for path in ROOT.rglob('*') if path.is_file())
     dashboards = []
     for dashboard_path in dashboard_paths:
@@ -340,6 +334,29 @@ data:
                 dashboard = json.load(stream)
         dashboards.append((dashboard_path, dashboard))
 
+    state = load_state()
+    now = int(time.time())
+    active_paths = {str(path.relative_to(ROOT)) for path, _ in dashboards}
+    source_digests = {
+        str(path.relative_to(ROOT)): source_digest(path)
+        for path, _ in dashboards
+    }
+    dirty_paths = {
+        str(path.relative_to(ROOT))
+        for path, _ in dashboards
+        if (
+            state.get(str(path.relative_to(ROOT)), {}).get('sourceDigest')
+            != source_digests[str(path.relative_to(ROOT))]
+            or now - state.get(str(path.relative_to(ROOT)), {}).get('verifiedAt', 0)
+            >= VERIFICATION_INTERVAL
+        )
+    }
+    stale_paths = set(state) - active_paths
+    if not dirty_paths and not stale_paths:
+        print(f'dashboard sync complete: imported=0 skipped={len(active_paths)} active={len(active_paths)}')
+        lock.close()
+        raise SystemExit(0)
+
     uid_map = {}
     for dashboard_path, dashboard in dashboards:
         original_uid = dashboard.get('uid')
@@ -350,10 +367,54 @@ data:
             )
 
     folders = list_resources(FOLDER_API)
+    folders_by_key = {
+        (
+            item.get('spec', {}).get('title'),
+            item.get('metadata', {}).get('annotations', {}).get('grafana.app/folder'),
+        ): item.get('metadata', {}).get('name')
+        for item in folders
+    }
     cluster_folder = None
     managed_folder_titles = set()
 
+    def ensure_indexed_folder(title, parent_uid):
+        key = (title, parent_uid or None)
+        existing = folders_by_key.get(key)
+        if existing:
+            return existing
+        uid = folder_uid(title, parent_uid)
+        payload = {
+            'metadata': {'name': uid},
+            'spec': {'title': title},
+        }
+        if parent_uid:
+            payload['metadata']['annotations'] = {'grafana.app/folder': parent_uid}
+        try:
+            _, result = request('POST', FOLDER_API, payload)
+            uid = result['metadata']['name']
+        except HTTPError as error:
+            if error.code != 409:
+                raise
+            # A second cluster-local syncer may have won the create race.
+            _, result = request('GET', f'{FOLDER_API}/{quote(uid, safe="")}')
+            uid = result['metadata']['name']
+        folders_by_key[key] = uid
+        folders.append({'metadata': {'name': uid, 'annotations': payload['metadata'].get('annotations', {})}, 'spec': {'title': title}})
+        return uid
+
+    imported = 0
+    skipped = 0
+
     for dashboard_path, dashboard in dashboards:
+        relative_path = str(dashboard_path.relative_to(ROOT))
+        digest = source_digests[relative_path]
+        previous = state.get(relative_path, {})
+        if (
+            previous.get('sourceDigest') == digest
+            and now - previous.get('verifiedAt', 0) < VERIFICATION_INTERVAL
+        ):
+            skipped += 1
+            continue
         original_uid = dashboard.get('uid')
         if original_uid:
             dashboard['uid'] = uid_map[original_uid]
@@ -403,19 +464,17 @@ data:
         folder_parts = relative_parent.parts
         global_folder = global_dashboard and folder_parts[0] == 'Global'
         if global_dashboard:
-            root_folder_uid = ensure_folder('Global', None, folders)
+            root_folder_uid = ensure_indexed_folder('Global', None)
         else:
             if cluster_folder is None:
-                cluster_folder = ensure_folder(cluster_name, None, folders)
-                folders = list_resources(FOLDER_API)
+                cluster_folder = ensure_indexed_folder(cluster_name, None)
             root_folder_uid = cluster_folder
         managed_folder_titles.add('Global' if global_dashboard else folder or cluster_name)
         folder_uid_value = root_folder_uid
         if folder:
             nested_folder = '/'.join(folder_parts[1:]) if global_folder else folder
             if nested_folder:
-                folder_uid_value = ensure_folder(nested_folder, root_folder_uid, folders)
-            folders = list_resources(FOLDER_API)
+                folder_uid_value = ensure_indexed_folder(nested_folder, root_folder_uid)
         scope_tag = 'sync-scope-' + hashlib.sha256(
             f'{root_folder_uid}:{folder_uid_value}'.encode()
         ).hexdigest()[:12]
@@ -436,6 +495,19 @@ data:
         payload['folderUid'] = folder_uid_value
         if not dashboard_is_unchanged(dashboard['uid'], dashboard):
             request('POST', '/api/dashboards/db', payload)
+            imported += 1
+        state[relative_path] = {
+            'sourceDigest': digest,
+            'verifiedAt': now,
+            'uid': dashboard['uid'],
+            'folderUid': folder_uid_value,
+        }
 
-    cleanup_empty_legacy_folders(folders, managed_folder_titles, cluster_folder)
+    for relative_path in stale_paths:
+        del state[relative_path]
+    save_state(state)
+    if imported or stale_paths:
+        cleanup_empty_legacy_folders(folders, managed_folder_titles, cluster_folder)
+    print(f'dashboard sync complete: imported={imported} skipped={skipped} active={len(active_paths)}')
+    lock.close()
 {{- end }}

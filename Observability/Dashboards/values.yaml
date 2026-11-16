@@ -130,6 +130,10 @@ grafana:
 dashboardSync:
   enabled: true
   centralClusterName: 'core-home1-talos-prod'
+  # The sidecar remains the Kubernetes watch/informer. The importer keeps a
+  # persistent fingerprint cache so unrelated ConfigMap events are cheap and
+  # unchanged dashboards are periodically revalidated instead of rewritten.
+  verificationIntervalSeconds: 300
   namespaces:
     - 'core-prod'
     - 'k8gb'
