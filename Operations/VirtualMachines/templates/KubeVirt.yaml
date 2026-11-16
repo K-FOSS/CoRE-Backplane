@@ -31,6 +31,12 @@ spec:
       manufacturer: "Talos Virtualization"
       product: "talosvm"
       family: "ccio"
+  # KubeVirt creates its ServiceMonitor in the observability namespace. The
+  # Alloy services collector discovers that ServiceMonitor and already has the
+  # permissions required to read the kubevirt metrics Service and Endpoints.
+  monitorNamespace: 'core-prod'
+  monitorAccount: 'core-collectors-alloy-services'
+  serviceMonitorNamespace: 'core-prod'
   workloadUpdateStrategy:
     workloadUpdateMethods:
       - LiveMigrate
