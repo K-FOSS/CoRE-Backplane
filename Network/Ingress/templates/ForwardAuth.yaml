@@ -1,21 +1,72 @@
-apiVersion: gateway.networking.k8s.io/v1beta1
-kind: HTTPRoute
+{{- range $backendIndex, $backend := .Values.backends }}
+{{- if $backend.forwardAuth }}
+apiVersion: tf.upbound.io/v1beta1
+kind: Workspace
 metadata:
-  name: forward-authtest
-
+  name: '{{ $backend.name }}-forward-auth'
 spec:
-  parentRefs:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      namespace: core-prod
-      name: main-gw
-      sectionName: https-myloginspace
+  providerConfigRef:
+    name: 'authentik'
+  writeConnectionSecretToRef:
+    namespace: '{{ $.Release.Namespace }}'
+    name: '{{ $backend.name }}-forward-auth'
+  forProvider:
+    source: 'Inline'
+    module: | # hcl
+      data "authentik_flow" "authorization" {
+        slug = "default-provider-authorization-implicit-consent"
+      }
 
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /outpost.goauthentik.io
+      data "authentik_flow" "invalidation" {
+        slug = "default-provider-invalidation-flow"
+      }
+
+      resource "authentik_provider_proxy" "forward_auth" {
+        name               = "{{ $backend.name }} Forward Auth"
+        mode               = "forward_single"
+        external_host      = "https://{{ index $backend.hostnames 0 }}"
+        authorization_flow = data.authentik_flow.authorization.id
+        invalidation_flow  = data.authentik_flow.invalidation.id
+      }
+
+      resource "authentik_application" "forward_auth" {
+        name              = "{{ $backend.name }} Forward Auth"
+        slug              = "{{ $backend.name }}-forward-auth"
+        meta_launch_url   = "blank://blank"
+        protocol_provider = authentik_provider_proxy.forward_auth.id
+      }
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: '{{ $backend.name }}-forward-auth'
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: 'HTTPRoute'
+      name: '{{ $backend.name }}'
+  extAuth:
+    failOpen: false
+    headersToExtAuth:
+      - 'cookie'
+    http:
+      headersToBackend:
+        - 'set-cookie'
+        - 'x-authentik-*'
+        - 'authorization'
+        - 'Content-Type'
+        - 'Location'
+      backendSettings:
+        loadBalancer:
+          type: 'ConsistentHash'
+          consistentHash:
+            type: 'SourceIP'
       backendRefs:
-        - name: aaa-myloginspace-proxy
+        - group: ''
+          kind: 'Service'
+          namespace: 'core-prod'
+          name: 'aaa-myloginspace-proxy'
           port: 80
+      path: '/outpost.goauthentik.io/auth/envoy'
+{{- end }}
+{{- end }}

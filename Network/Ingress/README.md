@@ -14,6 +14,19 @@ controller itself is enabled through Network Base.
 - Backend and certificate reference grants.
 - Envoy proxy tracing to the cluster-local Alloy OTLP/gRPC Service.
 
+## Backend authentication
+
+Each entry in [`values.yaml`](values.yaml) may set `forwardAuth: true`. The
+chart then creates an Envoy Gateway [`SecurityPolicy`](https://gateway.envoyproxy.io/latest/api/gateway_api/extension_types/securitypolicy/)
+targeting that backend's `HTTPRoute`, and an Authentik Terraform
+[`Workspace`](https://registry.terraform.io/providers/goauthentik/authentik/latest/docs)
+that creates the matching `forward_single` proxy application. The proxy
+external host is derived from the first backend hostname, while Envoy calls
+the shared Authentik outpost in `core-prod`.
+
+Disable the field before removing a protected backend so the generated policy
+and Authentik Workspace are reconciled together.
+
 | Label | Meaning |
 | --- | --- |
 | `resolvemy.host/gw` | Gateway name. |
