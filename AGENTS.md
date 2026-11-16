@@ -33,13 +33,13 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
 
 ## Standing Git and reconciliation authorization
 
-- The repository owner authorized this workflow on 2026-09-26 after the Valkey
-  operator deployment. For requested implementation work, agents may validate,
-  create narrowly scoped commits, and push them to the repository's intended
-  branch without asking again. For deployment requests, continue through
-  scoped Argo CD reconciliation and downstream verification. Do not default
-  to handing Git operations back to the user. A request to review only, leave
-  changes uncommitted, use a PR, or defer deployment overrides this allowance.
+- For requested implementation work, agents may inspect, edit, and validate the
+  requested files, but must leave review and Git publication to the user by
+  default. Do not stage, commit, push, or create a PR unless the user
+  explicitly requests that Git operation in the current task. If the user
+  explicitly requests deployment, continue through scoped Argo CD
+  reconciliation and downstream verification; otherwise stop after validation
+  with the changes available for manual review.
 - Apply this authorization only to the requested task. Preserve unrelated
   staged and unstaged edits, untracked files, and unpublished commits. Inspect
   the index and outgoing commit range before publishing; use an isolated
@@ -240,6 +240,15 @@ add rules for a subtree, but must not weaken these repository-wide requirements.
   manifests for unsupported CRDs or when BJW-S cannot preserve required
   identity, lifecycle, ordering, or security semantics, and document the
   reason for the exception.
+- Prefer BJW-S common chart features for reusable Helm behavior before writing
+  custom templates or helper functions. This includes ConfigMap and Secret
+  rendering, controller checksum annotations for rollout triggers, persistence
+  mounts, probes, services, and network policies. When an existing resource
+  must remain a direct manifest, first check whether it can be represented as a
+  common chart value or file-backed resource so built-in lifecycle behavior
+  such as checksum-based rollouts still applies. Document any custom
+  implementation that remains necessary and why the library feature does not
+  fit.
 - In new or touched YAML, use single quotes for string scalars, including
   strings in flow sequences and mappings. Use double quotes only when YAML
   escape processing is required or a single-quoted value would be materially
