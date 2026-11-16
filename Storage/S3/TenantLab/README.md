@@ -88,7 +88,8 @@ policy/users.
 ## S3 API browser CORS
 
 The `minio-s3-cors` Envoy Gateway `SecurityPolicy` targets the generated S3
-HTTPRoute in each TenantLab namespace using its BJW-S common chart name. It
+HTTPRoute in each TenantLab namespace through the BJW-S `getByIdentifier`
+helper using route identifier `s3`. It
 allows browser requests from any origin using the S3 `GET`, `HEAD`, `POST`,
 `PUT` and `DELETE` methods, allows
 arbitrary request headers for S3 signing, exposes `ETag` and MinIO request
