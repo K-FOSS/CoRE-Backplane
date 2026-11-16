@@ -45,6 +45,7 @@ spec:
                     mimirRulerReplicas: 1
                     mimirMaxRulesPerRuleGroup: 100
                     mimirAvoidHpc3: false
+                    mimirIngesterAvoidNodes: []
 
 
                 - name: core-home1-talos-prod
@@ -68,6 +69,7 @@ spec:
                     mimirRulerReplicas: 1
                     mimirMaxRulesPerRuleGroup: 100
                     mimirAvoidHpc3: true
+                    mimirIngesterAvoidNodes: ['hpc3', 'laptop2']
 
           - clusters:
               selector:
@@ -377,14 +379,14 @@ spec:
                       topologyKey: 'kubernetes.io/hostname'
                       whenUnsatisfiable: 'ScheduleAnyway'
                     affinity:
-                      {{- if .values.mimirAvoidHpc3 }}
+                      {{- with .values.mimirIngesterAvoidNodes }}
                       nodeAffinity:
                         requiredDuringSchedulingIgnoredDuringExecution:
                           nodeSelectorTerms:
                             - matchExpressions:
                                 - key: 'kubernetes.io/hostname'
-                                  operator: NotIn
-                                  values: ['hpc3']
+                                  operator: 'NotIn'
+                                  values: {{ toJson . }}
                       {{- end }}
                       podAntiAffinity:
                         preferredDuringSchedulingIgnoredDuringExecution:
