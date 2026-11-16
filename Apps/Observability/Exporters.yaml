@@ -227,6 +227,27 @@ spec:
               value: |-
                 patches:
                   - target:
+                      labelSelector: 'app.kubernetes.io/name=prometheus-smartctl-exporter'
+                    patch: |-
+                      - op: replace
+                        path: /metadata/namespace
+                        value: kube-system
+
+                  - target:
+                      kind: ServiceMonitor
+                      labelSelector: 'app.kubernetes.io/name=prometheus-smartctl-exporter'
+                    patch: |-
+                      - op: replace
+                        path: /spec/namespaceSelector/matchNames/0
+                        value: kube-system
+                      - op: add
+                        path: /spec/endpoints/0/relabelings
+                        value:
+                          - action: replace
+                            sourceLabels: ['__meta_kubernetes_endpoint_node_name']
+                            targetLabel: instance
+
+                  - target:
                       version: v1
                       kind: ConfigMap
                       name: '{{ .values.clusterName }}-expo-k8s-coredns'
