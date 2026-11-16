@@ -185,6 +185,15 @@ carries the `wan-mode: 'public'` label and ExternalDNS hostname annotations.
 The K8GB `Gslb` owns the global record. See the [K8GB resource reference](https://www.k8gb.io/latest/resource_ref/),
 [K8GB dynamic zones](https://www.k8gb.io/latest/dynamic_zones/), and
 [ExternalDNS Gateway API source](https://github.com/kubernetes-sigs/external-dns/tree/master/provider/kubernetes-sources).
+Both routes give Loki read APIs a 300-second backend request and a 330-second
+end-to-end request, aligned with Loki's default five-minute query timeout.
+The `/loki/api/v1/tail` WebSocket path disables request deadlines and remains
+bounded by the Gateway's connection idle policy. Writes and other paths keep
+the Gateway default. See the
+[HTTPRoute timeout fields](https://gateway-api.sigs.k8s.io/api-types/httproute/#timeouts-optional)
+and [Envoy Gateway timeout behavior](https://gateway.envoyproxy.io/docs/tasks/traffic/http-timeouts/).
+Loki's [HTTP API](https://grafana.com/docs/loki/latest/reference/loki-http-api/)
+documents the query and tail endpoints.
 
 The route uses an Envoy Gateway `BackendTrafficPolicy` that prefers local-zone
 Loki gateway endpoints, actively checks `/ready`, and passively ejects
