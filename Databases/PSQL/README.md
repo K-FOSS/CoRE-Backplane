@@ -75,7 +75,12 @@ connects to the local PostgreSQL process over loopback. Credentials are never
 stored in chart values or annotations.
 
 The sidecar connects to PostgreSQL over TLS with `sslmode=require` and exposes
-port 9432, the pinned `pg_exporter` image default. Its `tls` collector reports
+port 9432, the pinned `pg_exporter` image default. The exporter command is
+rendered explicitly because the Zalando [Postgres Operator sidecar
+specification](https://postgres-operator.readthedocs.io/en/latest/reference/cluster_manifest/)
+supports `command` but not a Kubernetes-style `args` field; unknown `args`
+fields are preserved in the PostgreSQL custom resource but are not propagated
+to generated pods. Its `tls` collector reports
 PostgreSQL certificate and connection-encryption metrics; its `system`
 collector reports CPU, load, memory, and swap metrics from the exporter host.
 The sidecar has explicit `10m`/`32Mi` requests and `100m`/`128Mi` limits under
@@ -109,6 +114,14 @@ activity, vacuum, locks, I/O, replication and related PostgreSQL state. The
 `pg_stat_statements` extension and `shared_preload_libraries` provisioning;
 enabling it without those prerequisites causes scrape errors. Panels for that
 collector remain empty until the extension is deliberately added.
+
+The separate `PostgreSQL / Database Capacity and Connections` dashboard is
+owned by this stack in
+[`templates/Monitoring/PostgreSQLCapacityDashboard.yaml`](templates/Monitoring/PostgreSQLCapacityDashboard.yaml).
+It imports into the `PostgreSQL` folder and uses `pg_database_size_bytes` and
+`pg_stat_database_numbackends` from the PostgreSQL exporter. The dashboard
+syncer imports its labeled ConfigMap from the PostgreSQL stack alongside the
+upstream PostgreSQL Monitoring and PGPool dashboards.
 
 Verify after reconciliation that the exporter container is ready on every
 PostgreSQL pod, `http://<service>:9187/metrics` responds from inside the cluster,
@@ -185,8 +198,14 @@ defaults allow eight worker processes, four parallel workers globally and two
 workers per parallel query. `workMem` sets PostgreSQL's per-operation sort/hash
 memory budget; `sharedBuffers` sets the PostgreSQL buffer pool and
 `effectiveCacheSize` sets the planner's estimate of PostgreSQL plus OS cache.
-The core cluster requests 2 CPU and 4GiB memory and is limited to 6 CPU and
-16GiB memory. Recalculate the connection budget whenever
+The PSQL ApplicationSet supplies explicit per-target profiles: the shared
+`psql-main` cluster requests `500m` CPU and `6GiB` memory and is limited to
+`6` CPU and `16GiB` memory on the Talos production sites; the YVR local cluster
+requests `250m` CPU and `2GiB` memory, while the YXL local cluster requests
+`250m` CPU and `1GiB` memory. Both local profiles are limited to `4` CPU and
+`8GiB` memory. The legacy K3s global target retains its smaller `100m` CPU and
+`1GiB` memory request with `4` CPU and `8GiB` limits. Recalculate the
+connection budget whenever
 the embedded replica count, `numInitChildren`, `maxPool` or
 `psql.tuning.maxConnections` changes.
 
