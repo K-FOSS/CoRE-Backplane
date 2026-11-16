@@ -110,6 +110,10 @@ are also accepted. The syncer watches only the explicitly configured
 `core-prod`, `k8gb`, `kube-system`, and `longhorn-system` namespaces through separate
 namespace-scoped Roles and RoleBindings. The k8s-sidecar uses the
 `grafana_folder` ConfigMap annotation to place files into their intended folder.
+The syncer Deployment uses Stakater Reloader's targeted ConfigMap annotation
+for `grafana-dashboard-sync-script`, so updates to `import.py` roll the syncer
+and load the new importer logic. See the upstream
+[Reloader annotation guide](https://github.com/stakater/Reloader#how-to-use-reloader).
 Kubernetes mixin dashboard ConfigMaps carry
 `grafana_dashboard_global: 'true'` and `grafana_folder: 'Global'`; the importer
 preserves their cluster variable and PromQL selectors, uses their upstream UIDs,
