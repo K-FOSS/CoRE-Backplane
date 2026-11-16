@@ -74,6 +74,10 @@ host in steady state, preventing a routable node failure from concentrating
 the global Service endpoints on one host. In the Home1 profile, the gateway and
 distributor also prefer every node except `hpc3`; other Tempo components retain
 their normal chart placement rules.
+The [ApplicationSet patch](../../Apps/Observability/Traces.yaml) selects the
+Home1 release by `app.kubernetes.io/instance` and targets only gateway and
+distributor Deployments. The [Kustomization marker](kustomization.yaml)
+enables Lovely's injected patch stage.
 
 ## Routing and telemetry flow
 
