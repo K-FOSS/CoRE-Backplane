@@ -5,7 +5,7 @@ through Authentik/Gateway policy. It is owned by
 `Apps/Infra/Resources.yaml`.
 
 Each selected infrastructure cluster creates its own Terraform
-[`authentik_provider_proxy` and `authentik_application` resources](https://registry.terraform.io/providers/goauthentik/authentik/2025.10.1/docs)
+[`authentik_provider_proxy` and `authentik_application` resources](https://registry.terraform.io/providers/goauthentik/authentik/2026.8.0/docs)
 through a Crossplane `Workspace`. The application is filed under the
 `<datacenter>-<cluster>` Authentik group and grants access to the existing
 `Server Admins` group. The generated provider host and application slug include
