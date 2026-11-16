@@ -50,17 +50,19 @@ configurations.
 The BMPS control plane currently runs only on the legacy k3s management
 cluster. The [`core-backplane-ops-cluster` ApplicationSet](../../Apps/Infra/Cluster.yaml)
 creates the `dc1-k3s-node1-ops-cluster` child application on legacy k3s. That
-application owns the live `srv1.dc1.yxl.resolvemy.host` node claim and its
-Crossplane/Terraform reconciliation for `core-dc1-talos`. A separate
+application owns the production `Cluster` and `ClusterNode` claims and their
+Crossplane/Terraform reconciliation for `core-dc1-talos` and
+`core-home1-talos`. A separate
 `core-dc1-talos-prod-ops-cluster` child application targets the managed Talos
-cluster; it is not the owner of the live srv1 claim. Preserve this distinction
-when refreshing or syncing Cluster Ops during recovery.
+cluster; it is not the owner of the production claims. Preserve this
+distinction when refreshing or syncing Cluster Ops during recovery.
 
 Only the child selected from an Argo cluster registration with
-`resolvemy.host/nodetype: init` renders the production `Cluster` claims. The
-ApplicationSet passes that selection as `operations.clusterClaims`; other
-Cluster Ops applications keep the API and controller resources without
-creating duplicate production cluster claims.
+`resolvemy.host/nodetype: init` renders the production `Cluster` and
+`ClusterNode` claims. The ApplicationSet passes that selection as
+`operations.clusterClaims`; other Cluster Ops applications keep the API and
+controller resources without creating duplicate production claims or starting
+BMPS reconciliation in a Talos workload cluster.
 
 ### Talos compute-node configuration compatibility
 
@@ -265,6 +267,16 @@ document path does not need legacy kubelet `extraMounts` ([Talos User Volumes](h
 Nodes below Talos 1.14 retain the legacy `machine.kubelet` configuration. If
 the version probe cannot reach a node, the Composition conservatively uses the
 legacy form.
+
+## Kubernetes API server overrides
+
+Set `Cluster.spec.overrides.kubeAPIServer.extraArgs` for API-server arguments
+shared by the cluster. A
+`ClusterNode.spec.overrides.kubeAPIServer.extraArgs` value is merged on top for
+one control-plane node, so the node value wins when both claims set the same
+key. The ClusterNode Terraform Workspace carries the merged values into
+Talos' [`KubeAPIServerConfig`](https://docs.siderolabs.com/talos/v1.14/reference/configuration/kubernetes/kubeapiserverconfig)
+document and the legacy API-server fallback for older nodes.
 
 For a node using the Talos v1.14 documents, its Workspace first removes the inherited legacy
 `machine.kubelet`, `machine.nodeLabels`, and

@@ -39,7 +39,10 @@ fleet capacity means every machine is interchangeable.
    node settings.
 6. A Tinkerbell machine/workflow boots the host and installs Talos.
 7. Talos contacts the configured control-plane endpoint and the machine joins
-   Kubernetes.
+   Kubernetes with the BMPS-managed topology and role labels. Control-plane
+   nodes receive `node-role.kubernetes.io/control-plane`; worker nodes receive
+   `node-role.kubernetes.io/worker`; both retain the site-specific
+   `resolvemy.host/nodemode` label.
 8. The Composition creates node-related resources such as Cilium BGP/node or
    FRR configuration when requested.
 
@@ -110,7 +113,10 @@ During provisioning:
 After provisioning:
 
 - Confirm the Talos machine is healthy and has joined Kubernetes.
-- Verify node addresses, labels, routes, BGP peers, and expected sysctls.
+- Verify node addresses, role and topology labels, routes, BGP peers, and
+  expected sysctls. The role labels are emitted through Talos
+  [`KubeNodeConfig`](https://www.talos.dev/v1.14/reference/configuration/kubernetes/kubenodeconfig)
+  and must match the `ClusterNode.spec.type` value.
 - Confirm Crossplane reports all composed resources ready.
 - Preserve enough event and workflow history to diagnose the next failure.
 
