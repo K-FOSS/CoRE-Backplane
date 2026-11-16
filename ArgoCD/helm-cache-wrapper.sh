@@ -17,7 +17,7 @@ fi
 shift 6
 mkdir -p "$cache_root/cache/repository"
 
-exec /usr/local/bin/helm \
+exec /usr/local/bin/helm3 \
   --registry-config "$cache_root/registry.json" \
   --repository-cache "$cache_root/cache/repository" \
   --repository-config "$cache_root/repositories.json" \
