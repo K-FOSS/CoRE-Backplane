@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'envoy-overview-dashboard'
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'Envoy'
+    k8s-sidecar-target-directory: 'Envoy'
+data:
+  envoy-overview.url: |-
+    https://grafana.com/api/dashboards/24459/revisions/3/download
