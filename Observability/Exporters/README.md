@@ -69,6 +69,17 @@ interval and refresh to Node Exporter Full, while the WAN-GW2 scrape runs every
 30 seconds. The exporter chart's standalone Prometheus and Grafana workloads
 remain disabled; Alloy and the dashboard syncer own collection and import.
 
+The stack also imports Grafana's pinned
+[SMARTctl Exporter dashboard 22604, revision 4](https://grafana.com/api/dashboards/22604/revisions/4/download)
+through [`SmartctlExporterDashboard.yaml`](templates/SmartctlExporterDashboard.yaml).
+The upstream dashboard is specific to
+[`prometheus-community/smartctl_exporter`](https://github.com/prometheus-community/smartctl_exporter)
+and uses `smartctl_device_smart_status`, `smartctl_device`, and the exporter
+device metadata labels. Its `node` variable matches the node-name `instance`
+relabeling applied by the owning ApplicationSet. The URL is revision-pinned;
+update it deliberately after reviewing a newer dashboard revision and its
+queries against the deployed exporter.
+
 The GPU exporters require host GPU enablement: NFD must publish the Intel PCI
 label `feature.node.kubernetes.io/pci-0300_8086.present: 'true'`, and the
 NVIDIA driver, container runtime integration, and device plugin must publish
