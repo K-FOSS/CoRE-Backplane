@@ -1,6 +1,8 @@
-{{- if .Values.monitoring.postgresExporter.enabled }}
 {{- $clusters := list "psql-main" (printf "psql-%s-%s" .Values.datacenter .Values.region) }}
+{{- $profiles := dict "psql-main" .Values.monitoring.postgresExporter.psqlCore (printf "psql-%s-%s" .Values.datacenter .Values.region) .Values.monitoring.postgresExporter.siteLocal }}
 {{- range $cluster := $clusters }}
+{{- $exporter := mergeOverwrite (deepCopy $.Values.monitoring.postgresExporter.defaults) (index $profiles $cluster) }}
+{{- if $exporter.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -14,9 +16,9 @@ spec:
   type: ClusterIP
   ports:
     - name: 'metrics'
-      port: {{ $.Values.monitoring.postgresExporter.servicePort }}
+      port: {{ $exporter.servicePort }}
       protocol: 'TCP'
-      targetPort: {{ $.Values.monitoring.postgresExporter.port }}
+      targetPort: {{ $exporter.port }}
   selector:
     application: 'spilo'
     cluster-name: '{{ $cluster }}'

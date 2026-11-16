@@ -91,45 +91,51 @@ monitoring:
     digest: 'sha256:6748aff469abaa6f5aa150da7f70f1853eb9bf6250e78ab780fa5e8429f2f860'
     port: 9719
   postgresExporter:
-    enabled: true
-    # The pinned PostgreSQL Monitoring dashboard uses the PG14+ session and
-    # checksum metrics provided by nbari/pg_exporter, not the similarly named
-    # prometheus-community exporter.
-    image: 'ghcr.io/nbari/pg_exporter:0.22.2@sha256:18006dbbc980627334c2e7cb2555b6bd2f82293e8726872a0b0aeec79af45680'
-    # pg_exporter listens on 9432 by default. The Zalando operator currently
-    # preserves the sidecar CR args but does not pass them into the generated
-    # pod, so the Service and ServiceMonitor must target the image default.
-    port: 9432
-    # Preserve the existing Service endpoint while moving its target to the
-    # image's native listener. This avoids a server-side apply list merge when
-    # reconciling the old 9187 Service.
-    servicePort: 9187
-    resources:
-      requests:
-        cpu: '10m'
-        memory: '32Mi'
-      limits:
-        cpu: '100m'
-        memory: '128Mi'
-    # These collectors provide the metrics used by the pinned PostgreSQL
-    # Monitoring dashboard. Keep statements out until pg_stat_statements is
-    # provisioned in PostgreSQL shared_preload_libraries.
-    collectors:
-      - 'default'
-      - 'activity'
-      - 'database'
-      - 'vacuum'
-      - 'locks'
-      - 'stat'
-      - 'stat_io'
-      - 'slru'
-      - 'temp'
-      - 'replication'
-      - 'index'
-      - 'sequences'
-      - 'tls'
-      - 'exporter'
-      - 'system'
+    # Defaults apply independently to both PostgreSQL cluster profiles.
+    defaults:
+      enabled: true
+      # The pinned PostgreSQL Monitoring dashboard uses the PG14+ session and
+      # checksum metrics provided by nbari/pg_exporter, not the similarly named
+      # prometheus-community exporter.
+      image: 'ghcr.io/nbari/pg_exporter:0.22.2@sha256:18006dbbc980627334c2e7cb2555b6bd2f82293e8726872a0b0aeec79af45680'
+      # pg_exporter listens on 9432 by default. The Zalando operator currently
+      # preserves the sidecar CR args but does not pass them into the generated
+      # pod, so the Service and ServiceMonitor must target the image default.
+      port: 9432
+      # Preserve the existing Service endpoint while moving its target to the
+      # image's native listener. This avoids a server-side apply list merge when
+      # reconciling the old 9187 Service.
+      servicePort: 9187
+      resources:
+        requests:
+          cpu: '10m'
+          memory: '32Mi'
+        limits:
+          cpu: '100m'
+          memory: '512Mi'
+      # These collectors provide the metrics used by the pinned PostgreSQL
+      # Monitoring dashboard. Keep statements out until pg_stat_statements is
+      # provisioned in PostgreSQL shared_preload_libraries.
+      collectors:
+        - 'default'
+        - 'activity'
+        - 'database'
+        - 'vacuum'
+        - 'locks'
+        - 'stat'
+        - 'stat_io'
+        - 'slru'
+        - 'temp'
+        - 'replication'
+        - 'index'
+        - 'sequences'
+        - 'tls'
+        - 'exporter'
+        - 'system'
+    # Overrides for the shared psql-main cluster rendered by PSQL-Core.
+    psqlCore: {}
+    # Overrides for the site-local psql-<datacenter>-<region> cluster.
+    siteLocal: {}
 
 
 

@@ -1,3 +1,4 @@
+{{- $exporter := mergeOverwrite (deepCopy .Values.monitoring.postgresExporter.defaults) .Values.monitoring.postgresExporter.psqlCore }}
 apiVersion: acid.zalan.do/v1
 kind: postgresql
 metadata:
@@ -24,24 +25,24 @@ spec:
 
   enableConnectionPooler: false
 
-  {{- if .Values.monitoring.postgresExporter.enabled }}
+  {{- if $exporter.enabled }}
   sidecars:
     - name: postgres-exporter
-      image: '{{ .Values.monitoring.postgresExporter.image }}'
+      image: '{{ $exporter.image }}'
       imagePullPolicy: 'IfNotPresent'
       command:
         - '/usr/local/bin/pg_exporter'
         - '--port'
-        - '{{ .Values.monitoring.postgresExporter.port }}'
-        {{- range .Values.monitoring.postgresExporter.collectors }}
+        - '{{ $exporter.port }}'
+        {{- range $exporter.collectors }}
         - '--collector.{{ . }}'
         {{- end }}
       ports:
         - name: metrics
-          containerPort: {{ .Values.monitoring.postgresExporter.port }}
+          containerPort: {{ $exporter.port }}
           protocol: 'TCP'
       resources:
-        {{- toYaml .Values.monitoring.postgresExporter.resources | nindent 8 }}
+        {{- toYaml $exporter.resources | nindent 8 }}
       env:
         - name: PG_EXPORTER_DSN
           value: 'postgresql://127.0.0.1:5432/postgres?sslmode=require'
