@@ -31,7 +31,7 @@ data:
           "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
           "id": 2,
           "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
-          "targets": [{"expr": "count(smartctl_device_status{job=~\"$job\", instance=~\"$instance\"} == 0)", "refId": "A"}],
+          "targets": [{"expr": "count(smartctl_device_smart_status{job=~\"$job\", instance=~\"$instance\"} == 0)", "refId": "A"}],
           "title": "SMART devices not healthy",
           "type": "stat"
         },
@@ -51,7 +51,7 @@ data:
           "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8},
           "id": 4,
           "options": {"cellHeight": "sm", "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false}, "showHeader": true, "sortBy": [{"desc": true, "displayName": "Value"}]},
-          "targets": [{"editorMode": "code", "expr": "smartctl_device_status{job=~\"$job\", instance=~\"$instance\"}", "format": "table", "instant": true, "legendFormat": "{{ "{{instance}}" }} / {{ "{{device}}" }}", "refId": "A"}],
+          "targets": [{"editorMode": "code", "expr": "smartctl_device_smart_status{job=~\"$job\", instance=~\"$instance\"}", "format": "table", "instant": true, "legendFormat": "{{ "{{instance}}" }} / {{ "{{device}}" }}", "refId": "A"}],
           "title": "SMART device health",
           "type": "table"
         },
