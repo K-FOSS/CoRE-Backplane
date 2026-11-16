@@ -143,15 +143,23 @@ data:
             )
         )
 
-    def replace_dashboard_links(value, uid_map, folder_uid):
+    def replace_dashboard_links(value, uid_map, folder_uid, scope_tag):
         if isinstance(value, dict):
-            return {
-                key: replace_dashboard_links(item, uid_map, folder_uid)
+            rewritten = {
+                key: replace_dashboard_links(item, uid_map, folder_uid, scope_tag)
                 for key, item in value.items()
             }
+            if value.get('type') == 'dashboards':
+                tags = rewritten.get('tags')
+                if not isinstance(tags, list):
+                    tags = []
+                if scope_tag not in tags:
+                    tags.append(scope_tag)
+                rewritten['tags'] = tags
+            return rewritten
         if isinstance(value, list):
             return [
-                replace_dashboard_links(item, uid_map, folder_uid)
+                replace_dashboard_links(item, uid_map, folder_uid, scope_tag)
                 for item in value
             ]
         if isinstance(value, str):
@@ -174,13 +182,10 @@ data:
         return value
 
     def scope_prometheus_query(query):
-        # A query that already scopes itself to a cluster owns its routing
-        # semantics. Preserve it byte-for-byte: multi-cluster rules and CPU
-        # queries may intentionally select or aggregate several clusters.
-        if re.search(
-            r'(?<![a-zA-Z0-9_])cluster\s*(?:=~|=|!~|!=)\s*"(?:\\.|[^"])*"',
-            query,
-        ):
+        # A query that already mentions cluster owns its routing and
+        # aggregation semantics. Preserve it byte-for-byte, including queries
+        # that group by cluster without a cluster matcher.
+        if re.search(r'(?<![a-zA-Z0-9_])cluster(?![a-zA-Z0-9_])', query):
             return query
         scoped = {'cluster': '$cluster', 'dc': '$dc', 'region': '$region'}
         selector_open = chr(123)
@@ -411,7 +416,18 @@ data:
             if nested_folder:
                 folder_uid_value = ensure_folder(nested_folder, root_folder_uid, folders)
             folders = list_resources(FOLDER_API)
-        dashboard = replace_dashboard_links(dashboard, uid_map, root_folder_uid)
+        scope_tag = 'sync-scope-' + hashlib.sha256(
+            f'{root_folder_uid}:{folder_uid_value}'.encode()
+        ).hexdigest()[:12]
+        dashboard_tags = dashboard.get('tags')
+        if not isinstance(dashboard_tags, list):
+            dashboard_tags = []
+        if scope_tag not in dashboard_tags:
+            dashboard_tags.append(scope_tag)
+        dashboard['tags'] = dashboard_tags
+        dashboard = replace_dashboard_links(
+            dashboard, uid_map, folder_uid_value, scope_tag
+        )
         payload = {
             'dashboard': dashboard,
             'folderId': 0,

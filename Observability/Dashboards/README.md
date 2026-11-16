@@ -124,9 +124,15 @@ root folder instead. The central Home1 syncer retains the upstream dashboard
 UIDs; non-central cluster syncers receive stable cluster-prefixed UIDs for
 cluster-scoped copies, while global dashboards always retain upstream UIDs so
 all cluster syncers converge on one dashboard.
-Internal dashboard links are rewritten to the local UID and include the owning
-folder UID, keeping navigation within the same folder even
-when a dashboard is stored in a dashboard-type subfolder.
+Internal dashboard URL links are rewritten to the local UID and owning folder
+UID. Grafana's dashboard-type links use tags instead of a folder selector, so
+the syncer adds a deterministic scope tag based on the cluster root and source
+folder to each imported dashboard and its dashboard links. A menu such as Loki
+Dashboards therefore shows only dashboards from that same cluster and source
+folder, rather than matching same-tag copies elsewhere in the shared Grafana
+database. The source dashboards' existing tags remain intact. This follows
+Grafana's [dashboard-link tag filtering](https://grafana.com/docs/grafana/latest/visualizations/dashboards/build-dashboards/manage-dashboard-links/#add-links-to-dashboards)
+behavior.
 Folder creation is keyed by the deterministic parent-aware UID, and the syncer
 removes only empty, root-level legacy folders after verifying that no dashboard
 or child folder remains in them. Before importing, the syncer compares the
@@ -136,12 +142,12 @@ overwrite alerts. Prometheus dashboards imported from upstream are normalized
 to the repository's `datasource` variable convention, so datasource inputs such
 as `${DS_PROMETHEUS}` do not remain unresolved in the saved dashboard.
 Cluster-scoped Prometheus dashboards imported by a syncer also receive visible
-`Cluster`, `Dc`, and `Region` selectors initialized to that syncer's source cluster. The syncer
-adds those matchers to unscoped PromQL selectors before writing the dashboard to
-Grafana, which prevents identically named resources such as PVCs from being
-joined across the two source clusters. If a query already contains a `cluster`
-label matcher, the syncer preserves it unchanged; this is required for
-intentionally multi-cluster dashboards and aggregation rules. Global dashboards
+`Cluster`, `Dc`, and `Region` selectors initialized to that syncer's source
+cluster. Before writing the dashboard to Grafana, the syncer adds those
+matchers only to queries that do not already mention `cluster`. Queries that
+filter, group, aggregate, or otherwise reference `cluster` retain their source
+expression unchanged. This preserves intentionally multi-cluster queries and
+prevents scoping from changing their aggregation semantics. Global dashboards
 skip this scoping entirely. The selectors remain part of the dashboard so an
 operator can see the scope applied to its queries. A separate
 `grafana-dashboard-api` Service is the only Cilium
