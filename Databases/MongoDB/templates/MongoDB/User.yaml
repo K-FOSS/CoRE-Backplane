@@ -7,9 +7,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: '0'
 spec:
-  name: MongoDB
+  name: MongoDB {{ default .Release.Name .Values.cluster.name }}
 
-  username: mongodb-{{ .Values.env }}
+  username: mongodb-{{ default .Release.Name .Values.cluster.name }}
 
   buckets:
     - mongodb-backups

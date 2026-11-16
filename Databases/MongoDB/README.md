@@ -14,6 +14,13 @@ integrations. It is owned by `Apps/Storage/Database/MongoDB.yaml`.
 - S3 backup configuration and scheduled backup.
 - An optional restore resource.
 
+The generated MongoDB service identity is a namespaced `User` claim whose
+Authentik display name and username include the target cluster. This keeps the
+LDAP identity cluster-scoped in the shared Authentik directory while retaining
+the standard `User.mylogin.space/v1alpha1` claim lifecycle. The owning
+ApplicationSet injects the cluster name; standalone chart renders fall back to
+the Helm release name.
+
 ## Dependencies
 
 - Percona MongoDB Operator and CRDs.
