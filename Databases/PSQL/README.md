@@ -83,8 +83,12 @@ fields are preserved in the PostgreSQL custom resource but are not propagated
 to generated pods. Its `tls` collector reports
 PostgreSQL certificate and connection-encryption metrics; its `system`
 collector reports CPU, load, memory, and swap metrics from the exporter host.
-The sidecar has explicit `10m`/`32Mi` requests and `100m`/`128Mi` limits under
-`monitoring.postgresExporter.resources`. The
+The exporter defaults have explicit `10m`/`32Mi` requests and `100m`/`512Mi`
+limits under `monitoring.postgresExporter.defaults.resources`. The shared
+`psql-main` (`PSQL-Core`) and site-local (`PSQL`) exporters can override those
+defaults independently through `monitoring.postgresExporter.psqlCore` and
+`monitoring.postgresExporter.siteLocal`; each profile supports `enabled`,
+`image`, `port`, `servicePort`, `resources`, and `collectors`. The
 metrics Services retain their existing 9187 Service port and target the sidecar
 on 9432 during this transition. This chart creates one internal ClusterIP
 metrics Service and one `ServiceMonitor` for `psql-main` and the site-local
@@ -126,8 +130,9 @@ upstream PostgreSQL Monitoring and PGPool dashboards.
 Verify after reconciliation that the exporter container is ready on every
 PostgreSQL pod, `http://<service>:9187/metrics` responds from inside the cluster,
 and Alloy reports successful scrapes and remote writes. A failed exporter must
-not affect PostgreSQL readiness; disable it by setting
-`monitoring.postgresExporter.enabled` to `false` and reconciling the owning
+not affect PostgreSQL readiness; disable one profile by setting its `enabled`
+field to `false` (for example,
+`monitoring.postgresExporter.siteLocal.enabled`) and reconciling the owning
 ApplicationSet.
 
 Chart dependencies are pinned to the
@@ -362,6 +367,10 @@ The chart's Authentik Terraform
 [`Workspace`](templates/PGAdmin/PGAdminAuth.yaml) creates the matching
 forward-single proxy provider and application and attaches it to the existing
 `myloginspace-proxy` outpost.
+The provider's forward-auth session/access-token lifetime is three hours, with
+a 30-day refresh-token lifetime so an active browser session can renew through
+the gateway's forwarded `Set-Cookie` response instead of requiring a new login
+every three hours.
 The configuration follows Authentik's [forward-auth provider
 model](https://docs.goauthentik.io/add-secure-apps/providers/proxy/create-proxy-provider/)
 and the Terraform provider's [`authentik_provider_proxy`

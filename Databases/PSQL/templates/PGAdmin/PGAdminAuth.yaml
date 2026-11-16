@@ -27,6 +27,11 @@ spec:
         authorization_flow = data.authentik_flow.default-authorization-flow.id
         invalidation_flow  = data.authentik_flow.default-provider-invalidation-flow.id
         mode               = "forward_single"
+        # The forward-auth session cookie follows the provider access-token
+        # lifetime. Keep refresh tokens longer so an active session can renew
+        # instead of forcing a new login at the three-hour boundary.
+        access_token_validity  = "hours=3"
+        refresh_token_validity = "days=30"
       }
 
       resource "authentik_application" "forward-auth" {
