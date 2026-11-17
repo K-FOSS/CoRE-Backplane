@@ -52,6 +52,9 @@ goldilocks:
 descheduler:
   kind: Deployment
 
+  podLabels:
+    logs: 'loki-myloginspace'
+
   resources:
     requests:
       cpu: 32m
@@ -81,10 +84,9 @@ descheduler:
             args:
               podProtections:
                 defaultDisabled:
-                - "PodsWithLocalStorage"
+                - 'PodsWithLocalStorage'
                 extraEnabled:
-                - "PodsWithPVC"
-          - name: RemoveDuplicates
+                - 'PodsWithPVC'
           - name: RemovePodsHavingTooManyRestarts
             args:
               podRestartThreshold: 100
@@ -109,7 +111,6 @@ descheduler:
         plugins:
           balance:
             enabled:
-              - RemoveDuplicates
               - RemovePodsViolatingTopologySpreadConstraint
               - LowNodeUtilization
           deschedule:

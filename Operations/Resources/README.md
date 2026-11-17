@@ -1,8 +1,10 @@
-# Resource operations deployment
+# CoRE-Backplane Operations/Resources Stack
 
-This deployment installs Goldilocks and Descheduler and exposes Goldilocks
-through Authentik/Gateway policy. It is owned by
-`Apps/Infra/Resources.yaml`.
+This stack installs [Goldilocks](https://github.com/FairwindsOps/goldilocks) and
+[Descheduler](https://github.com/kubernetes-sigs/descheduler/tree/release-1.36/charts/descheduler)
+and exposes Goldilocks through Authentik/Gateway policy. It is owned by the
+[Resources ApplicationSet](../../Apps/Infra/Resources.yaml) and belongs to the
+[Operations stack](../README.md).
 
 Each selected infrastructure cluster creates its own Terraform
 [`authentik_provider_proxy` and `authentik_application` resources](https://registry.terraform.io/providers/goauthentik/authentik/2026.8.0/docs)
@@ -24,7 +26,14 @@ forward Authentik identity, authorization, redirect, and cookie headers to
 Goldilocks.
 
 Goldilocks/VPA recommendations are advisory unless another process applies
-them. Descheduler can evict workloads across the cluster. Review policies,
+them. The [Descheduler policy](values.yaml) enables topology-spread and
+low-utilization balancing, plus the listed descheduling strategies. It does not
+enable `RemoveDuplicates`, so pods are not evicted solely because replicas of
+one controller share a node. Descheduler can still evict workloads across the
+cluster under its remaining strategies. Its pod carries the
+`logs=loki-myloginspace` label selected by the
+[Alloy log collector](../../Observability/Collectors/values.yaml), so its logs
+enter the shared Loki pipeline on both Talos sites. Review policies,
 eviction limits, PDBs, priority classes, local storage and maintenance windows
 before enabling new strategies.
 
