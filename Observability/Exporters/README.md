@@ -76,9 +76,26 @@ The upstream dashboard is specific to
 [`prometheus-community/smartctl_exporter`](https://github.com/prometheus-community/smartctl_exporter)
 and uses `smartctl_device_smart_status`, `smartctl_device`, and the exporter
 device metadata labels. Its `node` variable matches the node-name `instance`
-relabeling applied by the owning ApplicationSet. The URL is revision-pinned;
-update it deliberately after reviewing a newer dashboard revision and its
-queries against the deployed exporter.
+relabeling applied by the owning ApplicationSet. The [dashboard
+syncer](../Dashboards/README.md) adds a Prometheus datasource picker from the
+upstream `DS_PROMETHEUS` import input when it imports this dashboard. This keeps
+the upstream JSON intact while resolving its datasource references in Grafana.
+The URL is revision-pinned; update it deliberately after reviewing a newer
+dashboard revision and its queries against the deployed exporter.
+
+The stack also imports [retn0's SMARTctl Exporter Dashboard 24922, revision 1](https://grafana.com/grafana/dashboards/24922-retn0-s-smartctl-exporter-dashboard/)
+through [`SmartctlExtendedDashboard.yaml`](templates/SmartctlExtendedDashboard.yaml).
+This community dashboard adds a 19-panel disk overview with health, capacity,
+temperature, lifetime, read/write, NVMe spare, and SATA reliability views. The
+existing 22604 dashboard remains available for comparison. The installed
+`prometheus-smartctl-exporter` chart does not bundle a dashboard; the pinned
+Grafana revision is imported through the repository dashboard syncer. Its
+`DS_PROMETHEUS` input becomes the local datasource picker, and the `node`
+variable uses the ApplicationSet's node-name `instance` relabeling. Queries
+were checked against the metric names and device labels exposed by the YVR,
+DC1 Talos, and legacy K3s exporters. NVMe and SATA panels show no data on
+hosts without those device types; the error log panel uses a metric currently
+present on DC1 Talos but absent on YVR.
 
 The GPU exporters require host GPU enablement: NFD must publish the Intel PCI
 label `feature.node.kubernetes.io/pci-0300_8086.present: 'true'`, and the
