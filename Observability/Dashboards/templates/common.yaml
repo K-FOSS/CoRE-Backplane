@@ -10,7 +10,7 @@ controllers:
   main:
     forceRename: 'grafana-dashboard-sync'
     replicas: 1
-    strategy: 'RollingUpdate'
+    strategy: 'Recreate'
     annotations:
       configmap.reloader.stakater.com/reload: 'grafana-dashboard-sync-script'
     serviceAccount:
@@ -39,6 +39,11 @@ controllers:
           NAMESPACE: {{ join "," .Values.dashboardSync.namespaces | quote }}
           RESOURCE: 'configmap'
           METHOD: 'WATCH'
+          LOG_LEVEL: 'WARN'
+          REQ_TIMEOUT: '5'
+          REQ_RETRY_TOTAL: '2'
+          REQ_RETRY_CONNECT: '2'
+          REQ_RETRY_READ: '2'
           FOLDER: '/tmp/dashboards'
           FOLDER_ANNOTATION: 'grafana_folder'
           SCRIPT: '/scripts/import.py'
@@ -65,7 +70,9 @@ controllers:
               httpGet:
                 path: '/healthz'
                 port: 'health'
-              failureThreshold: 30
+              # The initial scan downloads remote dashboard sources before
+              # the sidecar reports healthy. Allow fifteen minutes for it.
+              failureThreshold: 180
               periodSeconds: 5
           readiness:
             enabled: true

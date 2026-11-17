@@ -114,7 +114,9 @@ namespace-scoped Roles and RoleBindings. The k8s-sidecar uses the
 The importer is intentionally incremental. A ConfigMap event still wakes the
 sidecar, but the importer serializes overlapping runs with a file lock, hashes
 source content, and skips unchanged dashboards until the configured
-`verificationIntervalSeconds` (five minutes by default) has elapsed. It indexes
+`verificationIntervalSeconds` (five minutes by default) has elapsed when another
+watch event invokes it. The sidecar resolves `.url` entries into local dashboard
+files before invoking the importer. It indexes
 Grafana folders once per run and creates each missing folder at most once, rather
 than refetching the complete folder list for every dashboard. Only dashboards
 whose source changed or whose verification interval expired make a Grafana
@@ -126,6 +128,11 @@ an unpublished custom image. The syncer Deployment uses Stakater Reloader's
 targeted ConfigMap annotation for `grafana-dashboard-sync-script`, so updates to
 the importer roll the syncer and load the new logic. See the upstream
 [Reloader annotation guide](https://github.com/stakater/Reloader#how-to-use-reloader).
+The syncer uses a Recreate rollout so only one pod imports into the shared
+Grafana database at a time. Its startup probe allows fifteen minutes for the
+initial scan, including remote dashboard downloads. The sidecar limits remote
+request retries and suppresses INFO logs that include entire fetched dashboard
+JSON bodies. A failed remote download remains visible as a warning/error.
 Kubernetes mixin dashboard ConfigMaps carry
 `grafana_dashboard_global: 'true'` and `grafana_folder: 'Global'`; the importer
 preserves their cluster variable and PromQL selectors, uses their upstream UIDs,
