@@ -1,7 +1,7 @@
 # CoRE-Backplane Operations/Resources Stack
 
-This stack installs [Goldilocks](https://github.com/FairwindsOps/goldilocks) and
-[Descheduler](https://github.com/kubernetes-sigs/descheduler/tree/release-1.36/charts/descheduler)
+This stack installs [Goldilocks](https://github.com/FairwindsOps/charts/tree/master/stable/goldilocks) and
+[Descheduler](https://github.com/kubernetes-sigs/descheduler/tree/release-1.37/charts/descheduler)
 and exposes Goldilocks through Authentik/Gateway policy. It is owned by the
 [Resources ApplicationSet](../../Apps/Infra/Resources.yaml) and belongs to the
 [Operations stack](../README.md).
@@ -36,6 +36,24 @@ cluster under its remaining strategies. Its pod carries the
 enter the shared Loki pipeline on both Talos sites. Review policies,
 eviction limits, PDBs, priority classes, local storage and maintenance windows
 before enabling new strategies.
+
+## Chart and image upgrades
+
+The [chart dependencies](Chart.yaml) pin Goldilocks 11.3.0 and Descheduler
+0.37.0. Their chart defaults select Goldilocks v4.16.3 and Descheduler v0.37.0
+images. Goldilocks bundles [VPA chart 5.2.0](https://github.com/FairwindsOps/charts/tree/master/stable/vpa),
+which selects VPA 1.7.1 images. The [VPA upgrade notes](https://github.com/FairwindsOps/charts/blob/master/stable/vpa/README.md#breaking-upgrading-to-500)
+require the VPA 1.7 CRDs before the controllers. Both target Talos clusters run
+Kubernetes 1.36 at this upgrade review and meet VPA 1.7's Kubernetes 1.28
+minimum. The two installed VPA CRD version schemas on each site already match
+the new chart's schemas.
+
+Before reconciling an upgraded Resources Application, review the VPA CRD schema
+diff and reconcile either CRD first if it has drifted, then sync the remaining
+resources on one site at a time. Verify VPA admission and recommendations,
+Goldilocks dashboard access, and Descheduler policy and evictions after each
+site. The existing chart values leave the VPA updater disabled; do not enable
+it as part of this upgrade.
 
 Verify the Terraform `Workspace` is `Ready`, then confirm the Authentik proxy
 provider, application grouping, entitlement, and policy bindings. Verify the
