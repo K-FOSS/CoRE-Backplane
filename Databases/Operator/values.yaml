@@ -4,6 +4,11 @@ postgres-operator:
 
   configGeneral:
     docker_image: 'forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/core/core-docker/psql@sha256:d5b2ff9231d4545af7df8c9de3fa987fad3ca692581127050f24f16ab886a29e'
+    # Argo CD owns the CRD schemas rendered by the pinned chart.
+    enable_crd_registration: false
+    # Keep Patroni on the existing Endpoint DCS during the v1 to v2 upgrade.
+    # Switching replicated clusters to ConfigMaps needs a separate scale-in migration.
+    kubernetes_use_configmaps: false
     max_instances: 3
 
   configUsers:
@@ -11,8 +16,8 @@ postgres-operator:
 
   configMajorVersionUpgrade:
     major_version_upgrade_mode: 'full'
-    minimal_major_version: '12'
-    target_major_version: '16'
+    minimal_major_version: '14'
+    target_major_version: '17'
 
   configKubernetes:
     enable_owner_references: true
@@ -24,7 +29,6 @@ postgres-operator:
       - 'lan-mode'
       - 'argocd.argoproj.io/instance'
     pod_environment_configmap: 'core-prod/psql-ops-override'
-    pod_environment_secret: 'psql-ops-s3-backup'
     pod_management_policy: 'parallel'
     spilo_runasuser: 101
     spilo_runasgroup: 103
@@ -46,7 +50,7 @@ postgres-operator:
     aws_region: 'us-east-1'
 
   configLogicalBackup:
-    logical_backup_docker_image: 'ghcr.io/zalando/postgres-operator/logical-backup:v1.13.0'
+    logical_backup_docker_image: 'ghcr.io/zalando/postgres-operator/logical-backup:v2.0.3'
     logical_backup_s3_region: 'us-east-1'
     logical_backup_s3_endpoint: 's3.mylogin.space'
 
