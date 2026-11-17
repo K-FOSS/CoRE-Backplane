@@ -177,6 +177,25 @@ spec:
                             enum:
                               - cilium
                               - frr
+                              - talos
+
+                          advertise:
+                            type: array
+                            description: Talos link names or aliases whose connected prefixes are advertised
+                            items:
+                              type: string
+
+                          routerID:
+                            type: string
+                            description: IPv4 router ID for a Talos BGP instance
+
+                          multipath:
+                            type: boolean
+                            description: Enable Talos BGP ECMP
+
+                          installRoutes:
+                            type: boolean
+                            description: Install Talos learned routes into the Linux routing table
 
                           port:
                             type: integer
@@ -191,7 +210,6 @@ spec:
 
                               required:
                                 - name
-                                - address
                                 - asn
 
                               properties:
@@ -210,6 +228,14 @@ spec:
                                 asn:
                                   type: integer
                                   description: ASN of the peer
+
+                                link:
+                                  type: string
+                                  description: Talos link name for an unnumbered peer; use instead of address
+
+                                passive:
+                                  type: boolean
+                                  description: Wait for the Talos BGP peer to initiate the session
 
                 versions:
                   type: object

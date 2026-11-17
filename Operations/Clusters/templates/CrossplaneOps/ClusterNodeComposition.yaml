@@ -582,7 +582,7 @@ spec:
                   metadata:
                     name: {{ (split "." .observed.composite.resource.spec.claimRef.name)._0 }}
             ---
-            {{ if .observed.composite.resource.spec.bgp.instances }}
+            {{ if or .observed.composite.resource.spec.bgp.instances $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances }}
             apiVersion: kubernetes.crossplane.io/v1alpha2
             kind: Object
             metadata:
@@ -775,6 +775,18 @@ spec:
                           neighbor ::1 port 1180
                           neighbor ::1 update-source lo
                           neighbor ::1 graceful-restart-helper
+                          {{- range $instance := concat (default (list) .observed.composite.resource.spec.bgp.instances) (default (list) $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances) }}
+                          {{- if eq $instance.type "frr" }}
+                          {{- if ne (int $instance.asn) 64512 }}{{ fail (printf "FRR BGP instance %s must use ASN 64512 for the existing Cilium loopback session" $instance.name) }}{{ end }}
+                          {{- range $peer := $instance.peers }}
+                          {{- if not $peer.address }}{{ fail (printf "FRR BGP peer %s requires an address" $peer.name) }}{{ end }}
+                          neighbor {{ $peer.address }} remote-as {{ $peer.asn }}
+                          {{- with $peer.localAddress }}
+                          neighbor {{ $peer.address }} update-source {{ . }}
+                          {{- end }}
+                          {{- end }}
+                          {{- end }}
+                          {{- end }}
                           {{- range $netIndex, $network := .observed.composite.resource.spec.networks }}
                           {{- if and $network.routing $network.routing.bgp $network.routing.bgp.enabled }}
                           
@@ -827,10 +839,30 @@ spec:
 
                             neighbor 127.0.0.1 soft-reconfiguration inbound
                             neighbor 127.0.0.1 prefix-list CILIUM in
+                            {{- range $instance := concat (default (list) .observed.composite.resource.spec.bgp.instances) (default (list) $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances) }}
+                            {{- if eq $instance.type "frr" }}
+                            {{- range $peer := $instance.peers }}
+                            {{- if not (contains ":" $peer.address) }}
+                            neighbor {{ $peer.address }} activate
+                            neighbor {{ $peer.address }} prefix-list CILIUM out
+                            {{- end }}
+                            {{- end }}
+                            {{- end }}
+                            {{- end }}
                           exit-address-family
                           address-family ipv6 unicast
                             neighbor ::1 soft-reconfiguration inbound
                             neighbor ::1 prefix-list CILIUM in
+                            {{- range $instance := concat (default (list) .observed.composite.resource.spec.bgp.instances) (default (list) $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances) }}
+                            {{- if eq $instance.type "frr" }}
+                            {{- range $peer := $instance.peers }}
+                            {{- if contains ":" $peer.address }}
+                            neighbor {{ $peer.address }} activate
+                            neighbor {{ $peer.address }} prefix-list CILIUM out
+                            {{- end }}
+                            {{- end }}
+                            {{- end }}
+                            {{- end }}
                           exit-address-family
             {{ end }}
             {{ end }}
@@ -1311,6 +1343,52 @@ spec:
                     EOT
                     {{- end }}
 
+                    {{ $talosBGPUsed := false }}
+                    {{ $bgpInstances := concat (default (list) $.observed.composite.resource.spec.bgp.instances) (default (list) $clusterCustomResource.status.atProvider.manifest.spec.bgp.instances) }}
+                    {{- range $instance := $bgpInstances }}
+                    {{- if eq $instance.type "talos" }}
+                    {{ $talosBGPUsed = true }}
+                    {{- end }}
+                    {{- end }}
+                    {{- if $talosBGPUsed }}
+                    {{- $bgpTalosVersion := default $clusterCustomResource.status.atProvider.manifest.spec.versions.talos $.observed.composite.resource.spec.overrides.version.talos }}
+                    {{- if not (semverCompare ">=1.14.0" $bgpTalosVersion) }}{{ fail "native Talos BGP requires intended Talos v1.14 or newer" }}{{ end }}
+                    talos-bgp-conf = <<-EOT
+                      {{- range $instance := $bgpInstances }}
+                      {{- if eq $instance.type "talos" }}
+                      {{- if not $instance.advertise }}{{ fail (printf "Talos BGP instance %s requires advertise links for a stable router ID" $instance.name) }}{{ end }}
+                      ---
+                      apiVersion: v1alpha1
+                      kind: BGPInstanceConfig
+                      name: {{ $instance.name | squote }}
+                      localASN: {{ $instance.asn }}
+                      {{- with $instance.routerID }}
+                      routerID: {{ . | squote }}
+                      {{- end }}
+                      {{- if hasKey $instance "multipath" }}
+                      multipath: {{ $instance.multipath }}
+                      {{- end }}
+                      {{- if hasKey $instance "installRoutes" }}
+                      installRoutes: {{ $instance.installRoutes }}
+                      {{- end }}
+                      advertise:
+                        {{- range $link := $instance.advertise }}
+                        - {{ $link | squote }}
+                        {{- end }}
+                      neighbors:
+                        {{- range $peer := $instance.peers }}
+                        {{- if eq (hasKey $peer "link") (hasKey $peer "address") }}{{ fail (printf "Talos BGP peer %s requires exactly one of address or link" $peer.name) }}{{ end }}
+                        - {{ if $peer.link }}link: {{ $peer.link | squote }}{{ else }}address: {{ $peer.address | squote }}{{ end }}
+                          peerASN: {{ $peer.asn }}
+                          {{- if hasKey $peer "passive" }}
+                          passive: {{ $peer.passive }}
+                          {{- end }}
+                        {{- end }}
+                      {{- end }}
+                      {{- end }}
+                    EOT
+                    {{- end }}
+
                     {{ $nicConfUsed := false }}
                     
                     {{- if $.observed.composite.resource.spec.nics }}
@@ -1783,6 +1861,9 @@ spec:
                       {{- end }}
                       {{- if eq $newNetworkUsed true }}
                       local.network-conf,
+                      {{- end }}
+                      {{- if $talosBGPUsed }}
+                      local.installed_talos_is_1_14_or_newer ? local.talos-bgp-conf : "",
                       {{- end }}
                       {{- if and $.observed.composite.resource.spec.networking $.observed.composite.resource.spec.networking.dns $.observed.composite.resource.spec.networking.dns.servers }}
                       local.dns-conf,
