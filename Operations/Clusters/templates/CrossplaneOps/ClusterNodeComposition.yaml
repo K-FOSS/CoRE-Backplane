@@ -1079,6 +1079,7 @@ spec:
                     installed_talos_is_1_14_or_newer = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 14)
                     use_kube_authentication_document = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
                     use_kube_apiserver_document = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
+                    use_v1_14_logging_cleanup = local.installed_talos_is_1_14_or_newer
                     use_v1_14_kubelet_documents = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
                     use_v1_14_kernel_param_documents = local.installed_talos_is_1_14_or_newer && local.intended_talos_is_1_14_or_newer
                     installed_talos_supports_multidoc = tonumber(local.installed_talos_parts[0]) > 1 || (tonumber(local.installed_talos_parts[0]) == 1 && tonumber(local.installed_talos_parts[1]) >= 12)
@@ -1284,6 +1285,12 @@ spec:
                     registry-cleanup = <<-EOT
                       machine:
                         registries:
+                          $patch: delete
+                    EOT
+
+                    legacy-logging-cleanup = <<-EOT
+                      machine:
+                        logging:
                           $patch: delete
                     EOT
 
@@ -1847,6 +1854,7 @@ spec:
                       local.use_v1_14_kernel_param_documents ? local.sysctl-conf : "",
                       local.use_v1_14_kernel_param_documents ? local.sysfs-conf : "",
                       local.use_kube_apiserver_document ? local.legacy-kube-apiserver-cleanup : "",
+                      local.use_v1_14_logging_cleanup ? local.legacy-logging-cleanup : "",
                       {{- if eq $.observed.composite.resource.spec.type "controlplane" }}
                       local.use_kube_apiserver_document ? local.kube-apiserver-conf : "",
                       local.use_kube_apiserver_document ? local.kube-authorizer-conf : "",
