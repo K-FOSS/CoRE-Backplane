@@ -111,10 +111,10 @@ spec:
                 alloy:
                   destinations:
                     {{- if .values.loki.globalService.enabled }}
-                    lokiUrl: 'http://loki-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:3100/loki/api/v1/push'
+                    lokiOtlpEndpoint: 'http://loki-core.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:3100/otlp'
                     {{- else }}
                     # Legacy has no namespace-local global Service registration.
-                    lokiUrl: 'http://10.44.0.196:3100/loki/api/v1/push'
+                    lokiOtlpEndpoint: 'http://10.44.0.196:3100/otlp'
                     {{- end }}
                     # Route metrics through the Cilium global Mimir Service;
                     # the site-local endpoint is selected by Cilium affinity.

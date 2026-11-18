@@ -5,6 +5,26 @@ kind: Kustomization
 # Keep the client Service and ring/memberlist Services independently
 # selectable while the ApplicationSet applies the global memberlist policy.
 patches:
+  # Keep Loki's main process container label consistent across its
+  # microservices so the shared workload dashboards can select `container="loki"`.
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      labelSelector: 'app.kubernetes.io/name=loki,app.kubernetes.io/component in (distributor,querier,query-frontend,query-scheduler)'
+    patch: |-
+      - op: 'replace'
+        path: '/spec/template/spec/containers/0/name'
+        value: 'loki'
+  - target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      labelSelector: 'app.kubernetes.io/name=loki,app.kubernetes.io/component in (compactor,index-gateway,ingester,ruler)'
+    patch: |-
+      - op: 'replace'
+        path: '/spec/template/spec/containers/0/name'
+        value: 'loki'
   - target:
       version: 'v1'
       kind: Service
