@@ -122,8 +122,6 @@ monitoring:
         - 'database'
         - 'vacuum'
         - 'locks'
-        - 'stat'
-        - 'stat_io'
         - 'slru'
         - 'temp'
         - 'replication'
@@ -135,7 +133,27 @@ monitoring:
     # Overrides for the shared psql-main cluster rendered by PSQL-Core.
     psqlCore: {}
     # Overrides for the site-local psql-<datacenter>-<region> cluster.
-    siteLocal: {}
+    siteLocal:
+      enabled: true
+      # The site-local cluster is the only one that needs the pg_stat_statements
+      # collector for the pinned PostgreSQL Monitoring dashboard.
+      collectors:
+        - 'default'
+        - 'activity'
+        - 'database'
+        - 'vacuum'
+        - 'locks'
+        - 'stat'
+        - 'stat_io'
+        - 'slru'
+        - 'temp'
+        - 'replication'
+        - 'index'
+        - 'sequences'
+        - 'tls'
+        - 'exporter'
+        - 'system'
+        - 'statements'
 
 
 
