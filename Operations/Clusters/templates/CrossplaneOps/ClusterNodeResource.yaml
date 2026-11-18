@@ -782,6 +782,31 @@ spec:
                           description: 'Kubernetes KubeletConfiguration fields merged over the cluster and platform defaults'
 
                           x-kubernetes-preserve-unknown-fields: true
+
+                    logging:
+                      type: object
+                      description: Talos log destinations added for this node
+                      properties:
+                        destinations:
+                          type: array
+                          description: Additional Talos machine log destinations for this node
+                          items:
+                            type: object
+                            required:
+                              - endpoint
+                              - format
+                            properties:
+                              endpoint:
+                                type: string
+                                description: TCP or UDP endpoint for the Talos log collector
+                              format:
+                                type: string
+                                enum:
+                                  - json_lines
+                              extraTags:
+                                type: object
+                                additionalProperties:
+                                  type: string
                           
 
                     cni:

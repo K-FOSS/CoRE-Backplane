@@ -132,6 +132,31 @@ spec:
                           additionalProperties:
                             type: string
 
+                logging:
+                  type: object
+                  description: Talos log destinations applied to every node
+                  properties:
+                    destinations:
+                      type: array
+                      description: Talos machine log destinations
+                      items:
+                        type: object
+                        required:
+                          - endpoint
+                          - format
+                        properties:
+                          endpoint:
+                            type: string
+                            description: TCP or UDP endpoint for the Talos log collector
+                          format:
+                            type: string
+                            enum:
+                              - json_lines
+                          extraTags:
+                            type: object
+                            additionalProperties:
+                              type: string
+
                 nodes:
                   type: integer
 
