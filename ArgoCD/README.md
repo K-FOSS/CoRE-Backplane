@@ -96,11 +96,14 @@ details into that Secret.
 The production ApplicationSet enables metrics and ServiceMonitors for the
 application controller, repo-server, ApplicationSet controller, notifications
 controller, and API server at a 30-second interval. Alloy's clustered
-ServiceMonitor pipeline forwards these metrics to Mimir. The standalone
-Grafana dashboard chart imports the pinned [Argo CD / Application / Overview
-dashboard](https://grafana.com/grafana/dashboards/19974-argocd-application-overview/)
-into the `Infrastructure` folder. Argo CD's [metrics
-documentation](https://argo-cd.readthedocs.io/en/stable/operator-manual/metrics/)
+ServiceMonitor pipeline forwards these metrics to Mimir. The Grafana dashboard
+ConfigMap imports two dashboards into the cluster's `Ops/ArgoCD` folder: the
+Argo CD project's [v3.6.1 example dashboard](https://github.com/argoproj/argo-cd/blob/v3.6.1/examples/dashboard.json),
+matching the deployed Argo CD chart's application version, and the pinned
+[Argo CD / Application / Overview dashboard](https://grafana.com/grafana/dashboards/19974-argocd-application-overview/)
+(Grafana revision 1). The syncer nests this path under the cluster folder, for
+example `core-home1-talos-prod/Ops/ArgoCD`. Argo CD's [metrics
+documentation](https://argo-cd.readthedocs.io/en/v3.6.1/operator-manual/metrics/)
 describes the component endpoints and available metric families.
 
 Dex and OpenShift integration are disabled. Argo CD's local admin account is
