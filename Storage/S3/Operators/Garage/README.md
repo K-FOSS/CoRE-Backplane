@@ -7,10 +7,13 @@ The Garage cluster for observability is defined separately in
 
 ## Ownership and configuration
 
-The ApplicationSet selects the core bare-metal infrastructure clusters in DC1
-regions YVR and YXL and installs the pinned upstream operator chart `0.9.0` into
-`garage-operator-system`. It watches only `core-prod` for Garage custom
-resources. The operator chart is published by the
+The ApplicationSet selects the `core-dc1-talos-prod` (DC1/YXL) and
+`core-home1-talos-prod` (Home1/YVR) bare-metal infrastructure clusters and
+installs the pinned upstream operator chart `0.9.0` into
+`garage-operator-system`. It watches `core-prod` and `core-testing` for Garage
+custom resources. The chart's [namespace-scoped watch setting](https://rajsinghtech.github.io/garage-operator/reference/helm/)
+also renders a Role and RoleBinding in each watched namespace. The operator
+chart is published by the
 [Garage Kubernetes Operator project](https://github.com/rajsinghtech/garage-operator)
 as an OCI artifact. Chart version `0.9.0` is pinned; its OCI digest is
 `sha256:b42209895a946ab4977d9f9e0702e22a3f61b2337bde87fbaa6789a5cfea3659`.
