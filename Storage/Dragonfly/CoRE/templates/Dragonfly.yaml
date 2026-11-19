@@ -31,10 +31,12 @@ spec:
     name: myloginspace-default-certificates
     namespace: core-prod
 
-  customReadinessProbeConfigMap:
-    name: dragonfly-core-readiness
-
   enableReplicationReadinessGate: true
+
+  {{- with .Values.topologySpreadConstraints }}
+  topologySpreadConstraints:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 
   env:
     - name: AWS_ACCESS_KEY_ID
