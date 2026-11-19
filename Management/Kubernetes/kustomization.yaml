@@ -6,6 +6,16 @@ resources:
 
 patches:
   - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      labelSelector: 'app.kubernetes.io/name=headlamp'
+    patch: |-
+      - op: add
+        path: /spec/revisionHistoryLimit
+        value: 3
+
+  - target:
       kind: ConfigMap|DaemonSet|Role|RoleBinding|ServiceAccount
       labelSelector: app.kubernetes.io/part-of=inspektor-gadget
     patch: |-
