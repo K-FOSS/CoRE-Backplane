@@ -22,6 +22,7 @@ alloy-logs:
           selectors {
             role = "pod"
             label = "logs=loki-myloginspace"
+            field = "spec.nodeName=" + sys.env("K8S_NODE_NAME")
           }
         }
 
@@ -108,6 +109,10 @@ alloy-logs:
       value: dc1
     - name: CLUSTER
       value: k8s
+    - name: K8S_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
   rbac:
     create: false
     rules:
