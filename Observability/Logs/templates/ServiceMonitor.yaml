@@ -25,6 +25,18 @@ spec:
           action: 'replace'
           replacement: '{{ .Release.Namespace }}/$1'
           targetLabel: 'job'
+        - sourceLabels:
+            - 'service'
+          regex: 'loki-core-(query-frontend|query-scheduler|querier|index-gateway)'
+          action: 'replace'
+          replacement: '{{ .Release.Namespace }}/loki-read'
+          targetLabel: 'job'
+        - sourceLabels:
+            - 'service'
+          regex: 'loki-core-(distributor|ingester)'
+          action: 'replace'
+          replacement: '{{ .Release.Namespace }}/loki-write'
+          targetLabel: 'job'
         - action: 'replace'
           replacement: '{{ .Values.cluster.name }}'
           targetLabel: 'cluster'
