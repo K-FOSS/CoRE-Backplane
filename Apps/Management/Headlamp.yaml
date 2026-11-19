@@ -57,6 +57,19 @@ spec:
 
                 region: {{ .values.region }}
 
+                headlamp:
+                  env:
+                    - name: 'HEADLAMP_CONFIG_TRACING_ENABLED'
+                      value: 'true'
+                    - name: 'HEADLAMP_CONFIG_SERVICE_NAME'
+                      value: 'headlamp'
+                    - name: 'HEADLAMP_CONFIG_SERVICE_VERSION'
+                      value: 'v0.46.0'
+                    - name: 'HEADLAMP_CONFIG_OTLP_ENDPOINT'
+                      value: 'alloy-otlp.core-prod.svc.{{ .values.clusterDomain }}:4317'
+                    - name: 'HEADLAMP_CONFIG_SAMPLING_RATE'
+                      value: '0.1'
+
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}
