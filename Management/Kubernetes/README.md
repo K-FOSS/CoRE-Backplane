@@ -124,6 +124,12 @@ The chart also installs these Headlamp plugins:
   ([repository](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt)) —
   adds Headlamp views and controls for KubeVirt resources.
 
+Headlamp pods carry the `logs: 'loki-myloginspace'` label so node-local Alloy
+collects their container logs through the shared [Loki pipeline](../../Observability/Logs/README.md).
+The [Collectors stack](../../Observability/Collectors/README.md) enables pod-log
+collection only on its configured clusters; the label does not enable the
+collector or grant it access to other workloads.
+
 ## Automated Authentik application
 
 The chart creates and maintains Headlamp's Authentik OAuth2/OIDC application
