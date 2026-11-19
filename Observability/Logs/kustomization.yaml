@@ -5,6 +5,15 @@ kind: Kustomization
 # Keep the client Service and ring/memberlist Services independently
 # selectable while the ApplicationSet applies the global memberlist policy.
 patches:
+  # The upstream Loki / Logs mixin queries legacy push labels and logfmt lines.
+  # Its stable UID is provided by the native OTLP dashboard in this stack.
+  - target:
+      version: 'v1'
+      kind: ConfigMap
+      name: 'loki-dashboards-1'
+    patch: |-
+      - op: 'remove'
+        path: '/data/loki-logs.json'
   # Keep Loki's main process container label consistent across its
   # microservices so the shared workload dashboards can select `container="loki"`.
   - target:

@@ -1,0 +1,277 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-loki-logging
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'Loki'
+data:
+  loki-logging.json: |-
+    {
+      "annotations": {
+        "list": []
+      },
+      "editable": true,
+      "graphTooltip": 1,
+      "links": [],
+      "panels": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "${loki}"
+          },
+          "fieldConfig": {
+            "defaults": {
+              "decimals": 1,
+              "unit": "decbytes"
+            },
+            "overrides": []
+          },
+          "gridPos": {"h": 5, "w": 8, "x": 0, "y": 0},
+          "id": 1,
+          "options": {
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto",
+            "orientation": "auto",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
+            "textMode": "auto"
+          },
+          "targets": [
+            {
+              "expr": "sum(bytes_over_time({cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=~\"$namespace\", service_name=~\"$service\"}[$__range]))",
+              "queryType": "instant",
+              "refId": "A"
+            }
+          ],
+          "title": "Log volume in selected range",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "${loki}"},
+          "fieldConfig": {"defaults": {"decimals": 1, "unit": "Bps"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 16, "x": 8, "y": 0},
+          "id": 2,
+          "options": {
+            "legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (cluster, dc) (bytes_over_time({cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=~\"$namespace\", service_name=~\"$service\"}[$__interval])) / $__interval_ms * 1000",
+              "legendFormat": "{{ "{{cluster}}" }}/{{ "{{dc}}" }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Log bytes per second",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "${loki}"},
+          "fieldConfig": {"defaults": {"decimals": 1, "unit": "decbytes"}, "overrides": []},
+          "gridPos": {"h": 10, "w": 12, "x": 0, "y": 8},
+          "id": 3,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false},
+            "showHeader": true,
+            "sortBy": [{"desc": true, "displayName": "Value"}]
+          },
+          "targets": [
+            {
+              "expr": "topk(25, sum by (cluster, dc, k8s_namespace_name, service_name) (bytes_over_time({cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=~\"$namespace\", service_name=~\"$service\"}[$__range])))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "{{ "{{cluster}}" }}/{{ "{{dc}}" }}/{{ "{{k8s_namespace_name}}" }}/{{ "{{service_name}}" }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Top services by log bytes",
+          "type": "table"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "${loki}"},
+          "fieldConfig": {"defaults": {"decimals": 0, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 10, "w": 12, "x": 12, "y": 8},
+          "id": 4,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {"countRows": false, "fields": "", "reducer": ["sum"], "show": false},
+            "showHeader": true,
+            "sortBy": [{"desc": true, "displayName": "Value"}]
+          },
+          "targets": [
+            {
+              "expr": "topk(25, sum by (cluster, dc, k8s_namespace_name, service_name) (count_over_time({cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=~\"$namespace\", service_name=~\"$service\"}[$__range])))",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "{{ "{{cluster}}" }}/{{ "{{dc}}" }}/{{ "{{k8s_namespace_name}}" }}/{{ "{{service_name}}" }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Top services by log lines",
+          "type": "table"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "${loki}"},
+          "fieldConfig": {"defaults": {"decimals": 1, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 18},
+          "id": 5,
+          "options": {
+            "legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom"},
+            "tooltip": {"mode": "multi", "sort": "desc"}
+          },
+          "targets": [
+            {
+              "expr": "sum by (cluster, dc) (count_over_time({cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=~\"$namespace\", service_name=~\"$service\"}[$__interval])) / $__interval_ms * 1000",
+              "legendFormat": "{{ "{{cluster}}" }}/{{ "{{dc}}" }}",
+              "refId": "A"
+            }
+          ],
+          "title": "Log lines per second",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "${loki}"},
+          "gridPos": {"h": 12, "w": 24, "x": 0, "y": 26},
+          "id": 6,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "expr": "{cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=\"kube-system\", service_name=\"cilium\"} | k8s_node_name=~\"$node\" | severity_text=~\"$severity\" |= \"$message\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Cilium logs by cluster, node, severity, and message",
+          "type": "logs"
+        },
+        {
+          "datasource": {"type": "loki", "uid": "${loki}"},
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 38},
+          "id": 7,
+          "options": {
+            "dedupStrategy": "none",
+            "enableLogDetails": true,
+            "prettifyLogMessage": false,
+            "showCommonLabels": false,
+            "showLabels": true,
+            "showTime": true,
+            "sortOrder": "Descending",
+            "wrapLogMessage": true
+          },
+          "targets": [
+            {
+              "expr": "{exporter=\"OTLP\"} | json | line_format \"{{ "{{.body}}" }}\"",
+              "queryType": "range",
+              "refId": "A"
+            }
+          ],
+          "title": "Historical legacy OTLP wrapped lines",
+          "type": "logs"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["loki", "logging", "capacity"],
+      "templating": {
+        "list": [
+          {
+            "allValue": ".+",
+            "current": {"text": "All", "value": ["$__all"]},
+            "datasource": {"type": "loki", "uid": "${loki}"},
+            "includeAll": true,
+            "label": "Cluster",
+            "multi": true,
+            "name": "cluster",
+            "query": "label_values({cluster=~\".+\"}, cluster)",
+            "refresh": 2,
+            "type": "query"
+          },
+          {
+            "allValue": ".+",
+            "current": {"text": "All", "value": ["$__all"]},
+            "datasource": {"type": "loki", "uid": "${loki}"},
+            "includeAll": true,
+            "label": "Datacenter",
+            "multi": true,
+            "name": "dc",
+            "query": "label_values({cluster=~\"$cluster\"}, dc)",
+            "refresh": 2,
+            "type": "query"
+          },
+          {
+            "allValue": ".+",
+            "current": {"text": "All", "value": ["$__all"]},
+            "datasource": {"type": "loki", "uid": "${loki}"},
+            "includeAll": true,
+            "label": "Namespace",
+            "multi": true,
+            "name": "namespace",
+            "query": "label_values({cluster=~\"$cluster\", dc=~\"$dc\"}, k8s_namespace_name)",
+            "refresh": 2,
+            "type": "query"
+          },
+          {
+            "allValue": ".+",
+            "current": {"text": "All", "value": ["$__all"]},
+            "datasource": {"type": "loki", "uid": "${loki}"},
+            "includeAll": true,
+            "label": "Service / workload",
+            "multi": true,
+            "name": "service",
+            "query": "label_values({cluster=~\"$cluster\", dc=~\"$dc\", k8s_namespace_name=~\"$namespace\"}, service_name)",
+            "refresh": 2,
+            "type": "query"
+          },
+          {
+            "current": {"text": ".+", "value": ".+"},
+            "label": "Node (structured metadata)",
+            "name": "node",
+            "query": ".+",
+            "type": "textbox"
+          },
+          {
+            "allValue": ".+",
+            "current": {"text": "All", "value": ["$__all"]},
+            "includeAll": true,
+            "label": "Severity",
+            "multi": true,
+            "name": "severity",
+            "query": "trace,debug,info,warn,error,fatal",
+            "type": "custom"
+          },
+          {
+            "current": {"text": "", "value": ""},
+            "label": "Message contains",
+            "name": "message",
+            "query": "",
+            "type": "textbox"
+          },
+          {
+            "current": {},
+            "label": "Loki",
+            "name": "loki",
+            "query": "loki",
+            "refresh": 1,
+            "type": "datasource"
+          }
+        ]
+      },
+      "time": {"from": "now-6h", "to": "now"},
+      "timezone": "browser",
+      "title": "Loki / Logs",
+      "uid": "logs",
+      "version": 1
+    }
