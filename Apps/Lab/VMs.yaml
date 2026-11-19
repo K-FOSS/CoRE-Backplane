@@ -39,9 +39,14 @@ spec:
                     vms:
                       - disk:
                           enabled: true
-                          size: 5Gi
+                          size: 20Gi
                         installing: false
                         name: wan-rt1
+                        cpus:
+                          cores: 1
+                          sockets: 1
+                          threads: 1
+
                         networks:
                           - name: nic1-backend951
                             macAddress: 02:09:51:00:00:01
@@ -131,7 +136,7 @@ spec:
                         installing: false
 
                         cpus:
-                          cores: 2
+                          cores: 1
                           sockets: 1
                           threads: 1
 
@@ -150,7 +155,7 @@ spec:
                         installing: false
 
                         cpus:
-                          cores: 2
+                          cores: 1
                           sockets: 1
                           threads: 1
 
@@ -344,16 +349,6 @@ spec:
                         disk:
                           enabled: true
                           size: 200Gi
-                        networks:
-                          - name: wan-home
-
-                      - name: wan-rt1
-                        installing: false
-                        nodeSelector:
-                          kubernetes.io/hostname: 'srv2'
-                        disk:
-                          enabled: true
-                          size: 20Gi
                         networks:
                           - name: wan-home
 
