@@ -41,6 +41,24 @@ controllers:
           - --gpgsql-dbname={{ .Values.powerdns.database.name }}
           - --gpgsql-user=$(USERNAME)
           - --gpgsql-password=$(PASSWORD)
+          {{- if .Values.powerdns.metrics.enabled }}
+          - --webserver=yes
+          - --webserver-address=0.0.0.0
+          - --webserver-allow-from=10.0.0.0/8,100.64.0.0/10,172.16.0.0/12,192.168.0.0/16
+          - --webserver-port={{ .Values.powerdns.metrics.port }}
+          {{- end }}
+        ports:
+          - name: 'dns-udp'
+            containerPort: 53
+            protocol: 'UDP'
+          - name: 'dns-tcp'
+            containerPort: 53
+            protocol: 'TCP'
+          {{- if .Values.powerdns.metrics.enabled }}
+          - name: 'metrics'
+            containerPort: {{ .Values.powerdns.metrics.port }}
+            protocol: 'TCP'
+          {{- end }}
         env:
           - name: USERNAME
             valueFrom:
@@ -340,6 +358,19 @@ service:
         primary: false
         port: 53
         protocol: TCP
+  metrics:
+    controller: main
+    primary: false
+    type: ClusterIP
+    labels:
+      app.kubernetes.io/name: 'powerdns'
+      app.kubernetes.io/component: 'metrics'
+    ports:
+      metrics:
+        primary: true
+        port: {{ .Values.powerdns.metrics.port }}
+        protocol: TCP
+        targetPort: 'metrics'
   discovery:
     controller: main
     type: ClusterIP
