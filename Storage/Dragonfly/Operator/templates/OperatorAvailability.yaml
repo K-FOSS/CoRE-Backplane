@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: dragonfly-operator-availability
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app.kubernetes.io/name: dragonfly-operator
+spec:
+  groups:
+    - name: dragonfly-operator.availability
+      rules:
+        - alert: DragonflyOperatorUnavailable
+          expr: 'kube_deployment_status_replicas_unavailable{namespace=''dragonfly-operator-system'', deployment=''dragonfly-operator-controller-manager''} > 0'
+          for: '10m'
+          labels:
+            severity: warning
+          annotations:
+            summary: 'Dragonfly operator replicas are unavailable'
+            description: 'The Dragonfly operator controller deployment has unavailable replicas for more than 10 minutes.'
