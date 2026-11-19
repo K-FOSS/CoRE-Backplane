@@ -14,7 +14,9 @@ spec:
   teamId: psql-site-{{ .Values.datacenter }}-{{ .Values.region }}
   volume:
     size: 50Gi
-    storageClass: '{{ .Values.psql.storageClass }}'
+    {{- with .Values.psql.storageClass }}
+    storageClass: '{{ . }}'
+    {{- end }}
 
   {{- if $exporter.enabled }}
   sidecars:

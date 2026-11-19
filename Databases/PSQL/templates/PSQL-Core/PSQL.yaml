@@ -96,7 +96,9 @@ spec:
 
   volume:
     size: 50Gi
-    storageClass: '{{ .Values.psql.storageClass }}'
+    {{- with .Values.psql.storageClass }}
+    storageClass: '{{ . }}'
+    {{- end }}
 
   resources:
     {{- toYaml .Values.psql.resources | nindent 4 }}
