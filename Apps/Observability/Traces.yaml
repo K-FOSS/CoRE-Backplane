@@ -153,8 +153,6 @@ spec:
                             key: 'SecretAccessKey'
                   tempo:
                     revisionHistoryLimit: 3
-                    podAnnotations:
-                      secret.reloader.stakater.com/reload: 'tempo-core,tempo-core-s3-creds'
                     memberlist:
                       service:
                         annotations:
@@ -311,7 +309,6 @@ spec:
                           metadata:
                             annotations:
                               checksum/config: null
-                              configmap.reloader.stakater.com/reload: '{{ .values.clusterName }}-traces-tempo-config'
                   - target:
                       group: apps
                       version: v1
@@ -327,22 +324,6 @@ spec:
                           metadata:
                             annotations:
                               checksum/config: null
-                              configmap.reloader.stakater.com/reload: '{{ .values.clusterName }}-traces-tempo-config'
-                  - target:
-                      group: apps
-                      version: v1
-                      kind: 'Deployment'
-                      labelSelector: 'app.kubernetes.io/name=tempo,app.kubernetes.io/instance={{ .values.clusterName }}-traces,app.kubernetes.io/component=gateway'
-                    patch: |-
-                      apiVersion: apps/v1
-                      kind: Deployment
-                      metadata:
-                        name: unused
-                      spec:
-                        template:
-                          metadata:
-                            annotations:
-                              configmap.reloader.stakater.com/reload: '{{ .values.clusterName }}-traces-tempo-config,{{ .values.clusterName }}-traces-tempo-gateway'
                   {{ if .values.tempoAvoidHpc3 }}
                   - target:
                       group: apps
