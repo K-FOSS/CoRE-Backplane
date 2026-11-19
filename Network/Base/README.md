@@ -87,19 +87,35 @@ latency, success rates, and connections; Upstream and Downstream provide
 focused traffic views. These dashboards do not enumerate Kubernetes HTTPRoutes
 as route objects.
 
-The Cilium chart's `cilium.dashboards.enabled` value is enabled, so the Cilium
-release remains the authoritative source for the agent, operator, and Hubble
-dashboard ConfigMaps in `kube-system`. The
-[Observability/Dashboards stack](../../Observability/Dashboards/README.md)
-imports those ConfigMaps through its dashboard syncer; do not add a second
-repository-managed Cilium dashboard there.
+The pinned [Cilium 1.20.4 Helm chart](https://github.com/cilium/cilium/tree/v1.20.4/install/kubernetes/cilium)
+is the source for its upstream agent, Operator, and Hubble dashboards. The
+agent dashboard and its ServiceMonitor were already enabled. The Operator
+ServiceMonitor and dashboard are now enabled as well. On DC1, where the
+ApplicationSet already enables Hubble, this configuration also enables its
+native metrics exporter, ServiceMonitor, and all four upstream Hubble
+dashboards. They are imported from ConfigMaps in `kube-system` by the
+[Observability/Dashboards syncer](../../Observability/Dashboards/README.md) into
+the `Cilium` folder.
 
 The ApplicationSet relabels Cilium agent metrics to a stable `cluster-name/node`
 identity. It also projects that identity into the upstream dashboard's existing
 `pod` label so the dashboard remains compatible with the pinned chart while
 surviving Cilium pod rollouts. The underlying `node` label is the authoritative
 identity for queries and storage; the `pod` label is only a dashboard-compatibility
-alias.
+alias. A live DC1 Mimir check found `up` series for all three DC1 and four Home1
+Cilium agent targets, along with `cilium_version`, `cilium_errors_warnings_total`,
+`cilium_bpf_map_pressure`, and process/API metrics. The upstream agent dashboard's
+`k8s_app="cilium"` and `pod` selectors match those stored labels. Before this
+change, the Operator had no ServiceMonitor and Hubble flow metrics were not
+enabled, leaving those upstream dashboards without their required series.
+
+DC1 enables the Hubble metric groups used by the upstream dashboards: DNS,
+drops, flows, HTTP, ICMP, port distribution, and TCP. Namespace labels are
+included for workload-independent views, with source/destination workload
+labels added for HTTP panels. DNS query labels are enabled for the upstream DNS
+top-queries panel; they add query-name cardinality. IP-address labels are not
+enabled. See the [Cilium metrics guide](https://docs.cilium.io/en/stable/observability/metrics/)
+for exporter configuration and metric label behavior.
 
 FRR-K8s v0.0.23 metrics are enabled through the upstream chart's ServiceMonitor.
 It scrapes both the controller endpoint and the FRR metrics sidecar over HTTPS;

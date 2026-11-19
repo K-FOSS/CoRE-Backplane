@@ -866,6 +866,8 @@ cilium:
   # ref: https://github.com/grafana/helm-charts/tree/main/charts/grafana#sidecar-for-dashboards
   dashboards:
     enabled: true
+    annotations:
+      grafana_folder: 'Cilium'
 
   daemon:
     enableSourceIPVerification: false
@@ -947,6 +949,15 @@ cilium:
 
     podDisruptionBudget:
       enabled: true
+
+    prometheus:
+      serviceMonitor:
+        enabled: true
+
+    dashboards:
+      enabled: true
+      annotations:
+        grafana_folder: 'Cilium'
 
 
   # -- Configure sysctl override described in #20072.
