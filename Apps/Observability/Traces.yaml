@@ -134,6 +134,8 @@ spec:
                   global:
                     fullnameOverride: 'tempo-core'
                     clusterDomain: '{{ .values.clusterDomain }}'
+                    podLabels:
+                      logs: 'loki-myloginspace'
                     extraArgs:
                       - '-config.expand-env=true'
                     extraEnv:
@@ -293,8 +295,55 @@ spec:
 
             - name: 'LOVELY_KUSTOMIZE_MERGE'
               value: |-
-                {{ if .values.tempoAvoidHpc3 }}
                 patches:
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: 'Deployment'
+                      labelSelector: 'app.kubernetes.io/name=tempo,app.kubernetes.io/instance={{ .values.clusterName }}-traces'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          metadata:
+                            annotations:
+                              checksum/config: null
+                              configmap.reloader.stakater.com/reload: '{{ .values.clusterName }}-traces-tempo-config'
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: 'StatefulSet'
+                      labelSelector: 'app.kubernetes.io/name=tempo,app.kubernetes.io/instance={{ .values.clusterName }}-traces'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: StatefulSet
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          metadata:
+                            annotations:
+                              checksum/config: null
+                              configmap.reloader.stakater.com/reload: '{{ .values.clusterName }}-traces-tempo-config'
+                  - target:
+                      group: apps
+                      version: v1
+                      kind: 'Deployment'
+                      labelSelector: 'app.kubernetes.io/name=tempo,app.kubernetes.io/instance={{ .values.clusterName }}-traces,app.kubernetes.io/component=gateway'
+                    patch: |-
+                      apiVersion: apps/v1
+                      kind: Deployment
+                      metadata:
+                        name: unused
+                      spec:
+                        template:
+                          metadata:
+                            annotations:
+                              configmap.reloader.stakater.com/reload: '{{ .values.clusterName }}-traces-tempo-config,{{ .values.clusterName }}-traces-tempo-gateway'
+                  {{ if .values.tempoAvoidHpc3 }}
                   - target:
                       group: apps
                       version: v1
@@ -318,9 +367,7 @@ spec:
                                           operator: NotIn
                                           values:
                                             - 'hpc3'
-                {{ else }}
-                {}
-                {{ end }}
+                  {{ end }}
       destination:
         server: '{{ .server }}'
         namespace: 'core-{{ .values.environment }}'
