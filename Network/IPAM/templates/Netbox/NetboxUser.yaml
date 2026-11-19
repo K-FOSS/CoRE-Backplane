@@ -2,21 +2,26 @@
 apiVersion: mylogin.space/v1alpha1
 kind: User
 metadata:
-  name: {{ .Release.Name }}-netbox
+  name: '{{ .Release.Name }}-netbox'
 
 spec:
-  name: Netbox
+  name: 'Netbox'
   groups:
-    - LDAPService
+    - 'LDAPService'
 
-  username: netbox-core
+  username: {{ required "netbox.externalDatabase.username is required" .Values.netbox.externalDatabase.username | squote }}
 
-  database:
-    name: 3dzxoCeJ1f
-
-  buckets:
-    - ipam-netbox
+  psql:
+    enabled: true
+    hostname: {{ required "netbox.externalDatabase.host is required" .Values.netbox.externalDatabase.host | squote }}
+    database: {{ required "netbox.externalDatabase.database is required" .Values.netbox.externalDatabase.database | squote }}
+    createUserDatabase: false
+    databases:
+      - {{ .Values.netbox.externalDatabase.database | squote }}
+    crossplane:
+      crossplaneProvider: 'psql-main'
+      terraformProvider: 'psql'
 
   writeConnectionSecretToRef:
-    name: netbox-creds
+    name: 'netbox-creds'
 {{- end }}

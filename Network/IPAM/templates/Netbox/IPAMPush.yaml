@@ -14,19 +14,9 @@ spec:
     secret:
       name: netbox-creds
 
+  # The User claim emits the database and credentials. PostgreSQL hostname and
+  # port are site-managed properties in Vault, not keys in this Secret.
   data:
-    - match:
-        secretKey: psqlHostname
-        remoteRef:
-          remoteKey: IPAM/Database
-          property: Hostname
-
-    - match:
-        secretKey: psqlPort
-        remoteRef:
-          remoteKey: IPAM/Database
-          property: Port
-
     - match:
         secretKey: database
         remoteRef:
