@@ -21,6 +21,8 @@ metadata:
   annotations:
     observability.core-backplane/reconcile: 'operator'
 spec:
+  image:
+    tag: {{ $.Values.image.tag | quote }}
   alloy:
 {{- $alloyValues := omit $instance.values.alloy "configMap" }}
 {{ toYaml $alloyValues | indent 4 }}
