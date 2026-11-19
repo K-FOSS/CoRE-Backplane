@@ -30,6 +30,7 @@ spec:
                               hub: false
                               replicas: '1'
                               psqlStorageClass: ''
+                              localPsqlVolumeSize: '25Gi'
                               datacenter: 'dc1'
                               region: 'yxl'
                               globalPsqlResources:
@@ -59,6 +60,7 @@ spec:
                               hub: false
                               replicas: '1'
                               psqlStorageClass: ''
+                              localPsqlVolumeSize: '25Gi'
                               datacenter: 'dc1'
                               region: 'yxl'
                               globalPsqlResources:
@@ -88,6 +90,7 @@ spec:
                               hub: true
                               replicas: '3'
                               psqlStorageClass: 'psql-storage'
+                              localPsqlVolumeSize: '50Gi'
                               datacenter: 'home1'
                               region: 'yvr'
                               globalPsqlResources:
@@ -204,6 +207,7 @@ spec:
                   standby: {{ not .values.hub }}
                   replicas: '{{ .values.replicas }}'
                   storageClass: '{{ .values.psqlStorageClass }}'
+                  localVolumeSize: '{{ .values.localPsqlVolumeSize }}'
                   standbyHost: 'psql-int.{{ $hub.name }}.{{ $hub.values.datacenter }}.{{ $hub.values.region }}.mylogin.space'
                   resources:
                     {{- toYaml .values.globalPsqlResources | nindent 20 }}
