@@ -107,6 +107,25 @@ key.
 It depends on the Dragonfly Operator/CRDs, S3, Vault/External Secrets,
 Crossplane, certificates and network reachability.
 
+## Metrics and dashboard
+
+The chart publishes a `PodMonitor` for pods labeled `app: dragonfly-core` and
+scrapes their `admin` port at `/metrics` every 30 seconds. This is Dragonfly's
+native Prometheus endpoint; the clustered Alloy PodMonitor pipeline forwards
+the samples to Mimir. The Dragonfly dashboard is the upstream operator
+[Grafana dashboard](https://github.com/dragonflydb/dragonfly-operator/blob/v1.8.0/monitoring/grafana-dashboard.json),
+pinned to the operator release tag and imported by the Grafana dashboard
+syncer into `Infrastructure`. See the upstream [Prometheus integration
+guide](https://www.dragonflydb.io/docs/managing-dragonfly/operator/prometheus-guide)
+and [operator monitoring assets](https://github.com/dragonflydb/dragonfly-operator/tree/v1.8.0/monitoring).
+
+The current operator manifest exposes its controller metrics through an HTTPS
+`kube-rbac-proxy` Service. Alloy does not currently have a token mounted for
+that service's RBAC authorization, so this change does not create an operator
+ServiceMonitor that would fail authorization. Operator process metrics require
+a narrowly scoped collector identity or an equivalent authenticated scrape
+path before they can be enabled safely.
+
 Validate replica health, TLS, PVC write/read and capacity, credential rotation,
 cache/data recovery and client behavior during one-replica failure. PVC-backed
 snapshots are not an independent site backup; define a volume-level backup or

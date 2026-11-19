@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: dragonfly-core
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app.kubernetes.io/name: dragonfly-core
+spec:
+  namespaceSelector:
+    matchNames:
+      - '{{ .Release.Namespace }}'
+  selector:
+    matchLabels:
+      app: dragonfly-core
+  podMetricsEndpoints:
+    - port: admin
+      path: '/metrics'
+      interval: '30s'
