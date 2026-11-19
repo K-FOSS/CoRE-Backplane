@@ -74,6 +74,19 @@ stacks. The dashboard ConfigMap is labelled for the
 [Grafana dashboard syncer](../../Observability/Dashboards/README.md) and placed
 in the `Envoy` folder.
 
+The [Envoy / Overview dashboard](https://grafana.com/grafana/dashboards/24459-envoy-overview/)
+and its linked [Envoy / Upstream](https://grafana.com/grafana/dashboards/24457-envoy-upstream/)
+and [Envoy / Downstream](https://grafana.com/grafana/dashboards/24458-envoy-downstream/)
+dashboards are imported by the dashboard syncer from pinned upstream revisions:
+[Overview revision 3](https://grafana.com/api/dashboards/24459/revisions/3/download),
+[Upstream revision 4](https://grafana.com/api/dashboards/24457/revisions/4/download),
+and [Downstream revision 3](https://grafana.com/api/dashboards/24458/revisions/3/download).
+They are supplied by `EnvoyOverviewDashboard.yaml` and use the existing Envoy
+folder and Prometheus datasource normalization. Overview covers proxy traffic,
+latency, success rates, and connections; Upstream and Downstream provide
+focused traffic views. These dashboards do not enumerate Kubernetes HTTPRoutes
+as route objects.
+
 The Cilium chart's `cilium.dashboards.enabled` value is enabled, so the Cilium
 release remains the authoritative source for the agent, operator, and Hubble
 dashboard ConfigMaps in `kube-system`. The
@@ -87,6 +100,23 @@ identity. It also projects that identity into the upstream dashboard's existing
 surviving Cilium pod rollouts. The underlying `node` label is the authoritative
 identity for queries and storage; the `pod` label is only a dashboard-compatibility
 alias.
+
+FRR-K8s v0.0.23 metrics are enabled through the upstream chart's ServiceMonitor.
+It scrapes both the controller endpoint and the FRR metrics sidecar over HTTPS;
+the chart generates self-signed metrics certificates unless
+`frr-k8s.tls.metricsTLSSecret` is provided, so its ServiceMonitor is configured
+to skip certificate verification. The monitor adds the pod's Kubernetes node
+name, and the clustered Alloy pipeline adds the source cluster, datacenter, and
+region labels. See the upstream [FRR-K8s Helm chart](https://github.com/metallb/frr-k8s/tree/v0.0.23/charts/frr-k8s)
+and [MetalLB FRR-K8s metric reference](https://metallb.io/prometheus-metrics/#frr-k8s-bgp-and-bfd-metrics).
+
+FRR-K8s does not publish a Grafana dashboard. The
+repository-managed [FRR-K8s dashboard](dashboards/frr-k8s.json) uses its
+documented `frrk8s_bgp_*` and `frrk8s_bfd_*` series and imports into the
+cluster's `Networking/FRR-K8s` folder. The Grafana community
+[FRR Exporter - BGP dashboard](https://grafana.com/grafana/dashboards/22943-frr-exporter-bgp/)
+targets `tynany/frr_exporter` metric names, so it is not compatible with this
+FRR-K8s exporter.
 
 Cilium path MTU discovery is enabled with TCP Packetization Layer PMTUD set to
 `always`, so agents continuously use packetization-layer probing rather than
@@ -398,9 +428,11 @@ missing domains/images or empty upstream lists when enabled.
 
 [`CoreDNSWorkload.yaml`](templates/DNS/CoreDNSWorkload.yaml) preserves bootstrap
 names, selectors, RBAC, four replicas, resources, anti-affinity, tolerations
-and `dnsPolicy: Default`. Direct manifests are an intentional common-library
-exception to preserve fixed bootstrap identities and ordering without a
-parallel Deployment or Service. Both sites use the shared
+and `dnsPolicy: Default`. Home1 additionally requires CoreDNS pods to avoid
+`laptop2`; its four replicas can spread across the four remaining eligible
+nodes. DC1 has no node exclusion. Direct manifests are an intentional
+common-library exception to preserve fixed bootstrap identities and ordering
+without a parallel Deployment or Service. Both sites use the shared
 `registry.k8s.io/coredns/coredns:v1.13.2`
 [image version](https://github.com/coredns/coredns/releases/tag/v1.13.2) from
 `values.yaml`; Home1 upgrades from v1.12.0 on reconciliation while DC1 retains

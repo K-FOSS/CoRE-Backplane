@@ -1,0 +1,13 @@
+{{- $dashboard := .Files.Get "dashboards/frr-k8s.json" | fromJson -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'grafana-dashboard-frr-k8s'
+  namespace: 'kube-system'
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'Networking/FRR-K8s'
+data:
+  frr-k8s.json: |-
+{{ toPrettyJson $dashboard | indent 4 }}

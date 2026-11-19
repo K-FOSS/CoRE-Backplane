@@ -1219,6 +1219,16 @@ envoy-addons:
 frr-k8s:
   enabled: true
 
+  prometheus:
+    serviceMonitor:
+      enabled: true
+      tlsConfig:
+        insecureSkipVerify: true
+      relabelings:
+        - sourceLabels:
+            - '__meta_kubernetes_pod_node_name'
+          targetLabel: 'node'
+
   frrk8s:
     livenessProbe:
       failureThreshold: 6
