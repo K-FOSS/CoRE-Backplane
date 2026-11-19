@@ -1,0 +1,65 @@
+{{- $dashboard := .Files.Get "dashboards/kubevirt-vm-grafana-25821-rev1.json" | fromJson -}}
+{{- $_ := set $dashboard "title" "KubeVirt VM Performance" -}}
+{{- $_ := set $dashboard "description" "Upstream Grafana dashboard 25821, adapted to the KubeVirt metrics collected in CoRE. CPU values are cores consumed; total CPU includes guest and hypervisor time." -}}
+{{- $variables := list -}}
+{{- range $variable := $dashboard.templating.list -}}
+  {{- if not (has $variable.name (list "node" "vmi_pod" "default_cpu_frequency_mega_hertz")) -}}
+    {{- $variables = append $variables $variable -}}
+  {{- end -}}
+{{- end -}}
+{{- $_ := set $dashboard.templating "list" $variables -}}
+{{- range $panel := $dashboard.panels -}}
+  {{- if eq (int $panel.id) 25 -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "displayName" "VMI present" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "noValue" "No active VMI" -}}
+    {{- $_ := set (index $panel.targets 0) "expr" "count(kubevirt_vmi_info{namespace=\"$namespace\", name=\"$vm\"})" -}}
+  {{- else if eq (int $panel.id) 49 -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "displayName" "Total CPU cores" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "unit" "short" -}}
+    {{- $_ := set (index $panel.targets 0) "expr" "sum(rate(kubevirt_vmi_cpu_usage_seconds_total{namespace=\"$namespace\", name=\"$vm\"}[5m])) or vector(0)" -}}
+  {{- else if eq (int $panel.id) 67 -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "displayName" "Guest user CPU cores" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "unit" "short" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "thresholds" (dict "mode" "absolute" "steps" (list (dict "color" "green" "value" 0))) -}}
+    {{- $_ := set (index $panel.targets 0) "expr" "sum(rate(kubevirt_vmi_cpu_user_usage_seconds_total{namespace=\"$namespace\", name=\"$vm\"}[5m])) or vector(0)" -}}
+  {{- else if eq (int $panel.id) 68 -}}
+    {{- $_ := set $panel "title" "CPU Usage (cores)" -}}
+    {{- $_ := set $panel "description" "Total CPU includes guest and hypervisor time. Guest user CPU records guest user-mode time." -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "unit" "short" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "thresholds" (dict "mode" "absolute" "steps" (list (dict "color" "green" "value" 0))) -}}
+    {{- $_ := set (index (index $panel.fieldConfig.defaults) "custom") "axisLabel" "CPU cores" -}}
+    {{- $_ := set (index (index $panel.targets 0)) "expr" "sum(rate(kubevirt_vmi_cpu_usage_seconds_total{namespace=\"$namespace\", name=\"$vm\"}[5m]))" -}}
+    {{- $_ := set (index (index $panel.targets 0)) "legendFormat" "total (guest + hypervisor)" -}}
+    {{- $_ := set (index (index $panel.targets 1)) "expr" "sum(rate(kubevirt_vmi_cpu_user_usage_seconds_total{namespace=\"$namespace\", name=\"$vm\"}[5m]))" -}}
+    {{- $_ := set (index (index $panel.targets 1)) "legendFormat" "guest user" -}}
+    {{- $_ := set $panel.fieldConfig "overrides" (list) -}}
+  {{- else if eq (int $panel.id) 35 -}}
+    {{- $_ := set $panel "title" "vCPU I/O Wait" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "unit" "short" -}}
+    {{- $_ := set (index (index $panel.fieldConfig.defaults) "custom") "axisLabel" "waiting vCPU equivalents" -}}
+    {{- $_ := set (index $panel.targets 0) "expr" "sum(kubevirt_vmi_vcpu_wait:rate5m{namespace=\"$namespace\", name=\"$vm\"}) or vector(0)" -}}
+    {{- $_ := set (index $panel.targets 0) "legendFormat" "vCPU wait" -}}
+  {{- else if eq (int $panel.id) 37 -}}
+    {{- $_ := set $panel "title" "vCPU Scheduling Delay" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "unit" "short" -}}
+    {{- $_ := unset (index $panel.fieldConfig.defaults) "max" -}}
+    {{- $_ := set (index $panel.fieldConfig.defaults) "thresholds" (dict "mode" "absolute" "steps" (list (dict "color" "green" "value" 0))) -}}
+    {{- $_ := set (index (index $panel.fieldConfig.defaults) "custom") "axisLabel" "delayed vCPU equivalents" -}}
+    {{- $_ := set (index $panel.targets 0) "expr" "sum(kubevirt_vmi_vcpu_delay:rate5m{namespace=\"$namespace\", name=\"$vm\"}) or vector(0)" -}}
+    {{- $_ := set (index $panel.targets 0) "legendFormat" "vCPU delay" -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq .Values.env "prod" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'grafana-dashboard-kubevirt-vm-performance'
+  namespace: 'core-prod'
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'KubeVirt'
+data:
+  kubevirt-vm-performance.json: |-
+{{ $dashboard | toPrettyJson | indent 4 }}
+{{- end -}}
