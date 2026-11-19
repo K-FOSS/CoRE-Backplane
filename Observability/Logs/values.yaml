@@ -75,10 +75,8 @@ loki:
     commonConfig:
       replication_factor: 1
 
-    podLabels:
-      logs: loki-myloginspace
-
     server:
+      log_format: 'json'
       http_server_read_timeout: 600s
       http_server_write_timeout: 600s
       grpc_server_max_recv_msg_size: 8388608
@@ -234,10 +232,6 @@ loki:
 
   ingress:
     enabled: false
-
-  lokiCanary:
-    podLabels:
-      logs: loki-myloginspace
 
   chunksCache:
     enabled: false
