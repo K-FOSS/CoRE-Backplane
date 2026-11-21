@@ -1,0 +1,78 @@
+{{- if .Values.siteLocalGarage.enabled }}
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageKey
+metadata:
+  name: {{ printf "%s-crossplane" .Values.siteLocalGarage.name | squote }}
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  clusterRef:
+    name: {{ .Values.siteLocalGarage.name | squote }}
+  name: 'Lab site-local Crossplane S3 provisioner'
+  neverExpires: true
+  permissions:
+    createBucket: true
+  allBuckets:
+    read: true
+    write: true
+    owner: true
+  secretTemplate:
+    name: {{ printf "%s-crossplane-credentials" .Values.siteLocalGarage.name | squote }}
+    accessKeyIdKey: 'AWS_ACCESS_KEY_ID'
+    secretAccessKeyKey: 'AWS_SECRET_ACCESS_KEY'
+    includeEndpoint: false
+    includeRegion: false
+---
+apiVersion: tf.upbound.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: {{ printf "%s-s3" .Values.siteLocalGarage.name | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '3'
+spec:
+  credentials:
+    - filename: 'AWS_ACCESS_KEY_ID'
+      source: 'Secret'
+      secretRef:
+        namespace: {{ .Release.Namespace | squote }}
+        name: {{ printf "%s-crossplane-credentials" .Values.siteLocalGarage.name | squote }}
+        key: 'AWS_ACCESS_KEY_ID'
+    - filename: 'AWS_SECRET_ACCESS_KEY'
+      source: 'Secret'
+      secretRef:
+        namespace: {{ .Release.Namespace | squote }}
+        name: {{ printf "%s-crossplane-credentials" .Values.siteLocalGarage.name | squote }}
+        key: 'AWS_SECRET_ACCESS_KEY'
+  configuration: |-
+    provider "aws" {
+      region                      = "garage"
+      access_key                  = file("${path.module}/AWS_ACCESS_KEY_ID")
+      secret_key                  = file("${path.module}/AWS_SECRET_ACCESS_KEY")
+      skip_credentials_validation = true
+      skip_region_validation      = true
+      skip_requesting_account_id  = true
+      skip_metadata_api_check     = true
+      s3_use_path_style           = true
+
+      endpoints {
+        s3 = "http://{{ .Values.siteLocalGarage.name }}.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}:3900"
+      }
+    }
+
+    terraform {
+      backend "kubernetes" {
+        secret_suffix     = "providerconfig-{{ .Values.siteLocalGarage.name }}-s3"
+        namespace         = "{{ .Release.Namespace }}"
+        in_cluster_config = true
+      }
+
+      required_providers {
+        aws = {
+          source  = "hashicorp/aws"
+          version = "5.100.0"
+        }
+      }
+    }
+{{- end }}
+{{- include "lab-storage.values.init" . -}}

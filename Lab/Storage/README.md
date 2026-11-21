@@ -60,6 +60,22 @@ the same Garage endpoint and cluster identity that the observability claims
 use. Keep it disabled in the shared lab deployment unless a lab consumer and
 its bucket names are deliberately assigned.
 
+The [site-local provider template](templates/Garage/SiteLocal/SiteLocalGarageCrossplane.yaml)
+creates a Garage operator-managed
+[`GarageKey`](https://rajsinghtech.github.io/garage-operator/reference/api/garagekey-v1beta1/)
+and a Crossplane Terraform
+[`ProviderConfig`](https://github.com/crossplane-contrib/provider-terraform#providerconfig)
+named `lab-garage-local-s3` in each YVR/YXL cluster. The key writes its S3
+credentials to a Secret in `core-testing`; the ProviderConfig reads that Secret
+and configures the pinned [Terraform AWS provider](https://registry.terraform.io/providers/hashicorp/aws/5.100.0/docs)
+to use Garage's in-cluster S3 endpoint with path-style requests. Workspaces can
+select `providerConfigRef.name: lab-garage-local-s3` for site-local S3 work.
+This provisioner can create buckets and has owner, read, and write access to
+every bucket in the independent lab store. Limit its use to trusted lab
+infrastructure; application consumers should use bucket-scoped Garage keys.
+The MinIO Crossplane provider is not used because its MinIO admin API is not
+the Garage S3 API.
+
 ## Prerequisites and security
 
 Before reconciliation, verify that the Garage operator is healthy in both
@@ -69,6 +85,9 @@ ExternalDNS watches headless Services, and the `mainvault-core`
 are `AdminToken` and `RPCSecret`; no credential values belong in Git. The UI
 route is protected by the Authentik forward-auth outpost and grants access
 only to the `Server Admins` group.
+The Terraform provider controller must be able to read the generated
+`lab-garage-local-crossplane-credentials` Secret in `core-testing` and reach
+`lab-garage-local` on port `3900`.
 
 The deployment uses [Garage](https://garagehq.deuxfleurs.fr/), the
 [Garage Kubernetes Operator](https://rajsinghtech.github.io/garage-operator/),
@@ -98,10 +117,23 @@ Vault-backed ExternalSecrets, three PVC-backed nodes per site, Garage layout
 health, headless Service endpoints, ExternalDNS records, HTTPRoute
 `Accepted`/`ResolvedRefs`, and the YVR UI Authentik Workspace. Confirm an
 object written through either site is readable after layout convergence.
+For the local provider, check that `GarageKey/lab-garage-local-crossplane` is
+Ready, the credential Secret exists without printing its values, and the
+Terraform `ProviderConfig/lab-garage-local-s3` is present. A Workspace must
+still be tested against its intended bucket workflow before claiming S3
+provisioning is healthy.
 
-Removing the chart retains Garage PVCs and the Vault path. Treat those as
-recovery material and delete them only after consumers and retained data have
-been reviewed.
+The federated Garage tier uses `Drain` to retire a site from its surviving
+layout. The independent site-local tier uses `Destroy`: it has no remote
+clusters to drain into, so deleting its GarageCluster tears down that store's
+operator-managed workloads and identity records. Both tiers set PVC retention
+to `Retain` on deletion and scale-down. Removing the chart retains those PVCs
+and the Vault path. Treat them as recovery material and delete them only after
+consumers and retained data have been reviewed. See the operator's
+[deletion and recovery guidance](https://rajsinghtech.github.io/garage-operator/operations/maintenance-and-recovery/).
+Removing the site-local GarageKey revokes its provisioner access; review the
+generated Secret and any dependent Workspaces before deletion. Existing
+buckets and object data require separate review.
 
 ## Existing lab test workload
 
