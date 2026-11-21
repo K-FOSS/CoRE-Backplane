@@ -1,0 +1,18 @@
+{{- if and .Values.siteLocalGarage.enabled (eq .Values.region "yxl") }}
+apiVersion: garage.rajsingh.info/v1beta1
+kind: GarageReferenceGrant
+metadata:
+  name: 'forgejo-site-local'
+  namespace: {{ .Release.Namespace | squote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: '2'
+spec:
+  from:
+    - kind: 'GarageBucket'
+      namespace: 'core-prod'
+    - kind: 'GarageKey'
+      namespace: 'core-prod'
+  to:
+    - kind: 'GarageCluster'
+      name: {{ .Values.siteLocalGarage.name | squote }}
+{{- end }}
