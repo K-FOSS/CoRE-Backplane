@@ -23,6 +23,7 @@ spec:
                     ldapServer: ldap-dc1.mylogin.space
                     garageS3Enabled: true
                     garageClusterName: 'observability-garage'
+                    forgejoGarageEnabled: true
 
                 - name: core-home1-talos-prod
                   values:
@@ -31,6 +32,7 @@ spec:
                     ldapServer: ldap-home1.mylogin.space
                     garageS3Enabled: true
                     garageClusterName: 'observability-garage'
+                    forgejoGarageEnabled: false
 
                 - name: 'dc1-k3s-node1'
                   values:
@@ -39,6 +41,7 @@ spec:
                     ldapServer: ldap-dc1.mylogin.space
                     garageS3Enabled: false
                     garageClusterName: 'observability-garage'
+                    forgejoGarageEnabled: false
 
           - clusters:
               selector:
@@ -85,6 +88,11 @@ spec:
                     enabled: {{ .values.garageS3Enabled }}
                     clusterName: '{{ if eq .values.region "yvr" }}observability-garage-yxl-credentials{{ else }}{{ .values.garageClusterName }}{{ end }}'
                     endpoint: '{{ if eq .values.region "yvr" }}http://observability-garage.core-prod.svc.{{ .values.clusterDomain }}:3900{{ else }}https://observability-garage-s3.core-prod.svc.{{ .values.clusterDomain }}:443{{ end }}'
+                    siteLocalForgejo:
+                      enabled: {{ .values.forgejoGarageEnabled }}
+                      clusterName: 'lab-garage-local'
+                      namespace: 'core-testing'
+                      endpoint: 'http://lab-garage-local.core-testing.svc.{{ .values.clusterDomain }}:3900'
                 mongodb:
                   hostname: '{{ .values.clusterName }}-rs0.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}'
                   port: '27017'

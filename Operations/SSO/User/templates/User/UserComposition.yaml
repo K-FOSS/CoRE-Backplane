@@ -835,6 +835,9 @@ spec:
             spec:
               clusterRef:
                 name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
+                {{- with $.observed.composite.resource.spec.s3.garage.namespace }}
+                namespace: {{ . | squote }}
+                {{- end }}
               globalAlias: {{ $bucketName | squote }}
               deletionPolicy: 'Retain'
             ---
@@ -852,6 +855,9 @@ spec:
             spec:
               clusterRef:
                 name: {{ $.observed.composite.resource.spec.s3.garage.clusterName | squote }}
+                {{- with $.observed.composite.resource.spec.s3.garage.namespace }}
+                namespace: {{ . | squote }}
+                {{- end }}
               name: {{ printf "S3 key for %s" .observed.composite.resource.spec.name | squote }}
               neverExpires: true
               {{- if gt (len $buckets) 0 }}

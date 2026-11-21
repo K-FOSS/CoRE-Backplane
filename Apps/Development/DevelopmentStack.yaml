@@ -345,7 +345,7 @@ spec:
 
                   gitea:
                     podAnnotations:
-                      secret.reloader.stakater.com/reload: 'forgejo-user,forgejo-s3,forgejo-admin,forgejo-oidc,forgejo-runner-core-dc1-talos-prod,forgejo-runner-core-home1-talos-prod,dragonfly-core-password'
+                      secret.reloader.stakater.com/reload: 'forgejo-user,{{ if eq .values.region "yxl" }}forgejo-garage-s3{{ else }}forgejo-s3{{ end }},forgejo-admin,forgejo-oidc,forgejo-runner-core-dc1-talos-prod,forgejo-runner-core-home1-talos-prod,dragonfly-core-password'
 
                     ldap:
                       - name: 'authentik-ldap'
@@ -388,11 +388,11 @@ spec:
                     {{- if eq .values.region "yxl" }}
                       storage:
                         STORAGE_TYPE: 'minio'
-                        MINIO_ENDPOINT: 's3.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                        MINIO_ENDPOINT: 'lab-garage-local.core-testing.svc.{{ .values.clusterDomain }}:3900'
                         MINIO_BUCKET: 'forgejo-{{ .values.clusterName }}'
                         MINIO_BUCKET_LOOKUP: 'path'
-                        MINIO_LOCATION: 'us-east-1'
-                        MINIO_USE_SSL: true
+                        MINIO_LOCATION: 'garage'
+                        MINIO_USE_SSL: false
                     {{- end }}
                       server:
                         DOMAIN: '{{ .values.forgejo.hostname }}'
@@ -411,12 +411,12 @@ spec:
                       - name: 'FORGEJO__STORAGE__MINIO_ACCESS_KEY_ID'
                         valueFrom:
                           secretKeyRef:
-                            name: 'forgejo-s3'
+                            name: 'forgejo-garage-s3'
                             key: 'AccessKey'
                       - name: 'FORGEJO__STORAGE__MINIO_SECRET_ACCESS_KEY'
                         valueFrom:
                           secretKeyRef:
-                            name: 'forgejo-s3'
+                            name: 'forgejo-garage-s3'
                             key: 'SecretAccessKey'
                     {{- end }}
                       - name: 'DRAGONFLY_PASSWORD'
