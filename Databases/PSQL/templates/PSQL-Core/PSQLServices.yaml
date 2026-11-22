@@ -10,6 +10,11 @@ metadata:
     cluster-name: psql-main
     team: core
 
+  annotations:
+    external-dns.kubernetes.io/hostname: 'psql-int-replica-{{ $index }}.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.{{ $.Values.tenant.domain }}'
+    # TODO(external-dns-034): Remove the legacy annotation after upgrading ExternalDNS.
+    external-dns.alpha.kubernetes.io/hostname: 'psql-int-replica-{{ $index }}.{{ $.Values.cluster.name }}.{{ $.Values.datacenter }}.{{ $.Values.region }}.{{ $.Values.tenant.domain }}'
+
 spec:
   type: ClusterIP
   clusterIP: 'None'

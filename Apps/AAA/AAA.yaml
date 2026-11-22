@@ -23,7 +23,7 @@ spec:
                   values:
                     hub: false
                     k8gbPrimaryGeoTag: 'home1'
-                    readReplicaHost: ''
+                    readReplicaHosts: []
                     ldapAdditionalExternalDNSHostname: ''
                     ldapClusterMeshEnabled: false
                     radiusAdditionalExternalDNSHostname: ''
@@ -33,7 +33,12 @@ spec:
                   values:
                     hub: true
                     k8gbPrimaryGeoTag: 'home1'
-                    readReplicaHost: 'psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                    readReplicaHosts:
+                      - 'psql-int-replica-0.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                      - 'psql-int-replica-1.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                      - 'psql-int-replica-2.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                      - 'psql-int-replica-0.core-home1-talos-prod.home1.yvr.mylogin.space'
+                      - 'psql-int-replica-1.core-home1-talos-prod.home1.yvr.mylogin.space'
                     ldapAdditionalExternalDNSHostname: 'ldap.mylogin.space,ldap-dc1-talos.mylogin.space'
                     ldapClusterMeshEnabled: true
                     radiusAdditionalExternalDNSHostname: 'radius.mylogin.space'
@@ -43,7 +48,12 @@ spec:
                   values:
                     hub: false
                     k8gbPrimaryGeoTag: 'home1'
-                    readReplicaHost: 'psql-int-rep.core-home1-talos-prod.home1.yvr.mylogin.space'
+                    readReplicaHosts:
+                      - 'psql-int-replica-0.core-home1-talos-prod.home1.yvr.mylogin.space'
+                      - 'psql-int-replica-1.core-home1-talos-prod.home1.yvr.mylogin.space'
+                      - 'psql-int-replica-0.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                      - 'psql-int-replica-1.core-dc1-talos-prod.dc1.yxl.mylogin.space'
+                      - 'psql-int-replica-2.core-dc1-talos-prod.dc1.yxl.mylogin.space'
                     ldapAdditionalExternalDNSHostname: 'ldap-home1.mylogin.space'
                     ldapClusterMeshEnabled: true
                     radiusAdditionalExternalDNSHostname: ''
@@ -104,8 +114,8 @@ spec:
                 hub: {{ .values.hub }}
 
                 readReplica:
-                  enabled: {{ ne .values.readReplicaHost "" }}
-                  host: '{{ .values.readReplicaHost }}'
+                  enabled: {{ gt (len .values.readReplicaHosts) 0 }}
+                  hosts: {{ toYaml .values.readReplicaHosts | nindent 4 }}
 
                 cluster:
                   name: {{ .values.clusterName }}
@@ -141,32 +151,34 @@ spec:
                       enabled: {{ .values.radiusClusterMeshEnabled }}
 
                   server:
-                    {{ if ne .values.readReplicaHost "" }}
+                    {{ if gt (len .values.readReplicaHosts) 0 }}
                     env:
-                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__HOST'
+                      {{ range $index, $host := .values.readReplicaHosts }}
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__{{ $index }}__HOST'
                         valueFrom:
                           configMapKeyRef:
                             name: 'aaa-authentik-read-replica'
-                            key: 'Host'
-                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__NAME'
+                            key: 'Host{{ $index }}'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__{{ $index }}__NAME'
                         valueFrom:
                           secretKeyRef:
                             name: 'aaa-authentik-database'
                             key: 'Database'
-                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__USER'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__{{ $index }}__USER'
                         valueFrom:
                           secretKeyRef:
                             name: 'aaa-authentik-database'
                             key: 'Username'
-                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__PASSWORD'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__{{ $index }}__PASSWORD'
                         valueFrom:
                           secretKeyRef:
                             name: 'aaa-authentik-database'
                             key: 'Password'
-                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_MAX_AGE'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__{{ $index }}__CONN_MAX_AGE'
                         value: '60'
-                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__0__CONN_HEALTH_CHECKS'
+                      - name: 'AUTHENTIK_POSTGRESQL__READ_REPLICAS__{{ $index }}__CONN_HEALTH_CHECKS'
                         value: 'true'
+                      {{ end }}
                     {{ end }}
                     service:
                       annotations:
@@ -311,9 +323,9 @@ spec:
                               - name: server
                                 env:
                                   - name: AUTHENTIK_POSTGRESQL__HOST
-                                    value: 'psql.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                                    value: 'psql-int.mylogin.space'
                                   - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
-                                    value: 'true'
+                                    value: 'false'
                                   - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
                                     value: '60'
                   - target:

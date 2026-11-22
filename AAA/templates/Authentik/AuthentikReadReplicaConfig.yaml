@@ -4,5 +4,7 @@ kind: ConfigMap
 metadata:
   name: aaa-authentik-read-replica
 data:
-  Host: {{ .Values.readReplica.host | quote }}
+  {{ range $index, $host := .Values.readReplica.hosts }}
+  Host{{ $index }}: {{ $host | squote }}
+  {{ end }}
 {{- end }}
