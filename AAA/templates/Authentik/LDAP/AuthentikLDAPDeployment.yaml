@@ -32,6 +32,8 @@ spec:
 
     spec:
       restartPolicy: Always
+      dnsConfig:
+{{ toYaml .Values.dnsConfig | indent 8 }}
       {{- if .Values.authentik.ldap.avoidNodeName }}
       affinity:
         nodeAffinity:
@@ -98,7 +100,7 @@ spec:
 
           env:
             - name: AUTHENTIK_HOST
-              value: 'http://{{ .Release.Name }}-authentik-server.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
+              value: 'http://aaa-core-authentik.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
 
             - name: AUTHENTIK_TOKEN
               valueFrom:
