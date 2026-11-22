@@ -53,20 +53,41 @@ the ready PowerDNS Recursor Pod addresses through its own IPv4 headless
 Service, health-checks each with an SOA query for `.`, and round-robins across
 healthy replicas. DNSDist uses that pool only for the site LAN CIDRs injected
 by the ApplicationSet:
-`10.0.0.0/24` in YVR and `172.16.51.0/24` in YXL/DC1.
-Queries outside those networks and the configured authoritative zones fall
-through to the authoritative pool, so the public listener does not provide
-open recursion.
+`10.0.0.0/24` in YVR and `172.16.51.0/24` in YXL/DC1. The YVR
+`10.0.0.19` answer rewrite runs in the Recursor, so it applies only to queries
+that dnsdist routes to that pool from the `10.0.0.0/24` client network. Queries
+from other source networks and queries outside the configured authoritative
+zones fall through to the authoritative pool, so the public listener does not
+provide open recursion. The Recursor sees dnsdist as its network peer; dnsdist's
+source-network routing rule is therefore the enforcement point for this
+restriction.
+
+## Home1 DNSDist placement
+
+The Home1 ApplicationSet requests four DNSDist frontend replicas, matching the
+observed deployment and allowing one pod on each preferred node. The pods are
+restricted to `hpc2`, `laptop2`, `srv2`, `srv3`, and `hpc3`. Kubernetes node
+affinity gives `hpc2` and `laptop2` the
+highest preference, `srv2` and `srv3` the next preference, and `hpc3` the
+lowest preference. A hostname topology-spread constraint keeps the pod count
+balanced across eligible nodes. DNSDist tolerates the `load=testing:NoSchedule`
+taint on `hpc2` to make that preferred node schedulable for this workload.
+These affinity weights are scheduler preferences, so resource fit and node
+availability can affect the final placement; inspect pod placement after a
+rollout. See Kubernetes' [node affinity
+documentation](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
+and [topology spread constraints](https://kubernetes.io/docs/concepts/scheduling-eviction/topology-spread-constraints/).
+DC1 does not receive these Home1-specific scheduling settings through the
+owning [DNS ApplicationSet](../../Apps/Network/DNS.yaml).
 
 The Recursor runs as a separate three-replica Deployment at both sites. It
 performs full iterative resolution, validates DNSSEC, and accepts inbound DNS
 only from private addresses. A NetworkPolicy further restricts ingress to
 DNSDist Pods and egress to upstream DNS over UDP/TCP port 53. Incoming TCP is
 limited to 128 concurrent clients, eight per client, and 100 queries per
-connection. It uses `SO_REUSEPORT`, a 256-entry TCP Fast Open queue, and TCP
-Fast Open for outbound authoritative connections. Pod TCP buffers are tuned
-with namespaced sysctls; the Talos node configuration enables
-`net.ipv4.tcp_fastopen=3` and the corresponding node TCP buffer limits.
+connection. It uses `SO_REUSEPORT`; TCP Fast Open is disabled because the
+runtime sysctl does not permit it. Pod TCP buffers are tuned with namespaced
+sysctls, while Talos sets the corresponding node TCP buffer limits.
 
 The Recursor has a 100,000-entry record cache and 50,000-entry packet cache.
 It refreshes records asynchronously when they reach 10% of their original TTL
@@ -104,12 +125,14 @@ for the destination filtering behavior.
 YVR enables an additional
 [`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)
 and [DNS record editing API](https://docs.powerdns.com/recursor/lua-scripting/dnsrecord.html)
-to inspect completed answers. If an A response contains a CNAME to the
- Vault-backed YVR `PublicHostname` injected as `dnsdist.cnameFilter.target`, it
- removes the returned CNAME chain and terminal records, then returns one A
- record for the original queried name at `dnsdist.cnameFilter.address`
-(`10.0.0.19`). This covers any alias whose CNAME points at the Vault-provided
-hostname, including aliases whose names are not known to the ApplicationSet.
+to inspect completed answers. It rewrites A answers when either a CNAME points
+to the Vault-backed YVR `PublicHostname` injected as
+`dnsdist.cnameFilter.target`, or the answer chain contains a CNAME under
+`gslb.mylogin.space` and an A record. It removes the returned CNAME chain and
+terminal records, then returns one A record for the original queried name at
+`dnsdist.cnameFilter.address` (`10.0.0.19`). This covers aliases whose names
+are not known to the ApplicationSet. The Recursor hook does not perform its own
+hostname lookup; it relies on the K8GB CNAME chain to scope GSLB rewrites.
 Other query types and unrelated CNAMEs are returned unchanged. The
 `dnsdistHostOverrides` entries still handle direct queries for
 `idp.mylogin.space.` and the Vault-backed YVR public hostname.
@@ -120,17 +143,15 @@ configuration without this rewrite.
 
 The dnsdist pod sets resolver `ndots: '0'` through its BJW-S pod DNS
 configuration so fully qualified internal Service names are resolved directly.
-The pod also runs a same-image configuration watcher. Kubernetes projects
-updates to the mounted ConfigMap directory; the watcher publishes a hash marker
-and dnsdist's one-second `maintenance()` hook detects it, reloads `rules.lua`,
-and applies routing rules in place through a dedicated Lua function that does
-not invoke dnsdist's built-in full configuration reload. Listening sockets and the dnsdist
-process remain open, so routing-rule changes do not restart the process or roll
-out the Pod. Changes to `dnsdist.conf`, including the downstream backend
-addresses and health checks, require updating `dnsdist.configRevision` to roll
-the Deployment and load the new configuration. The Network/NS headless Service
-change advances that revision so dnsdist starts with all ready PowerDNS Pods;
-the periodic resolver keeps that set current as Pods change.
+Both dnsdist and the Recursor pods carry the targeted
+`configmap.reloader.stakater.com/reload: 'dnsdist-config'` annotation.
+[Stakater Reloader](https://docs.stakater.com/reloader/latest/reference/annotations.html)
+restarts the appropriate workload when this common-chart-generated ConfigMap
+changes. This reloads dnsdist's listener and backend configuration safely at
+process startup and ensures the Recursor loads an updated Lua filter script.
+
+dnsdist periodically resolves the headless Network/NS and Recursor Services
+and updates its per-Pod backend list without requiring a ConfigMap change.
 
 YVR dnsdist is the public port-53 Service for the single-WAN site and uses
 KubeVIP with the static `kube-vip.io/loadbalancerIPs: '10.0.0.40'` Service
@@ -177,9 +198,8 @@ recursively. Verify the YVR WAN target externally before publishing glue or
 delegating a child zone.
 
 When changing the generated DNS configuration, verify the ConfigMap data,
-the watcher marker, both ready endpoints, and the affected answers. The watcher
-only publishes the file hash; dnsdist performs the rule replacement and does
-not expose a remote control socket. See the [dnsdist configuration and runtime guidance](https://www.dnsdist.org/running.html)
+Stakater Reloader's rollout, both ready endpoints, and the affected answers.
+dnsdist does not expose a remote control socket. See the [dnsdist configuration and runtime guidance](https://www.dnsdist.org/running.html)
 and [PowerDNS dnsdist container documentation](https://github.com/PowerDNS/pdns/tree/master/dockerdata),
 the [PowerDNS Recursor 5.4.9 image](https://hub.docker.com/r/powerdns/pdns-recursor-54),
 [PowerDNS Security Advisory 2026-12](https://doc.powerdns.com/recursor/security-advisories/powerdns-advisory-2026-12.html),
