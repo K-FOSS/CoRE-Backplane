@@ -278,6 +278,10 @@ data:
     disable_load_balance_on_write = 'transaction'
     statement_level_load_balance = off
     database_redirect_preference_list = '{{ .Values.pooler.databaseRedirectPreferenceList }}'
+    # Authentik's main database login uses its Vault-backed username; keep its
+    # SELECTs on the primary while Authentik handles eligible reads via its
+    # separately configured read replica.
+    user_redirect_preference_list = '{{ `{{ .AAAUsername }}` }}:primary'
 
     # Let periodic health checks detach failed nodes. Session-level errors and
     # administrative backend termination must not trigger fleet-wide failover.
