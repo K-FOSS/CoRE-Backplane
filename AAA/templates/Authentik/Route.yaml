@@ -26,7 +26,7 @@ spec:
     - backendRefs:
         - group: ''
           kind: Service
-          name: {{ .Release.Name }}-authentik-server
+          name: {{ ternary "aaa-core-authentik" (printf "%s-authentik-server" .Release.Name) .Values.authentik.clusterMesh.enabled | squote }}
           port: 80
           weight: 1
 
