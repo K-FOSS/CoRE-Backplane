@@ -33,6 +33,10 @@ spec:
         - '/usr/local/bin/pg_exporter'
         - '--port'
         - '{{ $exporter.port }}'
+        - '--scrape.statement-timeout-ms'
+        - '{{ $exporter.statementTimeoutMs }}'
+        - '--scrape.timeout-ms'
+        - '{{ $exporter.scrapeTimeoutMs }}'
         {{- range $exporter.collectors }}
         - '--collector.{{ . }}'
         {{- end }}

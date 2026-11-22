@@ -105,6 +105,10 @@ monitoring:
       # preserves the sidecar CR args but does not pass them into the generated
       # pod, so the Service and ServiceMonitor must target the image default.
       port: 9432
+      # Allow slow statistics queries while keeping collection below the
+      # ServiceMonitor's 25s scrape timeout.
+      statementTimeoutMs: '18000'
+      scrapeTimeoutMs: '22000'
       # Preserve the existing Service endpoint while moving its target to the
       # image's native listener. This avoids a server-side apply list merge when
       # reconciling the old 9187 Service.
