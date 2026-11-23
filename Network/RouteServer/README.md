@@ -1,14 +1,16 @@
-# Route Server chart
+# CoRE-Backplane Network/RouteServer Stack
 
 This chart runs one or more FRRouting (FRR) route servers and route reflectors.
 Each entry in `routeservers` produces a separate FRR workload, BGP
 `LoadBalancer` Service, FRR configuration ConfigMap, and one
 `NetworkAttachmentDefinition` (NAD) per data-plane interface.
 
-The fleet entry point is
-[`Apps/Network/RouteReflector.yaml`](../../Apps/Network/RouteReflector.yaml).
-It selects the target clusters and injects the real site-specific route
-servers, interfaces, peers, prefixes, communities, and policy. The checked-in
+The fleet owner is
+[`Apps/Network/RouteReflector.yaml`](../../Apps/Network/RouteReflector.yaml),
+and the parent [Network stack overview](../README.md) describes the related
+network components. The ApplicationSet selects the target clusters and injects
+the real site-specific route servers, interfaces, peers, prefixes, communities,
+and policy. The checked-in
 [`values.yaml`](values.yaml) is a reference/default configuration, not a
 complete description of what runs in every cluster.
 
@@ -20,6 +22,8 @@ For a route server named `rs0`, the chart renders:
 - a `LoadBalancer` Service on TCP/179, with the requested `ipAddress`
   advertised through PureLB;
 - a ConfigMap containing `frr.conf`, `daemons`, and `vtysh.conf`;
+- an FRR exporter sidecar sharing the FRR Unix socket directory and exposing
+  Prometheus metrics on port `9342`;
 - Multus NADs named `net-<release>-rs0-<index>`;
 - init containers that configure MTU, ring sizes, offloads, source-specific
   routes, and optional `tc` queueing; and
@@ -34,6 +38,34 @@ The FRR container deliberately runs `bgpd` with `--no_kernel`: learned BGP
 routes are not installed into the pod's kernel forwarding table. OSPF, OSPFv3,
 and IS-IS can still require `NET_ADMIN`, `NET_RAW`, `SYS_ADMIN`, and
 `NET_BIND_SERVICE`.
+
+## Router peer documentation and protocol references
+
+The generated FRR route servers are the Kubernetes-side route-reflector and
+route-server implementation for the router peers documented in:
+
+- [WAN-GW2 at Home1/YVR](../../Lab/VMs/WAN-GW2.md), including its
+  `YVR-CoRE-RR` and `YVR-CoRE-RRv6` peer groups, VPN/labeled-unicast/EVPN
+  address families, route policy, and WireGuard/GRE/MPLS paths toward DC1;
+- [WAN-RT1 at DC1/YXL](../../Lab/VMs/WAN-RT1.md), including its global BGP,
+  EVPN/VXLAN, VRF, OSPF, and MPLS/LDP assumptions; and
+- the fleet [RouteReflector ApplicationSet](../../Apps/Network/RouteReflector.yaml),
+  which injects the site-specific route-server addresses, peer groups, address
+  families, prefixes, communities, and route maps.
+
+The router documents describe the VyOS side of the relationship; this stack
+describes the FRR side. In particular, compare router IDs/control-plane
+addresses, BGP ASNs and cluster IDs, activated VPN/labeled-unicast/EVPN
+families, route-map direction, interface order, and the OSPF/MPLS/LDP transport
+before treating a peer relationship as complete. The generated FRR workload is
+not a substitute for VyOS guest routing-plane verification.
+
+For configuration semantics, use the upstream [FRRouting BGP documentation](https://docs.frrouting.org/en/latest/bgp.html)
+and [FRRouting LDP documentation](https://docs.frrouting.org/en/latest/ldpd.html),
+together with the [VyOS BGP documentation](https://docs.vyos.io/en/latest/configuration/protocols/bgp.html)
+and [VyOS LDP documentation](https://docs.vyos.io/en/latest/configuration/protocols/ldp.html).
+The repository's rendered `frr.conf`, the ApplicationSet-injected values, and
+the supplied router configuration remain authoritative for this deployment.
 
 ## Prerequisites
 
@@ -77,6 +109,7 @@ policy before enabling it.
 | `ospf`, `ospf6`, `isis` | Global routing-daemon configuration. An interface must also opt into the relevant protocol under `routing`. |
 | `bgp` | BGP process, peer-group, peer, and address-family configuration. |
 | `frr.version` | Per-server FRR image tag. |
+| `frr.exporter` | Shared FRR exporter image, port, resources, and enable switch. |
 | `frr.rawConfig` | Unstructured FRR commands appended after the generated BGP configuration. |
 | `nicConfig.image` | Optional image override for NIC and traffic-control init containers. |
 | `debugSidecar` | Optional sidecar sharing the pod network namespace. |
@@ -151,6 +184,36 @@ routeservers:
     frr:
       version: 10.6.1
 ```
+
+## FRR metrics and dashboard
+
+The chart runs the upstream [`tynany/frr_exporter`](https://github.com/tynany/frr_exporter)
+as a sidecar in every route-server pod. The image is pinned to v1.12.0 and its
+multi-platform GHCR digest. An `emptyDir` mounts at `/var/run/frr` in both the
+FRR and exporter containers so the exporter can read FRR's Unix sockets. It
+enables the default BGP, OSPF, BFD, and route collectors plus IPv6 BGP and
+L2VPN EVPN collectors. The exporter runs as UID 0 with all Linux capabilities
+dropped so it can read FRR-owned socket files without receiving network or
+process-management privileges.
+
+The pod carries `prometheus.io/scrape`, `prometheus.io/job`, and the named
+`frr-metrics` port annotations. Cluster Alloy's existing annotated-pod
+autodiscovery scrapes `/metrics` on port `9342` and sends the data through the
+existing Mimir pipeline. This path does not use a ServiceMonitor or expose a
+new Kubernetes Service.
+
+The route-server chart also publishes the upstream [FRR Exporter - BGP
+dashboard](https://grafana.com/grafana/dashboards/22943-frr-exporter-bgp/) to
+the dashboard syncer using pinned Grafana revision
+[3](https://grafana.com/api/dashboards/22943/revisions/3/download). It lands in
+`Network/Base/FRR`, alongside the FRR-K8s dashboard owned by Network/Base. The
+two dashboards query different exporters and cover the Kubernetes route
+servers and FRR-K8s control-plane component respectively.
+
+The exporter sidecar shares the route server's pod lifecycle. Because these
+workloads use the `Recreate` strategy, enabling or updating the exporter
+recreates its route-server pod; roll redundant route servers one at a time and
+verify BGP sessions and routes after reconciliation.
 
 ## Rendering and inspection
 

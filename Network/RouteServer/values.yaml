@@ -1,5 +1,19 @@
 frr:
   defaultVersion: v8.3.1
+  exporter:
+    enabled: true
+    image:
+      repository: ghcr.io/tynany/frr_exporter
+      tag: 'v1.12.0@sha256:33ff64b0c07192ea62fb403df434c22229c141ce3a22f846341a4ca6e81a24bf'
+      pullPolicy: IfNotPresent
+    port: 9342
+    resources:
+      requests:
+        cpu: '25m'
+        memory: '64Mi'
+      limits:
+        cpu: '250m'
+        memory: '256Mi'
 
 routeservers:
   rs0:

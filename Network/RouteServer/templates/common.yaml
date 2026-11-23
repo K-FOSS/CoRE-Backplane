@@ -186,8 +186,9 @@ controllers:
             value: '0'
           - name: edns0
 
-      {{- if and $rs.networking $rs.networking.interfaces }}
+      {{- if or (and $rs.networking $rs.networking.interfaces) $.Values.frr.exporter.enabled }}
       {{- $additionalNetworks := list }}
+      {{- if and $rs.networking $rs.networking.interfaces }}
       {{- range $netID, $netInterface := $rs.networking.interfaces }}
       {{- if gt $netID 0 }}
       {{- $network := dict "name" (printf "net-%s-%s-%d" $.Release.Name $name $netID) "interface" (printf "eth%d" $netID) }}
@@ -197,10 +198,18 @@ controllers:
       {{- $additionalNetworks = append $additionalNetworks $network }}
       {{- end }}
       {{- end }}
+      {{- end }}
       annotations:
+        {{- if and $rs.networking $rs.networking.interfaces }}
         v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $name }}-0'
         {{- if $additionalNetworks }}
         k8s.v1.cni.cncf.io/networks: {{ $additionalNetworks | toJson | quote }}
+        {{- end }}
+        {{- end }}
+        {{- if $.Values.frr.exporter.enabled }}
+        prometheus.io/scrape: 'true'
+        prometheus.io/job: 'frr-exporter'
+        prometheus.io/portName: 'frr-metrics'
         {{- end }}
       {{- end }}
 
@@ -299,6 +308,39 @@ controllers:
               ## This means it has a maximum of 5*30=150 seconds to start up before it fails
               periodSeconds: 5
               failureThreshold: 30
+
+      {{- if $.Values.frr.exporter.enabled }}
+      frr-exporter:
+        image:
+          repository: {{ $.Values.frr.exporter.image.repository }}
+          tag: '{{ $.Values.frr.exporter.image.tag }}'
+          pullPolicy: '{{ $.Values.frr.exporter.image.pullPolicy }}'
+
+        args:
+          - '--frr.socket.dir-path=/var/run/frr'
+          - '--collector.bgp6'
+          - '--collector.bgpl2vpn'
+
+        ports:
+          - name: 'frr-metrics'
+            containerPort: {{ $.Values.frr.exporter.port }}
+            protocol: TCP
+
+        resources:
+          {{- toYaml $.Values.frr.exporter.resources | nindent 10 }}
+
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          runAsUser: 0
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
+          seccompProfile:
+            type: RuntimeDefault
+      {{- end }}
 
       {{- if dig "debugSidecar" "enabled" false $rs }}
       netshoot:
@@ -759,6 +801,17 @@ configMaps:
 
 persistence:
   {{- range $name, $rs := .Values.routeservers }}
+  {{- if $.Values.frr.exporter.enabled }}
+  {{ $name }}-frr-sockets:
+    enabled: true
+    type: emptyDir
+    advancedMounts:
+      {{ $name }}-routeserver:
+        frr:
+          - path: '/var/run/frr'
+        frr-exporter:
+          - path: '/var/run/frr'
+  {{- end }}
   {{ $name }}-config:
     enabled: true
 
