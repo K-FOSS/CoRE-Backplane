@@ -117,6 +117,17 @@ resource requests, and the ApplicationSet's `service.main.annotations` merge
 point. Keep new bjw-s implementation details in the template and expose a value
 only when operators or target clusters need to change it.
 
+The authoritative PowerDNS process exposes its native Prometheus `/metrics`
+endpoint on the internal `ns-core-metrics` Service. The chart creates a
+ServiceMonitor with a 30-second interval; the metrics webserver is restricted
+to private network ranges and is not added to the public DNS LoadBalancer.
+PowerDNS documents this endpoint in the [Authoritative Server metrics
+documentation](https://doc.powerdns.com/authoritative/http-api/index.html).
+The shared Grafana dashboard is imported from [PowerDNS authoritative dashboard
+20445](https://grafana.com/grafana/dashboards/20445-powerdns-authoritative/).
+The dashboard ConfigMap is owned by this stack and imported by the shared
+[Grafana dashboard syncer](../../Observability/Dashboards/README.md).
+
 ## Reconciliation and prerequisites
 
 Argo CD renders Helm and creates the resources in the target cluster. External
