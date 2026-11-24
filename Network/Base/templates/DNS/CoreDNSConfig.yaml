@@ -40,8 +40,8 @@ data:
             {{- end }}
             ttl 30
         }
-        forward . {{ join " " .Values.kubeDNS.upstreams }} {
-            max_concurrent 1000
+        fanout . {{ join " " .Values.kubeDNS.upstreams }} {
+            network UDP
         }
         cache 300 {
             disable success {{ $domain }}

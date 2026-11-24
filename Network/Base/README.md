@@ -95,7 +95,7 @@ ApplicationSet already enables Hubble, this configuration also enables its
 native metrics exporter, ServiceMonitor, and all four upstream Hubble
 dashboards. They are imported from ConfigMaps in `kube-system` by the
 [Observability/Dashboards syncer](../../Observability/Dashboards/README.md) into
-the `Cilium` folder.
+the `Network/Base/Cilium` folder.
 
 The ApplicationSet relabels Cilium agent metrics to a stable `cluster-name/node`
 identity. It also projects that identity into the upstream dashboard's existing
@@ -129,10 +129,13 @@ and [MetalLB FRR-K8s metric reference](https://metallb.io/prometheus-metrics/#fr
 FRR-K8s does not publish a Grafana dashboard. The
 repository-managed [FRR-K8s dashboard](dashboards/frr-k8s.json) uses its
 documented `frrk8s_bgp_*` and `frrk8s_bfd_*` series and imports into the
-cluster's `Networking/FRR-K8s` folder. The Grafana community
+cluster's `Network/Base/FRR` folder. The Grafana community
 [FRR Exporter - BGP dashboard](https://grafana.com/grafana/dashboards/22943-frr-exporter-bgp/)
-targets `tynany/frr_exporter` metric names, so it is not compatible with this
-FRR-K8s exporter.
+is imported alongside it in `Network/Base/FRR`. It targets `tynany/frr_exporter`
+metrics from the Kubernetes route servers; those are separate from the
+FRR-K8s metrics shown by the repository-managed dashboard. The route-server
+exporter and its scrape configuration are owned by the
+[RouteServer stack](../RouteServer/README.md).
 
 Cilium path MTU discovery is enabled with TCP Packetization Layer PMTUD set to
 `always`, so agents continuously use packetization-layer probing rather than
@@ -449,11 +452,13 @@ and `dnsPolicy: Default`. Home1 additionally requires CoreDNS pods to avoid
 nodes. DC1 has no node exclusion. Direct manifests are an intentional
 common-library exception to preserve fixed bootstrap identities and ordering
 without a parallel Deployment or Service. Both sites use the shared
-`registry.k8s.io/coredns/coredns:v1.13.2`
-[image version](https://github.com/coredns/coredns/releases/tag/v1.13.2) from
-`values.yaml`; Home1 upgrades from v1.12.0 on reconciliation while DC1 retains
-its existing version. Review the upgrade and DNS reload logs before proceeding
-to another site.
+`kristianfjones/coredns-docker:core0`, pinned to registry digest
+`sha256:538e1122e930f523c8fecc64c7358148a6f9b52a88d1db202c984efc08730604`.
+The image metadata identifies CoreDNS 1.14.7 and the compiled fanout plugin;
+see the [image build documentation](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/Core-Docker/src/branch/main/Images/CoreDNS/README.md)
+and its [source repository](https://forge.core-dc1-talos-prod.dc1.yxl.writemy.codes/CoRE/Core-Docker).
+The registry reports this image as `linux/amd64`. Review the upgrade and DNS
+reload logs before proceeding to another site.
 Both sites use shared `values.yaml` defaults for `NS_ID` from `status.podIP`,
 liveness HTTP `/health` on 8080 (60-second initial delay), and readiness HTTP
 `/ready` on 8181. Home1 gains these settings and will roll its DNS Deployment;
@@ -472,15 +477,18 @@ Before adoption, the live configurations observed on 2026-09-26 differ by site:
   forwards to `1.1.1.1`, `1.0.0.1`, `9.9.9.9`, and `8.8.8.8`, disables caching
   for `k3s.dc1.resolvemy.host`, and retains `nsid {$NS_ID}`.
 
-The desired shared template Corefile forwards both sites to `1.1.1.1` and
-`8.8.8.8`, serves `cluster.local` and the injected cluster domain, and disables
-caching for that domain. It omits DC1's existing NSID directive. In Home1 this
-bypasses the current site-local resolver, so verify any private zones previously
-resolved by `172.31.193.16` before adoption. External DNS query metadata now goes
-to these public resolvers. The existing DNS egress-gateway destinations include
-both IPs. See
+The desired shared template Corefile sends each unmatched query over UDP to
+both `1.1.1.1` and `8.8.8.8` using the CoreDNS [fanout plugin](https://coredns.io/explugins/fanout/).
+It returns the first non-negative upstream response, serves `cluster.local`
+and the injected cluster domain, and disables caching for that domain. This
+sends every forwarded query to both resolvers, increasing upstream query
+volume and sharing each query with both providers. The image's upstream plugin
+source is [networkservicemesh/fanout](https://github.com/networkservicemesh/fanout).
+It omits DC1's existing NSID directive. In Home1 this bypasses the current
+site-local resolver, so verify any private zones previously resolved by
+`172.31.193.16` before adoption. The existing DNS egress-gateway destinations
+include both public resolver IPs. See
 the CoreDNS [Kubernetes plugin](https://coredns.io/plugins/kubernetes/),
-[forwarding plugin](https://coredns.io/plugins/forward/),
 [cache plugin](https://coredns.io/plugins/cache/), and
 [NSID plugin](https://coredns.io/plugins/nsid/) for their semantics.
 
