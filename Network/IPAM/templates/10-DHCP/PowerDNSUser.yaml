@@ -1,0 +1,43 @@
+{{- if and .Values.dhcp.enabled .Values.dhcp.servers.dhcpDdns }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns'
+
+  annotations:
+    argocd.argoproj.io/sync-wave: '0'
+
+  namespace: {{ .Release.Namespace | squote }}
+  labels:
+    {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
+
+spec:
+  name: 'Kea PowerDNS {{ .Values.cluster.name }}'
+  username: 'ipam-pdns-{{ .Values.cluster.name }}'
+  groups:
+    - 'LDAPService'
+
+  psql:
+    enabled: true
+    createUserDatabase: false
+    database: 'DlzcnePHKR'
+    hostname: {{ required "psql.hostname is required" .Values.psql.hostname | squote }}
+    uri: 'postgresql://'
+    readOnly: false
+    databases:
+      - 'DlzcnePHKR'
+    tables:
+      - 'domains'
+      - 'records'
+      - 'comments'
+      - 'domainmetadata'
+      - 'cryptokeys'
+      - 'tsigkeys'
+      - 'supermasters'
+    crossplane:
+      crossplaneProvider: {{ required "psql.crossplaneProvider is required" .Values.psql.crossplaneProvider | squote }}
+      terraformProvider: {{ required "psql.terraformProvider is required" .Values.psql.terraformProvider | squote }}
+
+  writeConnectionSecretToRef:
+    name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns-creds'
+{{- end }}

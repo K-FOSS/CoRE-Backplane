@@ -8,6 +8,9 @@ global:
 
 defaultPodOptions:
   automountServiceAccountToken: false
+  securityContext:
+    seccompProfile:
+      type: 'RuntimeDefault'
   labels:
     logs: 'loki-myloginspace'
 
@@ -22,7 +25,10 @@ controllers:
     pod:
       annotations:
         configmap.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dhcp-tpl'
-        secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dhcp-config'
+        secret.reloader.stakater.com/reload: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-dhcp-config,{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns-port,{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns-creds'
+      securityContext:
+        fsGroup: 953
+        fsGroupChangePolicy: 'OnRootMismatch'
     containers:
       dhcp:
         image:
@@ -80,33 +86,77 @@ controllers:
           - '--config-dir=/etc/pdns'
           - '--disable-syslog=yes'
           - '--socket-dir=/tmp'
-          - '--gpgsql-host={{ .Values.dhcp.database.host }}'
+          - '--gpgsql-host={{ required "psql.hostname is required" .Values.psql.hostname }}'
           - '--gpgsql-port=$(PSQL_PORT)'
           - '--gpgsql-dbname=DlzcnePHKR'
           - '--gpgsql-user=$(USERNAME)'
           - '--gpgsql-password=$(PASSWORD)'
         env:
-          - name: 'PSQL_HOSTNAME'
-            valueFrom:
-              secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
-                key: 'psqlHostname'
           - name: 'PSQL_PORT'
             valueFrom:
               secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
-                key: 'psqlPort'
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns-port'
+                key: 'port'
           - name: 'USERNAME'
             valueFrom:
               secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns-creds'
                 key: 'username'
           - name: 'PASSWORD'
             valueFrom:
               secretKeyRef:
-                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-ns'
+                name: '{{ include "bjw-s.common.lib.chart.names.fullname" . }}-pdns-creds'
                 key: 'password'
         workingDir: '/etc/pdns'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - ALL
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 953
+          runAsGroup: 953
+        probes:
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - 'pdns_control'
+                  - '--socket-dir=/tmp'
+                  - 'rping'
+              periodSeconds: 15
+              timeoutSeconds: 2
+              failureThreshold: 6
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - 'pdns_control'
+                  - '--socket-dir=/tmp'
+                  - 'rping'
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 3
+          startup:
+            enabled: true
+            custom: true
+            spec:
+              exec:
+                command:
+                  - 'pdns_control'
+                  - '--socket-dir=/tmp'
+                  - 'rping'
+              periodSeconds: 5
+              timeoutSeconds: 2
+              failureThreshold: 60
+        resources:
+{{ toYaml .Values.dhcp.powerdns.resources | nindent 10 }}
 
 service:
   main:
@@ -158,6 +208,17 @@ persistence:
       main:
         dhcp:
           - path: '/var/run/kea'
+  pdns-socket:
+    enabled: {{ .Values.dhcp.servers.dhcpDdns }}
+    type: 'custom'
+    volumeSpec:
+      emptyDir:
+        medium: 'Memory'
+    advancedMounts:
+      main:
+        ns:
+          - path: '/tmp'
+            readOnly: false
 
 configMaps:
   config:
