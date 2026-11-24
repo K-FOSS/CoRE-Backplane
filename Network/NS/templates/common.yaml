@@ -119,6 +119,26 @@ controllers:
       unavailable: '0'
     podDisruptionBudget:
       minAvailable: 1
+    initContainers:
+      tmp-permissions:
+        image:
+          repository: {{ .Values.images.powerdnsAdmin.repository | quote }}
+          tag: {{ .Values.images.powerdnsAdmin.tag | quote }}
+          pullPolicy: {{ .Values.images.powerdnsAdmin.pullPolicy }}
+        command:
+          - 'python3'
+          - '-c'
+          - 'import os; os.chown("/tmp", 0, 10001); os.chmod("/tmp", 0o1770)'
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+              - 'ALL'
+          privileged: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
     pod:
       securityContext:
         fsGroup: 10001
@@ -452,6 +472,8 @@ persistence:
           - path: /tmp
       nsadmin:
         pdns-api:
+          - path: /tmp
+        tmp-permissions:
           - path: /tmp
   config:
     type: custom
