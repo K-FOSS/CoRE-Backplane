@@ -64,41 +64,38 @@ headlamp:
     # the tag value so the deployed image is immutable.
     tag: 'v0.46.0@sha256:8a0ef97527544baa2b35825940ddf4db6e2d09c30cd5aa31fd269ff604cc8b75'
 
-
-  # -- An optional list of init containers to be run before the main containers.
+  # Keep the Inspektor Gadget URL rewrite required by its in-cluster proxy.
   initContainers:
-    - name: headlamp-plugins
-      image: ghcr.io/inspektor-gadget/headlamp-plugin:0.1.0-beta.3
-      imagePullPolicy: Always
+    - name: 'headlamp-plugins'
+      image: 'ghcr.io/inspektor-gadget/headlamp-plugin@sha256:9b7a5daf9ceb1ae85037df2bfb2ecc21985ac9bc115e82af3d2dfddecc327281'
+      imagePullPolicy: 'IfNotPresent'
       command:
-        - /bin/sh
+        - '/bin/sh'
         - '-ec'
-        - >
-          mkdir -p /build/plugins/inspektor-gadget
-
-          cp -r /plugins/inspektor-gadget-plugin/. /build/plugins/inspektor-gadget/
-
-          sed -i 's#http://localhost:4466/externalproxy#/externalproxy#g' /build/plugins/inspektor-gadget/main.js
-
+        - >-
+          mkdir -p /build/plugins/inspektor-gadget &&
+          cp -r /plugins/inspektor-gadget-plugin/. /build/plugins/inspektor-gadget/ &&
+          sed -i 's#http://localhost:4466/externalproxy#/externalproxy#g' /build/plugins/inspektor-gadget/main.js &&
           grep -o 'fetch("/externalproxy"' /build/plugins/inspektor-gadget/main.js
       volumeMounts:
-        - name: headlamp-plugins
-          mountPath: /build/plugins
+        - name: 'plugins-dir'
+          mountPath: '/build/plugins'
       securityContext:
         runAsUser: 100
         runAsGroup: 101
 
-    - name: headlamp-kubevirt
-      image: ghcr.io/naval-group/headlamp-kubevirt:latest
-      command: ['/bin/sh', '-c']
-      args:
-        - 'cp -r /plugins/kubevirt /headlamp-plugins/'
-      volumeMounts:
-        - name: headlamp-plugins
-          mountPath: /headlamp-plugins
-      securityContext:
-        runAsUser: 100
-        runAsGroup: 101
+  pluginsManager:
+    enabled: true
+    version: '0.1.1'
+    baseImage: 'node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a'
+    configContent: |-
+      plugins:
+        - name: 'headlamp_kubevirt'
+          source: 'https://artifacthub.io/packages/headlamp/headlamp-kubevirt/headlamp_kubevirt'
+          version: '0.3.1'
+      installOptions:
+        parallel: true
+        maxConcurrent: 3
 
   config:
     # -- base url path at which headlamp should run
@@ -129,6 +126,7 @@ headlamp:
 
     # -- directory to look for plugins
     pluginsDir: '/build/plugins'
+    watchPlugins: true
     # Extra arguments that can be given to the container. See charts/headlamp/README.md for more information.
     extraArgs:
       - '-proxy-urls=https://artifacthub.io/*'
@@ -162,8 +160,7 @@ headlamp:
 
   # -- Headlamp pod's Security Context
   podSecurityContext:
-    {}
-    # fsGroup: 2000
+    fsGroup: 101
 
   # -- Headlamp containers Security Context
   securityContext:
@@ -183,17 +180,6 @@ headlamp:
     port: 80
     # -- Kubernetes Service app protocol for WebSocket upgrade handling
     appProtocol: 'kubernetes.io/ws'
-
-  # -- Headlamp containers volume mounts
-  volumeMounts:
-    - name: 'headlamp-plugins'
-      mountPath: '/build/plugins'
-
-  # -- Headlamp pod's volumes
-  volumes:
-    - name: 'headlamp-plugins'
-      emptyDir:
-        medium: Memory
 
   persistentVolumeClaim:
     # -- Enable Persistent Volume Claim
