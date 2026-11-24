@@ -19,6 +19,12 @@ as an OCI artifact. Chart version `0.9.0` is pinned; its OCI digest is
 `sha256:b42209895a946ab4977d9f9e0702e22a3f61b2337bde87fbaa6789a5cfea3659`.
 The operator image and Garage `v2.4.1` image are pinned by digest in
 [values.yaml](values.yaml).
+The pinned chart does not expose a Deployment revision-history value. Lovely
+renders the chart and then applies the [Kustomize patch](kustomization.yaml),
+setting the operator Deployment's `revisionHistoryLimit` to `4` on both target
+clusters. The patch selects the chart's operator label so it follows the
+ApplicationSet-generated Deployment name.
+
 This upgrade retains the existing v1beta1 conversion path but marks v1beta1
 `GarageCluster` as deprecated; new resources should use v1beta2 after reviewing
 the upstream [API compatibility documentation](https://rajsinghtech.github.io/garage-operator/concepts/api-versions/)
@@ -51,6 +57,9 @@ helm dependency build Storage/S3/Operators/Garage
 helm lint Storage/S3/Operators/Garage
 helm template garage-operator Storage/S3/Operators/Garage --namespace garage-operator-system
 ```
+
+The Helm command validates the chart layer. Inspect the final Lovely-rendered
+Deployment as well to confirm `spec.revisionHistoryLimit: 4` after Kustomize.
 
 After sync, verify the operator Deployment and webhook are healthy and all six
 Garage CRDs are Established before syncing
