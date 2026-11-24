@@ -106,6 +106,13 @@ spec:
         sensitive = true
       }
 
+      # Envoy Gateway's OIDC SecurityPolicy expects this standard key in the
+      # same connection Secret. Keep the existing Headlamp chart output too.
+      output "client-secret" {
+        value     = random_password.client-secret.result
+        sensitive = true
+      }
+
       output "OIDC_ISSUER_URL" {
         value = "{{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/"
         sensitive = true

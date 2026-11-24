@@ -18,18 +18,49 @@ spec:
   hostnames:
     - headlamp.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.resolvemy.host
   rules:
-    - backendRefs:
+    # Keep websocket sessions open; the Service declares kubernetes.io/ws so
+    # Envoy Gateway upgrades the upstream connection as well.
+    - matches:
+        - path:
+            type: PathPrefix
+            value: '/'
+          headers:
+            - name: 'Upgrade'
+              value: 'websocket'
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              # Headlamp uses this only to enable its UI session. The forwarded
+              # ID token supplies the user's Kubernetes identity and RBAC.
+              - name: 'X-Forwarded-User'
+                value: 'OIDC authenticated'
+      backendRefs:
         - group: ''
           kind: Service
           name: {{ .Release.Name }}-headlamp
           port: 80
           weight: 1
-
       timeouts:
-        backendRequest: 3h
-        request: 0s
+        backendRequest: '0s'
+        request: '0s'
 
-      matches:
+    - matches:
         - path:
             type: PathPrefix
-            value: /
+            value: '/'
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: 'X-Forwarded-User'
+                value: 'OIDC authenticated'
+      backendRefs:
+        - group: ''
+          kind: Service
+          name: {{ .Release.Name }}-headlamp
+          port: 80
+          weight: 1
+      timeouts:
+        backendRequest: '30s'
+        request: '60s'

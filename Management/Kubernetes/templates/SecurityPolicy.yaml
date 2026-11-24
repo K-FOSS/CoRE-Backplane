@@ -1,0 +1,21 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: 'headlamp'
+spec:
+  targetRefs:
+    - group: 'gateway.networking.k8s.io'
+      kind: HTTPRoute
+      name: 'headlamp'
+  oidc:
+    provider:
+      issuer: '{{ .Values.oauth.authentik.urlBase }}/application/o/{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}/'
+    clientID: '{{ .Values.oauth.indexKey }}-{{ .Values.region }}-{{ .Values.datacenter }}-{{ .Values.cluster.name }}'
+    clientSecret:
+      name: 'core-headlamp-oidc'
+    redirectURL: 'https://headlamp.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.resolvemy.host/oauth2/callback'
+    logoutPath: '/logout'
+    cookieConfig:
+      sameSite: 'Lax'
+    forwardIDToken:
+      header: 'X-Forwarded-Id-Token'

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: 'headlamp-gateway-only'
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: 'headlamp'
+  policyTypes:
+    - 'Ingress'
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: 'kube-system'
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: 'envoy'
+              gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
+              gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
+      ports:
+        - protocol: 'TCP'
+          port: 4466
