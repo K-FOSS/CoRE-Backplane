@@ -72,7 +72,7 @@ controllers:
         enabled: {{ .Values.dhcp.servers.dhcpDdns }}
         image:
           repository: 'powerdns/pdns-auth-51'
-          tag: '5.1.3@sha256:f976e753a1de8ec62636203ecb12ae5fa3d1055601be167de53f1f673e0abe59'
+          tag: '5.1.5@sha256:77ff4efdbb9ec30e9309c8a1cbed6121a67fa3be25c848bbbfa756fc75bf9a27'
           pullPolicy: 'IfNotPresent'
         command:
           - '/usr/local/sbin/pdns_server'
@@ -244,17 +244,16 @@ configMaps:
         version-string=anonymous
         gpgsql-dnssec=
         allow-axfr-ips=172.16.0.0/12,10.0.0.0/8
-        allow-dnsupdate-from=172.16.0.0/12,10.0.0.0/8,127.0.0.0/8
-        webserver=yes
-        webserver-address=0.0.0.0
-        webserver-allow-from=0.0.0.0/0
-        webserver-port=8081
+        allow-dnsupdate-from=127.0.0.1
+        api=no
+        webserver=no
         default-soa-content=ns.resolvemy.host bots.@ 0 300 60 600 300
         dnsupdate=yes
         expand-alias=yes
-        forward-dnsupdate=yes
-        forward-notify=10.1.1.50,10.1.1.53
-        primary=yes
+        forward-dnsupdate=no
+        forward-notify=
+        primary=no
+        secondary=no
 {{- end -}}
 
 {{- $_ := mergeOverwrite .Values (include "app-template.hardcodedValues" . | fromYaml) -}}
