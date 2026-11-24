@@ -1,0 +1,17 @@
+{{- if .Values.frr.exporter.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: '{{ .Release.Name }}-frr-exporter'
+  namespace: '{{ .Release.Namespace }}'
+  labels:
+    app.kubernetes.io/name: '{{ .Release.Name }}'
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: '{{ .Release.Name }}'
+  podMetricsEndpoints:
+    - port: 'frr-metrics'
+      path: '/metrics'
+      interval: '30s'
+{{- end }}

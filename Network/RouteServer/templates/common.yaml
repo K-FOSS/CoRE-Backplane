@@ -186,9 +186,8 @@ controllers:
             value: '0'
           - name: edns0
 
-      {{- if or (and $rs.networking $rs.networking.interfaces) $.Values.frr.exporter.enabled }}
-      {{- $additionalNetworks := list }}
       {{- if and $rs.networking $rs.networking.interfaces }}
+      {{- $additionalNetworks := list }}
       {{- range $netID, $netInterface := $rs.networking.interfaces }}
       {{- if gt $netID 0 }}
       {{- $network := dict "name" (printf "net-%s-%s-%d" $.Release.Name $name $netID) "interface" (printf "eth%d" $netID) }}
@@ -198,18 +197,10 @@ controllers:
       {{- $additionalNetworks = append $additionalNetworks $network }}
       {{- end }}
       {{- end }}
-      {{- end }}
       annotations:
-        {{- if and $rs.networking $rs.networking.interfaces }}
         v1.multus-cni.io/default-network: '{{ $.Release.Namespace }}/net-{{ $.Release.Name }}-{{ $name }}-0'
         {{- if $additionalNetworks }}
         k8s.v1.cni.cncf.io/networks: {{ $additionalNetworks | toJson | quote }}
-        {{- end }}
-        {{- end }}
-        {{- if $.Values.frr.exporter.enabled }}
-        prometheus.io/scrape: 'true'
-        prometheus.io/job: 'frr-exporter'
-        prometheus.io/portName: 'frr-metrics'
         {{- end }}
       {{- end }}
 
