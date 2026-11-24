@@ -109,6 +109,34 @@ spec:
         configOverrides:
           devices: eno1
           direct-routing-device: eno1
+    pci:
+      # Keep VFs 0-2 on each PF bound to igbvf: VF0 is reserved for Cilium,
+      # and VFs 1-2 remain available to non-VFIO SR-IOV consumers.
+      rebinds:
+        - description: 'eno1 VF3 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:11.4'
+        - description: 'eno1 VF4 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:12.0'
+        - description: 'eno1 VF5 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:12.4'
+        - description: 'eno1 VF6 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:13.0'
+        - description: 'eno2 VF3 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:11.5'
+        - description: 'eno2 VF4 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:12.1'
+        - description: 'eno2 VF5 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:12.5'
+        - description: 'eno2 VF6 - VFIO'
+          driver: 'vfio-pci'
+          id: '0000:01:13.1'
     talos:
       kernel:
         modules:
