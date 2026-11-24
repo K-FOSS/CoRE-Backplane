@@ -301,25 +301,37 @@ controllers:
         probes:
           liveness:
             enabled: true
-            type: TCP
-            port: 8081
+            custom: true
             spec:
+              exec:
+                command:
+                  - 'pdns_control'
+                  - '--socket-dir=/tmp'
+                  - 'rping'
               periodSeconds: 15
               timeoutSeconds: 2
               failureThreshold: 6
           readiness:
             enabled: true
-            type: TCP
-            port: 8081
+            custom: true
             spec:
+              exec:
+                command:
+                  - 'pdns_control'
+                  - '--socket-dir=/tmp'
+                  - 'rping'
               periodSeconds: 5
               timeoutSeconds: 2
               failureThreshold: 3
           startup:
             enabled: true
-            type: TCP
-            port: 8081
+            custom: true
             spec:
+              exec:
+                command:
+                  - 'pdns_control'
+                  - '--socket-dir=/tmp'
+                  - 'rping'
               periodSeconds: 5
               timeoutSeconds: 2
               failureThreshold: 60
