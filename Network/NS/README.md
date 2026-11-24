@@ -39,8 +39,16 @@ rollouts, with readiness gated on its DNS listener and a startup probe allowing
 up to five minutes for initialization. A PodDisruptionBudget keeps at least
 two replicas available during voluntary disruptions. The single-replica
 NSAdmin Deployment also uses surge-before-unavailable behavior and waits for
-its HTTP endpoint and local PowerDNS API sidecar before receiving route traffic
-and allows up to five minutes to start. Its disruption budget prevents
+PowerDNS-Admin's unauthenticated `/ping` startup/liveness and `/healthcheck`
+readiness endpoints before receiving route traffic, with up to five minutes
+allowed for startup. These endpoints confirm the web process responds; they do
+not check PostgreSQL or the local PowerDNS API. The handlers are defined in
+the pinned [PowerDNS-Admin v2026.08.1 routes](https://github.com/PowerDNS-Admin/PowerDNS-Admin/blob/v2026.08.1/powerdnsadmin/routes/index.py).
+The local PowerDNS API sidecar binds to `127.0.0.1`, so its probes run
+`pdns_control rping` against the local control socket instead of trying the
+pod IP. PowerDNS documents this command in its
+[`pdns_control` manual](https://docs.powerdns.com/authoritative/manpages/pdns_control.1.html).
+Its disruption budget prevents
 voluntary eviction while the single replica has no replacement. Rollouts can
 remain pending if the cluster lacks room for the surge Pod, which preserves the
 serving replicas until capacity is available. Kubernetes documents
