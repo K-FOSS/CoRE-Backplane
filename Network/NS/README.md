@@ -181,6 +181,21 @@ generated password rather than LDAP authentication. The hub still pushes this
 Secret to the legacy `NS/Database` Vault path for other consumers that have not
 yet migrated to the claim.
 
+The `nsadmin-ns-core` claim provisions a separate global-database service
+identity for PowerDNS-Admin. Its PostgreSQL username is suffixed with the
+region and datacenter so the two site deployments do not collide in the shared
+database cluster. It grants read/write access to the PowerDNS tables
+`domains`, `records`, `comments`, `domainmetadata`, `cryptokeys`, `tsigkeys`,
+and `supermasters` in the `public` schema of `DlzcnePHKR`, and does not create
+a database. Its
+`nsadmin-ns-core-creds` Secret is available in the release namespace for the
+application to consume; the current PowerDNS-Admin Deployment does not yet
+reference this Secret. The PostgreSQL `User` Composition applies `ALL` table
+privileges only to the listed tables for this claim; writable claims that omit
+`tables` retain the existing all-public-tables behavior. The claim is also
+given database `CONNECT`, `CREATE`, and `TEMPORARY` privileges and schema-wide
+sequence privileges by that Composition.
+
 The global PSQL hub's `psql-ns-database-owner` Crossplane Terraform `Workspace`
 imports the existing `DlzcnePHKR` database and assigns it to the separate
 `NOLOGIN` role `ns-core-owner` through the injected `psql` Terraform provider.
