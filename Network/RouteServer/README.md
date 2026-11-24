@@ -196,11 +196,13 @@ L2VPN EVPN collectors. The exporter runs as UID 0 with all Linux capabilities
 dropped so it can read FRR-owned socket files without receiving network or
 process-management privileges.
 
-The pod carries `prometheus.io/scrape`, `prometheus.io/job`, and the named
-`frr-metrics` port annotations. Cluster Alloy's existing annotated-pod
-autodiscovery scrapes `/metrics` on port `9342` and sends the data through the
-existing Mimir pipeline. This path does not use a ServiceMonitor or expose a
-new Kubernetes Service.
+The chart creates a namespaced `PodMonitor` that selects pods from this
+RouteServer release and scrapes the named `frr-metrics` port every 30 seconds.
+The clustered central Alloy collector discovers PodMonitors and sends the
+samples through the existing Mimir pipeline. The FRR exporter does not need a
+Kubernetes Service. The collector stack owns the Prometheus Operator CRDs; see
+the [Alloy PodMonitor component documentation](https://grafana.com/docs/alloy/latest/reference/components/prometheus/prometheus.operator.podmonitors/)
+and the upstream [PodMonitor API](https://prometheus-operator.dev/docs/api-reference/api/#monitoring.coreos.com/v1.PodMonitor).
 
 The route-server chart also publishes the upstream [FRR Exporter - BGP
 dashboard](https://grafana.com/grafana/dashboards/22943-frr-exporter-bgp/) to
