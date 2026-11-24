@@ -105,13 +105,16 @@ The [v4-to-v5 migration](https://bjw-s-labs.github.io/helm-charts/docs/app-templ
 introduces dedicated ServiceAccount creation by default. This chart opts out,
 so workloads use the namespace's default identity without mounting its API
 token; neither workload uses the Kubernetes API. The authoritative
-PowerDNS container is pinned to the image's `pdns` UID/GID 953, uses the runtime
-default seccomp profile, drops all Linux capabilities, forbids privilege
-escalation, and runs with a read-only root filesystem. Only a size-limited,
-memory-backed `/tmp` volume remains writable for its control socket. Both
-containers have explicit CPU, memory, and ephemeral-storage requests and
-limits so a DNS or administration failure cannot consume unbounded node
-resources.
+PowerDNS container is pinned to the image's `pdns` UID/GID 953. PowerDNS-Admin
+runs as UID/GID 10001 with one synchronous Gunicorn worker. Both use the
+runtime default seccomp profile, drop all Linux capabilities, forbid privilege
+escalation, and run with a read-only root filesystem. Their size-limited,
+memory-backed `/tmp` volumes remain writable for temporary files and the
+PowerDNS control socket. Both workloads have explicit CPU, memory, and
+ephemeral-storage requests and limits. Admin ingress is restricted by a
+Kubernetes NetworkPolicy to the `main-gw` Envoy pods in `kube-system`; its
+Envoy Gateway SecurityPolicy still requires Authentik authorization. See
+Kubernetes' [NetworkPolicy documentation](https://kubernetes.io/docs/concepts/services-networking/network-policies/).
 
 The public address, ExternalDNS hostname/target,
 [PureLB](https://purelb.gitlab.io/purelb/) sharing key, cluster identity, and
@@ -145,8 +148,10 @@ PowerDNS-Admin can become ready. PowerDNS connects to the
 FQDN injected by the ApplicationSet; its database credentials remain
 secret-backed. PowerDNS-Admin uses `http://127.0.0.1:8081` to reach its local
 PowerDNS sidecar; no Kubernetes Service exposes this API. The
-sidecar mounts the ExternalSecret-generated API key configuration and shares
-the PowerDNS database credentials. PowerDNS-Admin is protected by the shared
+sidecar mounts the ExternalSecret-generated API key configuration and uses
+the dedicated `nsadmin-ns-core` database credentials, while the public
+authoritative PowerDNS process retains its separate database credentials.
+PowerDNS-Admin is protected by the shared
 Authentik forward-auth outpost through a fail-closed
 Envoy Gateway `SecurityPolicy`. The Authentik proxy application and the native
 OIDC application are restricted to the `Network` group. The native PowerDNS
@@ -196,9 +201,10 @@ database cluster. It grants read/write access to the PowerDNS tables
 `domains`, `records`, `comments`, `domainmetadata`, `cryptokeys`, `tsigkeys`,
 and `supermasters` in the `public` schema of `DlzcnePHKR`, and does not create
 a database. Its
-`nsadmin-ns-core-creds` Secret is available in the release namespace for the
-application to consume; the current PowerDNS-Admin Deployment does not yet
-reference this Secret. The PostgreSQL `User` Composition applies `ALL` table
+`nsadmin-ns-core-creds` Secret is consumed only by the local `pdns-api`
+sidecar, which performs the database mutations requested by PowerDNS-Admin.
+The public authoritative PowerDNS process continues using its separate,
+read-only `ns-core` role. The PostgreSQL `User` Composition applies `ALL` table
 privileges only to the listed tables for this claim; writable claims that omit
 `tables` retain the existing all-public-tables behavior. The claim is also
 given database `CONNECT`, `CREATE`, and `TEMPORARY` privileges and schema-wide
@@ -343,9 +349,10 @@ PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query.
 During upgrade verification, test a harmless RFC 2136 update and rollback,
 TSIG operations, zone transfers and notifications, and representative API
 consumers; API record representations can be normalized differently in 5.1.
-RFC 2136 and forwarded DNS updates remain disabled because the NS-Core database
-role is intentionally read-only; manage records through the separate
-PowerDNS-Admin role instead. Updates to LUA records also remain disabled.
+RFC 2136 and forwarded DNS updates remain disabled for the public authoritative
+server. Manage records through PowerDNS-Admin, whose local API sidecar uses the
+table-scoped writable `nsadmin-ns-core` role. Updates to LUA records also
+remain disabled.
 
 Rollback through Git and let Argo CD reconcile the previous render. Removing
 the Application deletes namespaced resources unless Argo CD preservation is

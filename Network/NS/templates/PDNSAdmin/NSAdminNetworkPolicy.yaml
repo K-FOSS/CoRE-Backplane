@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ns-core-nsadmin
+  labels:
+    {{- include "bjw-s.common.lib.metadata.allLabels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/controller: 'nsadmin'
+  policyTypes:
+    - 'Ingress'
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: 'kube-system'
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: 'envoy'
+              gateway.envoyproxy.io/owning-gateway-name: 'main-gw'
+              gateway.envoyproxy.io/owning-gateway-namespace: 'core-prod'
+      ports:
+        - protocol: 'TCP'
+          port: 80
