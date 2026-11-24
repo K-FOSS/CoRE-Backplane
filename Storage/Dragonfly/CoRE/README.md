@@ -1,27 +1,47 @@
-# Dragonfly CoRE chart
+# CoRE-Backplane Storage/Dragonfly/CoRE Stack
 
-This chart deploys a Dragonfly distribution/cache service with two replicas,
-TLS, PVC-backed snapshots and a long-lived S3 service-account credential. It is
-owned by
-`Apps/Storage/Dragonfly/CoRE.yaml`.
+This chart deploys the site-local shared Dragonfly service with TLS and
+PVC-backed snapshots. The [Dragonfly ApplicationSet](../../../Apps/Storage/Dragonfly/CoRE.yaml)
+owns its targets; see the [Storage overview](../../README.md) for the parent stack.
+
+## Ownership and failover
 
 The YVR fleet target `core-home1-talos-prod` runs three replicas and receives
 the same `load=testing:NoSchedule` toleration used by the PostgreSQL fleet,
 allowing the Dragonfly replicas to schedule on HPC2. This is a toleration rather
 than a node selector, so Kubernetes may still place replicas on other eligible
-nodes; YXL and other targets remain at two replicas without that toleration.
+nodes. A hostname topology spread preference distributes YVR replicas across
+eligible nodes when capacity permits. YXL and other targets remain at two
+replicas without that toleration or spread preference.
 
-Dragonfly creates snapshots every 30 minutes in a per-replica `130Gi`
-`ssd-storage` PVC mounted at `/data`. The optional `tiering` PVC is a separate
-performance/data-tier volume and is disabled by default. See the [Dragonfly operator snapshot and
+The [operator's primary Service](https://github.com/dragonflydb/dragonfly-operator/blob/v1.8.0/README.md)
+selects the pod labeled `role: master`. Argo CD, Grafana, and Mastodon use its
+site-local hostname, so new connections reach a promoted replica after the
+operator updates that label. They cannot write directly to a replica before
+promotion. Existing TCP connections can fail during promotion; application
+clients must reconnect and retry. The operator's
+[`enableReplicationReadinessGate`](https://github.com/dragonflydb/dragonfly-operator/issues/465)
+keeps a replica unready until replication is established. The former fixed
+300-second custom readiness delay is removed so rollout progress follows actual
+replication state rather than an additional timer.
+
+Before reconciling this chart, verify the live Dragonfly spec and all replica
+roles, readiness, placement, and Service EndpointSlices. In YVR on 2026-11-19,
+the live instance still had two replicas while this ApplicationSet requested
+three; its Argo CD application was OutOfSync. Allow the third replica to reach
+stable replication before proceeding with another rollout. After promotion,
+check Service endpoints and Argo CD, Grafana, and Mastodon Redis errors. A
+snapshot load or full synchronization can still interrupt clients, so zero
+interruption is not guaranteed by replica count alone.
+
+## Persistence and configuration
+
+Dragonfly creates snapshots every 30 minutes in a per-replica `ssd-storage`
+PVC mounted at `/data`; the chart default is `30Gi`. The optional `tiering` PVC
+is a separate performance/data-tier volume and is disabled by default. See the [Dragonfly operator snapshot and
 PVC documentation](https://github.com/dragonflydb/dragonfly-operator) and the [Dragonfly SSD tiering
 overview](https://www.dragonflydb.io/blog/a-preview-of-dragonfly-ssd-tiering)
 for the upstream behavior.
-
-Updated replicas must remain Ready for 300 seconds before the operator can
-advance the rollout. This is implemented with the Dragonfly custom readiness
-probe and replication-readiness gate because the operator CRD does not expose
-a native rollout-delay field. A pod restart resets this readiness timer.
 
 The `dragonfly-core` instance serves authenticated, TLS-enabled Redis clients
 on port `6379` and a TLS-enabled Memcached-compatible listener on port `11211`
