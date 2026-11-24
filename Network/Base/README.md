@@ -47,12 +47,19 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | [SR-IOV CNI](https://github.com/k8snetworkplumbingwg/sriov-cni) | Remote Kustomize resource installing the SR-IOV CNI binary on nodes. |
 | [SR-IOV network device plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin) | Remote Kustomize resource plus Helm-rendered `sriovdp-config`. The owning ApplicationSet supplies its resource pools through `sriovDevicePlugin.resourceList`. The patch in `kustomization.yaml` sets the `kube-sriovdp` CPU request to `16m`; memory and limits retain upstream values. |
 | [SR-IOV Network Operator](https://github.com/k8snetworkplumbingwg/sriov-network-operator) | Optional Helm dependency. It is disabled in `values.yaml`; the standalone SR-IOV CNI and device plugin remain enabled independently. |
+
 | [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/latest/) with [Cloudflare](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/cloudflare/) | Enabled Helm dependency publishing public records selected by `wan-mode=public`. Credentials come from the referenced Kubernetes Secret and must not be committed here. |
 | [PureLB](https://purelb.gitlab.io/purelb/) | Enabled Helm dependency using the Cilium announcer and `purelb.io/purelb` load-balancer class. |
 | [KubeVIP](https://kube-vip.io/docs/usage/kubernetes-services/) and [kube-vip-cloud-provider](https://kube-vip.io/docs/usage/cloud-provider/) | Optional LoadBalancer implementation using ARP on a Multus secondary network. Separate load-balancer class `kube-vip.io/kube-vip-class`; disabled by default. See the [KubeVIP source and releases](https://github.com/kube-vip/kube-vip) and [cloud-provider source](https://github.com/kube-vip/kube-vip-cloud-provider). |
 | [netshoot](https://github.com/nicolaka/netshoot) | Optional `netshoot` diagnostic sidecar in the KubeVIP DaemonSet. It shares the pod network namespace and is enabled for Home1; its image is pinned to `ghcr.io/nicolaka/netshoot:v0.16`. |
 | [Envoy Gateway](https://gateway.envoyproxy.io/docs/) | Enabled OCI Helm dependencies with two replicas, controller and proxy Prometheus monitoring, the pinned [Gateway Add-ons chart](https://github.com/envoyproxy/gateway/tree/v1.10.0/charts/gateway-addons-helm), Envoy dashboards, and Backend and EnvoyPatchPolicy extension APIs. Follow its [Helm installation and upgrade guidance](https://gateway.envoyproxy.io/docs/install/install-helm/) and [Grafana integration guidance](https://gateway.envoyproxy.io/latest/tasks/observability/grafana-integration/). |
 | [FRR-K8s](https://github.com/metallb/frr-k8s) | Enabled Helm dependency. The ApplicationSet replaces its startup daemon configuration and permits incoming BGP connections. |
+
+The planned YXL migration to DRA keeps Multus and SR-IOV CNI for attachment
+while replacing device-plugin allocation with ResourceClaims. See the
+[SR-IOV DRA migration plan](SRIOV_DRA_MIGRATION.md) for current constraints,
+including the separate KubeVirt VM passthrough path. No SR-IOV DRA driver is
+installed by this stack yet.
 
 The remote Multus dynamic controller, SR-IOV CNI, and SR-IOV device-plugin
 resources track moving branches. Some referenced images also use mutable tags.
@@ -343,6 +350,11 @@ Local templates generate:
 SR-IOV selectors are physical-host contracts. Confirm interface names, PCI IDs,
 drivers, IOMMU/VFIO state, and non-overlapping VF ranges on every target node.
 The device plugin advertises resources but does not create VFs or bind drivers.
+The SRV1 ClusterNode claim declares Intel I350 VFs (`8086:1520`) on `eno1` and
+`eno2`: VFs 0-2 per PF stay kernel-bound, with VF0 reserved for Cilium and
+VFs 1-2 for non-VFIO consumers; VFs 3-6 per PF bind to `vfio-pci`. The parent
+I350 functions report `8086:1521`. This split matches DC1's existing per-port
+VFIO and netdevice resource pools in the ApplicationSet.
 
 ## Prerequisites
 
@@ -446,10 +458,13 @@ Defaults in [`values.yaml`](values.yaml) keep adoption disabled and reject
 missing domains/images or empty upstream lists when enabled.
 
 [`CoreDNSWorkload.yaml`](templates/DNS/CoreDNSWorkload.yaml) preserves bootstrap
-names, selectors, RBAC, four replicas, resources, anti-affinity, tolerations
-and `dnsPolicy: Default`. Home1 additionally requires CoreDNS pods to avoid
-`laptop2`; its four replicas can spread across the four remaining eligible
-nodes. DC1 has no node exclusion. Direct manifests are an intentional
+names, selectors, RBAC, four replicas, resources, tolerations and
+`dnsPolicy: Default`. CoreDNS prefers to spread across hostnames through
+weighted pod anti-affinity and a `ScheduleAnyway` topology spread constraint;
+when eligible nodes are limited or placement conditions require it, multiple
+replicas can share a node. Home1 additionally requires CoreDNS pods to avoid
+`laptop2`; its four replicas prefer spreading across the four remaining
+eligible nodes. DC1 has no node exclusion. Direct manifests are an intentional
 common-library exception to preserve fixed bootstrap identities and ordering
 without a parallel Deployment or Service. Both sites use the shared
 `kristianfjones/coredns-docker:core0`, pinned to registry digest
