@@ -228,6 +228,8 @@ controllers:
             value: {{ .Values.powerdnsAdmin.gunicorn.timeout | quote }}
           - name: GUNICORN_WORKERS
             value: {{ .Values.powerdnsAdmin.gunicorn.workers | quote }}
+          - name: GUNICORN_CMD_ARGS
+            value: '--no-control-socket'
           - name: SQLALCHEMY_POOL_TIMEOUT
             value: {{ .Values.powerdnsAdmin.sqlalchemy.poolTimeout | quote }}
           - name: SQLALCHEMY_POOL_SIZE
