@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: descheduler-metrics
+  namespace: {{ .Release.Namespace }}
+spec:
+  secretName: 'descheduler-metrics-tls'
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: core-tls-vault
+  dnsNames:
+    - '{{ .Release.Name }}-descheduler.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
+  usages:
+    - 'server auth'

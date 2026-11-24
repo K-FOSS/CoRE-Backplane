@@ -37,6 +37,31 @@ enter the shared Loki pipeline on both Talos sites. Review policies,
 eviction limits, PDBs, priority classes, local storage and maintenance windows
 before enabling new strategies.
 
+The Deployment exposes the native Descheduler HTTPS metrics endpoint through
+the chart Service and a 30-second `ServiceMonitor`. A cert-manager `Certificate`
+uses the existing `core-tls-vault` ClusterIssuer for the Service DNS names;
+the chart mounts that Secret as the serving certificate and private key. Its
+SAN and the ServiceMonitor's `serverName` use the full Service FQDN
+`<release>-descheduler.kube-system.svc.<cluster.domain>`. The ApplicationSet
+injects the target cluster's DNS domain into `cluster.domain`, and the
+hostname remains within the Vault PKI role's permitted `svc` DNS suffix. The
+ServiceMonitor validates that hostname and trusts the Secret's `ca.crt`. See cert-manager's [Certificate
+resource](https://cert-manager.io/docs/usage/certificate/) and [Vault
+issuer](https://cert-manager.io/docs/configuration/vault/) documentation.
+Reloader restarts the Deployment when cert-manager rotates the certificate.
+The chart disables automatic service-account token mounting and projects a
+short-lived replacement token plus the namespace and API CA into the same
+standard path, preserving the Descheduler's Kubernetes API access. Alloy's
+ServiceMonitor pipeline forwards metrics to Mimir. The
+[`Descheduler` dashboard](templates/DeschedulerDashboard.yaml) shows eviction
+attempts and errors by strategy plus loop and strategy duration. Its eviction
+metrics are alpha in Descheduler 0.37.0 and may change between releases. The
+chart's own [ServiceMonitor values and template](https://github.com/kubernetes-sigs/descheduler/tree/release-1.37/charts/descheduler)
+and the versioned [Descheduler metrics reference](https://pkg.go.dev/sigs.k8s.io/descheduler@v0.37.0/metrics)
+document the monitored endpoint and metric families. Descheduler's
+[secure-serving flags](https://github.com/kubernetes-sigs/descheduler/blob/release-1.37/docs/cli/descheduler.md)
+load the configured certificate and key for its HTTPS endpoint.
+
 ## Chart and image upgrades
 
 The [chart dependencies](Chart.yaml) pin Goldilocks 11.3.0 and Descheduler

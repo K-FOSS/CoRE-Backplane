@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: descheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: 'descheduler'
+spec:
+  namespaceSelector:
+    matchNames:
+      - '{{ .Release.Namespace }}'
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: descheduler
+      app.kubernetes.io/instance: '{{ .Release.Name }}'
+  endpoints:
+    - port: 'http-metrics'
+      path: '/metrics'
+      interval: '30s'
+      scheme: 'https'
+      tlsConfig:
+        serverName: '{{ .Release.Name }}-descheduler.{{ .Release.Namespace }}.svc.{{ .Values.cluster.domain }}'
+        ca:
+          secret:
+            name: 'descheduler-metrics-tls'
+            key: 'ca.crt'

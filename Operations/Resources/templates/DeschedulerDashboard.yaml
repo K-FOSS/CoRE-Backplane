@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-descheduler
+  namespace: {{ .Release.Namespace }}
+  labels:
+    grafana_dashboard: 'true'
+  annotations:
+    grafana_folder: 'Infrastructure'
+data:
+  descheduler.json: |-
+    {
+      "annotations": {"list": []},
+      "editable": true,
+      "graphTooltip": 1,
+      "panels": [
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0},
+          "id": 1,
+          "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "sum(increase(descheduler_pods_evicted_total[$__range]))", "refId": "A"}],
+          "title": "Eviction attempts in selected range",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"color": {"fixedColor": "red", "mode": "fixed"}, "unit": "short"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 8, "y": 0},
+          "id": 2,
+          "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "sum(increase(descheduler_pods_evicted_total{result=\"error\"}[$__range]))", "refId": "A"}],
+          "title": "Eviction errors in selected range",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 6, "w": 8, "x": 16, "y": 0},
+          "id": 3,
+          "options": {"colorMode": "value", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+          "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(descheduler_loop_duration_seconds_bucket[5m])))", "refId": "A"}],
+          "title": "Descheduling cycle p95",
+          "type": "stat"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "ops"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 0, "y": 6},
+          "id": 4,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (result, strategy) (rate(descheduler_pods_evicted_total[5m]))", "legendFormat": "{{ "{{result}}" }} / {{ "{{strategy}}" }}", "refId": "A"}],
+          "title": "Eviction attempts by result and strategy",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {"type": "prometheus", "uid": "${datasource}"},
+          "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+          "gridPos": {"h": 9, "w": 12, "x": 12, "y": 6},
+          "id": 5,
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi", "sort": "desc"}},
+          "targets": [{"expr": "sum by (strategy) (rate(descheduler_strategy_duration_seconds_sum[5m])) / sum by (strategy) (rate(descheduler_strategy_duration_seconds_count[5m]))", "legendFormat": "{{ "{{strategy}}" }}", "refId": "A"}],
+          "title": "Mean strategy duration",
+          "type": "timeseries"
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["descheduler", "infrastructure"],
+      "time": {"from": "now-6h", "to": "now"},
+      "title": "Infrastructure / Descheduler",
+      "uid": "core-descheduler",
+      "version": 1
+    }

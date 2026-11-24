@@ -52,6 +52,62 @@ goldilocks:
 descheduler:
   kind: Deployment
 
+  automountServiceAccountToken: false
+
+  podSecurityContext:
+    fsGroup: 1000
+
+  cmdOptions:
+    v: 3
+    tls-cert-file: '/etc/descheduler/tls/tls.crt'
+    tls-private-key-file: '/etc/descheduler/tls/tls.key'
+
+  deploymentAnnotations:
+    secret.reloader.stakater.com/reload: 'descheduler-metrics-tls'
+
+  extraServiceAccountVolumeMounts:
+    - name: kube-api-access
+      mountPath: '/var/run/secrets/kubernetes.io/serviceaccount'
+      readOnly: true
+    - name: descheduler-metrics-tls
+      mountPath: '/etc/descheduler/tls'
+      readOnly: true
+
+  extraServiceAccountVolumes:
+    - name: kube-api-access
+      projected:
+        defaultMode: 0444
+        sources:
+          - serviceAccountToken:
+              expirationSeconds: 3600
+              path: token
+          - configMap:
+              name: kube-root-ca.crt
+              items:
+                - key: ca.crt
+                  path: ca.crt
+          - downwardAPI:
+              items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace
+    - name: descheduler-metrics-tls
+      secret:
+        secretName: 'descheduler-metrics-tls'
+        defaultMode: 0440
+        items:
+          - key: tls.crt
+            path: tls.crt
+          - key: tls.key
+            path: tls.key
+
+  service:
+    enabled: true
+
+  serviceMonitor:
+    enabled: false
+
   podLabels:
     logs: 'loki-myloginspace'
 
