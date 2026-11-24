@@ -1053,13 +1053,30 @@ spec:
                   }
 
                   resource "postgresql_grant" "tables" {
-                    for_each = var.read_only ? toset([]) : var.databases
+                    # An empty table list preserves the historical grant over
+                    # all tables. A populated list limits writable grants to
+                    # the named public-schema tables.
+                    for_each = var.read_only || length(var.tables) > 0 ? toset([]) : var.databases
 
                     database    = each.value
 
                     role        = var.role.name
                     schema      = "public"
                     object_type = "table"
+                    privileges  = ["ALL"]
+                  }
+
+                  resource "postgresql_grant" "writable_tables" {
+                    for_each = var.read_only ? {} : {
+                      for pair in setproduct(var.databases, var.tables) :
+                      "${pair[0]}:${pair[1]}" => pair
+                    }
+
+                    database    = each.value[0]
+                    role        = var.role.name
+                    schema      = "public"
+                    object_type = "table"
+                    objects     = [each.value[1]]
                     privileges  = ["ALL"]
                   }
 

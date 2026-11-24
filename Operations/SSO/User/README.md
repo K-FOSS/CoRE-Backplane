@@ -335,6 +335,13 @@ cluster with Garage and the operator watches only `core-prod`. Keep
 namespace; GarageKey-generated Secrets cannot be written across namespaces.
 Garage-managed bucket resources use `deletionPolicy: Retain`, so removing a
 claim or its bucket resource does not delete its Garage data.
+On YXL, the XRD also accepts the exact `lab-garage-local` cluster in
+`core-testing` with its in-cluster HTTP endpoint for Forgejo.
+The Composition sets `clusterRef.namespace` on the generated `GarageBucket`
+and `GarageKey`; the [Lab Storage grant](../../../Lab/Storage/templates/Garage/SiteLocal/ForgejoReferenceGrant.yaml)
+permits those resources from `core-prod`. GarageKey credentials still remain
+namespace-local to the claim. The other sites continue to accept only their
+configured observability Garage target.
 
 ## Connection details and Secrets
 
