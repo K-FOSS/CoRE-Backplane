@@ -165,6 +165,19 @@ PureLB at `66.165.222.100` with service group `anycast` and runs dnsdist at
 is changed to `ClusterIP` only for YVR by
 [`Apps/Network/NS.yaml`](../../Apps/Network/NS.yaml).
 
+Both target clusters also expose the same internal `core-dns` LoadBalancer
+Service on UDP and TCP port 53 at `10.1.1.53`. PureLB allocates it from the
+site-local anycast pool: `core-anycast` in Home1 and `anycast` in DC1. Those
+`/32` pools are declared in the respective [cluster definitions](../../Operations/Clusters/templates/prod/).
+The service selects the same dnsdist pods as the site-facing `dnsdist`
+Service, so authoritative, K8GB, and recursive query routing remain shared.
+The `10.1.1.0/24` client network is included in dnsdist's recursive routing
+allowlist; the Recursor itself already permits this private range. PureLB's
+[ServiceGroup pool configuration](https://purelb.io/docs/configuration/service-groups/)
+and [Service address annotations](https://purelb.io/docs/operations/services/)
+document the allocation and requested-address behavior. The Service does not
+publish a public DNS record.
+
 ## Verification and recovery
 
 The two-replica dnsdist Deployment and three-replica Recursor Deployment use
@@ -188,9 +201,13 @@ backends. This uses dnsdist's documented
 
 Render this chart with the target ApplicationSet values and verify the DNS
 ConfigMap, both Deployments and their replicas, the Recursor NetworkPolicy,
-headless backend names, Service annotations, and UDP/TCP ports.
-The Service targets the container ports by the matching `dns-udp` and `dns-tcp`
-names; verify both names are present on the rendered dnsdist container.
+headless backend names, both LoadBalancer Services, PureLB annotations, and
+UDP/TCP ports. After reconciliation, verify `core-dns` receives
+`10.1.1.53` in each cluster and that it resolves a cluster Service name, a
+configured authoritative name, a GSLB name, and an external recursive name
+over UDP and TCP. Both DNS Services target the container ports by the matching
+`dns-udp` and `dns-tcp` names; verify both names are present on the rendered
+dnsdist container.
 After reconciliation, verify dnsdist and K8GB readiness, the PowerDNS backend
 Service type, external authoritative answers over UDP and TCP, and that a
 public recursive query is refused or answered authoritatively rather than
