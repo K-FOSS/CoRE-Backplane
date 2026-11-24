@@ -110,7 +110,16 @@ runs as UID/GID 10001 with one synchronous Gunicorn worker. Both use the
 runtime default seccomp profile, drop all Linux capabilities, forbid privilege
 escalation, and run with a read-only root filesystem. Their size-limited,
 memory-backed `/tmp` volumes remain writable for temporary files and the
-PowerDNS control socket. Both workloads have explicit CPU, memory, and
+PowerDNS control socket. Gunicorn's separate administrative control socket is
+disabled because this workload does not use `gunicornc`; see its upstream
+[control socket settings](https://gunicorn.org/reference/settings/#control_socket_disable).
+PowerDNS-Admin enables the pinned image's prebuilt asset mode, and a short-lived
+init container copies its root-owned asset cache to a read-only-mounted,
+memory-backed volume with readable file modes. The pinned
+[PowerDNS-Admin release notes](https://github.com/PowerDNS-Admin/PowerDNS-Admin/releases/tag/v2026.08.1)
+document this prebuilt-assets setting. The init container also sets `/tmp` to
+`root:10001` mode `1770`; it has no Linux capabilities and mounts only these
+two temporary volumes. Both workloads have explicit CPU, memory, and
 ephemeral-storage requests and limits. Admin ingress is restricted by a
 Kubernetes NetworkPolicy to the `main-gw` Envoy pods in `kube-system`; its
 Envoy Gateway SecurityPolicy still requires Authentik authorization. See
@@ -256,8 +265,21 @@ ZSK for RFC 8901 model 2 multi-signer DNSSEC. See the upstream
 [DNSSEC migration and direct DNSKEY behavior](https://doc.powerdns.com/authoritative/dnssec/migration.html),
 and [PowerDNS-Admin](https://github.com/PowerDNS-Admin/PowerDNS-Admin/tree/v2026.08.1).
 
-AXFR is available for a secondary provider, while unsigned transfers are
-denied by default (`allow-axfr-ips=`). For `mylogin.social`, provision a
+PowerDNS primary and secondary operation, NOTIFY forwarding, RFC 2136 DNS
+UPDATE, and DNS UPDATE forwarding are disabled on both PowerDNS processes.
+The sidecar's authenticated REST API remains enabled on loopback for
+PowerDNS-Admin, which performs record changes directly through the PostgreSQL
+backend. The public server does not initiate transfers or NOTIFY peers. Any
+secondary provider must refresh from SOA timers instead; the default SOA
+refresh is 300 seconds. See upstream documentation for
+[primary/secondary modes](https://doc.powerdns.com/authoritative/modes-of-operation.html#primary-operation),
+[DNS UPDATE controls](https://doc.powerdns.com/authoritative/settings.html#dnsupdate),
+and [NOTIFY forwarding](https://doc.powerdns.com/authoritative/settings.html#forward-notify).
+
+AXFR remains available for an explicitly authorized secondary provider, while
+unsigned transfers are denied by default (`allow-axfr-ips=`). With primary
+operation disabled, the server does not send NOTIFY; secondaries discover
+changes by polling the SOA refresh timer. For `mylogin.social`, provision a
 dedicated TSIG key in the PowerDNS backend and authorize that key only for
 `mylogin.social` with the zone's `TSIG-ALLOW-AXFR` metadata. Configure the same
 key name, secret, and algorithm on the Cloudflare secondary peer. PowerDNS
@@ -343,15 +365,14 @@ authoritative request. PowerDNS documents these cache controls in its
 [authoritative settings](https://doc.powerdns.com/authoritative/settings.html)
 and [performance guide](https://doc.powerdns.com/authoritative/performance.html).
 
-The upgrade from 4.9.14 to 5.1.4 follows the
+The upgrade from 4.9.14 to 5.1.5 follows the
 [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html).
 PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query.
-During upgrade verification, test a harmless RFC 2136 update and rollback,
-TSIG operations, zone transfers and notifications, and representative API
-consumers; API record representations can be normalized differently in 5.1.
-RFC 2136 and forwarded DNS updates remain disabled for the public authoritative
-server. Manage records through PowerDNS-Admin, whose local API sidecar uses the
-table-scoped writable `nsadmin-ns-core` role. Updates to LUA records also
+During upgrade verification, confirm RFC 2136 updates remain rejected, check
+TSIG operations, authorized zone transfers and representative API consumers;
+API record representations can be normalized differently in 5.1. Manage
+records through PowerDNS-Admin, whose authenticated loopback API sidecar uses
+the table-scoped writable `nsadmin-ns-core` role. Updates to LUA records also
 remain disabled.
 
 Rollback through Git and let Argo CD reconcile the previous render. Removing

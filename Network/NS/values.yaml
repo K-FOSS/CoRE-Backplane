@@ -86,7 +86,10 @@ powerdns:
     # Authoritative DNS listeners and behavior
     local-address=0.0.0.0
     local-port=53
-    primary=yes
+    # Serve authoritative queries without running primary/secondary transfers.
+    primary=no
+    secondary=no
+    forward-notify=
     dnsupdate=no
     forward-dnsupdate=no
     expand-alias=yes
@@ -117,6 +120,7 @@ powerdns:
     zone-metadata-cache-ttl=3600
 
     # The API is isolated in the PowerDNS-Admin pod's localhost sidecar.
+    api=no
     webserver=no
 
     # Logging and version disclosure
