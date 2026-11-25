@@ -18,6 +18,7 @@ spec:
                 - name: core-dc1-talos-prod
                   values:
                     hub: false
+                    k8gbPrimaryGeoTag: 'dc1'
 
                     dhcp:
                       enabled: true
@@ -50,6 +51,7 @@ spec:
                 - name: dc1-k3s-node1
                   values:
                     hub: false
+                    k8gbPrimaryGeoTag: 'dc1'
 
                     dhcp:
                       enabled: true
@@ -80,6 +82,7 @@ spec:
                 - name: core-home1-talos-prod
                   values:
                     hub: true
+                    k8gbPrimaryGeoTag: 'home1'
 
                     dhcp:
                       enabled: true
@@ -225,6 +228,13 @@ spec:
                   cachingDatabase:
                     host: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
                     ssl: true
+
+                k8gb:
+                  enabled: true
+                  domain: 'ipam.gslb.mylogin.space'
+                  strategy: 'failover'
+                  primaryGeoTag: '{{ .values.k8gbPrimaryGeoTag }}'
+                  dnsTtlSeconds: 30
       destination:
         server: '{{ .server }}'
         namespace: core-{{ .values.environment }}

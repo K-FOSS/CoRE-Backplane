@@ -8,10 +8,15 @@ metadata:
     {{ include "ipam.labels" . | nindent 4 }}
 
 spec:
-  targetRef:
-    group: gateway.networking.k8s.io
-    kind: HTTPRoute
-    name: {{ .Release.Name }}
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: {{ .Release.Name }}
+    {{ if .Values.k8gb.enabled }}
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: '{{ .Release.Name }}-k8gb'
+    {{ end }}
 
   jwt:
     providers:
