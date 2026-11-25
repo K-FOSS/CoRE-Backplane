@@ -8,6 +8,7 @@ metadata:
   name: aaa-authentik-ldap
   annotations:
     k8gb.io/hostname: {{ printf "ldap.%s" .Values.k8gb.domain | squote }}
+    k8gb.io/exposed-ip-addresses: {{ required "authentik.ldap.k8gb.exposedIPAddresses is required when LDAP K8GB is enabled" .Values.authentik.ldap.k8gb.exposedIPAddresses | squote }}
 spec:
   resourceRef:
     apiVersion: v1

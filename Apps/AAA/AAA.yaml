@@ -201,6 +201,9 @@ spec:
                       enabled: {{ .values.authentik.ldap.clusterMesh.enabled }}
                     k8gb:
                       enabled: {{ .values.authentik.ldap.k8gb.enabled }}
+                      {{ if .values.authentik.ldap.k8gb.enabled }}
+                      exposedIPAddresses: '{{ .values.authentik.ldap.anycastIP }}'
+                      {{ end }}
                     globalService:
                       type: '{{ .values.authentik.ldap.globalService.type }}'
                       loadBalancerClass: '{{ .values.authentik.ldap.globalService.loadBalancerClass }}'
