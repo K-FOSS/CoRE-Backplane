@@ -51,11 +51,11 @@ headless Service addresses every 30 seconds and adds or removes individual
 backends as NS Pods become ready or are replaced. The recursive pool discovers
 the ready PowerDNS Recursor Pod addresses through its own IPv4 headless
 Service, health-checks each with an SOA query for `.`, and round-robins across
-healthy replicas. DNSDist uses that pool only for the site LAN CIDRs injected
-by the ApplicationSet:
-`10.0.0.0/24` in YVR and `172.16.51.0/24` in YXL/DC1. The YVR
+healthy replicas. DNSDist routes recursive queries from private IPv4 (RFC 1918)
+and IPv6 ULA (`fc00::/7`) source space to the Recursor, whose incoming ACL uses
+the same private ranges. The YVR
 `10.0.0.19` answer rewrite runs in the Recursor, so it applies only to queries
-that dnsdist routes to that pool from the `10.0.0.0/24` client network. Queries
+that dnsdist routes to that pool from private source addresses. Queries
 from other source networks and queries outside the configured authoritative
 zones fall through to the authoritative pool, so the public listener does not
 provide open recursion. The Recursor sees dnsdist as its network peer; dnsdist's
@@ -118,9 +118,10 @@ delegations for domains with private authoritative nameservers can resolve. Its
 documentation/reserved address ranges. This exception applies to recursive
 lookups generally, because the Recursor cannot identify which private
 nameservers belong to locally owned domains before following a delegation.
-Incoming recursion remains limited to the site LAN networks through dnsdist
-and the Recursor ACL. See PowerDNS's [`dont-query` setting](https://doc.powerdns.com/recursor/settings.html#dont-query)
-for the destination filtering behavior.
+Incoming recursion is limited to private IPv4 and IPv6 ULA source networks
+through dnsdist and the Recursor ACL. See PowerDNS's [`dont-query`
+setting](https://doc.powerdns.com/recursor/settings.html#dont-query) for the
+destination filtering behavior.
 
 YVR enables an additional
 [`postresolve` Lua hook](https://docs.powerdns.com/recursor/lua-scripting/hooks.html)
@@ -134,8 +135,17 @@ terminal records, then returns one A record for the original queried name at
 are not known to the ApplicationSet. The Recursor hook does not perform its own
 hostname lookup; it relies on the K8GB CNAME chain to scope GSLB rewrites.
 Other query types and unrelated CNAMEs are returned unchanged. The
-`dnsdistHostOverrides` entries still handle direct queries for
-`idp.mylogin.space.` and the Vault-backed YVR public hostname.
+`dnsdistHostOverrides` entry handles direct queries for the Vault-backed
+YVR public hostname. A host override can optionally include `sourceNetworks`;
+dnsdist combines the hostname and source CIDR checks and returns its configured
+addresses only to matching clients. Multiple entries for one hostname can
+return different addresses for different source ranges. Without that field,
+the hostname override applies to every source. This uses dnsdist's
+[combined rules](https://www.dnsdist.org/reference/selectors.html#andrule)
+and [`SpoofAction`](https://www.dnsdist.org/reference/actions.html#spoofaction).
+The YVR override is scoped to private source ranges. There is no longer a
+static override for
+`idp.mylogin.space.`; it follows normal DNS resolution.
 
 DNSSEC signatures for rewritten responses are removed with the original chain,
 so those synthesized A answers are unsigned. YXL/DC1 runs the same Recursor

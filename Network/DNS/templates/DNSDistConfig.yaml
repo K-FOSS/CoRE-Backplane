@@ -257,7 +257,15 @@ data:
     function applyRoutingRules()
       setRules({
     {{- range (default (list) .Values.dnsdist.hostOverrides) }}
-        newRuleAction(QNameRule({{ printf "%s." (trimSuffix "." .hostname) | quote }}), SpoofAction({
+        newRuleAction(
+    {{- if .sourceNetworks }}
+          AndRule({QNameRule({{ printf "%s." (trimSuffix "." .hostname) | quote }}), NetmaskGroupRule({
+    {{- range $index, $network := .sourceNetworks }}{{ if $index }}, {{ end }}{{ $network | quote }}{{ end }}
+          })}),
+    {{- else }}
+          QNameRule({{ printf "%s." (trimSuffix "." .hostname) | quote }}),
+    {{- end }}
+          SpoofAction({
     {{- range $index, $address := .addresses }}{{ if $index }}, {{ end }}{{ $address | quote }}{{ end }}
         })),
     {{- end }}

@@ -25,8 +25,10 @@ spec:
                       serviceGroup: ''
                       serviceType: 'LoadBalancer'
                     dnsdistRecursiveNetworks:
-                      - '10.0.0.0/24'
-                      - '10.1.1.0/24'
+                      - '10.0.0.0/8'
+                      - '172.16.0.0/12'
+                      - '192.168.0.0/16'
+                      - 'fc00::/7'
                     globalDNSServiceGroup: 'core-anycast'
                     dnsdistCnameFilter:
                       enabled: true
@@ -34,6 +36,8 @@ spec:
                       address: '10.0.0.19'
                     dnsdistHostOverrides:
                       - hostname: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
+                        sourceNetworks:
+                          - '10.0.0.0/24'
                         addresses:
                           - '10.0.0.19'
                 - name: core-dc1-talos-prod
@@ -48,8 +52,10 @@ spec:
                       serviceGroup: 'anycast'
                       serviceType: 'LoadBalancer'
                     dnsdistRecursiveNetworks:
-                      - '172.16.51.0/24'
-                      - '10.1.1.0/24'
+                      - '10.0.0.0/8'
+                      - '172.16.0.0/12'
+                      - '192.168.0.0/16'
+                      - 'fc00::/7'
                     globalDNSServiceGroup: 'anycast'
                     dnsdistCnameFilter:
                       enabled: false
