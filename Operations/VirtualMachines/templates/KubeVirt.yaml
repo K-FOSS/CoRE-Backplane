@@ -8,6 +8,9 @@ spec:
     developerConfiguration:
       featureGates:
         - 'HostDevices'
+        {{- if .Values.cpuDra.enabled }}
+        - 'CPUsWithDRA'
+        {{- end }}
       disabledFeatureGates:
         - 'ContainerPathVolumes'
         - 'DeclarativeHotplugVolumes'

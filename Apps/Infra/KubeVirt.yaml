@@ -55,6 +55,9 @@ spec:
               value: |- # yaml
                 env: {{ .values.environment }}
 
+                cpuDra:
+                  enabled: {{ eq .values.clusterName "core-dc1-talos-prod" }}
+
                 cluster:
                   name: {{ .values.clusterName }}
                   domain: {{ .values.clusterDomain }}
