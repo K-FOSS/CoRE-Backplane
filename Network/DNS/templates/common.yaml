@@ -121,10 +121,15 @@ controllers:
         probes:
           readiness:
             enabled: true
-            type: TCP
-            port: 53
+            custom: true
             spec:
+              tcpSocket:
+                port: 53
+              initialDelaySeconds: 0
+              failureThreshold: 3
               periodSeconds: 10
+              timeoutSeconds: 1
+              successThreshold: 4
           liveness:
             enabled: true
             type: TCP
@@ -211,10 +216,15 @@ controllers:
         probes:
           readiness:
             enabled: true
-            type: TCP
-            port: {{ .Values.dnsdist.recursor.port }}
+            custom: true
             spec:
+              tcpSocket:
+                port: {{ .Values.dnsdist.recursor.port }}
+              initialDelaySeconds: 0
+              failureThreshold: 3
               periodSeconds: 10
+              timeoutSeconds: 1
+              successThreshold: 4
           liveness:
             enabled: true
             type: TCP

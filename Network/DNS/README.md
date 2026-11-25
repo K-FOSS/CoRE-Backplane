@@ -89,6 +89,16 @@ connection. It uses `SO_REUSEPORT`; TCP Fast Open is disabled because the
 runtime sysctl does not permit it. Pod TCP buffers are tuned with namespaced
 sysctls, while Talos sets the corresponding node TCP buffer limits.
 
+Both DNSDist and Recursor readiness probes run every 10 seconds and require
+four consecutive successful checks before marking a Pod Ready. This gives
+each replacement Pod about 30 seconds of successful health checks before
+Kubernetes advances the rolling update. Both Deployments also set
+`minReadySeconds: 30`, so Kubernetes waits another 30 seconds after readiness
+before counting a replacement as available. BJW-S renders the Deployments and
+readiness probes; the local
+[`kustomization.yaml`](kustomization.yaml) adds `minReadySeconds` because the
+pinned common chart does not expose that Deployment field.
+
 The Recursor has a 100,000-entry record cache and 50,000-entry packet cache.
 It refreshes records asynchronously when they reach 10% of their original TTL
 and can serve expired records for up to one hour when an upstream refresh
