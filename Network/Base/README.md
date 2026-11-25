@@ -483,6 +483,16 @@ DC1 preserves its observed settings. See CoreDNS
 RBAC remains list/watch only for endpoints,
 Services, Pods, namespaces and EndpointSlices; no Secret access is added.
 
+The ApplicationSet enables CoreDNS tracing only for `core-home1-talos-prod`
+(YVR); DC1 leaves it disabled. The Corefile samples one query in every 100 and
+sends Zipkin spans to the local `alloy-otlp` Service on TCP/9411. CoreDNS's
+[trace plugin](https://coredns.io/plugins/trace/) records query names and
+client addresses, so traces remain on the private cluster telemetry path. The
+[Alloy Zipkin receiver](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.zipkin/)
+converts those spans into the existing OTLP pipeline to Tempo. The CoreDNS
+image build, pinned above, includes the stock `trace` plugin alongside its
+`fanout` extension.
+
 Before adoption, the live configurations observed on 2026-09-26 differ by site:
 
 - Home1 resolves `k8s.home1.resolvemy.host` and `cluster.local` in Kubernetes,

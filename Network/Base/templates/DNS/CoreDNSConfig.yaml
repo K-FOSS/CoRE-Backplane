@@ -6,6 +6,20 @@
 {{- if empty .Values.kubeDNS.upstreams }}
 {{- fail "kubeDNS.upstreams must contain at least one resolver" }}
 {{- end }}
+{{- if .Values.kubeDNS.tracing.enabled }}
+{{- if empty .Values.kubeDNS.tracing.endpoint }}
+{{- fail "kubeDNS.tracing.endpoint is required when tracing is enabled" }}
+{{- end }}
+{{- if not (regexMatch "^[a-z0-9.-]+:[0-9]+$" .Values.kubeDNS.tracing.endpoint) }}
+{{- fail "kubeDNS.tracing.endpoint must be a DNS hostname and port" }}
+{{- end }}
+{{- if lt (int .Values.kubeDNS.tracing.every) 1 }}
+{{- fail "kubeDNS.tracing.every must be at least one" }}
+{{- end }}
+{{- if not (regexMatch "^[A-Za-z0-9_.-]+$" .Values.kubeDNS.tracing.service) }}
+{{- fail "kubeDNS.tracing.service must be a CoreDNS service name" }}
+{{- end }}
+{{- end }}
 {{- range .Values.kubeDNS.upstreams }}
 {{- if not (regexMatch "^[0-9a-fA-F:.]+$" .) }}
 {{- fail "kubeDNS.upstreams entries must be resolver IP addresses" }}
@@ -23,6 +37,12 @@ data:
   Corefile: |-
     .:53 {
         errors
+        {{- if .Values.kubeDNS.tracing.enabled }}
+        trace zipkin {{ .Values.kubeDNS.tracing.endpoint }} {
+            every {{ .Values.kubeDNS.tracing.every }}
+            service {{ .Values.kubeDNS.tracing.service }}
+        }
+        {{- end }}
         health {
             lameduck 5s
         }

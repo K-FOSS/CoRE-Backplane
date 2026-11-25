@@ -49,6 +49,7 @@ spec:
                     kubeDNS:
                       upstreams: ['1.1.1.1', '8.8.8.8']
                       forwardUnmatchedClusterDomain: true
+                    kubeDNSTracingEnabled: false
                     nodePortNetwork: 172.31.241.0/24
                     clusterId: 2
                     peers:
@@ -141,6 +142,7 @@ spec:
                                 - key: 'kubernetes.io/hostname'
                                   operator: 'NotIn'
                                   values: ['laptop2']
+                    kubeDNSTracingEnabled: true
                     nodePortNetwork: 172.31.193.0/24
                     clusterId: 1
                     peers:
@@ -306,6 +308,11 @@ spec:
                 kubeDNS:
                   enabled: true
                   clusterDomain: '{{ .values.clusterDomain }}'
+                  tracing:
+                    enabled: {{ .values.kubeDNSTracingEnabled }}
+                    endpoint: 'core-collectors-alloy-otlp.core-{{ .values.environment }}.svc.{{ .values.clusterDomain }}:9411'
+                    every: 100
+                    service: 'coredns-{{ .values.clusterName }}'
                   {{- nindent 2 (toYaml .values.kubeDNS) }}
 
                 kubeVip:

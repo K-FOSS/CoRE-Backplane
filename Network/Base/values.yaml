@@ -6,6 +6,11 @@ kubeDNS:
   upstreams: ['1.1.1.1', '8.8.8.8']
   replicas: 4
   image: 'kristianfjones/coredns-docker:core0@sha256:538e1122e930f523c8fecc64c7358148a6f9b52a88d1db202c984efc08730604'
+  tracing:
+    enabled: false
+    endpoint: ''
+    every: 100
+    service: 'coredns'
   extraEnv:
     - name: 'NS_ID'
       valueFrom:
