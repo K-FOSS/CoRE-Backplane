@@ -509,6 +509,13 @@ alloy-otlp:
           }
         }
 
+        otelcol.receiver.zipkin "coredns" {
+          endpoint = "0.0.0.0:9411"
+          output {
+            traces = [otelcol.processor.batch.forward.input]
+          }
+        }
+
         otelcol.receiver.otlp "infrastructure" {
           http {
             endpoint = "0.0.0.0:4328"
@@ -552,6 +559,10 @@ alloy-otlp:
       port: 4328
       targetPort: 4328
       protocol: TCP
+    - name: 'zipkin'
+      port: 9411
+      targetPort: 9411
+      protocol: 'TCP'
   rbac:
     create: false
   serviceAccount:
