@@ -47,6 +47,7 @@ spec:
                       enabled: true
 
                       replicas: '3'
+                      resources: {}
 
                 - name: dc1-k3s-node1
                   values:
@@ -78,6 +79,7 @@ spec:
                       hub: false
 
                       enabled: true
+                      resources: {}
 
                 - name: core-home1-talos-prod
                   values:
@@ -109,6 +111,11 @@ spec:
                       hub: false
 
                       enabled: true
+                      resources:
+                        limits:
+                          memory: '3Gi'
+                        requests:
+                          memory: '1Gi'
           - clusters:
               selector:
                 matchLabels:
@@ -222,6 +229,8 @@ spec:
                     host: 'psql-int.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
                     username: 'netbox-{{ .values.clusterName }}'
                     existingSecretName: 'netbox-db-creds'
+
+                  resources: {{ toYaml (default dict .values.netbox.resources) | nindent 4 }}
 
                   tasksDatabase:
                     host: dragonfly.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space
