@@ -1,0 +1,42 @@
+{{- if and .Values.k8gb.enabled .Values.authentik.ldap.enabled .Values.authentik.ldap.clusterMesh.enabled .Values.authentik.ldap.k8gb.enabled }}
+apiVersion: k8gb.io/v1beta1
+kind: Gslb
+metadata:
+  name: aaa-authentik-ldap
+  annotations:
+    k8gb.io/hostname: {{ printf "ldap.%s" .Values.k8gb.domain | squote }}
+spec:
+  resourceRef:
+    apiVersion: v1
+    kind: Service
+    matchLabels:
+      app.kubernetes.io/name: 'myloginspace-ldap'
+      app.kubernetes.io/component: 'global'
+  strategy:
+    type: {{ .Values.k8gb.strategy | squote }}
+    {{- if eq .Values.k8gb.strategy "failover" }}
+    primaryGeoTag: {{ .Values.k8gb.primaryGeoTag | squote }}
+    {{- end }}
+    dnsTtlSeconds: {{ .Values.k8gb.dnsTtlSeconds }}
+{{- end }}
+{{- if and .Values.k8gb.enabled .Values.authentik.radius.enabled .Values.authentik.radius.clusterMesh.enabled .Values.authentik.radius.k8gb.enabled }}
+---
+apiVersion: k8gb.io/v1beta1
+kind: Gslb
+metadata:
+  name: aaa-authentik-radius
+  annotations:
+    k8gb.io/hostname: {{ printf "radius.%s" .Values.k8gb.domain | squote }}
+spec:
+  resourceRef:
+    apiVersion: v1
+    kind: Service
+    matchLabels:
+      app.kubernetes.io/name: 'myloginspace-radius'
+  strategy:
+    type: {{ .Values.k8gb.strategy | squote }}
+    {{- if eq .Values.k8gb.strategy "failover" }}
+    primaryGeoTag: {{ .Values.k8gb.primaryGeoTag | squote }}
+    {{- end }}
+    dnsTtlSeconds: {{ .Values.k8gb.dnsTtlSeconds }}
+{{- end }}

@@ -5,23 +5,30 @@ metadata:
   labels:
     app.kubernetes.io/instance: test-ldap-global
     app.kubernetes.io/name: myloginspace-ldap
-    lan-mode: 'private'
-    wan-mode: 'public'
+    app.kubernetes.io/component: 'global'
+    {{- with .Values.authentik.ldap.globalService.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 
   annotations:
-    {{- with .Values.authentik.ldap.additionalExternalDNSHostname }}
-    external-dns.kubernetes.io/hostname: '{{ . }}'
-    # TODO(external-dns-025): Remove the legacy annotation after upgrading ExternalDNS.
-    external-dns.alpha.kubernetes.io/hostname: '{{ . }}'
-    {{- end }}
     service.cilium.io/affinity: 'local'
     service.cilium.io/global: 'true'
     service.cilium.io/global-sync-endpoint-slices: 'true'
+    {{- with .Values.authentik.ldap.globalService.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 
   name: myloginspace-ldap-global
 
 spec:
-  type: ClusterIP
+  type: {{ .Values.authentik.ldap.globalService.type | squote }}
+  {{- if eq .Values.authentik.ldap.globalService.type "LoadBalancer" }}
+  {{- with .Values.authentik.ldap.globalService.loadBalancerClass }}
+  loadBalancerClass: {{ . | squote }}
+  {{- end }}
+  allocateLoadBalancerNodePorts: {{ .Values.authentik.ldap.globalService.allocateLoadBalancerNodePorts }}
+  externalTrafficPolicy: {{ .Values.authentik.ldap.globalService.externalTrafficPolicy | squote }}
+  {{- end }}
 
   selector:
     app.kubernetes.io/name: myloginspace-ldap

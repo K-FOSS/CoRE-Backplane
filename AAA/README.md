@@ -29,7 +29,10 @@ Every selected cluster receives:
 - optional Envoy `Backend` objects for peer Authentik clusters.
 
 The current HTTPRoute hostname comes from `route.hostnames`, which the fleet
-ApplicationSet sets to `idp.mylogin.space`. Its separate K8GB HTTPRoute uses
+ApplicationSet sets to `idp.mylogin.space`. When ClusterMesh is enabled, this
+non-GSLB route targets the `aaa-core-authentik` global Service; the legacy
+`dc1-k3s-node1` target keeps using its local Authentik Service because it does
+not create the ClusterMesh Service. The separate K8GB HTTPRoute uses
 `idp.gslb.mylogin.space` as the per-cluster route and is referenced by
 a `Gslb` advertising `idp.mylogin.space`. K8GB owns the global DNS decision;
 the per-cluster route sends traffic only to the local Authentik Service. The
@@ -48,32 +51,33 @@ The [AAA chart values](values.yaml) set Authentik's default and session-scoped
 direct database connections to `psql-int.mylogin.space`. The [PostgreSQL fleet
 ApplicationSet](../Apps/Storage/PSQL.yaml) places the writable hub at HOME1 and
 publishes this global name from its master Service. The [AAA fleet
-ApplicationSet](../Apps/AAA/AAA.yaml) changes only the DC1 Talos server's
-default connection to its site-local PGPool Service,
-`psql.core-dc1-talos-prod.dc1.yxl.mylogin.space`. The server keeps the global
+ApplicationSet](../Apps/AAA/AAA.yaml) keeps the DC1 Talos server's default
+connection on that global primary hostname too. The server keeps the global
 direct endpoint for Channels LISTEN/NOTIFY, worker advisory locks, and startup
 migrations, following [Authentik's pooler guidance](https://docs.goauthentik.io/install-config/configuration/#session-scoped-operations-and-transaction-mode-poolers).
-The ApplicationSet renders the site hostname before Kustomize patches the
-Deployment. Kubernetes places the patched database host before the shared
-cluster-name environment entries, so `$(CLUSTER_NAME)` style references there
-would remain literal and fail DNS resolution.
-It disables server-side cursors for the pooled connection, checks connection
-health, and limits connection age to 60 seconds.
+Server-side cursors remain enabled (`AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS=false`)
+for the direct PostgreSQL connections. Pgpool-II has backend connection caching
+enabled, not transaction-mode pooling. Authentik documents setting
+`AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS` to `true` for transaction
+pooling or cursor-related errors. Connection health checks and a 60-second
+maximum connection age guard persistent connections.
 
 The [PGPool configuration](../Databases/PSQL/templates/PGPool/PGPoolConfigTemplate.yaml)
-routes server writes to the detected primary. DC1 Talos currently has a local
-standby backend and a remote HOME1 primary backend. The DC1 Talos server also
-uses an [Authentik read-replica connection](https://docs.goauthentik.io/install-config/configuration/#read-replicas)
-to its local `psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space` standby for
-eligible reads. Its replica host comes from the `aaa-authentik-read-replica`
-ConfigMap; name, user, and password come from the existing
-`aaa-authentik-database` Secret. The replica connection has a 60-second maximum
-age and a health check before reuse, matching the YXL server's pooled default
-connection. This avoids a new local PostgreSQL handshake on every eligible
-request while allowing closed connections to be replaced. HOME1 does not
-configure an Authentik read replica. PostgreSQL and AAA select their hubs
-independently: AAA's `hub` value controls the `authentik-core` credential
-producer, not database leadership.
+routes Authentik's writes to the detected primary. Each active Authentik server
+also uses five [read-replica connections](https://docs.goauthentik.io/install-config/configuration/#read-replicas)
+for eligible reads: the two YVR standby pods and all three expected YXL standby
+pods. The PostgreSQL chart publishes a distinct DNS name for each pod through
+its existing headless per-pod Service; these records resolve to pod addresses,
+avoiding a shared Service VIP that would spread Authentik's connection pool
+across replicas opaquely. The fleet ApplicationSet orders local-site endpoints
+first, then peer-site endpoints. The AAA chart renders them as indexed `Host0`
+through `Host4` entries in `aaa-authentik-read-replica`. Every entry uses the
+existing `aaa-authentik-database` Secret for database name, username, and
+password. The replica list excludes YVR's primary pod and the independent
+site-local `psql-dc1-yxl` and `psql-home1-yvr` clusters. Each connection has a
+60-second maximum age and a health check before reuse. PostgreSQL and AAA select
+their hubs independently: AAA's `hub` value controls the `authentik-core`
+credential producer, not database leadership.
 
 The DC1 Talos worker retains its older local PGPool default and local
 `psql-int.core-dc1-talos-prod.dc1.yxl.mylogin.space` direct endpoint, without
@@ -81,7 +85,7 @@ an Authentik read-replica connection. The ApplicationSet keeps that worker at
 zero replicas. Its direct endpoint is a PostgreSQL standby and cannot support
 worker writes or session-scoped operations if the worker is enabled. Move its
 direct endpoint to a writable primary before scaling it up. The [upstream Helm
-chart's deployment templates](https://github.com/goauthentik/helm/tree/authentik-2026.8.5/charts/authentik/templates)
+chart's deployment templates](https://github.com/goauthentik/helm/tree/authentik-2026.8.6/charts/authentik/templates)
 append per-component environment entries to the shared values. Server replicas
 default to two with a PodDisruptionBudget; enabled workers and outposts depend
 on the shared database and secret-store chain.
@@ -157,6 +161,7 @@ deployment settings. Current defaults:
 - use an external PostgreSQL host;
 - load database credentials and `AUTHENTIK_SECRET_KEY` from
   `aaa-authentik-database`;
+- retain background task records for 12 hours before worker cleanup;
 - load email credentials from `authentik-core`;
 - run two server replicas with a PDB;
 - enable server metrics, ServiceMonitor, and Prometheus rules;
@@ -167,16 +172,25 @@ workers. Authentik discovers certificates by the directory containing
 `tls.crt` and `tls.key`; the mount directory is cluster-specific, with an
 established `tls` exception for the DC1 Talos cluster.
 
+`AUTHENTIK_WORKER__TASK_EXPIRATION` is set to `hours=12` for the chart's
+Authentik containers. Authentik's workers purge expired tasks on their cleanup
+interval; this changes when a task becomes eligible for deletion and does not
+remove task records immediately. See Authentik's [worker configuration](https://docs.goauthentik.io/install-config/configuration/configuration/)
+and [background task lifecycle](https://docs.goauthentik.io/worker/).
+
 ### Outposts
 
 | Values | Resources and ports |
 | --- | --- |
 | `authentik.ldap.enabled`, `replicas` | LDAP outpost Deployment, token ExternalSecret, and cluster-scoped Service exposing TCP/UDP 389, 636, and metrics 9300. |
-| `authentik.ldap.additionalExternalDNSHostname` | Optional comma-separated hostnames published only by the LDAP global Service. |
 | `authentik.ldap.clusterMesh.enabled` | Creates the dedicated LDAP global Service and opts it into Cilium global-service discovery and EndpointSlice synchronization. |
+| `authentik.ldap.globalService` | Configures the global Service type, class, annotations, labels, node-port allocation, and external traffic policy. It remains `ClusterIP` by default. |
+| `authentik.ldap.k8gb.enabled` | Enables the LDAP Service-mode Gslb when the global Service is a LoadBalancer. |
 | `authentik.radius.enabled`, `replicas` | RADIUS outpost Deployment and Service exposing TCP/UDP 1812 and metrics 9300. |
 | `authentik.radius.additionalExternalDNSHostname` | Optional additional hostname appended to the RADIUS Service's cluster-specific ExternalDNS hostname. |
 | `authentik.radius.clusterMesh.enabled` | Opts the RADIUS Service into Cilium global-service discovery and EndpointSlice synchronization. |
+| `authentik.radius.service` | Configures the RADIUS Service type, class, annotations, labels, node-port allocation, and external traffic policy. It remains `ClusterIP` by default. |
+| `authentik.radius.k8gb.enabled` | Enables the RADIUS Service-mode Gslb; disabled in every fleet target. |
 | `authentik.proxy.enabled`, `replicas` | Proxy outpost Deployment, token ExternalSecret, Service on port 80, and `/outpost.goauthentik.io` HTTPRoute. |
 
 Outposts connect to the local Authentik server over cluster DNS with
@@ -186,9 +200,8 @@ network. Their tokens determine outpost identity and authorization.
 The owning ApplicationSet enables [Cilium global Services](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
 for LDAP and RADIUS on the two Talos ClusterMesh peers. It leaves the legacy
 K3s target local. LDAP uses a dedicated `myloginspace-ldap-global` Service;
-the existing `myloginspace-ldap` Service remains cluster-scoped and continues
-to publish only
-`ldap.<cluster>.<datacenter>.<region>.mylogin.space`. Global Services have
+the existing `myloginspace-ldap` Service remains cluster-scoped. Neither LDAP
+Service carries ExternalDNS annotations or `lan-mode`/`wan-mode` labels. Global Services have
 identical names and namespaces on the mesh peers, so Cilium can combine their
 backends. Both outposts' global Services use
 [`local` service affinity](https://docs.cilium.io/en/stable/network/clustermesh/affinity/),
@@ -199,16 +212,35 @@ observe remote endpoints. Disable either outpost's `clusterMesh.enabled` value
 for a cluster before intentionally removing that cluster's backends from the
 global Service.
 
-The [ExternalDNS hostname annotation](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/annotations/#external-dnsalphakubernetesiohostname)
-accepts comma-separated names. LDAP publishes its cluster-specific name from
-the cluster-scoped Service and publishes `additionalExternalDNSHostname` only
-from the dedicated global Service. RADIUS continues to append its additional
-hostnames to its existing Service. The ApplicationSet currently assigns the
-shared `ldap.mylogin.space` and `radius.mylogin.space` aliases only to
-`core-dc1-talos-prod`, avoiding multiple cluster-scoped ExternalDNS instances
-claiming ownership of the same records. Per-cluster list-generator values are
-the fleet-level opt-in and alias override points; chart defaults are empty and
-disabled for standalone renders.
+RADIUS continues to append its optional additional hostname to its existing
+Service's [ExternalDNS annotation](https://kubernetes-sigs.github.io/external-dns/latest/docs/annotations/annotations/#external-dnsalphakubernetesiohostname).
+The ApplicationSet assigns `radius.mylogin.space` only to
+`core-dc1-talos-prod`. Per-cluster list-generator values under
+`authentik.ldap` and `authentik.radius` set each outpost's `enabled`,
+`clusterMesh.enabled`, and `k8gb.enabled`. LDAP's `anycastIP` and
+`globalService.serviceGroup` configure its LoadBalancer; RADIUS's `anycastIP`
+and `service.serviceGroup` configure its LoadBalancer. The ApplicationSet
+injects the PureLB address and ServiceGroup annotations; the chart renders
+them as generic Service annotations.
+
+K8GB [LoadBalancer Service mode](https://www.k8gb.io/latest/lbservice-integration/)
+advertises `ldap.gslb.mylogin.space` from the existing global LDAP Service.
+The Service uses PureLB's [fixed-address annotation](https://purelb.io/docs/operations/services/)
+for `10.1.1.36`, allocated from `anycast` in YXL and `core-anycast` in YVR.
+The existing RADIUS Service uses `10.1.1.18` from the same site pools, while
+its K8GB Gslb remains disabled. Its LoadBalancer spec clears the previous
+`66.165.222.113` external IP. The [Cluster claims](../Operations/Clusters/README.md)
+reserve both `/32` addresses in each ServiceGroup. Cilium still synchronizes
+remote EndpointSlices for the LDAP Service; verify K8GB's per-site health
+behavior with a local outpost down
+before relying on DNS failover.
+The ApplicationSet no longer publishes LDAP ExternalDNS names. Verify that the
+LDAP outpost presents a certificate valid for the GSLB hostname before using
+`ldap.gslb.mylogin.space:636` with TLS certificate validation.
+The Cloudflare ExternalDNS controller currently runs with `--policy=upsert-only`;
+removing the old Service annotation does not delete an existing
+LDAP DNS records or their ownership TXT records. Remove those
+records after the new GSLB name is verified and consumers have migrated.
 
 Current template coupling requires special care:
 
@@ -225,7 +257,8 @@ Always inspect the rendered resource set.
 
 Each `peers[]` item renders an Envoy Gateway `Backend` named
 `aaa-server-<cluster>` pointing to `<endpoint>:80`. The main HTTPRoute includes
-all peer Backends at weight 1 alongside the local Authentik Service.
+all peer Backends at weight 1 alongside the ClusterMesh global Service when
+enabled, or the local Authentik Service on the legacy target.
 
 Example:
 
@@ -243,9 +276,9 @@ behavior before adding a peer.
 ### Legacy OpenLDAP
 
 `openldap.enabled` creates a ConfigMap and a single-replica Deployment running
-a platform-specific OpenLDAP image. It proxies the hardcoded
-`ldaps://ldap.mylogin.space:636` directory and mounts the configured TLS
-Secret. No Service is created by these templates. This path is disabled by
+a platform-specific OpenLDAP image. It proxies the configured
+`openldap.upstreamURI` (default `ldaps://ldap.gslb.mylogin.space:636`) and
+mounts the configured TLS Secret. No Service is created by these templates. This path is disabled by
 default and should be treated as legacy rather than a general OpenLDAP chart.
 
 ## Gateway and authorization policy
@@ -269,11 +302,15 @@ Security profile for `NET_RAW`.
 `aaa-core-authentik` is a separate internal Service for cross-cluster
 consumers on the configured ClusterMesh peers. Cilium marks it global, shares
 the service identity across the ClusterMesh members, synchronizes EndpointSlices,
-and prefers local endpoints. It selects only the Authentik server pods and
-exposes the upstream chart's HTTP and HTTPS ports. The public `aaa-authentik`
-and K8GB routes continue to use the site-local `aaa-authentik-server` Service,
-so route policy and peer Backend behavior remain unchanged. See the [Cilium global Services
-documentation](https://docs.cilium.io/en/stable/network/clustermesh/global-services/)
+and prefers local-cluster endpoints. Its Kubernetes `trafficDistribution` is
+`PreferSameNode`, preferring Authentik server endpoints on the client node and
+falling back to the same zone or wider endpoint set when needed. It selects
+only the Authentik server pods and exposes the upstream chart's HTTP and HTTPS
+ports. The non-GSLB route uses this global Service when ClusterMesh is enabled;
+the GSLB route and the legacy target continue to use the site-local
+`aaa-authentik-server` Service. See the [Cilium global Services
+documentation](https://docs.cilium.io/en/stable/network/clustermesh/global-services/),
+Kubernetes' [Service traffic distribution documentation](https://kubernetes.io/docs/concepts/services-networking/service/#traffic-distribution),
 and [Kubernetes Service documentation](https://kubernetes.io/docs/concepts/services-networking/service/).
 
 The HTTPRoute hostname, Gateway section name, CORS origin, Vault paths, and
@@ -298,8 +335,10 @@ helm template aaa AAA --namespace core-prod > /tmp/aaa.yaml
 ```
 
 To reproduce a cluster, copy its `hub`, `cluster`, `datacenter`, `region`, and
-outpost DNS/ClusterMesh values from `Apps/AAA/AAA.yaml` into a temporary values
-file.
+outpost `authentik.ldap`/`authentik.radius` values from the
+[AAA ApplicationSet](../Apps/AAA/AAA.yaml) into a temporary values file,
+mapping each `anycastIP` and `serviceGroup` into its Service's
+`annotations.purelb.io/addresses` and `annotations.purelb.io/service-group`.
 The Lovely merge also supplies Authentik service annotations, labels,
 PostgreSQL settings, and worker TLS mounts.
 
@@ -312,8 +351,9 @@ Before syncing, inspect:
   endpoint, and the disabled worker's older local direct endpoint;
 - Authentik server/worker images, replicas, PDB, probes, and resources;
 - enabled outpost Deployments, matching Secrets and Services;
-- LDAP/RADIUS cluster-specific and optional shared ExternalDNS hostnames, plus
-  Cilium global-service annotations only on intended ClusterMesh members;
+- LDAP GSLB hostname, PureLB address and pool on both sites, the remaining
+  RADIUS ExternalDNS hostnames, and Cilium global-service annotations only on
+  intended ClusterMesh members;
 - Route parent references, peer endpoints, timeouts, and policy targets;
 - TLS Secret names and worker mount paths; and
 - CRD/API compatibility for Authentik, External Secrets, Gateway/Envoy, and
@@ -324,21 +364,26 @@ in [`values.yaml`](values.yaml) under `authentik.ldap.resources` and
 `authentik.proxy.resources`; the fleet ApplicationSet only supplies
 cluster-specific topology and endpoint settings.
 
-Adding or removing the server read replica requires restarting its pods.
-Before reconciliation, verify the rendered replica host and
-`aaa-authentik-read-replica` ConfigMap on DC1 Talos, and confirm PGPool sees a
-writable HOME1 backend and the global direct name resolves to its master.
-After reconciliation, confirm server writes through PGPool and session-scoped
-direct operations reach the global primary, eligible reads reach the local standby,
-and replication lag permits complete browser login, OIDC token
-issuance, and outpost authentication. A reachable PostgreSQL standby alone does
+Adding or removing a server read replica requires restarting its pods.
+Before reconciliation, verify all five rendered replica hosts and the
+`aaa-authentik-read-replica` ConfigMap on DC1 Talos and HOME1. Confirm each
+`psql-int-replica-N` hostname resolves to the pod IP selected by its headless
+Service, each target is in recovery, and cross-site pod routing and TLS work.
+On DC1 Talos, confirm PGPool sees a writable HOME1 backend and the global
+`psql-int.mylogin.space` name resolves to its master. After reconciliation,
+confirm server writes reach the primary, eligible reads reach all five standby
+pods, and replication lag permits
+complete browser login, OIDC token issuance, and outpost authentication. A
+reachable PostgreSQL standby alone does
 not prove Authentik is healthy: replica lag can make recent writes invisible to
-the next read, and loss of the local replica can interrupt reads even while the
-global primary remains available. If the PostgreSQL hub moves, update the AAA
-read-replica site selection in the same change and validate the new global
-endpoint before rolling Authentik. Roll back the DC1 server routing by removing
-its ApplicationSet patch and reconciling the server Deployment; this does not
-promote PostgreSQL or change stored identity data.
+the next read, and loss of all replica endpoints can interrupt reads even while
+the global primary remains available. If the PostgreSQL hub moves, update the
+AAA read-replica site selection in the same change and validate all endpoints
+before rolling Authentik. To roll back read replicas for a cluster, clear its
+`readReplicaHosts` ApplicationSet list and reconcile the server Deployment;
+eligible reads then return to the primary. Roll back the DC1 server routing by
+removing its ApplicationSet patch and reconciling the server Deployment; this
+does not promote PostgreSQL or change stored identity data.
 
 After reconciliation:
 

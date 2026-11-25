@@ -83,10 +83,10 @@ authentik:
             key: DOMAIN_NAME
 
       - name: AUTHENTIK_WEB__WORKERS
-        value: '2'
+        value: '1'
 
       - name: AUTHENTIK_WEB__THREADS
-        value: '2'
+        value: '1'
 
       - name: AUTHENTIK_WORKER__TASK_EXPIRATION
         value: 'hours=12'
@@ -229,9 +229,17 @@ authentik:
         cpu: '250m'
         memory: '128Mi'
     avoidNodeName: ''
-    additionalExternalDNSHostname: ''
     clusterMesh:
       enabled: false
+    k8gb:
+      enabled: false
+    globalService:
+      type: 'ClusterIP'
+      loadBalancerClass: ''
+      annotations: {}
+      labels: {}
+      allocateLoadBalancerNodePorts: false
+      externalTrafficPolicy: 'Cluster'
 
   radius:
     enabled: true
@@ -246,8 +254,16 @@ authentik:
     additionalExternalDNSHostname: ''
     clusterMesh:
       enabled: false
-    ipAddresses:
-      - 10.1.1.18
+    k8gb:
+      enabled: false
+    service:
+      type: 'ClusterIP'
+      loadBalancerClass: ''
+      annotations: {}
+      labels: {}
+      externalIPs: []
+      allocateLoadBalancerNodePorts: false
+      externalTrafficPolicy: 'Cluster'
 
   proxy:
     enabled: true
@@ -266,5 +282,6 @@ authentik:
 
 openldap:
   enabled: false
+  upstreamURI: 'ldaps://ldap.gslb.mylogin.space:636'
   tls:
     secretName: myloginspace-default-certificates

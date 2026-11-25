@@ -7,9 +7,11 @@ metadata:
     app.kubernetes.io/name: myloginspace-radius
     lan-mode: 'private'
     wan-mode: 'public'
+    {{- with .Values.authentik.radius.service.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 
   annotations:
-    consul.hashicorp.com/service-name: radius
     external-dns.kubernetes.io/hostname: 'radius.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ with .Values.authentik.radius.additionalExternalDNSHostname }},{{ . }}{{ end }}'
     # TODO(external-dns-026): Remove the legacy annotation after upgrading ExternalDNS.
     external-dns.alpha.kubernetes.io/hostname: 'radius.{{ .Values.cluster.name }}.{{ .Values.datacenter }}.{{ .Values.region }}.mylogin.space{{ with .Values.authentik.radius.additionalExternalDNSHostname }},{{ . }}{{ end }}'
@@ -18,11 +20,22 @@ metadata:
     service.cilium.io/global: 'true'
     service.cilium.io/global-sync-endpoint-slices: 'true'
     {{- end }}
+    {{- with .Values.authentik.radius.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 
   name: myloginspace-radius
 
 spec:
-  type: ClusterIP
+  type: {{ .Values.authentik.radius.service.type | squote }}
+  {{- if eq .Values.authentik.radius.service.type "LoadBalancer" }}
+  externalIPs: {{ .Values.authentik.radius.service.externalIPs | toJson }}
+  {{- with .Values.authentik.radius.service.loadBalancerClass }}
+  loadBalancerClass: {{ . | squote }}
+  {{- end }}
+  allocateLoadBalancerNodePorts: {{ .Values.authentik.radius.service.allocateLoadBalancerNodePorts }}
+  externalTrafficPolicy: {{ .Values.authentik.radius.service.externalTrafficPolicy | squote }}
+  {{- end }}
 
   selector:
     app.kubernetes.io/name: myloginspace-radius

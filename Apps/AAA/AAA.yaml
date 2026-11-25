@@ -24,10 +24,30 @@ spec:
                     hub: false
                     k8gbPrimaryGeoTag: 'home1'
                     readReplicaHosts: []
-                    ldapAdditionalExternalDNSHostname: ''
-                    ldapClusterMeshEnabled: false
-                    radiusAdditionalExternalDNSHostname: ''
-                    radiusClusterMeshEnabled: false
+                    authentik:
+                      ldap:
+                        enabled: true
+                        anycastIP: ''
+                        clusterMesh:
+                          enabled: false
+                        k8gb:
+                          enabled: false
+                        globalService:
+                          type: 'ClusterIP'
+                          loadBalancerClass: ''
+                          serviceGroup: ''
+                      radius:
+                        enabled: true
+                        anycastIP: ''
+                        additionalExternalDNSHostname: ''
+                        clusterMesh:
+                          enabled: false
+                        k8gb:
+                          enabled: false
+                        service:
+                          type: 'ClusterIP'
+                          loadBalancerClass: ''
+                          serviceGroup: ''
 
                 - name: core-dc1-talos-prod
                   values:
@@ -37,12 +57,30 @@ spec:
                       - 'psql-int-replica-0.core-dc1-talos-prod.dc1.yxl.mylogin.space'
                       - 'psql-int-replica-1.core-dc1-talos-prod.dc1.yxl.mylogin.space'
                       - 'psql-int-replica-2.core-dc1-talos-prod.dc1.yxl.mylogin.space'
-                      - 'psql-int-replica-0.core-home1-talos-prod.home1.yvr.mylogin.space'
-                      - 'psql-int-replica-1.core-home1-talos-prod.home1.yvr.mylogin.space'
-                    ldapAdditionalExternalDNSHostname: 'ldap.mylogin.space,ldap-dc1-talos.mylogin.space'
-                    ldapClusterMeshEnabled: true
-                    radiusAdditionalExternalDNSHostname: 'radius.mylogin.space'
-                    radiusClusterMeshEnabled: true
+                    authentik:
+                      ldap:
+                        enabled: true
+                        anycastIP: '10.1.1.36'
+                        clusterMesh:
+                          enabled: true
+                        k8gb:
+                          enabled: true
+                        globalService:
+                          type: 'LoadBalancer'
+                          loadBalancerClass: 'purelb.io/purelb'
+                          serviceGroup: 'anycast'
+                      radius:
+                        enabled: true
+                        anycastIP: '10.1.1.18'
+                        additionalExternalDNSHostname: 'radius.mylogin.space'
+                        clusterMesh:
+                          enabled: true
+                        k8gb:
+                          enabled: false
+                        service:
+                          type: 'LoadBalancer'
+                          loadBalancerClass: 'purelb.io/purelb'
+                          serviceGroup: 'anycast'
 
                 - name: core-home1-talos-prod
                   values:
@@ -51,13 +89,30 @@ spec:
                     readReplicaHosts:
                       - 'psql-int-replica-0.core-home1-talos-prod.home1.yvr.mylogin.space'
                       - 'psql-int-replica-1.core-home1-talos-prod.home1.yvr.mylogin.space'
-                      - 'psql-int-replica-0.core-dc1-talos-prod.dc1.yxl.mylogin.space'
-                      - 'psql-int-replica-1.core-dc1-talos-prod.dc1.yxl.mylogin.space'
-                      - 'psql-int-replica-2.core-dc1-talos-prod.dc1.yxl.mylogin.space'
-                    ldapAdditionalExternalDNSHostname: 'ldap-home1.mylogin.space'
-                    ldapClusterMeshEnabled: true
-                    radiusAdditionalExternalDNSHostname: ''
-                    radiusClusterMeshEnabled: true
+                    authentik:
+                      ldap:
+                        enabled: true
+                        anycastIP: '10.1.1.36'
+                        clusterMesh:
+                          enabled: true
+                        k8gb:
+                          enabled: true
+                        globalService:
+                          type: 'LoadBalancer'
+                          loadBalancerClass: 'purelb.io/purelb'
+                          serviceGroup: 'core-anycast'
+                      radius:
+                        enabled: true
+                        anycastIP: '10.1.1.18'
+                        additionalExternalDNSHostname: ''
+                        clusterMesh:
+                          enabled: true
+                        k8gb:
+                          enabled: false
+                        service:
+                          type: 'LoadBalancer'
+                          loadBalancerClass: 'purelb.io/purelb'
+                          serviceGroup: 'core-anycast'
 
           - clusters:
               selector:
@@ -134,21 +189,42 @@ spec:
 
                 authentik:
                   clusterMesh:
-                    enabled: {{ .values.ldapClusterMeshEnabled }}
+                    enabled: {{ .values.authentik.ldap.clusterMesh.enabled }}
 
                   authentik:
                     log_level: warning
 
                   ldap:
+                    enabled: {{ .values.authentik.ldap.enabled }}
                     avoidNodeName: ''
-                    additionalExternalDNSHostname: '{{ .values.ldapAdditionalExternalDNSHostname }}'
                     clusterMesh:
-                      enabled: {{ .values.ldapClusterMeshEnabled }}
+                      enabled: {{ .values.authentik.ldap.clusterMesh.enabled }}
+                    k8gb:
+                      enabled: {{ .values.authentik.ldap.k8gb.enabled }}
+                    globalService:
+                      type: '{{ .values.authentik.ldap.globalService.type }}'
+                      loadBalancerClass: '{{ .values.authentik.ldap.globalService.loadBalancerClass }}'
+                      {{ if eq .values.authentik.ldap.globalService.type "LoadBalancer" }}
+                      annotations:
+                        purelb.io/service-group: '{{ .values.authentik.ldap.globalService.serviceGroup }}'
+                        purelb.io/addresses: '{{ .values.authentik.ldap.anycastIP }}'
+                      {{ end }}
 
                   radius:
-                    additionalExternalDNSHostname: '{{ .values.radiusAdditionalExternalDNSHostname }}'
+                    enabled: {{ .values.authentik.radius.enabled }}
+                    additionalExternalDNSHostname: '{{ .values.authentik.radius.additionalExternalDNSHostname }}'
                     clusterMesh:
-                      enabled: {{ .values.radiusClusterMeshEnabled }}
+                      enabled: {{ .values.authentik.radius.clusterMesh.enabled }}
+                    k8gb:
+                      enabled: {{ .values.authentik.radius.k8gb.enabled }}
+                    service:
+                      type: '{{ .values.authentik.radius.service.type }}'
+                      loadBalancerClass: '{{ .values.authentik.radius.service.loadBalancerClass }}'
+                      {{ if eq .values.authentik.radius.service.type "LoadBalancer" }}
+                      annotations:
+                        purelb.io/service-group: '{{ .values.authentik.radius.service.serviceGroup }}'
+                        purelb.io/addresses: '{{ .values.authentik.radius.anycastIP }}'
+                    {{ end }}
 
                   server:
                     {{ if gt (len .values.readReplicaHosts) 0 }}
