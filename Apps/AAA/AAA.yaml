@@ -71,10 +71,14 @@ spec:
                           enabled: true
                         k8gb:
                           enabled: true
+                          service:
+                            type: 'LoadBalancer'
+                            loadBalancerClass: ''
+                            serviceGroup: 'anycast'
+                            trafficDistribution: 'PreferSameNode'
                         globalService:
-                          type: 'LoadBalancer'
+                          type: 'ClusterIP'
                           loadBalancerClass: ''
-                          serviceGroup: 'anycast'
                           trafficDistribution: 'PreferSameNode'
                       radius:
                         enabled: true
@@ -107,10 +111,14 @@ spec:
                           enabled: true
                         k8gb:
                           enabled: true
+                          service:
+                            type: 'LoadBalancer'
+                            loadBalancerClass: ''
+                            serviceGroup: 'core-anycast'
+                            trafficDistribution: 'PreferSameNode'
                         globalService:
-                          type: 'LoadBalancer'
+                          type: 'ClusterIP'
                           loadBalancerClass: ''
-                          serviceGroup: 'core-anycast'
                           trafficDistribution: 'PreferSameNode'
                       radius:
                         enabled: true
@@ -191,11 +199,11 @@ spec:
 
                 route:
                   hostnames:
-                    - 'idp.mylogin.space'
+                    - 'idp.{{ .values.domainRoot }}'
 
                 k8gb:
                   enabled: true
-                  domain: 'gslb.mylogin.space'
+                  domain: 'gslb.{{ .values.domainRoot }}'
                   strategy: 'failover'
                   primaryGeoTag: '{{ .values.k8gbPrimaryGeoTag }}'
                   dnsTtlSeconds: 30
@@ -218,6 +226,13 @@ spec:
                       enabled: {{ .values.authentik.ldap.k8gb.enabled }}
                       {{ if .values.authentik.ldap.k8gb.enabled }}
                       exposedIPAddresses: '{{ .values.authentik.ldap.anycastIP }}'
+                      service:
+                        type: '{{ .values.authentik.ldap.k8gb.service.type }}'
+                        loadBalancerClass: '{{ .values.authentik.ldap.k8gb.service.loadBalancerClass }}'
+                        trafficDistribution: '{{ .values.authentik.ldap.k8gb.service.trafficDistribution }}'
+                        annotations:
+                          purelb.io/service-group: '{{ .values.authentik.ldap.k8gb.service.serviceGroup }}'
+                          purelb.io/addresses: '{{ .values.authentik.ldap.anycastIP }}'
                       {{ end }}
                     globalService:
                       type: '{{ .values.authentik.ldap.globalService.type }}'
@@ -225,11 +240,6 @@ spec:
                       trafficDistribution: '{{ .values.authentik.ldap.globalService.trafficDistribution }}'
                       {{ if .values.authentik.ldap.clusterMesh.enabled }}
                       externalDNSHostname: 'ldap-{{ .values.datacenter }}.{{ .values.domainRoot }}'
-                      {{ end }}
-                      {{ if eq .values.authentik.ldap.globalService.type "LoadBalancer" }}
-                      annotations:
-                        purelb.io/service-group: '{{ .values.authentik.ldap.globalService.serviceGroup }}'
-                        purelb.io/addresses: '{{ .values.authentik.ldap.anycastIP }}'
                       {{ end }}
 
                   radius:
