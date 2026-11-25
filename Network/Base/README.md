@@ -94,7 +94,7 @@ latency, success rates, and connections; Upstream and Downstream provide
 focused traffic views. These dashboards do not enumerate Kubernetes HTTPRoutes
 as route objects.
 
-The pinned [Cilium 1.20.4 Helm chart](https://github.com/cilium/cilium/tree/v1.20.4/install/kubernetes/cilium)
+The pinned [Cilium 1.20.5 Helm chart](https://github.com/cilium/cilium/tree/v1.20.5/install/kubernetes/cilium)
 is the source for its upstream agent, Operator, and Hubble dashboards. The
 agent dashboard and its ServiceMonitor were already enabled. The Operator
 ServiceMonitor and dashboard are now enabled as well. On DC1, where the
@@ -150,6 +150,19 @@ waiting for a suspected PMTU black hole. The [Cilium Helm values reference](http
 and [PMTU tuning guidance](https://docs.cilium.io/en/stable/operations/performance/tuning/)
 describe the mode and its trade-offs. Verify the effective value with
 `cilium-dbg config` after reconciliation.
+
+Cilium service topology filtering is enabled in [the shared values](values.yaml)
+for Home1 and DC1. Services whose EndpointSlices contain topology hints can
+prefer endpoints in the client's zone; services without hints retain normal
+backend selection. See [Cilium's traffic distribution guidance](https://docs.cilium.io/en/stable/network/kubernetes/kubeproxy-free/#traffic-distribution-and-topology-aware-hints).
+Verify `enable-service-topology: "true"` in the rendered `cilium-config` ConfigMap
+and check the affected Service's EndpointSlice hints after reconciliation.
+
+The [owning ApplicationSet](../../Apps/Network/Base.yaml) injects Cilium XDP
+load-balancer acceleration by site: `disabled` in Home1/YVR and `best-effort`
+in DC1/YXL. The shared chart values set the other load-balancer options.
+Verify the rendered `bpf-lb-acceleration` key in each cluster's `cilium-config`
+ConfigMap after reconciliation.
 
 The Cilium agent CPU request is set to `128m` with `cilium.resources.requests.cpu`;
 this chart value configures the agent container's resource requests in the pinned
