@@ -1,4 +1,7 @@
 {{- if and .Values.k8gb.enabled .Values.authentik.ldap.enabled .Values.authentik.ldap.clusterMesh.enabled .Values.authentik.ldap.k8gb.enabled }}
+{{- if ne .Values.authentik.ldap.globalService.type "LoadBalancer" }}
+{{- fail "authentik.ldap.globalService.type must be LoadBalancer when LDAP K8GB is enabled" }}
+{{- end }}
 apiVersion: k8gb.io/v1beta1
 kind: Gslb
 metadata:
@@ -9,9 +12,7 @@ spec:
   resourceRef:
     apiVersion: v1
     kind: Service
-    matchLabels:
-      app.kubernetes.io/name: 'myloginspace-ldap'
-      app.kubernetes.io/component: 'global'
+    name: 'myloginspace-ldap-global'
   strategy:
     type: {{ .Values.k8gb.strategy | squote }}
     {{- if eq .Values.k8gb.strategy "failover" }}
