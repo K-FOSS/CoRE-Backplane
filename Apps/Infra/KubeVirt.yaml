@@ -66,6 +66,19 @@ spec:
 
                 region: {{ .values.region }}
 
+                networkResourcesInjector:
+                  enabled: {{ or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod") }}
+
+            - name: LOVELY_KUSTOMIZE_PATCH
+              value: |- # yaml
+                {{- if or (eq .values.clusterName "core-home1-talos-prod") (eq .values.clusterName "core-dc1-talos-prod") }}
+                - op: add
+                  path: /resources/-
+                  value: network-resources-injector
+                {{- else }}
+                []
+                {{- end }}
+
       destination:
         server: '{{ .server }}'
         namespace: core-kubevirt-{{ .values.environment }}

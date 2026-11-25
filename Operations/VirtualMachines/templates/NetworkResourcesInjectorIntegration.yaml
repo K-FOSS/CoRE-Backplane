@@ -1,0 +1,84 @@
+{{- if .Values.networkResourcesInjector.enabled }}
+# Upstream supplies the Deployment and Service through the Lovely Kustomize stage.
+# These resources bind the webhook to this cluster's certificate and VM namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: network-resources-injector-sa
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: network-resources-injector
+rules:
+  - apiGroups: ['k8s.cni.cncf.io']
+    resources: ['network-attachment-definitions']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['configmaps']
+    verbs: ['get']
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: network-resources-injector
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: network-resources-injector
+subjects:
+  - kind: ServiceAccount
+    name: network-resources-injector-sa
+    namespace: kube-system
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: network-resources-injector
+  namespace: kube-system
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: network-resources-injector
+  namespace: kube-system
+spec:
+  secretName: network-resources-injector-tls
+  isCA: true
+  dnsNames:
+    - 'network-resources-injector-service.kube-system.svc'
+    - 'network-resources-injector-service.kube-system.svc.{{ .Values.cluster.domain }}'
+  issuerRef:
+    name: network-resources-injector
+    kind: Issuer
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: network-resources-injector
+  annotations:
+    cert-manager.io/inject-ca-from: 'kube-system/network-resources-injector'
+webhooks:
+  - name: network-resources-injector.k8s.io
+    admissionReviewVersions: ['v1']
+    sideEffects: None
+    failurePolicy: Ignore
+    timeoutSeconds: 10
+    clientConfig:
+      service:
+        name: network-resources-injector-service
+        namespace: kube-system
+        path: '/mutate'
+        port: 443
+    namespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: core-testing
+    rules:
+      - operations: ['CREATE']
+        apiGroups: ['']
+        apiVersions: ['v1']
+        resources: ['pods']
+{{- end }}

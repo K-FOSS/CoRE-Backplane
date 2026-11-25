@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - https://raw.githubusercontent.com/k8snetworkplumbingwg/network-resources-injector/671bbf061ce3c5defff1e08f51b758e44226109e/deployments/server.yaml
+  - https://raw.githubusercontent.com/k8snetworkplumbingwg/network-resources-injector/671bbf061ce3c5defff1e08f51b758e44226109e/deployments/service.yaml
+
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: network-resources-injector
+      namespace: kube-system
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/serviceAccount
+        value: network-resources-injector-sa
+      - op: remove
+        path: /spec/template/spec/initContainers
+      - op: remove
+        path: /spec/template/spec/volumes/0/emptyDir
+      - op: add
+        path: /spec/template/spec/volumes/0/secret
+        value:
+          secretName: network-resources-injector-tls
+      - op: replace
+        path: /spec/template/spec/containers/0/image
+        value: ghcr.io/k8snetworkplumbingwg/network-resources-injector:v1.10.0@sha256:a0e064e3d49b3602fdc941f9b8a2c9db76f00fd5ebec00b459d42738fda40ade
+      - op: add
+        path: /spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation
+        value: false
