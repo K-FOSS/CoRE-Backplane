@@ -45,7 +45,7 @@ sessions, DNS publication, gateways, load balancers, or SR-IOV allocations work.
 | [Multus dynamic networks controller](https://github.com/k8snetworkplumbingwg/multus-dynamic-networks-controller) | Remote Kustomize resource installing the per-node dynamic attachment controller. |
 | [CNI bridge plugin](https://www.cni.dev/plugins/current/main/bridge/) | Creates the unaddressed node-side `kvip-cilium0` bridge and pod-side `handoff0` veth attachment used only for ingress redirection. |
 | [SR-IOV CNI](https://github.com/k8snetworkplumbingwg/sriov-cni) | Remote Kustomize resource installing the SR-IOV CNI binary on nodes. |
-| [SR-IOV network device plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin) | Remote Kustomize resource plus Helm-rendered `sriovdp-config`. The owning ApplicationSet supplies its resource pools through `sriovDevicePlugin.resourceList`. The patch in `kustomization.yaml` sets the `kube-sriovdp` CPU request to `16m`; memory and limits retain upstream values. |
+| [SR-IOV network device plugin](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/v3.11.0/README.md) | The [v3.11.0 release manifest](https://github.com/k8snetworkplumbingwg/sriov-network-device-plugin/blob/v3.11.0/deployments/sriovdp-daemonset.yaml) is a remote Kustomize resource; the local patch pins its image to the v3.11.0 multi-architecture digest. Helm renders `sriovdp-config`, and the owning ApplicationSet supplies its resource pools through `sriovDevicePlugin.resourceList`. The local patch sets the `kube-sriovdp` CPU request to `16m`; the ApplicationSet also sets its memory request to `40Mi`. Limits retain upstream values. |
 | [SR-IOV Network Operator](https://github.com/k8snetworkplumbingwg/sriov-network-operator) | Optional Helm dependency. It is disabled in `values.yaml`; the standalone SR-IOV CNI and device plugin remain enabled independently. |
 
 | [ExternalDNS](https://kubernetes-sigs.github.io/external-dns/latest/) with [Cloudflare](https://kubernetes-sigs.github.io/external-dns/latest/docs/tutorials/cloudflare/) | Enabled Helm dependency publishing public records selected by `wan-mode=public`. Credentials come from the referenced Kubernetes Secret and must not be committed here. |
@@ -61,10 +61,13 @@ while replacing device-plugin allocation with ResourceClaims. See the
 including the separate KubeVirt VM passthrough path. No SR-IOV DRA driver is
 installed by this stack yet.
 
-The remote Multus dynamic controller, SR-IOV CNI, and SR-IOV device-plugin
-resources track moving branches. Some referenced images also use mutable tags.
+The remote Multus dynamic controller and SR-IOV CNI resources track moving
+branches. Some referenced images also use mutable tags.
 These are existing supply-chain risks: inspect fetched manifests and image
 references on every change, and pin both before treating a render as reproducible.
+The pinned SR-IOV device-plugin v3.11.0 release manifest runs its container
+privileged; the later moving `master` manifest uses an unprivileged security
+context. Review that security difference when upgrading the release pin.
 
 ## Values and generated resources
 

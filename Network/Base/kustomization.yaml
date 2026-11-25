@@ -8,8 +8,8 @@ resources:
   - https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-dynamic-networks-controller/refs/heads/main/manifests/dynamic-networks-controller.yaml
   # renovate: datasource=git-refs depName=k8snetworkplumbingwg/sriov-cni
   - https://raw.githubusercontent.com/k8snetworkplumbingwg/sriov-cni/refs/heads/master/images/sriov-cni-daemonset.yaml
-  # renovate: datasource=git-refs depName=k8snetworkplumbingwg/sriov-network-device-plugin
-  - https://raw.githubusercontent.com/k8snetworkplumbingwg/sriov-network-device-plugin/refs/heads/master/deployments/sriovdp-daemonset.yaml
+  # renovate: datasource=github-releases depName=k8snetworkplumbingwg/sriov-network-device-plugin
+  - https://raw.githubusercontent.com/k8snetworkplumbingwg/sriov-network-device-plugin/refs/tags/v3.11.0/deployments/sriovdp-daemonset.yaml
 
 patches:
   - target:
@@ -63,6 +63,7 @@ patches:
           spec:
             containers:
               - name: kube-sriovdp
+                image: 'ghcr.io/k8snetworkplumbingwg/sriov-network-device-plugin:v3.11.0@sha256:7c5901727d4500f103f038c178b41dc6450afa6f324306c1973495c9a7c4f5a5'
                 resources:
                   requests:
                     cpu: 16m
