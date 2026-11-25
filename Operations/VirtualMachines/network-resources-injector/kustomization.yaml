@@ -27,6 +27,11 @@ patches:
       - op: replace
         path: /spec/template/spec/containers/0/image
         value: ghcr.io/k8snetworkplumbingwg/network-resources-injector:v1.10.0@sha256:a0e064e3d49b3602fdc941f9b8a2c9db76f00fd5ebec00b459d42738fda40ade
+      # Kubernetes admission calls do not present a client certificate here.
+      # Keep server TLS and the cert-manager-injected CA for API server verification.
+      - op: add
+        path: /spec/template/spec/containers/0/args/-
+        value: --insecure
       - op: add
         path: /spec/template/spec/containers/0/securityContext/allowPrivilegeEscalation
         value: false
