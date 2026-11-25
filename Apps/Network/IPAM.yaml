@@ -234,6 +234,11 @@ spec:
                     username: 'netbox-{{ .values.clusterName }}'
                     existingSecretName: 'netbox-db-creds'
 
+                  additionalDatabases:
+                    replica:
+                      host: 'psql-int-rep.{{ .values.clusterName }}.{{ .values.datacenter }}.{{ .values.region }}.mylogin.space'
+                      username: 'netbox-{{ .values.clusterName }}'
+
                   resources: {{ toYaml (default dict .values.netbox.resources) | nindent 4 }}
 
                   tasksDatabase:

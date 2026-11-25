@@ -70,39 +70,136 @@ and the rendered Argo CD revision must be used together during an audit.
   `active`; it does not rely on the image's DHCPv4-only `/Healthcheck.sh`. The
   entry script validates every enabled Kea configuration before startup and
   stops the daemons cleanly when the container receives a termination signal.
-- [PowerDNS Authoritative Server 5.1.3](https://doc.powerdns.com/authoritative/changelog/5.1.html#change-5.1.3)
+- [PowerDNS Authoritative Server 5.1.5](https://doc.powerdns.com/authoritative/changelog/5.1.html)
   serves DNS from the external PostgreSQL backend using the
   [official PowerDNS container](https://github.com/PowerDNS/pdns/blob/master/Docker-README.md),
-  pinned to its multi-architecture manifest digest. The upgrade from 4.8.4
+  pinned to its multi-architecture manifest digest. Kea sends DHCP DDNS only
+  to this pod's loopback listener; RFC 2136 updates are accepted from loopback
+  only, and PowerDNS does not forward updates or NOTIFY messages. Its HTTP API
+  and webserver are disabled because this instance has no API consumer. The
+  upgrade from 4.8.4
   follows the [PowerDNS upgrade notes](https://doc.powerdns.com/authoritative/upgrading.html):
   PostgreSQL must be 9.5 or newer for the 5.1 default TSIG replacement query,
   API record representations may be normalized differently, and updates to
   LUA records remain disabled because this deployment does not enable them.
+  Each enabled sidecar uses a cluster-specific Authentik service account from
+  a `User` claim and generated PostgreSQL credentials, rather than the shared
+  `NS/Database` username and password. The ApplicationSet injects the global
+  `psql-int.mylogin.space` hostname and the `psql-main`/`psql` provider configs;
+  PowerDNS connects to that primary endpoint for writes. Kea lease tables
+  continue to use the separate site-local `psql.<cluster>` PGPool endpoint.
+  The claim grants read/write access to the PowerDNS tables
+  `domains`, `records`, `comments`, `domainmetadata`, `cryptokeys`, `tsigkeys`,
+  and `supermasters` in `DlzcnePHKR`; it does not create a database. The User
+  Composition also grants database `CONNECT`, `CREATE`, and `TEMPORARY`, plus
+  schema-wide sequence privileges. The claim's credentials are mounted through
+  a namespace-local Secret; PowerDNS's PostgreSQL port remains site-managed in
+  Vault. The sidecar runs as UID/GID 953,
+  drops all capabilities, forbids privilege escalation, uses RuntimeDefault
+  seccomp and a read-only root filesystem, and has bounded CPU, memory, and
+  ephemeral-storage resources. Its memory-backed `/tmp` holds the control
+  socket. The pod ingress policy allows only the configured DHCP service ports,
+  leaving the PowerDNS listener private to Kea within the pod; see Kubernetes'
+  [NetworkPolicy documentation](https://kubernetes.io/docs/concepts/services-networking/network-policies/).
+  The policy restricts ingress only; egress remains shared with Kea in the pod
+  and is governed by the cluster's existing policy.
+  Removing the claim does not remove the PostgreSQL role and grants because
+  the User Composition orphans these provider resources; handle database
+  cleanup separately. The former ExternalSecret-managed `-ns` Secret is
+  replaced by a port-only `-pdns-port` Secret and the claim-owned `-pdns-creds`
+  Secret; both port and credential changes trigger the pod reloader.
 - [NetBox chart 8.3.51](https://github.com/netbox-community/netbox-chart/tree/netbox-8.3.51/charts/netbox)
-  deploys the [NetBox](https://netboxlabs.com/docs/netbox/en/stable/) web and
-  worker components using the site image and enabled plugins. The chart's
+  deploys the NetBox web and worker components using the site image and enabled
+  plugins. The running DC1 pod confirms NetBox Community
+  `v4.7.5-Docker-5.1.2` from its release metadata;
+  its settings are documented in the upstream
+  [v4.7.5 configuration reference](https://github.com/netbox-community/netbox/blob/v4.7.5/docs/configuration/system.md)
+  and [database configuration](https://github.com/netbox-community/netbox/blob/v4.7.5/docs/configuration/required-parameters.md).
+  The checked-in
+  [CoRE-Docker NetBox image README](https://slop.writemy.codes/CoRE/CoRE-Docker/src/branch/main/Images/NetBox/README.md)
+  and [image source](https://slop.writemy.codes/CoRE/CoRE-Docker/src/branch/main/Images/NetBox)
+  describe the custom image, while this ApplicationSet selects the mutable
+  `kristianfoss/netbox:core` tag. The current DC1 pod uses image digest
+  `sha256:b12127b5ecce5ec0e9ae8465514231faa7e538a32fca401f2708c7cf59d6e3c9`,
+  while the YVR Deployment currently has zero replicas. The checked-in
+  CoRE-Docker Dockerfile currently declares a `v4.6.8` base, so that source
+  snapshot does not describe the current image artifact. Keep the deployed
+  digest and release metadata as the live version evidence. The chart's
   bundled Valkey and PostgreSQL dependencies are disabled; chart 8.x renamed
   the former `redis.enabled` dependency control to `valkey.enabled` and the
   external Redis settings to `tasksDatabase` and `cachingDatabase`. The
-  ApplicationSet injects each target's site-local PGPool hostname into
-  `externalDatabase.host`
-  (`psql.<cluster>.<datacenter>.<region>.mylogin.space`) while preserving the
-  generated `netbox-core` credentials and database name. The base values
+  ApplicationSet configures the shared global primary
+  `psql-int.mylogin.space` as `externalDatabase.host`, so every cluster writes
+  to the same PostgreSQL primary. Each target has a dedicated PostgreSQL login
+  while all targets share the existing database. PostgreSQL also publishes
+  site-local replica services at
+  `psql-int-rep.<cluster>.<datacenter>.<region>.mylogin.space`.
+  NetBox container requests come from the target's `netbox.resources` values;
+  Home1/YVR requests `1Gi` and limits memory to `3Gi`.
+  The base values
   allocate Dragonfly databases `80` and `81` and select the generated password
   Secret, while the ApplicationSet injects each target's site-local TLS
   endpoint. The chart's application version does not select the running
   NetBox version because this deployment deliberately overrides the image and
   tag.
+  The chart configures `DATABASES.default` against global primary
+  `psql-int.mylogin.space` and a `replica` alias against each site's
+  `psql-int-rep.<cluster>.<datacenter>.<region>.mylogin.space` standby service.
+  The aliases use the same cluster-specific username and generated password;
+  the replica password is passed with a `secretKeyRef` from the existing
+  `netbox-db-creds` Secret. No credential is rendered into values or a
+  ConfigMap. PostgreSQL `target_session_attrs: read-only` makes the replica
+  connection reject a primary endpoint if that Service or DNS answer changes
+  during failover. See the PSQL chart's
+  [replica Service configuration](../../Databases/PSQL/templates/PSQL-Core/PSQL.yaml)
+  and PostgreSQL's
+  [connection selection settings](https://www.postgresql.org/docs/17/libpq-connect.html#LIBPQ-CONNECT-TARGET-SESSION-ATTRS).
+
+  The chart mounts a custom
+  [Django database router](files/netbox_database_router.py) and configures it
+  for web and worker processes. Reads use the local standby unless they access
+  authentication or session models, the request is mutating, a write has
+  occurred in the current request context, an ORM instance is pinned to a
+  database, or a transaction is already active. Writes and migrations use the
+  global primary; the router does not migrate the replica alias. Asynchronous
+  replication can still make a later read request briefly stale. The custom
+  middleware is inserted before the image's current
+  v4.7.5 middleware list, so review that list when updating the NetBox image.
+  This runtime module is mounted from a chart-owned ConfigMap because the
+  upstream chart supports YAML configuration and arbitrary ConfigMap volumes
+  but does not provide an SQL read/write router. Django documents the generic
+  [database router interface](https://docs.djangoproject.com/en/6.1/topics/db/multi-db/#database-routers);
+  NetBox documents its [`DATABASE_ROUTERS` setting](https://github.com/netbox-community/netbox/blob/v4.7.5/docs/configuration/system.md#database_routers).
 - [External Secrets Operator](https://external-secrets.io/latest/) reads
-  runtime credentials from `mainvault-core`; hub-mode `User` and `PushSecret`
-  resources create and publish service identities. Home1 is the IPAM hub and
-  creates the Kea identity and publishes its username and password. The
-  generated username is also the PostgreSQL role and database name. Kea reads
-  that database name and the site-managed host and port from Vault. The other
-  targets are spokes and consume the published identity.
+  runtime credentials from `mainvault-core`. Home1 owns the stable
+  `netbox-core` LDAP bind identity and publishes only that identity's username
+  and password. Kea's existing hub identity and site-managed database
+  connection remain unchanged.
+
+  Every target creates a namespaced
+  [`User` claim](templates/Netbox/NetboxDatabaseUser.yaml) whose username
+  includes its cluster name. Each claim connects through that site's
+  `psql-int` PGPool and uses the shared `psql-main` SQL and `psql` Terraform
+  ProviderConfigs to grant its role read/write access to all public tables in
+  the existing `3dzxoCeJ1f` database; it does not create a database. The
+  generated `netbox-db-creds` Secret is consumed directly by NetBox in that
+  namespace. This matches the per-site service-user approach used by Network
+  Nameservers while keeping NetBox data shared. The separate hub-only
+  [`netbox-core` identity claim](templates/Netbox/NetboxUser.yaml) remains for
+  LDAP binding and is not used for PostgreSQL connections. The
+  [User Composition](../../Operations/SSO/User/templates/User/UserComposition.yaml)
+  orphans PostgreSQL resources on claim deletion, so removing a per-site claim
+  does not prove its PostgreSQL role and grants were removed.
 - An [HTTPRoute](https://gateway-api.sigs.k8s.io/api-types/httproute/) attaches
   NetBox to the shared Gateway. An [Envoy Gateway SecurityPolicy](https://gateway.envoyproxy.io/latest/api/extension_types/)
   applies OIDC credentials synchronized from the secret store.
+- When enabled by the owning ApplicationSet, a second HTTPRoute serves
+  `ipam.gslb.mylogin.space` and a [K8GB `Gslb`](https://www.k8gb.io/latest/resource_ref/)
+  advertises the regular `ipam.mylogin.space` hostname using failover between
+  the `dc1` and `home1` geo tags. This uses the existing
+  `gslb.mylogin.space` zone configured by the [Network Global stack](../Global/README.md);
+  it does not create a separate DNS zone. The NetBox OIDC SecurityPolicy
+  applies to both routes.
 - External PostgreSQL stores NetBox and PowerDNS data. The cluster's shared
   authenticated, TLS-enabled `dragonfly-core` supplies two dedicated logical
   databases: DB `80` for NetBox tasks and DB `81` for NetBox caching; see
@@ -248,14 +345,17 @@ This renames and replaces the stateless NetBox web and worker workloads and
 their Service; PostgreSQL, Dragonfly, and S3 data remain external. The
 HTTPRoute and Terraform provider endpoint are updated to the new Service.
 
-No credential values belong in Git. `netbox-secret`, `netbox-creds`,
+No credential values belong in Git. `netbox-secret`, `netbox-auth-creds`,
+`netbox-db-creds`,
 `dragonfly-core-password`, the DNS secret, pull credentials, OIDC
 configuration, S3 credentials, and Terraform tokens are references to
-controller-managed Secrets. NetBox reads the same generated Dragonfly password
-as other local clients. A password rotation requires the NetBox web and worker
-pods to be restarted after the updated Secret is available. Keep an emergency
-access path independent of NetBox, Authentik, the public Gateway, Vault
-application credentials, and any single cluster.
+controller-managed Secrets. NetBox uses `netbox-db-creds` for both PostgreSQL
+aliases and the generated Dragonfly password for its tasks and cache. Rotating
+either credential requires restarting the NetBox web and worker pods after the
+updated Secret is available; the replica DB password is injected through an
+environment variable. Keep an emergency access path independent of NetBox,
+Authentik, the public Gateway, Vault application credentials, and any single
+cluster.
 
 ## Validation and operations
 
@@ -279,6 +379,10 @@ representative value, not a credential.
 After Argo CD reconciliation, verify all of the following:
 
 1. ExternalSecret and PushSecret conditions, without printing Secret data.
+   On every target, verify the site-specific NetBox database `User` claim,
+   composite, `netbox-db-creds` Secret, PostgreSQL role and table grants. On
+   Home1, also verify the `netbox-core` LDAP identity claim and its
+   `netbox-auth-creds` PushSecret.
 2. On Home2, capture one transaction by MAC and confirm the sequence
    `DISCOVER -> OFFER -> REQUEST -> ACK`; compare option 54 in the selected
    OFFER and REQUEST, and confirm the selected server's identifier matches the
@@ -294,13 +398,21 @@ After Argo CD reconciliation, verify all of the following:
    DHCP-DDNS process is stopped and succeeds when all enabled processes are
    active.
 5. Kea lease reads and writes through
-   `psql.core-prod.svc.<cluster-domain>`, plus PowerDNS PostgreSQL connectivity
-   and authoritative TCP/UDP answers. After a PowerDNS upgrade, also verify a
-   harmless RFC 2136 update and rollback of that test record, TSIG operations,
-   zone transfer/notification flow, and representative API consumers.
+   `psql.core-prod.svc.<cluster-domain>`, the PowerDNS `User` claim and scoped
+   PostgreSQL grants, plus authoritative TCP/UDP answers. Confirm Kea's local
+   RFC 2136 updates succeed, while external updates and access to the private
+   PowerDNS listener are blocked; confirm no DNS UPDATE or NOTIFY forwarding.
+   After a PowerDNS upgrade, verify TSIG operations, authorized zone transfers,
+   and representative API consumers.
 6. NetBox migrations, web and worker health, TLS-authenticated Dragonfly
-   connectivity to DBs `80` and `81`, PostgreSQL connectivity, OIDC login and
-   group entitlement, API access, plugins, and S3 operations.
+   connectivity to DBs `80` and `81`, and database routing. Using the generated
+   DB credential without printing it, confirm `psql-int.mylogin.space` returns
+   `pg_is_in_recovery() = false`; confirm the site's
+   `psql-int-rep.<cluster>...` endpoint returns `true` and
+   `transaction_read_only = on`. Exercise a read request, a write request, and
+   an immediate read after the write. Confirm each target's cluster-specific
+   PostgreSQL role can access the shared database, plus OIDC login and group
+   entitlement, API access, plugins, and S3 operations.
 7. Gateway attachment and policy status, then the user-facing NetBox workflow.
 8. Crossplane provider conditions and a harmless NetBox provider read.
 

@@ -1,0 +1,13 @@
+{{- if .Values.netbox.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: 'netbox-database-router'
+  namespace: {{ .Release.Namespace | squote }}
+  labels:
+    app.kubernetes.io/name: 'netbox'
+    app.kubernetes.io/component: 'database-router'
+data:
+  netbox_database_router.py: |-
+    {{ .Files.Get "files/netbox_database_router.py" | nindent 4 }}
+{{- end }}

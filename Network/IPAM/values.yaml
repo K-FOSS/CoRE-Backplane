@@ -548,6 +548,67 @@ netbox:
     existingSecretKey: 'password'
     connMaxAge: 3600
 
+  # Read-only Django alias. The ApplicationSet replaces host and username for
+  # each target with its local standby endpoint and cluster-specific DB role.
+  additionalDatabases:
+    replica:
+      engine: 'django.db.backends.postgresql'
+      database: '3dzxoCeJ1f'
+      username: 'netbox-k8s'
+      host: 'psql-int-rep.mylogin.space'
+      port: 5432
+      connMaxAge: 300
+      disableServerSideCursors: false
+      options:
+        sslmode: 'prefer'
+        target_session_attrs: 'read-only'
+
+  # The custom Django router module and its existingSecret-backed credential
+  # are consumed by both web and worker processes.
+  extraEnvs:
+    - name: 'PYTHONPATH'
+      value: '/run/config/extra/1'
+    - name: 'NETBOX_REPLICA_DB_PASSWORD'
+      valueFrom:
+        secretKeyRef:
+          name: 'netbox-db-creds'
+          key: 'password'
+  worker:
+    extraEnvs:
+      - name: 'PYTHONPATH'
+        value: '/run/config/extra/1'
+      - name: 'NETBOX_REPLICA_DB_PASSWORD'
+        valueFrom:
+          secretKeyRef:
+            name: 'netbox-db-creds'
+            key: 'password'
+
+  extraConfig:
+    - values:
+        DATABASE_ROUTERS:
+          - 'netbox_database_router.NetBoxDatabaseRouter'
+        MIDDLEWARE:
+          - 'netbox_database_router.ReadReplicaRoutingMiddleware'
+          - 'corsheaders.middleware.CorsMiddleware'
+          - 'django.contrib.sessions.middleware.SessionMiddleware'
+          - 'django.middleware.locale.LocaleMiddleware'
+          - 'netbox.middleware.CommonMiddleware'
+          - 'django.middleware.csrf.CsrfViewMiddleware'
+          - 'django.contrib.auth.middleware.AuthenticationMiddleware'
+          - 'django.contrib.messages.middleware.MessageMiddleware'
+          - 'django.middleware.clickjacking.XFrameOptionsMiddleware'
+          - 'django.middleware.security.SecurityMiddleware'
+          - 'django_htmx.middleware.HtmxMiddleware'
+          - 'netbox.middleware.RemoteUserMiddleware'
+          - 'netbox.middleware.CoreMiddleware'
+          - 'netbox.middleware.MaintenanceModeMiddleware'
+          - 'netbox.middleware.SocialAuthExceptionMiddleware'
+    - configMap:
+        name: 'netbox-database-router'
+        items:
+          - key: 'netbox_database_router.py'
+            path: 'netbox_database_router.py'
+
   postgresql:
     enabled: false
   valkey:
