@@ -73,11 +73,11 @@ data:
     })
     {{- end }}
     function postresolve(dq)
+      if dq.qtype ~= pdns.A then return false end
       {{- if .Values.dnsdist.cnameFilter.sourceNetworks }}
       local sourceSubnet = dq:getEDNSSubnet()
-      if sourceSubnet:empty() or not cnameFilterSourceNetworks:match(sourceSubnet:getNetwork()) then return false end
+      if not sourceSubnet or sourceSubnet:empty() or not cnameFilterSourceNetworks:match(sourceSubnet:getNetwork()) then return false end
       {{- end }}
-      if dq.qtype ~= pdns.A then return false end
       local records = dq:getRecords()
       local matched = false
       local k8gbAnswer = false
