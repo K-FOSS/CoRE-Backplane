@@ -64,10 +64,11 @@ Lovely through `LOVELY_HELM_MERGE`:
 | ApplicationSet source | Merged chart value | Usage in this chart |
 | --- | --- | --- |
 | Argo CD cluster name | `cluster.name` | Public hostname and Authentik names/client ID. |
-| `cluster.kubernetes.io/domain` | `cluster.domain` | Recorded as cluster metadata; not currently used by a template. |
+| `cluster.kubernetes.io/domain` | `cluster.domain` | Used to form Headlamp's in-cluster Alloy OTLP endpoint. |
 | `resolvemy.host/env` | `env` | Determines the destination namespace as well; not currently used by a chart template. |
 | `resolvemy.host/dc` | `datacenter` | Public hostname and Authentik naming/grouping. |
 | `topology.kubernetes.io/region` | `region` | Authentik provider name, application slug, and client ID. |
+| Cluster domain and environment | `headlamp.env` | Enables OTLP/gRPC tracing to `alloy-otlp.core-prod.svc.<cluster-domain>:4317`, with service name/version and 10% sampling. |
 
 The generator also reads `topology.kubernetes.io/zone`, but does not include it
 in `LOVELY_HELM_MERGE`; changing the zone label currently has no effect on this
@@ -115,20 +116,79 @@ creates the namespace in an earlier
 [sync wave](https://argo-cd.readthedocs.io/en/stable/user-guide/sync-waves/)
 before it applies resources assigned to that namespace.
 
-The chart also installs these Headlamp plugins:
+The KubeVirt plugin uses the Headlamp chart's plugin-manager sidecar. It pins
+the plugin-manager CLI to `0.1.1` and the [official Node image](https://github.com/nodejs/docker-node)
+to an image digest. The
+manager fetches the pinned Artifact Hub package version and verifies its
+archive checksum before installing it into the shared plugin volume.
+`config.watchPlugins` is enabled so the plugin is visible without recreating
+the Headlamp pod. The pod uses `fsGroup: 101` so the non-root plugin manager
+and Inspektor Gadget init container can write to that shared volume. The
+Inspektor Gadget plugin remains installed from its digest-pinned container
+image because its init container rewrites the `/externalproxy` endpoint used
+by the in-cluster plugin. See the pinned
+[Headlamp chart plugin-manager
+implementation](https://github.com/kubernetes-sigs/headlamp/blob/headlamp-helm-0.46.0/charts/headlamp/templates/deployment.yaml)
+and [plugin-manager documentation](https://headlamp.dev/docs/latest/installation/plugins/).
 
 - [Inspektor Gadget plugin README](https://github.com/inspektor-gadget/headlamp-plugin#readme)
-  ([repository](https://github.com/inspektor-gadget/headlamp-plugin)) — runs and
-  visualizes Inspektor Gadget tools from Headlamp.
-- [KubeVirt plugin README](https://github.com/buttahtoast/headlamp-plugins/blob/main/kubevirt/README.md)
-  ([repository](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt)) —
-  adds Headlamp views and controls for KubeVirt resources.
+  ([repository](https://github.com/inspektor-gadget/headlamp-plugin)) — pinned
+  to `0.1.0-beta.3`, the latest published version, with its published image
+  digest.
+- [KubeVirt plugin README](https://github.com/naval-group/headlamp-kubevirt#readme)
+  ([repository](https://github.com/naval-group/headlamp-kubevirt),
+  [v0.3.1 release](https://github.com/naval-group/headlamp-kubevirt/releases/tag/v0.3.1)) — updated
+  to `0.3.1` for VM lifecycle, console, and KubeVirt resource views. Its
+  release notes currently list support through KubeVirt v1.9; validate the
+  plugin against the deployed v1.10 API before relying on version-specific
+  feature-gate or VM actions.
+
+The public Headlamp HTTPRoute uses Envoy Gateway's v1.10
+[OIDC SecurityPolicy](https://gateway.envoyproxy.io/v1.10/tasks/security/oidc/)
+with the Authentik provider created by this chart. The policy forwards the raw
+ID token in `X-Forwarded-Id-Token`; Headlamp's
+[identity-aware proxy mode](https://headlamp.dev/docs/v0.46.0/installation/in-cluster/identity-aware-proxy/)
+uses that token for Kubernetes API requests and skips its login screen. The
+route overwrites `X-Forwarded-User` with a fixed authenticated label because
+Envoy Gateway does not expose OIDC identity claims as backend headers. This
+label identifies the proxy-authenticated UI session; Kubernetes RBAC still
+uses the individual forwarded ID token.
+
+The `headlamp-gateway-only` NetworkPolicy admits the Headlamp port only from
+Envoy proxy pods for the `main-gw` Gateway. This restriction is required because
+Headlamp trusts its proxy headers. The chart also publishes the same generated
+client secret under Envoy Gateway's required `client-secret` key in the
+existing `core-headlamp-oidc` connection Secret. Both this policy and the
+Headlamp chart consume that Secret without copying credential values into
+manifests.
+
+The HTTPRoute bounds regular requests to 60 seconds, with 30 seconds for each
+backend request. Its WebSocket rule disables those whole-response deadlines so
+interactive sessions can remain connected; the Headlamp Service declares
+`kubernetes.io/ws` for upstream upgrade handling. It does not configure
+automatic retries because Headlamp sends mutating Kubernetes operations and
+replaying a request after an ambiguous backend failure could duplicate an
+operation. See Envoy Gateway's [HTTP timeout](https://gateway.envoyproxy.io/v1.10/tasks/traffic/http-timeouts/)
+and [retry](https://gateway.envoyproxy.io/v1.10/tasks/traffic/retry/)
+documentation.
 
 Headlamp pods carry the `logs: 'loki-myloginspace'` label so node-local Alloy
 collects their container logs through the shared [Loki pipeline](../../Observability/Logs/README.md).
 The [Collectors stack](../../Observability/Collectors/README.md) enables pod-log
 collection only on its configured clusters; the label does not enable the
 collector or grant it access to other workloads.
+
+### Headlamp tracing
+
+The ApplicationSet enables Headlamp backend tracing with
+`HEADLAMP_CONFIG_TRACING_ENABLED`, names the service `headlamp`, sets version
+`v0.46.0`, and samples 10% of traces. Headlamp sends OTLP/gRPC to the cluster's
+`alloy-otlp` Service; central Alloy adds Kubernetes resource attributes and the
+`core` tenant header before exporting to Tempo. The endpoint uses the cluster
+domain supplied by the ApplicationSet. See Headlamp's
+[telemetry guide](https://headlamp.dev/docs/latest/development/telemetry/),
+[pinned v0.46.0 telemetry configuration](https://github.com/kubernetes-sigs/headlamp/blob/v0.46.0/backend/pkg/config/config.go),
+and the [Collectors trace pipeline](../../Observability/Collectors/README.md).
 
 ## Automated Authentik application
 
@@ -237,6 +297,8 @@ the public Headlamp URL.
 | --- | --- |
 | `templates/HeadlampAuthentik.yaml` | Creates the Terraform Workspace, Authentik provider/application/entitlements, and OIDC connection Secret outputs. |
 | `templates/HTTPRoute.yaml` | Routes the public Headlamp hostname to the Headlamp Service through the configured Gateway listener. |
+| `templates/SecurityPolicy.yaml` | Requires Authentik OIDC for the Headlamp HTTPRoute and forwards its ID token. |
+| `templates/NetworkPolicy.yaml` | Restricts Headlamp ingress to Envoy proxy pods so proxy identity headers cannot be spoofed from other pods. |
 | `templates/TempRole.yaml` | Grants the Kubernetes group `Server Admins` the `cluster-admin` ClusterRole. |
 | Headlamp dependency | Deploys Headlamp and consumes `core-headlamp-oidc`; also installs the configured UI plugins. |
 | Gadget dependency | Deploys the Inspektor Gadget node daemon used by its Headlamp plugin; Kustomize places its namespaced resources in `gadget`. |
