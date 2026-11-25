@@ -5,9 +5,16 @@ metadata:
   labels:
     app.kubernetes.io/instance: test-ldap
     app.kubernetes.io/name: myloginspace-ldap
+    {{- with .Values.authentik.ldap.service.externalDNSHostname }}
+    wan-mode: 'public'
+    {{- end }}
 
   annotations:
     consul.hashicorp.com/service-name: ldap
+    {{- with .Values.authentik.ldap.service.externalDNSHostname }}
+    external-dns.kubernetes.io/hostname: {{ . | squote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ . | squote }}
+    {{- end }}
 
   name: myloginspace-ldap
 

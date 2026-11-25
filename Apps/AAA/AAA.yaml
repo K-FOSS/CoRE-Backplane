@@ -28,6 +28,8 @@ spec:
                       ldap:
                         enabled: true
                         anycastIP: ''
+                        service:
+                          externalDNSHostname: ''
                         clusterMesh:
                           enabled: false
                         k8gb:
@@ -63,6 +65,8 @@ spec:
                       ldap:
                         enabled: true
                         anycastIP: '10.1.1.36'
+                        service:
+                          externalDNSHostname: ''
                         clusterMesh:
                           enabled: true
                         k8gb:
@@ -97,6 +101,8 @@ spec:
                       ldap:
                         enabled: true
                         anycastIP: '10.1.1.36'
+                        service:
+                          externalDNSHostname: 'ldap.core-home1-talos-prod.home1.yvr.mylogin.space'
                         clusterMesh:
                           enabled: true
                         k8gb:
@@ -203,6 +209,8 @@ spec:
                   ldap:
                     enabled: {{ .values.authentik.ldap.enabled }}
                     avoidNodeName: ''
+                    service:
+                      externalDNSHostname: '{{ .values.authentik.ldap.service.externalDNSHostname }}'
                     clusterMesh:
                       enabled: {{ .values.authentik.ldap.clusterMesh.enabled }}
                     k8gb:
