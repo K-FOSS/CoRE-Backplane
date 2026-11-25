@@ -22,11 +22,21 @@ The static k8gb zones are `gslb.mylogin.space` and `gslb.mylogin.social`,
 under the `mylogin.space` and `mylogin.social` parent zones respectively. Both
 zones are defined in chart defaults and explicitly injected by the owning
 ApplicationSet so the Lovely merge retains the complete nested k8gb
-configuration. K8GB generates a `ZoneDelegation` for each static zone; no
-application `Gslb` resources are created yet, and the embedded ExternalDNS
-remains disabled.
+configuration. K8GB generates a `ZoneDelegation` for each static zone. This
+foundation chart does not create application `Gslb` resources; consuming
+Applications own those resources. The live YVR cluster currently has active
+application `Gslb` resources using `roundRobin` and `failover`; none currently
+uses `GeoIP`. The embedded ExternalDNS remains disabled.
 K8GB CoreDNS remains an internal `ClusterIP` backend; the separate Network/DNS
 stack routes configured zones to it when dnsdist is enabled.
+
+K8GB's per-cluster geo tags identify participating clusters, but do not by
+themselves select a geographically close cluster. The current application
+strategies return both endpoints with `roundRobin` or pin to a primary with
+`failover`. K8GB's [`GeoIP` strategy](https://www.k8gb.io/v1.0.0/strategy/)
+requires a specially prepared GeoIP database and a resolver that supplies ECS.
+This is distinct from site-local IP anycast, where network routing selects the
+site that receives a shared service address.
 
 The ApplicationSet sets `k8gb.clusterExposedIPs` to the address served by the
 site's dnsdist front door: `10.0.0.40` for home1/YVR and `66.165.222.105` for
@@ -109,7 +119,8 @@ or parent-zone delegation in this initial configuration.
 
 After reconciliation, verify both child Applications, K8GB and CoreDNS
 readiness, CRD establishment, the site geotags, the generated
-`ZoneDelegation` status, and that no application `Gslb` resources exist.
+`ZoneDelegation` status, and the health and strategy of each consuming
+Application's `Gslb` resources.
 Adding `gslb.mylogin.social` to the static configuration does not guarantee
 working public delegation or a globally served application hostname. Once DNS
 prerequisites are met,
