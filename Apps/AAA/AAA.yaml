@@ -36,6 +36,7 @@ spec:
                           type: 'ClusterIP'
                           loadBalancerClass: ''
                           serviceGroup: ''
+                          trafficDistribution: 'PreferSameNode'
                       radius:
                         enabled: true
                         anycastIP: ''
@@ -48,6 +49,7 @@ spec:
                           type: 'ClusterIP'
                           loadBalancerClass: ''
                           serviceGroup: ''
+                          trafficDistribution: 'PreferSameNode'
 
                 - name: core-dc1-talos-prod
                   values:
@@ -69,6 +71,7 @@ spec:
                           type: 'LoadBalancer'
                           loadBalancerClass: ''
                           serviceGroup: 'anycast'
+                          trafficDistribution: 'PreferSameNode'
                       radius:
                         enabled: true
                         anycastIP: '10.1.1.18'
@@ -81,6 +84,7 @@ spec:
                           type: 'LoadBalancer'
                           loadBalancerClass: ''
                           serviceGroup: 'anycast'
+                          trafficDistribution: 'PreferSameNode'
 
                 - name: core-home1-talos-prod
                   values:
@@ -101,6 +105,7 @@ spec:
                           type: 'LoadBalancer'
                           loadBalancerClass: ''
                           serviceGroup: 'core-anycast'
+                          trafficDistribution: 'PreferSameNode'
                       radius:
                         enabled: true
                         anycastIP: '10.1.1.18'
@@ -113,6 +118,7 @@ spec:
                           type: 'LoadBalancer'
                           loadBalancerClass: 'purelb.io/purelb'
                           serviceGroup: 'core-anycast'
+                          trafficDistribution: 'PreferSameNode'
 
           - clusters:
               selector:
@@ -207,6 +213,7 @@ spec:
                     globalService:
                       type: '{{ .values.authentik.ldap.globalService.type }}'
                       loadBalancerClass: '{{ .values.authentik.ldap.globalService.loadBalancerClass }}'
+                      trafficDistribution: '{{ .values.authentik.ldap.globalService.trafficDistribution }}'
                       {{ if eq .values.authentik.ldap.globalService.type "LoadBalancer" }}
                       annotations:
                         purelb.io/service-group: '{{ .values.authentik.ldap.globalService.serviceGroup }}'
@@ -223,6 +230,7 @@ spec:
                     service:
                       type: '{{ .values.authentik.radius.service.type }}'
                       loadBalancerClass: '{{ .values.authentik.radius.service.loadBalancerClass }}'
+                      trafficDistribution: '{{ .values.authentik.radius.service.trafficDistribution }}'
                       {{ if eq .values.authentik.radius.service.type "LoadBalancer" }}
                       annotations:
                         purelb.io/service-group: '{{ .values.authentik.radius.service.serviceGroup }}'
