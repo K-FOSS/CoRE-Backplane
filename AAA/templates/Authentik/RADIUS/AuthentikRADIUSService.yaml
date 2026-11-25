@@ -28,6 +28,9 @@ metadata:
 
 spec:
   type: {{ .Values.authentik.radius.service.type | squote }}
+  {{- with .Values.authentik.radius.service.trafficDistribution }}
+  trafficDistribution: {{ . | squote }}
+  {{- end }}
   {{- if eq .Values.authentik.radius.service.type "LoadBalancer" }}
   externalIPs: {{ .Values.authentik.radius.service.externalIPs | toJson }}
   {{- with .Values.authentik.radius.service.loadBalancerClass }}

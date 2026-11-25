@@ -22,6 +22,9 @@ metadata:
 
 spec:
   type: {{ .Values.authentik.ldap.globalService.type | squote }}
+  {{- with .Values.authentik.ldap.globalService.trafficDistribution }}
+  trafficDistribution: {{ . | squote }}
+  {{- end }}
   {{- if eq .Values.authentik.ldap.globalService.type "LoadBalancer" }}
   {{- with .Values.authentik.ldap.globalService.loadBalancerClass }}
   loadBalancerClass: {{ . | squote }}
