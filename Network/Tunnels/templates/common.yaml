@@ -55,6 +55,15 @@ controllers:
     {{- end }}
 
     pod:
+      {{- if $tunneler.sriovDra }}
+      resourceClaims:
+        {{- range $netID, $netInterface := $tunneler.interfaces }}
+        {{- if eq $netInterface.type "sriov" }}
+        - name: 'sriov-{{ $netID }}'
+          resourceClaimTemplateName: 'net-{{ $.Release.Name }}-{{ $tunneler.name }}-{{ $netID }}'
+        {{- end }}
+        {{- end }}
+      {{- end }}
       dnsPolicy: None
 
       automountServiceAccountToken: false
@@ -349,11 +358,20 @@ controllers:
           tag: {{ dig "frr" "image" "tag" "10.6.1" $tunneler | quote }}
           pullPolicy: {{ dig "frr" "image" "pullPolicy" "IfNotPresent" $tunneler }}
 
-        {{- if $sriovUsed }}
+        {{- if and $sriovUsed (not $tunneler.sriovDra) }}
         resources:
           limits:
             {{- range $device, $count := $sriovResources }}
             {{ $device }}: {{ $count | quote }}
+            {{- end }}
+        {{- end }}
+        {{- if $tunneler.sriovDra }}
+        resources:
+          claims:
+            {{- range $netID, $netInterface := $tunneler.interfaces }}
+            {{- if eq $netInterface.type "sriov" }}
+            - name: 'sriov-{{ $netID }}'
+            {{- end }}
             {{- end }}
         {{- end }}
 
@@ -978,6 +996,23 @@ service:
 
 {{- range $tunIndex, $tunneler := .Values.tunnelers }}
 {{- range $netID, $netInterface := $tunneler.interfaces }}
+{{- if and $tunneler.sriovDra (eq $netInterface.type "sriov") }}
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: 'net-{{ $.Release.Name }}-{{ $tunneler.name }}-{{ $netID }}'
+spec:
+  spec:
+    devices:
+      requests:
+        - name: 'vf'
+          exactly:
+            deviceClassName: 'sriovnetwork.k8snetworkplumbingwg.io'
+            selectors:
+              - cel:
+                  expression: {{ printf "device.attributes[\"k8s.cni.cncf.io\"].resourceName == %q" $netInterface.sriov.device | quote }}
+{{- end }}
 ---
 apiVersion: k8s.cni.cncf.io/v1
 kind: NetworkAttachmentDefinition
