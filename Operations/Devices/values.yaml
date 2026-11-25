@@ -1,4 +1,7 @@
 devices:
+  sriovDra:
+    enabled: false
+    pools: []
   nvidia:
     enabled: true
   hami:
@@ -11,6 +14,17 @@ devices:
     enabled: true
   kepler:
     enabled: true
+
+sriov-dra:
+  fullnameOverride: 'sriov-dra'
+  image:
+    repository: 'ghcr.io/k8snetworkplumbingwg/dra-driver-sriov'
+    tag: '5125c9d@sha256:719cc5763341243558194feafb2cfe755279dc8c930ece981bc6e4af5f8dc7ca'
+    pullPolicy: 'IfNotPresent'
+  kubeletPlugin:
+    configurationMode: 'MULTUS'
+    sriovCniInit:
+      enabled: false
 
 nvidia-device-plugin:
   affinity:

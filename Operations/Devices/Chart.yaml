@@ -5,6 +5,12 @@ version: 1.0.0
 name: ops-devices
 
 dependencies:
+  - name: dra-driver-sriov-chart
+    alias: sriov-dra
+    version: 0.0.0-5125c9d
+    repository: oci://ghcr.io/k8snetworkplumbingwg
+    condition: devices.sriovDra.enabled
+
   - name: nvidia-device-plugin
     version: '>= 0.18.2'
     repository: https://nvidia.github.io/k8s-device-plugin

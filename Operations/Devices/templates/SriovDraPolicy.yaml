@@ -1,0 +1,33 @@
+{{- if .Values.devices.sriovDra.enabled }}
+{{- range .Values.devices.sriovDra.pools }}
+{{- $name := required "devices.sriovDra.pools[].name is required" .name }}
+{{- $resourceName := required (printf "SR-IOV DRA pool %s requires resourceName" $name) .resourceName }}
+{{- $nodeSelector := required (printf "SR-IOV DRA pool %s requires nodeSelector" $name) .nodeSelector }}
+{{- $filters := required (printf "SR-IOV DRA pool %s requires resourceFilters" $name) .resourceFilters }}
+---
+apiVersion: sriovnetwork.k8snetworkplumbingwg.io/v1alpha1
+kind: DeviceAttributes
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    core.mylogin.space/sriov-dra-pool: {{ $name | quote }}
+spec:
+  attributes:
+    k8s.cni.cncf.io/resourceName:
+      string: {{ $resourceName | quote }}
+---
+apiVersion: sriovnetwork.k8snetworkplumbingwg.io/v1alpha1
+kind: SriovResourcePolicy
+metadata:
+  name: {{ $name | quote }}
+spec:
+  nodeSelector:
+    {{- toYaml $nodeSelector | nindent 4 }}
+  configs:
+    - deviceAttributesSelector:
+        matchLabels:
+          core.mylogin.space/sriov-dra-pool: {{ $name | quote }}
+      resourceFilters:
+        {{- toYaml $filters | nindent 8 }}
+{{- end }}
+{{- end }}

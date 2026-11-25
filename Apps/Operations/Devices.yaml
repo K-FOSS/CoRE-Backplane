@@ -27,6 +27,7 @@ spec:
                       kepler: true
                       nvidia: false
                       nodeFeatureDiscovery: true
+                      sriovDra: true
 
                 - name: core-home1-talos-prod
                   values:
@@ -38,6 +39,7 @@ spec:
                       kepler: true
                       nvidia: true
                       nodeFeatureDiscovery: true
+                      sriovDra: false
 
                 - name: dc1-k3s-node1
                   values:
@@ -49,6 +51,7 @@ spec:
                       kepler: true
                       nvidia: false
                       nodeFeatureDiscovery: true
+                      sriovDra: false
           - clusters:
               selector:
                 matchLabels:
@@ -116,6 +119,8 @@ spec:
                     enabled: {{ .values.devices.nvidia }}
                   nodeFeatureDiscovery:
                     enabled: {{ .values.devices.nodeFeatureDiscovery }}
+                  sriovDra:
+                    enabled: {{ .values.devices.sriovDra }}
 
             - name: LOVELY_KUSTOMIZE_MERGE
               value: |-
