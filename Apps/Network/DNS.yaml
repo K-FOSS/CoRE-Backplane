@@ -34,6 +34,8 @@ spec:
                       enabled: true
                       target: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
                       address: '10.0.0.19'
+                      sourceNetworks:
+                        - '10.0.0.0/24'
                     dnsdistHostOverrides:
                       - hostname: '<path:CORE0_SITE1/data/Network/Public/YVR#PublicHostname>'
                         sourceNetworks:
@@ -61,6 +63,7 @@ spec:
                       enabled: false
                       target: 'unused.invalid.'
                       address: '10.0.0.19'
+                      sourceNetworks: []
                     dnsdistHostOverrides: []
           - clusters:
               selector:
@@ -176,6 +179,10 @@ spec:
                     enabled: {{ .values.dnsdistCnameFilter.enabled | default false }}
                     target: '{{ .values.dnsdistCnameFilter.target | default "unused.invalid." }}'
                     address: '{{ .values.dnsdistCnameFilter.address | default "10.0.0.19" }}'
+                    sourceNetworks:
+                      {{ range .values.dnsdistCnameFilter.sourceNetworks }}
+                      - '{{ . }}'
+                      {{ end }}
                   authoritative:
                     healthCheckName: 'mylogin.social.'
                     zones:
@@ -200,6 +207,12 @@ spec:
                   hostOverrides:
                     {{ range .values.dnsdistHostOverrides }}
                     - hostname: '{{ .hostname }}'
+                      {{ if .sourceNetworks }}
+                      sourceNetworks:
+                        {{ range .sourceNetworks }}
+                        - '{{ . }}'
+                        {{ end }}
+                      {{ end }}
                       addresses:
                         {{ range .addresses }}
                         - '{{ . }}'

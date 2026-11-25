@@ -144,8 +144,15 @@ terminal records, then returns one A record for the original queried name at
 `dnsdist.cnameFilter.address` (`10.0.0.19`). This covers aliases whose names
 are not known to the ApplicationSet. The Recursor hook does not perform its own
 hostname lookup; it relies on the K8GB CNAME chain to scope GSLB rewrites.
-Other query types and unrelated CNAMEs are returned unchanged. The
-`dnsdistHostOverrides` entry handles direct queries for the Vault-backed
+Other query types and unrelated CNAMEs are returned unchanged. The rewrite
+also checks `dnsdist.cnameFilter.sourceNetworks`. dnsdist marks recursive
+queries with the actual client IP in ECS and replaces any client-supplied ECS
+value on recursive queries. The Recursor Lua hook matches that address against
+the ApplicationSet-provided CIDRs. Recursor's outgoing EDNS subnet allow list
+remains empty, so the client IP is not sent to authoritative upstream servers.
+YVR configures only `10.0.0.0/24`. See the [dnsdist ECS actions](https://www.dnsdist.org/reference/actions.html)
+and [Recursor incoming ECS setting](https://docs.powerdns.com/recursor/settings.html#incoming-use-incoming-edns-subnet).
+The `dnsdistHostOverrides` entry handles direct queries for the Vault-backed
 YVR public hostname. A host override can optionally include `sourceNetworks`;
 dnsdist combines the hostname and source CIDR checks and returns its configured
 addresses only to matching clients. Multiple entries for one hostname can
@@ -153,9 +160,9 @@ return different addresses for different source ranges. Without that field,
 the hostname override applies to every source. This uses dnsdist's
 [combined rules](https://www.dnsdist.org/reference/selectors.html#andrule)
 and [`SpoofAction`](https://www.dnsdist.org/reference/actions.html#spoofaction).
-The YVR override is scoped to private source ranges. There is no longer a
-static override for
-`idp.mylogin.space.`; it follows normal DNS resolution.
+The YVR host override and CNAME rewrite are scoped to `10.0.0.0/24`. There is
+no longer a static override for `idp.mylogin.space.`; it follows normal DNS
+resolution.
 
 DNSSEC signatures for rewritten responses are removed with the original chain,
 so those synthesized A answers are unsigned. YXL/DC1 runs the same Recursor

@@ -17,6 +17,9 @@ data:
         - '{{ .Values.dnsdist.recursor.listenAddress }}:{{ .Values.dnsdist.recursor.port }}'
       allow_from:
 {{ toYaml .Values.dnsdist.recursor.allowFrom | nindent 8 }}
+      {{- if .Values.dnsdist.cnameFilter.sourceNetworks }}
+      use_incoming_edns_subnet: true
+      {{- end }}
       max_tcp_clients: {{ .Values.dnsdist.recursor.maxTcpClients }}
       max_tcp_per_client: {{ .Values.dnsdist.recursor.maxTcpPerClient }}
       max_tcp_queries_per_connection: {{ .Values.dnsdist.recursor.maxTcpQueriesPerConnection }}
@@ -55,13 +58,25 @@ data:
         - 'fc00::/7'
     outgoing:
       tcp_fast_open_connect: {{ .Values.dnsdist.recursor.outgoingTcpFastOpenConnect }}
+      {{- if .Values.dnsdist.cnameFilter.sourceNetworks }}
+      edns_subnet_allow_list: []
+      {{- end }}
       dont_query:
 {{ toYaml .Values.dnsdist.recursor.dontQuery | nindent 8 }}
     {{- if .Values.dnsdist.cnameFilter.enabled }}
   cname-filter.lua: |
     local cnameFilter = newDN({{ .Values.dnsdist.cnameFilter.target | quote }})
     local cnameFilterAddress = {{ .Values.dnsdist.cnameFilter.address | quote }}
+    {{- if .Values.dnsdist.cnameFilter.sourceNetworks }}
+    local cnameFilterSourceNetworks = newNMG({
+    {{- range $index, $network := .Values.dnsdist.cnameFilter.sourceNetworks }}{{ if $index }}, {{ end }}{{ $network | quote }}{{ end }}
+    })
+    {{- end }}
     function postresolve(dq)
+      {{- if .Values.dnsdist.cnameFilter.sourceNetworks }}
+      local sourceSubnet = dq:getEDNSSubnet()
+      if sourceSubnet:empty() or not cnameFilterSourceNetworks:match(sourceSubnet:getNetwork()) then return false end
+      {{- end }}
       if dq.qtype ~= pdns.A then return false end
       local records = dq:getRecords()
       local matched = false
@@ -215,6 +230,9 @@ data:
             address=backendAddress,
             name=name,
             pool='recursive',
+            {{- if .Values.dnsdist.cnameFilter.sourceNetworks }}
+            useClientSubnet=true,
+            {{- end }}
             checkType='SOA',
             checkName='.',
             mustResolve=true
@@ -278,6 +296,16 @@ data:
         newRuleAction(QNameSuffixRule({
     {{- range $index, $zone := .Values.dnsdist.authoritative.zones }}{{ if $index }}, {{ end }}'{{ $zone }}'{{ end }}
         }), PoolAction('authoritative')),
+    {{- end }}
+    {{- if and .Values.dnsdist.recursive.enabled .Values.dnsdist.cnameFilter.sourceNetworks }}
+        -- Replace client-supplied ECS with the actual client address for Recursor.
+        -- Recursor's outgoing allow list is empty, so the address stays internal.
+        newRuleAction(NetmaskGroupRule({
+    {{- range $index, $network := .Values.dnsdist.recursive.allowedNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
+        }), SetECSOverrideAction(true)),
+        newRuleAction(NetmaskGroupRule({
+    {{- range $index, $network := .Values.dnsdist.recursive.allowedNetworks }}{{ if $index }}, {{ end }}'{{ $network }}'{{ end }}
+        }), SetECSPrefixLengthAction(32, 128)),
     {{- end }}
     {{- if .Values.dnsdist.recursive.enabled }}
         newRuleAction(NetmaskGroupRule({
