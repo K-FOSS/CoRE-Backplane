@@ -139,6 +139,7 @@ spec:
                 region: '{{ index .metadata.labels "topology.kubernetes.io/region" }}'
                 zone: '{{ index .metadata.labels "topology.kubernetes.io/zone" }}'
                 datacenter: '{{ index .metadata.labels "resolvemy.host/dc" }}'
+                domainRoot: 'mylogin.space'
 
   syncPolicy:
     preserveResourcesOnDeletion: true
@@ -176,7 +177,7 @@ spec:
 
                 region: {{ .values.region }}
 
-                domainName: 'mylogin.space'
+                domainName: '{{ .values.domainRoot }}'
 
                 hub: {{ .values.hub }}
 
@@ -222,6 +223,9 @@ spec:
                       type: '{{ .values.authentik.ldap.globalService.type }}'
                       loadBalancerClass: '{{ .values.authentik.ldap.globalService.loadBalancerClass }}'
                       trafficDistribution: '{{ .values.authentik.ldap.globalService.trafficDistribution }}'
+                      {{ if .values.authentik.ldap.clusterMesh.enabled }}
+                      externalDNSHostname: 'ldap-{{ .values.datacenter }}.{{ .values.domainRoot }}'
+                      {{ end }}
                       {{ if eq .values.authentik.ldap.globalService.type "LoadBalancer" }}
                       annotations:
                         purelb.io/service-group: '{{ .values.authentik.ldap.globalService.serviceGroup }}'

@@ -6,6 +6,9 @@ metadata:
     app.kubernetes.io/instance: test-ldap-global
     app.kubernetes.io/name: myloginspace-ldap
     app.kubernetes.io/component: 'global'
+    {{- with .Values.authentik.ldap.globalService.externalDNSHostname }}
+    wan-mode: 'public'
+    {{- end }}
     {{- with .Values.authentik.ldap.globalService.labels }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -14,6 +17,10 @@ metadata:
     service.cilium.io/affinity: 'local'
     service.cilium.io/global: 'true'
     service.cilium.io/global-sync-endpoint-slices: 'true'
+    {{- with .Values.authentik.ldap.globalService.externalDNSHostname }}
+    external-dns.kubernetes.io/hostname: {{ . | squote }}
+    external-dns.alpha.kubernetes.io/hostname: {{ . | squote }}
+    {{- end }}
     {{- with .Values.authentik.ldap.globalService.annotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
