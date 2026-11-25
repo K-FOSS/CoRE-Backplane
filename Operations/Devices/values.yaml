@@ -1,4 +1,6 @@
 devices:
+  cpuDra:
+    enabled: false
   sriovDra:
     enabled: false
     pools: []
@@ -14,6 +16,19 @@ devices:
     enabled: true
   kepler:
     enabled: true
+
+cpu-dra:
+  fullnameOverride: 'cpu-dra'
+  image:
+    repository: 'registry.k8s.io/dra-driver-cpu/dra-driver-cpu'
+    tag: 'v0.3.1'
+    pullPolicy: 'IfNotPresent'
+  driverConfig:
+    apiVersion: 'v1alpha1'
+    cpuDeviceMode: 'grouped'
+    groupBy: 'numanode'
+  nodeSelector:
+    kubernetes.io/os: 'linux'
 
 sriov-dra:
   fullnameOverride: 'sriov-dra'

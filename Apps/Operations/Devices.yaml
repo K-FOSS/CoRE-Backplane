@@ -5,7 +5,7 @@ metadata:
   namespace: argocd
 
   annotations:
-    argocd.argoproj.io/sync-wave: '20'
+    argocd.argoproj.io/sync-wave: '5'
 
 spec:
   goTemplate: true
@@ -27,6 +27,7 @@ spec:
                       kepler: true
                       nvidia: false
                       nodeFeatureDiscovery: true
+                      cpuDra: true
                       sriovDra: true
 
                 - name: core-home1-talos-prod
@@ -39,6 +40,7 @@ spec:
                       kepler: true
                       nvidia: true
                       nodeFeatureDiscovery: true
+                      cpuDra: false
                       sriovDra: false
 
                 - name: dc1-k3s-node1
@@ -51,6 +53,7 @@ spec:
                       kepler: true
                       nvidia: false
                       nodeFeatureDiscovery: true
+                      cpuDra: false
                       sriovDra: false
           - clusters:
               selector:
@@ -107,6 +110,8 @@ spec:
                   domain: {{ .values.clusterDomain }}
 
                 devices:
+                  cpuDra:
+                    enabled: {{ .values.devices.cpuDra }}
                   amd:
                     enabled: {{ .values.devices.amd }}
                   hami:
