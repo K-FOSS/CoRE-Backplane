@@ -32,7 +32,7 @@ Changes to [`Collectors.yaml`](Collectors.yaml) must be reviewed with the
 Collector values and templates, and the downstream Metrics, Logs, Traces,
 Exporters, and Dashboards contracts.
 The current internal signal agents send to the main `*-collectors-alloy`
-gateway. The `alloy-otlp` Service remains the ingress for external OTLP clients
+gateway. The `core-collectors-alloy-otlp` Service remains the ingress for external OTLP clients
 and forwards to that main gateway; do not add it back as an unnecessary hop for
 internal Alloy agents.
 
