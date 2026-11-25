@@ -9,19 +9,11 @@ spec:
   groups:
     - 'LDAPService'
 
-  username: {{ required "netbox.externalDatabase.username is required" .Values.netbox.externalDatabase.username | squote }}
+  username: 'netbox-core'
 
   psql:
-    enabled: true
-    hostname: {{ required "netbox.externalDatabase.host is required" .Values.netbox.externalDatabase.host | squote }}
-    database: {{ required "netbox.externalDatabase.database is required" .Values.netbox.externalDatabase.database | squote }}
-    createUserDatabase: false
-    databases:
-      - {{ .Values.netbox.externalDatabase.database | squote }}
-    crossplane:
-      crossplaneProvider: 'psql-main'
-      terraformProvider: 'psql'
+    enabled: false
 
   writeConnectionSecretToRef:
-    name: 'netbox-creds'
+    name: 'netbox-auth-creds'
 {{- end }}

@@ -1,0 +1,28 @@
+{{ if .Values.netbox.enabled }}
+apiVersion: mylogin.space/v1alpha1
+kind: User
+metadata:
+  name: '{{ .Release.Name }}-netbox-database'
+
+spec:
+  name: 'NetBox database {{ .Values.cluster.name }}'
+  username: {{ printf "netbox-%s" .Values.cluster.name | squote }}
+  groups:
+    - 'LDAPService'
+
+  psql:
+    enabled: true
+    createUserDatabase: false
+    database: {{ required "netbox.externalDatabase.database is required" .Values.netbox.externalDatabase.database | squote }}
+    hostname: {{ required "psql.hostname must be injected by the owning ApplicationSet" .Values.psql.hostname | squote }}
+    uri: 'postgresql://'
+    readOnly: false
+    databases:
+      - {{ .Values.netbox.externalDatabase.database | squote }}
+    crossplane:
+      crossplaneProvider: {{ required "psql.crossplaneProvider must be injected by the owning ApplicationSet" .Values.psql.crossplaneProvider | squote }}
+      terraformProvider: {{ required "psql.terraformProvider must be injected by the owning ApplicationSet" .Values.psql.terraformProvider | squote }}
+
+  writeConnectionSecretToRef:
+    name: 'netbox-db-creds'
+{{- end }}

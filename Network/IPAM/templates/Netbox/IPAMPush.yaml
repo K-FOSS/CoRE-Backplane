@@ -12,17 +12,11 @@ spec:
 
   selector:
     secret:
-      name: netbox-creds
+      name: netbox-auth-creds
 
-  # The User claim emits the database and credentials. PostgreSQL hostname and
-  # port are site-managed properties in Vault, not keys in this Secret.
+  # This publishes the stable NetBox LDAP bind identity. Database credentials
+  # are now generated and consumed locally by each target's User claim.
   data:
-    - match:
-        secretKey: database
-        remoteRef:
-          remoteKey: IPAM/Database
-          property: Database
-
     - match:
         secretKey: username
         remoteRef:

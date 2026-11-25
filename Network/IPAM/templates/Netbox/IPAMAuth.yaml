@@ -2,7 +2,7 @@
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
 metadata:
-  name: {{ .Release.Name }}
+  name: '{{ .Release.Name }}'
 
   labels:
     {{ include "ipam.labels" . | nindent 4 }}
@@ -11,7 +11,7 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      name: {{ .Release.Name }}
+      name: '{{ .Release.Name }}'
     {{ if .Values.k8gb.enabled }}
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
@@ -21,33 +21,33 @@ spec:
   jwt:
     providers:
       - name: authentik
-        issuer: https://idp.mylogin.space/application/o/Netbox/
+        issuer: 'https://idp.mylogin.space/application/o/Netbox/'
         remoteJWKS:
-          uri: https://idp.mylogin.space/application/o/Netbox/jwks/
-          cacheDuration: 3600s
+          uri: 'https://idp.mylogin.space/application/o/Netbox/jwks/'
+          cacheDuration: '3600s'
         claimToHeaders:
-          - header: x-username
-            claim: preferred_username
+          - header: 'x-username'
+            claim: 'preferred_username'
 
-          - header: x-name
-            claim: name
+          - header: 'x-name'
+            claim: 'name'
 
-          - header: x-lastname
-            claim: last_name
+          - header: 'x-lastname'
+            claim: 'last_name'
 
-          - header: x-email
-            claim: email
+          - header: 'x-email'
+            claim: 'email'
 
-          - header: x-groups
-            claim: groups
+          - header: 'x-groups'
+            claim: 'groups'
         extractFrom:
           headers:
-            - name: Authorization
+            - name: 'Authorization'
               valuePrefix: 'Bearer '
           cookies:
-            - session_access_token
+            - 'session_access_token'
           params:
-            - token
+            - 'token'
 
   # extAuth:
   #   type: HTTP
@@ -60,12 +60,12 @@ spec:
 
   oidc:
     provider:
-      issuer: https://idp.mylogin.space/application/o/Netbox
+      issuer: 'https://idp.mylogin.space/application/o/Netbox'
     scopes:
-      - openid
-      - profile
-      - offline_access
-    clientID: FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b
+      - 'openid'
+      - 'profile'
+      - 'offline_access'
+    clientID: 'FcFoS8uvodipDAUGnc2MJjtPMqSSvIVS3iEW1b4b'
     forwardAccessToken: true
     refreshToken: true
     clientSecret:
