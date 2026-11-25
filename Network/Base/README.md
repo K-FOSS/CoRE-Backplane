@@ -485,7 +485,7 @@ Services, Pods, namespaces and EndpointSlices; no Secret access is added.
 
 The ApplicationSet enables CoreDNS tracing only for `core-home1-talos-prod`
 (YVR); DC1 leaves it disabled. The Corefile samples one query in every 100 and
-sends Zipkin spans to the local `alloy-otlp` Service on TCP/9411. CoreDNS's
+sends Zipkin spans to the local `core-collectors-alloy-otlp` Service on TCP/9411. CoreDNS's
 [trace plugin](https://coredns.io/plugins/trace/) records query names and
 client addresses, so traces remain on the private cluster telemetry path. The
 [Alloy Zipkin receiver](https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.receiver.zipkin/)
