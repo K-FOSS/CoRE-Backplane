@@ -369,7 +369,7 @@ spec:
                           spec:
                             initContainers:
                               - name: install-dhcp-cni
-                                image: rancher/hardened-cni-plugins:v1.9.1-build20260511
+                                image: 'rancher/hardened-cni-plugins:v1.10.0-build20261120@sha256:c6711801c4ed38549c1802e48c1d2695a738cf7a1a51dd0cb92bd7f68fb739cd'
                                 env:
                                   - name: SKIP_CNI_BINARIES
                                     value: 'bandwidth,bridge,firewall,flannel,host-device,host-local,ipvlan,loopback,macvlan,portmap,ptp,sbr,static,tuning,vlan,vrf'
@@ -384,7 +384,7 @@ spec:
                                   - name: host-run-cni
                                     mountPath: /run/cni
                               - name: dhcp-cni-daemon
-                                image: rancher/hardened-cni-plugins:v1.9.1-build20260511
+                                image: 'rancher/hardened-cni-plugins:v1.10.0-build20261120@sha256:c6711801c4ed38549c1802e48c1d2695a738cf7a1a51dd0cb92bd7f68fb739cd'
                                 command: ['/bin/sh', '-c']
                                 args: ['rm -f /run/cni/dhcp.sock && exec /host/opt/cni/bin/dhcp daemon']
                                 securityContext:
